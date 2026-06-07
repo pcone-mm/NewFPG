@@ -1,0 +1,1296 @@
+{
+  "blendFile": "D:\\Unity\\NewFPG\\Assets\\Art\\Scenes\\shulin演示.blend",
+  "scene": "Scene",
+  "materials": [
+    {
+      "name": "2.001",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/2.001.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/2.001_base_Old_Chinese_Roof_House_2_BaseColor.jpg.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/2.001_normal_Old_Chinese_Roof_House_2_Normal.jpg.png",
+      "metallicMap": "",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/2.001_roughness_Old_Chinese_Roof_House_2_Roughness.jpg.png",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "5.001",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/5.001.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/5.001_base_rb_5_BaseColor.jpg.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/5.001_normal_rb_5_Normal.jpg.png",
+      "metallicMap": "Assets/Art/Scenes/ShulinBlendTextures/5.001_metallic_rb_5_Metallic.jpg.png",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/5.001_roughness_rb_5_Roughness.jpg.png",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Default OBJ.001",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Default_OBJ.001.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "di",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/di.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/di.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 1.0
+    },
+    {
+      "name": "di上",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/di上.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/di上.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.4200001358985901
+    },
+    {
+      "name": "Dots Stroke",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Dots_Stroke.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        0.800000011920929,
+        0.800000011920929,
+        0.800000011920929,
+        1.0
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Grass Material",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Grass_Material.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material_base_Grass_basecolor.jpg.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material_normal_Grass_normal.jpg.png",
+      "metallicMap": "",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material_roughness_Grass_roughness.jpg.png",
+      "occlusionMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material_occlusion_Grass_ambientocclusion.jpg.png",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Grass Material.001",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Grass_Material.001.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.001_base_Grass_basecolor.jpg.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.001_normal_Grass_normal.jpg.png",
+      "metallicMap": "",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.001_roughness_Grass_roughness.jpg.png",
+      "occlusionMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.001_occlusion_Grass_ambientocclusion.jpg.png",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Grass Material.002",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Grass_Material.002.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.002_base_Grass_basecolor.jpg.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.002_normal_Grass_normal.jpg.png",
+      "metallicMap": "",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.002_roughness_Grass_roughness.jpg.png",
+      "occlusionMap": "Assets/Art/Scenes/ShulinBlendTextures/Grass_Material.002_occlusion_Grass_ambientocclusion.jpg.png",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "M Grass Generic",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/M_Grass_Generic.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "M Grass Small Cover",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/M_Grass_Small_Cover.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "M Grass Tabosa",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/M_Grass_Tabosa.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Material",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Material.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        0.09490671753883362,
+        0.08646893501281738,
+        0.04725073650479317,
+        1.0
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "QQ图片20260605200243",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/QQ图片20260605200243.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/shulin/QQ图片20260605200243.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Rock",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Rock.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/Rock_base_rock_moss_set_02_diff.png.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/Rock_normal_rock_moss_set_02_nor_gl.png.png",
+      "metallicMap": "",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/Rock_roughness_rock_moss_set_02_rough.png.png",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "Wood 01",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/Wood_01.mat",
+      "unlit": false,
+      "alphaMode": "Opaque",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/ShulinBlendTextures/Wood_01_base_Wooden_Board_10022023_BaseColor.jpg.png",
+      "normalMap": "Assets/Art/Scenes/ShulinBlendTextures/Wood_01_normal_Wooden_Board_10022023_Normal.jpg.png",
+      "metallicMap": "",
+      "roughnessMap": "Assets/Art/Scenes/ShulinBlendTextures/Wood_01_roughness_Smear002_4K_Roughness.jpg.png",
+      "occlusionMap": "Assets/Art/Scenes/ShulinBlendTextures/Wood_01_occlusion_Wooden_Board_10022023_ambientocclusion.jpg.png",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "emissionStrength": 1.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "中石头",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/中石头.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/中石头.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "大石头",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/大石头.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/大石头.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "天",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/天.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/shulin/天.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "房子1",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/房子1.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/房子1.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "房子2",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/房子2.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/房子2.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "树",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/树.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/树.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "灌木-中",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/灌木-中.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/灌木-中.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "灌木低",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/灌木低.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/灌木低.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "灌木低-暗",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/灌木低-暗.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/灌木低-暗.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "矮石头",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/矮石头.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/树林切图/矮石头.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "远山",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/远山.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/shulin/远山.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    },
+    {
+      "name": "雾",
+      "materialPath": "Assets/Art/Scenes/ShulinBlendMaterials/雾.mat",
+      "unlit": false,
+      "alphaMode": "Cutout",
+      "blendMethod": "HASHED",
+      "baseMap": "Assets/Art/Scenes/shulin/雾.png",
+      "normalMap": "",
+      "metallicMap": "",
+      "roughnessMap": "",
+      "occlusionMap": "",
+      "baseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "diffuseColor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "emissionColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissionStrength": 0.0,
+      "metallic": 0.0,
+      "roughness": 0.5
+    }
+  ],
+  "objects": [
+    {
+      "name": "Cube",
+      "mesh": "Cube",
+      "materials": [
+        "Material"
+      ]
+    },
+    {
+      "name": "Realistic_White_Male_Low_Poly",
+      "mesh": "Realistic_White_Male_Low_Poly",
+      "materials": [
+        "Default OBJ.001"
+      ]
+    },
+    {
+      "name": "立方体",
+      "mesh": "立方体",
+      "materials": [
+        "2.001"
+      ]
+    },
+    {
+      "name": "立方体.001",
+      "mesh": "立方体.001",
+      "materials": [
+        "2.001"
+      ]
+    },
+    {
+      "name": "di上",
+      "mesh": "di上",
+      "materials": [
+        "di上"
+      ]
+    },
+    {
+      "name": "di",
+      "mesh": "di",
+      "materials": [
+        "di"
+      ]
+    },
+    {
+      "name": "房子2",
+      "mesh": "房子2",
+      "materials": [
+        "房子2"
+      ]
+    },
+    {
+      "name": "矮石头",
+      "mesh": "矮石头",
+      "materials": [
+        "矮石头"
+      ]
+    },
+    {
+      "name": "房子1",
+      "mesh": "房子1",
+      "materials": [
+        "房子1"
+      ]
+    },
+    {
+      "name": "树",
+      "mesh": "树",
+      "materials": [
+        "树"
+      ]
+    },
+    {
+      "name": "大石头",
+      "mesh": "大石头",
+      "materials": [
+        "大石头"
+      ]
+    },
+    {
+      "name": "灌木低-暗",
+      "mesh": "灌木低-暗",
+      "materials": [
+        "灌木低-暗"
+      ]
+    },
+    {
+      "name": "中石头",
+      "mesh": "中石头",
+      "materials": [
+        "中石头"
+      ]
+    },
+    {
+      "name": "灌木低",
+      "mesh": "灌木低",
+      "materials": [
+        "灌木低"
+      ]
+    },
+    {
+      "name": "灌木-中",
+      "mesh": "灌木-中",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "树.001",
+      "mesh": "树.001",
+      "materials": [
+        "树"
+      ]
+    },
+    {
+      "name": "树.002",
+      "mesh": "树.002",
+      "materials": [
+        "树"
+      ]
+    },
+    {
+      "name": "灌木低-暗.001",
+      "mesh": "灌木低-暗.001",
+      "materials": [
+        "灌木低-暗"
+      ]
+    },
+    {
+      "name": "矮石头.001",
+      "mesh": "矮石头.001",
+      "materials": [
+        "矮石头"
+      ]
+    },
+    {
+      "name": "灌木-中.001",
+      "mesh": "灌木-中.001",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "灌木-中.002",
+      "mesh": "灌木-中.002",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "灌木-中.003",
+      "mesh": "灌木-中.003",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "灌木-中.004",
+      "mesh": "灌木-中.004",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "大石头.001",
+      "mesh": "大石头.001",
+      "materials": [
+        "大石头"
+      ]
+    },
+    {
+      "name": "大石头.002",
+      "mesh": "大石头.002",
+      "materials": [
+        "大石头"
+      ]
+    },
+    {
+      "name": "di上.001",
+      "mesh": "di上.001",
+      "materials": [
+        "di上"
+      ]
+    },
+    {
+      "name": "树.003",
+      "mesh": "树.003",
+      "materials": [
+        "树"
+      ]
+    },
+    {
+      "name": "灌木-中.005",
+      "mesh": "灌木-中.005",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "中石头.001",
+      "mesh": "中石头.001",
+      "materials": [
+        "中石头"
+      ]
+    },
+    {
+      "name": "天",
+      "mesh": "天",
+      "materials": [
+        "天"
+      ]
+    },
+    {
+      "name": "远山",
+      "mesh": "远山",
+      "materials": [
+        "远山"
+      ]
+    },
+    {
+      "name": "雾",
+      "mesh": "雾",
+      "materials": [
+        "雾"
+      ]
+    },
+    {
+      "name": "雾.001",
+      "mesh": "雾.001",
+      "materials": [
+        "雾"
+      ]
+    },
+    {
+      "name": "雾.002",
+      "mesh": "雾.002",
+      "materials": [
+        "雾"
+      ]
+    },
+    {
+      "name": "雾.003",
+      "mesh": "雾.003",
+      "materials": [
+        "雾"
+      ]
+    },
+    {
+      "name": "雾.004",
+      "mesh": "雾.004",
+      "materials": [
+        "雾"
+      ]
+    },
+    {
+      "name": "雾.005",
+      "mesh": "雾.005",
+      "materials": [
+        "雾"
+      ]
+    },
+    {
+      "name": "di.001",
+      "mesh": "di.001",
+      "materials": [
+        "di"
+      ]
+    },
+    {
+      "name": "灌木低.001",
+      "mesh": "灌木低.001",
+      "materials": [
+        "灌木低"
+      ]
+    },
+    {
+      "name": "大石头.003",
+      "mesh": "大石头.003",
+      "materials": [
+        "大石头"
+      ]
+    },
+    {
+      "name": "QQ图片20260605200243",
+      "mesh": "QQ图片20260605200243",
+      "materials": [
+        "QQ图片20260605200243"
+      ]
+    },
+    {
+      "name": "灌木-中.006",
+      "mesh": "灌木-中.006",
+      "materials": [
+        "灌木-中"
+      ]
+    },
+    {
+      "name": "Grass Generic LRG Moore",
+      "mesh": "Mesh_0.008",
+      "materials": [
+        "M Grass Generic"
+      ]
+    },
+    {
+      "name": "_Grass Generic Medium Sparse.001",
+      "mesh": "_Grass Generic Medium Sparse.001",
+      "materials": [
+        "Grass Material.001"
+      ]
+    },
+    {
+      "name": "Grass Dandellion 01 ",
+      "mesh": "Grass Dandellion 01",
+      "materials": [
+        "M Grass Small Cover"
+      ]
+    },
+    {
+      "name": "_Grass Generic Medium Sparse.002",
+      "mesh": "_Grass Generic Medium Sparse.002",
+      "materials": [
+        "Grass Material.002"
+      ]
+    },
+    {
+      "name": "rock_big_4.002",
+      "mesh": "moss rock 13.002",
+      "materials": [
+        "Rock"
+      ]
+    },
+    {
+      "name": "5.003",
+      "mesh": "网格.002",
+      "materials": [
+        "5.001"
+      ]
+    },
+    {
+      "name": "5.004",
+      "mesh": "网格.003",
+      "materials": [
+        "5.001"
+      ]
+    },
+    {
+      "name": "5.005",
+      "mesh": "网格.008",
+      "materials": [
+        "5.001"
+      ]
+    },
+    {
+      "name": "Grass Tabosa Tall ",
+      "mesh": "Grass Tabosa Tall ",
+      "materials": [
+        "M Grass Tabosa"
+      ]
+    },
+    {
+      "name": "_Grass Generic Medium Sparse",
+      "mesh": "_Grass Generic Medium Sparse",
+      "materials": [
+        "Grass Material"
+      ]
+    }
+  ]
+}

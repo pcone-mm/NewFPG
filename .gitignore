@@ -20,6 +20,10 @@
 /[Uu]ser[Ss]ettings/
 *.log
 
+# Agent 和生成流程的临时输出
+/[Oo]utput/
+/[Tt]mp/
+
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be committed to version control.
 *.blend1
 *.blend1.meta

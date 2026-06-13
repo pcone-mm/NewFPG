@@ -6,11 +6,15 @@ using UnityEngine;
 [CustomEditor(typeof(PrototypeFirstPersonWeaponView))]
 public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
 {
+    private SerializedProperty interactionConfigProperty;
     private SerializedProperty weaponsProperty;
     private ReorderableList weaponsList;
+    private Editor interactionConfigEditor;
+    private bool showInteractionConfig = true;
 
     private void OnEnable()
     {
+        interactionConfigProperty = serializedObject.FindProperty("interactionConfig");
         weaponsProperty = serializedObject.FindProperty("weapons");
         weaponsList = new ReorderableList(serializedObject, weaponsProperty, true, true, true, true)
         {
@@ -22,12 +26,22 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         };
     }
 
+    private void OnDisable()
+    {
+        if (interactionConfigEditor != null)
+        {
+            DestroyImmediate(interactionConfigEditor);
+        }
+    }
+
     public override void OnInspectorGUI()
     {
+        SyncTargetsFromScene();
         serializedObject.Update();
 
         EditorGUI.BeginChangeCheck();
-        DrawPropertiesExcluding(serializedObject, "m_Script", "weapons");
+        DrawPropertiesExcluding(serializedObject, "m_Script", "interactionConfig", "weapons");
+        EditorGUILayout.PropertyField(interactionConfigProperty);
         weaponsList.DoLayoutList();
 
         using (new EditorGUILayout.HorizontalScope())
@@ -52,11 +66,14 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         {
             serializedObject.ApplyModifiedProperties();
         }
+
+        DrawInteractionConfigInspector();
     }
 
     private void OnSceneGUI()
     {
         PrototypeFirstPersonWeaponView view = (PrototypeFirstPersonWeaponView)target;
+        view.SyncWeaponPosesFromScene();
         Transform root = view.transform;
 
         serializedObject.Update();
@@ -136,6 +153,28 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         EditorGUI.PropertyField(new Rect(rect.x, y, rect.width, lineHeight), width);
     }
 
+    private void DrawInteractionConfigInspector()
+    {
+        Object config = interactionConfigProperty.objectReferenceValue;
+        if (config == null)
+        {
+            EditorGUILayout.HelpBox("Assign an interaction config asset to enable Play Mode hover and attack tuning.", MessageType.Info);
+            return;
+        }
+
+        EditorGUILayout.Space(4f);
+        showInteractionConfig = EditorGUILayout.Foldout(showInteractionConfig, "Interaction Config", true);
+        if (!showInteractionConfig)
+        {
+            return;
+        }
+
+        EditorGUI.indentLevel++;
+        CreateCachedEditor(config, null, ref interactionConfigEditor);
+        interactionConfigEditor.OnInspectorGUI();
+        EditorGUI.indentLevel--;
+    }
+
     private void AddWeapon(ReorderableList list)
     {
         int index = weaponsProperty.arraySize;
@@ -168,6 +207,17 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
             {
                 view.RebuildWeapons();
                 EditorUtility.SetDirty(view);
+            }
+        }
+    }
+
+    private void SyncTargetsFromScene()
+    {
+        foreach (Object selectedTarget in targets)
+        {
+            if (selectedTarget is PrototypeFirstPersonWeaponView view)
+            {
+                view.SyncWeaponPosesFromScene();
             }
         }
     }

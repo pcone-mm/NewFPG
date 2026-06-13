@@ -1,10 +1,20 @@
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
+#if ODIN_INSPECTOR
+using Sirenix.OdinInspector;
+#endif
+
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditor.SceneManagement;
 #endif
 
 namespace NewFPG.Prototype
@@ -16,6 +26,7 @@ namespace NewFPG.Prototype
         private const string RigName = "FirstPersonWeaponRig";
         private const string CameraName = "FirstPersonWeaponCamera";
         private const string MaterialName = "FirstPersonWeaponMaterial";
+        private const string PointerHitboxSuffix = " Pointer Hitbox";
 
         [Header("Binding")]
         [SerializeField] private Camera worldCamera;
@@ -32,6 +43,12 @@ namespace NewFPG.Prototype
         [SerializeField] private float farClipPlane = 8f;
         [SerializeField] private float weaponDepth = 1.35f;
 
+        [Header("Interaction")]
+#if ODIN_INSPECTOR
+        [InlineEditor(InlineEditorObjectFieldModes.Foldout)]
+#endif
+        [SerializeField] private PrototypeFirstPersonWeaponInteractionConfig interactionConfig;
+
         [Header("Layout")]
         [SerializeField] private List<WeaponPanelPose> weapons = new List<WeaponPanelPose>
         {
@@ -41,10 +58,16 @@ namespace NewFPG.Prototype
         };
 
         private readonly List<GameObject> spawnedWeapons = new List<GameObject>();
+        private readonly List<RuntimeWeapon> runtimeWeapons = new List<RuntimeWeapon>();
+        private RuntimeWeapon pointedWeapon;
+#if UNITY_EDITOR
+        private bool syncingWeaponPosesFromScene;
+#endif
 
         private void Reset()
         {
             LoadDefaultTexturesInEditor();
+            AssignDefaultInteractionConfigInEditor();
         }
 
         private void OnEnable()
@@ -54,10 +77,16 @@ namespace NewFPG.Prototype
             {
                 RebuildWeapons();
             }
+
+            if (Application.isPlaying)
+            {
+                RegisterRuntimeWeaponsFromRig();
+            }
         }
 
         private void OnDisable()
         {
+            KillRuntimeWeaponTweens();
             RemoveWeaponCameraFromStack();
         }
 
@@ -67,6 +96,25 @@ namespace NewFPG.Prototype
             nearClipPlane = Mathf.Max(0.001f, nearClipPlane);
             farClipPlane = Mathf.Max(nearClipPlane + 0.1f, farClipPlane);
             weaponDepth = Mathf.Clamp(weaponDepth, nearClipPlane + 0.05f, farClipPlane - 0.05f);
+            AssignDefaultInteractionConfigInEditor();
+        }
+
+        private void Update()
+        {
+            if (!Application.isPlaying)
+            {
+#if UNITY_EDITOR
+                SyncWeaponPosesFromScene();
+#endif
+                return;
+            }
+
+            if (interactionConfig == null)
+            {
+                return;
+            }
+
+            UpdatePointerInteraction();
         }
 
         [ContextMenu("Rebuild First Person Weapon View")]
@@ -128,12 +176,20 @@ namespace NewFPG.Prototype
         private bool CanModifySceneObject()
         {
 #if UNITY_EDITOR
-            if (!Application.isPlaying && PrefabUtility.IsPartOfPrefabAsset(gameObject))
+            if (!Application.isPlaying)
             {
-                return false;
+                if (PrefabUtility.IsPartOfPrefabAsset(gameObject))
+                {
+                    return false;
+                }
+
+                if (EditorSceneManager.IsPreviewScene(gameObject.scene) || EditorSceneManager.IsPreviewSceneObject(gameObject))
+                {
+                    return false;
+                }
             }
 #endif
-            return gameObject.scene.IsValid();
+            return gameObject.scene.IsValid() && gameObject.scene.isLoaded;
         }
 
         private void ResolveWorldCamera()
@@ -168,6 +224,8 @@ namespace NewFPG.Prototype
             return candidate != null
                 && candidate != weaponCamera
                 && candidate.transform != transform
+                && candidate.gameObject.scene == gameObject.scene
+                && !candidate.transform.IsChildOf(transform)
                 && candidate.cameraType == CameraType.Game
                 && candidate.isActiveAndEnabled;
         }
@@ -297,24 +355,94 @@ namespace NewFPG.Prototype
             weaponObject.name = pose.name;
             weaponObject.layer = weaponLayer;
             weaponObject.transform.SetParent(weaponRig, false);
-            weaponObject.transform.localPosition = new Vector3(pose.localPosition.x, pose.localPosition.y, Mathf.Max(pose.localPosition.z, weaponDepth));
+            weaponObject.transform.localPosition = pose.localPosition;
             weaponObject.transform.localRotation = Quaternion.Euler(pose.localEulerAngles);
 
             float aspect = texture.width > 0 && texture.height > 0 ? (float)texture.width / texture.height : 1f;
             weaponObject.transform.localScale = new Vector3(pose.width, pose.width / Mathf.Max(0.01f, aspect), 1f);
-
-            Collider weaponCollider = weaponObject.GetComponent<Collider>();
-            if (weaponCollider != null)
-            {
-                DestroyImmediateSafe(weaponCollider);
-            }
 
             Renderer renderer = weaponObject.GetComponent<Renderer>();
             renderer.sharedMaterial = CreateMaterial(texture, pose.sortingOrder);
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
 
+            DisableVisualColliders(weaponObject);
+            GameObject hitboxObject = CreateOrUpdatePointerHitbox(weaponObject);
+
             spawnedWeapons.Add(weaponObject);
+            runtimeWeapons.Add(new RuntimeWeapon(weaponObject, hitboxObject));
+        }
+
+        private GameObject CreateOrUpdatePointerHitbox(GameObject visualObject)
+        {
+            GameObject hitboxObject = FindPointerHitbox(visualObject.name);
+            if (hitboxObject == null)
+            {
+                hitboxObject = new GameObject(visualObject.name + PointerHitboxSuffix);
+                hitboxObject.transform.SetParent(weaponRig, false);
+                spawnedWeapons.Add(hitboxObject);
+            }
+
+            int weaponLayer = LayerMask.NameToLayer(ViewLayerName);
+            if (weaponLayer >= 0)
+            {
+                hitboxObject.layer = weaponLayer;
+            }
+
+            hitboxObject.hideFlags = HideFlags.HideInHierarchy;
+            CopyPointerHitboxTransform(visualObject.transform, hitboxObject.transform);
+            EnsurePointerCollider(hitboxObject);
+            return hitboxObject;
+        }
+
+        private GameObject FindPointerHitbox(string visualName)
+        {
+            if (weaponRig == null)
+            {
+                return null;
+            }
+
+            Transform hitbox = weaponRig.Find(visualName + PointerHitboxSuffix);
+            return hitbox != null ? hitbox.gameObject : null;
+        }
+
+        private static void CopyPointerHitboxTransform(Transform visualTransform, Transform hitboxTransform)
+        {
+            hitboxTransform.localPosition = visualTransform.localPosition;
+            hitboxTransform.localRotation = visualTransform.localRotation;
+            hitboxTransform.localScale = visualTransform.localScale;
+        }
+
+        private static void DisableVisualColliders(GameObject visualObject)
+        {
+            Collider[] colliders = visualObject.GetComponents<Collider>();
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                colliders[i].enabled = false;
+            }
+        }
+
+        private static void EnsurePointerCollider(GameObject hitboxObject)
+        {
+            Collider[] colliders = hitboxObject.GetComponents<Collider>();
+            BoxCollider boxCollider = hitboxObject.GetComponent<BoxCollider>();
+            if (boxCollider == null)
+            {
+                boxCollider = hitboxObject.AddComponent<BoxCollider>();
+            }
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != boxCollider)
+                {
+                    colliders[i].enabled = false;
+                }
+            }
+
+            boxCollider.enabled = true;
+            boxCollider.isTrigger = false;
+            boxCollider.center = Vector3.zero;
+            boxCollider.size = new Vector3(1f, 1f, 0.2f);
         }
 
         private Material CreateMaterial(Texture2D texture, int renderQueueOffset)
@@ -356,6 +484,10 @@ namespace NewFPG.Prototype
 
         private void ClearSpawnedWeapons()
         {
+            pointedWeapon = null;
+            KillRuntimeWeaponTweens();
+            runtimeWeapons.Clear();
+
             for (int i = spawnedWeapons.Count - 1; i >= 0; i--)
             {
                 if (spawnedWeapons[i] != null)
@@ -374,11 +506,318 @@ namespace NewFPG.Prototype
             for (int i = weaponRig.childCount - 1; i >= 0; i--)
             {
                 Transform child = weaponRig.GetChild(i);
-                if (child != null && child.GetComponent<Renderer>() != null)
+                if (child != null && (child.GetComponent<Renderer>() != null || child.name.EndsWith(PointerHitboxSuffix, System.StringComparison.Ordinal)))
                 {
                     DestroyImmediateSafe(child.gameObject);
                 }
             }
+        }
+
+        private void RegisterRuntimeWeaponsFromRig()
+        {
+            KillRuntimeWeaponTweens();
+            pointedWeapon = null;
+            runtimeWeapons.Clear();
+
+            if (weaponRig == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < weaponRig.childCount; i++)
+            {
+                Transform child = weaponRig.GetChild(i);
+                if (child == null || child.GetComponent<Renderer>() == null)
+                {
+                    continue;
+                }
+
+                DisableVisualColliders(child.gameObject);
+                GameObject hitboxObject = CreateOrUpdatePointerHitbox(child.gameObject);
+                runtimeWeapons.Add(new RuntimeWeapon(child.gameObject, hitboxObject));
+            }
+        }
+
+        private void UpdatePointerInteraction()
+        {
+            if (runtimeWeapons.Count == 0)
+            {
+                RegisterRuntimeWeaponsFromRig();
+            }
+
+            if (weaponCamera == null || runtimeWeapons.Count == 0)
+            {
+                pointedWeapon = null;
+                ReturnUnpointedHoverWeapons();
+                return;
+            }
+
+            RuntimeWeapon hitWeapon = FindPointerWeapon();
+            pointedWeapon = hitWeapon;
+
+            for (int i = 0; i < runtimeWeapons.Count; i++)
+            {
+                RuntimeWeapon weapon = runtimeWeapons[i];
+                if (weapon.State == WeaponInteractionState.Attack)
+                {
+                    continue;
+                }
+
+                if (weapon == hitWeapon)
+                {
+                    BeginHover(weapon);
+                }
+                else
+                {
+                    BeginReturn(weapon);
+                }
+            }
+
+            if (hitWeapon != null && hitWeapon.State != WeaponInteractionState.Attack && WasPointerPressedThisFrame())
+            {
+                BeginAttack(hitWeapon);
+            }
+        }
+
+        private RuntimeWeapon FindPointerWeapon()
+        {
+            int weaponLayer = LayerMask.NameToLayer(ViewLayerName);
+            if (weaponLayer < 0 || weaponCamera == null || !weaponCamera.isActiveAndEnabled)
+            {
+                return null;
+            }
+
+            if (!TryReadPointerPosition(out Vector2 pointerPosition))
+            {
+                return null;
+            }
+
+            Ray ray = weaponCamera.ScreenPointToRay(pointerPosition);
+            float raycastDistance = farClipPlane + interactionConfig.AttackForwardOffset + interactionConfig.RaycastDistancePadding;
+            if (!Physics.Raycast(ray, out RaycastHit hit, raycastDistance, 1 << weaponLayer, QueryTriggerInteraction.Collide))
+            {
+                return null;
+            }
+
+            return FindRuntimeWeapon(hit.collider.transform);
+        }
+
+        private RuntimeWeapon FindRuntimeWeapon(Transform hitTransform)
+        {
+            for (int i = 0; i < runtimeWeapons.Count; i++)
+            {
+                RuntimeWeapon weapon = runtimeWeapons[i];
+                if (hitTransform == weapon.HitTransform || hitTransform.IsChildOf(weapon.HitTransform))
+                {
+                    return weapon;
+                }
+            }
+
+            return null;
+        }
+
+        private void ReturnUnpointedHoverWeapons()
+        {
+            for (int i = 0; i < runtimeWeapons.Count; i++)
+            {
+                RuntimeWeapon weapon = runtimeWeapons[i];
+                if (weapon.State != WeaponInteractionState.Attack)
+                {
+                    BeginReturn(weapon);
+                }
+            }
+        }
+
+        private void BeginHover(RuntimeWeapon weapon)
+        {
+            if (weapon.State == WeaponInteractionState.HoverRise || weapon.State == WeaponInteractionState.HoverLoop)
+            {
+                return;
+            }
+
+            weapon.KillTweens();
+            weapon.CaptureAnimationStart();
+            weapon.State = WeaponInteractionState.HoverRise;
+            weapon.ActiveTween = DOTween.To(
+                    () => 0f,
+                    t => ApplyHoverFrame(weapon, t),
+                    1f,
+                    interactionConfig.HoverEnterDuration)
+                .SetEase(Ease.Linear)
+                .SetTarget(weapon.GameObject)
+                .OnComplete(() =>
+                {
+                    weapon.ActiveTween = null;
+                    BeginHoverLoop(weapon);
+                });
+        }
+
+        private void BeginAttack(RuntimeWeapon weapon)
+        {
+            if (weapon.State == WeaponInteractionState.Attack)
+            {
+                return;
+            }
+
+            weapon.KillTweens();
+            weapon.CaptureAnimationStart();
+            weapon.State = WeaponInteractionState.Attack;
+            weapon.ActiveTween = DOTween.To(
+                    () => 0f,
+                    t => ApplyAttackFrame(weapon, t),
+                    1f,
+                    interactionConfig.AttackDuration)
+                .SetEase(Ease.Linear)
+                .SetTarget(weapon.GameObject)
+                .OnComplete(() =>
+                {
+                    weapon.ActiveTween = null;
+                    if (pointedWeapon == weapon)
+                    {
+                        BeginHoverLoop(weapon);
+                    }
+                    else
+                    {
+                        BeginReturn(weapon);
+                    }
+                });
+        }
+
+        private void BeginReturn(RuntimeWeapon weapon)
+        {
+            if (weapon.State == WeaponInteractionState.Idle || weapon.State == WeaponInteractionState.Return)
+            {
+                return;
+            }
+
+            weapon.KillTweens();
+            weapon.CaptureAnimationStart();
+            weapon.State = WeaponInteractionState.Return;
+            weapon.ActiveTween = DOTween.To(
+                    () => 0f,
+                    t => ApplyReturnFrame(weapon, t),
+                    1f,
+                    interactionConfig.HoverReturnDuration)
+                .SetEase(Ease.Linear)
+                .SetTarget(weapon.GameObject)
+                .OnComplete(() =>
+                {
+                    weapon.ActiveTween = null;
+                    weapon.Transform.localPosition = weapon.BasePosition;
+                    weapon.Transform.localRotation = weapon.BaseRotation;
+                    weapon.Transform.localScale = weapon.BaseScale;
+                    weapon.State = WeaponInteractionState.Idle;
+                });
+        }
+
+        private void BeginHoverLoop(RuntimeWeapon weapon)
+        {
+            if (weapon.Transform == null)
+            {
+                return;
+            }
+
+            weapon.KillTweens();
+            weapon.ActiveTween = null;
+            weapon.State = WeaponInteractionState.HoverLoop;
+            weapon.Transform.localPosition = HoverPosition(weapon);
+            weapon.Transform.localRotation = weapon.BaseRotation;
+            weapon.Transform.localScale = weapon.BaseScale;
+
+            float spinSpeed = interactionConfig.HoverSpinSpeed;
+            if (Mathf.Approximately(spinSpeed, 0f))
+            {
+                return;
+            }
+
+            float cycleDuration = 360f / Mathf.Abs(spinSpeed);
+            Vector3 loopEuler = weapon.BaseEulerAngles + interactionConfig.HoverSpinAxis * (360f * Mathf.Sign(spinSpeed));
+            weapon.HoverLoopTween = weapon.Transform
+                .DOLocalRotate(loopEuler, cycleDuration, RotateMode.FastBeyond360)
+                .SetEase(Ease.Linear)
+                .SetLoops(-1, LoopType.Incremental)
+                .SetTarget(weapon.GameObject);
+        }
+
+        private void ApplyHoverFrame(RuntimeWeapon weapon, float normalizedTime)
+        {
+            float t = interactionConfig.EvaluateHoverEnter(normalizedTime);
+            weapon.Transform.localPosition = Vector3.LerpUnclamped(weapon.StartPosition, HoverPosition(weapon), t);
+            weapon.Transform.localRotation = Quaternion.SlerpUnclamped(weapon.StartRotation, weapon.BaseRotation, t);
+            weapon.Transform.localScale = Vector3.LerpUnclamped(weapon.StartScale, weapon.BaseScale, t);
+        }
+
+        private void ApplyAttackFrame(RuntimeWeapon weapon, float normalizedTime)
+        {
+            float t = Mathf.Clamp01(normalizedTime);
+            float recoverT = interactionConfig.EvaluateAttackRecover(t);
+            float attackArc = interactionConfig.EvaluateAttackArc(t);
+            Vector3 hoverPosition = HoverPosition(weapon);
+
+            weapon.Transform.localPosition = Vector3.LerpUnclamped(weapon.StartPosition, hoverPosition, recoverT)
+                + Vector3.forward * (interactionConfig.AttackForwardOffset * attackArc);
+            weapon.Transform.localRotation = Quaternion.SlerpUnclamped(weapon.StartRotation, weapon.BaseRotation, recoverT)
+                * Quaternion.Euler(interactionConfig.AttackRotationAxis * (interactionConfig.AttackRotation * attackArc));
+            weapon.Transform.localScale = Vector3.LerpUnclamped(weapon.StartScale, weapon.BaseScale, recoverT)
+                * Mathf.Lerp(1f, interactionConfig.AttackScale, attackArc);
+        }
+
+        private void ApplyReturnFrame(RuntimeWeapon weapon, float normalizedTime)
+        {
+            float t = interactionConfig.EvaluateHoverReturn(normalizedTime);
+            weapon.Transform.localPosition = Vector3.LerpUnclamped(weapon.StartPosition, weapon.BasePosition, t);
+            weapon.Transform.localRotation = Quaternion.SlerpUnclamped(weapon.StartRotation, weapon.BaseRotation, t);
+            weapon.Transform.localScale = Vector3.LerpUnclamped(weapon.StartScale, weapon.BaseScale, t);
+        }
+
+        private Vector3 HoverPosition(RuntimeWeapon weapon)
+        {
+            return weapon.BasePosition + Vector3.up * interactionConfig.HoverLift;
+        }
+
+        private void KillRuntimeWeaponTweens()
+        {
+            for (int i = 0; i < runtimeWeapons.Count; i++)
+            {
+                runtimeWeapons[i].KillTweens();
+            }
+        }
+
+        private static bool TryReadPointerPosition(out Vector2 pointerPosition)
+        {
+#if ENABLE_INPUT_SYSTEM
+            Mouse mouse = Mouse.current;
+            if (mouse != null)
+            {
+                pointerPosition = mouse.position.ReadValue();
+                return true;
+            }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            pointerPosition = Input.mousePosition;
+            return true;
+#else
+            pointerPosition = Vector2.zero;
+            return false;
+#endif
+        }
+
+        private static bool WasPointerPressedThisFrame()
+        {
+#if ENABLE_INPUT_SYSTEM
+            Mouse mouse = Mouse.current;
+            if (mouse != null)
+            {
+                return mouse.leftButton.wasPressedThisFrame;
+            }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetMouseButtonDown(0);
+#else
+            return false;
+#endif
         }
 
         private static void SetLayerRecursively(Transform root, int layer)
@@ -439,7 +878,134 @@ namespace NewFPG.Prototype
 #endif
         }
 
+        private void AssignDefaultInteractionConfigInEditor()
+        {
 #if UNITY_EDITOR
+            if (interactionConfig != null)
+            {
+                return;
+            }
+
+            string[] guids = AssetDatabase.FindAssets(
+                "t:" + nameof(PrototypeFirstPersonWeaponInteractionConfig),
+                new[] { "Assets/Settings" });
+
+            if (guids.Length == 0)
+            {
+                return;
+            }
+
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            interactionConfig = AssetDatabase.LoadAssetAtPath<PrototypeFirstPersonWeaponInteractionConfig>(path);
+#endif
+        }
+
+#if UNITY_EDITOR
+        [ContextMenu("Sync HUD Weapon Poses From Scene")]
+        public void SyncWeaponPosesFromScene()
+        {
+            if (Application.isPlaying || syncingWeaponPosesFromScene || weaponRig == null || weapons == null || weapons.Count == 0)
+            {
+                return;
+            }
+
+            if (!CanModifySceneObject())
+            {
+                return;
+            }
+
+            syncingWeaponPosesFromScene = true;
+            bool changed = false;
+
+            for (int i = 0; i < weapons.Count; i++)
+            {
+                Transform weaponTransform = FindEditableWeaponTransform(weapons[i], i);
+                if (weaponTransform == null)
+                {
+                    continue;
+                }
+
+                WeaponPanelPose pose = weapons[i];
+                Vector3 localPosition = weaponTransform.localPosition;
+                Vector3 localEulerAngles = weaponTransform.localEulerAngles;
+                float width = Mathf.Max(0.01f, weaponTransform.localScale.x);
+                GameObject hitboxObject = FindPointerHitbox(weaponTransform.name);
+                if (hitboxObject != null)
+                {
+                    CopyPointerHitboxTransform(weaponTransform, hitboxObject.transform);
+                }
+
+                if (!PoseMatchesTransform(pose, localPosition, weaponTransform.localRotation, width))
+                {
+                    if (!changed)
+                    {
+                        Undo.RecordObject(this, "Sync First Person Weapon Poses");
+                        changed = true;
+                    }
+
+                    pose.localPosition = localPosition;
+                    pose.localEulerAngles = localEulerAngles;
+                    pose.width = width;
+                    weapons[i] = pose;
+                }
+            }
+
+            if (changed)
+            {
+                EditorUtility.SetDirty(this);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+            }
+
+            syncingWeaponPosesFromScene = false;
+        }
+
+        private Transform FindEditableWeaponTransform(WeaponPanelPose pose, int index)
+        {
+            if (!string.IsNullOrWhiteSpace(pose.name))
+            {
+                Transform namedChild = weaponRig.Find(pose.name);
+                if (IsEditableWeaponTransform(namedChild))
+                {
+                    return namedChild;
+                }
+            }
+
+            int weaponIndex = 0;
+            for (int i = 0; i < weaponRig.childCount; i++)
+            {
+                Transform child = weaponRig.GetChild(i);
+                if (!IsEditableWeaponTransform(child))
+                {
+                    continue;
+                }
+
+                if (weaponIndex == index)
+                {
+                    return child;
+                }
+
+                weaponIndex++;
+            }
+
+            return null;
+        }
+
+        private static bool IsEditableWeaponTransform(Transform candidate)
+        {
+            return candidate != null && candidate.GetComponent<Renderer>() != null;
+        }
+
+        private static bool PoseMatchesTransform(
+            WeaponPanelPose pose,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            float width)
+        {
+            return (pose.localPosition - localPosition).sqrMagnitude < 0.000001f
+                && Quaternion.Angle(Quaternion.Euler(pose.localEulerAngles), localRotation) < 0.01f
+                && Mathf.Abs(pose.width - width) < 0.0001f;
+        }
+
         private bool NeedsDefaultTextures()
         {
             if (weaponTextures == null || weaponTextures.Length < 7)
@@ -519,6 +1085,61 @@ namespace NewFPG.Prototype
                 this.localEulerAngles = localEulerAngles;
                 this.width = width;
                 this.sortingOrder = sortingOrder;
+            }
+        }
+
+        private enum WeaponInteractionState
+        {
+            Idle,
+            HoverRise,
+            HoverLoop,
+            Attack,
+            Return,
+        }
+
+        private sealed class RuntimeWeapon
+        {
+            public RuntimeWeapon(GameObject gameObject, GameObject hitboxObject)
+            {
+                GameObject = gameObject;
+                Transform = gameObject.transform;
+                HitboxObject = hitboxObject;
+                HitTransform = hitboxObject.transform;
+                BasePosition = Transform.localPosition;
+                BaseRotation = Transform.localRotation;
+                BaseEulerAngles = Transform.localEulerAngles;
+                BaseScale = Transform.localScale;
+                CaptureAnimationStart();
+            }
+
+            public GameObject GameObject { get; }
+            public Transform Transform { get; }
+            public GameObject HitboxObject { get; }
+            public Transform HitTransform { get; }
+            public Vector3 BasePosition { get; }
+            public Quaternion BaseRotation { get; }
+            public Vector3 BaseEulerAngles { get; }
+            public Vector3 BaseScale { get; }
+            public Vector3 StartPosition { get; private set; }
+            public Quaternion StartRotation { get; private set; }
+            public Vector3 StartScale { get; private set; }
+            public WeaponInteractionState State { get; set; }
+            public Tween ActiveTween { get; set; }
+            public Tween HoverLoopTween { get; set; }
+
+            public void CaptureAnimationStart()
+            {
+                StartPosition = Transform.localPosition;
+                StartRotation = Transform.localRotation;
+                StartScale = Transform.localScale;
+            }
+
+            public void KillTweens()
+            {
+                ActiveTween?.Kill();
+                HoverLoopTween?.Kill();
+                ActiveTween = null;
+                HoverLoopTween = null;
             }
         }
     }

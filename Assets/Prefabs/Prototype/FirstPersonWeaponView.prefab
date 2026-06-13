@@ -484,6 +484,7 @@ MonoBehaviour:
   parentModuleToWorldCamera: 1
   useUrpCameraStack: 1
   rebuildOnEnable: 1
+  interactionConfig: {fileID: 11400000, guid: 22b28574ec7d4caca868693c4e571879, type: 2}
   weaponTextures:
   - {fileID: 2800000, guid: 67b3d4ef98c7f0b4ebd4cc39f1676fa5, type: 3}
   - {fileID: 2800000, guid: c37d24d4fddb5574a950cb0925bdd9ec, type: 3}
@@ -499,7 +500,7 @@ MonoBehaviour:
   weapons:
   - name: Left Blade
     textureIndex: 6
-    localPosition: {x: -0.43, y: -0.39, z: 1.35}
+    localPosition: {x: -0.28, y: 0.22, z: 1.35}
     localEulerAngles: {x: 0, y: 0, z: -80}
     width: 0.92
     sortingOrder: 0

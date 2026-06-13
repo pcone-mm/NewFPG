@@ -1,0 +1,33 @@
+# NewFPG Agent 使用指南
+
+## 项目地图
+
+- `Assets/Scripts/Battle/` 放可复用的战斗领域代码，命名空间是 `NewFPG.Battle`。神器、目标选择、队列、战斗状态等不依赖场景物体的规则，优先放这里。
+- `Assets/Scripts/Prototype/` 放原型场景的胶水代码，命名空间是 `NewFPG.Prototype`。这里负责 `MonoBehaviour` 编排、运行时生成 HUD、相机跟随辅助、洞穴战斗流程串联。
+- `Assets/Scenes/` 放可运行的 Unity 场景。`SampleScene.unity` 是当前已跟踪的基础场景；`PrototypeCaveBattleScene.unity` 是原型洞穴战斗场景。
+- `Assets/Art/` 放导入后的美术资源和源素材。角色、HUD、武器、实验场景参考图保持在当前各自目录中。其中有一个中文命名的实验场景美术目录，除非明确要做 Unity 资源迁移，否则保留现状。
+- `Assets/Materials/Prototype/` 放当前原型场景使用的材质。
+- `Assets/Screenshots/` 放视觉验证截图。把它当作参考证据，不要当作运行时依赖。
+- `Assets/Settings/`、`ProjectSettings/`、`Packages/` 是 Unity 管理的配置。只有明确涉及包、渲染管线、构建或项目设置时才修改。
+
+## 当前技术栈
+
+- Unity `6000.3.15f1`。
+- 已安装并配置 Universal Render Pipeline。
+- 通过 `Assets/InputSystem_Actions.inputactions` 使用 Input System。
+- 通过 `com.coplaydev.unity-mcp` 接入 Unity MCP 包。
+
+## 工作规则
+
+- 保留 Unity `.meta` 文件，并让它始终跟随对应资源。移动资源时，同步移动匹配的 `.meta` 文件。
+- 除非用户明确要求真正重整 Unity 资源目录，否则避免大规模搬动资源。场景和 prefab 引用稳定性比目录名好看更重要。
+- 生成物和探索性输出不要进入日常上下文：`Library/`、`Temp/`、`Logs/`、`UserSettings/`、`output/`、`tmp/`，除非任务明确要求读取生成物或日志。
+- 搜索时先在最可能相关的小目录里查，再考虑读取大型 Unity YAML 文件。
+- 编辑 C# 脚本时，命名空间要和目录边界一致：战斗逻辑用 `NewFPG.Battle`，原型场景代码用 `NewFPG.Prototype`。
+- 不要把 Unity 项目设置、包版本、渲染管线资源、构建设置当作顺手清理项一起改。
+
+## 验证方式
+
+- 修改 C# 或 Unity 资源后，打开 Unity 或使用 Unity MCP，等待编译完成，再检查 Console 错误。
+- 修改场景、相机或 HUD 后，截图并和预期视觉状态对比。
+- 只改文档或目录指南时，检查 `git diff --check` 并人工确认新增指南内容。

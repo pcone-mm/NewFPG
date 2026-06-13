@@ -1,0 +1,18 @@
+Create a clean 2D game character spritesheet for Unity.
+
+Use case: stylized-concept
+Asset type: top-down 2D RPG player character spritesheet
+Primary request: a young xianxia cultivator hero, elegant but simple, suitable for replacing temporary Unity sprites
+Subject: one consistent human player character wearing a flowing warm-ivory robe with low-saturation teal-green trim, small ochre-red waist sash, simple dark hair tied up with a ribbon, subtle jade talisman detail, no large weapon
+Style/medium: minimalist hand-painted storybook illustration, eastern xianxia monster-field-guide aesthetic, beige xuan paper feeling, black hand-drawn ink linework, soft flat colors, low saturation, charming and readable at small size
+Composition/framing: strict 2:1 landscape spritesheet, orthographic top-down RPG character view, centered in every cell, full body visible, same character height about 60-70% of each cell, consistent scale and foot position, generous padding on all sides, no camera perspective distortion
+Spritesheet layout: exactly 8 equal columns by 4 equal rows, 32 total frames, each frame independent and evenly spaced; every pose must stay fully inside its invisible 128 x 128 px cell
+Rows: row 1 facing down, row 2 facing left, row 3 facing right, row 4 facing up
+Columns: columns 1-4 are idle animation frames, columns 5-8 are walking animation frames
+Animation details: idle frames show subtle breathing and robe movement with planted feet; walking frames show a smooth four-frame walk loop with alternating steps and sleeve/ribbon sway
+Background: perfectly flat solid #ff00ff chroma-key background for background removal; no shadows, no texture, no gradients, no floor plane, no frame borders
+Color palette: black ink lines, warm beige/ivory robe, desaturated teal green accents, muted ochre red sash, small pale jade highlight
+Constraints: strict 2:1 landscape canvas; exactly 8 x 4 frames; every frame must show the same character design, same costume, same proportions, same scale, and same lighting; each frame must be separate with clear empty space between poses; no text, no labels, no watermark
+Avoid: square canvas, portrait canvas, attack poses, extra characters, monsters, weapons larger than the character, UI icons, particle effects, glowing aura, realistic rendering, anime cel-shading, pixel art, heavy detail, cast shadows, grid lines, cropped limbs, duplicate or missing directions
+
+Target output: exact 1024 x 512 px PNG source, with 128 x 128 px cells and no external margins. After generation, remove the #ff00ff background to create a transparent PNG.

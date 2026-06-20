@@ -92,7 +92,8 @@ MonoBehaviour:
   - {fileID: -3622820852857530025}
   - {fileID: -1824734157261895185}
   - {fileID: 2348967921662228310}
-  m_RendererFeatureMap: b3a60f816373968957998cfca027b9cdef09e2aaf33dade656f7761fe1359920
+  - {fileID: 777108652093147985}
+  m_RendererFeatureMap: b3a60f816373968957998cfca027b9cdef09e2aaf33dade656f7761fe1359920510be5a733d8c80a
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -139,3 +140,26 @@ MonoBehaviour:
     m_Bits: 4294967295
   ignoreReflectionProbes: 1
   useOptimizedDepthOnlyShader: 1
+--- !u!114 &777108652093147985
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5d21199b1b748dbbdf6d55d1536858e, type: 3}
+  m_Name: Dodge Speed Lines
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Rendering.DodgeSpeedLinesRendererFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: a8e426ff79724d8ebed670a459d6f3ea, type: 3}
+    injectionPoint: 600
+    opacity: 0.82
+    noiseScale: 32
+    animationSpeed: 2
+    lineThreshold: 0.3
+    radialScale: 1
+    lineColor: {r: 0.72, g: 0.9, b: 1, a: 1}
+    affectSceneView: 0

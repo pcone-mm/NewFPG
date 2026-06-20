@@ -23,6 +23,23 @@
 # Agent 和生成流程的临时输出
 /[Oo]utput/
 /[Tt]mp/
+/.codex/
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+
+# Local research/scrape scratch files
+/apex_sitemap.cache
+/aram_index.cache
+/aram_list.cache
+/aramgg_*.html
+/aramgg_*.json
+/cdragon_arena.cache
+/cdragon_cherry.cache
+/hextech_rows*.json
+/audit_hextech_review.py
+/clean_hextech_review.py
+/set_feishu_tag_dropdowns.py
+/write_feishu_hextech.py
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be committed to version control.
 *.blend1

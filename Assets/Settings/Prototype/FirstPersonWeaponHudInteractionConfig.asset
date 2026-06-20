@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: FirstPersonWeaponHudInteractionConfig
   m_EditorClassIdentifier: 
   hoverLift: 0.18
-  hoverEnterDuration: 0.18
-  hoverReturnDuration: 0.15
-  hoverSpinSpeed: 70
+  hoverEnterDuration: 0.05
+  hoverReturnDuration: 0.05
+  hoverSpinSpeed: 0
   hoverSpinAxis: 1
   hoverEnterEase:
     serializedVersion: 2
@@ -65,9 +65,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  attackDuration: 0.32
-  attackForwardOffset: 0.28
-  attackRotation: 28
+  attackDuration: 0.13
+  attackForwardOffset: 0.3
+  attackRotation: 100
   attackRotationAxis: 1
   attackScale: 1.08
   attackRecoverEase:
@@ -75,19 +75,19 @@ MonoBehaviour:
     m_Curve:
     - serializedVersion: 3
       time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      value: 1
+      inSlope: -1
+      outSlope: -1
+      tangentMode: 34
       weightedMode: 0
-      inWeight: 0.33333334
+      inWeight: 0
       outWeight: 0.33333334
     - serializedVersion: 3
       time: 1
-      value: 1
+      value: 0
       inSlope: 0
       outSlope: 0
-      tangentMode: 0
+      tangentMode: 136
       weightedMode: 0
       inWeight: 0.33333334
       outWeight: 0.33333334
@@ -100,30 +100,21 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
-    - serializedVersion: 3
-      time: 0.45
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     - serializedVersion: 3
       time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 34
       weightedMode: 0
-      inWeight: 0.33333334
-      outWeight: 0.33333334
+      inWeight: 0
+      outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4

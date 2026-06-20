@@ -27,6 +27,7 @@ namespace NewFPG.Prototype
         private const string CameraName = "FirstPersonWeaponCamera";
         private const string MaterialName = "FirstPersonWeaponMaterial";
         private const string PointerHitboxSuffix = " Pointer Hitbox";
+        private const float ScreenPointerPadding = 12f;
 
         [Header("Binding")]
         [SerializeField] private Camera worldCamera;
@@ -63,6 +64,8 @@ namespace NewFPG.Prototype
 #if UNITY_EDITOR
         private bool syncingWeaponPosesFromScene;
 #endif
+
+        public event System.Action<WeaponAttackContext> WeaponAttackStarted;
 
         private void Reset()
         {
@@ -171,6 +174,27 @@ namespace NewFPG.Prototype
             EnsureRig(weaponLayer);
             EnsureWeaponCamera(weaponLayer);
             worldCamera.cullingMask &= ~(1 << weaponLayer);
+        }
+
+        public void SetWorldCamera(Camera camera)
+        {
+            if (camera == null || camera == weaponCamera)
+            {
+                return;
+            }
+
+            worldCamera = camera;
+        }
+
+        public void RefreshRuntimeView(Camera camera)
+        {
+            SetWorldCamera(camera);
+            EnsureWeaponView();
+
+            if (Application.isPlaying)
+            {
+                RegisterRuntimeWeaponsFromRig();
+            }
         }
 
         private bool CanModifySceneObject()
@@ -592,6 +616,17 @@ namespace NewFPG.Prototype
                 return null;
             }
 
+            RuntimeWeapon physicsHit = FindPointerWeaponByPhysics(pointerPosition, weaponLayer);
+            if (physicsHit != null)
+            {
+                return physicsHit;
+            }
+
+            return FindPointerWeaponByScreenRect(pointerPosition);
+        }
+
+        private RuntimeWeapon FindPointerWeaponByPhysics(Vector2 pointerPosition, int weaponLayer)
+        {
             Ray ray = weaponCamera.ScreenPointToRay(pointerPosition);
             float raycastDistance = farClipPlane + interactionConfig.AttackForwardOffset + interactionConfig.RaycastDistancePadding;
             if (!Physics.Raycast(ray, out RaycastHit hit, raycastDistance, 1 << weaponLayer, QueryTriggerInteraction.Collide))
@@ -600,6 +635,114 @@ namespace NewFPG.Prototype
             }
 
             return FindRuntimeWeapon(hit.collider.transform);
+        }
+
+        private RuntimeWeapon FindPointerWeaponByScreenRect(Vector2 pointerPosition)
+        {
+            RuntimeWeapon bestWeapon = null;
+            float bestDistanceSqr = float.MaxValue;
+
+            for (int i = 0; i < runtimeWeapons.Count; i++)
+            {
+                RuntimeWeapon weapon = runtimeWeapons[i];
+                if (!TryGetWeaponScreenRect(weapon, out Rect screenRect))
+                {
+                    continue;
+                }
+
+                screenRect.xMin -= ScreenPointerPadding;
+                screenRect.xMax += ScreenPointerPadding;
+                screenRect.yMin -= ScreenPointerPadding;
+                screenRect.yMax += ScreenPointerPadding;
+
+                if (!screenRect.Contains(pointerPosition))
+                {
+                    continue;
+                }
+
+                Vector2 center = screenRect.center;
+                float distanceSqr = (pointerPosition - center).sqrMagnitude;
+                if (distanceSqr < bestDistanceSqr)
+                {
+                    bestDistanceSqr = distanceSqr;
+                    bestWeapon = weapon;
+                }
+            }
+
+            return bestWeapon;
+        }
+
+        private bool TryGetWeaponScreenRect(RuntimeWeapon weapon, out Rect rect)
+        {
+            rect = default;
+            if (weapon == null || weapon.Transform == null || weaponCamera == null)
+            {
+                return false;
+            }
+
+            Renderer renderer = weapon.Transform.GetComponent<Renderer>();
+            Bounds bounds;
+            if (renderer != null)
+            {
+                bounds = renderer.bounds;
+            }
+            else if (weapon.HitTransform != null)
+            {
+                Collider collider = weapon.HitTransform.GetComponent<Collider>();
+                if (collider == null)
+                {
+                    return false;
+                }
+
+                bounds = collider.bounds;
+            }
+            else
+            {
+                return false;
+            }
+
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+            Vector3[] corners =
+            {
+                new Vector3(min.x, min.y, min.z),
+                new Vector3(min.x, min.y, max.z),
+                new Vector3(min.x, max.y, min.z),
+                new Vector3(min.x, max.y, max.z),
+                new Vector3(max.x, min.y, min.z),
+                new Vector3(max.x, min.y, max.z),
+                new Vector3(max.x, max.y, min.z),
+                new Vector3(max.x, max.y, max.z),
+            };
+
+            bool hasPoint = false;
+            float minX = float.MaxValue;
+            float minY = float.MaxValue;
+            float maxX = float.MinValue;
+            float maxY = float.MinValue;
+
+            for (int i = 0; i < corners.Length; i++)
+            {
+                Vector3 screenPoint = weaponCamera.WorldToScreenPoint(corners[i]);
+                if (screenPoint.z <= 0f)
+                {
+                    continue;
+                }
+
+                hasPoint = true;
+                minX = Mathf.Min(minX, screenPoint.x);
+                minY = Mathf.Min(minY, screenPoint.y);
+                maxX = Mathf.Max(maxX, screenPoint.x);
+                maxY = Mathf.Max(maxY, screenPoint.y);
+            }
+
+            if (!hasPoint)
+            {
+                return false;
+            }
+
+            rect = Rect.MinMaxRect(minX, minY, maxX, maxY);
+            return rect.width > 0.1f && rect.height > 0.1f;
         }
 
         private RuntimeWeapon FindRuntimeWeapon(Transform hitTransform)
@@ -659,6 +802,7 @@ namespace NewFPG.Prototype
                 return;
             }
 
+            WeaponAttackStarted?.Invoke(new WeaponAttackContext(weapon.GameObject.name, weapon.Transform, weapon.HitTransform));
             weapon.KillTweens();
             weapon.CaptureAnimationStart();
             weapon.State = WeaponInteractionState.Attack;
@@ -792,6 +936,13 @@ namespace NewFPG.Prototype
                 pointerPosition = mouse.position.ReadValue();
                 return true;
             }
+
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
+            {
+                pointerPosition = touchscreen.primaryTouch.position.ReadValue();
+                return true;
+            }
 #endif
 
 #if ENABLE_LEGACY_INPUT_MANAGER
@@ -810,6 +961,12 @@ namespace NewFPG.Prototype
             if (mouse != null)
             {
                 return mouse.leftButton.wasPressedThisFrame;
+            }
+
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
+            {
+                return touchscreen.primaryTouch.press.wasPressedThisFrame;
             }
 #endif
 
@@ -1085,6 +1242,20 @@ namespace NewFPG.Prototype
                 this.localEulerAngles = localEulerAngles;
                 this.width = width;
                 this.sortingOrder = sortingOrder;
+            }
+        }
+
+        public struct WeaponAttackContext
+        {
+            public readonly string weaponName;
+            public readonly Transform weaponTransform;
+            public readonly Transform hitTransform;
+
+            public WeaponAttackContext(string weaponName, Transform weaponTransform, Transform hitTransform)
+            {
+                this.weaponName = weaponName;
+                this.weaponTransform = weaponTransform;
+                this.hitTransform = hitTransform;
             }
         }
 

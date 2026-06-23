@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8adc3c6fe72b7fd4fb40fbce0a7ed61e, type: 3}
+  m_Name: FlyingSword
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
+  displayName: Flying Sword
+  icon: {fileID: 21300000, guid: b815b2820e044b9ca79fd4157deb52bc, type: 3}
+  resourceCost: 3
+  damage: 35
+  cooldown: 0.45
+  range: 8
+  radius: 0.85
+  releaseEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}

@@ -14,9 +14,12 @@ GameObject:
   - component: {fileID: 9123752652661528403}
   - component: {fileID: 4888563794853541333}
   - component: {fileID: 3310741223843531305}
+  - component: {fileID: 5990160127804493065}
+  - component: {fileID: 2270140655557498170}
+  - component: {fileID: 6756104412928084255}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -198,3 +201,64 @@ CapsuleCollider:
   m_Height: 7.45
   m_Direction: 1
   m_Center: {x: 0, y: 3.725, z: 0}
+--- !u!114 &5990160127804493065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8136950479426970769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22fffc660c0adc24f9f38ae928c401b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitals
+  maxHealth: 100
+  startingHealth: 100
+  maxShield: 50
+  startingShield: 25
+  destroyOnDeath: 0
+  deathDelay: 0.2
+  disableOnDeath: []
+  animator: {fileID: 4997057410570907115}
+  hitTriggerParameter: Hit
+  spriteRenderer: {fileID: 1854983948291013765}
+  hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
+  hitTintSeconds: 0.12
+--- !u!114 &2270140655557498170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8136950479426970769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8724df2b569f1724fbeef34855d16cad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatResourcePool
+  maxResource: 10
+  startingResource: 5
+  recoveryPerSecond: 1
+  recoverOverTime: 1
+--- !u!114 &6756104412928084255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8136950479426970769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7e3e3ed539bb514a81870a53b063a1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.PlayerWeaponCaster
+  weapons:
+  - {fileID: 11400000, guid: 07f6e81e7ccefc84dafa35e280471dcf, type: 2}
+  resourcePool: {fileID: 2270140655557498170}
+  castOrigin: {fileID: 1848992493369915416}
+  targetMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  allowKeyboardShortcuts: 1
+  combatEnabled: 0

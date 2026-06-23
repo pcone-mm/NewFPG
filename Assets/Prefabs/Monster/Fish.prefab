@@ -14,6 +14,9 @@ GameObject:
   - component: {fileID: 5017408795760346369}
   - component: {fileID: 7658042473469622915}
   - component: {fileID: 8410643444241385341}
+  - component: {fileID: 3932387617477154748}
+  - component: {fileID: 7608634358937292601}
+  - component: {fileID: 4455949275264836976}
   m_Layer: 0
   m_Name: Fish
   m_TagString: Untagged
@@ -206,3 +209,79 @@ MonoBehaviour:
   speedParameter: Speed
   isMovingParameter: IsMoving
   movementStateParameter: MovementState
+--- !u!114 &3932387617477154748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4451659038750864529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22fffc660c0adc24f9f38ae928c401b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitals
+  maxHealth: 80
+  startingHealth: 80
+  maxShield: 0
+  startingShield: 0
+  destroyOnDeath: 1
+  deathDelay: 0.25
+  disableOnDeath: []
+  animator: {fileID: 3162850107769089715}
+  hitTriggerParameter: Hit
+  spriteRenderer: {fileID: 4436099648007178367}
+  hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
+  hitTintSeconds: 0.12
+--- !u!114 &7608634358937292601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4451659038750864529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c19dfc060c816f541aca9a0ace75d89f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.FishAttackController
+  target: {fileID: 0}
+  autoFindPlayer: 1
+  playerTag: Player
+  attackRange: 2.2
+  requestInterval: 2
+  attackPrepareTime: 0.8
+  damage: 12
+  damageRadius: 1.35
+  warningHeightOffset: 1.2
+  targetMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  movement: {fileID: 8410643444241385341}
+  animator: {fileID: 3162850107769089715}
+  warningIndicator: {fileID: 0}
+  attackTriggerParameter: Attack
+--- !u!114 &4455949275264836976
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4451659038750864529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41e3bbe036d0cd04eaf92cce36d17bcd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Level.LevelCombatant
+  maxHp: 80
+  destroyOnDeath: 0
+  deathDelay: 0.35
+  animator: {fileID: 3162850107769089715}
+  hitTriggerParameter: Hit
+  spriteRenderer: {fileID: 4436099648007178367}
+  hitSprite: {fileID: 0}
+  hitFlashDuration: 0.18
+  hitTint: {r: 1, g: 0.68, b: 0.5, a: 1}
+  fishMonsterController: {fileID: 8410643444241385341}
+  stopMovementOnDeath: 1
+  combatVitals: {fileID: 3932387617477154748}

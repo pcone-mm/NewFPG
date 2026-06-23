@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a964337764d6a048b007ce55fae95ba, type: 3}
+  m_Name: IND_HUD_Debug_Cone
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorConfig
+  abilityId: HUD_Debug_RitualDagger
+  indicatorId: IND_HUD_Debug_Cone
+  ownerType: 0
+  inputMode: 1
+  tapPolicy: 3
+  holdPolicy: 1
+  invalidReleasePolicy: 1
+  aimSource: 1
+  requireSurfaceHit: 1
+  clampToRange: 1
+  placementMode: 0
+  surfaceMask:
+    serializedVersion: 2
+    m_Bits: 4294967007
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  shapeType: 5
+  range: 7
+  radius: 0.7
+  width: 2.4
+  length: 6.5
+  angle: 72
+  height: 1.8
+  groundOffset: 0.06
+  tapMaxDuration: 0.16
+  holdEnterDelay: 0.12
+  castDelay: 0
+  warningTime: 0
+  duration: 0
+  fadeOut: 0.12
+  previewPrefabResourceId: 
+  validMaterialResourceId: M_IND_OwnerValid
+  invalidMaterialResourceId: M_IND_Invalid
+  confirmAudioResourceId: S_IND_ConfirmRelease
+  invalidAudioResourceId: S_IND_Invalid
+  debugDraw: 0

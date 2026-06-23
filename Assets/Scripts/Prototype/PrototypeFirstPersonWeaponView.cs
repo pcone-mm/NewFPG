@@ -38,7 +38,6 @@ namespace NewFPG.Prototype
         [SerializeField] private bool rebuildOnEnable = true;
 
         [Header("Rendering")]
-        [SerializeField] private Texture2D[] weaponTextures;
         [SerializeField] private float weaponFieldOfView = 42f;
         [SerializeField] private float nearClipPlane = 0.01f;
         [SerializeField] private float farClipPlane = 8f;
@@ -53,23 +52,32 @@ namespace NewFPG.Prototype
         [Header("Layout")]
         [SerializeField] private List<WeaponPanelPose> weapons = new List<WeaponPanelPose>
         {
-            new WeaponPanelPose("Left Blade", 1, new Vector3(-0.43f, -0.39f, 1.35f), new Vector3(0f, 0f, -80f), 0.92f, 0),
-            new WeaponPanelPose("Center Sword", 0, new Vector3(0.02f, -0.37f, 1.18f), new Vector3(0f, 0f, -90f), 0.72f, 2),
-            new WeaponPanelPose("Right Brush", 6, new Vector3(0.41f, -0.58f, 1.28f), new Vector3(0f, 0f, -106.2f), 0.96f, 1),
+            new WeaponPanelPose("Left Blade", new Vector3(-0.43f, -0.39f, 1.35f), new Vector3(0f, 0f, -80f), 0.92f, 0),
+            new WeaponPanelPose("Center Sword", new Vector3(0.02f, -0.37f, 1.18f), new Vector3(0f, 0f, -90f), 0.72f, 2),
+            new WeaponPanelPose("Right Brush", new Vector3(0.41f, -0.58f, 1.28f), new Vector3(0f, 0f, -106.2f), 0.96f, 1),
         };
 
         private readonly List<GameObject> spawnedWeapons = new List<GameObject>();
         private readonly List<RuntimeWeapon> runtimeWeapons = new List<RuntimeWeapon>();
+        private static Mesh cameraFacingQuadMesh;
+        private WeaponPresentation[] weaponPresentations;
         private RuntimeWeapon pointedWeapon;
+        private RuntimeWeapon pressedWeapon;
+        private float pointerPressedAt;
+        private Vector2 pointerPressedPosition;
 #if UNITY_EDITOR
         private bool syncingWeaponPosesFromScene;
 #endif
 
+        public event System.Func<WeaponPointerContext, bool> WeaponPointerPressed;
+        public event System.Action<WeaponPointerContext> WeaponPointerHeld;
+        public event System.Action<WeaponPointerContext> WeaponPointerReleased;
+        public event System.Action<WeaponPointerContext> WeaponPointerCancelled;
+        public event System.Func<WeaponAttackContext, bool> WeaponAttackRequested;
         public event System.Action<WeaponAttackContext> WeaponAttackStarted;
 
         private void Reset()
         {
-            LoadDefaultTexturesInEditor();
             AssignDefaultInteractionConfigInEditor();
         }
 
@@ -89,6 +97,7 @@ namespace NewFPG.Prototype
 
         private void OnDisable()
         {
+            CancelActivePointerPress();
             KillRuntimeWeaponTweens();
             RemoveWeaponCameraFromStack();
         }
@@ -134,12 +143,15 @@ namespace NewFPG.Prototype
                 return;
             }
 
-            LoadDefaultTexturesInEditor();
             ClearSpawnedWeapons();
 
-            for (int i = 0; i < weapons.Count; i++)
+            int weaponCount = HasWeaponPresentations()
+                ? weaponPresentations.Length
+                : weapons != null ? weapons.Count : 0;
+
+            for (int i = 0; i < weaponCount; i++)
             {
-                CreateWeapon(weapons[i]);
+                CreateWeapon(ResolveWeaponPanelPose(i, weaponCount), i);
             }
         }
 
@@ -190,11 +202,42 @@ namespace NewFPG.Prototype
         {
             SetWorldCamera(camera);
             EnsureWeaponView();
+            RebuildWeapons();
 
             if (Application.isPlaying)
             {
                 RegisterRuntimeWeaponsFromRig();
             }
+        }
+
+        public void SetWeaponPresentations(WeaponPresentation[] presentations)
+        {
+            if (presentations == null || presentations.Length == 0)
+            {
+                weaponPresentations = null;
+            }
+            else
+            {
+                weaponPresentations = new WeaponPresentation[presentations.Length];
+                for (int i = 0; i < presentations.Length; i++)
+                {
+                    weaponPresentations[i] = presentations[i];
+                }
+            }
+
+            RebuildWeapons();
+        }
+
+        public bool PlayWeaponAttack(int weaponIndex)
+        {
+            RuntimeWeapon weapon = FindRuntimeWeaponByIndex(weaponIndex);
+            if (weapon == null)
+            {
+                return false;
+            }
+
+            BeginAttack(weapon, false);
+            return true;
         }
 
         private bool CanModifySceneObject()
@@ -336,6 +379,7 @@ namespace NewFPG.Prototype
 
             if (useUrpCameraStack)
             {
+                RemoveInvalidStackCameras(worldCameraData);
                 if (!worldCameraData.cameraStack.Contains(weaponCamera))
                 {
                     worldCameraData.cameraStack.Add(weaponCamera);
@@ -361,32 +405,32 @@ namespace NewFPG.Prototype
             }
         }
 
-        private void CreateWeapon(WeaponPanelPose pose)
+        private void CreateWeapon(WeaponPanelPose pose, int poseIndex)
         {
-            if (weaponRig == null || weaponTextures == null || pose.textureIndex < 0 || pose.textureIndex >= weaponTextures.Length)
-            {
-                return;
-            }
-
-            Texture2D texture = weaponTextures[pose.textureIndex];
-            if (texture == null)
+            if (weaponRig == null || !TryResolveWeaponVisual(pose, poseIndex, out WeaponVisualSource visual))
             {
                 return;
             }
 
             int weaponLayer = LayerMask.NameToLayer(ViewLayerName);
-            GameObject weaponObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            weaponObject.name = pose.name;
+            GameObject weaponObject = new GameObject(
+                HasWeaponPresentations()
+                ? visual.name + " " + (poseIndex + 1).ToString()
+                : visual.name);
             weaponObject.layer = weaponLayer;
             weaponObject.transform.SetParent(weaponRig, false);
             weaponObject.transform.localPosition = pose.localPosition;
             weaponObject.transform.localRotation = Quaternion.Euler(pose.localEulerAngles);
 
-            float aspect = texture.width > 0 && texture.height > 0 ? (float)texture.width / texture.height : 1f;
-            weaponObject.transform.localScale = new Vector3(pose.width, pose.width / Mathf.Max(0.01f, aspect), 1f);
+            float displayAspect = Mathf.Max(0.01f, visual.aspect);
+            weaponObject.transform.localScale = new Vector3(pose.width, pose.width / displayAspect, 1f);
+            MarkGeneratedWeaponObject(weaponObject, false);
 
-            Renderer renderer = weaponObject.GetComponent<Renderer>();
-            renderer.sharedMaterial = CreateMaterial(texture, pose.sortingOrder);
+            MeshFilter meshFilter = weaponObject.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = GetCameraFacingQuadMesh();
+
+            Renderer renderer = weaponObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = CreateMaterial(visual.texture, visual.name, pose.sortingOrder, visual.textureScale, visual.textureOffset);
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             renderer.receiveShadows = false;
 
@@ -394,7 +438,60 @@ namespace NewFPG.Prototype
             GameObject hitboxObject = CreateOrUpdatePointerHitbox(weaponObject);
 
             spawnedWeapons.Add(weaponObject);
-            runtimeWeapons.Add(new RuntimeWeapon(weaponObject, hitboxObject));
+            runtimeWeapons.Add(new RuntimeWeapon(weaponObject, hitboxObject, poseIndex));
+        }
+
+        private bool HasWeaponPresentations()
+        {
+            return weaponPresentations != null && weaponPresentations.Length > 0;
+        }
+
+        private WeaponPanelPose ResolveWeaponPanelPose(int index, int totalCount)
+        {
+            if (weapons != null && index >= 0 && index < weapons.Count)
+            {
+                return weapons[index];
+            }
+
+            int safeTotalCount = Mathf.Max(1, totalCount);
+            float center = (safeTotalCount - 1) * 0.5f;
+            float x = (index - center) * 0.32f;
+            float normalizedFromCenter = center > 0f ? Mathf.Abs(index - center) / center : 0f;
+            return new WeaponPanelPose(
+                "Weapon " + (index + 1).ToString(),
+                new Vector3(x, -0.48f - normalizedFromCenter * 0.08f, weaponDepth),
+                new Vector3(0f, 0f, -90f - x * 28f),
+                0.72f,
+                index);
+        }
+
+        private bool TryResolveWeaponVisual(WeaponPanelPose pose, int poseIndex, out WeaponVisualSource visual)
+        {
+            if (HasWeaponPresentations())
+            {
+                if (poseIndex < 0 || poseIndex >= weaponPresentations.Length)
+                {
+                    visual = default;
+                    return false;
+                }
+
+                WeaponPresentation presentation = weaponPresentations[poseIndex];
+                string presentationName = !string.IsNullOrWhiteSpace(presentation.DisplayName)
+                    ? presentation.DisplayName
+                    : pose.name;
+
+                if (presentation.Icon != null && presentation.Icon.texture != null)
+                {
+                    visual = WeaponVisualSource.FromSprite(presentationName, presentation.Icon);
+                    return true;
+                }
+
+                visual = default;
+                return false;
+            }
+
+            visual = default;
+            return false;
         }
 
         private GameObject CreateOrUpdatePointerHitbox(GameObject visualObject)
@@ -413,7 +510,7 @@ namespace NewFPG.Prototype
                 hitboxObject.layer = weaponLayer;
             }
 
-            hitboxObject.hideFlags = HideFlags.HideInHierarchy;
+            MarkGeneratedWeaponObject(hitboxObject, true);
             CopyPointerHitboxTransform(visualObject.transform, hitboxObject.transform);
             EnsurePointerCollider(hitboxObject);
             return hitboxObject;
@@ -469,7 +566,30 @@ namespace NewFPG.Prototype
             boxCollider.size = new Vector3(1f, 1f, 0.2f);
         }
 
-        private Material CreateMaterial(Texture2D texture, int renderQueueOffset)
+        private static void MarkGeneratedWeaponObject(GameObject target, bool hideInHierarchy)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            HideFlags flags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+            if (hideInHierarchy)
+            {
+                flags |= HideFlags.HideInHierarchy;
+            }
+
+            target.hideFlags = flags;
+#endif
+        }
+
+        private Material CreateMaterial(
+            Texture2D texture,
+            string materialSuffix,
+            int renderQueueOffset,
+            Vector2 textureScale,
+            Vector2 textureOffset)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null)
@@ -478,8 +598,10 @@ namespace NewFPG.Prototype
             }
 
             Material material = new Material(shader);
-            material.name = MaterialName + "_" + texture.name;
+            material.name = MaterialName + "_" + (!string.IsNullOrWhiteSpace(materialSuffix) ? materialSuffix : texture.name);
             material.mainTexture = texture;
+            material.mainTextureScale = textureScale;
+            material.mainTextureOffset = textureOffset;
             material.renderQueue = 3000 + renderQueueOffset;
             material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
             material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
@@ -501,14 +623,70 @@ namespace NewFPG.Prototype
             if (material.HasProperty("_BaseMap"))
             {
                 material.SetTexture("_BaseMap", texture);
+                material.SetTextureScale("_BaseMap", textureScale);
+                material.SetTextureOffset("_BaseMap", textureOffset);
+            }
+
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", Color.white);
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", texture);
+                material.SetTextureScale("_MainTex", textureScale);
+                material.SetTextureOffset("_MainTex", textureOffset);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", Color.white);
             }
 
             return material;
         }
 
+        private static Mesh GetCameraFacingQuadMesh()
+        {
+            if (cameraFacingQuadMesh != null)
+            {
+                return cameraFacingQuadMesh;
+            }
+
+            cameraFacingQuadMesh = new Mesh
+            {
+                name = "FirstPersonWeaponCameraFacingQuad",
+                hideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild,
+                vertices = new[]
+                {
+                    new Vector3(-0.5f, -0.5f, 0f),
+                    new Vector3(0.5f, -0.5f, 0f),
+                    new Vector3(-0.5f, 0.5f, 0f),
+                    new Vector3(0.5f, 0.5f, 0f),
+                },
+                uv = new[]
+                {
+                    new Vector2(0f, 0f),
+                    new Vector2(1f, 0f),
+                    new Vector2(0f, 1f),
+                    new Vector2(1f, 1f),
+                },
+                triangles = new[]
+                {
+                    0, 2, 1,
+                    2, 3, 1,
+                },
+            };
+            cameraFacingQuadMesh.RecalculateNormals();
+            cameraFacingQuadMesh.RecalculateBounds();
+            return cameraFacingQuadMesh;
+        }
+
         private void ClearSpawnedWeapons()
         {
             pointedWeapon = null;
+            ClearActivePointerPress();
             KillRuntimeWeaponTweens();
             runtimeWeapons.Clear();
 
@@ -541,6 +719,7 @@ namespace NewFPG.Prototype
         {
             KillRuntimeWeaponTweens();
             pointedWeapon = null;
+            ClearActivePointerPress();
             runtimeWeapons.Clear();
 
             if (weaponRig == null)
@@ -558,7 +737,23 @@ namespace NewFPG.Prototype
 
                 DisableVisualColliders(child.gameObject);
                 GameObject hitboxObject = CreateOrUpdatePointerHitbox(child.gameObject);
-                runtimeWeapons.Add(new RuntimeWeapon(child.gameObject, hitboxObject));
+                runtimeWeapons.Add(new RuntimeWeapon(child.gameObject, hitboxObject, runtimeWeapons.Count));
+            }
+        }
+
+        private static void RemoveInvalidStackCameras(UniversalAdditionalCameraData cameraData)
+        {
+            if (cameraData == null)
+            {
+                return;
+            }
+
+            for (int i = cameraData.cameraStack.Count - 1; i >= 0; i--)
+            {
+                if (cameraData.cameraStack[i] == null)
+                {
+                    cameraData.cameraStack.RemoveAt(i);
+                }
             }
         }
 
@@ -597,9 +792,14 @@ namespace NewFPG.Prototype
                 }
             }
 
+            if (pressedWeapon != null)
+            {
+                UpdateActivePointerPress();
+            }
+
             if (hitWeapon != null && hitWeapon.State != WeaponInteractionState.Attack && WasPointerPressedThisFrame())
             {
-                BeginAttack(hitWeapon);
+                BeginPointerPress(hitWeapon);
             }
         }
 
@@ -759,6 +959,20 @@ namespace NewFPG.Prototype
             return null;
         }
 
+        private RuntimeWeapon FindRuntimeWeaponByIndex(int weaponIndex)
+        {
+            for (int i = 0; i < runtimeWeapons.Count; i++)
+            {
+                RuntimeWeapon weapon = runtimeWeapons[i];
+                if (weapon != null && weapon.WeaponIndex == weaponIndex)
+                {
+                    return weapon;
+                }
+            }
+
+            return null;
+        }
+
         private void ReturnUnpointedHoverWeapons()
         {
             for (int i = 0; i < runtimeWeapons.Count; i++)
@@ -795,14 +1009,121 @@ namespace NewFPG.Prototype
                 });
         }
 
+        private void BeginPointerPress(RuntimeWeapon weapon)
+        {
+            if (weapon == null || weapon.State == WeaponInteractionState.Attack)
+            {
+                return;
+            }
+
+            TryReadPointerPosition(out pointerPressedPosition);
+            pressedWeapon = weapon;
+            pointerPressedAt = Time.time;
+            WeaponPointerContext context = CreatePointerContext(weapon, pointerPressedPosition);
+            if (CanUseDefaultPointerAttack(context))
+            {
+                ClearActivePointerPress();
+                BeginAttack(weapon, true);
+            }
+        }
+
+        private void UpdateActivePointerPress()
+        {
+            if (pressedWeapon == null)
+            {
+                return;
+            }
+
+            TryReadPointerPosition(out Vector2 pointerPosition);
+            if (WasPointerReleasedThisFrame())
+            {
+                WeaponPointerReleased?.Invoke(CreatePointerContext(pressedWeapon, pointerPosition));
+                ClearActivePointerPress();
+                return;
+            }
+
+            if (!IsPointerDown())
+            {
+                CancelActivePointerPress();
+                return;
+            }
+
+            WeaponPointerHeld?.Invoke(CreatePointerContext(pressedWeapon, pointerPosition));
+        }
+
+        private bool CanUseDefaultPointerAttack(WeaponPointerContext context)
+        {
+            System.Func<WeaponPointerContext, bool> handlers = WeaponPointerPressed;
+            if (handlers == null)
+            {
+                return true;
+            }
+
+            foreach (System.Func<WeaponPointerContext, bool> handler in handlers.GetInvocationList())
+            {
+                if (!handler(context))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void CancelActivePointerPress()
+        {
+            if (pressedWeapon != null)
+            {
+                TryReadPointerPosition(out Vector2 pointerPosition);
+                WeaponPointerCancelled?.Invoke(CreatePointerContext(pressedWeapon, pointerPosition));
+            }
+
+            ClearActivePointerPress();
+        }
+
+        private void ClearActivePointerPress()
+        {
+            pressedWeapon = null;
+            pointerPressedAt = 0f;
+            pointerPressedPosition = Vector2.zero;
+        }
+
+        private WeaponPointerContext CreatePointerContext(RuntimeWeapon weapon, Vector2 pointerPosition)
+        {
+            return new WeaponPointerContext(
+                weapon.GameObject.name,
+                weapon.Transform,
+                weapon.HitTransform,
+                weapon.WeaponIndex,
+                pointerPressedPosition,
+                pointerPosition,
+                Mathf.Max(0f, Time.time - pointerPressedAt));
+        }
+
         private void BeginAttack(RuntimeWeapon weapon)
+        {
+            BeginAttack(weapon, true);
+        }
+
+        private void BeginAttack(RuntimeWeapon weapon, bool requireRequestApproval)
         {
             if (weapon.State == WeaponInteractionState.Attack)
             {
                 return;
             }
 
-            WeaponAttackStarted?.Invoke(new WeaponAttackContext(weapon.GameObject.name, weapon.Transform, weapon.HitTransform));
+            WeaponAttackContext context = new WeaponAttackContext(
+                weapon.GameObject.name,
+                weapon.Transform,
+                weapon.HitTransform,
+                weapon.WeaponIndex);
+
+            if (requireRequestApproval && !CanStartWeaponAttack(context))
+            {
+                return;
+            }
+
+            WeaponAttackStarted?.Invoke(context);
             weapon.KillTweens();
             weapon.CaptureAnimationStart();
             weapon.State = WeaponInteractionState.Attack;
@@ -825,6 +1146,25 @@ namespace NewFPG.Prototype
                         BeginReturn(weapon);
                     }
                 });
+        }
+
+        private bool CanStartWeaponAttack(WeaponAttackContext context)
+        {
+            System.Func<WeaponAttackContext, bool> handlers = WeaponAttackRequested;
+            if (handlers == null)
+            {
+                return true;
+            }
+
+            foreach (System.Func<WeaponAttackContext, bool> handler in handlers.GetInvocationList())
+            {
+                if (!handler(context))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void BeginReturn(RuntimeWeapon weapon)
@@ -977,6 +1317,52 @@ namespace NewFPG.Prototype
 #endif
         }
 
+        private static bool IsPointerDown()
+        {
+#if ENABLE_INPUT_SYSTEM
+            Mouse mouse = Mouse.current;
+            if (mouse != null)
+            {
+                return mouse.leftButton.isPressed;
+            }
+
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
+            {
+                return touchscreen.primaryTouch.press.isPressed;
+            }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetMouseButton(0);
+#else
+            return false;
+#endif
+        }
+
+        private static bool WasPointerReleasedThisFrame()
+        {
+#if ENABLE_INPUT_SYSTEM
+            Mouse mouse = Mouse.current;
+            if (mouse != null)
+            {
+                return mouse.leftButton.wasReleasedThisFrame;
+            }
+
+            Touchscreen touchscreen = Touchscreen.current;
+            if (touchscreen != null)
+            {
+                return touchscreen.primaryTouch.press.wasReleasedThisFrame;
+            }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetMouseButtonUp(0);
+#else
+            return false;
+#endif
+        }
+
         private static void SetLayerRecursively(Transform root, int layer)
         {
             root.gameObject.layer = layer;
@@ -1006,33 +1392,17 @@ namespace NewFPG.Prototype
 
             if (Application.isPlaying)
             {
+                if (target is GameObject targetGameObject)
+                {
+                    targetGameObject.transform.SetParent(null, false);
+                }
+
                 Destroy(target);
             }
             else
             {
                 DestroyImmediate(target);
             }
-        }
-
-        private void LoadDefaultTexturesInEditor()
-        {
-#if UNITY_EDITOR
-            if (!NeedsDefaultTextures())
-            {
-                return;
-            }
-
-            weaponTextures = new[]
-            {
-                LoadWeaponTexture("1.png"),
-                LoadWeaponTexture("2.png"),
-                LoadWeaponTexture("3.png"),
-                LoadWeaponTexture("4.png"),
-                LoadWeaponTexture("5.png"),
-                LoadWeaponTexture("6.png"),
-                LoadWeaponTexture("7.png"),
-            };
-#endif
         }
 
         private void AssignDefaultInteractionConfigInEditor()
@@ -1163,33 +1533,6 @@ namespace NewFPG.Prototype
                 && Mathf.Abs(pose.width - width) < 0.0001f;
         }
 
-        private bool NeedsDefaultTextures()
-        {
-            if (weaponTextures == null || weaponTextures.Length < 7)
-            {
-                return true;
-            }
-
-            return weaponTextures[0] == null || weaponTextures[1] == null || weaponTextures[6] == null;
-        }
-
-        private static Texture2D LoadWeaponTexture(string fileName)
-        {
-            string assetName = System.IO.Path.GetFileNameWithoutExtension(fileName);
-            string[] guids = AssetDatabase.FindAssets(assetName + " t:Texture2D", new[] { "Assets/Art" });
-
-            for (int i = 0; i < guids.Length; i++)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
-                if (path.EndsWith("/" + fileName, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                }
-            }
-
-            return null;
-        }
-
         private static void EnsureLayerExistsInEditor(string layerName)
         {
             SerializedObject tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
@@ -1222,7 +1565,6 @@ namespace NewFPG.Prototype
         public struct WeaponPanelPose
         {
             public string name;
-            public int textureIndex;
             public Vector3 localPosition;
             public Vector3 localEulerAngles;
             public float width;
@@ -1230,14 +1572,12 @@ namespace NewFPG.Prototype
 
             public WeaponPanelPose(
                 string name,
-                int textureIndex,
                 Vector3 localPosition,
                 Vector3 localEulerAngles,
                 float width,
                 int sortingOrder)
             {
                 this.name = name;
-                this.textureIndex = textureIndex;
                 this.localPosition = localPosition;
                 this.localEulerAngles = localEulerAngles;
                 this.width = width;
@@ -1245,17 +1585,99 @@ namespace NewFPG.Prototype
             }
         }
 
+        public struct WeaponPresentation
+        {
+            public string DisplayName { get; }
+            public Sprite Icon { get; }
+
+            public WeaponPresentation(string displayName, Sprite icon)
+            {
+                DisplayName = displayName;
+                Icon = icon;
+            }
+        }
+
+        private struct WeaponVisualSource
+        {
+            public string name;
+            public Texture2D texture;
+            public float aspect;
+            public Vector2 textureScale;
+            public Vector2 textureOffset;
+
+            public static WeaponVisualSource FromSprite(string name, Sprite sprite)
+            {
+                Texture2D texture = sprite.texture;
+                Rect textureRect = sprite.textureRect;
+                float textureWidth = Mathf.Max(1f, texture != null ? texture.width : 1f);
+                float textureHeight = Mathf.Max(1f, texture != null ? texture.height : 1f);
+                float spriteWidth = Mathf.Max(1f, textureRect.width);
+                float spriteHeight = Mathf.Max(1f, textureRect.height);
+
+                return new WeaponVisualSource
+                {
+                    name = ResolveName(name, sprite != null ? sprite.name : null),
+                    texture = texture,
+                    aspect = spriteWidth / spriteHeight,
+                    textureScale = new Vector2(spriteWidth / textureWidth, spriteHeight / textureHeight),
+                    textureOffset = new Vector2(textureRect.x / textureWidth, textureRect.y / textureHeight),
+                };
+            }
+
+            private static string ResolveName(string preferredName, string fallbackName)
+            {
+                if (!string.IsNullOrWhiteSpace(preferredName))
+                {
+                    return preferredName;
+                }
+
+                return !string.IsNullOrWhiteSpace(fallbackName) ? fallbackName : "Weapon";
+            }
+
+        }
+
         public struct WeaponAttackContext
         {
             public readonly string weaponName;
             public readonly Transform weaponTransform;
             public readonly Transform hitTransform;
+            public readonly int weaponIndex;
 
-            public WeaponAttackContext(string weaponName, Transform weaponTransform, Transform hitTransform)
+            public WeaponAttackContext(string weaponName, Transform weaponTransform, Transform hitTransform, int weaponIndex = -1)
             {
                 this.weaponName = weaponName;
                 this.weaponTransform = weaponTransform;
                 this.hitTransform = hitTransform;
+                this.weaponIndex = weaponIndex;
+            }
+        }
+
+        public struct WeaponPointerContext
+        {
+            public readonly string weaponName;
+            public readonly Transform weaponTransform;
+            public readonly Transform hitTransform;
+            public readonly int weaponIndex;
+            public readonly Vector2 pressScreenPosition;
+            public readonly Vector2 currentScreenPosition;
+            public readonly float holdDuration;
+
+            public WeaponPointerContext(
+                string weaponName,
+                Transform weaponTransform,
+                Transform hitTransform,
+                int weaponIndex,
+                Vector2 pressScreenPosition,
+                Vector2 currentScreenPosition,
+                float holdDuration)
+            {
+                this.weaponName = weaponName;
+                this.weaponTransform = weaponTransform;
+                this.hitTransform = hitTransform;
+                this.weaponIndex = weaponIndex;
+                this.pressScreenPosition = pressScreenPosition;
+                this.currentScreenPosition = currentScreenPosition;
+                this.holdDuration = holdDuration;
             }
         }
 
@@ -1270,12 +1692,13 @@ namespace NewFPG.Prototype
 
         private sealed class RuntimeWeapon
         {
-            public RuntimeWeapon(GameObject gameObject, GameObject hitboxObject)
+            public RuntimeWeapon(GameObject gameObject, GameObject hitboxObject, int weaponIndex)
             {
                 GameObject = gameObject;
                 Transform = gameObject.transform;
                 HitboxObject = hitboxObject;
                 HitTransform = hitboxObject.transform;
+                WeaponIndex = weaponIndex;
                 BasePosition = Transform.localPosition;
                 BaseRotation = Transform.localRotation;
                 BaseEulerAngles = Transform.localEulerAngles;
@@ -1287,6 +1710,7 @@ namespace NewFPG.Prototype
             public Transform Transform { get; }
             public GameObject HitboxObject { get; }
             public Transform HitTransform { get; }
+            public int WeaponIndex { get; }
             public Vector3 BasePosition { get; }
             public Quaternion BaseRotation { get; }
             public Vector3 BaseEulerAngles { get; }

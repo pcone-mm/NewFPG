@@ -128,7 +128,6 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
     {
         SerializedProperty weapon = weaponsProperty.GetArrayElementAtIndex(index);
         SerializedProperty name = weapon.FindPropertyRelative("name");
-        SerializedProperty textureIndex = weapon.FindPropertyRelative("textureIndex");
         SerializedProperty localPosition = weapon.FindPropertyRelative("localPosition");
         SerializedProperty localEulerAngles = weapon.FindPropertyRelative("localEulerAngles");
         SerializedProperty width = weapon.FindPropertyRelative("width");
@@ -141,9 +140,7 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         EditorGUI.PropertyField(line, name);
         y += lineHeight + 2f;
 
-        float halfWidth = (rect.width - 8f) * 0.5f;
-        EditorGUI.PropertyField(new Rect(rect.x, y, halfWidth, lineHeight), textureIndex);
-        EditorGUI.PropertyField(new Rect(rect.x + halfWidth + 8f, y, halfWidth, lineHeight), sortingOrder);
+        EditorGUI.PropertyField(new Rect(rect.x, y, rect.width, lineHeight), sortingOrder);
         y += lineHeight + 2f;
 
         EditorGUI.PropertyField(new Rect(rect.x, y, rect.width, lineHeight), localPosition);
@@ -182,7 +179,6 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
 
         SerializedProperty weapon = weaponsProperty.GetArrayElementAtIndex(index);
         weapon.FindPropertyRelative("name").stringValue = "Weapon " + (index + 1);
-        weapon.FindPropertyRelative("textureIndex").intValue = 0;
         weapon.FindPropertyRelative("localPosition").vector3Value = new Vector3(0f, -0.35f, 1.35f);
         weapon.FindPropertyRelative("localEulerAngles").vector3Value = Vector3.zero;
         weapon.FindPropertyRelative("width").floatValue = 0.75f;

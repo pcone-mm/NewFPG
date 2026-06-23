@@ -404,6 +404,7 @@ namespace NewFPG.Battle
             queueState.isLoadoutValid = IsValid(catalog, out invalidReason);
             queueState.invalidReason = queueState.isLoadoutValid ? string.Empty : invalidReason;
             FillEmptySlots(queueState);
+            queueState.EnsureCycleInitialized();
             return queueState;
         }
 

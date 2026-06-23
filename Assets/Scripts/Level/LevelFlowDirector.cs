@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using NewFPG.CameraRig;
 using NewFPG.Characters;
+using NewFPG.Combat;
 using NewFPG.Monsters;
 using NewFPG.Prototype;
 
@@ -24,7 +25,7 @@ namespace NewFPG.Level
         [SerializeField] private Transform[] roomAnchors;
         [SerializeField] private CinemachineCameraModeController cameraModeController;
         [SerializeField] private PrototypeFirstPersonWeaponView weaponView;
-        [SerializeField] private LevelWeaponProjectileShooter weaponShooter;
+        [SerializeField] private PrototypeWeaponCombatHud weaponCombatHud;
         [SerializeField] private LevelFlowHud hud;
         [SerializeField] private LevelRoomInteractable roomInteractablePrefab;
 
@@ -56,6 +57,9 @@ namespace NewFPG.Level
         private Rigidbody playerBody;
         private Collider[] playerColliders;
         private Renderer[] playerVisualRenderers;
+        private CombatVitals playerVitals;
+        private CombatResourcePool playerResourcePool;
+        private PlayerWeaponCaster playerWeaponCaster;
         private bool[] playerRendererEnabledBeforeCombat;
         private bool[] playerColliderEnabledBeforeCombat;
         private bool playerMovementEnabledBeforeCombat;
@@ -86,7 +90,7 @@ namespace NewFPG.Level
             player = FindFirstObjectByType<PlayerCharacterController>()?.transform;
             cameraModeController = FindFirstObjectByType<CinemachineCameraModeController>();
             weaponView = FindFirstObjectByType<PrototypeFirstPersonWeaponView>();
-            weaponShooter = weaponView != null ? weaponView.GetComponent<LevelWeaponProjectileShooter>() : null;
+            weaponCombatHud = weaponView != null ? weaponView.GetComponent<PrototypeWeaponCombatHud>() : null;
             hud = GetComponentInChildren<LevelFlowHud>();
         }
 
@@ -94,7 +98,7 @@ namespace NewFPG.Level
         {
             ResolveReferences();
             BuildUndergroundFirstFloorRoute();
-            ConfigureWeaponShooter();
+            ConfigureWeaponHud();
         }
 
         private void Start()
@@ -477,10 +481,6 @@ namespace NewFPG.Level
             if (choice.damageBonus > 0f)
             {
                 damageBonus += choice.damageBonus;
-                if (weaponShooter != null)
-                {
-                    weaponShooter.SetDamageMultiplier(1f + damageBonus);
-                }
             }
 
             if (choice.goldDelta != 0)
@@ -556,6 +556,8 @@ namespace NewFPG.Level
 
         private Transform SpawnEnemy(Vector3 position, int index)
         {
+            position = FlattenEnemySpawnPosition(position);
+
             if (enemyPrefab != null)
             {
                 Transform spawned = Instantiate(enemyPrefab, position, enemyPrefab.rotation);
@@ -598,6 +600,12 @@ namespace NewFPG.Level
                 fish.Target = player;
             }
 
+            FishAttackController fishAttack = enemyObject.GetComponent<FishAttackController>();
+            if (fishAttack != null && player != null)
+            {
+                fishAttack.Target = player;
+            }
+
             return combatant;
         }
 
@@ -633,7 +641,7 @@ namespace NewFPG.Level
                 Transform spawn = enemySpawnPoints[index % enemySpawnPoints.Length];
                 if (spawn != null)
                 {
-                    return spawn.position;
+                    return FlattenEnemySpawnPosition(spawn.position);
                 }
             }
 
@@ -641,7 +649,13 @@ namespace NewFPG.Level
             float angle = count <= 1 ? 0f : (360f / count) * index;
             Vector3 offset = Quaternion.Euler(0f, angle, 0f) * Vector3.right * enemySpawnRadius;
             offset.y = 0f;
-            return center + offset;
+            return FlattenEnemySpawnPosition(center + offset);
+        }
+
+        private static Vector3 FlattenEnemySpawnPosition(Vector3 position)
+        {
+            position.y = 0f;
+            return position;
         }
 
         private void MovePlayerToRoomAnchor(int index)
@@ -704,6 +718,35 @@ namespace NewFPG.Level
                 player = playerController.transform;
             }
 
+            if (player != null)
+            {
+                if (playerVitals == null)
+                {
+                    playerVitals = player.GetComponent<CombatVitals>();
+                }
+
+                if (playerResourcePool == null)
+                {
+                    playerResourcePool = player.GetComponent<CombatResourcePool>();
+                }
+
+                if (playerWeaponCaster == null)
+                {
+                    playerWeaponCaster = player.GetComponent<PlayerWeaponCaster>();
+                }
+
+                if (playerVitals != null && player.GetComponent<PlayerHitFeedback>() == null)
+                {
+                    player.gameObject.AddComponent<PlayerHitFeedback>();
+                }
+
+                PlayerHitFeedback hitFeedback = player.GetComponent<PlayerHitFeedback>();
+                if (hitFeedback != null)
+                {
+                    hitFeedback.SetTargetCamera(Camera.main);
+                }
+            }
+
             if (cameraModeController == null)
             {
                 cameraModeController = FindFirstObjectByType<CinemachineCameraModeController>();
@@ -714,12 +757,12 @@ namespace NewFPG.Level
                 weaponView = FindFirstObjectByType<PrototypeFirstPersonWeaponView>(FindObjectsInactive.Include);
             }
 
-            if (weaponShooter == null && weaponView != null)
+            if (weaponCombatHud == null && weaponView != null)
             {
-                weaponShooter = weaponView.GetComponent<LevelWeaponProjectileShooter>();
-                if (weaponShooter == null)
+                weaponCombatHud = weaponView.GetComponent<PrototypeWeaponCombatHud>();
+                if (weaponCombatHud == null)
                 {
-                    weaponShooter = weaponView.gameObject.AddComponent<LevelWeaponProjectileShooter>();
+                    weaponCombatHud = weaponView.gameObject.AddComponent<PrototypeWeaponCombatHud>();
                 }
             }
 
@@ -759,45 +802,33 @@ namespace NewFPG.Level
             }
 
             hud.Initialize();
+            BindWeaponCombatHud();
             CachePlayerVisuals();
             CachePlayerPhysics();
         }
 
-        private void ConfigureWeaponShooter()
+        private void ConfigureWeaponHud()
         {
-            EnsureWeaponShooter();
-            if (weaponShooter == null)
-            {
-                return;
-            }
-
-            weaponShooter.SetFlowDirector(this);
-            weaponShooter.IsEnabledByCombat = false;
             SetWeaponPresentationActive(false);
+            SetCombatPresentationActive(false);
         }
 
         private void SetCombatPresentationActive(bool active)
         {
+            if (playerWeaponCaster != null)
+            {
+                playerWeaponCaster.SetCombatEnabled(active);
+            }
+
             if (active)
             {
                 SetWeaponPresentationActive(true);
-                SetWeaponCombatEnabled(true);
                 SetPlayerHiddenForCombat(true);
                 return;
             }
 
-            SetWeaponCombatEnabled(false);
             SetWeaponPresentationActive(false);
             SetPlayerHiddenForCombat(false);
-        }
-
-        private void SetWeaponCombatEnabled(bool enabled)
-        {
-            EnsureWeaponShooter();
-            if (weaponShooter != null)
-            {
-                weaponShooter.IsEnabledByCombat = enabled;
-            }
         }
 
         private void SetWeaponPresentationActive(bool active)
@@ -820,32 +851,92 @@ namespace NewFPG.Level
 
             if (active)
             {
-                Camera mainCamera = Camera.main;
-                weaponView.RefreshRuntimeView(mainCamera);
-                EnsureWeaponShooter();
-                if (weaponShooter != null)
+                Camera combatCamera = ResolveCombatCamera();
+                AttachWeaponViewToActiveCamera(combatCamera);
+                BindWeaponCombatHud();
+                weaponView.RefreshRuntimeView(combatCamera);
+                if (weaponCombatHud != null)
                 {
-                    weaponShooter.SetAimCamera(mainCamera);
+                    weaponCombatHud.SetAimCamera(combatCamera);
+                    weaponCombatHud.SetCombatEnabled(true);
                 }
+                return;
+            }
+
+            BindWeaponCombatHud();
+            if (weaponCombatHud != null)
+            {
+                weaponCombatHud.SetCombatEnabled(false);
             }
         }
 
-        private void EnsureWeaponShooter()
+        private Camera ResolveCombatCamera()
+        {
+            Camera camera = Camera.main;
+            if (IsUsableGameplayCamera(camera))
+            {
+                return camera;
+            }
+
+            Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                if (IsUsableGameplayCamera(cameras[i]))
+                {
+                    return cameras[i];
+                }
+            }
+
+            return camera;
+        }
+
+        private bool IsUsableGameplayCamera(Camera camera)
+        {
+            return camera != null
+                && camera.gameObject.scene == gameObject.scene
+                && camera.cameraType == CameraType.Game
+                && camera.isActiveAndEnabled
+                && (weaponView == null || camera != weaponView.GetComponentInChildren<Camera>(true));
+        }
+
+        private void AttachWeaponViewToActiveCamera(Camera camera)
+        {
+            if (weaponView == null || camera == null)
+            {
+                return;
+            }
+
+            Transform viewTransform = weaponView.transform;
+            if (viewTransform.parent == camera.transform && weaponView.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            viewTransform.SetParent(camera.transform, false);
+            viewTransform.localPosition = Vector3.zero;
+            viewTransform.localRotation = Quaternion.identity;
+            viewTransform.localScale = Vector3.one;
+        }
+
+        private void BindWeaponCombatHud()
         {
             if (weaponView == null)
             {
                 weaponView = FindFirstObjectByType<PrototypeFirstPersonWeaponView>(FindObjectsInactive.Include);
             }
 
-            if (weaponShooter == null && weaponView != null)
+            if (weaponCombatHud == null && weaponView != null)
             {
-                weaponShooter = weaponView.GetComponent<LevelWeaponProjectileShooter>();
-                if (weaponShooter == null)
+                weaponCombatHud = weaponView.GetComponent<PrototypeWeaponCombatHud>();
+                if (weaponCombatHud == null)
                 {
-                    weaponShooter = weaponView.gameObject.AddComponent<LevelWeaponProjectileShooter>();
+                    weaponCombatHud = weaponView.gameObject.AddComponent<PrototypeWeaponCombatHud>();
                 }
+            }
 
-                weaponShooter.SetFlowDirector(this);
+            if (weaponCombatHud != null)
+            {
+                weaponCombatHud.Bind(playerVitals, playerResourcePool, playerWeaponCaster);
             }
         }
 

@@ -1,0 +1,335 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b22322a8ab9faec4b967b4f5a5acb21f, type: 3}
+  m_Name: SO_IND_TemporaryArtIndex
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtIndex
+  entries:
+  - resourceId: PF_IND_TargetReticle
+    category: Prefab
+    usage: Target lock, reticle, weak point, and aim assist placeholder.
+    prefab: {fileID: 3223305516119322155, guid: 9ec14eeb9dd9ef14bad4de1987f80427, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_GroundCircle
+    category: Prefab
+    usage: Ground circle range, explosion, heal, aura, and area preview.
+    prefab: {fileID: 2968194300810875609, guid: 75e9ad7d03781c747b2798389ada0d0d, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_LineRect
+    category: Prefab
+    usage: Line, rectangle, dash path, beam, and wall direction placeholder.
+    prefab: {fileID: 4660650812202534990, guid: 73eaf9904d2235d47a01f290ece56297, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_Cone
+    category: Prefab
+    usage: Cone, sweep, breath, and monster frontal attack placeholder.
+    prefab: {fileID: 1700750697139125477, guid: d75ae571814c10c4bb58c364d2f065a0, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_ArcTrajectory
+    category: Prefab
+    usage: Projectile arc path and predicted landing placeholder.
+    prefab: {fileID: 7082211353216412522, guid: cd08d0ae38a81a34d90aaa8155d65212, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_Footprint
+    category: Prefab
+    usage: Placement footprint and forward direction placeholder.
+    prefab: {fileID: 3674401335039507702, guid: 85db33fdb283a44418c8f08054338dce, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_TetherLine
+    category: Prefab
+    usage: Drain, pull, chain, link, and break threshold placeholder.
+    prefab: {fileID: 4300037875250000851, guid: b6f0487ea8160fc428091af084f25f6b, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_CountdownDanger
+    category: Prefab
+    usage: Delayed burst, monster wind-up, and countdown telegraph placeholder.
+    prefab: {fileID: 792175275756606650, guid: da5fae32c6dedcb4ead738d568e602ea, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_PersistentZone
+    category: Prefab
+    usage: Persistent zone, tick area, and fade-out placeholder.
+    prefab: {fileID: 4806152202178010068, guid: 6deefeac0c90de3419cb8466dd5cf949, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_PlacementGhost
+    category: Prefab
+    usage: Transparent model ghost for placement skills.
+    prefab: {fileID: 2645876143482423510, guid: 98e7538c65235b543b61185af90e98d3, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_MonsterWarningCircle
+    category: Prefab
+    usage: Monster warning circle for normal, elite, and boss attacks.
+    prefab: {fileID: 2899742968254749839, guid: 0aacf0d2f07e4dc4bb1ad1fe3b622847, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: PF_IND_HUDHoldProgress
+    category: Prefab
+    usage: HUD weapon hold progress and cancel feedback placeholder.
+    prefab: {fileID: 6643966995746220202, guid: bd4153f3de294f240bd97395323a98b0, type: 3}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_OwnerValid
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: afa44dc2ee77c654f961df222eedd4f1, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_Invalid
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: 2f89a7fa36cf50544bd0af2ab5bc5b1d, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_EnemyDanger
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: 6e5b9bbc1a570f243ac4151e871b3ef5, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_AllyBuff
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: 77eaf480d8469764faa9e49bb5176b42, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_PersistentZone
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: 8967910d9b6f8ce48ab1fd73acffc731, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_TetherLine
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: 1a6107ddc754e49419d6d9b836db1ea8, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: M_IND_PlacementGhost
+    category: Material
+    usage: Phase/color material placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 2100000, guid: c21acbfc52ec62046927fc0911318863, type: 2}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_RingCircle
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: 03d76125e7125314fa5f45452db2dfd6, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_SoftDisc
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: e8f1727954dbb974baf9bafb6d6d7e5f, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_DashedLine
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: 42034781c77c360429cad001fb295d88, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_Arrow
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: ac5dbe0e92f47af45a3b167130dce04b, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_Cross
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: 378e6a2b9aa6fe1429904850fe7d54d6, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_Check
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: cfe0a81d3c5ef2a439e5bc21bb4c60b0, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_ConeMask
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: 5c4a8d961f12da9489497b5e06addf66, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_Noise
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: 6566d2fe79b22be4eb13f12bbb2c63cc, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_FlowStripe
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: bd6e71912235ac04aaf2581eaac0d7f1, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_TargetLock
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: 97468a5f03f4f01488ae7bf5ff8bec78, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: T_IND_HUDHoldProgress
+    category: Texture
+    usage: Transparent grayscale or colored sprite placeholder.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 2800000, guid: f5cbef64afcfdac468348d7ee25733a2, type: 3}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 0}
+  - resourceId: MS_IND_UnitCircle
+    category: Mesh
+    usage: Unit mesh placeholder scaled by runtime indicator geometry.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 4300000, guid: b434da900520cc641b74eb7abbaaf422, type: 2}
+    audioClip: {fileID: 0}
+  - resourceId: MS_IND_UnitRectangle
+    category: Mesh
+    usage: Unit mesh placeholder scaled by runtime indicator geometry.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 4300000, guid: 9782d88c0aae9e44780c0a6381f6d003, type: 2}
+    audioClip: {fileID: 0}
+  - resourceId: MS_IND_Cone90
+    category: Mesh
+    usage: Unit mesh placeholder scaled by runtime indicator geometry.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 4300000, guid: 671c14bee32ff894f907a77b052158ff, type: 2}
+    audioClip: {fileID: 0}
+  - resourceId: MS_IND_FootprintBox
+    category: Mesh
+    usage: Unit mesh placeholder scaled by runtime indicator geometry.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 4300000, guid: 3b41fd0928e86cf4581e5b2cc50bacbe, type: 2}
+    audioClip: {fileID: 0}
+  - resourceId: S_IND_PreviewEnter
+    category: Audio
+    usage: Short placeholder cue for skill indicator feedback.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 8300000, guid: 8b6d454fe240e6b4eb1df72cd49e99bf, type: 3}
+  - resourceId: S_IND_TargetLock
+    category: Audio
+    usage: Short placeholder cue for skill indicator feedback.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 8300000, guid: 86d1513777f643540b19dd741a254370, type: 3}
+  - resourceId: S_IND_Invalid
+    category: Audio
+    usage: Short placeholder cue for skill indicator feedback.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 8300000, guid: f984986becd9ffc4ea8d7027d5edba0f, type: 3}
+  - resourceId: S_IND_ConfirmRelease
+    category: Audio
+    usage: Short placeholder cue for skill indicator feedback.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 8300000, guid: 663f13e1773fd6b4d9f28b298c188186, type: 3}
+  - resourceId: S_IND_DangerTick
+    category: Audio
+    usage: Short placeholder cue for skill indicator feedback.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 8300000, guid: a8e9704ea8b45764d9182811a70d27b5, type: 3}
+  - resourceId: S_IND_ZoneExpire
+    category: Audio
+    usage: Short placeholder cue for skill indicator feedback.
+    prefab: {fileID: 0}
+    material: {fileID: 0}
+    texture: {fileID: 0}
+    mesh: {fileID: 0}
+    audioClip: {fileID: 8300000, guid: 881bfa27faf18b6449f6ca2b98580a49, type: 3}

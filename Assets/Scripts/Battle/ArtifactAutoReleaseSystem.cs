@@ -21,6 +21,8 @@ namespace NewFPG.Battle
         public Vector3 effectPosition;
         public ArtifactRuntimeState supplyReceiver;
         public ElementSupplyEvent supplyEvent;
+        public ArtifactRuntimeState drawnArtifact;
+        public int cycledSlotIndex = -1;
         public string message;
     }
 
@@ -41,15 +43,18 @@ namespace NewFPG.Battle
             }
 
             TickCooldowns(context.artifactQueue.equippedArtifacts, deltaTime);
+            context.artifactQueue.EnsureCycleInitialized();
 
             if (!context.isBattleRunning || !context.totalAutoEnabled)
             {
                 return;
             }
 
-            for (int i = 0; i < context.artifactQueue.equippedArtifacts.Count; i++)
+            List<ArtifactRuntimeState> visibleArtifacts = context.artifactQueue.GetVisibleArtifacts();
+            int visibleCount = visibleArtifacts != null ? visibleArtifacts.Count : 0;
+            for (int i = 0; i < visibleCount; i++)
             {
-                ArtifactRuntimeState runtime = context.artifactQueue.equippedArtifacts[i];
+                ArtifactRuntimeState runtime = visibleArtifacts[i];
                 if (!CanAttemptRelease(runtime))
                 {
                     continue;
@@ -58,7 +63,16 @@ namespace NewFPG.Battle
                 ArtifactReleaseReport report;
                 if (TryRelease(context, runtime, out report))
                 {
+                    ArtifactRuntimeState drawnArtifact;
+                    int cycledSlotIndex;
+                    if (context.artifactQueue.TryCycleAfterRelease(runtime, out drawnArtifact, out cycledSlotIndex))
+                    {
+                        report.drawnArtifact = drawnArtifact;
+                        report.cycledSlotIndex = cycledSlotIndex;
+                    }
+
                     Released?.Invoke(report);
+                    break;
                 }
             }
         }
@@ -407,12 +421,13 @@ namespace NewFPG.Battle
         private static List<ArtifactRuntimeState> CollectSupplyReceivers(ArtifactQueueState queue, ArtifactRuntimeState source)
         {
             List<ArtifactRuntimeState> receivers = new List<ArtifactRuntimeState>();
-            if (queue.equippedArtifacts == null)
+            List<ArtifactRuntimeState> visibleArtifacts = queue != null ? queue.GetVisibleArtifacts() : null;
+            if (visibleArtifacts == null)
             {
                 return receivers;
             }
 
-            int index = queue.equippedArtifacts.IndexOf(source);
+            int index = visibleArtifacts.IndexOf(source);
             if (index < 0)
             {
                 return receivers;
@@ -421,12 +436,12 @@ namespace NewFPG.Battle
             SupplyDirection direction = source.profile.supplyDirection;
             if ((direction == SupplyDirection.Left || direction == SupplyDirection.Both) && index - 1 >= 0)
             {
-                receivers.Add(queue.equippedArtifacts[index - 1]);
+                receivers.Add(visibleArtifacts[index - 1]);
             }
 
-            if ((direction == SupplyDirection.Right || direction == SupplyDirection.Both) && index + 1 < queue.equippedArtifacts.Count)
+            if ((direction == SupplyDirection.Right || direction == SupplyDirection.Both) && index + 1 < visibleArtifacts.Count)
             {
-                receivers.Add(queue.equippedArtifacts[index + 1]);
+                receivers.Add(visibleArtifacts[index + 1]);
             }
 
             return receivers;
@@ -434,22 +449,23 @@ namespace NewFPG.Battle
 
         private static ArtifactRuntimeState FindCatalystReceiver(ArtifactQueueState queue, ArtifactRuntimeState source)
         {
-            if (queue == null || queue.equippedArtifacts == null)
+            List<ArtifactRuntimeState> visibleArtifacts = queue != null ? queue.GetVisibleArtifacts() : null;
+            if (visibleArtifacts == null)
             {
                 return null;
             }
 
             ArtifactRuntimeState best = null;
             float bestCooldown = 0f;
-            int sourceIndex = queue.equippedArtifacts.IndexOf(source);
-            for (int i = 0; i < queue.equippedArtifacts.Count; i++)
+            int sourceIndex = visibleArtifacts.IndexOf(source);
+            for (int i = 0; i < visibleArtifacts.Count; i++)
             {
                 if (i != sourceIndex - 1 && i != sourceIndex + 1)
                 {
                     continue;
                 }
 
-                ArtifactRuntimeState candidate = queue.equippedArtifacts[i];
+                ArtifactRuntimeState candidate = visibleArtifacts[i];
                 if (candidate == null || candidate == source || candidate.cooldownRemaining <= bestCooldown)
                 {
                     continue;

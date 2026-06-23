@@ -1,3 +1,4 @@
+using NewFPG.Combat;
 using NewFPG.Level;
 using NewFPG.Prototype;
 using UnityEditor;
@@ -25,9 +26,9 @@ namespace NewFPG.EditorTools
             }
 
             PrototypeFirstPersonWeaponView weaponView = Object.FindFirstObjectByType<PrototypeFirstPersonWeaponView>();
-            if (weaponView != null && weaponView.GetComponent<LevelWeaponProjectileShooter>() == null)
+            if (weaponView != null && weaponView.GetComponent<PrototypeWeaponCombatHud>() == null)
             {
-                Undo.AddComponent<LevelWeaponProjectileShooter>(weaponView.gameObject);
+                Undo.AddComponent<PrototypeWeaponCombatHud>(weaponView.gameObject);
             }
 
             EditorUtility.SetDirty(director);

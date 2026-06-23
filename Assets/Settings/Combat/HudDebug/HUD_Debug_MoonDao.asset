@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8adc3c6fe72b7fd4fb40fbce0a7ed61e, type: 3}
+  m_Name: HUD_Debug_MoonDao
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
+  displayName: Moon Dao
+  icon: {fileID: 21300000, guid: d31bca8fae13e5344a01263426386b25, type: 3}
+  resourceCost: 0
+  damage: 0
+  cooldown: 0.12
+  range: 9
+  radius: 0.45
+  indicatorConfig: {fileID: 11400000, guid: 5f9ba4de41de333479a76121120fbbd8, type: 2}
+  releaseEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}

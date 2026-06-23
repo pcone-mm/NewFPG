@@ -31,6 +31,7 @@ namespace NewFPG.Prototype
         private Font font;
         private BattleSessionContext context;
         private float feedbackUntil;
+        private int shownCycleVersion = -1;
 
         public event Action<bool> TotalAutoChanged;
         public event Action<ArtifactRuntimeState, bool> ArtifactAutoChanged;
@@ -38,6 +39,11 @@ namespace NewFPG.Prototype
         public void Initialize(BattleSessionContext nextContext)
         {
             context = nextContext;
+            if (context != null && context.artifactQueue != null)
+            {
+                context.artifactQueue.EnsureCycleInitialized();
+            }
+
             BuildUi();
             RebuildArtifactViews();
             Refresh();
@@ -116,7 +122,10 @@ namespace NewFPG.Prototype
                 return;
             }
 
-            int count = context.artifactQueue.equippedArtifacts.Count;
+            context.artifactQueue.EnsureCycleInitialized();
+            shownCycleVersion = context.artifactQueue.cycleVersion;
+            List<ArtifactRuntimeState> visibleArtifacts = context.artifactQueue.GetVisibleArtifacts();
+            int count = visibleArtifacts != null ? visibleArtifacts.Count : 0;
             float width = 132f;
             float gap = 12f;
             float totalWidth = count * width + Mathf.Max(0, count - 1) * gap;
@@ -124,7 +133,7 @@ namespace NewFPG.Prototype
 
             for (int i = 0; i < count; i++)
             {
-                ArtifactRuntimeState runtime = context.artifactQueue.equippedArtifacts[i];
+                ArtifactRuntimeState runtime = visibleArtifacts[i];
                 GameObject panelObject = CreateRectObject("ArtifactHud_" + i, queueRoot, typeof(Image));
                 Image panel = panelObject.GetComponent<Image>();
                 panel.color = new Color(0.12f, 0.105f, 0.088f, 0.95f);
@@ -165,6 +174,11 @@ namespace NewFPG.Prototype
             if (context == null)
             {
                 return;
+            }
+
+            if (context.artifactQueue != null && shownCycleVersion != context.artifactQueue.cycleVersion)
+            {
+                RebuildArtifactViews();
             }
 
             hpText.text = "生命 " + context.playerHp.ToString("0") + "/" + context.playerMaxHp.ToString("0") + "　护盾 " + context.playerShield.ToString("0");

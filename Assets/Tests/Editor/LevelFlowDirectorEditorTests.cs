@@ -126,7 +126,7 @@ public sealed class LevelFlowDirectorEditorTests
         Assert.IsFalse(spriteRenderer.enabled);
         Assert.IsFalse((bool)GetProperty(playerController, "MovementEnabled"));
         Assert.IsTrue(weaponObject.activeSelf);
-        Assert.IsNotNull(weaponObject.GetComponent(RequireType("NewFPG.Level.LevelWeaponProjectileShooter, Assembly-CSharp")));
+        Assert.IsNotNull(weaponObject.GetComponent(RequireType("NewFPG.Combat.PrototypeWeaponCombatHud, Assembly-CSharp")));
         Assert.IsTrue(playerBody.isKinematic);
         Assert.AreEqual(RigidbodyConstraints.FreezeAll, playerBody.constraints);
         Assert.IsFalse(playerCollider.enabled);
@@ -144,10 +144,91 @@ public sealed class LevelFlowDirectorEditorTests
     }
 
     [Test]
+    public void CombatPresentationReparentsWeaponViewOutOfInactiveParent()
+    {
+        Component director = CreateDirector();
+        GameObject cameraObject = new GameObject("Level Flow Active Camera", typeof(Camera));
+        temporaryObjects.Add(cameraObject);
+        cameraObject.tag = "MainCamera";
+
+        GameObject inactiveCameraContainer = new GameObject("Level Flow Inactive Weapon Parent");
+        temporaryObjects.Add(inactiveCameraContainer);
+        inactiveCameraContainer.SetActive(false);
+
+        GameObject weaponObject = new GameObject("Level Flow Weapon View In Inactive Parent");
+        temporaryObjects.Add(weaponObject);
+        weaponObject.transform.SetParent(inactiveCameraContainer.transform, false);
+        Component weaponView = weaponObject.AddComponent(RequireType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp"));
+
+        SetField(director, "weaponView", weaponView);
+
+        Assert.IsTrue(weaponObject.activeSelf);
+        Assert.IsFalse(weaponObject.activeInHierarchy);
+
+        InvokePrivate(director, "SetCombatPresentationActive", true);
+
+        Assert.IsTrue(weaponObject.activeSelf);
+        Assert.IsTrue(weaponObject.activeInHierarchy);
+        Assert.IsNotNull(weaponObject.transform.parent.GetComponent<Camera>());
+    }
+
+    [Test]
+    public void EnemySpawnPositionAlwaysUsesGroundY()
+    {
+        Component director = CreateDirector();
+        GameObject playerObject = new GameObject("Level Flow Enemy Spawn Height Player");
+        temporaryObjects.Add(playerObject);
+        playerObject.transform.position = new Vector3(2f, 3.5f, -1f);
+        playerObject.transform.rotation = Quaternion.identity;
+        SetField(director, "player", playerObject.transform);
+
+        Vector3 fallbackPosition = (Vector3)InvokePrivate(director, "ResolveEnemySpawnPosition", 0, 1);
+        Assert.AreEqual(0f, fallbackPosition.y, 0.001f);
+
+        GameObject spawnPoint = new GameObject("Level Flow Enemy Spawn Point Height Test");
+        temporaryObjects.Add(spawnPoint);
+        spawnPoint.transform.position = new Vector3(-4f, 9.25f, 6f);
+        SetField(director, "enemySpawnPoints", new[] { spawnPoint.transform });
+
+        Vector3 explicitPosition = (Vector3)InvokePrivate(director, "ResolveEnemySpawnPosition", 0, 1);
+        Assert.AreEqual(0f, explicitPosition.y, 0.001f);
+        Assert.AreEqual(spawnPoint.transform.position.x, explicitPosition.x, 0.001f);
+        Assert.AreEqual(spawnPoint.transform.position.z, explicitPosition.z, 0.001f);
+
+        Transform enemy = (Transform)InvokePrivate(director, "SpawnEnemy", explicitPosition + Vector3.up * 5f, 0);
+        temporaryObjects.Add(enemy.gameObject);
+        Assert.AreEqual(0f, enemy.position.y, 0.001f);
+    }
+
+    [Test]
+    public void EnsureCombatantBindsFishMovementAndAttackTargetsToPlayer()
+    {
+        Component director = CreateDirector();
+        GameObject playerObject = new GameObject("Level Flow Fish Target Player");
+        temporaryObjects.Add(playerObject);
+        SetField(director, "player", playerObject.transform);
+
+        GameObject fishObject = new GameObject("Level Flow Fish Target Enemy");
+        temporaryObjects.Add(fishObject);
+        fishObject.AddComponent<SpriteRenderer>();
+        fishObject.AddComponent<Rigidbody>();
+        fishObject.AddComponent<BoxCollider>();
+        Component movement = fishObject.AddComponent(RequireType("NewFPG.Monsters.FishMonsterController, Assembly-CSharp"));
+        Component attack = fishObject.AddComponent(RequireType("NewFPG.Combat.FishAttackController, Assembly-CSharp"));
+
+        object room = Activator.CreateInstance(RequireType("NewFPG.Level.LevelRoomDefinition, Assembly-CSharp"));
+
+        InvokePrivate(director, "EnsureCombatant", fishObject, room);
+
+        Assert.AreSame(playerObject.transform, GetProperty(movement, "Target"));
+        Assert.AreSame(playerObject.transform, GetProperty(attack, "Target"));
+    }
+
+    [Test]
     public void RuntimeDebugApiExposesChoiceDoorAndCombatControls()
     {
         Type directorType = RequireType("NewFPG.Level.LevelFlowDirector, Assembly-CSharp");
-        Type shooterType = RequireType("NewFPG.Level.LevelWeaponProjectileShooter, Assembly-CSharp");
+        Type combatHudType = RequireType("NewFPG.Combat.PrototypeWeaponCombatHud, Assembly-CSharp");
         Type weaponViewType = RequireType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp");
 
         AssertPublicMethod(directorType, "SelectChoice", typeof(int));
@@ -156,12 +237,16 @@ public sealed class LevelFlowDirectorEditorTests
         AssertPublicMethod(directorType, "DebugInteractCurrentRoomObject");
         AssertPublicMethod(directorType, "GetActiveEnemyCount");
         AssertPublicMethod(directorType, "DebugKillActiveEnemies");
-        AssertPublicMethod(shooterType, "SetAimCamera", typeof(Camera));
+        AssertPublicMethod(combatHudType, "Bind", RequireType("NewFPG.Combat.CombatVitals, Assembly-CSharp"), RequireType("NewFPG.Combat.CombatResourcePool, Assembly-CSharp"), RequireType("NewFPG.Combat.PlayerWeaponCaster, Assembly-CSharp"));
+        AssertPublicMethod(combatHudType, "SetAimCamera", typeof(Camera));
+        AssertPublicMethod(combatHudType, "SetCombatEnabled", typeof(bool));
         AssertPublicMethod(weaponViewType, "RefreshRuntimeView", typeof(Camera));
-        AssertNoPublicMethod(shooterType, "FireDebugShot");
         Assert.IsNotNull(
             weaponViewType.GetEvent("WeaponAttackStarted", BindingFlags.Instance | BindingFlags.Public),
-            "Weapon HUD should expose the attack event that drives projectile firing.");
+            "Weapon HUD should expose the attack event for visual release callbacks.");
+        Assert.IsNotNull(
+            weaponViewType.GetEvent("WeaponAttackRequested", BindingFlags.Instance | BindingFlags.Public),
+            "Weapon HUD should expose the request event so resource checks can block attacks before the animation.");
     }
 
     private Component CreateDirector()
@@ -188,13 +273,6 @@ public sealed class LevelFlowDirectorEditorTests
         Assert.IsNotNull(
             type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public, null, parameterTypes, null),
             type.Name + "." + methodName + " should be public.");
-    }
-
-    private static void AssertNoPublicMethod(Type type, string methodName)
-    {
-        Assert.IsNull(
-            type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public),
-            type.Name + "." + methodName + " should not be public.");
     }
 
     private static object Invoke(object target, string methodName, params object[] args)

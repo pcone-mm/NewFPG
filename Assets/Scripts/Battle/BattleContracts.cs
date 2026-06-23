@@ -149,16 +149,244 @@ namespace NewFPG.Battle
     [Serializable]
     public sealed class ArtifactQueueState
     {
+        public const int DefaultVisibleArtifactCount = 3;
+
         public int capacity = 10;
         public List<ArtifactRuntimeState> equippedArtifacts = new List<ArtifactRuntimeState>();
+        public int visibleArtifactCount = DefaultVisibleArtifactCount;
+        public List<ArtifactRuntimeState> activeArtifacts = new List<ArtifactRuntimeState>();
+        public List<ArtifactRuntimeState> drawPile = new List<ArtifactRuntimeState>();
         public List<ArtifactQueueSlot> slots = new List<ArtifactQueueSlot>();
         public int usedCapacity;
+        public int cycleVersion;
         public bool isLoadoutValid = true;
         public string invalidReason;
 
         public int RemainingCapacity
         {
             get { return Mathf.Max(0, capacity - usedCapacity); }
+        }
+
+        public List<ArtifactRuntimeState> GetVisibleArtifacts()
+        {
+            if (activeArtifacts != null && activeArtifacts.Count > 0)
+            {
+                return activeArtifacts;
+            }
+
+            return equippedArtifacts;
+        }
+
+        public void EnsureCycleInitialized()
+        {
+            EnsureCycleInitialized(visibleArtifactCount > 0 ? visibleArtifactCount : DefaultVisibleArtifactCount);
+        }
+
+        public void EnsureCycleInitialized(int maxVisibleArtifacts)
+        {
+            visibleArtifactCount = maxVisibleArtifacts > 0 ? Mathf.Max(1, maxVisibleArtifacts) : DefaultVisibleArtifactCount;
+            if (equippedArtifacts == null)
+            {
+                equippedArtifacts = new List<ArtifactRuntimeState>();
+            }
+
+            if (activeArtifacts == null)
+            {
+                activeArtifacts = new List<ArtifactRuntimeState>();
+            }
+
+            if (drawPile == null)
+            {
+                drawPile = new List<ArtifactRuntimeState>();
+            }
+
+            if (activeArtifacts.Count > 0 || drawPile.Count > 0)
+            {
+                NormalizeCycleLists();
+                return;
+            }
+
+            if (equippedArtifacts.Count == 0)
+            {
+                return;
+            }
+
+            int visibleCount = Mathf.Min(visibleArtifactCount, equippedArtifacts.Count);
+            for (int i = 0; i < equippedArtifacts.Count; i++)
+            {
+                ArtifactRuntimeState runtime = equippedArtifacts[i];
+                if (runtime == null)
+                {
+                    continue;
+                }
+
+                if (activeArtifacts.Count < visibleCount)
+                {
+                    activeArtifacts.Add(runtime);
+                }
+                else
+                {
+                    drawPile.Add(runtime);
+                }
+            }
+
+            cycleVersion++;
+        }
+
+        public bool TryCycleAfterRelease(
+            ArtifactRuntimeState usedArtifact,
+            out ArtifactRuntimeState drawnArtifact,
+            out int slotIndex)
+        {
+            drawnArtifact = null;
+            slotIndex = -1;
+            EnsureCycleInitialized();
+
+            if (usedArtifact == null || activeArtifacts == null)
+            {
+                return false;
+            }
+
+            slotIndex = activeArtifacts.IndexOf(usedArtifact);
+            if (slotIndex < 0)
+            {
+                return false;
+            }
+
+            int targetVisibleCount = Mathf.Min(visibleArtifactCount, equippedArtifacts != null ? equippedArtifacts.Count : 0);
+            if (equippedArtifacts == null || equippedArtifacts.Count <= targetVisibleCount || drawPile == null || drawPile.Count == 0)
+            {
+                return false;
+            }
+
+            activeArtifacts.RemoveAt(slotIndex);
+            drawnArtifact = DrawNextArtifact();
+            if (drawnArtifact != null)
+            {
+                activeArtifacts.Insert(Mathf.Clamp(slotIndex, 0, activeArtifacts.Count), drawnArtifact);
+            }
+
+            drawPile.Add(usedArtifact);
+            NormalizeCycleLists();
+            cycleVersion++;
+            return drawnArtifact != null;
+        }
+
+        private ArtifactRuntimeState DrawNextArtifact()
+        {
+            if (drawPile == null)
+            {
+                return null;
+            }
+
+            while (drawPile.Count > 0)
+            {
+                ArtifactRuntimeState candidate = drawPile[0];
+                drawPile.RemoveAt(0);
+                if (candidate != null
+                    && equippedArtifacts != null
+                    && equippedArtifacts.Contains(candidate)
+                    && (activeArtifacts == null || !activeArtifacts.Contains(candidate)))
+                {
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        private void NormalizeCycleLists()
+        {
+            RemoveInvalidActiveArtifacts();
+            RemoveInvalidDrawPileArtifacts();
+
+            int targetVisibleCount = Mathf.Min(visibleArtifactCount, equippedArtifacts != null ? equippedArtifacts.Count : 0);
+            while (activeArtifacts.Count > targetVisibleCount)
+            {
+                ArtifactRuntimeState overflow = activeArtifacts[activeArtifacts.Count - 1];
+                activeArtifacts.RemoveAt(activeArtifacts.Count - 1);
+                if (overflow != null && !drawPile.Contains(overflow))
+                {
+                    drawPile.Insert(0, overflow);
+                }
+            }
+
+            while (activeArtifacts.Count < targetVisibleCount && drawPile.Count > 0)
+            {
+                ArtifactRuntimeState next = DrawNextArtifact();
+                if (next == null)
+                {
+                    break;
+                }
+
+                activeArtifacts.Add(next);
+            }
+
+            if (equippedArtifacts == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < equippedArtifacts.Count; i++)
+            {
+                ArtifactRuntimeState runtime = equippedArtifacts[i];
+                if (runtime == null || activeArtifacts.Contains(runtime) || drawPile.Contains(runtime))
+                {
+                    continue;
+                }
+
+                if (activeArtifacts.Count < targetVisibleCount)
+                {
+                    activeArtifacts.Add(runtime);
+                }
+                else
+                {
+                    drawPile.Add(runtime);
+                }
+            }
+        }
+
+        private void RemoveInvalidActiveArtifacts()
+        {
+            if (activeArtifacts == null)
+            {
+                activeArtifacts = new List<ArtifactRuntimeState>();
+                return;
+            }
+
+            for (int i = activeArtifacts.Count - 1; i >= 0; i--)
+            {
+                ArtifactRuntimeState runtime = activeArtifacts[i];
+                if (runtime == null
+                    || equippedArtifacts == null
+                    || !equippedArtifacts.Contains(runtime)
+                    || activeArtifacts.IndexOf(runtime) != i)
+                {
+                    activeArtifacts.RemoveAt(i);
+                }
+            }
+        }
+
+        private void RemoveInvalidDrawPileArtifacts()
+        {
+            if (drawPile == null)
+            {
+                drawPile = new List<ArtifactRuntimeState>();
+                return;
+            }
+
+            for (int i = drawPile.Count - 1; i >= 0; i--)
+            {
+                ArtifactRuntimeState runtime = drawPile[i];
+                if (runtime == null
+                    || equippedArtifacts == null
+                    || !equippedArtifacts.Contains(runtime)
+                    || activeArtifacts.Contains(runtime)
+                    || drawPile.IndexOf(runtime) != i)
+                {
+                    drawPile.RemoveAt(i);
+                }
+            }
         }
     }
 

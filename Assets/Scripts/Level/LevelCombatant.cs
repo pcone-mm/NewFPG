@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using NewFPG.Monsters;
+using NewFPG.Combat;
 
 namespace NewFPG.Level
 {
@@ -22,6 +23,7 @@ namespace NewFPG.Level
         [Header("Movement")]
         [SerializeField] private FishMonsterController fishMonsterController;
         [SerializeField] private bool stopMovementOnDeath = true;
+        [SerializeField] private CombatVitals combatVitals;
 
         private Sprite defaultSprite;
         private Color defaultColor = Color.white;
@@ -30,13 +32,14 @@ namespace NewFPG.Level
         private bool isDead;
         private int hitTriggerHash;
         private bool animatorHasHitTrigger;
+        private bool forwardingToVitals;
 
         public event Action<LevelCombatant> Damaged;
         public event Action<LevelCombatant> Died;
 
-        public float Hp => hp;
-        public float MaxHp => maxHp;
-        public bool IsDead => isDead;
+        public float Hp => combatVitals != null ? combatVitals.CurrentHealth : hp;
+        public float MaxHp => combatVitals != null ? combatVitals.MaxHealth : maxHp;
+        public bool IsDead => combatVitals != null ? !combatVitals.IsAlive : isDead;
 
         public void SetHitSprite(Sprite sprite)
         {
@@ -63,9 +66,24 @@ namespace NewFPG.Level
 
         private void OnEnable()
         {
+            if (combatVitals != null)
+            {
+                combatVitals.Damaged += OnCombatVitalsDamaged;
+                combatVitals.Died += OnCombatVitalsDied;
+            }
+
             if (hp <= 0f)
             {
                 hp = maxHp;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (combatVitals != null)
+            {
+                combatVitals.Damaged -= OnCombatVitalsDamaged;
+                combatVitals.Died -= OnCombatVitalsDied;
             }
         }
 
@@ -93,6 +111,12 @@ namespace NewFPG.Level
 
         public void ApplyDamage(float amount, Vector3 hitPoint, GameObject source = null)
         {
+            if (combatVitals != null && !forwardingToVitals)
+            {
+                combatVitals.ReceiveDamage(new DamagePayload(amount, source, hitPoint));
+                return;
+            }
+
             if (isDead || amount <= 0f)
             {
                 return;
@@ -111,6 +135,12 @@ namespace NewFPG.Level
         public void ResetHp(float nextMaxHp)
         {
             maxHp = Mathf.Max(1f, nextMaxHp);
+            if (combatVitals != null)
+            {
+                combatVitals.SetMaxHealth(maxHp, true);
+                isDead = false;
+            }
+
             hp = maxHp;
             isDead = false;
             if (spriteRenderer != null)
@@ -195,6 +225,25 @@ namespace NewFPG.Level
             {
                 fishMonsterController = GetComponent<FishMonsterController>();
             }
+
+            if (combatVitals == null)
+            {
+                combatVitals = GetComponent<CombatVitals>();
+            }
+        }
+
+        private void OnCombatVitalsDamaged(CombatVitals vitals, DamagePayload payload)
+        {
+            forwardingToVitals = true;
+            hp = vitals.CurrentHealth;
+            Damaged?.Invoke(this);
+            forwardingToVitals = false;
+        }
+
+        private void OnCombatVitalsDied(CombatVitals vitals)
+        {
+            hp = 0f;
+            Die();
         }
 
         private void CacheAnimatorHitParameter()

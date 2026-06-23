@@ -1,0 +1,250 @@
+{
+  "canvas": {
+    "width": 3840,
+    "height": 2160
+  },
+  "layers": [
+    {
+      "name": "forge_background",
+      "file": "00_forge_background.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/00_forge_background.png",
+      "bbox": {
+        "x1": 0,
+        "y1": 0,
+        "x2": 4370,
+        "y2": 2160,
+        "w": 4370,
+        "h": 2160
+      },
+      "order": 0,
+      "anchoredPosition": [
+        265.0,
+        0.0
+      ],
+      "sizeDelta": [
+        4370,
+        2160
+      ]
+    },
+    {
+      "name": "left_panel_mask",
+      "file": "01_left_panel_mask.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/01_left_panel_mask.png",
+      "bbox": {
+        "x1": 0,
+        "y1": 0,
+        "x2": 2411,
+        "y2": 2160,
+        "w": 2411,
+        "h": 2160
+      },
+      "order": 1,
+      "anchoredPosition": [
+        -714.5,
+        0.0
+      ],
+      "sizeDelta": [
+        2411,
+        2160
+      ]
+    },
+    {
+      "name": "material_cabinet",
+      "file": "02_material_cabinet.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/02_material_cabinet.png",
+      "bbox": {
+        "x1": 68,
+        "y1": 75,
+        "x2": 1600,
+        "y2": 2139,
+        "w": 1532,
+        "h": 2064
+      },
+      "order": 2,
+      "anchoredPosition": [
+        -1086.0,
+        -27.0
+      ],
+      "sizeDelta": [
+        1532,
+        2064
+      ]
+    },
+    {
+      "name": "yellow_earth",
+      "file": "03_yellow_earth.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/03_yellow_earth.png",
+      "bbox": {
+        "x1": 465,
+        "y1": 998,
+        "x2": 643,
+        "y2": 1149,
+        "w": 178,
+        "h": 151
+      },
+      "order": 3,
+      "anchoredPosition": [
+        -1366.0,
+        6.5
+      ],
+      "sizeDelta": [
+        178,
+        151
+      ]
+    },
+    {
+      "name": "spring_water",
+      "file": "04_spring_water.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/04_spring_water.png",
+      "bbox": {
+        "x1": 357,
+        "y1": 1304,
+        "x2": 550,
+        "y2": 1489,
+        "w": 193,
+        "h": 185
+      },
+      "order": 4,
+      "anchoredPosition": [
+        -1466.5,
+        -316.5
+      ],
+      "sizeDelta": [
+        193,
+        185
+      ]
+    },
+    {
+      "name": "red_coral",
+      "file": "05_red_coral.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/05_red_coral.png",
+      "bbox": {
+        "x1": 1048,
+        "y1": 982,
+        "x2": 1192,
+        "y2": 1149,
+        "w": 144,
+        "h": 167
+      },
+      "order": 5,
+      "anchoredPosition": [
+        -800.0,
+        14.5
+      ],
+      "sizeDelta": [
+        144,
+        167
+      ]
+    },
+    {
+      "name": "plant_ash",
+      "file": "06_plant_ash.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/06_plant_ash.png",
+      "bbox": {
+        "x1": 1020,
+        "y1": 649,
+        "x2": 1192,
+        "y2": 793,
+        "w": 172,
+        "h": 144
+      },
+      "order": 6,
+      "anchoredPosition": [
+        -814.0,
+        359.0
+      ],
+      "sizeDelta": [
+        172,
+        144
+      ]
+    },
+    {
+      "name": "bloodstone",
+      "file": "07_bloodstone.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/07_bloodstone.png",
+      "bbox": {
+        "x1": 465,
+        "y1": 614,
+        "x2": 600,
+        "y2": 794,
+        "w": 135,
+        "h": 180
+      },
+      "order": 7,
+      "anchoredPosition": [
+        -1387.5,
+        376.0
+      ],
+      "sizeDelta": [
+        135,
+        180
+      ]
+    },
+    {
+      "name": "spirit_wood",
+      "file": "08_spirit_wood.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/08_spirit_wood.png",
+      "bbox": {
+        "x1": 1020,
+        "y1": 1623,
+        "x2": 1239,
+        "y2": 1831,
+        "w": 219,
+        "h": 208
+      },
+      "order": 8,
+      "anchoredPosition": [
+        -790.5,
+        -647.0
+      ],
+      "sizeDelta": [
+        219,
+        208
+      ]
+    },
+    {
+      "name": "black_iron",
+      "file": "09_black_iron.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/09_black_iron.png",
+      "bbox": {
+        "x1": 1122,
+        "y1": 1346,
+        "x2": 1288,
+        "y2": 1489,
+        "w": 166,
+        "h": 143
+      },
+      "order": 9,
+      "anchoredPosition": [
+        -715.0,
+        -337.5
+      ],
+      "sizeDelta": [
+        166,
+        143
+      ]
+    },
+    {
+      "name": "name_tags",
+      "file": "10_name_tags.png",
+      "asset_path": "Assets/Art/UI/ForgingPSDImport/Layers/10_name_tags.png",
+      "bbox": {
+        "x1": 263,
+        "y1": 215,
+        "x2": 1002,
+        "y2": 1831,
+        "w": 739,
+        "h": 1616
+      },
+      "order": 10,
+      "anchoredPosition": [
+        -1287.5,
+        57.0
+      ],
+      "sizeDelta": [
+        739,
+        1616
+      ]
+    }
+  ]
+}

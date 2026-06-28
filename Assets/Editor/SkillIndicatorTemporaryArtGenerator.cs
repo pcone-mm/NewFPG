@@ -18,17 +18,17 @@ namespace NewFPG.EditorTools
         private const string AudioDir = Root + "/Audio";
         private const string IndexPath = Root + "/SO_IND_TemporaryArtIndex.asset";
 
-        private static readonly Color OwnerValid = new Color(0.10f, 0.72f, 1.00f, 0.54f);
-        private static readonly Color Invalid = new Color(1.00f, 0.12f, 0.08f, 0.56f);
-        private static readonly Color EnemyDanger = new Color(1.00f, 0.32f, 0.08f, 0.60f);
-        private static readonly Color AllyBuff = new Color(0.18f, 1.00f, 0.48f, 0.48f);
-        private static readonly Color Persistent = new Color(0.52f, 0.35f, 1.00f, 0.40f);
-        private static readonly Color Tether = new Color(0.72f, 0.92f, 1.00f, 0.85f);
-        private static readonly Color Ghost = new Color(0.45f, 0.80f, 1.00f, 0.28f);
+        private static readonly Color OwnerValid = new Color(0.10f, 0.72f, 1.00f, 0.82f);
+        private static readonly Color Invalid = new Color(1.00f, 0.12f, 0.08f, 0.84f);
+        private static readonly Color EnemyDanger = new Color(1.00f, 0.32f, 0.08f, 0.86f);
+        private static readonly Color AllyBuff = new Color(0.18f, 1.00f, 0.48f, 0.80f);
+        private static readonly Color Persistent = new Color(0.52f, 0.35f, 1.00f, 0.76f);
+        private static readonly Color Tether = new Color(0.72f, 0.92f, 1.00f, 0.96f);
+        private static readonly Color Ghost = new Color(0.45f, 0.80f, 1.00f, 0.55f);
         private static readonly Color White = new Color(1f, 1f, 1f, 1f);
         private static readonly Color Transparent = new Color(0f, 0f, 0f, 0f);
 
-        [MenuItem("NewFPG/Skill Indicators/Generate Temporary Art Pack")]
+        [MenuItem("NewFPG/技能指示器/生成临时美术包")]
         public static void Generate()
         {
             EnsureFolders();
@@ -42,7 +42,7 @@ namespace NewFPG.EditorTools
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("Generated temporary skill indicator art pack at " + Root);
+            Debug.Log("已生成技能指示器临时美术包：" + Root);
         }
 
         private static void EnsureFolders()
@@ -178,6 +178,11 @@ namespace NewFPG.EditorTools
                 material.SetFloat("_ZWrite", 0f);
             }
 
+            if (material.HasProperty("_Cull"))
+            {
+                material.SetFloat("_Cull", 0f);
+            }
+
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             material.SetOverrideTag("RenderType", "Transparent");
         }
@@ -212,17 +217,17 @@ namespace NewFPG.EditorTools
         private static Dictionary<string, GameObject> CreatePrefabs(Dictionary<string, Texture2D> textures, Dictionary<string, Material> materials, Dictionary<string, Mesh> meshes)
         {
             Dictionary<string, GameObject> prefabs = new Dictionary<string, GameObject>();
-            AddPrefab(prefabs, "PF_IND_TargetReticle", BuildSpritePrefab("PF_IND_TargetReticle", textures["T_IND_TargetLock"], materials["M_IND_TetherLine"], "Screen/world target lock marker."));
-            AddPrefab(prefabs, "PF_IND_GroundCircle", BuildMeshIndicator("PF_IND_GroundCircle", meshes["MS_IND_UnitCircle"], materials["M_IND_OwnerValid"], true, "Ground circle preview."));
+            AddPrefab(prefabs, "PF_IND_TargetReticle", BuildSpritePrefab("PF_IND_TargetReticle", textures["T_IND_TargetLock"], materials["M_IND_TetherLine"], "屏幕或世界空间的目标锁定标记。"));
+            AddPrefab(prefabs, "PF_IND_GroundCircle", BuildMeshIndicator("PF_IND_GroundCircle", meshes["MS_IND_UnitCircle"], materials["M_IND_OwnerValid"], true, "地面圆形范围预览。"));
             AddPrefab(prefabs, "PF_IND_LineRect", BuildLineRectPrefab(meshes, materials));
-            AddPrefab(prefabs, "PF_IND_Cone", BuildMeshIndicator("PF_IND_Cone", meshes["MS_IND_Cone90"], materials["M_IND_OwnerValid"], true, "Cone preview, scale for radius and rotate for facing."));
+            AddPrefab(prefabs, "PF_IND_Cone", BuildMeshIndicator("PF_IND_Cone", meshes["MS_IND_Cone90"], materials["M_IND_OwnerValid"], true, "扇形预览；缩放控制半径，旋转控制朝向。"));
             AddPrefab(prefabs, "PF_IND_ArcTrajectory", BuildArcTrajectoryPrefab(materials));
             AddPrefab(prefabs, "PF_IND_Footprint", BuildFootprintPrefab(meshes, materials));
             AddPrefab(prefabs, "PF_IND_TetherLine", BuildTetherPrefab(materials));
             AddPrefab(prefabs, "PF_IND_CountdownDanger", BuildCountdownPrefab(meshes, materials));
-            AddPrefab(prefabs, "PF_IND_PersistentZone", BuildMeshIndicator("PF_IND_PersistentZone", meshes["MS_IND_UnitCircle"], materials["M_IND_PersistentZone"], true, "Persistent area placeholder."));
+            AddPrefab(prefabs, "PF_IND_PersistentZone", BuildMeshIndicator("PF_IND_PersistentZone", meshes["MS_IND_UnitCircle"], materials["M_IND_PersistentZone"], true, "持续区域占位预览。"));
             AddPrefab(prefabs, "PF_IND_PlacementGhost", BuildPlacementGhostPrefab(materials));
-            AddPrefab(prefabs, "PF_IND_MonsterWarningCircle", BuildMeshIndicator("PF_IND_MonsterWarningCircle", meshes["MS_IND_UnitCircle"], materials["M_IND_EnemyDanger"], true, "Monster attack telegraph circle."));
+            AddPrefab(prefabs, "PF_IND_MonsterWarningCircle", BuildMeshIndicator("PF_IND_MonsterWarningCircle", meshes["MS_IND_UnitCircle"], materials["M_IND_EnemyDanger"], true, "怪物攻击预警圆形范围。"));
             AddPrefab(prefabs, "PF_IND_HUDHoldProgress", BuildHudPrefab(textures));
             return prefabs;
         }
@@ -289,7 +294,7 @@ namespace NewFPG.EditorTools
 
         private static GameObject BuildLineRectPrefab(Dictionary<string, Mesh> meshes, Dictionary<string, Material> materials)
         {
-            GameObject root = BuildMeshIndicator("PF_IND_LineRect", meshes["MS_IND_UnitRectangle"], materials["M_IND_OwnerValid"], false, "Line or rectangle preview. Scale Z for length and X for width.");
+            GameObject root = BuildMeshIndicator("PF_IND_LineRect", meshes["MS_IND_UnitRectangle"], materials["M_IND_OwnerValid"], false, "直线或矩形预览；缩放 Z 控制长度，缩放 X 控制宽度。");
             GameObject arrow = new GameObject("DirectionArrow");
             arrow.transform.SetParent(root.transform, false);
             arrow.transform.localPosition = new Vector3(0f, 0.01f, 0.55f);
@@ -305,7 +310,7 @@ namespace NewFPG.EditorTools
         private static GameObject BuildArcTrajectoryPrefab(Dictionary<string, Material> materials)
         {
             GameObject root = new GameObject("PF_IND_ArcTrajectory");
-            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "Arc path placeholder. Runtime can replace LineRenderer positions with sampled projectile path.";
+            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "抛物线轨迹占位；运行时可用采样后的投射物路径替换 LineRenderer 点位。";
             LineRenderer line = root.AddComponent<LineRenderer>();
             ConfigureLine(line, materials["M_IND_TetherLine"], 0.045f, false);
             line.positionCount = 16;
@@ -324,7 +329,7 @@ namespace NewFPG.EditorTools
 
         private static GameObject BuildFootprintPrefab(Dictionary<string, Mesh> meshes, Dictionary<string, Material> materials)
         {
-            GameObject root = BuildMeshIndicator("PF_IND_Footprint", meshes["MS_IND_FootprintBox"], materials["M_IND_PlacementGhost"], false, "Placement footprint with forward arrow and validity color material slot.");
+            GameObject root = BuildMeshIndicator("PF_IND_Footprint", meshes["MS_IND_FootprintBox"], materials["M_IND_PlacementGhost"], false, "放置占位预览，带前向箭头和可替换的有效性颜色材质槽。");
             root.transform.localScale = new Vector3(1.5f, 1f, 1f);
             GameObject arrow = new GameObject("ForwardArrow");
             arrow.transform.SetParent(root.transform, false);
@@ -339,7 +344,7 @@ namespace NewFPG.EditorTools
         private static GameObject BuildTetherPrefab(Dictionary<string, Material> materials)
         {
             GameObject root = new GameObject("PF_IND_TetherLine");
-            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "Tether line placeholder. Runtime should set endpoints from owner and target anchors.";
+            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "连线占位；运行时应根据施法者和目标挂点设置两端位置。";
             LineRenderer line = root.AddComponent<LineRenderer>();
             ConfigureLine(line, materials["M_IND_TetherLine"], 0.06f, false);
             line.positionCount = 2;
@@ -350,7 +355,7 @@ namespace NewFPG.EditorTools
 
         private static GameObject BuildCountdownPrefab(Dictionary<string, Mesh> meshes, Dictionary<string, Material> materials)
         {
-            GameObject root = BuildMeshIndicator("PF_IND_CountdownDanger", meshes["MS_IND_UnitCircle"], materials["M_IND_EnemyDanger"], true, "Countdown danger placeholder. Runtime can animate material alpha or sweep child rotation.");
+            GameObject root = BuildMeshIndicator("PF_IND_CountdownDanger", meshes["MS_IND_UnitCircle"], materials["M_IND_EnemyDanger"], true, "倒计时危险区占位；运行时可动画材质透明度或旋转扫掠子物体。");
             GameObject sweep = new GameObject("CountdownSweep");
             sweep.transform.SetParent(root.transform, false);
             sweep.transform.localPosition = new Vector3(0f, 0.012f, 0f);
@@ -368,7 +373,7 @@ namespace NewFPG.EditorTools
             GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cube);
             root.name = "PF_IND_PlacementGhost";
             UnityEngine.Object.DestroyImmediate(root.GetComponent<Collider>());
-            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "Transparent placement ghost for turret, trap, wall, summon, or interactable footprint.";
+            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "透明放置虚影，可用于炮塔、陷阱、墙体、召唤物或交互物占位。";
             root.transform.localScale = new Vector3(1f, 0.35f, 1f);
             MeshRenderer renderer = root.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = materials["M_IND_PlacementGhost"];
@@ -380,7 +385,7 @@ namespace NewFPG.EditorTools
         private static GameObject BuildHudPrefab(Dictionary<string, Texture2D> textures)
         {
             GameObject root = new GameObject("PF_IND_HUDHoldProgress", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
-            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "Screen-space HUD hold progress placeholder. Replace sprites with final HUD art later.";
+            root.AddComponent<SkillIndicatorTemporaryArtNote>().note = "屏幕空间 HUD 长按进度占位；后续可替换为正式 HUD 美术。";
             Canvas canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             CanvasScaler scaler = root.GetComponent<CanvasScaler>();
@@ -440,37 +445,37 @@ namespace NewFPG.EditorTools
             }
 
             List<SkillIndicatorTemporaryArtEntry> entries = new List<SkillIndicatorTemporaryArtEntry>();
-            entries.Add(PrefabEntry("PF_IND_TargetReticle", "Prefab", "Target lock, reticle, weak point, and aim assist placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_GroundCircle", "Prefab", "Ground circle range, explosion, heal, aura, and area preview.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_LineRect", "Prefab", "Line, rectangle, dash path, beam, and wall direction placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_Cone", "Prefab", "Cone, sweep, breath, and monster frontal attack placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_ArcTrajectory", "Prefab", "Projectile arc path and predicted landing placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_Footprint", "Prefab", "Placement footprint and forward direction placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_TetherLine", "Prefab", "Drain, pull, chain, link, and break threshold placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_CountdownDanger", "Prefab", "Delayed burst, monster wind-up, and countdown telegraph placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_PersistentZone", "Prefab", "Persistent zone, tick area, and fade-out placeholder.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_PlacementGhost", "Prefab", "Transparent model ghost for placement skills.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_MonsterWarningCircle", "Prefab", "Monster warning circle for normal, elite, and boss attacks.", prefabs));
-            entries.Add(PrefabEntry("PF_IND_HUDHoldProgress", "Prefab", "HUD weapon hold progress and cancel feedback placeholder.", prefabs));
+            entries.Add(PrefabEntry("PF_IND_TargetReticle", "预制体", "目标锁定、准星、弱点提示和辅助瞄准占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_GroundCircle", "预制体", "地面圆形范围、爆炸、治疗、光环和区域预览。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_LineRect", "预制体", "直线、矩形、冲刺路径、光束和墙体方向占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_Cone", "预制体", "扇形、横扫、吐息和怪物正面攻击占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_ArcTrajectory", "预制体", "投射物抛物线路径和预计落点占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_Footprint", "预制体", "放置占位和前向方向提示占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_TetherLine", "预制体", "吸取、拉拽、锁链、连接和断链阈值占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_CountdownDanger", "预制体", "延迟爆发、怪物蓄力和倒计时预警占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_PersistentZone", "预制体", "持续区域、周期伤害区域和淡出占位。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_PlacementGhost", "预制体", "放置类技能的透明模型虚影。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_MonsterWarningCircle", "预制体", "普通、精英和 Boss 攻击的怪物预警圆。", prefabs));
+            entries.Add(PrefabEntry("PF_IND_HUDHoldProgress", "预制体", "HUD 武器长按进度和取消反馈占位。", prefabs));
 
             foreach (KeyValuePair<string, Material> pair in materials)
             {
-                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "Material", usage = "Phase/color material placeholder.", material = pair.Value });
+                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "材质", usage = "阶段和颜色反馈用的临时材质。", material = pair.Value });
             }
 
             foreach (KeyValuePair<string, Texture2D> pair in textures)
             {
-                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "Texture", usage = "Transparent grayscale or colored sprite placeholder.", texture = pair.Value });
+                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "贴图", usage = "透明灰度或彩色精灵占位贴图。", texture = pair.Value });
             }
 
             foreach (KeyValuePair<string, Mesh> pair in meshes)
             {
-                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "Mesh", usage = "Unit mesh placeholder scaled by runtime indicator geometry.", mesh = pair.Value });
+                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "网格", usage = "单位尺寸网格占位，由运行时按指示器几何缩放。", mesh = pair.Value });
             }
 
             foreach (KeyValuePair<string, AudioClip> pair in audioClips)
             {
-                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "Audio", usage = "Short placeholder cue for skill indicator feedback.", audioClip = pair.Value });
+                entries.Add(new SkillIndicatorTemporaryArtEntry { resourceId = pair.Key, category = "音效", usage = "技能指示器反馈用的短音效占位。", audioClip = pair.Value });
             }
 
             index.SetEntries(entries);
@@ -546,7 +551,10 @@ namespace NewFPG.EditorTools
                     if (d <= 0.95f)
                     {
                         Color c = color;
-                        c.a *= Mathf.SmoothStep(0.45f, 0.05f, d);
+                        float fill = d <= 0.72f
+                            ? Mathf.Lerp(0.95f, 0.62f, d / 0.72f)
+                            : Mathf.SmoothStep(0.62f, 0f, Mathf.InverseLerp(0.72f, 0.95f, d));
+                        c.a *= fill;
                         texture.SetPixel(x, y, c);
                     }
                 }
@@ -657,7 +665,7 @@ namespace NewFPG.EditorTools
                     if (Mathf.Abs(angle) <= halfAngle)
                     {
                         Color c = color;
-                        c.a *= Mathf.Lerp(0.65f, 0.16f, dist);
+                        c.a *= Mathf.Lerp(0.90f, 0.38f, dist);
                         texture.SetPixel(x, y, c);
                     }
                 }

@@ -249,7 +249,17 @@ namespace NewFPG.Combat.SkillIndicators
             SkillIndicatorPreviewFrame frame = previewRuntime != null
                 ? ResolveFrameForActiveWeapon(weapon)
                 : default;
-            return frame.IsValid ? weaponCaster.TryCast(activeCasterIndex, frame.Command) : weaponCaster.TryCast(activeCasterIndex);
+            if (frame.IsValid)
+            {
+                return weaponCaster.TryCast(activeCasterIndex, frame.Command);
+            }
+
+            if (previewRuntime == null || frame.Config.invalidReleasePolicy == SkillIndicatorInvalidReleasePolicy.FallbackToDefault)
+            {
+                return weaponCaster.TryCast(activeCasterIndex);
+            }
+
+            return false;
         }
 
         private SkillIndicatorPreviewFrame ResolveFrameForActiveWeapon(WeaponDefinition weapon)

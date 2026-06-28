@@ -103,5 +103,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Transparent placement ghost for turret, trap, wall, summon, or interactable
-    footprint.
+  note: 透明放置虚影，可用于炮塔、陷阱、墙体、召唤物或交互物占位。

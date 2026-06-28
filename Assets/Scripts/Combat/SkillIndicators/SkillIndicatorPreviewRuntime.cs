@@ -7,6 +7,9 @@ namespace NewFPG.Combat.SkillIndicators
     {
         private const string PreviewRootName = "SkillIndicatorScenePreviewRoot";
         private const string AttachedPreviewRootName = "SkillIndicatorWorldPreviewRoot";
+        private const string RangeBoundaryName = "SkillIndicatorRangeBoundary";
+        private const int RangeBoundarySegments = 96;
+        private static readonly Color RangeBoundaryColor = new Color(0.35f, 0.95f, 1f, 0.88f);
 
         [SerializeField] private SkillIndicatorTemporaryArtIndex temporaryArtIndex;
         [SerializeField] private Camera aimCamera;
@@ -19,6 +22,8 @@ namespace NewFPG.Combat.SkillIndicators
         private SkillIndicatorPreviewFrame currentFrame;
         private bool hasCurrentFrame;
         private int localCastSequence;
+        private LineRenderer rangeBoundaryRenderer;
+        private Material rangeBoundaryMaterial;
 
         public bool HasPreview => hasCurrentFrame;
         public SkillIndicatorPreviewFrame CurrentFrame => currentFrame;
@@ -72,6 +77,7 @@ namespace NewFPG.Combat.SkillIndicators
         {
             hasCurrentFrame = false;
             rendererPool?.HideActive();
+            HideRangeBoundary();
         }
 
         public int NextCastSequence()
@@ -166,7 +172,8 @@ namespace NewFPG.Combat.SkillIndicators
 
             Quaternion surfaceRotation = Quaternion.FromToRotation(Vector3.up, normal);
             Quaternion facingRotation = Quaternion.LookRotation(flatDirection.normalized, Vector3.up);
-            bool valid = frame.IsValid;
+            bool useInvalidAppearance = ShouldUseInvalidAppearance(frame);
+            bool visualValid = !useInvalidAppearance;
 
             switch (frame.Config.shapeType)
             {
@@ -182,14 +189,14 @@ namespace NewFPG.Combat.SkillIndicators
                     instance.transform.localScale = Vector3.one * Mathf.Max(0.05f, frame.Config.range);
                     break;
                 case SkillIndicatorShapeType.TargetReticle:
-                    instance.transform.position = ResolveTargetPosition(command, sticksToGround) + normal * (resolvedSurfaceOffset + 0.08f);
+                    instance.transform.position = ResolveTargetPosition(command, frame.Config, sticksToGround) + normal * (resolvedSurfaceOffset + 0.08f);
                     instance.transform.rotation = aimCamera != null
                         ? Quaternion.LookRotation(instance.transform.position - aimCamera.transform.position, aimCamera.transform.up)
                         : surfaceRotation;
                     instance.transform.localScale = Vector3.one * Mathf.Max(0.25f, frame.Config.radius);
                     break;
                 default:
-                    instance.transform.position = ResolveTargetPosition(command, sticksToGround) + normal * resolvedSurfaceOffset;
+                    instance.transform.position = ResolveTargetPosition(command, frame.Config, sticksToGround) + normal * resolvedSurfaceOffset;
                     instance.transform.rotation = sticksToGround ? Quaternion.identity : surfaceRotation;
                     instance.transform.localScale = Vector3.one * Mathf.Max(0.05f, frame.Config.radius);
                     break;
@@ -197,9 +204,10 @@ namespace NewFPG.Combat.SkillIndicators
 
             Material material = rendererPool.ResolveMaterial(
                 temporaryArtIndex,
-                valid ? frame.Config.validMaterialResourceId : frame.Config.invalidMaterialResourceId,
-                valid);
-            ApplyMaterial(instance, material, valid);
+                visualValid ? frame.Config.validMaterialResourceId : frame.Config.invalidMaterialResourceId,
+                visualValid);
+            ApplyMaterial(instance, material, visualValid);
+            UpdateRangeBoundary(frame, sticksToGround, normal, resolvedSurfaceOffset);
         }
 
         private static Vector3 ResolveBasePosition(CastCommandData command, bool sticksToGround)
@@ -207,9 +215,19 @@ namespace NewFPG.Combat.SkillIndicators
             return sticksToGround ? command.SceneOrigin : command.Origin;
         }
 
-        private static Vector3 ResolveTargetPosition(CastCommandData command, bool sticksToGround)
+        private static Vector3 ResolveTargetPosition(CastCommandData command, SkillIndicatorResolvedConfig config, bool sticksToGround)
         {
-            return sticksToGround ? command.TargetPoint : command.Origin;
+            if (sticksToGround)
+            {
+                return command.TargetPoint;
+            }
+
+            if (config.placementMode == SkillIndicatorPlacementMode.AttachToCastOrigin)
+            {
+                return command.Origin;
+            }
+
+            return command.HasTargetPoint ? command.TargetPoint : command.Origin;
         }
 
         private Transform ResolvePreviewParent(SkillIndicatorResolvedConfig config, Transform castOrigin)
@@ -222,6 +240,148 @@ namespace NewFPG.Combat.SkillIndicators
                     return ResolveWorldPreviewRoot();
                 default:
                     return scenePreviewRoot;
+            }
+        }
+
+        private void UpdateRangeBoundary(
+            SkillIndicatorPreviewFrame frame,
+            bool sticksToGround,
+            Vector3 normal,
+            float resolvedSurfaceOffset)
+        {
+            float range = Mathf.Max(0f, frame.Config.range);
+            if (range <= 0.01f)
+            {
+                HideRangeBoundary();
+                return;
+            }
+
+            LineRenderer lineRenderer = EnsureRangeBoundaryRenderer();
+            if (lineRenderer == null)
+            {
+                return;
+            }
+
+            Vector3 center = frame.Command.SceneOrigin;
+            Vector3 boundaryNormal = Vector3.up;
+            float offset = resolvedSurfaceOffset + 0.018f;
+            center += boundaryNormal * offset;
+
+            Quaternion rotation = Quaternion.identity;
+            lineRenderer.positionCount = RangeBoundarySegments;
+            lineRenderer.loop = true;
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.startWidth = Mathf.Clamp(range * 0.008f, 0.025f, 0.075f);
+            lineRenderer.endWidth = lineRenderer.startWidth;
+            lineRenderer.startColor = RangeBoundaryColor;
+            lineRenderer.endColor = RangeBoundaryColor;
+
+            for (int i = 0; i < RangeBoundarySegments; i++)
+            {
+                float angle = (i / (float)RangeBoundarySegments) * Mathf.PI * 2f;
+                Vector3 point = new Vector3(Mathf.Cos(angle) * range, 0f, Mathf.Sin(angle) * range);
+                lineRenderer.SetPosition(i, center + rotation * point);
+            }
+
+            lineRenderer.gameObject.SetActive(true);
+        }
+
+        private LineRenderer EnsureRangeBoundaryRenderer()
+        {
+            EnsurePool();
+            if (rangeBoundaryRenderer != null)
+            {
+                SetLayerRecursively(rangeBoundaryRenderer.transform, ResolvePreviewLayer());
+                return rangeBoundaryRenderer;
+            }
+
+            Transform parent = scenePreviewRoot != null ? scenePreviewRoot : ResolvePreviewRoot(PreviewRootName);
+            GameObject boundary = new GameObject(RangeBoundaryName);
+            boundary.transform.SetParent(parent, false);
+            SetLayerRecursively(boundary.transform, ResolvePreviewLayer());
+
+            rangeBoundaryRenderer = boundary.AddComponent<LineRenderer>();
+            rangeBoundaryRenderer.sharedMaterial = ResolveRangeBoundaryMaterial();
+            rangeBoundaryRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rangeBoundaryRenderer.receiveShadows = false;
+            rangeBoundaryRenderer.numCornerVertices = 4;
+            rangeBoundaryRenderer.numCapVertices = 4;
+            rangeBoundaryRenderer.textureMode = LineTextureMode.Stretch;
+            rangeBoundaryRenderer.alignment = LineAlignment.View;
+            return rangeBoundaryRenderer;
+        }
+
+        private void HideRangeBoundary()
+        {
+            if (rangeBoundaryRenderer != null)
+            {
+                rangeBoundaryRenderer.gameObject.SetActive(false);
+            }
+        }
+
+        private Material ResolveRangeBoundaryMaterial()
+        {
+            if (rangeBoundaryMaterial == null)
+            {
+                rangeBoundaryMaterial = CreateTransparentMaterial(RangeBoundaryColor);
+            }
+
+            return rangeBoundaryMaterial;
+        }
+
+        private static Material CreateTransparentMaterial(Color color)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Unlit")
+                ?? Shader.Find("Sprites/Default")
+                ?? Shader.Find("Unlit/Transparent")
+                ?? Shader.Find("Unlit/Color");
+            Material material = new Material(shader);
+            material.color = color;
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", color);
+            }
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+            }
+
+            if (material.HasProperty("_ZWrite"))
+            {
+                material.SetFloat("_ZWrite", 0f);
+            }
+
+            if (material.HasProperty("_Cull"))
+            {
+                material.SetFloat("_Cull", 0f);
+            }
+
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.SetOverrideTag("RenderType", "Transparent");
+            return material;
+        }
+
+        private static bool ShouldUseInvalidAppearance(SkillIndicatorPreviewFrame frame)
+        {
+            if (frame.IsValid)
+            {
+                return false;
+            }
+
+            switch (frame.Validation.Reason)
+            {
+                case SkillIndicatorValidationReason.NoSurface:
+                case SkillIndicatorValidationReason.OutOfRange:
+                    return false;
+                default:
+                    return true;
             }
         }
 
@@ -244,14 +404,27 @@ namespace NewFPG.Combat.SkillIndicators
             MeshRenderer[] meshRenderers = instance.GetComponentsInChildren<MeshRenderer>(true);
             for (int i = 0; i < meshRenderers.Length; i++)
             {
+                if (IsBoundaryRenderer(meshRenderers[i]))
+                {
+                    continue;
+                }
+
                 meshRenderers[i].sharedMaterial = material;
             }
 
             LineRenderer[] lineRenderers = instance.GetComponentsInChildren<LineRenderer>(true);
             for (int i = 0; i < lineRenderers.Length; i++)
             {
+                if (IsBoundaryRenderer(lineRenderers[i]))
+                {
+                    Color boundaryColor = valid ? new Color(0.1f, 0.72f, 1f, 0.96f) : new Color(1f, 0.12f, 0.08f, 0.96f);
+                    lineRenderers[i].startColor = boundaryColor;
+                    lineRenderers[i].endColor = boundaryColor;
+                    continue;
+                }
+
                 lineRenderers[i].sharedMaterial = material;
-                Color color = valid ? new Color(0.1f, 0.72f, 1f, 0.75f) : new Color(1f, 0.12f, 0.08f, 0.78f);
+                Color color = valid ? new Color(0.1f, 0.72f, 1f, 0.92f) : new Color(1f, 0.12f, 0.08f, 0.94f);
                 lineRenderers[i].startColor = color;
                 lineRenderers[i].endColor = color;
             }
@@ -263,5 +436,13 @@ namespace NewFPG.Combat.SkillIndicators
                 spriteRenderers[i].color = valid ? Color.white : new Color(1f, 0.25f, 0.18f, 1f);
             }
         }
+
+        private static bool IsBoundaryRenderer(Renderer renderer)
+        {
+            return renderer != null
+                && renderer.transform != null
+                && string.Equals(renderer.transform.name, "BoundaryRing", System.StringComparison.Ordinal);
+        }
+
     }
 }

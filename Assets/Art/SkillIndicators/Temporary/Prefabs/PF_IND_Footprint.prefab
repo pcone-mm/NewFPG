@@ -137,7 +137,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Placement footprint with forward arrow and validity color material slot.
+  note: 放置占位预览，带前向箭头和可替换的有效性颜色材质槽。
 --- !u!33 &8529509053450766882
 MeshFilter:
   m_ObjectHideFlags: 0

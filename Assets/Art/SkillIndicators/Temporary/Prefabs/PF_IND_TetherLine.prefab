@@ -45,8 +45,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Tether line placeholder. Runtime should set endpoints from owner and target
-    anchors.
+  note: 连线占位；运行时应根据施法者和目标挂点设置两端位置。
 --- !u!120 &3872465020978312048
 LineRenderer:
   serializedVersion: 3

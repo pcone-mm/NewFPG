@@ -1,0 +1,104 @@
+{
+  "version": "draft-2026-06-27",
+  "source": "Unity ScriptableObject forging configs",
+  "materials": [
+    {
+      "materialId": "stardust_gold",
+      "displayName": "星辰碎金",
+      "rarity": 1,
+      "value": 20,
+      "shapeWidth": 2,
+      "shapeHeight": 2,
+      "cells": [
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "attributes": {
+        "metal": 10.0,
+        "water": 0.0,
+        "wood": 0.0,
+        "fire": 5.0,
+        "earth": 5.0
+      },
+      "neighborRules": [
+        {
+          "ruleType": "MultiplyElement",
+          "targetElement": "Wood",
+          "multiplier": 0.5,
+          "includeDiagonals": false,
+          "description": "相邻材料的木属性降低 50%。"
+        }
+      ],
+      "weaponBonuses": [
+        {
+          "bonusType": "ElementDamagePercentRange",
+          "element": "Metal",
+          "minPercent": 0.01,
+          "maxPercent": 0.05,
+          "description": "武器附加最终金属性 1%-5% 的金属性伤害。"
+        }
+      ],
+      "texturePath": "Assets/Art/UI/ForgingPSDImport/Layers/03_yellow_earth.png",
+      "uiSlot": {
+        "anchoredPosition": {
+          "x": -1366.0,
+          "y": 6.5
+        },
+        "size": {
+          "x": 260.0,
+          "y": 220.0
+        }
+      },
+      "description": "材料表第一项：形状 1，金 10 / 火 5 / 土 5。"
+    },
+    {
+      "materialId": "young_wood_core",
+      "displayName": "青木胚",
+      "rarity": 1,
+      "value": 20,
+      "shapeWidth": 1,
+      "shapeHeight": 2,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "attributes": {
+        "metal": 0.0,
+        "water": 0.0,
+        "wood": 20.0,
+        "fire": 0.0,
+        "earth": 0.0
+      },
+      "neighborRules": [],
+      "weaponBonuses": [],
+      "texturePath": "Assets/Art/UI/ForgingPSDImport/Layers/08_spirit_wood.png",
+      "uiSlot": {
+        "anchoredPosition": {
+          "x": -790.5,
+          "y": -647.0
+        },
+        "size": {
+          "x": 250.0,
+          "y": 240.0
+        }
+      },
+      "description": "临时验证材料，用来测试星辰碎金相邻木属性衰减。"
+    }
+  ]
+}

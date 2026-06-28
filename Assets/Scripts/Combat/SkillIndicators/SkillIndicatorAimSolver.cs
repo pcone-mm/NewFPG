@@ -30,7 +30,18 @@ namespace NewFPG.Combat.SkillIndicators
             Vector3 sceneOrigin = ResolveSceneOrigin(config, origin, owner, castOrigin);
 
             Vector3 direction = ResolveBaseDirection(config, owner, aimCamera, pointerPosition, hasPointerPosition);
-            Vector3 targetPoint = ResolveTargetPoint(config, sceneOrigin, direction, aimCamera, pointerPosition, hasPointerPosition, owner, castOrigin, out Vector3 normal, out bool hitSurface);
+            Vector3 targetPoint = ResolveTargetPoint(
+                config,
+                sceneOrigin,
+                direction,
+                aimCamera,
+                pointerPosition,
+                hasPointerPosition,
+                owner,
+                castOrigin,
+                out Vector3 normal,
+                out bool hitSurface,
+                out int targetEntityId);
             direction = ResolveDirectionFromPoints(config, sceneOrigin, targetPoint, direction);
 
             IndicatorValidationResult validation = Validate(config, sceneOrigin, targetPoint, hitSurface);
@@ -42,7 +53,7 @@ namespace NewFPG.Combat.SkillIndicators
                 Direction = direction,
                 TargetPoint = targetPoint,
                 SurfaceNormal = normal.sqrMagnitude > 0.001f ? normal.normalized : Vector3.up,
-                TargetEntityId = -1,
+                TargetEntityId = targetEntityId,
                 PlacementMode = config.placementMode,
                 HoldDuration = holdDuration,
                 LocalCastSequence = localCastSequence,
@@ -129,10 +140,12 @@ namespace NewFPG.Combat.SkillIndicators
             Transform owner,
             Transform castOrigin,
             out Vector3 normal,
-            out bool hitSurface)
+            out bool hitSurface,
+            out int targetEntityId)
         {
             normal = Vector3.up;
             hitSurface = false;
+            targetEntityId = -1;
             bool sticksToGround = config.SticksToGround();
 
             if (config.holdPolicy == SkillIndicatorDefaultReleasePolicy.CastOnSelf || config.aimSource == SkillIndicatorAimSource.Self)
@@ -142,6 +155,26 @@ namespace NewFPG.Combat.SkillIndicators
             }
 
             Ray ray;
+            if (config.holdPolicy == SkillIndicatorDefaultReleasePolicy.CastAtCurrentLock
+                && TryBuildAimRay(config, aimCamera, pointerPosition, hasPointerPosition, out ray))
+            {
+                if (TryResolveLockTarget(
+                    config,
+                    ray,
+                    ResolveAimSurfaceRayDistance(config, ray, origin),
+                    owner,
+                    castOrigin,
+                    out Vector3 lockPoint,
+                    out int lockTargetId))
+                {
+                    hitSurface = true;
+                    targetEntityId = lockTargetId;
+                    return lockPoint;
+                }
+
+                return ResolveFallbackTarget(origin, direction, config);
+            }
+
             if (TryBuildAimRay(config, aimCamera, pointerPosition, hasPointerPosition, out ray)
                 && TryResolveSurfaceHit(
                     config,
@@ -441,6 +474,11 @@ namespace NewFPG.Combat.SkillIndicators
                 return IndicatorValidationResult.Invalid(SkillIndicatorValidationReason.NoSurface, "No valid surface.");
             }
 
+            if (config.holdPolicy == SkillIndicatorDefaultReleasePolicy.CastAtCurrentLock && !hitSurface)
+            {
+                return IndicatorValidationResult.Invalid(SkillIndicatorValidationReason.NoTarget, "No locked target.");
+            }
+
             float range = Mathf.Max(0.1f, config.range);
             Vector3 delta = targetPoint - origin;
             if (config.SticksToGround())
@@ -454,6 +492,59 @@ namespace NewFPG.Combat.SkillIndicators
             }
 
             return IndicatorValidationResult.Valid();
+        }
+
+        private static bool TryResolveLockTarget(
+            SkillIndicatorResolvedConfig config,
+            Ray ray,
+            float maxDistance,
+            Transform owner,
+            Transform castOrigin,
+            out Vector3 targetPoint,
+            out int targetEntityId)
+        {
+            targetPoint = Vector3.zero;
+            targetEntityId = -1;
+            RaycastHit[] hits = Physics.RaycastAll(
+                ray,
+                maxDistance,
+                ResolveSceneSurfaceMask(config.surfaceMask),
+                QueryTriggerInteraction.Collide);
+            if (hits == null || hits.Length == 0)
+            {
+                return false;
+            }
+
+            Array.Sort(hits, CompareRaycastHitDistance);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Collider collider = hits[i].collider;
+                if (collider == null)
+                {
+                    continue;
+                }
+
+                Transform hitTransform = collider.transform;
+                if (IsTransformWithin(hitTransform, owner) || IsTransformWithin(hitTransform, castOrigin))
+                {
+                    continue;
+                }
+
+                IDamageable damageable = collider.GetComponentInParent<IDamageable>();
+                if (damageable == null || !damageable.IsAlive)
+                {
+                    continue;
+                }
+
+                Transform aimTransform = damageable.AimTransform;
+                targetPoint = aimTransform != null ? aimTransform.position : collider.bounds.center;
+                targetEntityId = aimTransform != null
+                    ? aimTransform.gameObject.GetInstanceID()
+                    : collider.gameObject.GetInstanceID();
+                return true;
+            }
+
+            return false;
         }
     }
 }

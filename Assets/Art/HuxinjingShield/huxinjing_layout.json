@@ -1,0 +1,111 @@
+{
+  "sourcePsd": "D:\\仙侠炼器\\huxinjing.psd",
+  "canvasWidth": 3000,
+  "canvasHeight": 2053,
+  "groupName": "huxinjing",
+  "groupOpacity": 0.3686274509803922,
+  "groupOpacityByte": 94,
+  "groupBbox": [
+    195,
+    -178,
+    2805,
+    2441
+  ],
+  "groupWidth": 2610,
+  "groupHeight": 2619,
+  "layers": [
+    {
+      "name": "huxinjing1",
+      "sourceLayerName": "椭圆 1",
+      "file": "Textures/huxinjing1.png",
+      "opacity": 1.0,
+      "opacityByte": 255,
+      "blendMode": "BlendMode.NORMAL",
+      "bbox": [
+        729,
+        373,
+        2275,
+        1922
+      ],
+      "width": 1546,
+      "height": 1549,
+      "centerOffsetPixels": [
+        2.0,
+        -121.0
+      ],
+      "groupRectPixels": [
+        534,
+        519,
+        1546,
+        1549
+      ],
+      "pivotPixels": [
+        1307.0,
+        1293.5
+      ],
+      "normalizedSorting": 0
+    },
+    {
+      "name": "huxinjing2",
+      "sourceLayerName": "huxinjing2",
+      "file": "Textures/huxinjing2.png",
+      "opacity": 1.0,
+      "opacityByte": 255,
+      "blendMode": "BlendMode.NORMAL",
+      "bbox": [
+        456,
+        65,
+        2526,
+        2191
+      ],
+      "width": 2070,
+      "height": 2126,
+      "centerOffsetPixels": [
+        -9.0,
+        -101.5
+      ],
+      "groupRectPixels": [
+        261,
+        250,
+        2070,
+        2126
+      ],
+      "pivotPixels": [
+        1296.0,
+        1313.0
+      ],
+      "normalizedSorting": 1
+    },
+    {
+      "name": "huxinjing3",
+      "sourceLayerName": "huxinjing3",
+      "file": "Textures/huxinjing3.png",
+      "opacity": 1.0,
+      "opacityByte": 255,
+      "blendMode": "BlendMode.NORMAL",
+      "bbox": [
+        195,
+        -178,
+        2805,
+        2441
+      ],
+      "width": 2610,
+      "height": 2619,
+      "centerOffsetPixels": [
+        0.0,
+        -105.0
+      ],
+      "groupRectPixels": [
+        0,
+        0,
+        2610,
+        2619
+      ],
+      "pivotPixels": [
+        1305.0,
+        1309.5
+      ],
+      "normalizedSorting": 2
+    }
+  ]
+}

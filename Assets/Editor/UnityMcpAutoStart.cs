@@ -37,7 +37,6 @@ public static class UnityMcpAutoStart
             return;
         }
 
-        bool packageAutoStartWasEnabled = EditorPrefs.GetBool(PackageAutoStartKey, false);
         ConfigurePackageForLocalHttpAutoStart();
 
         if (Application.isBatchMode &&
@@ -46,10 +45,7 @@ public static class UnityMcpAutoStart
             return;
         }
 
-        if (!packageAutoStartWasEnabled)
-        {
-            EditorApplication.delayCall += StartAfterEditorLoad;
-        }
+        EditorApplication.delayCall += StartAfterEditorLoad;
     }
 
     public static void SetProjectAutoStartEnabled(bool enabled)

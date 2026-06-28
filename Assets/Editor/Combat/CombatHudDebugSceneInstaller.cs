@@ -54,6 +54,27 @@ namespace NewFPG.EditorTools
                 2.4f,
                 6.5f,
                 72f),
+            new DebugWeaponSpec(
+                "HUD_Debug_TargetLock",
+                "Target Lock Test",
+                "Assets/Art/Weapons/HUD/Xianxia_MoonDao.png",
+                "IND_HUD_Debug_TargetLock",
+                SkillIndicatorShapeType.TargetReticle,
+                SkillIndicatorDefaultReleasePolicy.CastAtCurrentLock,
+                10f,
+                0.75f,
+                1.2f,
+                10f,
+                90f,
+                SkillIndicatorDefaultReleasePolicy.CastAtCurrentLock,
+                SkillIndicatorAimSource.ScreenCursorRay,
+                false,
+                SkillIndicatorPlacementMode.WorldSpace,
+                "PF_IND_TargetReticle",
+                "M_IND_TetherLine",
+                "S_IND_TargetLock",
+                8f,
+                SkillIndicatorInvalidReleasePolicy.Cancel),
         };
 
         [MenuItem("NewFPG/Combat/Create HUD Weapon Debug Scene")]
@@ -104,7 +125,7 @@ namespace NewFPG.EditorTools
                 serializedWeapon.FindProperty("displayName").stringValue = spec.displayName;
                 serializedWeapon.FindProperty("icon").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(spec.iconPath);
                 serializedWeapon.FindProperty("resourceCost").floatValue = 0f;
-                serializedWeapon.FindProperty("damage").floatValue = 0f;
+                serializedWeapon.FindProperty("damage").floatValue = spec.damage;
                 serializedWeapon.FindProperty("cooldown").floatValue = 0.12f;
                 serializedWeapon.FindProperty("range").floatValue = spec.range;
                 serializedWeapon.FindProperty("radius").floatValue = spec.radius;
@@ -133,13 +154,13 @@ namespace NewFPG.EditorTools
             serializedIndicator.FindProperty("indicatorId").stringValue = spec.indicatorAssetName;
             serializedIndicator.FindProperty("ownerType").enumValueIndex = (int)SkillIndicatorOwnerType.Player;
             serializedIndicator.FindProperty("inputMode").enumValueIndex = (int)SkillIndicatorInputMode.HoldPreview;
-            serializedIndicator.FindProperty("tapPolicy").enumValueIndex = (int)SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget;
+            serializedIndicator.FindProperty("tapPolicy").enumValueIndex = (int)spec.tapPolicy;
             serializedIndicator.FindProperty("holdPolicy").enumValueIndex = (int)spec.holdPolicy;
-            serializedIndicator.FindProperty("invalidReleasePolicy").enumValueIndex = (int)SkillIndicatorInvalidReleasePolicy.FallbackToDefault;
-            serializedIndicator.FindProperty("aimSource").enumValueIndex = (int)SkillIndicatorAimSource.ScreenCursorRay;
-            serializedIndicator.FindProperty("requireSurfaceHit").boolValue = true;
+            serializedIndicator.FindProperty("invalidReleasePolicy").enumValueIndex = (int)spec.invalidReleasePolicy;
+            serializedIndicator.FindProperty("aimSource").enumValueIndex = (int)spec.aimSource;
+            serializedIndicator.FindProperty("requireSurfaceHit").boolValue = spec.requireSurfaceHit;
             serializedIndicator.FindProperty("clampToRange").boolValue = true;
-            serializedIndicator.FindProperty("placementMode").enumValueIndex = (int)SkillIndicatorPlacementMode.GroundSurface;
+            serializedIndicator.FindProperty("placementMode").enumValueIndex = (int)spec.placementMode;
             serializedIndicator.FindProperty("surfaceMask").intValue = ResolveSceneSurfaceMask();
             serializedIndicator.FindProperty("collisionMask").intValue = 0;
             serializedIndicator.FindProperty("shapeType").enumValueIndex = (int)spec.shapeType;
@@ -156,10 +177,10 @@ namespace NewFPG.EditorTools
             serializedIndicator.FindProperty("warningTime").floatValue = 0f;
             serializedIndicator.FindProperty("duration").floatValue = 0f;
             serializedIndicator.FindProperty("fadeOut").floatValue = 0.12f;
-            serializedIndicator.FindProperty("previewPrefabResourceId").stringValue = string.Empty;
-            serializedIndicator.FindProperty("validMaterialResourceId").stringValue = "M_IND_OwnerValid";
+            serializedIndicator.FindProperty("previewPrefabResourceId").stringValue = spec.previewPrefabResourceId;
+            serializedIndicator.FindProperty("validMaterialResourceId").stringValue = spec.validMaterialResourceId;
             serializedIndicator.FindProperty("invalidMaterialResourceId").stringValue = "M_IND_Invalid";
-            serializedIndicator.FindProperty("confirmAudioResourceId").stringValue = "S_IND_ConfirmRelease";
+            serializedIndicator.FindProperty("confirmAudioResourceId").stringValue = spec.confirmAudioResourceId;
             serializedIndicator.FindProperty("invalidAudioResourceId").stringValue = "S_IND_Invalid";
             serializedIndicator.FindProperty("debugDraw").boolValue = false;
             serializedIndicator.ApplyModifiedPropertiesWithoutUndo();
@@ -212,6 +233,15 @@ namespace NewFPG.EditorTools
                 target.transform.position = new Vector3((i - 1) * 1.6f, 0.85f, 3.2f + i * 0.7f);
                 target.transform.localScale = new Vector3(0.58f, 0.85f, 0.58f);
                 target.GetComponent<Renderer>().sharedMaterial = CreateMaterial("HUD Debug Target Material " + i.ToString(), new Color(0.62f, 0.18f, 0.16f, 1f));
+
+                CombatVitals vitals = target.AddComponent<CombatVitals>();
+                SerializedObject serializedVitals = new SerializedObject(vitals);
+                serializedVitals.FindProperty("maxHealth").floatValue = 500f;
+                serializedVitals.FindProperty("startingHealth").floatValue = 500f;
+                serializedVitals.FindProperty("maxShield").floatValue = 0f;
+                serializedVitals.FindProperty("startingShield").floatValue = 0f;
+                serializedVitals.FindProperty("destroyOnDeath").boolValue = false;
+                serializedVitals.ApplyModifiedPropertiesWithoutUndo();
             }
         }
 
@@ -487,12 +517,21 @@ namespace NewFPG.EditorTools
             public readonly string iconPath;
             public readonly string indicatorAssetName;
             public readonly SkillIndicatorShapeType shapeType;
+            public readonly SkillIndicatorDefaultReleasePolicy tapPolicy;
             public readonly SkillIndicatorDefaultReleasePolicy holdPolicy;
+            public readonly SkillIndicatorInvalidReleasePolicy invalidReleasePolicy;
+            public readonly SkillIndicatorAimSource aimSource;
+            public readonly bool requireSurfaceHit;
+            public readonly SkillIndicatorPlacementMode placementMode;
             public readonly float range;
             public readonly float radius;
             public readonly float width;
             public readonly float length;
             public readonly float angle;
+            public readonly string previewPrefabResourceId;
+            public readonly string validMaterialResourceId;
+            public readonly string confirmAudioResourceId;
+            public readonly float damage;
 
             public DebugWeaponSpec(
                 string weaponAssetName,
@@ -505,19 +544,37 @@ namespace NewFPG.EditorTools
                 float radius,
                 float width,
                 float length,
-                float angle)
+                float angle,
+                SkillIndicatorDefaultReleasePolicy tapPolicy = SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget,
+                SkillIndicatorAimSource aimSource = SkillIndicatorAimSource.ScreenCursorRay,
+                bool requireSurfaceHit = true,
+                SkillIndicatorPlacementMode placementMode = SkillIndicatorPlacementMode.GroundSurface,
+                string previewPrefabResourceId = "",
+                string validMaterialResourceId = "M_IND_OwnerValid",
+                string confirmAudioResourceId = "S_IND_ConfirmRelease",
+                float damage = 0f,
+                SkillIndicatorInvalidReleasePolicy invalidReleasePolicy = SkillIndicatorInvalidReleasePolicy.FallbackToDefault)
             {
                 this.weaponAssetName = weaponAssetName;
                 this.displayName = displayName;
                 this.iconPath = iconPath;
                 this.indicatorAssetName = indicatorAssetName;
                 this.shapeType = shapeType;
+                this.tapPolicy = tapPolicy;
                 this.holdPolicy = holdPolicy;
+                this.invalidReleasePolicy = invalidReleasePolicy;
+                this.aimSource = aimSource;
+                this.requireSurfaceHit = requireSurfaceHit;
+                this.placementMode = placementMode;
                 this.range = range;
                 this.radius = radius;
                 this.width = width;
                 this.length = length;
                 this.angle = angle;
+                this.previewPrefabResourceId = previewPrefabResourceId;
+                this.validMaterialResourceId = validMaterialResourceId;
+                this.confirmAudioResourceId = confirmAudioResourceId;
+                this.damage = damage;
             }
         }
     }

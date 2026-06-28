@@ -48,8 +48,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Countdown danger placeholder. Runtime can animate material alpha or sweep
-    child rotation.
+  note: 倒计时危险区占位；运行时可动画材质透明度或旋转扫掠子物体。
 --- !u!33 &1706813450190609715
 MeshFilter:
   m_ObjectHideFlags: 0

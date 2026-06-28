@@ -1,0 +1,382 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 909ecce1afd5cb94e9cb6b56068beb8a, type: 3}
+  m_Name: ForgingUILayoutPreset
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Forging.ForgingUILayoutPreset
+  drawerOpenAnchoredPosition: {x: -36, y: 0}
+  drawerClosedAnchoredPosition: {x: 722, y: 0}
+  drawerToggleOpenAnchoredPosition: {x: -716, y: -4}
+  drawerToggleClosedAnchoredPosition: {x: -28, y: -4}
+  entries:
+  - path: MaterialHotspots
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    anchoredPosition3D: {x: 0, y: 0, z: 0}
+    sizeDelta: {x: 0, y: 0}
+    offsetMin: {x: 0, y: 0}
+    offsetMax: {x: 0, y: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: MaterialHotspots/MaterialSlot_stardust_gold
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: -1366, y: 0.5}
+    anchoredPosition3D: {x: -1366, y: 0.5, z: 0}
+    sizeDelta: {x: 318, y: 278}
+    offsetMin: {x: -1525, y: -138.5}
+    offsetMax: {x: -1207, y: 139.5}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: MaterialHotspots/MaterialSlot_stardust_gold/Icon
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 18}
+    anchoredPosition3D: {x: 0, y: 18, z: 0}
+    sizeDelta: {x: 187.20001, y: 158.40001}
+    offsetMin: {x: -93.600006, y: -61.200005}
+    offsetMax: {x: 93.600006, y: 97.200005}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: MaterialHotspots/MaterialSlot_stardust_gold/Label
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: -109}
+    anchoredPosition3D: {x: 0, y: -109, z: 0}
+    sizeDelta: {x: 366, y: 54}
+    offsetMin: {x: -183, y: -136}
+    offsetMax: {x: 183, y: -82}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: MaterialHotspots/MaterialSlot_young_wood_core
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: -790.5, y: -653}
+    anchoredPosition3D: {x: -790.5, y: -653, z: 0}
+    sizeDelta: {x: 308, y: 298}
+    offsetMin: {x: -944.5, y: -802}
+    offsetMax: {x: -636.5, y: -504}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: MaterialHotspots/MaterialSlot_young_wood_core/Icon
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 18}
+    anchoredPosition3D: {x: 0, y: 18, z: 0}
+    sizeDelta: {x: 180, y: 172.8}
+    offsetMin: {x: -90, y: -68.4}
+    offsetMax: {x: 90, y: 104.4}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: MaterialHotspots/MaterialSlot_young_wood_core/Label
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: -119}
+    anchoredPosition3D: {x: 0, y: -119, z: 0}
+    sizeDelta: {x: 356, y: 54}
+    offsetMin: {x: -178, y: -146}
+    offsetMax: {x: 178, y: -92}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ForgeBoardFrame
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 777.403, y: 0.0049388}
+    anchoredPosition3D: {x: 777.403, y: 0.0049388, z: 0}
+    sizeDelta: {x: 1937.3, y: 2159.9}
+    offsetMin: {x: -191.24701, y: -1079.9451}
+    offsetMax: {x: 1746.053, y: 1079.9548}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ForgeBoardFrame/BlueprintTitle
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0.000083923, y: 430.852}
+    anchoredPosition3D: {x: 0.000083923, y: 430.852, z: 0}
+    sizeDelta: {x: 684.972, y: 200.297}
+    offsetMin: {x: -342.4859, y: 330.7035}
+    offsetMax: {x: 342.48608, y: 531.0005}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ForgeBoardFrame/BlueprintGrid
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: -28}
+    anchoredPosition3D: {x: 0, y: -28, z: 0}
+    sizeDelta: {x: 540, y: 402}
+    offsetMin: {x: -270, y: -229}
+    offsetMax: {x: 270, y: 173}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ForgeBoardFrame/BlueprintGrid/PlacementPreview
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    anchoredPosition3D: {x: 0, y: 0, z: 0}
+    sizeDelta: {x: 0, y: 0}
+    offsetMin: {x: 0, y: 0}
+    offsetMax: {x: 0, y: 0}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ResultPanel
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 758, y: -800}
+    anchoredPosition3D: {x: 758, y: -800, z: 0}
+    sizeDelta: {x: 1100, y: 420.505}
+    offsetMin: {x: 208, y: -1010.2525}
+    offsetMax: {x: 1308, y: -589.7475}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ResultPanel/ResultText
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: -134, y: 0}
+    anchoredPosition3D: {x: -134, y: 0, z: 0}
+    sizeDelta: {x: -352, y: -56}
+    offsetMin: {x: 42, y: 28}
+    offsetMax: {x: -310, y: -28}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ResultPanel/ForgeButton
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 390, y: 48}
+    anchoredPosition3D: {x: 390, y: 48, z: 0}
+    sizeDelta: {x: 230, y: 82}
+    offsetMin: {x: 275, y: 7}
+    offsetMax: {x: 505, y: 89}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ResultPanel/ForgeButton/Label
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    anchoredPosition3D: {x: 0, y: 0, z: 0}
+    sizeDelta: {x: -28, y: -12}
+    offsetMin: {x: 14, y: 6}
+    offsetMax: {x: -14, y: -6}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ResultPanel/ClearButton
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 390, y: -54}
+    anchoredPosition3D: {x: 390, y: -54, z: 0}
+    sizeDelta: {x: 230, y: 74}
+    offsetMin: {x: 275, y: -91}
+    offsetMax: {x: 505, y: -17}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: ResultPanel/ClearButton/Label
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    anchoredPosition3D: {x: 0, y: 0, z: 0}
+    sizeDelta: {x: -28, y: -12}
+    offsetMin: {x: 14, y: 6}
+    offsetMax: {x: -14, y: -6}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: Status
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 751, y: -972}
+    anchoredPosition3D: {x: 751, y: -972, z: 0}
+    sizeDelta: {x: 1100, y: 58}
+    offsetMin: {x: 201, y: -1001}
+    offsetMax: {x: 1301, y: -943}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer
+    anchorMin: {x: 1, y: 0.5}
+    anchorMax: {x: 1, y: 0.5}
+    pivot: {x: 1, y: 0.5}
+    anchoredPosition: {x: 722, y: 0}
+    anchoredPosition3D: {x: 722, y: 0, z: 0}
+    sizeDelta: {x: 680, y: 980}
+    offsetMin: {x: 42, y: -490}
+    offsetMax: {x: 722, y: 490}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/DrawerTitle
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 398}
+    anchoredPosition3D: {x: 0, y: 398, z: 0}
+    sizeDelta: {x: 540, y: 80}
+    offsetMin: {x: -270, y: 358}
+    offsetMax: {x: 270, y: 438}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/DrawerHint
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 332}
+    anchoredPosition3D: {x: 0, y: 332, z: 0}
+    sizeDelta: {x: 540, y: 48}
+    offsetMin: {x: -270, y: 308}
+    offsetMax: {x: 270, y: 356}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: -56}
+    anchoredPosition3D: {x: 0, y: -56, z: 0}
+    sizeDelta: {x: 540, y: 560}
+    offsetMin: {x: -270, y: -336}
+    offsetMax: {x: 270, y: 224}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_taomu_sword
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 190}
+    anchoredPosition3D: {x: 0, y: 190, z: 0}
+    sizeDelta: {x: 540, y: 120}
+    offsetMin: {x: -270, y: 130}
+    offsetMax: {x: 270, y: 250}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_taomu_sword/Label
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 81, y: 0}
+    anchoredPosition3D: {x: 81, y: 0, z: 0}
+    sizeDelta: {x: -218, y: -40}
+    offsetMin: {x: 190, y: 20}
+    offsetMax: {x: -28, y: -20}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_taomu_sword/ShapePreview
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: -178, y: 0}
+    anchoredPosition3D: {x: -178, y: 0, z: 0}
+    sizeDelta: {x: 88, y: 88}
+    offsetMin: {x: -222, y: -44}
+    offsetMax: {x: -134, y: 44}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_heart_mirror
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 40}
+    anchoredPosition3D: {x: 0, y: 40, z: 0}
+    sizeDelta: {x: 540, y: 120}
+    offsetMin: {x: -270, y: -20}
+    offsetMax: {x: 270, y: 100}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_heart_mirror/Label
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 81, y: 0}
+    anchoredPosition3D: {x: 81, y: 0, z: 0}
+    sizeDelta: {x: -218, y: -40}
+    offsetMin: {x: 190, y: 20}
+    offsetMax: {x: -28, y: -20}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_heart_mirror/ShapePreview
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: -178, y: 0}
+    anchoredPosition3D: {x: -178, y: 0, z: 0}
+    sizeDelta: {x: 88, y: 88}
+    offsetMin: {x: -222, y: -44}
+    offsetMax: {x: -134, y: 44}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_fan
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: -110}
+    anchoredPosition3D: {x: 0, y: -110, z: 0}
+    sizeDelta: {x: 540, y: 120}
+    offsetMin: {x: -270, y: -170}
+    offsetMax: {x: 270, y: -50}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_fan/Label
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 81, y: 0}
+    anchoredPosition3D: {x: 81, y: 0, z: 0}
+    sizeDelta: {x: -218, y: -40}
+    offsetMin: {x: 190, y: 20}
+    offsetMax: {x: -28, y: -20}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawer/BlueprintList/Blueprint_fan/ShapePreview
+    anchorMin: {x: 0.5, y: 0.5}
+    anchorMax: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: -178, y: 0}
+    anchoredPosition3D: {x: -178, y: 0, z: 0}
+    sizeDelta: {x: 88, y: 88}
+    offsetMin: {x: -222, y: -44}
+    offsetMax: {x: -134, y: 44}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawerToggle
+    anchorMin: {x: 1, y: 0.5}
+    anchorMax: {x: 1, y: 0.5}
+    pivot: {x: 1, y: 0.5}
+    anchoredPosition: {x: -28, y: -4}
+    anchoredPosition3D: {x: -28, y: -4, z: 0}
+    sizeDelta: {x: 112, y: 280}
+    offsetMin: {x: -140, y: -144}
+    offsetMax: {x: -28, y: 136}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}
+  - path: BlueprintDrawerToggle/Label
+    anchorMin: {x: 0, y: 0}
+    anchorMax: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    anchoredPosition: {x: 0, y: 0}
+    anchoredPosition3D: {x: 0, y: 0, z: 0}
+    sizeDelta: {x: -28, y: -12}
+    offsetMin: {x: 14, y: 6}
+    offsetMax: {x: -14, y: -6}
+    localScale: {x: 1, y: 1, z: 1}
+    localEulerAngles: {x: -0, y: 0, z: 0}

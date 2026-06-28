@@ -259,6 +259,6 @@ MonoBehaviour:
   castOrigin: {fileID: 1848992493369915416}
   targetMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 311
   allowKeyboardShortcuts: 1
   combatEnabled: 0

@@ -7,6 +7,8 @@
 - `NewFPG/...` 菜单项、场景/Prefab 安装器和运行时探针。
 - 美术/材质/Blender 导入后的 Unity 侧修复工具。
 - 只在编辑器内运行的资源生成、动画安装、标签和序列化引用绑定。
+- 炼器配置同步、炼器工作台场景安装和炼器 Inspector 辅助，当前集中在 `ForgingConfigEditorUtility.cs`、`ForgingConfigEditors.cs` 和 `ForgingWorkbenchSceneInstaller.cs`。
+- Unity MCP / Unity-Skills 启动与本地自动化入口，当前集中在 `UnityMcpAutoStart.cs`。
 
 ## 边界
 
@@ -18,3 +20,5 @@
 
 - 修改安装器后，在 Unity 里执行对应菜单项，并检查 Console。
 - 影响 `LevelFlowDirector` 或 Combat 基础安装时，优先跑相关 Editor 测试，再手动检查 Player、Fish、FirstPersonWeaponView prefab 和当前打开场景绑定。
+- 改炼器配置同步或工作台安装器时，优先跑 `Assets/Tests/Editor/ForgingSystemEditorTests.cs`，再执行 `NewFPG/Forging/Install Lianqi Workbench` 检查场景绑定。
+- 改 Unity MCP 自动启动或本地 HTTP 传输配置时，优先跑 `Assets/Tests/Editor/UnityMcpAutoStartTests.cs`，再检查 Editor Console 或 `/health` 可达性。

@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Cone preview, scale for radius and rotate for facing.
+  note: 扇形预览；缩放控制半径，旋转控制朝向。
 --- !u!33 &5307052865132185930
 MeshFilter:
   m_ObjectHideFlags: 0

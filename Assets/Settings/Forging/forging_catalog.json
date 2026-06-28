@@ -1,0 +1,160 @@
+{
+  "version": "draft-2026-06-27",
+  "source": "Feishu wiki MMFdwgwLpirWwwkbwKYcNCAcntd, sheets 2e05e3 and fcqA1P",
+  "weaponBlueprints": [
+    {
+      "blueprintId": "taomu_sword",
+      "displayName": "桃木剑",
+      "skillLogicId": "weapon.taomu_sword.falling_sword",
+      "width": 3,
+      "height": 4,
+      "cells": [
+        { "x": 1, "y": 0 },
+        { "x": 1, "y": 1 },
+        { "x": 1, "y": 2 },
+        { "x": 0, "y": 3 },
+        { "x": 1, "y": 3 },
+        { "x": 2, "y": 3 }
+      ],
+      "skillScalings": [
+        { "valueType": "Damage", "element": "Wood", "coefficient": 1.0 }
+      ],
+      "runtime": {
+        "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_TaomuSword.asset",
+        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png",
+        "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset",
+        "resourceCost": 0.0,
+        "baseDamage": 0.0,
+        "cooldown": 0.3,
+        "range": 10.0,
+        "radius": 0.75
+      },
+      "skillDescription": "锁定范围内目标，从目标头顶落剑，造成 100% 木属性伤害。"
+    },
+    {
+      "blueprintId": "heart_mirror",
+      "displayName": "护心镜",
+      "skillLogicId": "weapon.heart_mirror.guard_bash",
+      "width": 3,
+      "height": 3,
+      "cells": [
+        { "x": 1, "y": 0 },
+        { "x": 0, "y": 1 },
+        { "x": 1, "y": 1 },
+        { "x": 2, "y": 1 },
+        { "x": 1, "y": 2 }
+      ],
+      "skillScalings": [
+        { "valueType": "Damage", "element": "Water", "coefficient": 0.1 },
+        { "valueType": "Shield", "element": "Wood", "coefficient": 0.2 }
+      ],
+      "runtime": {
+        "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_HeartMirror.asset",
+        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_RitualDagger.png",
+        "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Cone.asset",
+        "resourceCost": 0.0,
+        "baseDamage": 0.0,
+        "cooldown": 0.45,
+        "range": 7.0,
+        "radius": 0.7
+      },
+      "skillDescription": "近距离扇形攻击并击退，造成 10% 水属性伤害，并获得 20% 木属性护盾。"
+    },
+    {
+      "blueprintId": "fan",
+      "displayName": "扇子",
+      "skillLogicId": "weapon.fan.tornado_wave",
+      "width": 4,
+      "height": 3,
+      "cells": [
+        { "x": 0, "y": 0 },
+        { "x": 1, "y": 0 },
+        { "x": 2, "y": 0 },
+        { "x": 3, "y": 0 },
+        { "x": 1, "y": 1 },
+        { "x": 2, "y": 1 },
+        { "x": 1, "y": 2 },
+        { "x": 2, "y": 2 }
+      ],
+      "skillScalings": [
+        { "valueType": "Damage", "element": "Fire", "coefficient": 0.3 },
+        { "valueType": "Damage", "element": "Earth", "coefficient": 0.3 }
+      ],
+      "runtime": {
+        "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_Fan.asset",
+        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_MoonDao.png",
+        "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Line.asset",
+        "resourceCost": 0.0,
+        "baseDamage": 0.0,
+        "cooldown": 0.35,
+        "range": 9.0,
+        "radius": 0.45
+      },
+      "skillDescription": "直线发波形成旋风并击退，造成 30% 火属性 + 30% 土属性伤害。"
+    }
+  ],
+  "materials": [
+    {
+      "materialId": "stardust_gold",
+      "displayName": "星辰碎金",
+      "rarity": 1,
+      "value": 20,
+      "cells": [
+        { "x": 0, "y": 0 }
+      ],
+      "attributes": {
+        "metal": 10.0,
+        "water": 0.0,
+        "wood": 0.0,
+        "fire": 5.0,
+        "earth": 5.0
+      },
+      "neighborRules": [
+        {
+          "ruleType": "MultiplyElement",
+          "targetElement": "Wood",
+          "multiplier": 0.5,
+          "includeDiagonals": false,
+          "description": "相邻材料的木属性降低 50%。"
+        }
+      ],
+      "weaponBonuses": [
+        {
+          "bonusType": "ElementDamagePercentRange",
+          "element": "Metal",
+          "minPercent": 0.01,
+          "maxPercent": 0.05,
+          "description": "武器附加最终金属性 1%-5% 的金属性伤害。"
+        }
+      ],
+      "texturePath": "Assets/Art/UI/ForgingPSDImport/Layers/03_yellow_earth.png",
+      "uiSlot": {
+        "anchoredPosition": { "x": -1366.0, "y": 6.5 },
+        "size": { "x": 260.0, "y": 220.0 }
+      },
+      "description": "材料表第一项：形状 1，金 10 / 火 5 / 土 5。"
+    },
+    {
+      "materialId": "young_wood_core",
+      "displayName": "青木胚",
+      "rarity": 1,
+      "value": 20,
+      "cells": [
+        { "x": 0, "y": 0 }
+      ],
+      "attributes": {
+        "metal": 0.0,
+        "water": 0.0,
+        "wood": 20.0,
+        "fire": 0.0,
+        "earth": 0.0
+      },
+      "texturePath": "Assets/Art/UI/ForgingPSDImport/Layers/08_spirit_wood.png",
+      "uiSlot": {
+        "anchoredPosition": { "x": -790.5, "y": -647.0 },
+        "size": { "x": 250.0, "y": 240.0 }
+      },
+      "description": "临时验证材料，用来测试星辰碎金相邻木属性衰减。"
+    }
+  ]
+}

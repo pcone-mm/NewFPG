@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a81f9e6b892daaf44ab9529628ec162c, type: 3}
+  m_Name: taomu_sword
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Forging.ForgingWeaponBlueprintConfig
+  blueprintId: taomu_sword
+  displayName: "\u6843\u6728\u5251"
+  skillLogicId: weapon.taomu_sword.falling_sword
+  width: 3
+  height: 5
+  cells:
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+  - {x: 1, y: 2}
+  - {x: 0, y: 3}
+  - {x: 1, y: 3}
+  - {x: 2, y: 3}
+  - {x: 1, y: 4}
+  skillScalings:
+  - valueType: 0
+    element: 2
+    coefficient: 1
+  skillDescription: "\u9501\u5B9A\u8303\u56F4\u5185\u76EE\u6807\uFF0C\u4ECE\u76EE\u6807\u5934\u9876\u843D\u5251\uFF0C\u9020\u6210
+    100% \u6728\u5C5E\u6027\u4F24\u5BB3\u3002"
+  weaponDefinitionAsset: {fileID: 11400000, guid: 43182db9abb532c40a1cdda5ae3ff656, type: 2}
+  weaponDefinitionAssetPath: Assets/Settings/Forging/Weapons/WPN_TaomuSword.asset
+  hudIcon: {fileID: 21300000, guid: b815b2820e044b9ca79fd4157deb52bc, type: 3}
+  hudIconPath: Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png
+  indicatorConfig: {fileID: 11400000, guid: 63147d9372bb427cbf54cce368fa106d, type: 2}
+  indicatorConfigPath: Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset
+  releaseEffectPrefab: {fileID: 0}
+  releaseEffectPrefabPath: 
+  hitEffectPrefab: {fileID: 0}
+  hitEffectPrefabPath: 
+  resourceCost: 3
+  baseDamage: 0
+  cooldown: 0.3
+  range: 10
+  radius: 0.75

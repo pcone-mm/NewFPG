@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8adc3c6fe72b7fd4fb40fbce0a7ed61e, type: 3}
+  m_Name: WPN_HeartMirror
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
+  displayName: "\u62A4\u5FC3\u955C"
+  icon: {fileID: 21300000, guid: cfcd112288aa4c29aaea04119071dd0e, type: 3}
+  resourceCost: 0
+  damage: 0
+  cooldown: 0.45
+  range: 7
+  radius: 0.7
+  indicatorConfig: {fileID: 11400000, guid: e93627ba494f6fe49a6de0eb80395c29, type: 2}
+  releaseEffectPrefab: {fileID: 0}
+  hitEffectPrefab: {fileID: 0}
+  forgedRuntimeStats:
+    blueprintId: heart_mirror
+    displayName: "\u62A4\u5FC3\u955C"
+    skillLogicId: weapon.heart_mirror.guard_bash
+    attributes:
+      metal: 0
+      water: 0
+      wood: 0
+      fire: 0
+      earth: 0
+    damage: 0
+    shield: 0
+    bonuses: []

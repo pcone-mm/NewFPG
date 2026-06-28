@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 sealed class ReadmeEditor : Editor
 {
     const string k_ShowedReadmeSessionStateName = "ReadmeEditor.showedReadme";
-    const string k_ReadmeSourceDirectory = "Assets/TutorialInfo";
+    const string k_ReadmeSourceDirectory = "Assets/ThirdParty/TutorialInfo";
 
     static ReadmeEditor()
         => EditorApplication.delayCall += SelectReadmeAutomatically;
@@ -22,7 +22,7 @@ sealed class ReadmeEditor : Editor
 
             if (readme && !readme.loadedLayout)
             {
-                EditorUtility.LoadWindowLayout(Path.Combine(Application.dataPath, "TutorialInfo/Layout.wlt"));
+                EditorUtility.LoadWindowLayout(Path.Combine(Application.dataPath, "ThirdParty/TutorialInfo/Layout.wlt"));
                 readme.loadedLayout = true;
             }
         }

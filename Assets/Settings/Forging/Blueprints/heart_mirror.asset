@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a81f9e6b892daaf44ab9529628ec162c, type: 3}
+  m_Name: heart_mirror
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Forging.ForgingWeaponBlueprintConfig
+  blueprintId: heart_mirror
+  displayName: "\u62A4\u5FC3\u955C"
+  skillLogicId: weapon.heart_mirror.guard_bash
+  width: 3
+  height: 3
+  cells:
+  - {x: 1, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
+  - {x: 2, y: 1}
+  - {x: 1, y: 2}
+  skillScalings:
+  - valueType: 0
+    element: 1
+    coefficient: 0.1
+  - valueType: 1
+    element: 2
+    coefficient: 0.2
+  skillDescription: "\u8FD1\u8DDD\u79BB\u6247\u5F62\u653B\u51FB\u5E76\u51FB\u9000\uFF0C\u9020\u6210
+    10% \u6C34\u5C5E\u6027\u4F24\u5BB3\uFF0C\u5E76\u83B7\u5F97 20% \u6728\u5C5E\u6027\u62A4\u76FE\u3002"
+  weaponDefinitionAsset: {fileID: 11400000, guid: 2595487b69a4d65459749911c4365a5e, type: 2}
+  weaponDefinitionAssetPath: Assets/Settings/Forging/Weapons/WPN_HeartMirror.asset
+  hudIcon: {fileID: 21300000, guid: cfcd112288aa4c29aaea04119071dd0e, type: 3}
+  hudIconPath: Assets/Art/Weapons/HUD/Xianxia_RitualDagger.png
+  indicatorConfig: {fileID: 11400000, guid: e93627ba494f6fe49a6de0eb80395c29, type: 2}
+  indicatorConfigPath: Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Cone.asset
+  releaseEffectPrefab: {fileID: 0}
+  releaseEffectPrefabPath: 
+  hitEffectPrefab: {fileID: 0}
+  hitEffectPrefabPath: 
+  resourceCost: 3
+  baseDamage: 0
+  cooldown: 0.45
+  range: 7
+  radius: 0.7

@@ -103,7 +103,7 @@ namespace NewFPG.Combat.SkillIndicators
         {
             if (fallbackValidMaterial == null)
             {
-                fallbackValidMaterial = CreateFallbackMaterial(new Color(0.1f, 0.72f, 1f, 0.48f));
+                fallbackValidMaterial = CreateFallbackMaterial(new Color(0.1f, 0.72f, 1f, 0.82f));
             }
 
             return fallbackValidMaterial;
@@ -113,7 +113,7 @@ namespace NewFPG.Combat.SkillIndicators
         {
             if (fallbackInvalidMaterial == null)
             {
-                fallbackInvalidMaterial = CreateFallbackMaterial(new Color(1f, 0.12f, 0.08f, 0.52f));
+                fallbackInvalidMaterial = CreateFallbackMaterial(new Color(1f, 0.12f, 0.08f, 0.84f));
             }
 
             return fallbackInvalidMaterial;
@@ -146,6 +146,11 @@ namespace NewFPG.Combat.SkillIndicators
             if (material.HasProperty("_ZWrite"))
             {
                 material.SetFloat("_ZWrite", 0f);
+            }
+
+            if (material.HasProperty("_Cull"))
+            {
+                material.SetFloat("_Cull", 0f);
             }
 
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");

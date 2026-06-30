@@ -25,7 +25,7 @@ MonoBehaviour:
   placementMode: 0
   surfaceMask:
     serializedVersion: 2
-    m_Bits: 4294967007
+    m_Bits: 23
   collisionMask:
     serializedVersion: 2
     m_Bits: 0

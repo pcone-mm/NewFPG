@@ -1,0 +1,183 @@
+{
+  "version": "draft-2026-06-27",
+  "source": "Unity ScriptableObject forging configs",
+  "weaponBlueprints": [
+    {
+      "blueprintId": "taomu_sword",
+      "displayName": "桃木剑",
+      "skillLogicId": "weapon.taomu_sword.falling_sword",
+      "width": 3,
+      "height": 5,
+      "cells": [
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 3
+        },
+        {
+          "x": 1,
+          "y": 3
+        },
+        {
+          "x": 2,
+          "y": 3
+        },
+        {
+          "x": 1,
+          "y": 4
+        }
+      ],
+      "skillScalings": [
+        {
+          "valueType": "Damage",
+          "element": "Wood",
+          "coefficient": 1.0
+        }
+      ],
+      "runtime": {
+        "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_TaomuSword.asset",
+        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png",
+        "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset",
+        "releaseEffectPrefabPath": "",
+        "hitEffectPrefabPath": "",
+        "resourceCost": 0.0,
+        "baseDamage": 0.0,
+        "cooldown": 0.3,
+        "range": 10.0,
+        "radius": 0.75
+      },
+      "skillDescription": "锁定范围内目标，从目标头顶落剑，造成 100% 木属性伤害。"
+    },
+    {
+      "blueprintId": "heart_mirror",
+      "displayName": "护心镜",
+      "skillLogicId": "weapon.heart_mirror.guard_bash",
+      "width": 3,
+      "height": 3,
+      "cells": [
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 2,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 2
+        }
+      ],
+      "skillScalings": [
+        {
+          "valueType": "Damage",
+          "element": "Water",
+          "coefficient": 0.1
+        },
+        {
+          "valueType": "Shield",
+          "element": "Wood",
+          "coefficient": 0.2
+        }
+      ],
+      "runtime": {
+        "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_HeartMirror.asset",
+        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_RitualDagger.png",
+        "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Cone.asset",
+        "releaseEffectPrefabPath": "",
+        "hitEffectPrefabPath": "",
+        "resourceCost": 0.0,
+        "baseDamage": 0.0,
+        "cooldown": 0.45,
+        "range": 7.0,
+        "radius": 0.7
+      },
+      "skillDescription": "近距离扇形攻击并击退，造成 10% 水属性伤害，并获得 20% 木属性护盾。"
+    },
+    {
+      "blueprintId": "fan",
+      "displayName": "扇子",
+      "skillLogicId": "weapon.fan.tornado_wave",
+      "width": 4,
+      "height": 3,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        },
+        {
+          "x": 3,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": 1
+        }
+      ],
+      "skillScalings": [
+        {
+          "valueType": "Damage",
+          "element": "Fire",
+          "coefficient": 0.3
+        },
+        {
+          "valueType": "Damage",
+          "element": "Earth",
+          "coefficient": 0.3
+        }
+      ],
+      "runtime": {
+        "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_Fan.asset",
+        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_MoonDao.png",
+        "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Line.asset",
+        "releaseEffectPrefabPath": "",
+        "hitEffectPrefabPath": "",
+        "resourceCost": 0.0,
+        "baseDamage": 0.0,
+        "cooldown": 0.35,
+        "range": 9.0,
+        "radius": 0.45
+      },
+      "skillDescription": "直线发波形成旋风并击退，造成 30% 火属性 + 30% 土属性伤害。"
+    }
+  ]
+}

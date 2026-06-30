@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a964337764d6a048b007ce55fae95ba, type: 3}
+  m_Name: IND_HUD_Debug_TargetLock
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorConfig
+  abilityId: HUD_Debug_TargetLock
+  indicatorId: IND_HUD_Debug_TargetLock
+  ownerType: 0
+  inputMode: 1
+  tapPolicy: 5
+  holdPolicy: 5
+  invalidReleasePolicy: 0
+  aimSource: 1
+  requireSurfaceHit: 0
+  clampToRange: 1
+  placementMode: 1
+  surfaceMask:
+    serializedVersion: 2
+    m_Bits: 23
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  shapeType: 1
+  range: 10
+  radius: 0.75
+  width: 1.2
+  length: 10
+  angle: 90
+  height: 1.8
+  groundOffset: 0.06
+  tapMaxDuration: 0.16
+  holdEnterDelay: 0.12
+  castDelay: 0
+  warningTime: 0
+  duration: 0
+  fadeOut: 0.12
+  previewPrefabResourceId: PF_IND_TargetReticle
+  validMaterialResourceId: M_IND_TetherLine
+  invalidMaterialResourceId: M_IND_Invalid
+  confirmAudioResourceId: S_IND_TargetLock
+  invalidAudioResourceId: S_IND_Invalid
+  debugDraw: 0

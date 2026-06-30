@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Ground circle preview.
+  note: 地面圆形范围预览。
 --- !u!33 &8548513258363099958
 MeshFilter:
   m_ObjectHideFlags: 0

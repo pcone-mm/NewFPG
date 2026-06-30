@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d05b16de3db42542a7e2a9d630282e6, type: 3}
+  m_Name: stardust_gold
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Forging.ForgingMaterialConfig
+  materialId: stardust_gold
+  displayName: "\u661F\u8FB0\u788E\u91D1"
+  rarity: 1
+  value: 20
+  shapeWidth: 2
+  shapeHeight: 2
+  cells:
+  - {x: 1, y: 1}
+  - {x: 0, y: 1}
+  - {x: 1, y: 0}
+  attributes:
+    metal: 10
+    water: 0
+    wood: 0
+    fire: 5
+    earth: 5
+  neighborRules:
+  - ruleType: 1
+    targetElement: 2
+    multiplier: 0.5
+    includeDiagonals: 0
+    description: "\u76F8\u90BB\u6750\u6599\u7684\u6728\u5C5E\u6027\u964D\u4F4E 50%\u3002"
+  weaponBonuses:
+  - bonusType: 1
+    element: 0
+    minPercent: 0.01
+    maxPercent: 0.05
+    description: "\u6B66\u5668\u9644\u52A0\u6700\u7EC8\u91D1\u5C5E\u6027 1%-5% \u7684\u91D1\u5C5E\u6027\u4F24\u5BB3\u3002"
+  texture: {fileID: 2800000, guid: dff571791e7d7c44c8ea6026b35c0343, type: 3}
+  texturePath: Assets/Art/UI/ForgingPSDImport/Layers/03_yellow_earth.png
+  uiSlot:
+    anchoredPosition: {x: -1366, y: 6.5}
+    size: {x: 260, y: 220}
+  description: "\u6750\u6599\u8868\u7B2C\u4E00\u9879\uFF1A\u5F62\u72B6 1\uFF0C\u91D1
+    10 / \u706B 5 / \u571F 5\u3002"

@@ -283,7 +283,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Monster attack telegraph circle.
+  note: 怪物攻击预警圆形范围。
 --- !u!33 &7914095018855671393
 MeshFilter:
   m_ObjectHideFlags: 0

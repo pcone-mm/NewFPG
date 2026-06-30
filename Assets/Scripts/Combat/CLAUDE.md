@@ -7,6 +7,7 @@
 - 生命、护盾、受击、死亡和资源池组件。
 - 武器定义、玩家施法、冷却、消耗和命中结算。
 - 敌人攻击请求、攻击预警和伤害投递。
+- 技能指示器输入、预览、瞄准求解、渲染池和临时资源索引。
 - 临时战斗 HUD、玩家受击反馈与第一人称武器视图的衔接。
 
 ## 边界
@@ -14,6 +15,7 @@
 - 房间流程、门选择、奖励预览、敌人生成节奏和相机状态切换属于 `Assets/Scripts/Level/`。
 - 旧神器自动释放、目标选择和不依赖场景物体的领域规则仍属于 `Assets/Scripts/Battle/`。
 - 只服务某个 prefab 的引用假设要在对应组件序列化字段或安装脚本附近保持清晰，不要写进全局规则。
+- `SkillIndicators/` 子目录属于 `NewFPG.Combat.SkillIndicators`，资源引用通过 `SkillIndicatorConfig` 和 `SkillIndicatorTemporaryArtIndex` 的字符串 ID 解析；改 ID 时同步检查 `Assets/Art/SkillIndicators/Temporary/` 和 `Assets/Settings/Combat/HudDebug/`。
 
 ## 已实现反馈
 
@@ -28,5 +30,6 @@
 
 - 修改后等待 Unity 编译并检查 Console。
 - 改生命、伤害、施法、敌人攻击、玩家受击反馈或 HUD 时，优先跑相关 Editor 测试。
+- 改技能指示器配置、瞄准或临时资源索引时，优先跑 `Assets/Tests/Editor/SkillIndicatorSystemEditorTests.cs`，再打开 `CombatHudWeaponDebug.unity` 做视觉检查。
 - 没有自动覆盖时，在场景里验证玩家武器、鱼怪攻击预警、受击反馈和资源/血条刷新。
 - 改 prefab 绑定时同步检查对应 `.meta` 和序列化引用，不要手动大范围重写 prefab YAML。

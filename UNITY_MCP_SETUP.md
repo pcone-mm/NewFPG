@@ -7,10 +7,10 @@ This project is wired to use [`MCP for Unity`](https://github.com/CoplayDev/unit
 `Packages/manifest.json` includes:
 
 ```json
-"com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v9.7.1"
+"com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v9.7.3"
 ```
 
-The package is pinned to `v9.7.1` for reproducible installs. If you want to follow upstream continuously, switch the suffix to `#main`.
+The package is pinned to `v9.7.3` for reproducible installs. If you want to follow upstream continuously, switch the suffix to `#main`.
 
 ## Local prerequisites
 

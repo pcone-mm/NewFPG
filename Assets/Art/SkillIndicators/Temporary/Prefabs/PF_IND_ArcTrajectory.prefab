@@ -78,8 +78,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Arc path placeholder. Runtime can replace LineRenderer positions with sampled
-    projectile path.
+  note: 抛物线轨迹占位；运行时可用采样后的投射物路径替换 LineRenderer 点位。
 --- !u!120 &744465518989709696
 LineRenderer:
   serializedVersion: 3

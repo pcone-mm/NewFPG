@@ -47,7 +47,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db02899a06bb81040a1dd73d103b6d28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtNote
-  note: Persistent area placeholder.
+  note: 持续区域占位预览。
 --- !u!33 &3764966000225839353
 MeshFilter:
   m_ObjectHideFlags: 0

@@ -56,7 +56,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -110,12 +110,12 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: b8925796b579fb547b3f4275744e202e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 062eec3b4b7c47a89b4be43d8f56e16e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 2.76, y: 7.45}
+  m_Size: {x: 5.48, y: 9.81}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -130,7 +130,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f2b91752437c3c4c84a58d47ec3991f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Characters.PlayerCharacterController
   moveSpeed: 4.5
   acceleration: 40
@@ -197,10 +197,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1.38
-  m_Height: 7.45
+  m_Radius: 2.74
+  m_Height: 9.81
   m_Direction: 1
-  m_Center: {x: 0, y: 3.725, z: 0}
+  m_Center: {x: 0, y: 4.905, z: 0}
 --- !u!114 &5990160127804493065
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -211,7 +211,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 22fffc660c0adc24f9f38ae928c401b7, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitals
   maxHealth: 100
   startingHealth: 100
@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8724df2b569f1724fbeef34855d16cad, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatResourcePool
   maxResource: 10
   startingResource: 5
@@ -251,7 +251,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e7e3e3ed539bb514a81870a53b063a1d, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.PlayerWeaponCaster
   weapons:
   - {fileID: 11400000, guid: 07f6e81e7ccefc84dafa35e280471dcf, type: 2}
@@ -259,6 +259,6 @@ MonoBehaviour:
   castOrigin: {fileID: 1848992493369915416}
   targetMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 311
   allowKeyboardShortcuts: 1
   combatEnabled: 0

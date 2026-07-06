@@ -5,6 +5,8 @@ using NewFPG.Characters;
 using NewFPG.Combat;
 using NewFPG.Monsters;
 using NewFPG.Prototype;
+using Pathfinding;
+using UnityEngine.Serialization;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -14,43 +16,101 @@ namespace NewFPG.Level
 {
     public sealed class LevelFlowDirector : MonoBehaviour
     {
-        [Header("Route")]
+        [Header("路线配置")]
+        [Tooltip("当前 Director 运行的路线标识，用于和绑定的 LevelRouteTable 做一致性检查。")]
         [SerializeField] private LevelRouteId routeId = LevelRouteId.UndergroundFirstFloor;
+
+        [Tooltip("路线表：配置起始房间、房间触发方式、选择项和出口门。")]
+        [SerializeField] private LevelRouteTable routeTable;
+
+        [Tooltip("是否在 Start 时自动进入路线。测试或手动调试时可以关闭。")]
         [SerializeField] private bool autoStart = true;
 
-        [Header("Scene References")]
+        [Tooltip("刷怪表：房间通过 encounterId 到这里查找波次和怪物配置。")]
+        [SerializeField] private LevelEncounterTable encounterTable;
+
+        [Header("场景引用")]
+        [Tooltip("玩家 Transform。为空时会在场景中查找 PlayerCharacterController。")]
         [SerializeField] private Transform player;
-        [SerializeField] private Transform enemyPrefab;
+
+        [Tooltip("怪物刷点。为空时会按玩家前方的环形 fallback 位置生成。")]
         [SerializeField] private Transform[] enemySpawnPoints;
+
+        [Tooltip("房间锚点。进入第 N 个房间时会把玩家移动到对应锚点。")]
         [SerializeField] private Transform[] roomAnchors;
+
+        [Tooltip("相机模式控制器。进战斗切 Battle，清房/探索切 Explore。")]
         [SerializeField] private CinemachineCameraModeController cameraModeController;
+
+        [Tooltip("第一人称武器表现。战斗时会挂到当前可用相机下。")]
         [SerializeField] private PrototypeFirstPersonWeaponView weaponView;
+
+        [Tooltip("武器战斗 HUD。为空时会尝试从 weaponView 上获取或添加。")]
         [SerializeField] private PrototypeWeaponCombatHud weaponCombatHud;
+
+        [Tooltip("怪物战斗 HUD。为空时会在 Director 子物体中查找或创建。")]
+        [SerializeField] private MonsterCombatHud monsterCombatHud;
+
+        [Tooltip("怪物行为树节点“移动到战斗区域”使用的可选战斗区域图。")]
+        [SerializeField] private BattleArenaZoneMap battleArenaZoneMap;
+
+        [Tooltip("Optional A* root used for monster movement. Created at runtime when missing.")]
+        [SerializeField] private AstarPath astarPath;
+
+        [FormerlySerializedAs("autoBuildNavMeshSurface")]
+        [SerializeField] private bool autoBuildAstarGraph = true;
+
+        [Header("A* Runtime Recast")]
+        [SerializeField, Min(0.05f)] private float astarCellSize = 0.25f;
+        [SerializeField, Min(0.05f)] private float astarCharacterRadius = 0.35f;
+        [SerializeField, Min(0.1f)] private float astarCharacterHeight = 1.2f;
+        [SerializeField, Min(0f)] private float astarWalkableClimb = 0.35f;
+        [SerializeField, Range(0f, 90f)] private float astarMaxSlope = 45f;
+        [SerializeField] private Vector3 astarGraphBoundsOffset = new Vector3(0f, 2f, 0f);
+        [SerializeField] private Vector3 astarGraphBoundsSize = new Vector3(24f, 8f, 24f);
+        [Tooltip("Only these layers are scanned by A* Recast. Nothing means A* scans nothing.")]
+        [InspectorName("Astar Graph Layer Mask")]
+        [SerializeField] private LayerMask astarGraphScanLayerMask = 0;
+
+        [Tooltip("关卡流程 HUD。为空时会在 Director 子物体中查找或创建。")]
         [SerializeField] private LevelFlowHud hud;
+
+        [Tooltip("房间交互物 prefab。为空时会创建一个临时球体交互物。")]
         [SerializeField] private LevelRoomInteractable roomInteractablePrefab;
 
-        [Header("Timing")]
+        [Header("时序")]
+        [Tooltip("进入房间后，到开始执行房间内容前的等待时间。")]
         [SerializeField, Min(0f)] private float roomIntroSeconds = 0.75f;
+
+        [Tooltip("战斗结束后，到房间结算/开门前的等待时间。")]
         [SerializeField, Min(0f)] private float combatEndCameraDelay = 0.8f;
+
+        [Tooltip("选择项或交互触发后，到执行完成方式前的等待时间。")]
         [SerializeField, Min(0f)] private float eventResolveSeconds = 0.45f;
+
+        [Tooltip("没有显式刷点时，fallback 环形刷怪位置的半径。")]
         [SerializeField, Min(0f)] private float enemySpawnRadius = 1.6f;
 
-        [Header("Enemy Defaults")]
-        [SerializeField, Min(1f)] private float normalEnemyHp = 80f;
-        [SerializeField, Min(1f)] private float eliteEnemyHp = 150f;
-        [SerializeField] private Sprite fishHitSprite;
-
-        [Header("Room Interaction")]
+        [Header("房间交互")]
+        [Tooltip("自动生成交互物时，放在玩家前方的距离。")]
         [SerializeField, Min(0.5f)] private float interactableForwardOffset = 2.2f;
+
+        [Tooltip("自动生成交互物时，距离地面的高度。")]
         [SerializeField, Min(0.5f)] private float interactableHeight = 0.8f;
 
-        [Header("Combat Presentation")]
+        [Header("战斗表现")]
+        [Tooltip("进入战斗时是否隐藏玩家视觉渲染器。")]
         [SerializeField] private bool hidePlayerVisualsDuringCombat = true;
+
+        [Tooltip("进入战斗时是否禁用玩家移动控制。")]
         [SerializeField] private bool disablePlayerMovementDuringCombat = true;
+
+        [Tooltip("进入战斗时是否冻结玩家物理，退出战斗后恢复。")]
         [SerializeField] private bool freezePlayerPhysicsDuringCombat = true;
 
         private readonly Dictionary<string, LevelRoomDefinition> roomsById = new Dictionary<string, LevelRoomDefinition>();
         private readonly List<LevelCombatant> activeEnemies = new List<LevelCombatant>();
+        private readonly System.Random encounterRandom = new System.Random();
         private LevelRoomDefinition currentRoom;
         private LevelRoomInteractable currentRoomInteractable;
         private PlayerCharacterController playerController;
@@ -73,6 +133,9 @@ namespace NewFPG.Level
         private int roomDepth;
         private float damageBonus;
         private int gold;
+        private LevelEncounterDefinition currentEncounter;
+        private int currentWaveIndex = -1;
+        private string pendingEncounterIdOverride;
         private bool starting;
         private PendingFlowAction pendingAction;
         private LevelRoomDefinition pendingRoom;
@@ -91,13 +154,18 @@ namespace NewFPG.Level
             cameraModeController = FindFirstObjectByType<CinemachineCameraModeController>();
             weaponView = FindFirstObjectByType<PrototypeFirstPersonWeaponView>();
             weaponCombatHud = weaponView != null ? weaponView.GetComponent<PrototypeWeaponCombatHud>() : null;
+            monsterCombatHud = GetComponentInChildren<MonsterCombatHud>();
+            astarPath = FindFirstObjectByType<AstarPath>(FindObjectsInactive.Include);
             hud = GetComponentInChildren<LevelFlowHud>();
+            ResolveDefaultRouteTable();
+            ResolveDefaultEncounterTable();
         }
 
         private void Awake()
         {
             ResolveReferences();
-            BuildUndergroundFirstFloorRoute();
+            EnsureRuntimeAstarGraph();
+            BuildRouteIndex();
             ConfigureWeaponHud();
         }
 
@@ -112,6 +180,7 @@ namespace NewFPG.Level
         private void Update()
         {
             HandleDebugInput();
+            PruneDeadEnemiesAndAdvanceIfCleared();
 
             if (pendingAction == PendingFlowAction.None || Time.unscaledTime < pendingActionAt)
             {
@@ -131,6 +200,9 @@ namespace NewFPG.Level
                 case PendingFlowAction.StartCombat:
                     BeginCombatRoom(room);
                     break;
+                case PendingFlowAction.StartNextWave:
+                    StartCurrentWave(room);
+                    break;
                 case PendingFlowAction.ResolveRoom:
                     ResolveRoom();
                     break;
@@ -141,6 +213,11 @@ namespace NewFPG.Level
         {
             SetPlayerHiddenForCombat(false);
             UnsubscribeEnemies();
+            if (monsterCombatHud != null)
+            {
+                monsterCombatHud.Clear();
+            }
+
             ClearRoomInteractable();
         }
 
@@ -158,10 +235,26 @@ namespace NewFPG.Level
             roomDepth = 0;
             damageBonus = 0f;
             gold = 0;
+            currentEncounter = null;
+            currentWaveIndex = -1;
+            pendingEncounterIdOverride = null;
             ClearRoomInteractable();
             ClearActiveEnemies();
             SetCombatPresentationActive(false);
-            EnterRoom("b1_entry_combat");
+            BuildRouteIndex();
+            if (routeTable == null)
+            {
+                CompleteRoute("Missing LevelRouteTable.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(routeTable.StartRoomId))
+            {
+                CompleteRoute("LevelRouteTable has no start room.");
+                return;
+            }
+
+            EnterRoom(routeTable.StartRoomId);
         }
 
         [ContextMenu("Debug Select First Room Choice")]
@@ -183,9 +276,18 @@ namespace NewFPG.Level
             {
                 if (activeEnemies[i] != null && !activeEnemies[i].IsDead)
                 {
-                    activeEnemies[i].ApplyDamage(activeEnemies[i].Hp, activeEnemies[i].transform.position, gameObject);
+                    IDamageable damageable = activeEnemies[i].GetComponent<IDamageable>();
+                    if (IsDamageableAlive(damageable))
+                    {
+                        Vector3 hitPoint = damageable.AimTransform != null
+                            ? damageable.AimTransform.position
+                            : activeEnemies[i].transform.position;
+                        damageable.ReceiveDamage(new DamagePayload(FatalDamageFor(activeEnemies[i], damageable), gameObject, hitPoint));
+                    }
                 }
             }
+
+            PruneDeadEnemiesAndAdvanceIfCleared();
         }
 
         private void HandleDebugInput()
@@ -287,7 +389,7 @@ namespace NewFPG.Level
                 return false;
             }
 
-            BeginEventRoom(currentRoom);
+            BeginTriggeredRoom(currentRoom);
             return true;
         }
 
@@ -342,23 +444,50 @@ namespace NewFPG.Level
                 return;
             }
 
-            if (room.choices != null && room.choices.Count > 0)
+            pendingEncounterIdOverride = null;
+            if (ShouldWaitForRoomInteraction(room))
             {
                 BeginRoomInteraction(room);
                 return;
             }
 
-            if (room.IsCombatRoom)
+            BeginTriggeredRoom(room);
+        }
+
+        private void BeginTriggeredRoom(LevelRoomDefinition room)
+        {
+            if (room == null || room != currentRoom)
             {
-                BeginCombatRoom(room);
                 return;
             }
 
-            BeginEventRoom(room);
+            if (HasRoomChoices(room))
+            {
+                BeginEventRoom(room);
+                return;
+            }
+
+            ClearRoomInteractable();
+            ExecuteRoomCompletion(room, null);
+        }
+
+        private static bool ShouldWaitForRoomInteraction(LevelRoomDefinition room)
+        {
+            return room != null && room.triggerMode == LevelRoomTriggerMode.OnInteract;
+        }
+
+        private static bool HasRoomChoices(LevelRoomDefinition room)
+        {
+            return room != null && room.choices != null && room.choices.Count > 0;
         }
 
         private void BeginCombatRoom(LevelRoomDefinition room)
         {
+            if (room == null || room != currentRoom)
+            {
+                return;
+            }
+
             state = LevelFlowState.InCombat;
             hud.SetStatus(
                 "战斗：" + room.displayName,
@@ -369,8 +498,10 @@ namespace NewFPG.Level
                 cameraModeController.SwitchToBattle();
             }
 
-            SpawnEncounter(room);
             SetCombatPresentationActive(true);
+            ActivateBattleArenaZoneMap();
+            EnsureRuntimeAstarGraph();
+            SpawnEncounter(room);
         }
 
         private void BeginRoomInteraction(LevelRoomDefinition room)
@@ -459,7 +590,7 @@ namespace NewFPG.Level
 
             if (room.choices == null || room.choices.Count == 0)
             {
-                ResolveRoom();
+                ExecuteRoomCompletion(room, null);
                 return;
             }
 
@@ -488,11 +619,41 @@ namespace NewFPG.Level
                 gold += choice.goldDelta;
             }
 
+            string encounterOverride = string.IsNullOrWhiteSpace(choice.encounterIdOverride)
+                ? null
+                : choice.encounterIdOverride;
             hud.SetStatus(
                 "获得：" + choice.displayName,
                 "伤害加成 +" + Mathf.RoundToInt(damageBonus * 100f) + "%\n金币 " + gold);
+            ExecuteRoomCompletion(currentRoom, encounterOverride);
+        }
+
+        private void ExecuteRoomCompletion(LevelRoomDefinition room, string encounterOverride)
+        {
+            if (room == null || room != currentRoom)
+            {
+                return;
+            }
+
+            ClearRoomInteractable();
+            pendingEncounterIdOverride = encounterOverride;
             state = LevelFlowState.ResolvingRoom;
-            Schedule(currentRoom != null && currentRoom.IsCombatRoom ? PendingFlowAction.StartCombat : PendingFlowAction.ResolveRoom, currentRoom, eventResolveSeconds);
+
+            switch (room.completionMode)
+            {
+                case LevelRoomCompletionMode.StartEncounter:
+                    hud.SetStatus(
+                        "Triggered: " + room.displayName,
+                        "Combat is starting.");
+                    Schedule(PendingFlowAction.StartCombat, room, eventResolveSeconds);
+                    break;
+                case LevelRoomCompletionMode.CompleteRoute:
+                    CompleteRoute("Route complete.");
+                    break;
+                default:
+                    Schedule(PendingFlowAction.ResolveRoom, room, eventResolveSeconds);
+                    break;
+            }
         }
 
         private void ResolveRoom()
@@ -529,6 +690,11 @@ namespace NewFPG.Level
         private void CompleteRoute(string message)
         {
             state = LevelFlowState.Complete;
+            currentEncounter = null;
+            currentWaveIndex = -1;
+            pendingEncounterIdOverride = null;
+            pendingAction = PendingFlowAction.None;
+            pendingRoom = null;
             SetCombatPresentationActive(false);
             if (cameraModeController != null)
             {
@@ -543,77 +709,249 @@ namespace NewFPG.Level
         private void SpawnEncounter(LevelRoomDefinition room)
         {
             ClearActiveEnemies();
-            int count = Mathf.Max(1, room.enemyCount);
-            for (int i = 0; i < count; i++)
+            currentEncounter = null;
+            currentWaveIndex = -1;
+
+            string encounterId = !string.IsNullOrWhiteSpace(pendingEncounterIdOverride)
+                ? pendingEncounterIdOverride
+                : room != null ? room.encounterId : null;
+            pendingEncounterIdOverride = null;
+
+            if (room == null)
             {
-                Vector3 spawnPosition = ResolveEnemySpawnPosition(i, count);
-                Transform enemyTransform = SpawnEnemy(spawnPosition, i);
-                LevelCombatant combatant = EnsureCombatant(enemyTransform.gameObject, room);
-                combatant.Died += OnEnemyDied;
-                activeEnemies.Add(combatant);
+                FailEncounterConfiguration("Cannot start encounter for a null room.");
+                return;
             }
+
+            if (encounterTable == null)
+            {
+                FailEncounterConfiguration("Missing LevelEncounterTable.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(encounterId))
+            {
+                FailEncounterConfiguration("Room has no encounter id: " + room.roomId);
+                return;
+            }
+
+            currentEncounter = encounterTable.FindEncounter(encounterId);
+            if (currentEncounter == null)
+            {
+                FailEncounterConfiguration("Level encounter table has no encounter id: " + encounterId);
+                return;
+            }
+
+            if (currentEncounter.waves == null || currentEncounter.waves.Count == 0)
+            {
+                FailEncounterConfiguration("Level encounter has no waves: " + encounterId);
+                return;
+            }
+
+            currentWaveIndex = 0;
+            StartCurrentWave(room);
         }
 
-        private Transform SpawnEnemy(Vector3 position, int index)
+        private void StartCurrentWave(LevelRoomDefinition room)
         {
-            position = FlattenEnemySpawnPosition(position);
-
-            if (enemyPrefab != null)
+            if (room == null || room != currentRoom || state != LevelFlowState.InCombat)
             {
-                Transform spawned = Instantiate(enemyPrefab, position, enemyPrefab.rotation);
-                spawned.name = enemyPrefab.name + "_RoomEnemy_" + index;
-                spawned.gameObject.SetActive(true);
-                return spawned;
+                return;
             }
 
-            GameObject enemyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            enemyObject.name = "PrototypeEnemy_" + index;
-            enemyObject.transform.position = position;
-            enemyObject.transform.localScale = new Vector3(1.1f, 1.4f, 1.1f);
-            Rigidbody body = enemyObject.AddComponent<Rigidbody>();
-            body.useGravity = false;
-            body.constraints = RigidbodyConstraints.FreezeRotation | RigidbodyConstraints.FreezePositionY;
-            return enemyObject.transform;
+            if (currentEncounter == null
+                || currentEncounter.waves == null
+                || currentWaveIndex < 0
+                || currentWaveIndex >= currentEncounter.waves.Count)
+            {
+                FailEncounterConfiguration("Invalid encounter wave state.");
+                return;
+            }
+
+            LevelEncounterWave wave = currentEncounter.waves[currentWaveIndex];
+            LevelSpawnRequest[] requests = LevelEncounterResolver.Resolve(wave, encounterRandom);
+            if (requests == null || requests.Length == 0)
+            {
+                FailEncounterConfiguration("Level encounter wave resolved no spawn requests: " + currentEncounter.encounterId + "/" + wave.waveId);
+                return;
+            }
+
+            for (int i = 0; i < requests.Length; i++)
+            {
+                Vector3 spawnPosition = ResolveEnemySpawnPosition(i, requests.Length);
+                Transform enemyTransform = SpawnEnemy(spawnPosition, i, requests[i]);
+                if (enemyTransform == null)
+                {
+                    FailEncounterConfiguration("Level spawn request has no monster prefab: " + requests[i].MonsterId);
+                    return;
+                }
+
+                LevelCombatant combatant = EnsureCombatant(enemyTransform.gameObject, room, requests[i]);
+                TrackActiveEnemy(combatant);
+            }
+
+            hud.SetStatus(
+                "Combat: " + room.displayName,
+                "Wave " + (currentWaveIndex + 1) + " / " + currentEncounter.waves.Count);
+        }
+
+        private void FailEncounterConfiguration(string message)
+        {
+            Debug.LogError(message, this);
+            ClearActiveEnemies();
+            currentEncounter = null;
+            currentWaveIndex = -1;
+            SetCombatPresentationActive(false);
+            state = LevelFlowState.ResolvingRoom;
+            Schedule(PendingFlowAction.ResolveRoom, currentRoom, eventResolveSeconds);
+        }
+
+        private void TrackActiveEnemy(LevelCombatant combatant)
+        {
+            if (combatant == null)
+            {
+                return;
+            }
+
+            combatant.Died -= OnEnemyDied;
+            combatant.Died += OnEnemyDied;
+            activeEnemies.Add(combatant);
+        }
+
+        private Transform SpawnEnemy(Vector3 position, int index, LevelSpawnRequest request)
+        {
+            position = FlattenEnemySpawnPosition(position);
+            if (request.MonsterPrefab != null)
+            {
+                GameObject spawned = Instantiate(request.MonsterPrefab, position, request.MonsterPrefab.transform.rotation);
+                spawned.name = request.MonsterPrefab.name + "_RoomEnemy_" + index;
+                MonsterConfigBinding binding = spawned.GetComponent<MonsterConfigBinding>();
+                if (binding != null)
+                {
+                    binding.SetHomePositionToCurrent();
+                }
+
+                spawned.SetActive(true);
+                return spawned.transform;
+            }
+
+            return null;
+        }
+
+        private LevelCombatant EnsureCombatant(GameObject enemyObject, LevelRoomDefinition room, LevelSpawnRequest request)
+        {
+            return EnsureCombatant(enemyObject, room, request.HasMaxHealthOverride, request.MaxHealthOverride);
         }
 
         private LevelCombatant EnsureCombatant(GameObject enemyObject, LevelRoomDefinition room)
         {
+            return EnsureCombatant(enemyObject, room, false, 1f);
+        }
+
+        private LevelCombatant EnsureCombatant(GameObject enemyObject, LevelRoomDefinition room, bool overrideMaxHealth, float maxHealth)
+        {
+            CombatVitals vitals = enemyObject.GetComponent<CombatVitals>();
+            if (vitals == null)
+            {
+                vitals = enemyObject.AddComponent<CombatVitals>();
+            }
+
             LevelCombatant combatant = enemyObject.GetComponent<LevelCombatant>();
             if (combatant == null)
             {
                 combatant = enemyObject.AddComponent<LevelCombatant>();
             }
 
-            float hp = room.roomType == LevelRoomType.EliteCombat || room.roomType == LevelRoomType.Boss
-                ? eliteEnemyHp
-                : normalEnemyHp;
-            combatant.ResetHp(hp);
-
-            if (fishHitSprite != null)
+            if (overrideMaxHealth)
             {
-                combatant.SetHitSprite(fishHitSprite);
+                combatant.ResetHp(maxHealth);
+            }
+            else
+            {
+                vitals.ResetVitals();
             }
 
-            FishMonsterController fish = enemyObject.GetComponent<FishMonsterController>();
-            if (fish != null && player != null)
-            {
-                fish.Target = player;
-            }
-
-            FishAttackController fishAttack = enemyObject.GetComponent<FishAttackController>();
-            if (fishAttack != null && player != null)
-            {
-                fishAttack.Target = player;
-            }
+            TrackMonsterHud(combatant, room);
 
             return combatant;
         }
 
         private void OnEnemyDied(LevelCombatant enemy)
         {
+            if (enemy != null)
+            {
+                enemy.Died -= OnEnemyDied;
+                if (monsterCombatHud != null)
+                {
+                    monsterCombatHud.Untrack(enemy);
+                }
+            }
+
             activeEnemies.Remove(enemy);
             if (activeEnemies.Count > 0 || state != LevelFlowState.InCombat)
             {
+                return;
+            }
+
+            AdvanceEncounterOrComplete();
+        }
+
+        private void PruneDeadEnemiesAndAdvanceIfCleared()
+        {
+            if (activeEnemies.Count == 0)
+            {
+                return;
+            }
+
+            bool removed = false;
+            for (int i = activeEnemies.Count - 1; i >= 0; i--)
+            {
+                LevelCombatant enemy = activeEnemies[i];
+                if (enemy != null && !enemy.IsDead)
+                {
+                    continue;
+                }
+
+                if (enemy != null)
+                {
+                    enemy.Died -= OnEnemyDied;
+                    if (monsterCombatHud != null)
+                    {
+                        monsterCombatHud.Untrack(enemy);
+                    }
+                }
+
+                activeEnemies.RemoveAt(i);
+                removed = true;
+            }
+
+            if (removed && activeEnemies.Count == 0 && state == LevelFlowState.InCombat)
+            {
+                AdvanceEncounterOrComplete();
+            }
+        }
+
+        private void AdvanceEncounterOrComplete()
+        {
+            if (currentEncounter != null
+                && currentEncounter.waves != null
+                && currentWaveIndex + 1 < currentEncounter.waves.Count)
+            {
+                currentWaveIndex++;
+                LevelEncounterWave nextWave = currentEncounter.waves[currentWaveIndex];
+                float delay = nextWave != null ? nextWave.delayAfterPreviousWave : 0f;
+                hud.SetStatus(
+                    "Next wave",
+                    "Wave " + (currentWaveIndex + 1) + " / " + currentEncounter.waves.Count);
+                if (delay <= 0f)
+                {
+                    StartCurrentWave(currentRoom);
+                }
+                else
+                {
+                    Schedule(PendingFlowAction.StartNextWave, currentRoom, delay);
+                }
+
                 return;
             }
 
@@ -623,6 +961,8 @@ namespace NewFPG.Level
         private void BeginCombatComplete()
         {
             state = LevelFlowState.ResolvingRoom;
+            currentEncounter = null;
+            currentWaveIndex = -1;
             SetCombatPresentationActive(false);
             hud.SetStatus("战斗结束", "怪物已清除，镜头回到探索视角。");
 
@@ -703,6 +1043,9 @@ namespace NewFPG.Level
 
         private void ResolveReferences()
         {
+            ResolveDefaultRouteTable();
+            ResolveDefaultEncounterTable();
+
             if (playerController == null && player != null)
             {
                 playerController = player.GetComponent<PlayerCharacterController>();
@@ -766,6 +1109,15 @@ namespace NewFPG.Level
                 }
             }
 
+            if (astarPath == null)
+            {
+                astarPath = AstarPath.active != null
+                    ? AstarPath.active
+                    : FindFirstObjectByType<AstarPath>(FindObjectsInactive.Include);
+            }
+
+            ResolveBattleArenaZoneMap();
+
             if (hud == null)
             {
                 hud = GetComponentInChildren<LevelFlowHud>();
@@ -777,34 +1129,254 @@ namespace NewFPG.Level
                 }
             }
 
-            if (enemyPrefab == null)
-            {
-                FishMonsterController fish = FindFirstObjectByType<FishMonsterController>();
-                if (fish != null)
-                {
-                    enemyPrefab = fish.transform;
-                    fish.gameObject.SetActive(false);
-                }
-            }
-
-            if (fishHitSprite == null)
-            {
-                SpriteRenderer[] sprites = FindObjectsByType<SpriteRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-                for (int i = 0; i < sprites.Length; i++)
-                {
-                    if (sprites[i] != null && sprites[i].name.ToLowerInvariant().Contains("fish_hit"))
-                    {
-                        fishHitSprite = sprites[i].sprite;
-                        sprites[i].gameObject.SetActive(false);
-                        break;
-                    }
-                }
-            }
-
             hud.Initialize();
+            EnsureMonsterCombatHud();
             BindWeaponCombatHud();
             CachePlayerVisuals();
             CachePlayerPhysics();
+        }
+
+        private BattleArenaZoneMap ResolveBattleArenaZoneMap()
+        {
+            if (battleArenaZoneMap != null)
+            {
+                return battleArenaZoneMap;
+            }
+
+            battleArenaZoneMap = GetComponentInChildren<BattleArenaZoneMap>(true);
+            if (battleArenaZoneMap == null)
+            {
+                battleArenaZoneMap = FindFirstObjectByType<BattleArenaZoneMap>(FindObjectsInactive.Include);
+            }
+
+            return battleArenaZoneMap;
+        }
+
+        private void ActivateBattleArenaZoneMap()
+        {
+            BattleArenaZoneMap.SetCurrent(ResolveBattleArenaZoneMap());
+        }
+
+        public Bounds GetAstarGraphPreviewBounds()
+        {
+            return ResolveAstarGraphBounds();
+        }
+
+        public void SetAstarGraphPreviewBounds(Bounds worldBounds)
+        {
+            Vector3 sanitizedSize = new Vector3(
+                Mathf.Max(1f, Mathf.Abs(worldBounds.size.x)),
+                Mathf.Max(1f, Mathf.Abs(worldBounds.size.y)),
+                Mathf.Max(1f, Mathf.Abs(worldBounds.size.z)));
+            astarGraphBoundsSize = sanitizedSize;
+            astarGraphBoundsOffset = worldBounds.center - ResolveAstarGraphAnchor();
+        }
+
+        public bool FitAstarGraphBoundsToBattleArena()
+        {
+            BattleArenaZoneMap zoneMap = ResolveBattleArenaZoneMap();
+            if (zoneMap == null)
+            {
+                return false;
+            }
+
+            Vector2 arenaSize = zoneMap.ArenaSize;
+            astarGraphBoundsSize = new Vector3(
+                Mathf.Max(1f, arenaSize.x + astarCharacterRadius * 4f),
+                Mathf.Max(1f, Mathf.Abs(astarGraphBoundsSize.y)),
+                Mathf.Max(1f, arenaSize.y + astarCharacterRadius * 4f));
+            astarGraphBoundsOffset = new Vector3(0f, astarGraphBoundsOffset.y, 0f);
+            return true;
+        }
+
+        public void ScanAstarGraphNow()
+        {
+            EnsureRuntimeAstarGraph();
+        }
+
+        private void EnsureRuntimeAstarGraph()
+        {
+            if (!autoBuildAstarGraph)
+            {
+                return;
+            }
+
+            if (astarPath == null)
+            {
+                astarPath = AstarPath.active != null
+                    ? AstarPath.active
+                    : FindFirstObjectByType<AstarPath>(FindObjectsInactive.Include);
+            }
+
+            if (astarPath == null)
+            {
+                GameObject astarObject = new GameObject("RuntimeAstarPath");
+                astarObject.transform.SetParent(transform, false);
+                astarPath = astarObject.AddComponent<AstarPath>();
+            }
+
+            RecastGraph graph = astarPath.data.recastGraph;
+            if (graph == null)
+            {
+                astarPath.data.FindGraphTypes();
+                graph = astarPath.data.AddGraph<RecastGraph>();
+            }
+
+            ConfigureRuntimeRecastGraph(graph);
+            astarPath.Scan(graph);
+        }
+
+        private void ConfigureRuntimeRecastGraph(RecastGraph graph)
+        {
+            if (graph == null)
+            {
+                return;
+            }
+
+            Bounds bounds = ResolveAstarGraphBounds();
+            graph.cellSize = Mathf.Max(0.05f, astarCellSize);
+            graph.characterRadius = Mathf.Max(0.05f, astarCharacterRadius);
+            graph.walkableHeight = Mathf.Max(0.1f, astarCharacterHeight);
+            graph.walkableClimb = Mathf.Min(Mathf.Max(0f, astarWalkableClimb), graph.walkableHeight);
+            graph.maxSlope = Mathf.Clamp(astarMaxSlope, 0f, 90f);
+            graph.forcedBoundsCenter = bounds.center;
+            graph.forcedBoundsSize = bounds.size;
+            graph.collectionSettings.collectionMode = RecastGraph.CollectionSettings.FilterMode.Layers;
+            graph.collectionSettings.layerMask = astarGraphScanLayerMask;
+            graph.collectionSettings.rasterizeColliders = true;
+            graph.collectionSettings.rasterizeMeshes = true;
+            graph.collectionSettings.rasterizeTerrain = true;
+        }
+
+        private Bounds ResolveAstarGraphBounds()
+        {
+            Vector3 sanitizedSize = new Vector3(
+                Mathf.Max(1f, Mathf.Abs(astarGraphBoundsSize.x)),
+                Mathf.Max(1f, Mathf.Abs(astarGraphBoundsSize.y)),
+                Mathf.Max(1f, Mathf.Abs(astarGraphBoundsSize.z)));
+            return new Bounds(ResolveAstarGraphAnchor() + astarGraphBoundsOffset, sanitizedSize);
+        }
+
+        private Vector3 ResolveAstarGraphAnchor()
+        {
+            BattleArenaZoneMap zoneMap = ResolveBattleArenaZoneMap();
+            if (zoneMap != null)
+            {
+                return zoneMap.transform.TransformPoint(zoneMap.CenterOffset);
+            }
+
+            return player != null ? player.position : transform.position;
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (!autoBuildAstarGraph)
+            {
+                return;
+            }
+
+            Bounds bounds = ResolveAstarGraphBounds();
+            Color previousColor = Gizmos.color;
+
+            Gizmos.color = new Color(0.1f, 0.65f, 1f, 0.85f);
+            Gizmos.DrawWireCube(bounds.center, bounds.size);
+            Gizmos.DrawSphere(bounds.center, 0.12f);
+
+            Vector3 bottomCenter = bounds.center - Vector3.up * bounds.extents.y;
+            Vector3 bottomSize = new Vector3(bounds.size.x, 0f, bounds.size.z);
+            Gizmos.color = new Color(0.1f, 0.65f, 1f, 0.35f);
+            Gizmos.DrawWireCube(bottomCenter, bottomSize);
+
+#if UNITY_EDITOR
+            UnityEditor.Handles.color = new Color(0.1f, 0.65f, 1f, 0.95f);
+            UnityEditor.Handles.Label(
+                bounds.center + Vector3.up * (bounds.extents.y + 0.3f),
+                $"A* Recast Bounds\n{bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#}");
+#endif
+
+            Gizmos.color = previousColor;
+        }
+
+        private void ResolveDefaultRouteTable()
+        {
+            if (routeTable != null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            routeTable = UnityEditor.AssetDatabase.LoadAssetAtPath<LevelRouteTable>(LevelRouteTable.DefaultAssetPath);
+#endif
+        }
+
+        private void ResolveDefaultEncounterTable()
+        {
+            if (encounterTable != null)
+            {
+                return;
+            }
+
+#if UNITY_EDITOR
+            encounterTable = UnityEditor.AssetDatabase.LoadAssetAtPath<LevelEncounterTable>(LevelEncounterTable.DefaultAssetPath);
+#endif
+        }
+
+        private void BuildRouteIndex()
+        {
+            roomsById.Clear();
+            ResolveDefaultRouteTable();
+            if (routeTable == null)
+            {
+                Debug.LogError("Missing LevelRouteTable.", this);
+                return;
+            }
+
+            if (routeTable.RouteId != routeId)
+            {
+                Debug.LogWarning("LevelRouteTable route id does not match director route id: " + routeTable.RouteId + " / " + routeId, this);
+            }
+
+            IReadOnlyList<LevelRoomDefinition> rooms = routeTable.Rooms;
+            if (rooms == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < rooms.Count; i++)
+            {
+                LevelRoomDefinition room = rooms[i];
+                if (room == null || string.IsNullOrWhiteSpace(room.roomId))
+                {
+                    continue;
+                }
+
+                roomsById[room.roomId] = room;
+            }
+        }
+
+        private static bool IsDamageableAlive(IDamageable damageable)
+        {
+            if (damageable == null)
+            {
+                return false;
+            }
+
+            if (damageable is Object unityObject && unityObject == null)
+            {
+                return false;
+            }
+
+            return damageable.IsAlive;
+        }
+
+        private static float FatalDamageFor(LevelCombatant enemy, IDamageable damageable)
+        {
+            if (damageable is CombatVitals vitals && vitals != null)
+            {
+                return Mathf.Max(1f, vitals.CurrentHealth + vitals.CurrentShield);
+            }
+
+            return enemy != null ? Mathf.Max(1f, enemy.Hp) : 1f;
         }
 
         private void ConfigureWeaponHud()
@@ -827,6 +1399,7 @@ namespace NewFPG.Level
                 return;
             }
 
+            BattleArenaZoneMap.ClearCurrent(battleArenaZoneMap);
             SetWeaponPresentationActive(false);
             SetPlayerHiddenForCombat(false);
         }
@@ -852,6 +1425,11 @@ namespace NewFPG.Level
             if (active)
             {
                 Camera combatCamera = ResolveCombatCamera();
+                if (monsterCombatHud != null)
+                {
+                    monsterCombatHud.SetTargetCamera(combatCamera);
+                }
+
                 AttachWeaponViewToActiveCamera(combatCamera);
                 BindWeaponCombatHud();
                 weaponView.RefreshRuntimeView(combatCamera);
@@ -938,6 +1516,37 @@ namespace NewFPG.Level
             {
                 weaponCombatHud.Bind(playerVitals, playerResourcePool, playerWeaponCaster);
             }
+        }
+
+        private void TrackMonsterHud(LevelCombatant combatant, LevelRoomDefinition room)
+        {
+            MonsterCombatHud combatHud = EnsureMonsterCombatHud();
+            if (combatHud == null || combatant == null || room == null)
+            {
+                return;
+            }
+
+            combatHud.SetTargetCamera(ResolveCombatCamera());
+            combatHud.Track(combatant, room.roomType == LevelRoomType.Boss, room.displayName);
+        }
+
+        private MonsterCombatHud EnsureMonsterCombatHud()
+        {
+            if (monsterCombatHud != null)
+            {
+                return monsterCombatHud;
+            }
+
+            monsterCombatHud = GetComponentInChildren<MonsterCombatHud>(true);
+            if (monsterCombatHud != null)
+            {
+                return monsterCombatHud;
+            }
+
+            GameObject hudObject = new GameObject("MonsterCombatHud");
+            hudObject.transform.SetParent(transform, false);
+            monsterCombatHud = hudObject.AddComponent<MonsterCombatHud>();
+            return monsterCombatHud;
         }
 
         private void CachePlayerVisuals()
@@ -1156,6 +1765,11 @@ namespace NewFPG.Level
         private void ClearActiveEnemies()
         {
             UnsubscribeEnemies();
+            if (monsterCombatHud != null)
+            {
+                monsterCombatHud.Clear();
+            }
+
             for (int i = activeEnemies.Count - 1; i >= 0; i--)
             {
                 if (activeEnemies[i] != null)
@@ -1193,6 +1807,10 @@ namespace NewFPG.Level
                 if (activeEnemies[i] != null)
                 {
                     activeEnemies[i].Died -= OnEnemyDied;
+                    if (monsterCombatHud != null)
+                    {
+                        monsterCombatHud.Untrack(activeEnemies[i]);
+                    }
                 }
             }
         }
@@ -1204,6 +1822,7 @@ namespace NewFPG.Level
             pendingActionAt = Time.unscaledTime + Mathf.Max(0f, delay);
         }
 
+#if false
         private void BuildUndergroundFirstFloorRoute()
         {
             roomsById.Clear();
@@ -1216,8 +1835,6 @@ namespace NewFPG.Level
                 encounterId = "fish_intro",
                 rewardPreview = "初始祝福",
                 roomNote = "第一间固定为战前祝福选择，选择后才生成鱼怪。",
-                enemyCount = 1,
-                startsCombatAfterChoice = true,
                 choices =
                 {
                     new LevelRoomChoiceDefinition { choiceId = "entry_blade_flame", displayName = "灵火入刃", description = "本房开始前获得 20% 子弹伤害。", damageBonus = 0.2f },
@@ -1238,8 +1855,6 @@ namespace NewFPG.Level
                 rewardPool = LevelRewardPool.MajorFind,
                 rewardPreview = "本局强化",
                 roomNote = "先选择 Major Find 式强化，再生成怪物进入战斗。",
-                enemyCount = 1,
-                startsCombatAfterChoice = true,
                 choices =
                 {
                     new LevelRoomChoiceDefinition { choiceId = "blade_heat", displayName = "剑火入脉", description = "武器子弹伤害提高 25%。", damageBonus = 0.25f },
@@ -1260,8 +1875,6 @@ namespace NewFPG.Level
                 rewardPool = LevelRewardPool.SpecialDoor,
                 rewardPreview = "事件/代价",
                 roomNote = "先处理事件/代价选择，再生成怪物；后续可挂 NPC 对话或限时宝箱。",
-                enemyCount = 1,
-                startsCombatAfterChoice = true,
                 choices =
                 {
                     new LevelRoomChoiceDefinition { choiceId = "listen", displayName = "听完低语", description = "获得 15 金币。", goldDelta = 15 },
@@ -1282,8 +1895,6 @@ namespace NewFPG.Level
                 encounterId = "fish_pair",
                 rewardPreview = "材料/金币",
                 roomNote = "战前选择局外收益倾向，然后测试多目标和清房结算。",
-                enemyCount = 2,
-                startsCombatAfterChoice = true,
                 choices =
                 {
                     new LevelRoomChoiceDefinition { choiceId = "minor_bones", displayName = "拾取残骨", description = "获得 20 金币作为局外资源占位。", goldDelta = 20 },
@@ -1305,8 +1916,6 @@ namespace NewFPG.Level
                 encounterId = "elite_fish",
                 rewardPreview = "高稀有度奖励",
                 roomNote = "先确认高风险奖励，再触发地下第一层的小强度尖峰。",
-                enemyCount = 1,
-                startsCombatAfterChoice = true,
                 choices =
                 {
                     new LevelRoomChoiceDefinition { choiceId = "elite_risk", displayName = "接下刻痕", description = "高风险门：伤害提高 20%，随后生成精英怪。", damageBonus = 0.2f },
@@ -1355,11 +1964,13 @@ namespace NewFPG.Level
             };
         }
 
+#endif
         private enum PendingFlowAction
         {
             None,
             StartRoomContent,
             StartCombat,
+            StartNextWave,
             ResolveRoom,
         }
 

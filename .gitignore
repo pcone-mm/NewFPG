@@ -24,6 +24,7 @@
 /[Oo]utput/
 /[Tt]mp/
 /.codex/
+/.codex-backups/
 /[Aa]ssets/_Recovery/
 /[Aa]ssets/_Recovery.meta
 

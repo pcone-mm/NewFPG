@@ -16,6 +16,9 @@ namespace NewFPG.Prototype
         [SerializeField] private PrototypePlayerMover mover;
         [SerializeField] private float idleFramesPerSecond = 4f;
         [SerializeField] private float walkFramesPerSecond = 8f;
+        // TODO: Remove this temporary one-sided sprite mirroring once final left/right frames are available.
+        [SerializeField] private bool mirrorHorizontalFrames = true;
+        [SerializeField] private bool horizontalFramesFaceRightByDefault = true;
         [SerializeField] private Sprite[] idleDown;
         [SerializeField] private Sprite[] idleLeft;
         [SerializeField] private Sprite[] idleRight;
@@ -55,7 +58,8 @@ namespace NewFPG.Prototype
                 frameTimer = 0f;
             }
 
-            Sprite[] frames = GetFrames(facing, isMoving);
+            Sprite[] frames = GetFrames(facing, isMoving, out bool flipX);
+            spriteRenderer.flipX = flipX;
             if (frames == null || frames.Length == 0)
             {
                 return;
@@ -82,19 +86,68 @@ namespace NewFPG.Prototype
             return input.y < 0f ? FacingDirection.Down : FacingDirection.Up;
         }
 
-        private Sprite[] GetFrames(FacingDirection direction, bool isMoving)
+        private Sprite[] GetFrames(FacingDirection direction, bool isMoving, out bool flipX)
         {
+            flipX = false;
+
             switch (direction)
             {
                 case FacingDirection.Left:
-                    return isMoving ? walkLeft : idleLeft;
+                    return GetHorizontalFrames(true, isMoving, out flipX);
                 case FacingDirection.Right:
-                    return isMoving ? walkRight : idleRight;
+                    return GetHorizontalFrames(false, isMoving, out flipX);
                 case FacingDirection.Up:
                     return isMoving ? walkUp : idleUp;
                 default:
                     return isMoving ? walkDown : idleDown;
             }
+        }
+
+        private Sprite[] GetHorizontalFrames(bool facingLeft, bool isMoving, out bool flipX)
+        {
+            flipX = false;
+
+            Sprite[] leftFrames = isMoving ? walkLeft : idleLeft;
+            Sprite[] rightFrames = isMoving ? walkRight : idleRight;
+            bool hasLeftFrames = HasFrames(leftFrames);
+            bool hasRightFrames = HasFrames(rightFrames);
+
+            if (mirrorHorizontalFrames)
+            {
+                Sprite[] defaultFrames = horizontalFramesFaceRightByDefault ? rightFrames : leftFrames;
+                Sprite[] fallbackFrames = horizontalFramesFaceRightByDefault ? leftFrames : rightFrames;
+
+                if (HasFrames(defaultFrames))
+                {
+                    flipX = horizontalFramesFaceRightByDefault ? facingLeft : !facingLeft;
+                    return defaultFrames;
+                }
+
+                if (HasFrames(fallbackFrames))
+                {
+                    flipX = horizontalFramesFaceRightByDefault ? !facingLeft : facingLeft;
+                    return fallbackFrames;
+                }
+            }
+
+            if ((facingLeft && hasLeftFrames) || (!facingLeft && hasRightFrames))
+            {
+                return facingLeft ? leftFrames : rightFrames;
+            }
+
+            if (facingLeft)
+            {
+                flipX = true;
+                return rightFrames;
+            }
+
+            flipX = true;
+            return leftFrames;
+        }
+
+        private static bool HasFrames(Sprite[] frames)
+        {
+            return frames != null && frames.Length > 0;
         }
     }
 }

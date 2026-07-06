@@ -1,0 +1,27 @@
+{
+  "name": "bajiaoshan_fanwind_first_person_keyframes",
+  "description": "First-person banana leaf fan wind-release attack keyframes. Transparent 2560x1440 PNG frames, 12 frames, 16:9.",
+  "resolution": [
+    2560,
+    1440
+  ],
+  "frame_count": 12,
+  "suggested_fps": 18,
+  "loop": false,
+  "source_sheet": "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\bajiaoshan_fanwind_sheet.png",
+  "preview_sheet": "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\bajiaoshan_fanwind_frames_2k_preview.png",
+  "frames": [
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_01.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_02.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_03.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_04.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_05.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_06.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_07.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_08.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_09.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_10.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_11.png",
+    "D:\\Unity\\NewFPG\\Assets\\Art\\Weapons\\BajiaoshanFrames\\frames_2k\\bajiaoshan_fanwind_frame_12.png"
+  ]
+}

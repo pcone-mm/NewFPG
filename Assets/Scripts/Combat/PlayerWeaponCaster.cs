@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using NewFPG.Combat.SkillIndicators;
 
@@ -13,6 +14,8 @@ namespace NewFPG.Combat
     public sealed class PlayerWeaponCaster : MonoBehaviour
     {
         [SerializeField] private WeaponDefinition[] weapons;
+        [SerializeField] private WeaponInstanceData[] weaponInstances;
+        [SerializeField] private List<WeaponModifier> activeModifiers = new List<WeaponModifier>();
         [SerializeField] private CombatResourcePool resourcePool;
         [SerializeField] private Transform castOrigin;
         [SerializeField] private LayerMask targetMask = ~0;
@@ -25,11 +28,13 @@ namespace NewFPG.Combat
 
         public event Action<WeaponDefinition, bool> CastAttempted;
 
-        public int WeaponCount => weapons == null ? 0 : weapons.Length;
+        public int WeaponCount => HasWeaponInstances ? weaponInstances.Length : weapons == null ? 0 : weapons.Length;
         public bool CombatEnabled => combatEnabled;
         public Transform CastOrigin => runtimeCastOriginOverride != null
             ? runtimeCastOriginOverride
             : castOrigin != null ? castOrigin : transform;
+
+        private bool HasWeaponInstances => weaponInstances != null && weaponInstances.Length > 0;
 
         private void Reset()
         {
@@ -69,7 +74,34 @@ namespace NewFPG.Combat
 
         public WeaponDefinition GetWeapon(int index)
         {
-            if (weapons == null || index < 0 || index >= weapons.Length)
+            if (index < 0)
+            {
+                return null;
+            }
+
+            if (HasWeaponInstances)
+            {
+                if (index >= weaponInstances.Length)
+                {
+                    return null;
+                }
+
+                WeaponInstanceData instance = weaponInstances[index];
+                if (instance == null)
+                {
+                    return null;
+                }
+
+                if (WeaponInventorySaveData.TryFindDefinition(weapons, instance.baseWeaponId, out WeaponDefinition instanceWeapon))
+                {
+                    return instanceWeapon;
+                }
+
+                Debug.LogWarning("PlayerWeaponCaster could not find weapon definition for id: " + instance.baseWeaponId, this);
+                return null;
+            }
+
+            if (weapons == null || index >= weapons.Length)
             {
                 return null;
             }
@@ -77,55 +109,100 @@ namespace NewFPG.Combat
             return weapons[index];
         }
 
-        public bool CanCast(int index)
+        public WeaponRuntimeStats GetRuntimeStats(int index)
         {
             WeaponDefinition weapon = GetWeapon(index);
-            if (weapon == null || resourcePool == null)
+            if (weapon == null)
+            {
+                return null;
+            }
+
+            return WeaponRuntimeResolver.Resolve(weapon, GetWeaponInstance(index), activeModifiers);
+        }
+
+        public void SetWeaponInstances(WeaponInstanceData[] instances)
+        {
+            weaponInstances = instances ?? Array.Empty<WeaponInstanceData>();
+            EnsureCooldownCapacity();
+        }
+
+        public void SetActiveModifiers(IEnumerable<WeaponModifier> modifiers)
+        {
+            activeModifiers.Clear();
+            if (modifiers == null)
+            {
+                return;
+            }
+
+            activeModifiers.AddRange(modifiers);
+        }
+
+        public void AddActiveModifier(WeaponModifier modifier)
+        {
+            if (modifier == null)
+            {
+                return;
+            }
+
+            activeModifiers.Add(modifier);
+        }
+
+        public bool RemoveActiveModifier(WeaponModifier modifier)
+        {
+            return modifier != null && activeModifiers.Remove(modifier);
+        }
+
+        public bool CanCast(int index)
+        {
+            WeaponRuntimeStats stats = GetRuntimeStats(index);
+            if (stats == null || resourcePool == null)
             {
                 return false;
             }
 
-            return combatEnabled && Time.time >= GetNextCastTime(index) && resourcePool.CanSpend(weapon.ResourceCost);
+            return combatEnabled && Time.time >= GetNextCastTime(index) && resourcePool.CanSpend(stats.ResourceCost);
         }
 
         public bool TryCast(int index)
         {
-            WeaponDefinition weapon = GetWeapon(index);
-            if (!combatEnabled || weapon == null || resourcePool == null || Time.time < GetNextCastTime(index))
+            WeaponRuntimeStats stats = GetRuntimeStats(index);
+            WeaponDefinition weapon = stats != null ? stats.Definition : GetWeapon(index);
+            if (!combatEnabled || stats == null || resourcePool == null || Time.time < GetNextCastTime(index))
             {
                 CastAttempted?.Invoke(weapon, false);
                 return false;
             }
 
-            if (!resourcePool.TrySpend(weapon.ResourceCost))
+            if (!resourcePool.TrySpend(stats.ResourceCost))
             {
                 CastAttempted?.Invoke(weapon, false);
                 return false;
             }
 
-            SetNextCastTime(index, Time.time + weapon.Cooldown);
-            ReleaseWeapon(weapon);
+            SetNextCastTime(index, Time.time + stats.Cooldown);
+            ReleaseWeapon(stats);
             CastAttempted?.Invoke(weapon, true);
             return true;
         }
 
         public bool TryCast(int index, CastCommandData command)
         {
-            WeaponDefinition weapon = GetWeapon(index);
-            if (!combatEnabled || weapon == null || resourcePool == null || Time.time < GetNextCastTime(index) || !command.IsValid)
+            WeaponRuntimeStats stats = GetRuntimeStats(index);
+            WeaponDefinition weapon = stats != null ? stats.Definition : GetWeapon(index);
+            if (!combatEnabled || stats == null || resourcePool == null || Time.time < GetNextCastTime(index) || !command.IsValid)
             {
                 CastAttempted?.Invoke(weapon, false);
                 return false;
             }
 
-            if (!resourcePool.TrySpend(weapon.ResourceCost))
+            if (!resourcePool.TrySpend(stats.ResourceCost))
             {
                 CastAttempted?.Invoke(weapon, false);
                 return false;
             }
 
-            SetNextCastTime(index, Time.time + weapon.Cooldown);
-            ReleaseWeapon(weapon, command);
+            SetNextCastTime(index, Time.time + stats.Cooldown);
+            ReleaseWeapon(stats, command);
             CastAttempted?.Invoke(weapon, true);
             return true;
         }
@@ -142,93 +219,136 @@ namespace NewFPG.Combat
 
         public float GetCooldownRatio(int index)
         {
-            WeaponDefinition weapon = GetWeapon(index);
-            if (weapon == null || weapon.Cooldown <= 0f)
+            WeaponRuntimeStats stats = GetRuntimeStats(index);
+            if (stats == null || stats.Cooldown <= 0f)
             {
                 return 0f;
             }
 
             float remaining = Mathf.Max(0f, GetNextCastTime(index) - Time.time);
-            return Mathf.Clamp01(remaining / weapon.Cooldown);
+            return Mathf.Clamp01(remaining / stats.Cooldown);
         }
 
-        private void ReleaseWeapon(WeaponDefinition weapon)
+        private void ReleaseWeapon(WeaponRuntimeStats stats)
+        {
+            ReleaseWeaponAt(stats, CreateDefaultCastCommand(stats));
+        }
+
+        private void ReleaseWeapon(WeaponRuntimeStats stats, CastCommandData command)
+        {
+            ReleaseWeaponAt(stats, command);
+        }
+
+        private CastCommandData CreateDefaultCastCommand(WeaponRuntimeStats stats)
         {
             Vector3 origin = CastOrigin.position;
-            Vector3 center = ResolveTargetCenter(origin, weapon);
-            ReleaseWeaponAt(weapon, center);
-        }
+            Vector3 sceneOrigin = ResolveDefaultSceneOrigin(origin, stats);
+            Vector3 shapeOrigin = stats.PlacementMode == SkillIndicatorPlacementMode.GroundSurface
+                ? sceneOrigin
+                : origin;
+            Vector3 center = ResolveDefaultTargetPoint(shapeOrigin, stats);
+            Vector3 direction = center - shapeOrigin;
+            direction.y = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                direction = ResolveForward();
+            }
 
-        private void ReleaseWeapon(WeaponDefinition weapon, CastCommandData command)
-        {
-            ReleaseWeaponAt(weapon, command);
-        }
-
-        private void ReleaseWeaponAt(WeaponDefinition weapon, Vector3 center)
-        {
             CastCommandData command = new CastCommandData
             {
-                Origin = CastOrigin.position,
+                AbilityId = stats.WeaponId,
+                Origin = origin,
+                SceneOrigin = sceneOrigin,
                 TargetPoint = center,
-                Direction = ResolveForward(),
-                ShapeType = SkillIndicatorShapeType.GroundCircle,
-                Radius = weapon.Radius,
-                Width = weapon.Radius * 2f,
-                Length = weapon.Range,
-                Angle = 90f,
+                SurfaceNormal = Vector3.up,
+                PlacementMode = stats.PlacementMode,
+                Direction = direction.normalized,
+                ShapeType = stats.ShapeType,
+                Radius = stats.Radius,
+                Width = stats.Width,
+                Length = stats.Length,
+                Angle = stats.Angle,
+                Height = stats.Height,
+                GroundOffset = stats.GroundOffset,
                 HasTargetPoint = true,
                 IsValid = true,
             };
-            ReleaseWeaponAt(weapon, command);
+            return command;
         }
 
-        private void ReleaseWeaponAt(WeaponDefinition weapon, CastCommandData command)
+        private Vector3 ResolveDefaultSceneOrigin(Vector3 origin, WeaponRuntimeStats stats)
         {
-            Vector3 center = command.HasTargetPoint ? command.TargetPoint : ResolveTargetCenter(command.Origin, weapon);
-            if (weapon.ReleaseEffectPrefab != null)
+            if (stats.PlacementMode != SkillIndicatorPlacementMode.GroundSurface)
             {
-                Instantiate(weapon.ReleaseEffectPrefab, center, Quaternion.identity);
+                return origin;
             }
 
-            if (ownerVitals != null && weapon.RuntimeShield > 0f)
+            LayerMask surfaceMask = SkillIndicatorAimSolver.ResolveSceneSurfaceMask(stats.SurfaceMask);
+            Vector3 rayOrigin = origin + Vector3.up * 0.5f;
+            float maxDistance = Mathf.Max(8f, Mathf.Max(stats.Range, stats.Height) + 8f);
+            RaycastHit[] hits = Physics.RaycastAll(
+                rayOrigin,
+                Vector3.down,
+                maxDistance,
+                surfaceMask,
+                QueryTriggerInteraction.Collide);
+            if (hits != null && hits.Length > 0)
             {
-                ownerVitals.AddShield(weapon.RuntimeShield);
+                Array.Sort(hits, CompareRaycastHitDistance);
+                for (int i = 0; i < hits.Length; i++)
+                {
+                    Collider hitCollider = hits[i].collider;
+                    if (hitCollider == null
+                        || hitCollider.transform.IsChildOf(transform)
+                        || hitCollider.GetComponentInParent<IDamageable>() != null)
+                    {
+                        continue;
+                    }
+
+                    return hits[i].point;
+                }
             }
 
-            Collider[] hits = ResolveHitCandidates(weapon, command, center);
+            return new Vector3(origin.x, 0f, origin.z);
+        }
+
+        private void ReleaseWeaponAt(WeaponRuntimeStats stats, CastCommandData command)
+        {
+            Vector3 center = command.HasTargetPoint ? command.TargetPoint : ResolveTargetCenter(command.Origin, stats);
+            if (stats.ReleaseEffectPrefab != null)
+            {
+                Instantiate(stats.ReleaseEffectPrefab, center, Quaternion.identity);
+            }
+
+            if (ownerVitals != null && stats.Shield > 0f)
+            {
+                ownerVitals.AddShield(stats.Shield);
+            }
+
+            HashSet<IDamageable> damagedTargets = new HashSet<IDamageable>();
+            Collider[] hits = WeaponCastHitResolver.QueryCandidates(command, targetMask);
             for (int i = 0; i < hits.Length; i++)
             {
-                if (hits[i] == null || hits[i].transform.IsChildOf(transform))
+                if (!WeaponCastHitResolver.TryResolveHit(command, hits[i], targetMask, transform, out WeaponCastHitResult hit)
+                    || !damagedTargets.Add(hit.Damageable))
                 {
                     continue;
                 }
 
-                IDamageable damageable = hits[i].GetComponentInParent<IDamageable>();
-                if (damageable == null || !damageable.IsAlive)
+                hit.Damageable.ReceiveDamage(new DamagePayload(stats.RuntimeTotalDamage, gameObject, hit.HitPoint));
+                if (stats.HitEffectPrefab != null)
                 {
-                    continue;
-                }
-
-                Vector3 aimPoint = damageable.AimTransform != null ? damageable.AimTransform.position : hits[i].bounds.center;
-                if (!IsInsideCommandShape(weapon, command, center, aimPoint))
-                {
-                    continue;
-                }
-
-                Vector3 hitPoint = hits[i].ClosestPoint(center);
-                damageable.ReceiveDamage(new DamagePayload(weapon.RuntimeTotalDamage, gameObject, hitPoint));
-                if (weapon.HitEffectPrefab != null)
-                {
-                    Instantiate(weapon.HitEffectPrefab, hitPoint, Quaternion.identity);
+                    Instantiate(stats.HitEffectPrefab, hit.HitPoint, Quaternion.identity);
                 }
             }
         }
 
-        private Vector3 ResolveTargetCenter(Vector3 origin, WeaponDefinition weapon)
+        private Vector3 ResolveTargetCenter(Vector3 origin, WeaponRuntimeStats stats)
         {
             IDamageable nearest = null;
             float nearestDistanceSqr = float.MaxValue;
-            Collider[] candidates = Physics.OverlapSphere(origin, weapon.Range, targetMask, QueryTriggerInteraction.Collide);
+            float searchRadius = ResolveAutoSelectSearchRadius(stats);
+            Collider[] candidates = Physics.OverlapSphere(origin, searchRadius, targetMask, QueryTriggerInteraction.Collide);
             for (int i = 0; i < candidates.Length; i++)
             {
                 if (candidates[i] == null || candidates[i].transform.IsChildOf(transform))
@@ -237,7 +357,7 @@ namespace NewFPG.Combat
                 }
 
                 IDamageable damageable = candidates[i].GetComponentInParent<IDamageable>();
-                if (damageable == null || !damageable.IsAlive)
+                if (damageable == null || !damageable.IsAlive || !damageable.IsTargetable)
                 {
                     continue;
                 }
@@ -263,87 +383,40 @@ namespace NewFPG.Combat
                 forward = Vector3.forward;
             }
 
-            return origin + forward.normalized * Mathf.Min(weapon.Range, 2.5f);
+            return origin + forward.normalized * Mathf.Min(stats.Range, 2.5f);
         }
 
-        private Collider[] ResolveHitCandidates(WeaponDefinition weapon, CastCommandData command, Vector3 center)
+        private static float ResolveAutoSelectSearchRadius(WeaponRuntimeStats stats)
         {
-            float radius = ResolveCommandRadius(weapon, command);
-            switch (command.ShapeType)
+            switch (stats.ShapeType)
             {
                 case SkillIndicatorShapeType.Line:
                 case SkillIndicatorShapeType.Rectangle:
-                    return Physics.OverlapCapsule(
-                        command.Origin,
-                        command.Origin + ResolveCommandDirection(command) * Mathf.Max(0.1f, ResolveCommandLength(weapon, command)),
-                        Mathf.Max(0.05f, ResolveCommandWidth(weapon, command) * 0.5f),
-                        targetMask,
-                        QueryTriggerInteraction.Collide);
                 case SkillIndicatorShapeType.Cone:
-                    return Physics.OverlapSphere(command.Origin, ResolveCommandLength(weapon, command), targetMask, QueryTriggerInteraction.Collide);
+                    return Mathf.Max(0.1f, stats.Length);
                 default:
-                    return Physics.OverlapSphere(center, radius, targetMask, QueryTriggerInteraction.Collide);
+                    return Mathf.Max(0.1f, stats.Range);
             }
         }
 
-        private bool IsInsideCommandShape(WeaponDefinition weapon, CastCommandData command, Vector3 center, Vector3 point)
+        private static int CompareRaycastHitDistance(RaycastHit left, RaycastHit right)
         {
-            switch (command.ShapeType)
+            return left.distance.CompareTo(right.distance);
+        }
+
+        private Vector3 ResolveDefaultTargetPoint(Vector3 origin, WeaponRuntimeStats stats)
+        {
+            switch (stats.TapPolicy)
             {
-                case SkillIndicatorShapeType.Line:
-                case SkillIndicatorShapeType.Rectangle:
-                    return IsInsideLine(command, point, ResolveCommandLength(weapon, command), ResolveCommandWidth(weapon, command));
-                case SkillIndicatorShapeType.Cone:
-                    return IsInsideCone(command, point, ResolveCommandLength(weapon, command), command.Angle > 0f ? command.Angle : 90f);
+                case SkillIndicatorDefaultReleasePolicy.CastOnSelf:
+                    return origin;
+                case SkillIndicatorDefaultReleasePolicy.CastForwardMaxRange:
+                case SkillIndicatorDefaultReleasePolicy.CastAtGroundUnderCrosshair:
+                case SkillIndicatorDefaultReleasePolicy.CastAtCrosshairHit:
+                    return origin + ResolveForward() * stats.Range;
                 default:
-                    return (Flatten(point) - Flatten(center)).sqrMagnitude <= Mathf.Pow(ResolveCommandRadius(weapon, command), 2f);
+                    return ResolveTargetCenter(origin, stats);
             }
-        }
-
-        private static bool IsInsideLine(CastCommandData command, Vector3 point, float length, float width)
-        {
-            Vector3 origin = Flatten(command.Origin);
-            Vector3 direction = ResolveCommandDirection(command);
-            Vector3 toPoint = Flatten(point) - origin;
-            float forwardDistance = Vector3.Dot(toPoint, direction);
-            if (forwardDistance < 0f || forwardDistance > Mathf.Max(0.1f, length))
-            {
-                return false;
-            }
-
-            Vector3 nearest = origin + direction * forwardDistance;
-            float halfWidth = Mathf.Max(0.05f, width * 0.5f);
-            return (Flatten(point) - nearest).sqrMagnitude <= halfWidth * halfWidth;
-        }
-
-        private static bool IsInsideCone(CastCommandData command, Vector3 point, float length, float angle)
-        {
-            Vector3 origin = Flatten(command.Origin);
-            Vector3 toPoint = Flatten(point) - origin;
-            if (toPoint.sqrMagnitude > Mathf.Max(0.1f, length) * Mathf.Max(0.1f, length))
-            {
-                return false;
-            }
-
-            if (toPoint.sqrMagnitude <= 0.0001f)
-            {
-                return true;
-            }
-
-            return Vector3.Angle(ResolveCommandDirection(command), toPoint.normalized) <= Mathf.Clamp(angle, 1f, 360f) * 0.5f;
-        }
-
-        private static Vector3 ResolveCommandDirection(CastCommandData command)
-        {
-            Vector3 direction = command.Direction;
-            direction.y = 0f;
-            if (direction.sqrMagnitude <= 0.0001f && command.HasTargetPoint)
-            {
-                direction = command.TargetPoint - command.Origin;
-                direction.y = 0f;
-            }
-
-            return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
         }
 
         private Vector3 ResolveForward()
@@ -351,27 +424,6 @@ namespace NewFPG.Combat
             Vector3 forward = transform.forward;
             forward.y = 0f;
             return forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
-        }
-
-        private static Vector3 Flatten(Vector3 value)
-        {
-            value.y = 0f;
-            return value;
-        }
-
-        private static float ResolveCommandRadius(WeaponDefinition weapon, CastCommandData command)
-        {
-            return command.Radius > 0f ? command.Radius : weapon.Radius;
-        }
-
-        private static float ResolveCommandWidth(WeaponDefinition weapon, CastCommandData command)
-        {
-            return command.Width > 0f ? command.Width : weapon.Radius * 2f;
-        }
-
-        private static float ResolveCommandLength(WeaponDefinition weapon, CastCommandData command)
-        {
-            return command.Length > 0f ? command.Length : weapon.Range;
         }
 
         private float GetNextCastTime(int index)
@@ -401,6 +453,16 @@ namespace NewFPG.Combat
             {
                 Array.Resize(ref nextCastTimes, weaponCount);
             }
+        }
+
+        private WeaponInstanceData GetWeaponInstance(int index)
+        {
+            if (!HasWeaponInstances || index < 0 || index >= weaponInstances.Length)
+            {
+                return null;
+            }
+
+            return weaponInstances[index];
         }
 
         private static int ReadWeaponShortcut()

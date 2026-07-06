@@ -122,6 +122,8 @@ namespace NewFPG.Forging
             {
                 blueprint.runtime = new ForgingWeaponRuntimeBinding();
             }
+
+            blueprint.runtime.Normalize();
         }
 
         private static void NormalizeMaterial(ForgingMaterialDefinition material)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 #if ENABLE_INPUT_SYSTEM
@@ -47,6 +48,7 @@ namespace NewFPG.Forging
         [SerializeField] private Texture materialTexture;
         [SerializeField] private bool showDrawerOnStart = true;
         [SerializeField] private ForgingUILayoutPreset layoutPreset;
+        [SerializeField] private string returnSceneName = "Dongfu_Home";
 
         private Canvas canvas;
         private RectTransform root;
@@ -65,6 +67,7 @@ namespace NewFPG.Forging
         private TextMeshProUGUI drawerToggleLabel;
         private Button forgeButton;
         private Button clearButton;
+        private Button returnButton;
 
         private readonly List<ForgingWeaponBlueprintDefinition> blueprints = new List<ForgingWeaponBlueprintDefinition>();
         private readonly List<ForgingMaterialDefinition> materials = new List<ForgingMaterialDefinition>();
@@ -468,9 +471,22 @@ namespace NewFPG.Forging
             clearButton.GetComponentInChildren<TextMeshProUGUI>().fontSize = 38;
             clearButton.onClick.AddListener(ClearMaterials);
 
+            returnButton = CreateButton(root, "ReturnDongfuButton", font, "返回洞府");
+            SetRect(returnButton.GetComponent<RectTransform>(), new Vector2(-1640f, 960f), new Vector2(280f, 80f));
+            returnButton.GetComponentInChildren<TextMeshProUGUI>().fontSize = 34;
+            returnButton.onClick.AddListener(ReturnToHomeScene);
+
             BuildDrawer(font);
             BuildBoard();
             ApplyLayoutPreset();
+        }
+
+        private void ReturnToHomeScene()
+        {
+            if (!string.IsNullOrWhiteSpace(returnSceneName))
+            {
+                SceneManager.LoadScene(returnSceneName, LoadSceneMode.Single);
+            }
         }
 
         private void BuildMaterialButtons(Font font)

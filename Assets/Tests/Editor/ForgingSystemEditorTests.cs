@@ -20,9 +20,11 @@ public sealed class ForgingSystemEditorTests
         Assert.IsNotNull(heartMirror);
         Assert.IsNotNull(fan);
         Assert.IsNotNull(stardust);
-        Assert.AreEqual(
-            "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset",
-            GetField<string>(GetField(taomuSword, "runtime"), "indicatorConfigPath"));
+        object taomuRuntime = GetField(taomuSword, "runtime");
+        Assert.AreEqual("TargetReticle", GetField(taomuRuntime, "shapeType").ToString());
+        Assert.AreEqual(10f, GetField<float>(taomuRuntime, "range"), 0.0001f);
+        Assert.AreEqual(1.2f, GetField<float>(taomuRuntime, "width"), 0.0001f);
+        Assert.AreEqual("PF_IND_TargetReticle", GetField<string>(taomuRuntime, "previewPrefabResourceId"));
         Assert.GreaterOrEqual(GetField<int>(stardust, "shapeWidth"), 1);
         Assert.GreaterOrEqual(GetField<int>(stardust, "shapeHeight"), 1);
         Assert.Greater(GetField<IList>(stardust, "cells").Count, 0);
@@ -135,7 +137,7 @@ public sealed class ForgingSystemEditorTests
     }
 
     [Test]
-    public void ForgedWeaponFactoryAppliesHudAndIndicatorConfigToWeaponDefinition()
+    public void ForgedWeaponFactoryAppliesHudAndRuntimeGeometryToWeaponDefinition()
     {
         object catalog = InvokeStatic(ForgingType("ForgingCatalogLoader"), "LoadDefault");
         object taomuSword = InvokeInstance(catalog, "FindBlueprint", "taomu_sword");
@@ -153,9 +155,12 @@ public sealed class ForgingSystemEditorTests
         Assert.IsNotNull(weapon);
         Assert.AreEqual("桃木剑", GetProperty<string>(weapon, "DisplayName"));
         Assert.IsNotNull(GetProperty<Sprite>(weapon, "Icon"));
-        object indicatorConfig = GetProperty(weapon, "IndicatorConfig");
-        Assert.IsNotNull(indicatorConfig);
-        Assert.AreEqual("TargetReticle", GetProperty(indicatorConfig, "ShapeType").ToString());
+        Assert.AreEqual("TargetReticle", GetProperty(weapon, "ShapeType").ToString());
+        Assert.AreEqual(10f, GetProperty<float>(weapon, "Range"), 0.0001f);
+        Assert.AreEqual(0.75f, GetProperty<float>(weapon, "Radius"), 0.0001f);
+        Assert.AreEqual(1.2f, GetProperty<float>(weapon, "Width"), 0.0001f);
+        Assert.AreEqual(10f, GetProperty<float>(weapon, "Length"), 0.0001f);
+        Assert.AreEqual("M_IND_TetherLine", GetProperty<string>(weapon, "ValidMaterialResourceId"));
         Assert.AreEqual(cells.Count * 10f, GetProperty<float>(weapon, "RuntimeTotalDamage"), 0.0001f);
         UnityEngine.Object.DestroyImmediate(weapon);
     }

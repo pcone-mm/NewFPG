@@ -1,4 +1,5 @@
 using UnityEngine;
+using NewFPG.Combat;
 
 namespace NewFPG.Level
 {
@@ -45,9 +46,9 @@ namespace NewFPG.Level
             Vector3 currentDirection = ResolveDirection();
             Vector3 next = previous + currentDirection * (speed * Time.deltaTime);
 
-            if (TryHitAlongSegment(previous, next, out LevelCombatant combatant, out Vector3 hitPoint))
+            if (TryHitAlongSegment(previous, next, out IDamageable damageable, out Vector3 hitPoint))
             {
-                Hit(combatant, hitPoint);
+                Hit(damageable, hitPoint);
                 return;
             }
 
@@ -65,8 +66,8 @@ namespace NewFPG.Level
                 return direction;
             }
 
-            LevelCombatant combatant = target.GetComponentInParent<LevelCombatant>();
-            if (combatant != null && combatant.IsDead)
+            IDamageable damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null && !IsDamageableAlive(damageable))
             {
                 target = null;
                 return direction;
@@ -82,9 +83,9 @@ namespace NewFPG.Level
             return direction;
         }
 
-        private bool TryHitAlongSegment(Vector3 start, Vector3 end, out LevelCombatant combatant, out Vector3 hitPoint)
+        private bool TryHitAlongSegment(Vector3 start, Vector3 end, out IDamageable damageable, out Vector3 hitPoint)
         {
-            combatant = null;
+            damageable = null;
             hitPoint = end;
 
             Vector3 segment = end - start;
@@ -104,29 +105,29 @@ namespace NewFPG.Level
                     continue;
                 }
 
-                LevelCombatant hitCombatant = hit.collider.GetComponentInParent<LevelCombatant>();
-                if (hitCombatant == null || hitCombatant.IsDead || hit.distance >= nearestDistance)
+                IDamageable hitDamageable = hit.collider.GetComponentInParent<IDamageable>();
+                if (!IsDamageableAlive(hitDamageable) || hit.distance >= nearestDistance)
                 {
                     continue;
                 }
 
                 nearestDistance = hit.distance;
-                combatant = hitCombatant;
+                damageable = hitDamageable;
                 hitPoint = hit.point;
             }
 
-            if (combatant != null)
+            if (damageable != null)
             {
                 return true;
             }
 
             if (target != null)
             {
-                LevelCombatant targetCombatant = target.GetComponentInParent<LevelCombatant>();
-                if (targetCombatant != null && !targetCombatant.IsDead && Vector3.Distance(end, TargetPoint(target)) <= hitRadius)
+                IDamageable targetDamageable = target.GetComponentInParent<IDamageable>();
+                if (IsDamageableAlive(targetDamageable) && Vector3.Distance(end, TargetPoint(targetDamageable, target)) <= hitRadius)
                 {
-                    combatant = targetCombatant;
-                    hitPoint = TargetPoint(target);
+                    damageable = targetDamageable;
+                    hitPoint = TargetPoint(targetDamageable, target);
                     return true;
                 }
             }
@@ -134,9 +135,9 @@ namespace NewFPG.Level
             return false;
         }
 
-        private void Hit(LevelCombatant combatant, Vector3 hitPoint)
+        private void Hit(IDamageable damageable, Vector3 hitPoint)
         {
-            combatant.ApplyDamage(damage, hitPoint, gameObject);
+            damageable.ReceiveDamage(new DamagePayload(damage, gameObject, hitPoint));
             if (hitEffectPrefab != null)
             {
                 Instantiate(hitEffectPrefab, hitPoint, Quaternion.identity);
@@ -147,6 +148,27 @@ namespace NewFPG.Level
 
         private static Vector3 TargetPoint(Transform targetTransform)
         {
+            return TargetPoint(targetTransform != null ? targetTransform.GetComponentInParent<IDamageable>() : null, targetTransform);
+        }
+
+        private static Vector3 TargetPoint(IDamageable damageable, Transform fallbackTransform)
+        {
+            if (damageable != null && damageable.AimTransform != null)
+            {
+                return damageable.AimTransform.position;
+            }
+
+            Transform targetTransform = fallbackTransform;
+            if (targetTransform == null && damageable is Component component && component != null)
+            {
+                targetTransform = component.transform;
+            }
+
+            if (targetTransform == null)
+            {
+                return Vector3.zero;
+            }
+
             Collider collider = targetTransform.GetComponentInChildren<Collider>();
             if (collider != null)
             {
@@ -160,6 +182,21 @@ namespace NewFPG.Level
             }
 
             return targetTransform.position + Vector3.up;
+        }
+
+        private static bool IsDamageableAlive(IDamageable damageable)
+        {
+            if (damageable == null)
+            {
+                return false;
+            }
+
+            if (damageable is Object unityObject && unityObject == null)
+            {
+                return false;
+            }
+
+            return damageable.IsAlive && damageable.IsTargetable;
         }
     }
 }

@@ -19,6 +19,7 @@ namespace NewFPG.Combat
     public interface IDamageable
     {
         bool IsAlive { get; }
+        bool IsTargetable { get; }
         Transform AimTransform { get; }
         void ReceiveDamage(DamagePayload payload);
     }

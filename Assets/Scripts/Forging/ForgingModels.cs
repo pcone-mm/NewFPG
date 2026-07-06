@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NewFPG.Combat.SkillIndicators;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -201,6 +202,7 @@ namespace NewFPG.Forging
     {
         public string weaponDefinitionAssetPath;
         public string hudIconPath;
+        [Obsolete("Legacy migration field. Runtime geometry is stored directly on WeaponDefinition/runtime binding.")]
         public string indicatorConfigPath;
         public string releaseEffectPrefabPath;
         public string hitEffectPrefabPath;
@@ -209,6 +211,74 @@ namespace NewFPG.Forging
         [Min(0.05f)] public float cooldown = 0.4f;
         [Min(0.1f)] public float range = 8f;
         [Min(0.05f)] public float radius = 0.55f;
+        public SkillIndicatorShapeType shapeType = SkillIndicatorShapeType.GroundCircle;
+        [Min(0.05f)] public float width = 1.1f;
+        [Min(0.1f)] public float length = 8f;
+        [Range(1f, 360f)] public float angle = 90f;
+        [Min(0f)] public float height = 2f;
+        [Min(0f)] public float groundOffset = 0.06f;
+        public SkillIndicatorInputMode inputMode = SkillIndicatorInputMode.HoldPreview;
+        public SkillIndicatorDefaultReleasePolicy tapPolicy = SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget;
+        public SkillIndicatorDefaultReleasePolicy holdPolicy = SkillIndicatorDefaultReleasePolicy.CastAtCrosshairHit;
+        public SkillIndicatorInvalidReleasePolicy invalidReleasePolicy = SkillIndicatorInvalidReleasePolicy.Cancel;
+        public SkillIndicatorAimSource aimSource = SkillIndicatorAimSource.CrosshairRay;
+        public bool requireSurfaceHit;
+        public bool clampToRange = true;
+        public SkillIndicatorPlacementMode placementMode = SkillIndicatorPlacementMode.GroundSurface;
+        public int surfaceMask = ~0;
+        public int collisionMask = ~0;
+        [Min(0f)] public float tapMaxDuration = 0.16f;
+        [Min(0f)] public float holdEnterDelay = 0.1f;
+        [Min(0f)] public float castDelay;
+        [Min(0f)] public float warningTime;
+        [Min(0f)] public float duration;
+        [Min(0f)] public float fadeOut = 0.15f;
+        public string previewPrefabResourceId;
+        public string validMaterialResourceId = "M_IND_OwnerValid";
+        public string invalidMaterialResourceId = "M_IND_Invalid";
+        public string confirmAudioResourceId = "S_IND_ConfirmRelease";
+        public string invalidAudioResourceId = "S_IND_Invalid";
+        public bool debugDraw;
+
+        public void Normalize()
+        {
+            resourceCost = Mathf.Max(0f, resourceCost);
+            baseDamage = Mathf.Max(0f, baseDamage);
+            cooldown = Mathf.Max(0.05f, cooldown);
+            range = Mathf.Max(0.1f, range);
+            radius = Mathf.Max(0.05f, radius);
+            width = width > 0f ? Mathf.Max(0.05f, width) : radius * 2f;
+            length = length > 0f ? Mathf.Max(0.1f, length) : range;
+            angle = Mathf.Clamp(angle, 1f, 360f);
+            height = Mathf.Max(0f, height);
+            groundOffset = Mathf.Max(0f, groundOffset);
+            tapMaxDuration = Mathf.Max(0f, tapMaxDuration);
+            holdEnterDelay = Mathf.Max(0f, holdEnterDelay);
+            castDelay = Mathf.Max(0f, castDelay);
+            warningTime = Mathf.Max(0f, warningTime);
+            duration = Mathf.Max(0f, duration);
+            fadeOut = Mathf.Max(0f, fadeOut);
+
+            if (string.IsNullOrWhiteSpace(validMaterialResourceId))
+            {
+                validMaterialResourceId = "M_IND_OwnerValid";
+            }
+
+            if (string.IsNullOrWhiteSpace(invalidMaterialResourceId))
+            {
+                invalidMaterialResourceId = "M_IND_Invalid";
+            }
+
+            if (string.IsNullOrWhiteSpace(confirmAudioResourceId))
+            {
+                confirmAudioResourceId = "S_IND_ConfirmRelease";
+            }
+
+            if (string.IsNullOrWhiteSpace(invalidAudioResourceId))
+            {
+                invalidAudioResourceId = "S_IND_Invalid";
+            }
+        }
     }
 
     [Serializable]

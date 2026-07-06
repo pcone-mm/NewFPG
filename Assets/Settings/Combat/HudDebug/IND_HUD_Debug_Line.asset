@@ -30,10 +30,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   shapeType: 3
-  range: 9
-  radius: 0.45
-  width: 1.2
-  length: 9
+  range: 0
+  radius: 0
+  width: 0
+  length: 0
   angle: 90
   height: 1.8
   groundOffset: 0.06

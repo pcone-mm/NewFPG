@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Pathfinding;
 
 namespace NewFPG.EditorTools
 {
@@ -137,20 +138,24 @@ namespace NewFPG.EditorTools
         {
             player.tag = PlayerTag;
             CombatVitals vitals = EnsureComponent<CombatVitals>(player);
+            CombatVitalsAuthoring vitalsAuthoring = EnsureComponent<CombatVitalsAuthoring>(player);
             CombatResourcePool resourcePool = EnsureComponent<CombatResourcePool>(player);
             PlayerWeaponCaster caster = EnsureComponent<PlayerWeaponCaster>(player);
             PlayerHitFeedback hitFeedback = EnsureComponent<PlayerHitFeedback>(player);
             RemoveMissingMonoBehaviours(player);
 
             SerializedObject serializedVitals = new SerializedObject(vitals);
-            serializedVitals.FindProperty("maxHealth").floatValue = 100f;
-            serializedVitals.FindProperty("startingHealth").floatValue = 100f;
-            serializedVitals.FindProperty("maxShield").floatValue = 50f;
-            serializedVitals.FindProperty("startingShield").floatValue = 25f;
-            serializedVitals.FindProperty("destroyOnDeath").boolValue = false;
             serializedVitals.FindProperty("animator").objectReferenceValue = player.GetComponent<Animator>();
             serializedVitals.FindProperty("spriteRenderer").objectReferenceValue = player.GetComponent<SpriteRenderer>();
             serializedVitals.ApplyModifiedPropertiesWithoutUndo();
+
+            vitalsAuthoring.Settings.maxHealth = 100f;
+            vitalsAuthoring.Settings.startingHealth = 100f;
+            vitalsAuthoring.Settings.maxShield = 50f;
+            vitalsAuthoring.Settings.startingShield = 25f;
+            vitalsAuthoring.Settings.destroyOnDeath = false;
+            vitalsAuthoring.Settings.Normalize();
+            EditorUtility.SetDirty(vitalsAuthoring);
 
             SerializedObject serializedResource = new SerializedObject(resourcePool);
             serializedResource.FindProperty("maxResource").floatValue = 10f;
@@ -187,50 +192,47 @@ namespace NewFPG.EditorTools
 
         private static void ConfigureFishObject(GameObject fish, bool prefabAsset)
         {
-            CombatVitals vitals = EnsureComponent<CombatVitals>(fish);
-            FishAttackController attack = EnsureComponent<FishAttackController>(fish);
-            LevelCombatant levelCombatant = EnsureComponent<LevelCombatant>(fish);
+            RemoveComponentIfExists<MonsterAttackController>(fish);
+            RemoveComponentIfExists<MonsterBrain>(fish);
+            RemoveComponentIfExists<MonsterSkillController>(fish);
+            RemoveComponentIfExists<MonsterMechanicRunner>(fish);
+            RemoveComponentIfExists<MonsterState>(fish);
+            RemoveComponentIfExists<Rigidbody>(fish);
+            RemoveComponentIfExistsByName(fish, "UnityEngine.AI.NavMeshAgent");
+            RemoveComponentIfExistsByName(fish, "NewFPG.Monsters.FishMonsterController");
+            RemoveComponentIfExistsByName(fish, "NewFPG.Monsters.MonsterRuntimeController");
+            RemoveMissingMonoBehaviours(fish);
 
-            FishMonsterController movement = fish.GetComponent<FishMonsterController>();
+            CombatVitals vitals = EnsureComponent<CombatVitals>(fish);
+            EnsureComponent<Seeker>(fish);
+            AIPath agent = EnsureComponent<AIPath>(fish);
+            MonsterConfigBinding binding = EnsureComponent<MonsterConfigBinding>(fish);
+
             Animator animator = fish.GetComponent<Animator>();
             SpriteRenderer spriteRenderer = fish.GetComponent<SpriteRenderer>();
 
             SerializedObject serializedVitals = new SerializedObject(vitals);
-            serializedVitals.FindProperty("maxHealth").floatValue = 80f;
-            serializedVitals.FindProperty("startingHealth").floatValue = 80f;
-            serializedVitals.FindProperty("maxShield").floatValue = 0f;
-            serializedVitals.FindProperty("startingShield").floatValue = 0f;
-            serializedVitals.FindProperty("destroyOnDeath").boolValue = true;
-            serializedVitals.FindProperty("deathDelay").floatValue = 0.25f;
             serializedVitals.FindProperty("animator").objectReferenceValue = animator;
             serializedVitals.FindProperty("spriteRenderer").objectReferenceValue = spriteRenderer;
             serializedVitals.ApplyModifiedPropertiesWithoutUndo();
 
-            SerializedObject serializedAttack = new SerializedObject(attack);
-            serializedAttack.FindProperty("target").objectReferenceValue = null;
-            serializedAttack.FindProperty("autoFindPlayer").boolValue = true;
-            serializedAttack.FindProperty("playerTag").stringValue = PlayerTag;
-            serializedAttack.FindProperty("attackRange").floatValue = 2.2f;
-            serializedAttack.FindProperty("requestInterval").floatValue = 2f;
-            serializedAttack.FindProperty("attackPrepareTime").floatValue = 0.8f;
-            serializedAttack.FindProperty("damage").floatValue = 12f;
-            serializedAttack.FindProperty("damageRadius").floatValue = 1.35f;
-            serializedAttack.FindProperty("warningHeightOffset").floatValue = 1.2f;
-            serializedAttack.FindProperty("targetMask").intValue = ~0;
-            serializedAttack.FindProperty("movement").objectReferenceValue = movement;
-            serializedAttack.FindProperty("animator").objectReferenceValue = animator;
-            serializedAttack.FindProperty("warningIndicator").objectReferenceValue = null;
-            serializedAttack.FindProperty("attackTriggerParameter").stringValue = AttackParameter;
-            serializedAttack.ApplyModifiedPropertiesWithoutUndo();
+            SerializedObject serializedBinding = new SerializedObject(binding);
+            serializedBinding.FindProperty("monsterId").stringValue = "fish";
+            serializedBinding.FindProperty("catalogJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(MonsterCatalog.DefaultCatalogPath);
+            serializedBinding.FindProperty("applyOnAwake").boolValue = true;
+            serializedBinding.ApplyModifiedPropertiesWithoutUndo();
 
-            SerializedObject serializedLevelCombatant = new SerializedObject(levelCombatant);
-            serializedLevelCombatant.FindProperty("maxHp").floatValue = 80f;
-            serializedLevelCombatant.FindProperty("destroyOnDeath").boolValue = false;
-            serializedLevelCombatant.FindProperty("animator").objectReferenceValue = animator;
-            serializedLevelCombatant.FindProperty("spriteRenderer").objectReferenceValue = spriteRenderer;
-            serializedLevelCombatant.FindProperty("fishMonsterController").objectReferenceValue = movement;
-            serializedLevelCombatant.FindProperty("combatVitals").objectReferenceValue = vitals;
-            serializedLevelCombatant.ApplyModifiedPropertiesWithoutUndo();
+            agent.radius = 0.35f;
+            agent.height = 1.2f;
+            agent.maxSpeed = 2.5f;
+            agent.maxAcceleration = 16f;
+            agent.rotationSpeed = 720f;
+            agent.endReachedDistance = 1.2f;
+            agent.slowdownDistance = 1.2f;
+            agent.updateRotation = false;
+            agent.gravity = Vector3.zero;
+            agent.constrainInsideGraph = true;
+            EditorUtility.SetDirty(agent);
 
             if (prefabAsset)
             {
@@ -478,6 +480,28 @@ namespace NewFPG.EditorTools
             }
 
             GameObjectUtility.RemoveMonoBehavioursWithMissingScript(target);
+        }
+
+        private static void RemoveComponentIfExists<T>(GameObject target) where T : Component
+        {
+            T component = target.GetComponent<T>();
+            if (component != null)
+            {
+                Object.DestroyImmediate(component, true);
+            }
+        }
+
+        private static void RemoveComponentIfExistsByName(GameObject target, string fullTypeName)
+        {
+            Component[] components = target.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component != null && component.GetType().FullName == fullTypeName)
+                {
+                    Object.DestroyImmediate(component, true);
+                }
+            }
         }
 
         private static void EnsureFolder(string folderPath)

@@ -1,4 +1,5 @@
 using System;
+using NewFPG.Monsters;
 using UnityEngine;
 
 namespace NewFPG.Combat
@@ -6,26 +7,13 @@ namespace NewFPG.Combat
     [DisallowMultipleComponent]
     public sealed class CombatVitals : MonoBehaviour, IDamageable
     {
-        [Header("Health")]
-        [SerializeField, Min(1f)] private float maxHealth = 100f;
-        [SerializeField, Min(0f)] private float startingHealth = 100f;
-
-        [Header("Shield")]
-        [SerializeField, Min(0f)] private float maxShield = 50f;
-        [SerializeField, Min(0f)] private float startingShield;
-
-        [Header("Death")]
-        [SerializeField] private bool destroyOnDeath;
-        [SerializeField, Min(0f)] private float deathDelay = 0.2f;
+        [Header("References")]
         [SerializeField] private Behaviour[] disableOnDeath;
-
-        [Header("Feedback")]
         [SerializeField] private Animator animator;
-        [SerializeField] private string hitTriggerParameter = "Hit";
         [SerializeField] private SpriteRenderer spriteRenderer;
-        [SerializeField] private Color hitTint = new Color(1f, 0.65f, 0.55f, 1f);
-        [SerializeField, Min(0.02f)] private float hitTintSeconds = 0.12f;
 
+        private CombatVitalsSettings settings = new CombatVitalsSettings();
+        private IMonsterState monsterState;
         private float currentHealth;
         private float currentShield;
         private bool dead;
@@ -39,18 +27,41 @@ namespace NewFPG.Combat
         public event Action<CombatVitals> Died;
 
         public float CurrentHealth => currentHealth;
-        public float MaxHealth => maxHealth;
-        public float HealthRatio => maxHealth <= 0f ? 0f : currentHealth / maxHealth;
+        public float MaxHealth => settings.maxHealth;
+        public float HealthRatio => settings.maxHealth <= 0f ? 0f : currentHealth / settings.maxHealth;
         public float CurrentShield => currentShield;
-        public float MaxShield => maxShield;
-        public float ShieldRatio => maxShield <= 0f ? 0f : currentShield / maxShield;
+        public float MaxShield => settings.maxShield;
+        public float ShieldRatio => settings.maxShield <= 0f ? 0f : currentShield / settings.maxShield;
         public bool IsAlive => !dead && currentHealth > 0f;
-        public Transform AimTransform => transform;
+        public bool IsTargetable => monsterState == null || monsterState.IsTargetable;
+        public Transform AimTransform => IsTargetable ? transform : null;
+
+        public CombatVitalsSettings ToSettings()
+        {
+            return settings.Clone();
+        }
+
+        public void ApplySettings(CombatVitalsSettings nextSettings, bool resetVitals = false)
+        {
+            if (nextSettings == null)
+            {
+                return;
+            }
+
+            settings = nextSettings.Clone();
+            settings.Normalize();
+            CacheAnimatorParameter();
+
+            if (resetVitals)
+            {
+                ResetVitals();
+            }
+        }
 
         private void Reset()
         {
             CacheReferences();
-            startingHealth = maxHealth;
+            settings.startingHealth = settings.maxHealth;
         }
 
         private void Awake()
@@ -71,11 +82,6 @@ namespace NewFPG.Combat
 
         private void OnValidate()
         {
-            maxHealth = Mathf.Max(1f, maxHealth);
-            startingHealth = Mathf.Clamp(startingHealth <= 0f ? maxHealth : startingHealth, 1f, maxHealth);
-            maxShield = Mathf.Max(0f, maxShield);
-            startingShield = Mathf.Clamp(startingShield, 0f, maxShield);
-            hitTintSeconds = Mathf.Max(0.02f, hitTintSeconds);
             CacheReferences();
             CacheAnimatorParameter();
         }
@@ -97,8 +103,9 @@ namespace NewFPG.Combat
         public void ResetVitals()
         {
             dead = false;
-            currentHealth = Mathf.Clamp(startingHealth <= 0f ? maxHealth : startingHealth, 1f, maxHealth);
-            currentShield = Mathf.Clamp(startingShield, 0f, maxShield);
+            settings.Normalize();
+            currentHealth = Mathf.Clamp(settings.startingHealth <= 0f ? settings.maxHealth : settings.startingHealth, 1f, settings.maxHealth);
+            currentShield = Mathf.Clamp(settings.startingShield, 0f, settings.maxShield);
 
             if (spriteRenderer != null)
             {
@@ -112,7 +119,8 @@ namespace NewFPG.Combat
 
         public void SetMaxHealth(float value, bool fill)
         {
-            maxHealth = Mathf.Max(1f, value);
+            settings.maxHealth = Mathf.Max(1f, value);
+            settings.startingHealth = Mathf.Clamp(settings.startingHealth <= 0f ? settings.maxHealth : settings.startingHealth, 1f, settings.maxHealth);
             if (fill)
             {
                 dead = false;
@@ -124,14 +132,15 @@ namespace NewFPG.Combat
                 }
             }
 
-            currentHealth = fill ? maxHealth : Mathf.Clamp(currentHealth, 0f, maxHealth);
+            currentHealth = fill ? settings.maxHealth : Mathf.Clamp(currentHealth, 0f, settings.maxHealth);
             Changed?.Invoke(this);
         }
 
         public void SetMaxShield(float value, bool fill)
         {
-            maxShield = Mathf.Max(0f, value);
-            currentShield = fill ? maxShield : Mathf.Clamp(currentShield, 0f, maxShield);
+            settings.maxShield = Mathf.Max(0f, value);
+            settings.startingShield = Mathf.Clamp(settings.startingShield, 0f, settings.maxShield);
+            currentShield = fill ? settings.maxShield : Mathf.Clamp(currentShield, 0f, settings.maxShield);
             Changed?.Invoke(this);
         }
 
@@ -142,7 +151,7 @@ namespace NewFPG.Combat
                 return;
             }
 
-            currentShield = Mathf.Clamp(currentShield + amount, 0f, maxShield);
+            currentShield = Mathf.Clamp(currentShield + amount, 0f, settings.maxShield);
             Changed?.Invoke(this);
         }
 
@@ -153,13 +162,13 @@ namespace NewFPG.Combat
                 return;
             }
 
-            currentHealth = Mathf.Clamp(currentHealth + amount, 0f, maxHealth);
+            currentHealth = Mathf.Clamp(currentHealth + amount, 0f, settings.maxHealth);
             Changed?.Invoke(this);
         }
 
         public void ReceiveDamage(DamagePayload payload)
         {
-            if (dead || payload.Amount <= 0f)
+            if (dead || payload.Amount <= 0f || monsterState != null && monsterState.IsInvincible)
             {
                 return;
             }
@@ -198,9 +207,9 @@ namespace NewFPG.Combat
             SetDeathBehavioursEnabled(false);
             Died?.Invoke(this);
 
-            if (destroyOnDeath)
+            if (settings.destroyOnDeath)
             {
-                Destroy(gameObject, deathDelay);
+                Destroy(gameObject, settings.deathDelay);
             }
             else if (spriteRenderer != null)
             {
@@ -222,8 +231,8 @@ namespace NewFPG.Combat
             }
 
             defaultColor = spriteRenderer.color;
-            spriteRenderer.color = hitTint;
-            tintRemaining = hitTintSeconds;
+            spriteRenderer.color = settings.hitTint;
+            tintRemaining = settings.hitTintSeconds;
         }
 
         private void SetDeathBehavioursEnabled(bool enabled)
@@ -253,11 +262,17 @@ namespace NewFPG.Combat
             {
                 spriteRenderer = GetComponent<SpriteRenderer>();
             }
+
+            monsterState = GetComponent<MonsterConfigBinding>();
+            if (monsterState == null)
+            {
+                monsterState = GetComponent<MonsterState>();
+            }
         }
 
         private void CacheAnimatorParameter()
         {
-            hitTriggerHash = Animator.StringToHash(hitTriggerParameter);
+            hitTriggerHash = Animator.StringToHash(settings.hitTriggerParameter);
             animatorHasHitTrigger = false;
             if (animator == null)
             {

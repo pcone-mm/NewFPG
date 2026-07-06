@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa98621b2ce2476788e9a5f0748d84cc, type: 3}
+  m_Name: SO_HTC_Default
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.HitTipCatalog
+  defaultAnimation: {fileID: 11400000, guid: 42a8bcf5f1514a50a77ad688ec81d717, type: 2}
+  styles:
+  - styleId: 0
+    backgroundSprite: {fileID: 21300000, guid: 2d0738d553479264c88b2604a1b3f403, type: 3}
+    digitSprites:
+    - {fileID: 21300000, guid: 3d156223438aad844addccc898a7305c, type: 3}
+    - {fileID: 21300000, guid: c9f1c198b21c21940947240585ab0940, type: 3}
+    - {fileID: 21300000, guid: c98f7f7fa4cb4064fae9d0b58f15f670, type: 3}
+    - {fileID: 21300000, guid: faac3facc16007842b4d7a6d7a1d374d, type: 3}
+    - {fileID: 21300000, guid: 7ae21a9aaf474874a9ddfccb92a98b15, type: 3}
+    - {fileID: 21300000, guid: 9f12be4130989644f8fdf54676ba93f9, type: 3}
+    - {fileID: 21300000, guid: 64260db91f0bea9438b9dfb92f962d34, type: 3}
+    - {fileID: 21300000, guid: f1138e82cb4ae3a40babdc9f038c0b53, type: 3}
+    - {fileID: 21300000, guid: 1580f22da6265d94fb7c1b377fd316d7, type: 3}
+    - {fileID: 21300000, guid: 813e83d93e399c24c9d0a99d1e11926e, type: 3}
+    animation: {fileID: 11400000, guid: 42a8bcf5f1514a50a77ad688ec81d717, type: 2}
+    digitSpacing: -2
+    backgroundHorizontalPadding: 34
+    backgroundMinSize: {x: 133, y: 50}
+    digitHeight: 60
+    baseColor: {r: 1, g: 1, b: 1, a: 1}
+    highlightColor: {r: 1, g: 0.95, b: 0.66, a: 1}
+  - styleId: 1
+    backgroundSprite: {fileID: 21300000, guid: 2d0738d553479264c88b2604a1b3f403, type: 3}
+    digitSprites:
+    - {fileID: 21300000, guid: 4c07ed1eef819f44fbb8f4ad531cc4ff, type: 3}
+    - {fileID: 21300000, guid: 260d40fc4c185b54f86368d2e9342ef4, type: 3}
+    - {fileID: 21300000, guid: 5913a8063a5c91a43bf598bb6f269c12, type: 3}
+    - {fileID: 21300000, guid: 18700a9074db6284695b32ef62528da0, type: 3}
+    - {fileID: 21300000, guid: 5fa1fa3059b46d04e92a5e1bd00c2c55, type: 3}
+    - {fileID: 21300000, guid: 35de5bef663a14f45b7588e367c163b2, type: 3}
+    - {fileID: 21300000, guid: 714caf67f28393946bbc036ecb1517ce, type: 3}
+    - {fileID: 21300000, guid: 82db3f3268fd54e4dabd5c318be88d8b, type: 3}
+    - {fileID: 21300000, guid: 0db03738d4a8bb5438b43c0fdced1a84, type: 3}
+    - {fileID: 21300000, guid: d67e7acf841fffb4599ac1dd0327093c, type: 3}
+    animation: {fileID: 11400000, guid: 42a8bcf5f1514a50a77ad688ec81d717, type: 2}
+    digitSpacing: -2
+    backgroundHorizontalPadding: 34
+    backgroundMinSize: {x: 133, y: 50}
+    digitHeight: 60
+    baseColor: {r: 1, g: 1, b: 1, a: 1}
+    highlightColor: {r: 1, g: 0.98, b: 0.5, a: 1}
+  - styleId: 2
+    backgroundSprite: {fileID: 21300000, guid: 40757c80c52098c419a127a01bc787d9, type: 3}
+    digitSprites:
+    - {fileID: 21300000, guid: bb0a5fd56ff0bb242ae727c9af88775f, type: 3}
+    - {fileID: 21300000, guid: 75858b31362e2044dae64999208b831a, type: 3}
+    - {fileID: 21300000, guid: 3195a4a87850bd84a86ea31eac0d2e29, type: 3}
+    - {fileID: 21300000, guid: ea9f29c42c7c9ea4a8bc162cef20fd6f, type: 3}
+    - {fileID: 21300000, guid: 036cf8f24f0ef344ba289456942ec6d1, type: 3}
+    - {fileID: 21300000, guid: 7f8a66dcfe46cb4469fa2b2a143a6472, type: 3}
+    - {fileID: 21300000, guid: 5058ef2d3ae7bc5488d9f7a0509bfc48, type: 3}
+    - {fileID: 21300000, guid: e0f3c8e29a9363a478ac5a459897dd97, type: 3}
+    - {fileID: 21300000, guid: 25c95b7df5cd28c4f8bd76ac5dd79cbe, type: 3}
+    - {fileID: 21300000, guid: c5869842a4b1f9f4192f9b1160aa2caf, type: 3}
+    animation: {fileID: 11400000, guid: 42a8bcf5f1514a50a77ad688ec81d717, type: 2}
+    digitSpacing: -2
+    backgroundHorizontalPadding: 34
+    backgroundMinSize: {x: 133, y: 50}
+    digitHeight: 60
+    baseColor: {r: 1, g: 1, b: 1, a: 1}
+    highlightColor: {r: 1, g: 0.72, b: 0.78, a: 1}

@@ -1,0 +1,155 @@
+{
+  "version": "draft-2026-06-30",
+  "source": "Unity ScriptableObject 怪物配置",
+  "中文备注": "运行时默认从 monster_catalog.json 读取；策划可在 MonsterCatalogAuthoring.asset 里编辑后导出 JSON。ID、Tag、Animator 参数、Layer 名、资源路径是运行时绑定键，不要为了中文显示改名。怪物 AI 流程在 Behavior Designer 行为树中配置，本表只保存数值、技能、机制和站位区域组数据。",
+  "monsters": [
+    {
+      "monsterId": "fish",
+      "displayName": "鱼怪",
+      "中文备注": "鱼怪配置：Fish.prefab 保留 MonsterConfigBinding、BehaviorTree、monsterId 和 catalogJson 引用；移动、技能、机制和战斗区域组从本 catalog 读取。monsterId 是运行时查找键，保持 fish。",
+      "prefabPath": "Assets/Prefabs/Monster/Fish.prefab",
+      "movement": {
+        "中文备注": "控制 A* AIPath 移动、追击、巡逻、BattleArenaZoneMap 区域组站位采样、碰撞体自动适配和移动动画参数。战斗 AI 找 Player 默认不限制距离，避免鱼怪远离玩家后丢目标并误进巡逻。targetTag、MoveX、MoveZ、Speed、IsMoving、MovementState 必须和 Unity Tag/Animator 参数一致；near/mid/far/left/center/right 是稳定区域组 ID，不要翻译。",
+        "moveSpeed": 2.5,
+        "acceleration": 16.0,
+        "deceleration": 20.0,
+        "movementEnabled": true,
+        "autoFindTargetByTag": true,
+        "targetTag": "Player",
+        "detectionRadius": 0.0,
+        "stoppingDistance": 1.2,
+        "navMeshAgentRadius": 0.35,
+        "navMeshAgentHeight": 1.2,
+        "navMeshAgentAngularSpeed": 720.0,
+        "navMeshAgentBaseOffset": 0.0,
+        "navMeshAreaMask": -1,
+        "navMeshSampleDistance": 1.5,
+        "visibilitySampleHeight": 1.0,
+        "visiblePositionLineOfSightMask": 2048,
+        "visiblePositionOccupancyMask": 2048,
+        "visiblePositionSampleAttempts": 24,
+        "visiblePositionOccupancyRadius": 0.45,
+        "nearZoneGroup": {
+          "中文备注": "近距离/前排区域组：对应 BattleArenaZoneMap 的左前、中前、右前三个格子。鱼怪靠近目标时可优先在这里找站位。",
+          "groupId": "near",
+          "zoneIds": "left_front,center_front,right_front"
+        },
+        "midZoneGroup": {
+          "中文备注": "中距离/中排区域组：对应 BattleArenaZoneMap 的左中、中间、右中三个格子。near 不合适时可作为靠近备选。",
+          "groupId": "mid",
+          "zoneIds": "left_mid,center_mid,right_mid"
+        },
+        "farZoneGroup": {
+          "中文备注": "远距离/后排区域组：对应 BattleArenaZoneMap 的左后、中后、右后三个格子。鱼怪释放技能后拉远时使用。",
+          "groupId": "far",
+          "zoneIds": "left_back,center_back,right_back"
+        },
+        "leftZoneGroup": {
+          "中文备注": "左列区域组：对应 BattleArenaZoneMap 的左前、左中、左后三个格子。用于需要控制横向站位的行为树分支。",
+          "groupId": "left",
+          "zoneIds": "left_front,left_mid,left_back"
+        },
+        "centerZoneGroup": {
+          "中文备注": "中列区域组：对应 BattleArenaZoneMap 的中前、中间、中后三个格子。用于需要控制横向站位的行为树分支。",
+          "groupId": "center",
+          "zoneIds": "center_front,center_mid,center_back"
+        },
+        "rightZoneGroup": {
+          "中文备注": "右列区域组：对应 BattleArenaZoneMap 的右前、右中、右后三个格子。用于需要控制横向站位的行为树分支。",
+          "groupId": "right",
+          "zoneIds": "right_front,right_mid,right_back"
+        },
+        "targetRefreshInterval": 0.25,
+        "patrolWhenNoTarget": true,
+        "patrolRadius": 3.0,
+        "patrolPointTolerance": 0.2,
+        "patrolPauseDuration": 1.0,
+        "flipSpriteWithHorizontalMovement": true,
+        "spriteFacesRightByDefault": true,
+        "autoConfigureCollider": true,
+        "colliderWidthScale": 0.8,
+        "colliderHeightScale": 0.75,
+        "colliderDepth": 0.75,
+        "moveXParameter": "MoveX",
+        "moveZParameter": "MoveZ",
+        "speedParameter": "Speed",
+        "isMovingParameter": "IsMoving",
+        "movementStateParameter": "MovementState"
+      },
+      "vitals": {
+        "中文备注": "套用到 CombatVitals：控制最大生命、初始生命、护盾、死亡销毁和受击染色/受击动画。",
+        "maxHealth": 80.0,
+        "startingHealth": 80.0,
+        "maxShield": 0.0,
+        "startingShield": 0.0,
+        "destroyOnDeath": true,
+        "deathDelay": 0.25,
+        "hitTriggerParameter": "Hit",
+        "hitTint": {
+          "r": 1.0,
+          "g": 0.65,
+          "b": 0.55,
+          "a": 1.0
+        },
+        "hitTintSeconds": 0.12
+      },
+      "attack": {
+        "中文备注": "旧攻击兼容参数：当前鱼怪实际攻击由 skills/mechanics 执行；这里主要用于缺省技能生成和旧工具兼容。",
+        "autoFindPlayer": true,
+        "playerTag": "Player",
+        "attackRange": 2.2,
+        "requestInterval": 2.0,
+        "attackPrepareTime": 0.8,
+        "damage": 12.0,
+        "damageRadius": 1.35,
+        "warningHeightOffset": 1.2,
+        "targetMask": 311,
+        "attackTriggerParameter": "Attack"
+      },
+      "ai": {
+        "中文备注": "AI 流程由 Behavior Designer 外部行为树配置；catalog 只保存技能、机制、移动数值和 BattleArenaZoneMap 区域组。鱼怪使用 BT_Fish：找 Player，技能可用时移动到 near/mid 区域组，确认距离和视线后释放近身咬击，结束后尝试退到 far 区域组；不可用时追踪目标，无目标时巡逻。",
+        "enabled": true,
+        "behaviorTreePath": "Assets/Settings/Monsters/BehaviorTrees/BT_Fish.asset"
+      },
+      "skills": [
+        {
+          "skillId": "melee_bite",
+          "displayName": "近身咬击",
+          "中文备注": "鱼怪基础攻击：开始施放后停止移动并显示预警，等待 0.8 秒前摇后触发 Attack 动画，再执行 bite_damage_area 造成瞬时范围伤害。释放前会用 AstarBlocking 层做视线遮挡判断，玩家、武器和普通场景层不会挡住怪物视线。",
+          "cooldown": 2.0,
+          "windup": 0.8,
+          "activeDuration": 0.0,
+          "recovery": 0.0,
+          "castRange": 30.0,
+          "requireLineOfSight": true,
+          "lineOfSightMask": 2048,
+          "lineOfSightHeightOffset": 1.0,
+          "stopMovementDuringCast": true,
+          "animationTriggerParameter": "Attack",
+          "showWarning": true,
+          "warningHeightOffset": 1.2,
+          "mechanics": [
+            {
+              "mechanicId": "bite_damage_area",
+              "type": "damage_area",
+              "中文备注": "咬击伤害区：以鱼怪当前位置向上偏移 1.2 米为中心，半径 1.35 米内检测 targetMask 对应目标，造成 12 点伤害；affectSelf=false 会排除自己和其他怪物。",
+              "delay": 0.0,
+              "duration": 0.0,
+              "value": 12.0,
+              "radius": 1.35,
+              "heightOffset": 1.2,
+              "targetMask": 311,
+              "affectSelf": false
+            }
+          ]
+        }
+      ],
+      "presentation": {
+        "中文备注": "表现参数：Attack/Hit 是 Animator Trigger 名，必须和 Fish.controller 保持一致；warningHeightOffset 控制预警圈跟随鱼怪时的高度。",
+        "attackTriggerParameter": "Attack",
+        "hitTriggerParameter": "Hit",
+        "warningHeightOffset": 1.2
+      }
+    }
+  ]
+}

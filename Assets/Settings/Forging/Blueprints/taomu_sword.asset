@@ -35,14 +35,45 @@ MonoBehaviour:
   weaponDefinitionAssetPath: Assets/Settings/Forging/Weapons/WPN_TaomuSword.asset
   hudIcon: {fileID: 21300000, guid: b815b2820e044b9ca79fd4157deb52bc, type: 3}
   hudIconPath: Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png
-  indicatorConfig: {fileID: 11400000, guid: 63147d9372bb427cbf54cce368fa106d, type: 2}
   indicatorConfigPath: Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset
   releaseEffectPrefab: {fileID: 0}
-  releaseEffectPrefabPath: 
+  releaseEffectPrefabPath: Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_TaomuSword_Release.prefab
   hitEffectPrefab: {fileID: 0}
-  hitEffectPrefabPath: 
-  resourceCost: 3
+  hitEffectPrefabPath: Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_TaomuSword_Hit.prefab
+  resourceCost: 0
   baseDamage: 0
   cooldown: 0.3
   range: 10
   radius: 0.75
+  shapeType: 1
+  shapeWidth: 1.2
+  shapeLength: 10
+  angle: 90
+  shapeHeight: 1.8
+  groundOffset: 0.06
+  inputMode: 1
+  tapPolicy: 5
+  holdPolicy: 5
+  invalidReleasePolicy: 0
+  aimSource: 1
+  requireSurfaceHit: 0
+  clampToRange: 1
+  placementMode: 1
+  surfaceMask:
+    serializedVersion: 2
+    m_Bits: 23
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  tapMaxDuration: 0.16
+  holdEnterDelay: 0.12
+  castDelay: 0
+  warningTime: 0
+  duration: 0
+  fadeOut: 0.12
+  previewPrefabResourceId: PF_IND_TargetReticle
+  validMaterialResourceId: M_IND_TetherLine
+  invalidMaterialResourceId: M_IND_Invalid
+  confirmAudioResourceId: S_IND_TargetLock
+  invalidAudioResourceId: S_IND_Invalid
+  debugDraw: 0

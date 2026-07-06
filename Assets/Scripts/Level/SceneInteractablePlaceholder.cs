@@ -1,5 +1,6 @@
 using NewFPG.Characters;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -16,11 +17,13 @@ namespace NewFPG.Level
         [SerializeField] private string displayName;
         [SerializeField] private string prompt = "Interact";
         [SerializeField, TextArea] private string note;
+        [SerializeField] private string targetSceneName;
 
         public string InteractionId => interactionId;
         public string DisplayName => displayName;
         public string Prompt => prompt;
         public string Note => note;
+        public string TargetSceneName => targetSceneName;
         public bool IsPlayerInRange => player != null
             && Vector3.Distance(FlatPosition(player.position), FlatPosition(transform.position)) <= interactDistance;
 
@@ -32,11 +35,31 @@ namespace NewFPG.Level
             string newNote,
             float newInteractDistance = 2.4f)
         {
+            Initialize(
+                playerTransform,
+                newInteractionId,
+                newDisplayName,
+                newPrompt,
+                newNote,
+                string.Empty,
+                newInteractDistance);
+        }
+
+        public void Initialize(
+            Transform playerTransform,
+            string newInteractionId,
+            string newDisplayName,
+            string newPrompt,
+            string newNote,
+            string newTargetSceneName,
+            float newInteractDistance = 2.4f)
+        {
             player = playerTransform;
             interactionId = newInteractionId;
             displayName = newDisplayName;
             prompt = newPrompt;
             note = newNote;
+            targetSceneName = newTargetSceneName;
             interactDistance = Mathf.Max(0.25f, newInteractDistance);
             EnsurePhysics();
         }
@@ -72,6 +95,12 @@ namespace NewFPG.Level
 
         public bool Interact()
         {
+            if (!string.IsNullOrWhiteSpace(targetSceneName))
+            {
+                SceneManager.LoadScene(targetSceneName, LoadSceneMode.Single);
+                return true;
+            }
+
             Debug.Log(
                 $"Scene interactable placeholder triggered: {displayName} ({interactionId}). {note}",
                 this);

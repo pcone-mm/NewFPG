@@ -535,6 +535,7 @@ GameObject:
   m_Component:
   - component: {fileID: 456178857}
   - component: {fileID: 456178859}
+  - component: {fileID: 456178860}
   - component: {fileID: 456178858}
   - component: {fileID: 456178856}
   m_Layer: 0
@@ -610,18 +611,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22fffc660c0adc24f9f38ae928c401b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitals
-  maxHealth: 100
-  startingHealth: 100
-  maxShield: 50
-  startingShield: 50
-  destroyOnDeath: 0
-  deathDelay: 0.2
   disableOnDeath: []
   animator: {fileID: 0}
-  hitTriggerParameter: Hit
   spriteRenderer: {fileID: 0}
-  hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
-  hitTintSeconds: 0.12
+--- !u!114 &456178860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 456178855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d47c206becd4932a81d094a5e475f4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitalsAuthoring
+  settings:
+    maxHealth: 100
+    startingHealth: 100
+    maxShield: 50
+    startingShield: 50
+    destroyOnDeath: 0
+    deathDelay: 0.2
+    hitTriggerParameter: Hit
+    hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
+    hitTintSeconds: 0.12
+  applyOnAwake: 1
 --- !u!1 &518863566
 GameObject:
   m_ObjectHideFlags: 0

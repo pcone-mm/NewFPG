@@ -114,10 +114,7 @@ public sealed class PlayerHitFeedbackEditorTests
     {
         GameObject player = CreateTrackedGameObject("Player Hit Feedback Test Player");
         Component vitals = player.AddComponent(RequireType("NewFPG.Combat.CombatVitals, Assembly-CSharp"));
-        SetField(vitals, "maxHealth", 100f);
-        SetField(vitals, "startingHealth", 100f);
-        SetField(vitals, "maxShield", 0f);
-        SetField(vitals, "startingShield", 0f);
+        ApplyVitalsSettings(vitals, 100f, 0f);
         Invoke(vitals, "ResetVitals");
 
         GameObject cameraObject = CreateTrackedGameObject("Player Hit Feedback Test Camera");
@@ -179,6 +176,17 @@ public sealed class PlayerHitFeedbackEditorTests
         FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         Assert.IsNotNull(field, target.GetType().Name + "." + fieldName + " should exist.");
         field.SetValue(target, value);
+    }
+
+    private static void ApplyVitalsSettings(Component vitals, float health, float shield)
+    {
+        object settings = Activator.CreateInstance(RequireType("NewFPG.Combat.CombatVitalsSettings, Assembly-CSharp"));
+        SetField(settings, "maxHealth", health);
+        SetField(settings, "startingHealth", health);
+        SetField(settings, "maxShield", shield);
+        SetField(settings, "startingShield", shield);
+        SetField(settings, "destroyOnDeath", false);
+        Invoke(vitals, "ApplySettings", settings, true);
     }
 
     private static void ClearCinemachineImpulses()

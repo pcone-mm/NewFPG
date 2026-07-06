@@ -1,4 +1,5 @@
 using UnityEngine;
+using NewFPG.Combat;
 using NewFPG.Prototype;
 
 namespace NewFPG.Level
@@ -129,10 +130,10 @@ namespace NewFPG.Level
                 Ray ray = cameraForAim.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
                 if (Physics.Raycast(ray, out RaycastHit hit, aimDistance, ~0, QueryTriggerInteraction.Collide))
                 {
-                    LevelCombatant combatant = hit.collider.GetComponentInParent<LevelCombatant>();
-                    if (combatant != null && !combatant.IsDead)
+                    IDamageable damageable = hit.collider.GetComponentInParent<IDamageable>();
+                    if (IsDamageableAlive(damageable))
                     {
-                        target = combatant.transform;
+                        target = DamageableTransform(damageable);
                         return (hit.point - spawnPosition).normalized;
                     }
                 }
@@ -142,7 +143,7 @@ namespace NewFPG.Level
             if (nearest != null)
             {
                 target = nearest.transform;
-                return (TargetPoint(nearest.transform) - spawnPosition).normalized;
+                return (TargetPoint(nearest) - spawnPosition).normalized;
             }
 
             if (cameraForAim != null)
@@ -166,7 +167,13 @@ namespace NewFPG.Level
                     continue;
                 }
 
-                float distanceSqr = (TargetPoint(combatant.transform) - origin).sqrMagnitude;
+                IDamageable damageable = combatant.GetComponent<IDamageable>();
+                if (!IsDamageableAlive(damageable))
+                {
+                    continue;
+                }
+
+                float distanceSqr = (TargetPoint(combatant) - origin).sqrMagnitude;
                 if (distanceSqr < nearestDistanceSqr)
                 {
                     nearest = combatant;
@@ -222,8 +229,31 @@ namespace NewFPG.Level
             return projectileObject;
         }
 
-        private static Vector3 TargetPoint(Transform targetTransform)
+        private static Vector3 TargetPoint(LevelCombatant combatant)
         {
+            Transform combatantTransform = combatant != null ? combatant.transform : null;
+            IDamageable damageable = combatantTransform != null ? combatantTransform.GetComponentInParent<IDamageable>() : null;
+            return TargetPoint(damageable, combatantTransform);
+        }
+
+        private static Vector3 TargetPoint(IDamageable damageable, Transform fallbackTransform)
+        {
+            if (damageable != null && damageable.AimTransform != null)
+            {
+                return damageable.AimTransform.position;
+            }
+
+            Transform targetTransform = fallbackTransform;
+            if (targetTransform == null)
+            {
+                targetTransform = DamageableTransform(damageable);
+            }
+
+            if (targetTransform == null)
+            {
+                return Vector3.zero;
+            }
+
             Collider collider = targetTransform.GetComponentInChildren<Collider>();
             if (collider != null)
             {
@@ -237,6 +267,26 @@ namespace NewFPG.Level
             }
 
             return targetTransform.position + Vector3.up;
+        }
+
+        private static bool IsDamageableAlive(IDamageable damageable)
+        {
+            if (damageable == null)
+            {
+                return false;
+            }
+
+            if (damageable is Object unityObject && unityObject == null)
+            {
+                return false;
+            }
+
+            return damageable.IsAlive && damageable.IsTargetable;
+        }
+
+        private static Transform DamageableTransform(IDamageable damageable)
+        {
+            return damageable is Component component && component != null ? component.transform : null;
         }
     }
 }

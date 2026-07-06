@@ -55,8 +55,8 @@ namespace NewFPG.Combat.SkillIndicators
                 return;
             }
 
-            WeaponDefinition weapon = weaponCaster.GetWeapon(activeCasterIndex);
-            SkillIndicatorResolvedConfig config = SkillIndicatorResolvedConfig.From(weapon != null ? weapon.IndicatorConfig : null, weapon);
+            WeaponRuntimeStats stats = weaponCaster.GetRuntimeStats(activeCasterIndex);
+            SkillIndicatorResolvedConfig config = SkillIndicatorResolvedConfig.From(stats);
             if (config.inputMode != SkillIndicatorInputMode.HoldPreview)
             {
                 return;
@@ -212,8 +212,8 @@ namespace NewFPG.Combat.SkillIndicators
                 return;
             }
 
-            WeaponDefinition weapon = weaponCaster.GetWeapon(activeCasterIndex);
-            if (weapon == null || !weaponCaster.CanCast(activeCasterIndex))
+            WeaponRuntimeStats stats = weaponCaster.GetRuntimeStats(activeCasterIndex);
+            if (stats == null || !weaponCaster.CanCast(activeCasterIndex))
             {
                 previewRuntime.HidePreview();
                 previewing = false;
@@ -223,8 +223,7 @@ namespace NewFPG.Combat.SkillIndicators
             previewing = true;
             Transform castOrigin = weaponCaster.CastOrigin;
             activePreviewFrame = previewRuntime.ShowPreview(
-                weapon.IndicatorConfig,
-                weapon,
+                stats,
                 castOrigin,
                 castOrigin,
                 activePointerPosition,
@@ -239,15 +238,15 @@ namespace NewFPG.Combat.SkillIndicators
                 return false;
             }
 
-            WeaponDefinition weapon = weaponCaster.GetWeapon(activeCasterIndex);
-            SkillIndicatorResolvedConfig config = SkillIndicatorResolvedConfig.From(weapon != null ? weapon.IndicatorConfig : null, weapon);
-            if (weapon == null || config.tapPolicy == SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget)
+            WeaponRuntimeStats stats = weaponCaster.GetRuntimeStats(activeCasterIndex);
+            SkillIndicatorResolvedConfig config = SkillIndicatorResolvedConfig.From(stats);
+            if (stats == null || config.tapPolicy == SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget)
             {
                 return weaponCaster.TryCast(activeCasterIndex);
             }
 
             SkillIndicatorPreviewFrame frame = previewRuntime != null
-                ? ResolveFrameForActiveWeapon(weapon)
+                ? ResolveFrameForActiveWeapon(stats)
                 : default;
             if (frame.IsValid)
             {
@@ -262,12 +261,11 @@ namespace NewFPG.Combat.SkillIndicators
             return false;
         }
 
-        private SkillIndicatorPreviewFrame ResolveFrameForActiveWeapon(WeaponDefinition weapon)
+        private SkillIndicatorPreviewFrame ResolveFrameForActiveWeapon(WeaponRuntimeStats stats)
         {
             Transform castOrigin = weaponCaster.CastOrigin;
             return previewRuntime.Resolve(
-                weapon.IndicatorConfig,
-                weapon,
+                stats,
                 castOrigin,
                 castOrigin,
                 activePointerPosition,
@@ -282,8 +280,8 @@ namespace NewFPG.Combat.SkillIndicators
                 return false;
             }
 
-            WeaponDefinition weapon = weaponCaster.GetWeapon(activeCasterIndex);
-            if (weapon == null)
+            WeaponRuntimeStats stats = weaponCaster.GetRuntimeStats(activeCasterIndex);
+            if (stats == null)
             {
                 return false;
             }

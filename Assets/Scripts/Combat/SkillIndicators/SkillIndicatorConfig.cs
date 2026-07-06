@@ -117,6 +117,7 @@ namespace NewFPG.Combat.SkillIndicators
         NoTarget,
     }
 
+    [Obsolete("Legacy migration asset. Runtime cast geometry/config now lives on WeaponDefinition.")]
     [CreateAssetMenu(fileName = "SkillIndicatorConfig", menuName = "NewFPG/战斗/技能指示器/技能指示器配置")]
     public sealed class SkillIndicatorConfig : ScriptableObject
     {
@@ -280,16 +281,65 @@ namespace NewFPG.Combat.SkillIndicators
         public string previewPrefabResourceId;
         public string validMaterialResourceId;
         public string invalidMaterialResourceId;
+        public string confirmAudioResourceId;
+        public string invalidAudioResourceId;
+        public bool debugDraw;
 
+        public static SkillIndicatorResolvedConfig From(WeaponRuntimeStats stats)
+        {
+            float resolvedRange = stats != null ? Mathf.Max(0.1f, stats.Range) : 6f;
+            float resolvedRadius = stats != null ? Mathf.Max(0.05f, stats.Radius) : 1f;
+            SkillIndicatorShapeType shape = stats != null ? stats.ShapeType : SkillIndicatorShapeType.GroundCircle;
+
+            return new SkillIndicatorResolvedConfig
+            {
+                abilityId = ResolveAbilityId(stats),
+                inputMode = stats != null ? stats.InputMode : SkillIndicatorInputMode.HoldPreview,
+                tapPolicy = stats != null ? stats.TapPolicy : SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget,
+                holdPolicy = stats != null ? stats.HoldPolicy : SkillIndicatorDefaultReleasePolicy.CastAtCrosshairHit,
+                invalidReleasePolicy = stats != null ? stats.InvalidReleasePolicy : SkillIndicatorInvalidReleasePolicy.Cancel,
+                aimSource = stats != null ? stats.AimSource : SkillIndicatorAimSource.CrosshairRay,
+                placementMode = stats != null ? stats.PlacementMode : SkillIndicatorPlacementMode.GroundSurface,
+                shapeType = shape,
+                requireSurfaceHit = stats != null && stats.RequireSurfaceHit,
+                clampToRange = stats == null || stats.ClampToRange,
+                surfaceMask = stats != null ? stats.SurfaceMask : ~0,
+                collisionMask = stats != null ? stats.CollisionMask : ~0,
+                range = resolvedRange,
+                radius = resolvedRadius,
+                width = stats != null && stats.Width > 0f ? stats.Width : resolvedRadius * 2f,
+                length = stats != null && stats.Length > 0f ? stats.Length : resolvedRange,
+                angle = stats != null ? Mathf.Clamp(stats.Angle, 1f, 360f) : 90f,
+                height = stats != null ? Mathf.Max(0f, stats.Height) : 2f,
+                groundOffset = stats != null ? Mathf.Max(0f, stats.GroundOffset) : 0.06f,
+                tapMaxDuration = stats != null ? Mathf.Max(0f, stats.TapMaxDuration) : 0.16f,
+                holdEnterDelay = stats != null ? Mathf.Max(0f, stats.HoldEnterDelay) : 0.1f,
+                previewPrefabResourceId = ResolvePrefabResourceId(stats, shape),
+                validMaterialResourceId = stats != null && !string.IsNullOrWhiteSpace(stats.ValidMaterialResourceId) ? stats.ValidMaterialResourceId : "M_IND_OwnerValid",
+                invalidMaterialResourceId = stats != null && !string.IsNullOrWhiteSpace(stats.InvalidMaterialResourceId) ? stats.InvalidMaterialResourceId : "M_IND_Invalid",
+                confirmAudioResourceId = stats != null && !string.IsNullOrWhiteSpace(stats.ConfirmAudioResourceId) ? stats.ConfirmAudioResourceId : "S_IND_ConfirmRelease",
+                invalidAudioResourceId = stats != null && !string.IsNullOrWhiteSpace(stats.InvalidAudioResourceId) ? stats.InvalidAudioResourceId : "S_IND_Invalid",
+                debugDraw = stats != null && stats.DebugDraw,
+            };
+        }
+
+#pragma warning disable CS0618
+        [Obsolete("Use From(WeaponRuntimeStats). This overload is kept for legacy migration tools only.")]
         public static SkillIndicatorResolvedConfig From(SkillIndicatorConfig config, WeaponDefinition weapon)
         {
-            float fallbackRange = weapon != null ? Mathf.Max(0.1f, weapon.Range) : 6f;
-            float fallbackRadius = weapon != null ? Mathf.Max(0.05f, weapon.Radius) : 1f;
+            return From(config, weapon != null ? WeaponRuntimeResolver.Resolve(weapon) : null);
+        }
+
+        [Obsolete("Use From(WeaponRuntimeStats). This overload is kept for legacy migration tools only.")]
+        public static SkillIndicatorResolvedConfig From(SkillIndicatorConfig config, WeaponRuntimeStats stats)
+        {
+            float fallbackRange = stats != null ? Mathf.Max(0.1f, stats.Range) : 6f;
+            float fallbackRadius = stats != null ? Mathf.Max(0.05f, stats.Radius) : 1f;
 
             SkillIndicatorShapeType shape = config != null ? config.ShapeType : SkillIndicatorShapeType.GroundCircle;
             SkillIndicatorResolvedConfig resolved = new SkillIndicatorResolvedConfig
             {
-                abilityId = ResolveAbilityId(config, weapon),
+                abilityId = ResolveAbilityId(config, stats),
                 inputMode = config != null ? config.InputMode : SkillIndicatorInputMode.HoldPreview,
                 tapPolicy = config != null ? config.TapPolicy : SkillIndicatorDefaultReleasePolicy.AutoSelectBestTarget,
                 holdPolicy = config != null ? config.HoldPolicy : SkillIndicatorDefaultReleasePolicy.CastAtCrosshairHit,
@@ -310,31 +360,65 @@ namespace NewFPG.Combat.SkillIndicators
                 groundOffset = config != null ? Mathf.Max(0f, config.GroundOffset) : 0.06f,
                 tapMaxDuration = config != null ? config.TapMaxDuration : 0.16f,
                 holdEnterDelay = config != null ? config.HoldEnterDelay : 0.1f,
-                previewPrefabResourceId = ResolvePrefabResourceId(config, shape),
+                previewPrefabResourceId = ResolveLegacyPrefabResourceId(config, shape),
                 validMaterialResourceId = config != null && !string.IsNullOrWhiteSpace(config.ValidMaterialResourceId) ? config.ValidMaterialResourceId : "M_IND_OwnerValid",
                 invalidMaterialResourceId = config != null && !string.IsNullOrWhiteSpace(config.InvalidMaterialResourceId) ? config.InvalidMaterialResourceId : "M_IND_Invalid",
+                confirmAudioResourceId = config != null && !string.IsNullOrWhiteSpace(config.ConfirmAudioResourceId) ? config.ConfirmAudioResourceId : "S_IND_ConfirmRelease",
+                invalidAudioResourceId = config != null && !string.IsNullOrWhiteSpace(config.InvalidAudioResourceId) ? config.InvalidAudioResourceId : "S_IND_Invalid",
+                debugDraw = config != null && config.DebugDraw,
             };
 
             return resolved;
         }
 
-        private static string ResolveAbilityId(SkillIndicatorConfig config, WeaponDefinition weapon)
+        private static string ResolveAbilityId(WeaponRuntimeStats stats)
+        {
+            if (stats != null && !string.IsNullOrWhiteSpace(stats.WeaponId))
+            {
+                return stats.WeaponId;
+            }
+
+            return stats != null && stats.Definition != null ? stats.Definition.name : string.Empty;
+        }
+
+        private static string ResolveAbilityId(SkillIndicatorConfig config, WeaponRuntimeStats stats)
         {
             if (config != null && !string.IsNullOrWhiteSpace(config.AbilityId))
             {
                 return config.AbilityId;
             }
 
-            return weapon != null ? weapon.name : string.Empty;
+            if (stats != null && !string.IsNullOrWhiteSpace(stats.WeaponId))
+            {
+                return stats.WeaponId;
+            }
+
+            return stats != null && stats.Definition != null ? stats.Definition.name : string.Empty;
         }
 
-        private static string ResolvePrefabResourceId(SkillIndicatorConfig config, SkillIndicatorShapeType shape)
+        private static string ResolvePrefabResourceId(WeaponRuntimeStats stats, SkillIndicatorShapeType shape)
+        {
+            if (stats != null && !string.IsNullOrWhiteSpace(stats.PreviewPrefabResourceId))
+            {
+                return stats.PreviewPrefabResourceId;
+            }
+
+            return ResolveDefaultPrefabResourceId(shape);
+        }
+
+        private static string ResolveLegacyPrefabResourceId(SkillIndicatorConfig config, SkillIndicatorShapeType shape)
         {
             if (config != null && !string.IsNullOrWhiteSpace(config.PreviewPrefabResourceId))
             {
                 return config.PreviewPrefabResourceId;
             }
 
+            return ResolveDefaultPrefabResourceId(shape);
+        }
+#pragma warning restore CS0618
+
+        private static string ResolveDefaultPrefabResourceId(SkillIndicatorShapeType shape)
+        {
             switch (shape)
             {
                 case SkillIndicatorShapeType.TargetReticle:

@@ -44,8 +44,8 @@ The first floor does not spawn enemies immediately on room entry. The flow is:
 - LevelFlowDirector: room state machine, first-floor pre-combat choice rule, camera switching, enemy spawning, and next door selection.
 - LevelFlowHud: temporary runtime Canvas for status, blessing/event choices, and door choices.
 - LevelWeaponProjectileShooter: bridges PrototypeFirstPersonWeaponView click attacks into projectile fire.
-- LevelProjectile: simple homing/aim projectile that damages LevelCombatant targets.
-- LevelCombatant: health, death, hit feedback, optional Animator Hit trigger, and fish hit sprite fallback.
+- LevelProjectile: simple homing/aim projectile that damages Combat.IDamageable targets directly.
+- LevelCombatant: level-only enemy tracker that listens to CombatVitals death and reports room progress.
 - LevelFlowSceneInstaller: editor menu to install this prototype into a scene.
 
 ## Next Expansion Points

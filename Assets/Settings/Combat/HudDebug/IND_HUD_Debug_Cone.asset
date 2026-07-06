@@ -30,7 +30,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 0
   shapeType: 5
-  range: 7
+  range: 23.61
   radius: 0.7
   width: 2.4
   length: 6.5

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -28,7 +29,9 @@ namespace NewFPG.Characters
 
         [Header("Visuals")]
         [SerializeField] private bool flipSpriteWithHorizontalMovement = true;
-        [SerializeField] private bool spriteFacesRightByDefault = true;
+        // TODO: Remove this temporary per-state mirroring once final left/right player assets are imported.
+        [SerializeField, FormerlySerializedAs("spriteFacesRightByDefault")] private bool walkSpriteFacesRightByDefault = true;
+        [SerializeField] private bool idleSpriteFacesRightByDefault = true;
 
         [Header("References")]
         [SerializeField] private Rigidbody body;
@@ -47,6 +50,7 @@ namespace NewFPG.Characters
         private Vector2 moveInput;
         private Vector2 velocity;
         private Vector2 lastMoveDirection = Vector2.down;
+        private float lastHorizontalFacing = 1f;
         private MovementState movementState;
         private int moveXHash;
         private int moveYHash;
@@ -140,6 +144,11 @@ namespace NewFPG.Characters
             if (moveInput.sqrMagnitude > 0.001f)
             {
                 lastMoveDirection = moveInput.normalized;
+            }
+
+            if (Mathf.Abs(moveInput.x) > 0.001f)
+            {
+                lastHorizontalFacing = Mathf.Sign(moveInput.x);
             }
 
             movementState = moveInput.sqrMagnitude > 0.001f ? MovementState.Walk : MovementState.Idle;
@@ -256,13 +265,16 @@ namespace NewFPG.Characters
 
         private void UpdateSpriteFacing()
         {
-            if (!flipSpriteWithHorizontalMovement || spriteRenderer == null || Mathf.Abs(moveInput.x) <= 0.001f)
+            if (!flipSpriteWithHorizontalMovement || spriteRenderer == null)
             {
                 return;
             }
 
-            bool movingRight = moveInput.x > 0f;
-            spriteRenderer.flipX = spriteFacesRightByDefault ? !movingRight : movingRight;
+            bool usesWalkSprite = movementState == MovementState.Walk;
+            bool facesRightByDefault = usesWalkSprite ? walkSpriteFacesRightByDefault : idleSpriteFacesRightByDefault;
+            float facingX = usesWalkSprite && Mathf.Abs(moveInput.x) > 0.001f ? moveInput.x : lastHorizontalFacing;
+            bool facingRight = facingX > 0f;
+            spriteRenderer.flipX = facesRightByDefault ? !facingRight : facingRight;
         }
 
         private void CacheAnimatorHashes()

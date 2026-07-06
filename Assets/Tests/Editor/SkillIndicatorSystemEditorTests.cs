@@ -14,8 +14,11 @@ public sealed class SkillIndicatorSystemEditorTests
         Type weaponViewType = RequireType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp");
         Type weaponCasterType = RequireType("NewFPG.Combat.PlayerWeaponCaster, Assembly-CSharp");
         Type weaponDefinitionType = RequireType("NewFPG.Combat.WeaponDefinition, Assembly-CSharp");
+        Type weaponInstanceDataType = RequireType("NewFPG.Combat.WeaponInstanceData, Assembly-CSharp");
+        Type weaponRuntimeStatsType = RequireType("NewFPG.Combat.WeaponRuntimeStats, Assembly-CSharp");
         Type castCommandType = RequireType("NewFPG.Combat.SkillIndicators.CastCommandData, Assembly-CSharp");
         Type configType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorConfig, Assembly-CSharp");
+        Type resolvedConfigType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorResolvedConfig, Assembly-CSharp");
         Type inputControllerType = RequireType("NewFPG.Combat.SkillIndicators.AbilityInputController, Assembly-CSharp");
         Type previewRuntimeType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorPreviewRuntime, Assembly-CSharp");
         Type aimSolverType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorAimSolver, Assembly-CSharp");
@@ -31,9 +34,17 @@ public sealed class SkillIndicatorSystemEditorTests
         AssertPublicMethod(weaponViewType, "SetWeaponPresentations", weaponPresentationType.MakeArrayType());
 
         AssertPublicMethod(weaponCasterType, "TryCast", typeof(int), castCommandType);
-        Assert.IsNotNull(weaponDefinitionType.GetProperty("IndicatorConfig", BindingFlags.Instance | BindingFlags.Public));
+        AssertPublicMethod(weaponCasterType, "GetRuntimeStats", typeof(int));
+        AssertPublicMethod(weaponCasterType, "SetWeaponInstances", weaponInstanceDataType.MakeArrayType());
+        Assert.IsNotNull(weaponDefinitionType.GetProperty("WeaponId", BindingFlags.Instance | BindingFlags.Public));
+        Assert.IsNotNull(weaponDefinitionType.GetProperty("ShapeType", BindingFlags.Instance | BindingFlags.Public));
+        Assert.IsNotNull(weaponDefinitionType.GetProperty("Width", BindingFlags.Instance | BindingFlags.Public));
+        Assert.IsNotNull(weaponDefinitionType.GetProperty("Length", BindingFlags.Instance | BindingFlags.Public));
+        Assert.IsNotNull(weaponDefinitionType.GetProperty("Angle", BindingFlags.Instance | BindingFlags.Public));
         Assert.IsNotNull(weaponDefinitionType.GetProperty("Icon", BindingFlags.Instance | BindingFlags.Public));
         Assert.IsNotNull(configType.GetCustomAttribute<CreateAssetMenuAttribute>());
+        AssertPublicStaticMethod(resolvedConfigType, "From", weaponRuntimeStatsType);
+        AssertPublicStaticMethod(resolvedConfigType, "From", configType, weaponRuntimeStatsType);
         AssertPublicMethod(inputControllerType, "SetInputEnabled", typeof(bool));
         AssertPublicMethod(
             inputControllerType,
@@ -43,6 +54,15 @@ public sealed class SkillIndicatorSystemEditorTests
             typeof(Camera),
             RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorTemporaryArtIndex, Assembly-CSharp"));
         AssertPublicMethod(previewRuntimeType, "HidePreview");
+        AssertPublicMethod(
+            previewRuntimeType,
+            "ShowPreview",
+            weaponRuntimeStatsType,
+            typeof(Transform),
+            typeof(Transform),
+            typeof(Vector2),
+            typeof(bool),
+            typeof(float));
         AssertPublicStaticMethod(aimSolverType, "ResolveSceneSurfaceMask", typeof(LayerMask));
         AssertPublicMethod(weaponCasterType, "SetRuntimeCastOriginOverride", typeof(Transform));
         Assert.IsNotNull(configType.GetProperty("PlacementMode", BindingFlags.Instance | BindingFlags.Public));
@@ -324,7 +344,7 @@ public sealed class SkillIndicatorSystemEditorTests
         try
         {
             Component runtime = hostObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
             showPreview.Invoke(runtime, new object[] { null, null, hostObject.transform, hostObject.transform, Vector2.zero, false, 0f });
 
             object command = Activator.CreateInstance(commandType);
@@ -375,7 +395,7 @@ public sealed class SkillIndicatorSystemEditorTests
         try
         {
             Component runtime = hostObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
             showPreview.Invoke(runtime, new object[] { null, null, hostObject.transform, hostObject.transform, Vector2.zero, false, 0f });
 
             Vector3 targetPoint = new Vector3(2f, 1.4f, 5f);
@@ -410,6 +430,82 @@ public sealed class SkillIndicatorSystemEditorTests
         }
     }
 
+    [Test]
+    public void ConePreviewMeshUsesCommandAngleAndLength()
+    {
+        Type previewRuntimeType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorPreviewRuntime, Assembly-CSharp");
+        Type previewFrameType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorPreviewFrame, Assembly-CSharp");
+        Type commandType = RequireType("NewFPG.Combat.SkillIndicators.CastCommandData, Assembly-CSharp");
+        Type resolvedConfigType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorResolvedConfig, Assembly-CSharp");
+        Type validationType = RequireType("NewFPG.Combat.SkillIndicators.IndicatorValidationResult, Assembly-CSharp");
+        GameObject hostObject = new GameObject("Cone Preview Host");
+        GameObject previewInstance = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        GameObject boundary = new GameObject("BoundaryRing");
+        try
+        {
+            boundary.transform.SetParent(previewInstance.transform, false);
+            LineRenderer boundaryRenderer = boundary.AddComponent<LineRenderer>();
+
+            Component runtime = hostObject.AddComponent(previewRuntimeType);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
+            showPreview.Invoke(runtime, new object[] { null, null, hostObject.transform, hostObject.transform, Vector2.zero, false, 0f });
+
+            object command = Activator.CreateInstance(commandType);
+            SetField(command, "Origin", Vector3.zero);
+            SetField(command, "SceneOrigin", Vector3.zero);
+            SetField(command, "TargetPoint", Vector3.forward * 5f);
+            SetField(command, "Direction", Vector3.forward);
+            SetField(command, "SurfaceNormal", Vector3.up);
+            SetEnumField(command, "ShapeType", "Cone");
+            SetField(command, "Length", 5f);
+            SetField(command, "Angle", 60f);
+            SetField(command, "GroundOffset", 0.06f);
+            SetField(command, "HasTargetPoint", true);
+            SetField(command, "IsValid", true);
+
+            object config = CreateGroundResolvedConfig(resolvedConfigType, requireSurfaceHit: false, range: 6f);
+            SetEnumField(config, "shapeType", "Cone");
+            SetField(config, "length", 5f);
+            SetField(config, "angle", 60f);
+
+            object frame = Activator.CreateInstance(previewFrameType);
+            SetField(frame, "Command", command);
+            SetField(frame, "Config", config);
+            MethodInfo validFactory = validationType.GetMethod("Valid", BindingFlags.Static | BindingFlags.Public);
+            SetField(frame, "Validation", validFactory.Invoke(null, Array.Empty<object>()));
+
+            MethodInfo applyFrame = previewRuntimeType.GetMethod("ApplyFrame", BindingFlags.Instance | BindingFlags.NonPublic);
+            applyFrame.Invoke(runtime, new object[] { previewInstance, frame, hostObject.transform });
+
+            MeshFilter meshFilter = previewInstance.GetComponent<MeshFilter>();
+            Assert.That(meshFilter.sharedMesh, Is.Not.Null);
+            Vector3[] vertices = meshFilter.sharedMesh.vertices;
+            Assert.That(vertices.Length, Is.GreaterThan(2));
+            float minAngle = float.MaxValue;
+            float maxAngle = float.MinValue;
+            for (int i = 1; i < vertices.Length; i++)
+            {
+                float pointAngle = Mathf.Atan2(vertices[i].x, vertices[i].z) * Mathf.Rad2Deg;
+                minAngle = Mathf.Min(minAngle, pointAngle);
+                maxAngle = Mathf.Max(maxAngle, pointAngle);
+            }
+
+            Assert.That(minAngle, Is.EqualTo(-30f).Within(0.1f));
+            Assert.That(maxAngle, Is.EqualTo(30f).Within(0.1f));
+            Assert.That(previewInstance.transform.localScale, Is.EqualTo(Vector3.one * 5f));
+            Assert.That(boundaryRenderer.loop, Is.False);
+            Assert.That(boundaryRenderer.positionCount, Is.GreaterThan(3));
+            Assert.That(boundaryRenderer.GetPosition(0), Is.EqualTo(new Vector3(0f, 0.018f, 0f)));
+            Assert.That(boundaryRenderer.GetPosition(boundaryRenderer.positionCount - 1), Is.EqualTo(new Vector3(0f, 0.018f, 0f)));
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(previewInstance);
+            UnityEngine.Object.DestroyImmediate(hostObject);
+            DestroyPreviewRoots();
+        }
+    }
+
     [TestCase("NoSurface")]
     [TestCase("OutOfRange")]
     public void PreviewRuntimeKeepsRangeAndSurfaceMissesInValidAppearance(string validationReason)
@@ -424,7 +520,7 @@ public sealed class SkillIndicatorSystemEditorTests
         try
         {
             Component runtime = hostObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
             showPreview.Invoke(runtime, new object[] { null, null, hostObject.transform, hostObject.transform, Vector2.zero, false, 0f });
 
             object command = Activator.CreateInstance(commandType);
@@ -472,7 +568,7 @@ public sealed class SkillIndicatorSystemEditorTests
         try
         {
             Component runtime = hostObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
             showPreview.Invoke(runtime, new object[] { null, null, hostObject.transform, hostObject.transform, Vector2.zero, false, 0f });
 
             object command = Activator.CreateInstance(commandType);
@@ -531,7 +627,7 @@ public sealed class SkillIndicatorSystemEditorTests
         try
         {
             Component runtime = hostObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
             showPreview.Invoke(runtime, new object[] { null, null, hostObject.transform, hostObject.transform, Vector2.zero, false, 0f });
 
             Vector3 sceneOrigin = new Vector3(1f, 0f, -2f);
@@ -646,7 +742,7 @@ public sealed class SkillIndicatorSystemEditorTests
             staleChild.transform.SetParent(staleRoot.transform, false);
 
             Component runtime = hudObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = FindWeaponDefinitionShowPreview(previewRuntimeType);
             object frame = showPreview.Invoke(
                 runtime,
                 new object[] { null, null, hudObject.transform, hudObject.transform, Vector2.zero, false, 0f });
@@ -674,7 +770,8 @@ public sealed class SkillIndicatorSystemEditorTests
     public void NonGroundPreviewCanAttachToCastOrigin()
     {
         Type previewRuntimeType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorPreviewRuntime, Assembly-CSharp");
-        Type configType = RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorConfig, Assembly-CSharp");
+        Type weaponDefinitionType = RequireType("NewFPG.Combat.WeaponDefinition, Assembly-CSharp");
+        Type runtimeResolverType = RequireType("NewFPG.Combat.WeaponRuntimeResolver, Assembly-CSharp");
         GameObject existingSceneRoot = GameObject.Find("SkillIndicatorScenePreviewRoot");
         if (existingSceneRoot != null)
         {
@@ -689,17 +786,37 @@ public sealed class SkillIndicatorSystemEditorTests
 
         GameObject hostObject = new GameObject("Non Ground Preview Host");
         GameObject castOrigin = new GameObject("Attached Cast Origin");
+        ScriptableObject weapon = null;
         try
         {
             castOrigin.transform.position = new Vector3(2f, 1.5f, -3f);
-            UnityEngine.Object config = ScriptableObject.CreateInstance(configType);
-            SetPrivateField(config, "placementMode", Enum.Parse(RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorPlacementMode, Assembly-CSharp"), "AttachToCastOrigin"));
+            weapon = ScriptableObject.CreateInstance(weaponDefinitionType);
+            SetPrivateField(weapon, "placementMode", Enum.Parse(RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorPlacementMode, Assembly-CSharp"), "AttachToCastOrigin"));
+            object stats = runtimeResolverType.GetMethod(
+                "Resolve",
+                BindingFlags.Static | BindingFlags.Public,
+                null,
+                new[] { weaponDefinitionType },
+                null).Invoke(null, new object[] { weapon });
 
             Component runtime = hostObject.AddComponent(previewRuntimeType);
-            MethodInfo showPreview = previewRuntimeType.GetMethod("ShowPreview", BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo showPreview = previewRuntimeType.GetMethod(
+                "ShowPreview",
+                BindingFlags.Instance | BindingFlags.Public,
+                null,
+                new[]
+                {
+                    RequireType("NewFPG.Combat.WeaponRuntimeStats, Assembly-CSharp"),
+                    typeof(Transform),
+                    typeof(Transform),
+                    typeof(Vector2),
+                    typeof(bool),
+                    typeof(float),
+                },
+                null);
             showPreview.Invoke(
                 runtime,
-                new object[] { config, null, castOrigin.transform, castOrigin.transform, Vector2.zero, false, 0f });
+                new object[] { stats, castOrigin.transform, castOrigin.transform, Vector2.zero, false, 0f });
 
             Transform previewInstance = castOrigin.transform.Find("PF_IND_GroundCircle_Runtime");
             Assert.That(previewInstance, Is.Not.Null, "AttachToCastOrigin previews should live under the cast origin.");
@@ -707,6 +824,7 @@ public sealed class SkillIndicatorSystemEditorTests
         }
         finally
         {
+            UnityEngine.Object.DestroyImmediate(weapon);
             UnityEngine.Object.DestroyImmediate(hostObject);
             UnityEngine.Object.DestroyImmediate(castOrigin);
             DestroyPreviewRoots();
@@ -782,6 +900,27 @@ public sealed class SkillIndicatorSystemEditorTests
         Type type = Type.GetType(assemblyQualifiedName, true);
         Assert.IsNotNull(type, assemblyQualifiedName + " should resolve.");
         return type;
+    }
+
+    private static MethodInfo FindWeaponDefinitionShowPreview(Type previewRuntimeType)
+    {
+        MethodInfo method = previewRuntimeType.GetMethod(
+            "ShowPreview",
+            BindingFlags.Instance | BindingFlags.Public,
+            null,
+            new[]
+            {
+                RequireType("NewFPG.Combat.SkillIndicators.SkillIndicatorConfig, Assembly-CSharp"),
+                RequireType("NewFPG.Combat.WeaponDefinition, Assembly-CSharp"),
+                typeof(Transform),
+                typeof(Transform),
+                typeof(Vector2),
+                typeof(bool),
+                typeof(float),
+            },
+            null);
+        Assert.IsNotNull(method, previewRuntimeType.Name + ".ShowPreview should keep the WeaponDefinition compatibility overload.");
+        return method;
     }
 
     private static void AssertPublicMethod(Type type, string methodName, params Type[] parameterTypes)

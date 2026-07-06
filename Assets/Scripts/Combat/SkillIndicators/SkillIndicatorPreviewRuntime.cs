@@ -8,7 +8,10 @@ namespace NewFPG.Combat.SkillIndicators
         private const string PreviewRootName = "SkillIndicatorScenePreviewRoot";
         private const string AttachedPreviewRootName = "SkillIndicatorWorldPreviewRoot";
         private const string RangeBoundaryName = "SkillIndicatorRangeBoundary";
+        private const string RuntimeConeMeshName = "SkillIndicatorRuntimeConeMesh";
         private const int RangeBoundarySegments = 96;
+        private const int ConePreviewMaxSegments = 96;
+        private const float ConeBoundaryHeight = 0.018f;
         private static readonly Color RangeBoundaryColor = new Color(0.35f, 0.95f, 1f, 0.88f);
 
         [SerializeField] private SkillIndicatorTemporaryArtIndex temporaryArtIndex;
@@ -34,6 +37,7 @@ namespace NewFPG.Combat.SkillIndicators
             aimCamera = camera != null ? camera : aimCamera;
         }
 
+#pragma warning disable CS0618
         public SkillIndicatorPreviewFrame Resolve(
             SkillIndicatorConfig config,
             WeaponDefinition weapon,
@@ -43,7 +47,37 @@ namespace NewFPG.Combat.SkillIndicators
             bool hasPointerPosition,
             float holdDuration)
         {
-            SkillIndicatorResolvedConfig resolved = SkillIndicatorResolvedConfig.From(config, weapon);
+            return Resolve(
+                weapon != null ? WeaponRuntimeResolver.Resolve(weapon) : null,
+                owner,
+                castOrigin,
+                pointerPosition,
+                hasPointerPosition,
+                holdDuration);
+        }
+
+        public SkillIndicatorPreviewFrame Resolve(
+            SkillIndicatorConfig config,
+            WeaponRuntimeStats stats,
+            Transform owner,
+            Transform castOrigin,
+            Vector2 pointerPosition,
+            bool hasPointerPosition,
+            float holdDuration)
+        {
+            return Resolve(stats, owner, castOrigin, pointerPosition, hasPointerPosition, holdDuration);
+        }
+#pragma warning restore CS0618
+
+        public SkillIndicatorPreviewFrame Resolve(
+            WeaponRuntimeStats stats,
+            Transform owner,
+            Transform castOrigin,
+            Vector2 pointerPosition,
+            bool hasPointerPosition,
+            float holdDuration)
+        {
+            SkillIndicatorResolvedConfig resolved = SkillIndicatorResolvedConfig.From(stats);
             return SkillIndicatorAimSolver.Resolve(
                 resolved,
                 owner,
@@ -55,6 +89,7 @@ namespace NewFPG.Combat.SkillIndicators
                 localCastSequence);
         }
 
+#pragma warning disable CS0618
         public SkillIndicatorPreviewFrame ShowPreview(
             SkillIndicatorConfig config,
             WeaponDefinition weapon,
@@ -64,8 +99,38 @@ namespace NewFPG.Combat.SkillIndicators
             bool hasPointerPosition,
             float holdDuration)
         {
+            return ShowPreview(
+                weapon != null ? WeaponRuntimeResolver.Resolve(weapon) : null,
+                owner,
+                castOrigin,
+                pointerPosition,
+                hasPointerPosition,
+                holdDuration);
+        }
+
+        public SkillIndicatorPreviewFrame ShowPreview(
+            SkillIndicatorConfig config,
+            WeaponRuntimeStats stats,
+            Transform owner,
+            Transform castOrigin,
+            Vector2 pointerPosition,
+            bool hasPointerPosition,
+            float holdDuration)
+        {
+            return ShowPreview(stats, owner, castOrigin, pointerPosition, hasPointerPosition, holdDuration);
+        }
+#pragma warning restore CS0618
+
+        public SkillIndicatorPreviewFrame ShowPreview(
+            WeaponRuntimeStats stats,
+            Transform owner,
+            Transform castOrigin,
+            Vector2 pointerPosition,
+            bool hasPointerPosition,
+            float holdDuration)
+        {
             EnsurePool();
-            currentFrame = Resolve(config, weapon, owner, castOrigin, pointerPosition, hasPointerPosition, holdDuration);
+            currentFrame = Resolve(stats, owner, castOrigin, pointerPosition, hasPointerPosition, holdDuration);
             hasCurrentFrame = true;
 
             GameObject instance = rendererPool.Show(currentFrame.Config.previewPrefabResourceId, temporaryArtIndex);
@@ -174,31 +239,39 @@ namespace NewFPG.Combat.SkillIndicators
             Quaternion facingRotation = Quaternion.LookRotation(flatDirection.normalized, Vector3.up);
             bool useInvalidAppearance = ShouldUseInvalidAppearance(frame);
             bool visualValid = !useInvalidAppearance;
+            SkillIndicatorShapeType shapeType = command.ShapeType != SkillIndicatorShapeType.None
+                ? command.ShapeType
+                : frame.Config.shapeType;
+            float radius = ResolvePreviewRadius(frame);
+            float width = ResolvePreviewWidth(frame, radius);
+            float length = ResolvePreviewLength(frame);
+            float angle = ResolvePreviewAngle(frame);
 
-            switch (frame.Config.shapeType)
+            switch (shapeType)
             {
                 case SkillIndicatorShapeType.Line:
                 case SkillIndicatorShapeType.Rectangle:
-                    instance.transform.position = ResolveBasePosition(command, sticksToGround) + flatDirection.normalized * (frame.Config.length * 0.5f) + normal * resolvedSurfaceOffset;
+                    instance.transform.position = ResolveBasePosition(command, sticksToGround) + flatDirection.normalized * (length * 0.5f) + normal * resolvedSurfaceOffset;
                     instance.transform.rotation = facingRotation;
-                    instance.transform.localScale = new Vector3(Mathf.Max(0.05f, frame.Config.width), 1f, Mathf.Max(0.05f, frame.Config.length));
+                    instance.transform.localScale = new Vector3(Mathf.Max(0.05f, width), 1f, Mathf.Max(0.05f, length));
                     break;
                 case SkillIndicatorShapeType.Cone:
                     instance.transform.position = ResolveBasePosition(command, sticksToGround) + normal * resolvedSurfaceOffset;
                     instance.transform.rotation = facingRotation;
-                    instance.transform.localScale = Vector3.one * Mathf.Max(0.05f, frame.Config.range);
+                    instance.transform.localScale = Vector3.one * Mathf.Max(0.05f, length);
+                    ApplyConeGeometry(instance, angle);
                     break;
                 case SkillIndicatorShapeType.TargetReticle:
                     instance.transform.position = ResolveTargetPosition(command, frame.Config, sticksToGround) + normal * (resolvedSurfaceOffset + 0.08f);
                     instance.transform.rotation = aimCamera != null
                         ? Quaternion.LookRotation(instance.transform.position - aimCamera.transform.position, aimCamera.transform.up)
                         : surfaceRotation;
-                    instance.transform.localScale = Vector3.one * Mathf.Max(0.25f, frame.Config.radius);
+                    instance.transform.localScale = Vector3.one * Mathf.Max(0.25f, radius);
                     break;
                 default:
                     instance.transform.position = ResolveTargetPosition(command, frame.Config, sticksToGround) + normal * resolvedSurfaceOffset;
                     instance.transform.rotation = sticksToGround ? Quaternion.identity : surfaceRotation;
-                    instance.transform.localScale = Vector3.one * Mathf.Max(0.05f, frame.Config.radius);
+                    instance.transform.localScale = Vector3.one * Mathf.Max(0.05f, radius);
                     break;
             }
 
@@ -208,6 +281,149 @@ namespace NewFPG.Combat.SkillIndicators
                 visualValid);
             ApplyMaterial(instance, material, visualValid);
             UpdateRangeBoundary(frame, sticksToGround, normal, resolvedSurfaceOffset);
+        }
+
+        private static float ResolvePreviewRadius(SkillIndicatorPreviewFrame frame)
+        {
+            return frame.Command.Radius > 0f ? frame.Command.Radius : frame.Config.radius;
+        }
+
+        private static float ResolvePreviewWidth(SkillIndicatorPreviewFrame frame, float radius)
+        {
+            return frame.Command.Width > 0f ? frame.Command.Width : radius * 2f;
+        }
+
+        private static float ResolvePreviewLength(SkillIndicatorPreviewFrame frame)
+        {
+            return frame.Command.Length > 0f ? frame.Command.Length : frame.Config.length;
+        }
+
+        private static float ResolvePreviewAngle(SkillIndicatorPreviewFrame frame)
+        {
+            return frame.Command.Angle > 0f ? frame.Command.Angle : frame.Config.angle;
+        }
+
+        private static void ApplyConeGeometry(GameObject instance, float angle)
+        {
+            MeshFilter meshFilter = instance.GetComponent<MeshFilter>();
+            if (meshFilter != null)
+            {
+                Mesh mesh = meshFilter.sharedMesh;
+                if (mesh == null || mesh.name == null || !mesh.name.StartsWith(RuntimeConeMeshName))
+                {
+                    mesh = new Mesh
+                    {
+                        name = RuntimeConeMeshName,
+                        hideFlags = HideFlags.DontSave,
+                    };
+                    meshFilter.sharedMesh = mesh;
+                }
+
+                RebuildConeMesh(mesh, angle);
+            }
+
+            ApplyConeBoundary(instance, angle);
+        }
+
+        private static void RebuildConeMesh(Mesh mesh, float angle)
+        {
+            if (mesh == null)
+            {
+                return;
+            }
+
+            float resolvedAngle = Mathf.Clamp(angle, 1f, 360f);
+            int segments = ResolveConeSegmentCount(resolvedAngle);
+            bool fullCircle = resolvedAngle >= 359.9f;
+            int outerVertexCount = fullCircle ? segments : segments + 1;
+            Vector3[] vertices = new Vector3[outerVertexCount + 1];
+            Vector2[] uvs = new Vector2[vertices.Length];
+            int[] triangles = new int[segments * 3];
+
+            vertices[0] = Vector3.zero;
+            uvs[0] = new Vector2(0.5f, 0.5f);
+            for (int i = 0; i < outerVertexCount; i++)
+            {
+                Vector3 point = fullCircle
+                    ? ConePoint((i / (float)outerVertexCount) * 360f)
+                    : ConePoint(Mathf.Lerp(-resolvedAngle * 0.5f, resolvedAngle * 0.5f, i / (float)segments));
+                vertices[i + 1] = point;
+                uvs[i + 1] = new Vector2(point.x * 0.5f + 0.5f, point.z * 0.5f + 0.5f);
+            }
+
+            for (int i = 0; i < segments; i++)
+            {
+                triangles[i * 3] = 0;
+                triangles[i * 3 + 1] = i + 1;
+                triangles[i * 3 + 2] = fullCircle && i == segments - 1 ? 1 : i + 2;
+            }
+
+            mesh.Clear();
+            mesh.vertices = vertices;
+            mesh.uv = uvs;
+            mesh.triangles = triangles;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+        }
+
+        private static void ApplyConeBoundary(GameObject instance, float angle)
+        {
+            LineRenderer[] lineRenderers = instance.GetComponentsInChildren<LineRenderer>(true);
+            if (lineRenderers == null || lineRenderers.Length == 0)
+            {
+                return;
+            }
+
+            float resolvedAngle = Mathf.Clamp(angle, 1f, 360f);
+            int segments = ResolveConeSegmentCount(resolvedAngle);
+            bool fullCircle = resolvedAngle >= 359.9f;
+
+            for (int i = 0; i < lineRenderers.Length; i++)
+            {
+                LineRenderer lineRenderer = lineRenderers[i];
+                if (!IsBoundaryRenderer(lineRenderer))
+                {
+                    continue;
+                }
+
+                lineRenderer.useWorldSpace = false;
+                lineRenderer.loop = fullCircle;
+                lineRenderer.positionCount = fullCircle ? segments : segments + 3;
+                if (fullCircle)
+                {
+                    for (int j = 0; j < segments; j++)
+                    {
+                        lineRenderer.SetPosition(j, ConePoint((j / (float)segments) * 360f, ConeBoundaryHeight));
+                    }
+
+                    continue;
+                }
+
+                lineRenderer.SetPosition(0, new Vector3(0f, ConeBoundaryHeight, 0f));
+                for (int j = 0; j <= segments; j++)
+                {
+                    float pointAngle = Mathf.Lerp(-resolvedAngle * 0.5f, resolvedAngle * 0.5f, j / (float)segments);
+                    lineRenderer.SetPosition(j + 1, ConePoint(pointAngle, ConeBoundaryHeight));
+                }
+
+                lineRenderer.SetPosition(segments + 2, new Vector3(0f, ConeBoundaryHeight, 0f));
+            }
+        }
+
+        private static int ResolveConeSegmentCount(float angle)
+        {
+            return Mathf.Clamp(Mathf.CeilToInt(Mathf.Clamp(angle, 1f, 360f) / 4f), 8, ConePreviewMaxSegments);
+        }
+
+        private static Vector3 ConePoint(float angle)
+        {
+            return ConePoint(angle, 0f);
+        }
+
+        private static Vector3 ConePoint(float angle, float y)
+        {
+            float radians = angle * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Sin(radians), y, Mathf.Cos(radians));
         }
 
         private static Vector3 ResolveBasePosition(CastCommandData command, bool sticksToGround)

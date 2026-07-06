@@ -531,7 +531,7 @@ namespace NewFPG.Combat.SkillIndicators
                 }
 
                 IDamageable damageable = collider.GetComponentInParent<IDamageable>();
-                if (damageable == null || !damageable.IsAlive)
+                if (damageable == null || !damageable.IsAlive || !damageable.IsTargetable)
                 {
                     continue;
                 }

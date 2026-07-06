@@ -1607,7 +1607,8 @@ MonoBehaviour:
   interactionId: exit_to_battle
   displayName: "\u5916\u51FA\u6218\u6597"
   prompt: "\u6309 E \u5916\u51FA\u6218\u6597"
-  note: 'TODO: connect to outbound battle scene or level route.'
+  note: "\u5916\u51FA\u8FDB\u5165\u6811\u6797\u6218\u6597\u5173\u5361\uFF1B\u8BE5\u51FA\u53E3\u4E0D\u63D0\u4F9B\u81EA\u52A8\u8FD4\u56DE\u3002"
+  targetSceneName: Shulin_L0
 --- !u!54 &1128689674
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -2265,7 +2266,8 @@ MonoBehaviour:
   interactionId: refining_room
   displayName: "\u70BC\u5668\u623F"
   prompt: "\u6309 E \u8FDB\u5165\u70BC\u5668\u623F"
-  note: 'TODO: connect to equipment refining/crafting room flow.'
+  note: "\u8FDB\u5165\u70BC\u5668\u623F\u573A\u666F\u3002"
+  targetSceneName: lianqi
 --- !u!54 &1502356597
 Rigidbody:
   m_ObjectHideFlags: 0

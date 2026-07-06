@@ -60,6 +60,7 @@ public static class ForgingWorkbenchSceneInstaller
         SetString(serializedObject, "weaponBlueprintsPath", ForgingCatalogLoader.DefaultWeaponBlueprintsPath);
         SetString(serializedObject, "materialsPath", ForgingCatalogLoader.DefaultMaterialsPath);
         SetString(serializedObject, "catalogPath", ForgingCatalogLoader.LegacyCatalogPath);
+        SetString(serializedObject, "returnSceneName", "Dongfu_Home");
         serializedObject.FindProperty("materialTexture").objectReferenceValue = texture;
         serializedObject.FindProperty("showDrawerOnStart").boolValue = true;
         serializedObject.FindProperty("layoutPreset").objectReferenceValue = LoadOrCreateLayoutPreset();

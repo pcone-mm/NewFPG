@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 4888563794853541333}
   - component: {fileID: 3310741223843531305}
   - component: {fileID: 5990160127804493065}
+  - component: {fileID: 7050049920681302514}
   - component: {fileID: 2270140655557498170}
   - component: {fileID: 6756104412928084255}
   m_Layer: 0
@@ -140,7 +141,8 @@ MonoBehaviour:
   invertDepthInput: 0
   movementEnabled: 1
   flipSpriteWithHorizontalMovement: 1
-  spriteFacesRightByDefault: 1
+  walkSpriteFacesRightByDefault: 0
+  idleSpriteFacesRightByDefault: 1
   body: {fileID: 4888563794853541333}
   animator: {fileID: 4997057410570907115}
   spriteRenderer: {fileID: 1854983948291013765}
@@ -213,18 +215,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22fffc660c0adc24f9f38ae928c401b7, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitals
-  maxHealth: 100
-  startingHealth: 100
-  maxShield: 50
-  startingShield: 25
-  destroyOnDeath: 0
-  deathDelay: 0.2
   disableOnDeath: []
   animator: {fileID: 4997057410570907115}
-  hitTriggerParameter: Hit
   spriteRenderer: {fileID: 1854983948291013765}
-  hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
-  hitTintSeconds: 0.12
+--- !u!114 &7050049920681302514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8136950479426970769}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d47c206becd4932a81d094a5e475f4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitalsAuthoring
+  settings:
+    maxHealth: 100
+    startingHealth: 100
+    maxShield: 50
+    startingShield: 25
+    destroyOnDeath: 0
+    deathDelay: 0.2
+    hitTriggerParameter: Hit
+    hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
+    hitTintSeconds: 0.12
+  applyOnAwake: 1
 --- !u!114 &2270140655557498170
 MonoBehaviour:
   m_ObjectHideFlags: 0

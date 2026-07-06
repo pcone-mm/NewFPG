@@ -11,12 +11,12 @@ GameObject:
   - component: {fileID: 4720705885109953293}
   - component: {fileID: 4436099648007178367}
   - component: {fileID: 3162850107769089715}
-  - component: {fileID: 5017408795760346369}
   - component: {fileID: 7658042473469622915}
-  - component: {fileID: 8410643444241385341}
   - component: {fileID: 3932387617477154748}
-  - component: {fileID: 7608634358937292601}
-  - component: {fileID: 4455949275264836976}
+  - component: {fileID: 495864160061308609}
+  - component: {fileID: 6750671274155761654}
+  - component: {fileID: 2484150782650505475}
+  - component: {fileID: 5076535152244928054}
   m_Layer: 0
   m_Name: Fish
   m_TagString: Untagged
@@ -34,8 +34,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.4, y: 0.4, z: 0.4}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -120,33 +120,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!54 &5017408795760346369
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4451659038750864529}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 0
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 116
-  m_CollisionDetection: 1
 --- !u!65 &7658042473469622915
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -162,53 +135,12 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 11.616, y: 5.0099998, z: 0.75}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &8410643444241385341
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4451659038750864529}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9b4454e4cb0fbfc43ba98ced7d4be06b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Monsters.FishMonsterController
-  moveSpeed: 2.5
-  acceleration: 16
-  deceleration: 20
-  movementEnabled: 1
-  target: {fileID: 0}
-  autoFindTargetByTag: 1
-  targetTag: Player
-  detectionRadius: 7
-  stoppingDistance: 1.2
-  targetRefreshInterval: 0.25
-  patrolWhenNoTarget: 1
-  patrolRadius: 3
-  patrolPointTolerance: 0.2
-  patrolPauseDuration: 1
-  flipSpriteWithHorizontalMovement: 1
-  spriteFacesRightByDefault: 1
-  autoConfigureCollider: 1
-  colliderWidthScale: 0.8
-  colliderHeightScale: 0.75
-  colliderDepth: 0.75
-  body: {fileID: 5017408795760346369}
-  animator: {fileID: 3162850107769089715}
-  spriteRenderer: {fileID: 4436099648007178367}
-  boxCollider: {fileID: 7658042473469622915}
-  moveXParameter: MoveX
-  moveZParameter: MoveZ
-  speedParameter: Speed
-  isMovingParameter: IsMoving
-  movementStateParameter: MovementState
 --- !u!114 &3932387617477154748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -221,19 +153,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22fffc660c0adc24f9f38ae928c401b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.CombatVitals
-  maxHealth: 80
-  startingHealth: 80
-  maxShield: 0
-  startingShield: 0
-  destroyOnDeath: 1
-  deathDelay: 0.25
   disableOnDeath: []
   animator: {fileID: 3162850107769089715}
-  hitTriggerParameter: Hit
   spriteRenderer: {fileID: 4436099648007178367}
-  hitTint: {r: 1, g: 0.65, b: 0.55, a: 1}
-  hitTintSeconds: 0.12
---- !u!114 &7608634358937292601
+--- !u!114 &495864160061308609
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -242,26 +165,121 @@ MonoBehaviour:
   m_GameObject: {fileID: 4451659038750864529}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c19dfc060c816f541aca9a0ace75d89f, type: 3}
+  m_Script: {fileID: 11500000, guid: b86ee0b670d61cf469e3b3b7fb03d889, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.FishAttackController
-  target: {fileID: 0}
-  autoFindPlayer: 1
-  playerTag: Player
-  attackRange: 2.2
-  requestInterval: 2
-  attackPrepareTime: 0.8
-  damage: 12
-  damageRadius: 1.35
-  warningHeightOffset: 1.2
-  targetMask:
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Monsters.MonsterConfigBinding
+  monsterId: fish
+  catalogJson: {fileID: 4900000, guid: c2c1c3b3c894133478dda6668ab162b5, type: 3}
+  applyOnAwake: 1
+--- !u!114 &6750671274155761654
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4451659038750864529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373b52eb9bf8c40f785bb6947a1aee66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AstarPathfindingProject::Pathfinding.Seeker
+  version: 1073741824
+  drawGizmos: 1
+  detailedGizmos: 0
+  startEndModifier:
+    addPoints: 0
+    exactStartPoint: 3
+    exactEndPoint: 3
+    useRaycasting: 0
+    mask:
+      serializedVersion: 2
+      m_Bits: 4294967295
+    useGraphRaycasting: 0
+  traversableTags: -1
+  tagCostMultipliers:
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  - 1
+  tagEntryCosts: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  graphMask:
+    value: -1
+--- !u!114 &2484150782650505475
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4451659038750864529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6eb1402c17e84a9282a7f0f62eb584f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AstarPathfindingProject::Pathfinding.AIPath
+  version: 1073741824
+  radius: 0.35
+  height: 1.2
+  simulateMovement: 1
+  maxSpeed: 2.5
+  gravity: {x: 0, y: 0, z: 0}
+  groundMask:
     serializedVersion: 2
     m_Bits: 4294967295
-  movement: {fileID: 8410643444241385341}
-  animator: {fileID: 3162850107769089715}
-  warningIndicator: {fileID: 0}
-  attackTriggerParameter: Attack
---- !u!114 &4455949275264836976
+  endReachedDistance: 1.2
+  whenCloseToDestination: 0
+  rvoDensityBehavior:
+    enabled: 1
+    densityThreshold: 0.5
+    returnAfterBeingPushedAway: 0
+    progressAverage: 0
+    lastJobDensityResult: 0
+  repathRateCompatibility: NaN
+  canSearchCompability: 0
+  orientation: 0
+  enableRotation: 1
+  autoRepath:
+    mode: 2
+    period: 0.5
+    sensitivity: 10
+    maximumPeriod: 2
+    visualizeSensitivity: 0
+  maxAcceleration: 16
+  rotationSpeed: 720
+  slowdownDistance: 1.2
+  pickNextWaypointDist: 2
+  alwaysDrawGizmos: 0
+  slowWhenNotFacingTarget: 1
+  preventMovingBackwards: 0
+  constrainInsideGraph: 1
+--- !u!114 &5076535152244928054
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -270,18 +288,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 4451659038750864529}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41e3bbe036d0cd04eaf92cce36d17bcd, type: 3}
+  m_Script: {fileID: 11500000, guid: 8d7b55c7ecdb49a4a89fa5e6f9022861, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Level.LevelCombatant
-  maxHp: 80
-  destroyOnDeath: 0
-  deathDelay: 0.35
-  animator: {fileID: 3162850107769089715}
-  hitTriggerParameter: Hit
-  spriteRenderer: {fileID: 4436099648007178367}
-  hitSprite: {fileID: 0}
-  hitFlashDuration: 0.18
-  hitTint: {r: 1, g: 0.68, b: 0.5, a: 1}
-  fishMonsterController: {fileID: 8410643444241385341}
-  stopMovementOnDeath: 1
-  combatVitals: {fileID: 3932387617477154748}
+  m_EditorClassIdentifier: Assembly-CSharp::BehaviorDesigner.Runtime.BehaviorTree
+  startWhenEnabled: 1
+  asynchronousLoad: 0
+  pauseWhenDisabled: 0
+  restartWhenComplete: 0
+  logTaskChanges: 0
+  group: 0
+  resetValuesOnRestart: 0
+  externalBehavior: {fileID: 11400000, guid: d828cf2352a852b49b3a8d31a324511d, type: 2}
+  mBehaviorSource:
+    behaviorName: Behavior
+    behaviorDescription: 
+    mTaskData:
+      types: []
+      parentIndex: 
+      startIndex: 
+      variableStartIndex: 
+      JSONSerialization: 
+      fieldSerializationData:
+        typeName: []
+        fieldNameHash: 
+        startIndex: 
+        dataPosition: 
+        unityObjects: []
+        byteData: 
+        byteDataArray: 
+      Version: 
+  gizmoViewMode: 0
+  showBehaviorDesignerGizmo: 1

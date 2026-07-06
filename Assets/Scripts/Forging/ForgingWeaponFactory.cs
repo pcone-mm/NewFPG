@@ -1,5 +1,4 @@
 using NewFPG.Combat;
-using NewFPG.Combat.SkillIndicators;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -10,6 +9,20 @@ namespace NewFPG.Forging
 {
     public static class ForgingWeaponFactory
     {
+        public static WeaponInstanceData CreateWeaponInstance(
+            WeaponDefinition baseDefinition,
+            ForgingWeaponBlueprintDefinition blueprint,
+            ForgingResult result)
+        {
+            if (baseDefinition == null || blueprint == null)
+            {
+                return null;
+            }
+
+            ForgedWeaponRuntimeStats stats = CreateRuntimeStats(blueprint, result);
+            return WeaponInstanceData.CreateForged(baseDefinition, stats, blueprint.displayName);
+        }
+
         public static WeaponDefinition CreateRuntimeWeapon(ForgingWeaponBlueprintDefinition blueprint, ForgingResult result)
         {
             if (blueprint == null)
@@ -36,27 +49,33 @@ namespace NewFPG.Forging
             }
 
             ForgingWeaponRuntimeBinding runtime = blueprint.runtime ?? new ForgingWeaponRuntimeBinding();
-            ForgedWeaponRuntimeStats stats = result != null && result.isValid
-                ? result.ToRuntimeStats()
-                : new ForgedWeaponRuntimeStats
-                {
-                    blueprintId = blueprint.blueprintId,
-                    displayName = blueprint.displayName,
-                    skillLogicId = blueprint.skillLogicId,
-                };
+            runtime.Normalize();
+            ForgedWeaponRuntimeStats stats = CreateRuntimeStats(blueprint, result);
 
             weapon.ApplyForgingRuntime(
                 blueprint.displayName,
                 LoadAsset<Sprite>(runtime.hudIconPath),
-                runtime.resourceCost,
-                runtime.baseDamage,
-                runtime.cooldown,
-                runtime.range,
-                runtime.radius,
-                LoadAsset<SkillIndicatorConfig>(runtime.indicatorConfigPath),
+                runtime,
                 LoadAsset<GameObject>(runtime.releaseEffectPrefabPath),
                 LoadAsset<GameObject>(runtime.hitEffectPrefabPath),
                 stats);
+        }
+
+        private static ForgedWeaponRuntimeStats CreateRuntimeStats(
+            ForgingWeaponBlueprintDefinition blueprint,
+            ForgingResult result)
+        {
+            if (result != null && result.isValid)
+            {
+                return result.ToRuntimeStats();
+            }
+
+            return new ForgedWeaponRuntimeStats
+            {
+                blueprintId = blueprint != null ? blueprint.blueprintId : string.Empty,
+                displayName = blueprint != null ? blueprint.displayName : string.Empty,
+                skillLogicId = blueprint != null ? blueprint.skillLogicId : string.Empty,
+            };
         }
 
         private static T LoadAsset<T>(string projectPath) where T : Object

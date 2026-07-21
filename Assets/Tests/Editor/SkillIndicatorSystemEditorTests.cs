@@ -12,6 +12,7 @@ public sealed class SkillIndicatorSystemEditorTests
     public void RuntimeApiExposesSkillIndicatorInputPipeline()
     {
         Type weaponViewType = RequireType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp");
+        Type layoutProfileType = RequireType("NewFPG.Prototype.FirstPersonWeaponLayoutProfile, Assembly-CSharp");
         Type weaponCasterType = RequireType("NewFPG.Combat.PlayerWeaponCaster, Assembly-CSharp");
         Type weaponDefinitionType = RequireType("NewFPG.Combat.WeaponDefinition, Assembly-CSharp");
         Type weaponInstanceDataType = RequireType("NewFPG.Combat.WeaponInstanceData, Assembly-CSharp");
@@ -29,6 +30,10 @@ public sealed class SkillIndicatorSystemEditorTests
         Assert.IsNotNull(weaponViewType.GetEvent("WeaponPointerReleased", BindingFlags.Instance | BindingFlags.Public));
         Assert.IsNotNull(weaponViewType.GetEvent("WeaponPointerCancelled", BindingFlags.Instance | BindingFlags.Public));
         AssertPublicMethod(weaponViewType, "PlayWeaponAttack", typeof(int));
+        AssertPublicMethod(weaponViewType, "SetLayoutProfile", layoutProfileType);
+        AssertProperty(weaponViewType, "WeaponRig", typeof(Transform));
+        AssertProperty(weaponViewType, "WeaponCamera", typeof(Camera));
+        AssertProperty(weaponViewType, "LayoutProfile", layoutProfileType);
         Type weaponPresentationType = weaponViewType.GetNestedType("WeaponPresentation", BindingFlags.Public);
         Assert.IsNotNull(weaponPresentationType, "Weapon HUD should expose WeaponPresentation for direct WeaponDefinition-driven icons.");
         AssertPublicMethod(weaponViewType, "SetWeaponPresentations", weaponPresentationType.MakeArrayType());
@@ -935,6 +940,13 @@ public sealed class SkillIndicatorSystemEditorTests
         Assert.IsNotNull(
             type.GetMethod(methodName, BindingFlags.Static | BindingFlags.Public, null, parameterTypes, null),
             type.Name + "." + methodName + " should be public static.");
+    }
+
+    private static void AssertProperty(Type type, string propertyName, Type propertyType)
+    {
+        PropertyInfo property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+        Assert.IsNotNull(property, type.Name + "." + propertyName + " should be public.");
+        Assert.AreEqual(propertyType, property.PropertyType);
     }
 
     private static object CreateGroundResolvedConfig(Type resolvedConfigType, bool requireSurfaceHit, float range)

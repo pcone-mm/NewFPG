@@ -8,12 +8,12 @@
 
 ## 工作规则
 
-- `HitTips/` 资产由 `Assets/Editor/Combat/HitTipAssetInstaller.cs` 从 `Assets/Art/HUD/Hit_tip/` 安装或更新。
+- `HitTips/` 的默认 catalog 和动画配置已落盘；其源图层位于 `Assets/Art/HUD/Hit_tip/`，修改时直接维护对应资产与导入设置。
 - 改 `HitTips/` 文件名、路径或 catalog 类型时，同步检查 `MonsterCombatHud` 中的 `Resources.Load("HitTips/SO_HTC_Default")`。
 - 保留并同步 `.meta` 文件，避免 runtime load 资产或 sprite 引用断开。
 - 不要把 `Resources/` 当作临时缓存、截图输出或大型第三方资源仓库。
 
 ## 验证方式
 
-- 改战斗跳字资源后，在 Unity 里执行 `NewFPG/Combat/Install Hit Tip Assets`。
+- 改战斗跳字资源后，检查 `SO_HTC_Default.asset` 和 `SO_HTA_Default.asset` 的引用是否仍能解析。
 - 运行 `Assets/Tests/Editor/MonsterCombatHudEditorTests.cs`，确认默认 `HitTipCatalog` 三种样式都能加载完整背景和数字图层。

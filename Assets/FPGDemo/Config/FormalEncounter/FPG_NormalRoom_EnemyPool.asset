@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 293d2b6af4d44e87ad1ec034e018629b, type: 3}
+  m_Name: FPG_NormalRoom_EnemyPool
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyPoolDefinition
+  poolId: normal-room-core
+  displayName: Normal Room Core
+  designerNotes: 
+  entries:
+  - enemy: {fileID: 11400000, guid: 78a6cabda29c4054b9415701981a8f69, type: 2}
+    selectionWeight: 5
+    minDepth: 0
+    maxDepth: 99
+    maxPerWave: 8
+    maxPerRoom: 16
+    themeEligible: 1
+  - enemy: {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}
+    selectionWeight: 4
+    minDepth: 0
+    maxDepth: 99
+    maxPerWave: 8
+    maxPerRoom: 16
+    themeEligible: 1
+  - enemy: {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
+    selectionWeight: 2
+    minDepth: 1
+    maxDepth: 99
+    maxPerWave: 2
+    maxPerRoom: 4
+    themeEligible: 1

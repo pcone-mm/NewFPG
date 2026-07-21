@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71ec866d9e2bafb47b6a6ba1a88a46d5, type: 3}
+  m_Name: D0_Hudie_Enemy
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0EnemyDefinition
+  enemyId: hudie
+  displayName: Hudie
+  designerNotes: Hudie owns the selected encounter identity; its current visual is
+    backed by the D0 gameplay adapter.
+  life: 800
+  breakValue: 160
+  actorPresentation: {fileID: 11400000, guid: aabb93e4dc0a03144b334e79ba9e4908, type: 2}
+  behaviorProfile: {fileID: 11400000, guid: d91172f6d6b2bf9408a0df9d16298ef9, type: 2}
+  entityPrefab: {fileID: 8811375339980499798, guid: c02f8f1b840951447a366680c93218f5, type: 3}

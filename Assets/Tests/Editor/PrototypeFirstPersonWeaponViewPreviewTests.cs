@@ -117,8 +117,7 @@ public sealed class PrototypeFirstPersonWeaponViewPreviewTests
             Is.GreaterThanOrEqualTo(0),
             "This test expects the FirstPersonWeapon layer to exist.");
 
-        Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png");
-        Assert.IsNotNull(icon, "HUD debug weapon icon should be available.");
+        Sprite icon = CreateTestSprites(1, new Rect(0f, 0f, 4f, 4f))[0];
         Assert.That(icon.rect.width / icon.rect.height, Is.EqualTo(1f).Within(0.01f));
 
         Type viewType = Type.GetType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp", true);
@@ -139,6 +138,54 @@ public sealed class PrototypeFirstPersonWeaponViewPreviewTests
         Transform weapon = FindChildRecursive(viewObject.transform, "Flying Sword 1");
         Assert.IsNotNull(weapon, "WeaponDefinition icon should generate a first-person weapon quad.");
         Assert.That(weapon.localScale.y, Is.GreaterThan(weapon.localScale.x * 0.8f));
+    }
+
+    [Test]
+    public void AssignedLayoutProfileControlsGeneratedWeaponPose()
+    {
+        Assert.That(
+            LayerMask.NameToLayer("FirstPersonWeapon"),
+            Is.GreaterThanOrEqualTo(0),
+            "This test expects the FirstPersonWeapon layer to exist.");
+
+        Type viewType = Type.GetType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp", true);
+        Type layoutProfileType = Type.GetType("NewFPG.Prototype.FirstPersonWeaponLayoutProfile, Assembly-CSharp", true);
+        Type slotType = layoutProfileType.GetNestedType("WeaponSlot", BindingFlags.Public);
+        Assert.IsNotNull(slotType);
+
+        GameObject cameraObject = CreateTrackedGameObject("World Camera");
+        cameraObject.tag = "MainCamera";
+        cameraObject.AddComponent<Camera>();
+
+        GameObject viewObject = CreateTrackedGameObject("First Person Weapon View");
+        Component view = viewObject.AddComponent(viewType);
+
+        ScriptableObject profile = ScriptableObject.CreateInstance(layoutProfileType);
+        objectsToDestroy.Add(profile);
+        object slot = Activator.CreateInstance(
+            slotType,
+            "Custom Slot",
+            new Vector3(0.31f, -0.22f, 1.44f),
+            new Vector3(0f, 0f, 222f),
+            0.63f,
+            7);
+        layoutProfileType.GetMethod("SetWeapon", BindingFlags.Instance | BindingFlags.Public)
+            .Invoke(profile, new[] { 0, slot });
+
+        viewType.GetMethod("SetLayoutProfile", BindingFlags.Instance | BindingFlags.Public)
+            .Invoke(view, new object[] { profile });
+        ApplyPresentations(
+            viewType,
+            view,
+            new[] { "Profile Sword" },
+            CreateTestSprites(1, new Rect(0f, 0f, 6f, 3f)));
+
+        Transform weapon = FindChildRecursive(viewObject.transform, "Profile Sword 1");
+        Assert.IsNotNull(weapon, "Assigned layout profile should drive generated first-person weapon pose.");
+        Assert.That(weapon.localPosition, Is.EqualTo(new Vector3(0.31f, -0.22f, 1.44f)));
+        Assert.That(weapon.localEulerAngles.z, Is.EqualTo(222f).Within(0.01f));
+        Assert.That(weapon.localScale.x, Is.EqualTo(0.63f).Within(0.001f));
+        Assert.That(weapon.localScale.y, Is.EqualTo(0.315f).Within(0.001f));
     }
 
     [Test]
@@ -184,8 +231,7 @@ public sealed class PrototypeFirstPersonWeaponViewPreviewTests
             Is.GreaterThanOrEqualTo(0),
             "This test expects the FirstPersonWeapon layer to exist.");
 
-        Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png");
-        Assert.IsNotNull(icon, "HUD debug weapon icon should be available.");
+        Sprite icon = CreateTestSprites(1, new Rect(0f, 0f, 4f, 4f))[0];
 
         Type viewType = Type.GetType("NewFPG.Prototype.PrototypeFirstPersonWeaponView, Assembly-CSharp", true);
         Type presentationType = viewType.GetNestedType("WeaponPresentation", BindingFlags.Public);

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8adc3c6fe72b7fd4fb40fbce0a7ed61e, type: 3}
   m_Name: HUD_Debug_TargetLock
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
-  weaponId:
+  weaponId: 
   displayName: Target Lock Test
-  icon: {fileID: 21300000, guid: d31bca8fae13e5344a01263426386b25, type: 3}
+  icon: {fileID: 21300000, guid: 3a6df8952be88ef4da5f91e6ad92589e, type: 3}
   resourceCost: 0
   damage: 8
   cooldown: 0.12
@@ -56,9 +56,9 @@ MonoBehaviour:
   releaseEffectPrefab: {fileID: 7472231787283715185, guid: 0a26a886b10c1374997e516f519d335b, type: 3}
   hitEffectPrefab: {fileID: 3500664676075429397, guid: 033f271275e9191479220c154e91e55c, type: 3}
   forgedRuntimeStats:
-    blueprintId:
-    displayName:
-    skillLogicId:
+    blueprintId: 
+    displayName: 
+    skillLogicId: 
     attributes:
       metal: 0
       water: 0

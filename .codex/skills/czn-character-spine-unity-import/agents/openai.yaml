@@ -1,0 +1,4 @@
+interface:
+  display_name: "CZN Character Spine Import"
+  short_description: "Recover CZN character animation/VFX into Spine 3.8 and Unity."
+  default_prompt: "Use $czn-character-spine-unity-import to recover this CZN character's battle model and layered skills, import them into Unity, and validate preview/replay behavior."

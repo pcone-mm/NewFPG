@@ -21,7 +21,7 @@
       ],
       "runtime": {
         "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_TaomuSword.asset",
-        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png",
+        "hudIconPath": "Assets/Art/Weapons/HUD/2d_tongqianjian.png",
         "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset",
         "releaseEffectPrefabPath": "Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_TaomuSword_Release.prefab",
         "hitEffectPrefabPath": "Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_TaomuSword_Hit.prefab",
@@ -80,7 +80,7 @@
       ],
       "runtime": {
         "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_HeartMirror.asset",
-        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_RitualDagger.png",
+        "hudIconPath": "Assets/Art/Weapons/HUD/2d_huxinjing.png",
         "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Cone.asset",
         "releaseEffectPrefabPath": "Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_HeartMirror_Release.prefab",
         "hitEffectPrefabPath": "Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_HeartMirror_Hit.prefab",
@@ -142,7 +142,7 @@
       ],
       "runtime": {
         "weaponDefinitionAssetPath": "Assets/Settings/Forging/Weapons/WPN_Fan.asset",
-        "hudIconPath": "Assets/Art/Weapons/HUD/Xianxia_MoonDao.png",
+        "hudIconPath": "Assets/Art/Weapons/HUD/2d_bajiaoshan.png",
         "indicatorConfigPath": "Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Line.asset",
         "releaseEffectPrefabPath": "Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_Fan_Release.prefab",
         "hitEffectPrefabPath": "Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_Fan_Hit.prefab",

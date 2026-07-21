@@ -33,8 +33,8 @@ MonoBehaviour:
     100% \u6728\u5C5E\u6027\u4F24\u5BB3\u3002"
   weaponDefinitionAsset: {fileID: 11400000, guid: 43182db9abb532c40a1cdda5ae3ff656, type: 2}
   weaponDefinitionAssetPath: Assets/Settings/Forging/Weapons/WPN_TaomuSword.asset
-  hudIcon: {fileID: 21300000, guid: b815b2820e044b9ca79fd4157deb52bc, type: 3}
-  hudIconPath: Assets/Art/Weapons/HUD/Xianxia_FlyingSword.png
+  hudIcon: {fileID: 21300000, guid: 3a6df8952be88ef4da5f91e6ad92589e, type: 3}
+  hudIconPath: Assets/Art/Weapons/HUD/2d_tongqianjian.png
   indicatorConfigPath: Assets/Settings/Combat/HudDebug/IND_HUD_Debug_TargetLock.asset
   releaseEffectPrefab: {fileID: 0}
   releaseEffectPrefabPath: Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_TaomuSword_Release.prefab

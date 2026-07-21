@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="FpgRoomEditor.uss" />
+    <ui:VisualElement name="room-editor-root" class="room-editor">
+        <uie:Toolbar class="top-toolbar">
+            <ui:Label text="FPG 房间编辑器" class="window-title" />
+            <ui:VisualElement class="toolbar-spacer" />
+            <uie:ToolbarButton name="create-room-button" text="新建" tooltip="创建房间资产" />
+            <uie:ToolbarButton name="duplicate-room-button" text="复制" tooltip="复制房间并生成新房间 ID" />
+            <uie:ToolbarButton name="save-room-button" text="保存" tooltip="保存当前房间资产" />
+            <uie:ToolbarButton name="frame-room-button" text="聚焦" tooltip="在 SceneView 中聚焦所选标记或房间" />
+            <uie:ToolbarButton name="play-room-button" text="试玩" class="play-button" tooltip="临时载入 CombatLab 并试玩" />
+        </uie:Toolbar>
+
+        <ui:VisualElement class="content-split">
+            <ui:VisualElement class="browser-pane">
+                <ui:Label text="房间库" class="section-title" />
+                <uie:ToolbarSearchField name="search-field" class="search-field" />
+                <ui:DropdownField name="group-filter" label="主分组" />
+                <ui:DropdownField name="tag-filter" label="标签" />
+                <ui:DropdownField name="status-filter" label="校验" />
+                <ui:ListView name="room-list" class="room-list" selection-type="Single" virtualization-method="DynamicHeight" />
+                <ui:Label name="room-count-label" text="0 个房间" class="muted-label" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="main-pane">
+                <ui:VisualElement class="marker-toolbar">
+                    <ui:Label text="放置工具" class="toolbar-label" />
+                    <ui:Button name="place-exit-button" text="出口" tooltip="在 SceneView 放置出口插槽" class="marker-tool marker-tool--exit" />
+                    <ui:Button name="place-player-button" text="玩家" tooltip="在 SceneView 放置玩家入口" class="marker-tool marker-tool--player" />
+                    <ui:Button name="place-enemy-button" text="敌人" tooltip="在 SceneView 放置敌人出生点" class="marker-tool marker-tool--enemy" />
+                    <ui:Button name="place-destructible-button" text="可破坏物" tooltip="在 SceneView 放置可破坏物插槽" class="marker-tool marker-tool--destructible" />
+                    <ui:Button name="place-reachable-button" text="可到达点" tooltip="在 SceneView 放置可到达点" class="marker-tool marker-tool--reachable" />
+                    <ui:VisualElement class="toolbar-spacer" />
+                    <ui:FloatField name="snap-field" label="吸附" value="0.5" class="snap-field" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="visibility-toolbar">
+                    <ui:Label text="显示" class="toolbar-label" />
+                    <ui:Toggle name="show-exit-toggle" label="出口" value="true" />
+                    <ui:Toggle name="show-player-toggle" label="玩家" value="true" />
+                    <ui:Toggle name="show-enemy-toggle" label="敌人" value="true" />
+                    <ui:Toggle name="show-destructible-toggle" label="可破坏物" value="true" />
+                    <ui:Toggle name="show-reachable-toggle" label="可到达点" value="true" />
+                    <ui:VisualElement class="toolbar-spacer" />
+                    <uie:ObjectField name="scenario-field" label="遭遇配置" allow-scene-objects="false" class="scenario-field" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="authoring-split">
+                    <ui:ScrollView name="room-details-scroll" class="details-pane">
+                        <ui:Label text="房间资料" class="section-title" />
+                        <ui:VisualElement name="room-details" />
+                    </ui:ScrollView>
+
+                    <ui:VisualElement class="marker-pane">
+                        <ui:Label text="玩法标记" class="section-title" />
+                        <ui:ListView name="marker-list" class="marker-list" selection-type="Single" virtualization-method="DynamicHeight" />
+                        <ui:VisualElement class="marker-actions">
+                            <ui:Button name="duplicate-marker-button" text="复制标记" />
+                            <ui:Button name="delete-marker-button" text="删除标记" class="danger-button" />
+                        </ui:VisualElement>
+                        <ui:ScrollView name="marker-details-scroll" class="marker-details-scroll">
+                            <ui:Label text="所选标记" class="subsection-title" />
+                            <ui:VisualElement name="marker-details" />
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="validation-pane">
+                    <ui:VisualElement class="validation-header">
+                        <ui:Label text="结构校验" class="section-title" />
+                        <ui:Label name="validation-summary-label" class="validation-summary" />
+                    </ui:VisualElement>
+                    <ui:ListView name="validation-list" class="validation-list" selection-type="Single" virtualization-method="DynamicHeight" />
+                </ui:VisualElement>
+
+                <ui:Label name="status-label" text="请选择房间" class="status-bar" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

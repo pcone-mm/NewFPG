@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d46b66ebd4ae19a48bfde0220d460694, type: 3}
+  m_Name: D0_Hudie_Presentation
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ActorPresentationDefinition
+  actorId: hudie
+  displayName: Hudie
+  actorKind: 1
+  designerNotes: Hudie state animation mapping; attacks are authored on D0_Hudie_Attack_Bullet.
+  player:
+    idleAnimation: b_idle
+    hitAnimation: hit
+    groggyAnimation: groggy
+    defeatReadyAnimation: death_ready
+    defeatAnimation: death
+    victoryReadyAnimation: victory_ready
+    victoryAnimation: victory
+  enemy:
+    enterAnimation: appear
+    idleAnimation: idle
+    hitAnimation: idle
+    groggyAnimation: idle
+    deathAnimation: die
+    breakFeedbackDuration: 0.85

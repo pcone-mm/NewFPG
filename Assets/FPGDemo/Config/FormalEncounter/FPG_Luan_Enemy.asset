@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 265720d78861484cb3c4a860e28c2d25, type: 3}
+  m_Name: FPG_Luan_Enemy
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyDefinition
+  enemyDefinitionId: luan
+  displayName: Luan
+  designerNotes: 
+  role: 3
+  life: 180
+  breakValue: 45
+  spawnCost: 4
+  capWeight: 2
+  maxPerEncounter: 0
+  themeEligible: 1
+  entityViewPrefab: {fileID: 7330586324000684800, guid: cac252bb12fcae7418d1bd67ede1ccdf, type: 3}
+  behavior: {fileID: 11400000, guid: b13ba780e5e4b994a9c4c7e330edbee6, type: 2}
+  attackPatterns:
+  - {fileID: 11400000, guid: fbc7640a72ae77748ab60423d5df983f, type: 2}

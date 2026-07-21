@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
   weaponId: 
   displayName: Flying Sword
-  icon: {fileID: 21300000, guid: 98d434c187044ee42beff0ed05162789, type: 3}
+  icon: {fileID: 21300000, guid: 3a6df8952be88ef4da5f91e6ad92589e, type: 3}
   resourceCost: 2
   damage: 8
   cooldown: 0.12

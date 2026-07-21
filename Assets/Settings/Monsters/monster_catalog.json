@@ -101,7 +101,7 @@
         "requestInterval": 2.0,
         "attackPrepareTime": 0.8,
         "damage": 12.0,
-        "damageRadius": 1.35,
+        "damageRadius": 30.0,
         "warningHeightOffset": 1.2,
         "targetMask": 311,
         "attackTriggerParameter": "Attack"
@@ -132,11 +132,11 @@
             {
               "mechanicId": "bite_damage_area",
               "type": "damage_area",
-              "中文备注": "咬击伤害区：以鱼怪当前位置向上偏移 1.2 米为中心，半径 1.35 米内检测 targetMask 对应目标，造成 12 点伤害；affectSelf=false 会排除自己和其他怪物。",
+              "中文备注": "咬击伤害区：以鱼怪当前位置向上偏移 1.2 米为中心，半径 30 米内检测 targetMask 对应目标，造成 12 点伤害；affectSelf=false 会排除自己和其他怪物。",
               "delay": 0.0,
               "duration": 0.0,
               "value": 12.0,
-              "radius": 1.35,
+              "radius": 30.0,
               "heightOffset": 1.2,
               "targetMask": 311,
               "affectSelf": false

@@ -46,7 +46,7 @@ The first floor does not spawn enemies immediately on room entry. The flow is:
 - LevelWeaponProjectileShooter: bridges PrototypeFirstPersonWeaponView click attacks into projectile fire.
 - LevelProjectile: simple homing/aim projectile that damages Combat.IDamageable targets directly.
 - LevelCombatant: level-only enemy tracker that listens to CombatVitals death and reports room progress.
-- LevelFlowSceneInstaller: editor menu to install this prototype into a scene.
+
 
 ## Next Expansion Points
 

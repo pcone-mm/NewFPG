@@ -5,17 +5,21 @@
 ## 职责
 
 - 洞穴入口和原型战斗流程。
-- 原型 HUD 构建和交互。
+- 原型 HUD 构建、第一人称武器视图和指针交互。
 - 玩家移动、相机跟随辅助、面向相机的精灵、场景转场。
 - 把 `NewFPG.Battle` 逻辑接入可见场景对象。
+- `FirstPersonWeaponLayoutProfile` 维护第一人称武器 HUD 的可复用位置、旋转、宽度和排序。
 
 ## 边界
 
 - 可复用的战斗计算放到 `Assets/Scripts/Battle/`，不要嵌在 `MonoBehaviour` 里。
 - 场景特定名称和对象查找假设，要记录在实际使用它们的脚本附近。
 - 如果某个原型脚本因为同时构建 UI 和处理状态而变大，只有在能形成清晰运行时职责边界时再拆分。
+- `PrototypeFirstPersonWeaponView` 负责 URP camera stack、武器 quad、pointer hitbox 和攻击事件；实际施法、资源、技能指示器和战斗 HUD 状态仍由 `Assets/Scripts/Combat/` 消费。
+- 默认布局资产是 `Assets/Settings/Prototype/FirstPersonWeaponHudLayout.asset`；调武器卡位置、旋转、宽度或排序时优先改 layout profile 或 Inspector scene handles，不要只手改 prefab YAML 里的旧 `weapons` 列表。
 
 ## 验证方式
 
 - 修改后检查 Unity Console。
+- 改第一人称武器视图、layout profile 或 pointer hitbox 后，优先运行 `Assets/Tests/Editor/PrototypeFirstPersonWeaponViewPreviewTests.cs`。
 - 改 UI、相机或场景流程时，截取受影响场景状态的截图。

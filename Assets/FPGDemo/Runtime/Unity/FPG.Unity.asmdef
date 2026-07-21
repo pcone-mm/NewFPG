@@ -1,0 +1,23 @@
+{
+    "name": "FPG.Unity",
+    "rootNamespace": "FPG.Demo.Unity",
+    "references": [
+        "FPG.Core",
+        "FPG.Combat",
+        "FPG.Player",
+        "FPG.Enemy",
+        "FPG.Run",
+        "spine-unity",
+        "Unity.InputSystem",
+        "Unity.ugui"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

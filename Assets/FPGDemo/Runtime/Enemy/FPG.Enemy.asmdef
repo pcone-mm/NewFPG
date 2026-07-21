@@ -1,0 +1,17 @@
+{
+    "name": "FPG.Enemy",
+    "rootNamespace": "FPG.Demo.Enemy",
+    "references": [
+        "FPG.Core",
+        "FPG.Combat"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

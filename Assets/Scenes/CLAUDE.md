@@ -5,8 +5,8 @@
 - `SampleScene.unity` 是当前已跟踪的基础场景。
 - `PrototypeCaveBattleScene.unity` 是原型洞穴战斗场景。
 - `LevelScene.unity` 是当前森林切图关卡原型场景，常由 `Assets/Editor/ForestCutoutLevelSceneBuilder.cs` 更新。
-- `CombatHudWeaponDebug.unity` 是战斗 HUD、武器图标和技能指示器验证场景，常由 `Assets/Editor/Combat/CombatHudDebugSceneInstaller.cs` 生成。
-- `lianqi.unity` 是炼器工作台验证场景，常由 `Assets/Editor/ForgingWorkbenchSceneInstaller.cs` 绑定 `ForgingWorkbenchController`、配置路径和布局 preset。
+- `CombatHudWeaponDebug.unity` 是战斗 HUD、武器图标和技能指示器验证场景。
+- `lianqi.unity` 是炼器工作台验证场景，包含 `ForgingWorkbenchController`、配置路径和布局 preset 绑定。
 - `Dongfu_Home.unity` 是洞府主场景原型，包含炼器房、外出战斗入口、洞府材质和 `SceneInteractablePlaceholder` 交互占位。
 - `Shulin_L0.unity` 和 `ShulinDemoScene.unity` 是树林场景验证入口；改树林材质或切图资源后优先检查它们。
 

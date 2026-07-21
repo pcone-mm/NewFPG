@@ -1,0 +1,142 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a45d1e0f2b8e43c2a705b3ac8dd9a320, type: 3}
+  m_Name: CombatAudioBank
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.CombatAudioBank
+  concurrentVoiceLimit: 16
+  cueEntries:
+  - cue: 1
+    clip: {fileID: 8300000, guid: 624eba2f90ce5e340b98dc14ac779a56, type: 3}
+    priority: 130
+    volume: 1
+    cooldownSeconds: 0.04
+    maxConcurrentVoices: 4
+  - cue: 2
+    clip: {fileID: 8300000, guid: 4f4725ecc81f2824d8322839a9dc780d, type: 3}
+    priority: 85
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 1
+  - cue: 3
+    clip: {fileID: 8300000, guid: d18b23c642d07b747926b211f10496f4, type: 3}
+    priority: 55
+    volume: 1
+    cooldownSeconds: 0.08
+    maxConcurrentVoices: 2
+  - cue: 4
+    clip: {fileID: 8300000, guid: 1aa631e4d654fa643976537441ebdbbc, type: 3}
+    priority: 110
+    volume: 1
+    cooldownSeconds: 0.03
+    maxConcurrentVoices: 3
+  - cue: 5
+    clip: {fileID: 8300000, guid: 8477029eabbd17548915c6b79e084210, type: 3}
+    priority: 50
+    volume: 1
+    cooldownSeconds: 0.04
+    maxConcurrentVoices: 2
+  - cue: 6
+    clip: {fileID: 8300000, guid: ee3a6603a1778d84786525fd52d67ae6, type: 3}
+    priority: 45
+    volume: 1
+    cooldownSeconds: 0.04
+    maxConcurrentVoices: 2
+  - cue: 7
+    clip: {fileID: 8300000, guid: 1b122ebd44bfbde458c963ef3dbf29b0, type: 3}
+    priority: 100
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 1
+  - cue: 8
+    clip: {fileID: 8300000, guid: f7472d180ea668347b93f51df9a3d05c, type: 3}
+    priority: 60
+    volume: 1
+    cooldownSeconds: 0.2
+    maxConcurrentVoices: 1
+  - cue: 9
+    clip: {fileID: 8300000, guid: 51306df2e1abd5e42bdffd6da6104f9e, type: 3}
+    priority: 50
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 1
+  - cue: 10
+    clip: {fileID: 8300000, guid: 441df000076d67e48941ff4eaa642513, type: 3}
+    priority: 75
+    volume: 1
+    cooldownSeconds: 0.2
+    maxConcurrentVoices: 1
+  - cue: 11
+    clip: {fileID: 8300000, guid: cd1ae959471560d479cb50889d739aea, type: 3}
+    priority: 65
+    volume: 1
+    cooldownSeconds: 0.08
+    maxConcurrentVoices: 3
+  - cue: 12
+    clip: {fileID: 8300000, guid: ef3b73abe49ae3b4a8b7f92cc4a24e41, type: 3}
+    priority: 30
+    volume: 1
+    cooldownSeconds: 0.2
+    maxConcurrentVoices: 1
+  - cue: 13
+    clip: {fileID: 8300000, guid: 57c851a7f850b4543bf4e162cd48e4d7, type: 3}
+    priority: 25
+    volume: 1
+    cooldownSeconds: 0.12
+    maxConcurrentVoices: 1
+  - cue: 14
+    clip: {fileID: 8300000, guid: 25dd11ac57e80f745b7149df882fbfcc, type: 3}
+    priority: 20
+    volume: 1
+    cooldownSeconds: 0.15
+    maxConcurrentVoices: 1
+  - cue: 15
+    clip: {fileID: 8300000, guid: 828b86f1c3ef34345bd404296b1ce928, type: 3}
+    priority: 15
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+  - cue: 16
+    clip: {fileID: 8300000, guid: 5c8fe385b82a1b54593d173f53977c4c, type: 3}
+    priority: 20
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+  - cue: 17
+    clip: {fileID: 8300000, guid: dfc57a4dcfcd75b4a808bbd3d690263a, type: 3}
+    priority: 10
+    volume: 1
+    cooldownSeconds: 0.5
+    maxConcurrentVoices: 1
+  - cue: 18
+    clip: {fileID: 8300000, guid: 6bb4babc642b163458a255f64cd927d7, type: 3}
+    priority: 5
+    volume: 1
+    cooldownSeconds: 0.5
+    maxConcurrentVoices: 1
+  - cue: 19
+    clip: {fileID: 8300000, guid: 86d1513777f643540b19dd741a254370, type: 3}
+    priority: 130
+    volume: 1
+    cooldownSeconds: 0.08
+    maxConcurrentVoices: 1
+  - cue: 20
+    clip: {fileID: 8300000, guid: a8e9704ea8b45764d9182811a70d27b5, type: 3}
+    priority: 65
+    volume: 1
+    cooldownSeconds: 0.18
+    maxConcurrentVoices: 1
+  - cue: 21
+    clip: {fileID: 8300000, guid: 663f13e1773fd6b4d9f28b298c188186, type: 3}
+    priority: 70
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 1

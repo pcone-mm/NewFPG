@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b22b03119c0561418f09cb64beef21a, type: 3}
+  m_Name: D0_Hudie_Encounter
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0EncounterDefinition
+  encounterId: hudie-combatlab
+  displayName: Hudie
+  designerNotes: Standalone Hudie encounter using a single repeated, non-interceptable
+    D0 projectile.
+  encounterContract: 2
+  spawnSlots:
+  - definitionId: 1
+    enemy: {fileID: 11400000, guid: cc34fcd560214d543aeb25d92d279707, type: 2}
+    spawnPointId: enemy-main
+    spawnTick: 0
+    posePolicy: 0
+  attackSchedule:
+  - scheduleSequence: 1
+    dueTick: 390
+    attack: {fileID: 11400000, guid: 812174c049bd09f42a5d7d7a7062add2, type: 2}
+  - scheduleSequence: 2
+    dueTick: 570
+    attack: {fileID: 11400000, guid: 812174c049bd09f42a5d7d7a7062add2, type: 2}
+  - scheduleSequence: 3
+    dueTick: 750
+    attack: {fileID: 11400000, guid: 812174c049bd09f42a5d7d7a7062add2, type: 2}
+  - scheduleSequence: 4
+    dueTick: 930
+    attack: {fileID: 11400000, guid: 812174c049bd09f42a5d7d7a7062add2, type: 2}
+  - scheduleSequence: 5
+    dueTick: 1110
+    attack: {fileID: 11400000, guid: 812174c049bd09f42a5d7d7a7062add2, type: 2}
+  - scheduleSequence: 6
+    dueTick: 1290
+    attack: {fileID: 11400000, guid: 812174c049bd09f42a5d7d7a7062add2, type: 2}
+  threatSchedule: []

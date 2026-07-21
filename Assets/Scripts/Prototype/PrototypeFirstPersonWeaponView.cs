@@ -50,11 +50,14 @@ namespace NewFPG.Prototype
         [SerializeField] private PrototypeFirstPersonWeaponInteractionConfig interactionConfig;
 
         [Header("Layout")]
-        [SerializeField] private List<WeaponPanelPose> weapons = new List<WeaponPanelPose>
+        [SerializeField] private FirstPersonWeaponLayoutProfile layoutProfile;
+
+        [SerializeField, HideInInspector] private List<WeaponPanelPose> weapons = new List<WeaponPanelPose>
         {
-            new WeaponPanelPose("Left Blade", new Vector3(-0.43f, -0.39f, 1.35f), new Vector3(0f, 0f, -80f), 0.92f, 0),
-            new WeaponPanelPose("Center Sword", new Vector3(0.02f, -0.37f, 1.18f), new Vector3(0f, 0f, -90f), 0.72f, 2),
-            new WeaponPanelPose("Right Brush", new Vector3(0.41f, -0.58f, 1.28f), new Vector3(0f, 0f, -106.2f), 0.96f, 1),
+            new WeaponPanelPose("Left Card", new Vector3(-0.48f, -0.51f, 1.34f), new Vector3(0f, 0f, 282f), 0.38f, 0),
+            new WeaponPanelPose("Left Center Card", new Vector3(-0.16f, -0.43f, 1.22f), new Vector3(0f, 0f, 275f), 0.43f, 2),
+            new WeaponPanelPose("Right Center Card", new Vector3(0.16f, -0.43f, 1.22f), new Vector3(0f, 0f, 265f), 0.43f, 3),
+            new WeaponPanelPose("Right Card", new Vector3(0.48f, -0.51f, 1.34f), new Vector3(0f, 0f, 258f), 0.38f, 1),
         };
 
         private readonly List<GameObject> spawnedWeapons = new List<GameObject>();
@@ -76,9 +79,14 @@ namespace NewFPG.Prototype
         public event System.Func<WeaponAttackContext, bool> WeaponAttackRequested;
         public event System.Action<WeaponAttackContext> WeaponAttackStarted;
 
+        public Transform WeaponRig => weaponRig;
+        public Camera WeaponCamera => weaponCamera;
+        public FirstPersonWeaponLayoutProfile LayoutProfile => layoutProfile;
+
         private void Reset()
         {
             AssignDefaultInteractionConfigInEditor();
+            AssignDefaultLayoutProfileInEditor();
         }
 
         private void OnEnable()
@@ -109,6 +117,7 @@ namespace NewFPG.Prototype
             farClipPlane = Mathf.Max(nearClipPlane + 0.1f, farClipPlane);
             weaponDepth = Mathf.Clamp(weaponDepth, nearClipPlane + 0.05f, farClipPlane - 0.05f);
             AssignDefaultInteractionConfigInEditor();
+            AssignDefaultLayoutProfileInEditor();
         }
 
         private void Update()
@@ -145,9 +154,8 @@ namespace NewFPG.Prototype
 
             ClearSpawnedWeapons();
 
-            int weaponCount = HasWeaponPresentations()
-                ? weaponPresentations.Length
-                : weapons != null ? weapons.Count : 0;
+            int layoutCount = GetLayoutPoseCount();
+            int weaponCount = HasWeaponPresentations() ? weaponPresentations.Length : layoutCount;
 
             for (int i = 0; i < weaponCount; i++)
             {
@@ -225,6 +233,12 @@ namespace NewFPG.Prototype
                 }
             }
 
+            RebuildWeapons();
+        }
+
+        public void SetLayoutProfile(FirstPersonWeaponLayoutProfile profile)
+        {
+            layoutProfile = profile;
             RebuildWeapons();
         }
 
@@ -448,9 +462,9 @@ namespace NewFPG.Prototype
 
         private WeaponPanelPose ResolveWeaponPanelPose(int index, int totalCount)
         {
-            if (weapons != null && index >= 0 && index < weapons.Count)
+            if (TryGetConfiguredWeaponPanelPose(index, out WeaponPanelPose pose))
             {
-                return weapons[index];
+                return pose;
             }
 
             int safeTotalCount = Mathf.Max(1, totalCount);
@@ -463,6 +477,86 @@ namespace NewFPG.Prototype
                 new Vector3(0f, 0f, -90f - x * 28f),
                 0.72f,
                 index);
+        }
+
+        private int GetLayoutPoseCount()
+        {
+            if (HasLayoutProfileWeapons())
+            {
+                return layoutProfile.Count;
+            }
+
+            return weapons != null ? weapons.Count : 0;
+        }
+
+        private bool TryGetConfiguredWeaponPanelPose(int index, out WeaponPanelPose pose)
+        {
+            if (HasLayoutProfileWeapons())
+            {
+                if (layoutProfile.TryGetWeapon(index, out FirstPersonWeaponLayoutProfile.WeaponSlot slot))
+                {
+                    pose = new WeaponPanelPose(
+                        slot.name,
+                        slot.localPosition,
+                        slot.localEulerAngles,
+                        slot.width,
+                        slot.sortingOrder);
+                    NormalizeWeaponPanelPose(ref pose, index);
+                    return true;
+                }
+
+                pose = default;
+                return false;
+            }
+
+            if (weapons != null && index >= 0 && index < weapons.Count)
+            {
+                pose = weapons[index];
+                NormalizeWeaponPanelPose(ref pose, index);
+                return true;
+            }
+
+            pose = default;
+            return false;
+        }
+
+        private void SetConfiguredWeaponPanelPose(int index, WeaponPanelPose pose)
+        {
+            NormalizeWeaponPanelPose(ref pose, index);
+            if (HasLayoutProfileWeapons())
+            {
+                if (index >= 0 && index < layoutProfile.Count)
+                {
+                    layoutProfile.SetWeapon(index, new FirstPersonWeaponLayoutProfile.WeaponSlot(
+                        pose.name,
+                        pose.localPosition,
+                        pose.localEulerAngles,
+                        pose.width,
+                        pose.sortingOrder));
+                }
+
+                return;
+            }
+
+            if (weapons != null && index >= 0 && index < weapons.Count)
+            {
+                weapons[index] = pose;
+            }
+        }
+
+        private bool HasLayoutProfileWeapons()
+        {
+            return layoutProfile != null && layoutProfile.Count > 0;
+        }
+
+        private static void NormalizeWeaponPanelPose(ref WeaponPanelPose pose, int index)
+        {
+            if (string.IsNullOrWhiteSpace(pose.name))
+            {
+                pose.name = "Weapon " + (index + 1).ToString();
+            }
+
+            pose.width = Mathf.Max(0.01f, pose.width);
         }
 
         private bool TryResolveWeaponVisual(WeaponPanelPose pose, int poseIndex, out WeaponVisualSource visual)
@@ -1427,11 +1521,40 @@ namespace NewFPG.Prototype
 #endif
         }
 
+        private void AssignDefaultLayoutProfileInEditor()
+        {
+#if UNITY_EDITOR
+            if (layoutProfile != null)
+            {
+                return;
+            }
+
+            layoutProfile = AssetDatabase.LoadAssetAtPath<FirstPersonWeaponLayoutProfile>(
+                FirstPersonWeaponLayoutProfile.DefaultAssetPath);
+            if (layoutProfile != null)
+            {
+                return;
+            }
+
+            string[] guids = AssetDatabase.FindAssets(
+                "t:" + nameof(FirstPersonWeaponLayoutProfile),
+                new[] { "Assets/Settings" });
+
+            if (guids.Length == 0)
+            {
+                return;
+            }
+
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            layoutProfile = AssetDatabase.LoadAssetAtPath<FirstPersonWeaponLayoutProfile>(path);
+#endif
+        }
+
 #if UNITY_EDITOR
         [ContextMenu("Sync HUD Weapon Poses From Scene")]
         public void SyncWeaponPosesFromScene()
         {
-            if (Application.isPlaying || syncingWeaponPosesFromScene || weaponRig == null || weapons == null || weapons.Count == 0)
+            if (Application.isPlaying || syncingWeaponPosesFromScene || weaponRig == null || GetLayoutPoseCount() == 0)
             {
                 return;
             }
@@ -1443,16 +1566,22 @@ namespace NewFPG.Prototype
 
             syncingWeaponPosesFromScene = true;
             bool changed = false;
+            bool syncsLayoutProfile = HasLayoutProfileWeapons();
+            Object dirtyTarget = syncsLayoutProfile ? layoutProfile : this;
 
-            for (int i = 0; i < weapons.Count; i++)
+            for (int i = 0; i < GetLayoutPoseCount(); i++)
             {
-                Transform weaponTransform = FindEditableWeaponTransform(weapons[i], i);
+                if (!TryGetConfiguredWeaponPanelPose(i, out WeaponPanelPose pose))
+                {
+                    continue;
+                }
+
+                Transform weaponTransform = FindEditableWeaponTransform(pose, i);
                 if (weaponTransform == null)
                 {
                     continue;
                 }
 
-                WeaponPanelPose pose = weapons[i];
                 Vector3 localPosition = weaponTransform.localPosition;
                 Vector3 localEulerAngles = weaponTransform.localEulerAngles;
                 float width = Mathf.Max(0.01f, weaponTransform.localScale.x);
@@ -1466,21 +1595,24 @@ namespace NewFPG.Prototype
                 {
                     if (!changed)
                     {
-                        Undo.RecordObject(this, "Sync First Person Weapon Poses");
+                        Undo.RecordObject(dirtyTarget, "Sync First Person Weapon Poses");
                         changed = true;
                     }
 
                     pose.localPosition = localPosition;
                     pose.localEulerAngles = localEulerAngles;
                     pose.width = width;
-                    weapons[i] = pose;
+                    SetConfiguredWeaponPanelPose(i, pose);
                 }
             }
 
             if (changed)
             {
-                EditorUtility.SetDirty(this);
-                PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+                EditorUtility.SetDirty(dirtyTarget);
+                if (!syncsLayoutProfile)
+                {
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+                }
             }
 
             syncingWeaponPosesFromScene = false;

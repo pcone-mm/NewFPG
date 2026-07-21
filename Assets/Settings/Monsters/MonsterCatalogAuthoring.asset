@@ -119,7 +119,7 @@ MonoBehaviour:
         requestInterval: 2
         attackPrepareTime: 0.8
         damage: 12
-        damageRadius: 1.35
+        damageRadius: 30
         warningHeightOffset: 1.2
         targetMask: 311
         attackTriggerParameter: Attack
@@ -155,13 +155,13 @@ MonoBehaviour:
         - mechanicId: bite_damage_area
           type: damage_area
           designerNote: "\u54AC\u51FB\u4F24\u5BB3\u533A\uFF1A\u4EE5\u9C7C\u602A\u5F53\u524D\u4F4D\u7F6E\u5411\u4E0A\u504F\u79FB
-            1.2 \u7C73\u4E3A\u4E2D\u5FC3\uFF0C\u534A\u5F84 1.35 \u7C73\u5185\u68C0\u6D4B
+            1.2 \u7C73\u4E3A\u4E2D\u5FC3\uFF0C\u534A\u5F84 30 \u7C73\u5185\u68C0\u6D4B
             targetMask \u5BF9\u5E94\u76EE\u6807\uFF0C\u9020\u6210 12 \u70B9\u4F24\u5BB3\uFF1BaffectSelf=false
             \u4F1A\u6392\u9664\u81EA\u5DF1\u548C\u5176\u4ED6\u602A\u7269\u3002"
           delay: 0
           duration: 0
           value: 12
-          radius: 1.35
+          radius: 30
           heightOffset: 1.2
           targetMask: 311
           affectSelf: 0

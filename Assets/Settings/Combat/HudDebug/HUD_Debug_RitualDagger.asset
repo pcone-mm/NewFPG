@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
   weaponId: 
   displayName: Ritual Dagger
-  icon: {fileID: 21300000, guid: a328f6339fa55984fb80b5da510ffa7e, type: 3}
+  icon: {fileID: 21300000, guid: 9e13dc864933adc4ab43f68014cb5f4b, type: 3}
   resourceCost: 3
   damage: 8
   cooldown: 0.12

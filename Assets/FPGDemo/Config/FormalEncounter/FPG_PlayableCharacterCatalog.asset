@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3182322791da6349ae759e8a29657aa, type: 3}
+  m_Name: FPG_PlayableCharacterCatalog
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgPlayableCharacterCatalog
+  defaultCharacter: {fileID: 11400000, guid: 01f983f4cf769f54389f4d1fd953b05b, type: 2}
+  entries:
+  - character: {fileID: 11400000, guid: 01f983f4cf769f54389f4d1fd953b05b, type: 2}
+    threeCProfile: {fileID: 11400000, guid: 755c9bd22ef742f8b9471748ed088db1, type: 2}
+    selectionPreviewPrefab: {fileID: 3887859762420120384, guid: b0b355a0cb746b440960d44a01eaff5a, type: 3}

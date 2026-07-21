@@ -1,0 +1,344 @@
+:root {
+    --panel: #2c2d30;
+    --panel-strong: #242528;
+    --panel-soft: #36383c;
+    --line: #484b50;
+    --text: #dedfe2;
+    --muted: #9da0a6;
+    --accent: #4ba3d3;
+    --success: #66b879;
+    --warning: #d8a84d;
+    --danger: #d26464;
+}
+
+.room-editor {
+    flex-grow: 1;
+    min-width: 760px;
+    min-height: 520px;
+    color: var(--text);
+    background-color: var(--panel-strong);
+}
+
+.top-toolbar {
+    min-height: 30px;
+    padding-left: 6px;
+    padding-right: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line);
+}
+
+.window-title,
+.section-title,
+.subsection-title {
+    -unity-font-style: bold;
+}
+
+.window-title {
+    font-size: 13px;
+    margin-right: 12px;
+}
+
+.section-title {
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.subsection-title {
+    margin-top: 7px;
+    margin-bottom: 4px;
+}
+
+.toolbar-spacer {
+    flex-grow: 1;
+}
+
+.content-split,
+.authoring-split,
+.marker-toolbar,
+.visibility-toolbar,
+.marker-actions,
+.validation-header,
+.room-list-row,
+.validation-row {
+    flex-direction: row;
+}
+
+.content-split,
+.main-pane,
+.authoring-split {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.browser-pane {
+    width: 270px;
+    min-width: 220px;
+    padding: 8px;
+    background-color: var(--panel);
+    border-right-width: 1px;
+    border-right-color: var(--line);
+}
+
+.search-field {
+    margin-bottom: 5px;
+}
+
+.room-list {
+    flex-grow: 1;
+    min-height: 150px;
+    margin-top: 7px;
+    margin-bottom: 4px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-color: var(--line);
+}
+
+.room-list-row {
+    min-height: 38px;
+    padding: 4px 5px;
+    align-items: center;
+}
+
+.room-list-copy {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.room-list-name {
+    -unity-font-style: bold;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.room-list-id,
+.muted-label {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    border-radius: 4px;
+    margin-right: 7px;
+}
+
+.status-dot--valid { background-color: var(--success); }
+.status-dot--warning { background-color: var(--warning); }
+.status-dot--error { background-color: var(--danger); }
+
+.main-pane {
+    background-color: var(--panel-strong);
+}
+
+.marker-toolbar,
+.visibility-toolbar {
+    min-height: 31px;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line);
+}
+
+.toolbar-label {
+    color: var(--muted);
+    margin-right: 6px;
+}
+
+.marker-tool {
+    min-width: 54px;
+    margin-right: 3px;
+    border-bottom-width: 2px;
+}
+
+.marker-tool--exit { border-bottom-color: #e1a94b; }
+.marker-tool--player { border-bottom-color: #54cfa1; }
+.marker-tool--enemy { border-bottom-color: #e66b68; }
+.marker-tool--destructible { border-bottom-color: #c783d7; }
+.marker-tool--reachable { border-bottom-color: #63a9e8; }
+.marker-tool--active { background-color: #39586a; }
+
+.snap-field {
+    width: 116px;
+}
+
+.visibility-toolbar Toggle {
+    margin-right: 8px;
+}
+
+.scenario-field {
+    width: 280px;
+}
+
+.details-pane {
+    width: 54%;
+    min-width: 300px;
+    padding: 8px;
+    border-right-width: 1px;
+    border-right-color: var(--line);
+}
+
+.marker-pane {
+    flex-grow: 1;
+    min-width: 250px;
+    padding: 8px;
+}
+
+.marker-list {
+    height: 190px;
+    min-height: 100px;
+    border-width: 1px;
+    border-color: var(--line);
+}
+
+.marker-list-row {
+    min-height: 28px;
+    padding-left: 5px;
+    padding-right: 5px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.marker-swatch {
+    width: 7px;
+    height: 18px;
+    margin-right: 7px;
+    border-radius: 2px;
+}
+
+.marker-copy {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.marker-kind {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.marker-actions {
+    justify-content: flex-end;
+    margin-top: 5px;
+}
+
+.marker-actions Button {
+    margin-left: 4px;
+}
+
+.marker-details-scroll {
+    flex-grow: 1;
+    min-height: 90px;
+}
+
+.validation-pane {
+    height: 150px;
+    min-height: 100px;
+    padding: 7px 8px;
+    border-top-width: 1px;
+    border-top-color: var(--line);
+    background-color: var(--panel);
+}
+
+.validation-header {
+    align-items: center;
+}
+
+.validation-summary {
+    margin-left: 8px;
+    color: var(--muted);
+}
+
+.validation-list {
+    flex-grow: 1;
+}
+
+.validation-row {
+    min-height: 25px;
+    padding: 3px 4px;
+    align-items: center;
+}
+
+.validation-icon {
+    width: 40px;
+    min-width: 40px;
+    -unity-font-style: bold;
+}
+
+.validation-icon--error { color: var(--danger); }
+.validation-icon--warning { color: var(--warning); }
+.validation-icon--info { color: var(--accent); }
+
+.validation-message {
+    flex-grow: 1;
+    white-space: normal;
+}
+
+.status-bar {
+    min-height: 22px;
+    padding: 3px 8px;
+    color: var(--muted);
+    border-top-width: 1px;
+    border-top-color: var(--line);
+}
+
+.play-button {
+    background-color: #346b4a;
+}
+
+.danger-button {
+    color: #f0bbbb;
+}
+
+.empty-state {
+    color: var(--muted);
+    -unity-text-align: middle-center;
+    padding: 12px;
+}
+
+.formal-encounter-preview {
+    margin-top: 10px;
+    padding-top: 7px;
+    border-top-width: 1px;
+    border-top-color: var(--line);
+}
+
+.formal-encounter-preview__generate {
+    margin-top: 5px;
+    min-height: 24px;
+    background-color: #346b4a;
+}
+
+.formal-encounter-preview__output {
+    margin-top: 7px;
+    padding-top: 5px;
+    border-top-width: 1px;
+    border-top-color: var(--line);
+}
+
+.formal-encounter-preview__summary,
+.formal-encounter-preview__subheading {
+    -unity-font-style: bold;
+}
+
+.formal-encounter-preview__subheading {
+    margin-top: 7px;
+    margin-bottom: 3px;
+}
+
+.formal-encounter-preview__wave,
+.formal-encounter-preview__spawn,
+.formal-encounter-preview__missing {
+    white-space: normal;
+    margin-top: 2px;
+}
+
+.formal-encounter-preview__muted {
+    color: var(--muted);
+}
+
+.formal-encounter-preview__missing {
+    color: var(--warning);
+}
+

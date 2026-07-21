@@ -37,8 +37,8 @@ MonoBehaviour:
     30% \u706B\u5C5E\u6027 + 30% \u571F\u5C5E\u6027\u4F24\u5BB3\u3002"
   weaponDefinitionAsset: {fileID: 11400000, guid: 49750e41435d21e49bdb5cef79421f81, type: 2}
   weaponDefinitionAssetPath: Assets/Settings/Forging/Weapons/WPN_Fan.asset
-  hudIcon: {fileID: 21300000, guid: 14a5a30f462644eca72d04ad72b165aa, type: 3}
-  hudIconPath: Assets/Art/Weapons/HUD/Xianxia_MoonDao.png
+  hudIcon: {fileID: 21300000, guid: eb673b1864583cb42ae65d704620b7fe, type: 3}
+  hudIconPath: Assets/Art/Weapons/HUD/2d_bajiaoshan.png
   indicatorConfigPath: Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Line.asset
   releaseEffectPrefab: {fileID: 0}
   releaseEffectPrefabPath: Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_Fan_Release.prefab

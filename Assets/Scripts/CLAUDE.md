@@ -8,6 +8,7 @@
 - `Forging/` 是炼器系统。它负责图纸、材料、五行属性、形状格、邻接/加成规则、结果计算、运行时武器绑定和炼器 UI 控制。
 - `Monsters/` 是怪物配置和运行时 AI。它负责 catalog DTO、JSON/ScriptableObject authoring、Behavior Designer 自定义任务、怪物移动、技能选择和机制执行。
 - `Prototype/` 是面向场景的原型代码。它可以创建 UI、引用相机、移动场景对象，并把 `Battle` 代码接入当前可玩的原型。
+- `CZN/` 是 CZN Spine 技能组合的通用运行时，负责 SkillSequence、Timeline 求值、分层 Spine/粒子/镜头和可重播预览；角色专用解析与资产生成留在 `Assets/Editor/CZN/`。
 
 ## 约定
 
@@ -17,7 +18,9 @@
 - `Forging/` 下的文件使用 `NewFPG.Forging`。
 - `Monsters/` 下的文件使用 `NewFPG.Monsters`。
 - `Prototype/` 下的文件使用 `NewFPG.Prototype`。
+- `CZN/` 下的文件使用 `NewFPG.CZN`，只放运行时可用的 SkillSequence、Timeline、播放器和预览控制组件。
 - 只有多个系统共享的可序列化领域类型才放进 `BattleContracts.cs`。如果某个类型只服务于一个系统，尽量放在对应系统附近。
+- CZN Spine 重播必须清 AnimationState、恢复 Skeleton setup pose，并重置粒子、锚点和镜头；不得只清缓存的 TrackEntry。完整验收矩阵见 `.codex/skills/czn-character-spine-unity-import/references/WORKFLOW.zh-CN.md`。
 - 关卡房间、门、奖励池、流程状态等关卡结构类型放在 `Level/` 附近；通用生命、伤害、资源和武器施法组件放在 `Combat/` 附近。
 - 炼器图纸、材料、catalog JSON DTO 和运行时武器生成逻辑放在 `Forging/` 附近；战斗侧 `WeaponDefinition` 只保留最终运行时绑定。
 - 怪物可调数据、AI 规则、技能和机制 DTO 放在 `Monsters/` 附近；战斗侧只保留 `CombatVitals`、伤害接口和通用攻击预警表现。

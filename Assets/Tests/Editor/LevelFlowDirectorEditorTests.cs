@@ -389,6 +389,12 @@ public sealed class LevelFlowDirectorEditorTests
         AssertPublicMethod(combatHudType, "SetCombatEnabled", typeof(bool));
         AssertPublicMethod(weaponViewType, "RefreshRuntimeView", typeof(Camera));
         Assert.IsNotNull(
+            weaponViewType.GetProperty("WeaponRig", BindingFlags.Instance | BindingFlags.Public),
+            "Weapon HUD should expose the generated rig for presentation controllers.");
+        Assert.IsNotNull(
+            weaponViewType.GetProperty("WeaponCamera", BindingFlags.Instance | BindingFlags.Public),
+            "Weapon HUD should expose the generated camera for presentation controllers.");
+        Assert.IsNotNull(
             weaponViewType.GetEvent("WeaponAttackStarted", BindingFlags.Instance | BindingFlags.Public),
             "Weapon HUD should expose the attack event for visual release callbacks.");
         Assert.IsNotNull(

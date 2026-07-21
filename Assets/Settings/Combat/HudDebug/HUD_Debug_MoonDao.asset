@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
   weaponId: 
   displayName: Moon Dao
-  icon: {fileID: 21300000, guid: d31bca8fae13e5344a01263426386b25, type: 3}
+  icon: {fileID: 21300000, guid: eb673b1864583cb42ae65d704620b7fe, type: 3}
   resourceCost: 4
   damage: 8
   cooldown: 0.12

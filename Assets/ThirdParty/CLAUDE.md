@@ -1,15 +1,15 @@
 # ThirdParty 使用指南
 
-这个目录放导入的插件、Unity samples、vendored 资源和第三方示例内容。
+这个目录放导入的插件和 vendored 资源；Unity samples 和第三方 demo 内容默认不纳入项目上下文，只有明确集成或迁移任务才恢复或编辑。
 
 ## 目录边界
 
-- `JMO Assets/`、`VFX_Klaus/`、`VolumetricLights/`、`VolumetricFog2/`、`TextMesh Pro/`、`Samples/` 等优先视为外部资产或样例。
+- `JMO Assets/`、`VFX_Klaus/`、`VolumetricLights/`、`VolumetricFog2/`、`TextMesh Pro/` 等优先视为外部资产。
 - 项目自有玩法脚本、场景安装器和配置同步工具不要放在这里。
 
 ## 工作规则
 
-- 除非任务明确是插件集成、资源迁移或修复导入问题，否则不要编辑第三方源码、shader、sample scene 或 demo 资源。
+- 除非任务明确是插件集成、资源迁移或修复导入问题，否则不要编辑第三方源码、shader、sample scene 或 demo 资源，也不要重新导入已清理的 samples 目录。
 - 移动第三方资源时必须同步 `.meta`，并在场景、prefab、material 引用验证完成前不要删除原位置。
 - 从第三方资源中挑选可用特效或材质时，优先复制或包装到项目自有目录，再让 gameplay 代码依赖项目自有路径。
 

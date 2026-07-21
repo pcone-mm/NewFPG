@@ -1,0 +1,16 @@
+{
+    "name": "FPG.Combat",
+    "rootNamespace": "FPG.Demo.Combat",
+    "references": [
+        "FPG.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a06f4ad777414a4385855a18536cf82, type: 3}
+  m_Name: D0_CombatLab_FeiVsBurstbug
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0CombatScenarioDefinition
+  scenarioId: combatlab-fei-vs-burstbug
+  displayName: 'CombatLab: Fei vs Burstbug'
+  designerNotes: First planner-authored D0 vertical slice. Keeps CombatLab scene
+    wiring and technical capacities in BattleScenarioConfig.
+  scenarioSeed: 1
+  player: {fileID: 11400000, guid: 01f983f4cf769f54389f4d1fd953b05b, type: 2}
+  playerSpawnPointId: player-main
+  encounter: {fileID: 11400000, guid: 77b9361a7d779d14a9017c841d821884, type: 2}
+  luanSummonHudie: {fileID: 0}
+  feelProfile: {fileID: 11400000, guid: 735269d4a7982f7409df98618fbcc10f, type: 2}
+  threeCProfile: {fileID: 11400000, guid: 755c9bd22ef742f8b9471748ed088db1, type: 2}
+  stageDefinition: {fileID: 11400000, guid: 6755d53dcfd8b034392ac122d841057f, type: 2}

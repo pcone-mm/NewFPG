@@ -1,0 +1,28 @@
+{
+    "name":  "FPG.LevelAuthoring.Editor",
+    "rootNamespace":  "FPG.Demo.Editor.LevelAuthoring",
+    "references":  [
+                       "FPG.Unity",
+                       "FPG.Run"
+                   ],
+    "includePlatforms":  [
+                             "Editor"
+                         ],
+    "excludePlatforms":  [
+
+                         ],
+    "allowUnsafeCode":  false,
+    "overrideReferences":  true,
+    "precompiledReferences":  [
+
+                              ],
+    "autoReferenced":  true,
+    "defineConstraints":  [
+
+                          ],
+    "versionDefines":  [
+
+                       ],
+    "noEngineReferences":  false
+}
+

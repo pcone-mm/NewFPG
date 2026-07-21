@@ -1,0 +1,111 @@
+<title>新版 D0 阶段设计制作目标：Fei × Burstbug 标准战斗样板</title>
+
+<p>D0 的定位不是完成一套技术灰盒，而是交付首条可复制的角色、怪物与策划配置生产线。本阶段只以 Fei 与 Burstbug 为样板：用一场可重复体验的 CombatLab 战斗，同时验证角色 3C、怪物行为、资产安装标准和策划配置流程。</p>
+
+<h1>目标与完成定义</h1>
+
+<table>
+  <thead>
+    <tr><th>目标</th><th>完成定义</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Fei 3C</td><td>NIKKE 式 2.5D 自由准星体验：角色固定在画面中下方，不提供自由移动；探身、缩回、瞄准、主射、副射和受击反馈均可由策划调试。</td></tr>
+    <tr><td>Burstbug 行为</td><td>从场外入场，在左右巡航锚点之间循环横移；攻击时在当前位置停下，收招后按原方向恢复横移。</td></tr>
+    <tr><td>生产管线</td><td>Stage、Scenario、Encounter、角色技能表现与敌人 EntityPrefab 具有明确所有权，并能从源资产、配置、生成到验收完整追溯。</td></tr>
+    <tr><td>策划配置</td><td>角色、怪物、招式、怪物出场与巡航、战斗流程和表现均可通过既有配置入口编排，不建立平行配置系统。</td></tr>
+    <tr><td>标准战斗</td><td>一场完整样板可覆盖入场、巡航、三种攻击响应、主副射、探身/缩回、Break、胜利、失败与重开；战斗时长不设硬门槛。</td></tr>
+  </tbody>
+</table>
+
+<h1>范围与边界</h1>
+
+<p>Fei × Burstbug 是 D0 的标准战斗基准；Hudie 独立出场与 Luan → Hudie 替换只用于验证同一 SpawnSlot/EntityPrefab 生产合同。D0 不制作第二玩家角色、玩家自由移动、怪物追踪/转向/导航、多敌同时在场、多波次、构筑系统或地图路线。</p>
+
+<h1>舞台、生成与实体所有权</h1>
+
+<table>
+  <thead>
+    <tr><th>层级</th><th>职责</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>D0StageDefinition</td><td>只定义环境图层与具名 SpawnPoint 的位置/朝向；不决定角色、敌人、Prefab、视觉偏移或生成时机。</td></tr>
+    <tr><td>D0CombatScenarioDefinition</td><td>组合玩家、遭遇和 Stage，并以 playerSpawnPointId 选择玩家 gameplay 出生点。</td></tr>
+    <tr><td>D0EncounterDefinition</td><td>SpawnSlot 决定敌人定义、spawnPointId、spawnTick 与 AtSpawnPoint / InheritPreviousGameplayPose 姿态策略。</td></tr>
+    <tr><td>D0EnemyDefinition.EntityPrefab</td><td>拥有视觉根、identity gameplay 根、投射物生成锚点、弱点锚点和 Body/Weakpoint 命中体。</td></tr>
+    <tr><td>玩家角色技能表现</td><td>拥有技能 Socket 以及主射/副射的枪口、弹道、蓄力与爆发表现；Stage 不创建临时枪口或目标代理。</td></tr>
+  </tbody>
+</table>
+
+<p>D0EnemyEntityWorld 按 Encounter SpawnSlot 预备实体，只激活当前槽位并绑定当前 EnemyRuntime。Stage 提供“哪里可以生成”，Scenario/Encounter 决定“谁在何时使用哪个点”，角色或敌人资产决定“生成出来的实体长什么样、有哪些锚点和命中体”。</p>
+
+<h1>Fei 3C 标准</h1>
+
+<p>Fei 固定在 2.5D 构图的画面中下方。准星可在安全区内自由移动，鼠标灵敏度、瞄准距离、输入缓冲和镜头构图须可配置。探身和缩回表达的是暴露度与防御状态的切换，不驱动角色在场景中位移；护盾/掩体表现、受击反馈、主射和副射的镜头与音画反馈均须可调。</p>
+
+<p><b>D0ThreeCProfile</b> 统一承载镜头构图验收、准星安全区、鼠标灵敏度、瞄准距离、输入缓冲、探身/缩回状态、护盾表现以及射击镜头反馈。玩家 gameplay 根由 Scenario 的 <b>playerSpawnPointId</b> 选择 Stage SpawnPoint，视觉局部姿态由玩家角色表现定义提供；3C 不复制这两类位置配置。</p>
+
+<h1>Burstbug 行为与招式标准</h1>
+
+<p>Burstbug 的固定行为序列为：<b>场外入场 → 左右循环横移 → 停下施放攻击 → 收招 → 按原方向继续横移</b>。D0 不实现追踪、转向、导航或瞄准公平性逻辑。其基础出生点由 Encounter SpawnSlot 选择 Stage SpawnPoint；相对该实体基线的场外入场偏移、左右巡航、速度、停攻、恢复和死亡退出由 <b>D0EnemyBehaviorProfile</b> 配置。</p>
+
+<table>
+  <thead>
+    <tr><th>攻击语言</th><th>玩家应对</th><th>D0 样板</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>快攻</td><td>读到预警后及时缩回或规避暴露。</td><td>Burstbug Fast Attack</td></tr>
+    <tr><td>可拦截弹幕</td><td>瞄准并用主射清除来袭物。</td><td>Burstbug Interceptable Volley；单个弹幕生命值为 4，可由 Fei 一次主射清除。</td></tr>
+    <tr><td>重型弱点/Break</td><td>识别弱点窗口，以副射触发 Break。</td><td>Burstbug Heavy Weakpoint / Break</td></tr>
+  </tbody>
+</table>
+
+<p>低层 Threat 时序收口为可复用的 <b>D0EnemyAttackDefinition</b>。每个招式必须定义动画、预警、前摇、攻击载荷、命中或 Break 结果、后摇、特效/音频和恢复条件；遭遇流程只负责编排招式出现的时机与阶段。</p>
+
+<h1>策划配置流程</h1>
+
+<p>维持 <b>BattleScenarioConfig → D0CombatScenarioDefinition</b> 为唯一入口。Scenario 引用 Stage、玩家、playerSpawnPointId 与 Encounter；Encounter 的 SpawnSlot 编排敌人生命周期，攻击日程只负责编排招式。旧的低层 Threat 日程不再作为独立策划入口。</p>
+
+<ol>
+  <li>在 D0StageDefinition 中维护环境和可复用 SpawnPoint，不放角色、敌人或命中体。</li>
+  <li>选择 Fei 的 3C、武器、手感与角色技能表现，并在 Scenario 中设置 playerSpawnPointId。</li>
+  <li>让每个 D0EnemyDefinition 引用自己的行为、表现与完整 EntityPrefab。</li>
+  <li>在 D0EncounterDefinition 的 SpawnSlot 中编排敌人、spawnPointId、spawnTick 和姿态策略；在攻击日程中单独编排招式。</li>
+  <li>由 D0CombatScenarioDefinition 统一组装，并通过 BattleScenarioConfig 进入 CombatLab；切换 Scenario 不重建场景角色摆位。</li>
+</ol>
+
+<h1>角色与怪物资产交付合同</h1>
+
+<p>每个可入场资产都必须具备可验收的交付包，而非只交一份视觉资源。合同覆盖源文件与授权、命名、比例与朝向、Spine 动画命名和事件、技能/实体锚点、命中体与弱点、特效/音频槽、Prefab、性能预算及验证证据。</p>
+
+<ul>
+  <li><b>Fei：</b>idle、探身/缩回、瞄准、主射、副射、受击/失败等状态均需接入 3C 和表现；枪口 Socket、主射/副射枪口与弹道特效属于角色技能表现。</li>
+  <li><b>Burstbug：</b>enter、巡航、fast、volley、heavy、groggy/Break、death 动画齐备；EntityPrefab 自包含 VisualRoot、GameplayRoot、ProjectileSpawnAnchor、Weakpoint 与 Body/Weakpoint 命中体。</li>
+  <li><b>安装：</b>CombatLab 场景只安装环境、SpawnPoint 与生成基础设施；验证器检查 Scenario/Encounter 引用和 Prefab 自有层级，不在 Stage 补建敌人结构。</li>
+  <li><b>导入：</b>现有 CZN 角色 Spine 导入文档继续作为资源导入子流程；它不替代本 D0 资产合同。</li>
+</ul>
+
+<h1>CombatLab 标准战斗</h1>
+
+<p>CombatLab Stage 固定 2.5D 前景环境，并提供 player-main / enemy-main 等具名 SpawnPoint。Scenario 选择 Fei 的玩家点，Encounter 初始 SpawnSlot 在敌人点生成 Burstbug EntityPrefab；随后行为 Profile 驱动场外入场与左右巡航。每次攻击前实体在当前位置停下，攻击结束并完成后摇后恢复巡航。角色最终画面位置来自“SpawnPoint gameplay 基线 + 角色/敌人表现局部姿态”，不是 Stage 直接摆放模型。</p>
+
+<p>一次完整体验必须出现怪物入场、至少一次完整的巡航—停攻—恢复循环、快攻/可拦截弹幕/重型弱点 Break 三种攻击响应、主射、副射、探身/缩回、Break、胜利、失败与重开。验收以流程完整性、可读性、3C 手感和生产链可复现性为准，而不是以战斗时长为准。</p>
+
+<h1>验收矩阵</h1>
+
+<table>
+  <thead>
+    <tr><th>维度</th><th>验收要求</th><th>证据</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>自动化</td><td>验证 Stage 仅含环境/SpawnPoint、Scenario 玩家点、Encounter SpawnSlot、EnemyDefinition EntityPrefab 自有层级、玩家技能 Socket/特效归属，以及入场巡航、暂停/重开、确定性回放、池化与性能约束。</td><td>验证器输出、测试结果、配置、Prefab 与场景检查记录。</td></tr>
+    <tr><td>人体试玩</td><td>5 人各 3 次；第二次体验后至少 4/5 能识别三类攻击并采用预期应对，至少 4/5 能独立完成“瞄准→主射→副射 Break→缩回”循环。</td><td>试玩记录表，记录准星控制、射击反馈、探身/缩回可读性、怪物移动可读性和攻击公平性。</td></tr>
+    <tr><td>性能</td><td>Windows 1080p Release 下，战斗热路径无持续 GC、无运行时 Instantiate/Destroy、无池扩容和项目错误。</td><td>Profiler/Memory 报告、Player.log、截图和录像。</td></tr>
+    <tr><td>版本管理</td><td>实施前先为当前未追踪的 Assets/FPGDemo 建立明确的 Git 基线；D0 交付提交资产、配置、验证器、场景和证据索引。</td><td>Git 提交记录与证据索引。</td></tr>
+  </tbody>
+</table>
+
+<h1>交付清单与 D0 非目标</h1>
+
+<p>D0 交付 Fei 与 Burstbug 的样板资产和 Prefab、3C/行为/招式/遭遇配置、CombatLab 场景、配置与运行时验证器、资产合同、试玩表、性能报告、截图录像、Player.log 和证据索引。</p>
+
+<p>D0 不以新增内容数量作为完成标准，也不把第二玩家角色、玩家移动、追踪与导航、多敌同时在场、多波次、构筑或路线系统纳入本阶段。Hudie 与 Luan 的测试入口必须复用已定义的 Stage/Scenario/Encounter/EntityPrefab 所有权，不得靠场景临时摆位扩张内容。</p>

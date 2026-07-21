@@ -12,7 +12,8 @@ namespace NewFPG.Combat
         [SerializeField] private CombatVitals playerVitals;
         [SerializeField] private CombatResourcePool resourcePool;
         [SerializeField] private PlayerWeaponCaster weaponCaster;
-        [SerializeField] private bool keepResourceFull = true;
+        [SerializeField, Tooltip("For debug demonstrations only. When enabled, resource is refilled on bind and whenever it drops below maximum.")]
+        private bool keepResourceFull;
 
         private void Awake()
         {
@@ -34,7 +35,7 @@ namespace NewFPG.Combat
 
         public void Bind()
         {
-            if (resourcePool != null)
+            if (keepResourceFull && resourcePool != null)
             {
                 resourcePool.Fill();
             }

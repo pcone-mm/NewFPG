@@ -1,0 +1,17 @@
+{
+    "name": "FPG.Player",
+    "rootNamespace": "FPG.Demo.Player",
+    "references": [
+        "FPG.Core",
+        "FPG.Combat"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -217,6 +217,7 @@ MonoBehaviour:
   farClipPlane: 8
   weaponDepth: 1.35
   interactionConfig: {fileID: 11400000, guid: 22b28574ec7d4caca868693c4e571879, type: 2}
+  layoutProfile: {fileID: 11400000, guid: 605ed23c60f843689cac6dfc5345b20c, type: 2}
   weapons:
   - name: Left Blade
     localPosition: {x: -0.401, y: -0.583, z: 1.35}
@@ -250,9 +251,21 @@ MonoBehaviour:
   resourcePool: {fileID: 0}
   weaponCaster: {fileID: 0}
   abilityInputController: {fileID: 0}
+  dodgePresentation: {fileID: 0}
   temporaryArtIndex: {fileID: 0}
   aimCamera: {fileID: 0}
   font: {fileID: 0}
-  resourceBarSize: {x: 760, y: 30}
-  healthBarSize: {x: 360, y: 26}
-  shieldBarSize: {x: 270, y: 20}
+  healthBarSize: {x: 300, y: 20}
+  shieldBarSize: {x: 230, y: 16}
+  dodgeCooldownSize: {x: 54, y: 54}
+  dodgeCooldownOffset: {x: -82, y: 52}
+  hudBackdropSize: {x: 1320, y: 260}
+  hudBackdropOffset: {x: 0, y: 0}
+  resourceBaseSize: {x: 760, y: 136}
+  resourceBaseOffset: {x: 0, y: -10}
+  maxResourcePips: 10
+  resourcePipArcSize: {x: 650, y: 58}
+  resourcePipArcOffset: {x: -4, y: 30}
+  resourcePipSize: {x: 46, y: 12}
+  hudBackdropSprite: {fileID: 21300000, guid: 32808f7c40f3aa542b11858e0efb5f55, type: 3}
+  resourceBaseSprite: {fileID: 21300000, guid: ee0eacbde716409449e0beeb1e2bc0fc, type: 3}

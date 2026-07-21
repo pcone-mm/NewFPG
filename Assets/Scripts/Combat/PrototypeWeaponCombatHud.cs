@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NewFPG.Prototype;
 using NewFPG.Combat.SkillIndicators;
 using UnityEngine;
@@ -13,6 +14,11 @@ namespace NewFPG.Combat
     [RequireComponent(typeof(PrototypeFirstPersonWeaponView))]
     public sealed class PrototypeWeaponCombatHud : MonoBehaviour
     {
+#if UNITY_EDITOR
+        private const string HudBackdropSpritePath = "Assets/Art/Weapons/HUD/2d_di.png";
+        private const string HudResourceBaseSpritePath = "Assets/Art/Weapons/HUD/2d_dou.png";
+#endif
+
         [SerializeField] private PrototypeFirstPersonWeaponView weaponView;
         [SerializeField] private CombatVitals vitals;
         [SerializeField] private CombatResourcePool resourcePool;
@@ -24,17 +30,30 @@ namespace NewFPG.Combat
         [SerializeField] private Font font;
 
         [Header("Layout")]
-        [SerializeField] private Vector2 resourceBarSize = new Vector2(760f, 30f);
-        [SerializeField] private Vector2 healthBarSize = new Vector2(360f, 26f);
-        [SerializeField] private Vector2 shieldBarSize = new Vector2(270f, 20f);
-        [SerializeField] private Vector2 dodgeCooldownSize = new Vector2(76f, 76f);
-        [SerializeField] private Vector2 dodgeCooldownOffset = new Vector2(-52f, 32f);
+        [SerializeField] private Vector2 healthBarSize = new Vector2(300f, 20f);
+        [SerializeField] private Vector2 shieldBarSize = new Vector2(230f, 16f);
+        [SerializeField] private Vector2 dodgeCooldownSize = new Vector2(54f, 54f);
+        [SerializeField] private Vector2 dodgeCooldownOffset = new Vector2(-82f, 52f);
+        [SerializeField] private Vector2 hudBackdropSize = new Vector2(1320f, 260f);
+        [SerializeField] private Vector2 hudBackdropOffset = new Vector2(0f, 0f);
+        [SerializeField] private Vector2 resourceBaseSize = new Vector2(760f, 136f);
+        [SerializeField] private Vector2 resourceBaseOffset = new Vector2(0f, -10f);
+        [SerializeField, Min(1)] private int maxResourcePips = 10;
+        [SerializeField] private Vector2 resourcePipArcSize = new Vector2(650f, 58f);
+        [SerializeField] private Vector2 resourcePipArcOffset = new Vector2(-4f, 30f);
+        [SerializeField] private Vector2 resourcePipSize = new Vector2(46f, 12f);
+
+        [Header("Art")]
+        [SerializeField] private Sprite hudBackdropSprite;
+        [SerializeField] private Sprite resourceBaseSprite;
 
         private Canvas canvas;
         private RectTransform root;
         private RectTransform healthFill;
         private RectTransform shieldFill;
-        private RectTransform resourceFill;
+        private RectTransform resourcePipRoot;
+        private Image hudBackdropImage;
+        private Image resourceBaseImage;
         private CanvasGroup dodgeCooldownGroup;
         private Image dodgeCooldownBackground;
         private Image dodgeCooldownFill;
@@ -43,9 +62,10 @@ namespace NewFPG.Combat
         private Text dodgeCooldownText;
         private Sprite dodgeRingSprite;
         private Sprite dodgeDotSprite;
+        private Sprite resourcePipSprite;
         private Text healthText;
         private Text shieldText;
-        private Text resourceText;
+        private readonly List<Image> resourcePips = new List<Image>();
         private bool visible;
         private bool interceptAttacks;
         private float failedCastFlashRemaining;
@@ -63,6 +83,13 @@ namespace NewFPG.Combat
             ResolveWeaponView();
             ResolveDodgePresentation();
             Initialize();
+        }
+
+        private void OnValidate()
+        {
+            maxResourcePips = Mathf.Max(1, maxResourcePips);
+            resourcePipSize.x = Mathf.Max(1f, resourcePipSize.x);
+            resourcePipSize.y = Mathf.Max(1f, resourcePipSize.y);
         }
 
         private void OnEnable()
@@ -170,6 +197,7 @@ namespace NewFPG.Combat
             }
 
             font = font != null ? font : CreateChineseFont();
+            ResolveDefaultHudSprites();
 
             GameObject canvasObject = new GameObject("PrototypeWeaponCombatCanvas", typeof(Canvas), typeof(CanvasScaler));
             canvasObject.transform.SetParent(transform, false);
@@ -189,32 +217,103 @@ namespace NewFPG.Combat
             root.anchorMax = new Vector2(1f, 0f);
             root.pivot = new Vector2(0.5f, 0f);
             root.anchoredPosition = Vector2.zero;
-            root.sizeDelta = new Vector2(0f, 150f);
+            root.sizeDelta = new Vector2(0f, 300f);
 
-            RectTransform healthBar = CreateBar(root, "HealthBar", new Vector2(28f, 92f), healthBarSize, new Color(0.92f, 0.16f, 0.18f, 1f), out healthFill);
+            CreateBottomHudArt(root);
+
+            RectTransform healthBar = CreateBar(root, "HealthBar", new Vector2(30f, 188f), healthBarSize, new Color(0.92f, 0.16f, 0.18f, 1f), out healthFill);
             healthBar.anchorMin = new Vector2(0f, 0f);
             healthBar.anchorMax = new Vector2(0f, 0f);
             healthBar.pivot = new Vector2(0f, 0f);
             healthText = CreateText(healthBar, "HealthText", 18, TextAnchor.MiddleCenter, Color.white);
             Stretch(healthText.rectTransform, Vector2.zero, Vector2.zero);
 
-            RectTransform shieldBar = CreateBar(root, "ShieldBar", new Vector2(28f, 62f), shieldBarSize, new Color(0.32f, 0.78f, 1f, 1f), out shieldFill);
+            RectTransform shieldBar = CreateBar(root, "ShieldBar", new Vector2(30f, 162f), shieldBarSize, new Color(0.32f, 0.78f, 1f, 1f), out shieldFill);
             shieldBar.anchorMin = new Vector2(0f, 0f);
             shieldBar.anchorMax = new Vector2(0f, 0f);
             shieldBar.pivot = new Vector2(0f, 0f);
             shieldText = CreateText(shieldBar, "ShieldText", 16, TextAnchor.MiddleCenter, Color.white);
             Stretch(shieldText.rectTransform, Vector2.zero, Vector2.zero);
 
-            RectTransform resourceBar = CreateBar(root, "ResourceBar", new Vector2(0f, 24f), resourceBarSize, new Color(0.08f, 0.5f, 1f, 1f), out resourceFill);
-            resourceBar.anchorMin = new Vector2(0.5f, 0f);
-            resourceBar.anchorMax = new Vector2(0.5f, 0f);
-            resourceBar.pivot = new Vector2(0.5f, 0f);
-            resourceText = CreateText(resourceBar, "ResourceText", 18, TextAnchor.MiddleCenter, Color.white);
-            Stretch(resourceText.rectTransform, Vector2.zero, Vector2.zero);
+            CreateResourcePipHud(root);
 
             CreateDodgeCooldownWidget(root);
 
             SetVisible(false);
+        }
+
+        private void ResolveDefaultHudSprites()
+        {
+#if UNITY_EDITOR
+            if (hudBackdropSprite == null)
+            {
+                hudBackdropSprite = AssetDatabase.LoadAssetAtPath<Sprite>(HudBackdropSpritePath);
+            }
+
+            if (resourceBaseSprite == null)
+            {
+                resourceBaseSprite = AssetDatabase.LoadAssetAtPath<Sprite>(HudResourceBaseSpritePath);
+            }
+#endif
+        }
+
+        private void CreateBottomHudArt(RectTransform parent)
+        {
+            if (hudBackdropSprite != null)
+            {
+                hudBackdropImage = CreateHudImage(parent, "HudBottomBackdrop", hudBackdropSprite, Color.white);
+                hudBackdropImage.preserveAspect = false;
+                SetBottomCenterRect(hudBackdropImage.rectTransform, hudBackdropSize, hudBackdropOffset);
+            }
+
+            if (resourceBaseSprite != null)
+            {
+                resourceBaseImage = CreateHudImage(parent, "HudResourceBase", resourceBaseSprite, Color.white);
+                resourceBaseImage.preserveAspect = false;
+                SetBottomCenterRect(resourceBaseImage.rectTransform, resourceBaseSize, resourceBaseOffset);
+            }
+        }
+
+        private void CreateResourcePipHud(RectTransform parent)
+        {
+            resourcePipSprite = CreateCapsuleSprite(96, 28);
+
+            GameObject pipsObject = new GameObject("ResourcePips", typeof(RectTransform));
+            pipsObject.transform.SetParent(parent, false);
+            resourcePipRoot = pipsObject.GetComponent<RectTransform>();
+            resourcePipRoot.anchorMin = new Vector2(0.5f, 0f);
+            resourcePipRoot.anchorMax = new Vector2(0.5f, 0f);
+            resourcePipRoot.pivot = new Vector2(0.5f, 0f);
+            resourcePipRoot.anchoredPosition = resourcePipArcOffset;
+            resourcePipRoot.sizeDelta = resourcePipArcSize;
+
+            RebuildResourcePips();
+        }
+
+        private void RebuildResourcePips()
+        {
+            if (resourcePipRoot == null)
+            {
+                return;
+            }
+
+            ClearChildren(resourcePipRoot);
+            resourcePips.Clear();
+
+            int capacity = ResolveResourcePipCapacity();
+            for (int i = 0; i < capacity; i++)
+            {
+                Image pip = CreateHudImage(resourcePipRoot, "ResourcePip_" + i.ToString(), resourcePipSprite, Color.white);
+                pip.type = Image.Type.Sliced;
+                RectTransform pipRect = pip.rectTransform;
+                pipRect.anchorMin = new Vector2(0.5f, 0f);
+                pipRect.anchorMax = new Vector2(0.5f, 0f);
+                pipRect.pivot = new Vector2(0.5f, 0.5f);
+                pipRect.sizeDelta = resourcePipSize;
+                pipRect.anchoredPosition = ResourcePipPosition(i, capacity);
+                pipRect.localEulerAngles = new Vector3(0f, 0f, ResourcePipAngle(i, capacity));
+                resourcePips.Add(pip);
+            }
         }
 
         private RectTransform CreateBar(RectTransform parent, string name, Vector2 position, Vector2 size, Color fillColor, out RectTransform fill)
@@ -262,7 +361,7 @@ namespace NewFPG.Combat
         {
             RefreshBar(healthFill, vitals != null ? vitals.HealthRatio : 0f);
             RefreshBar(shieldFill, vitals != null ? vitals.ShieldRatio : 0f);
-            RefreshBar(resourceFill, resourcePool != null ? resourcePool.Ratio : 0f);
+            RefreshResourcePips();
 
             if (healthText != null)
             {
@@ -276,15 +375,87 @@ namespace NewFPG.Combat
                 shieldText.text = vitals != null ? "Shield " + vitals.CurrentShield.ToString("0") : "Shield 0";
             }
 
-            if (resourceText != null)
+            RefreshDodgeCooldown();
+        }
+
+        private void RefreshResourcePips()
+        {
+            if (resourcePipRoot == null)
             {
-                resourceText.text = resourcePool != null
-                    ? resourcePool.Current.ToString("0.0") + "/" + resourcePool.Max.ToString("0")
-                    : "0/0";
-                resourceText.color = failedCastFlashRemaining > 0f ? new Color(1f, 0.42f, 0.32f, 1f) : Color.white;
+                return;
             }
 
-            RefreshDodgeCooldown();
+            int capacity = ResolveResourcePipCapacity();
+            if (resourcePips.Count != capacity)
+            {
+                RebuildResourcePips();
+            }
+
+            int activeCount = resourcePool != null
+                ? ResolveActiveResourcePipCount(resourcePool.Ratio, capacity)
+                : 0;
+            Color pipColor = failedCastFlashRemaining > 0f
+                ? new Color(1f, 0.42f, 0.32f, 1f)
+                : Color.white;
+
+            for (int i = 0; i < resourcePips.Count; i++)
+            {
+                Image pip = resourcePips[i];
+                if (pip == null)
+                {
+                    continue;
+                }
+
+                bool active = i < activeCount;
+                pip.gameObject.SetActive(active);
+                pip.color = pipColor;
+            }
+        }
+
+        private int ResolveResourcePipCapacity()
+        {
+            int configuredCapacity = Mathf.Max(1, maxResourcePips);
+            if (resourcePool == null)
+            {
+                return configuredCapacity;
+            }
+
+            return Mathf.Clamp(Mathf.CeilToInt(resourcePool.Max), 1, configuredCapacity);
+        }
+
+        private static int ResolveActiveResourcePipCount(float resourceRatio, int capacity)
+        {
+            int resolvedCapacity = Mathf.Max(1, capacity);
+            float normalizedRatio = Mathf.Clamp01(resourceRatio);
+            return Mathf.Clamp(
+                Mathf.FloorToInt(normalizedRatio * resolvedCapacity + 0.0001f),
+                0,
+                resolvedCapacity);
+        }
+
+        private Vector2 ResourcePipPosition(int index, int capacity)
+        {
+            if (capacity <= 1)
+            {
+                return new Vector2(0f, resourcePipArcSize.y);
+            }
+
+            float t = index / (capacity - 1f);
+            float x = Mathf.Lerp(-resourcePipArcSize.x * 0.5f, resourcePipArcSize.x * 0.5f, t);
+            float y = Mathf.Sin(t * Mathf.PI) * resourcePipArcSize.y;
+            return new Vector2(x, y);
+        }
+
+        private float ResourcePipAngle(int index, int capacity)
+        {
+            if (capacity <= 1)
+            {
+                return 0f;
+            }
+
+            float t = index / (capacity - 1f);
+            float slope = Mathf.PI * resourcePipArcSize.y * Mathf.Cos(t * Mathf.PI) / Mathf.Max(1f, resourcePipArcSize.x);
+            return Mathf.Atan(slope) * Mathf.Rad2Deg;
         }
 
         private static void RefreshBar(RectTransform fill, float ratio)
@@ -464,6 +635,47 @@ namespace NewFPG.Combat
             return sprite;
         }
 
+        private static Sprite CreateCapsuleSprite(int width, int height)
+        {
+            width = Mathf.Max(2, width);
+            height = Mathf.Max(2, height);
+
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            texture.hideFlags = HideFlags.HideAndDontSave;
+            texture.wrapMode = TextureWrapMode.Clamp;
+
+            float radius = (height - 1) * 0.5f;
+            float centerY = (height - 1) * 0.5f;
+            float leftCenter = radius;
+            float rightCenter = width - 1 - radius;
+            Color clear = Color.clear;
+            Color white = Color.white;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    float capsuleX = Mathf.Clamp(x, leftCenter, rightCenter);
+                    float distance = Vector2.Distance(new Vector2(x, y), new Vector2(capsuleX, centerY));
+                    float alpha = Mathf.Clamp01(radius - distance + 1f);
+                    texture.SetPixel(x, y, alpha > 0.001f ? new Color(white.r, white.g, white.b, alpha) : clear);
+                }
+            }
+
+            texture.Apply();
+            Vector4 border = new Vector4(radius, radius, radius, radius);
+            Sprite sprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, width, height),
+                new Vector2(0.5f, 0.5f),
+                height,
+                0,
+                SpriteMeshType.FullRect,
+                border);
+            sprite.hideFlags = HideFlags.HideAndDontSave;
+            return sprite;
+        }
+
         private void Subscribe()
         {
             ResolveWeaponView();
@@ -623,6 +835,32 @@ namespace NewFPG.Combat
             rect.anchorMax = Vector2.one;
             rect.offsetMin = offsetMin;
             rect.offsetMax = offsetMax;
+        }
+
+        private static void SetBottomCenterRect(RectTransform rect, Vector2 size, Vector2 offset)
+        {
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = offset;
+            rect.sizeDelta = size;
+        }
+
+        private static void ClearChildren(Transform parent)
+        {
+            if (parent == null)
+            {
+                return;
+            }
+
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (child != null)
+                {
+                    Destroy(child.gameObject);
+                }
+            }
         }
 
         private static Font CreateChineseFont()

@@ -7,23 +7,21 @@ using UnityEngine;
 public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
 {
     private SerializedProperty interactionConfigProperty;
-    private SerializedProperty weaponsProperty;
+    private SerializedProperty layoutProfileProperty;
+    private SerializedProperty legacyWeaponsProperty;
     private ReorderableList weaponsList;
+    private FirstPersonWeaponLayoutProfile cachedLayoutProfile;
+    private SerializedObject layoutSerializedObject;
+    private SerializedProperty layoutWeaponsProperty;
     private Editor interactionConfigEditor;
     private bool showInteractionConfig = true;
 
     private void OnEnable()
     {
         interactionConfigProperty = serializedObject.FindProperty("interactionConfig");
-        weaponsProperty = serializedObject.FindProperty("weapons");
-        weaponsList = new ReorderableList(serializedObject, weaponsProperty, true, true, true, true)
-        {
-            drawHeaderCallback = rect => EditorGUI.LabelField(rect, "HUD Weapons"),
-            elementHeightCallback = _ => (EditorGUIUtility.singleLineHeight + 2f) * 5f + 6f,
-            drawElementCallback = DrawWeaponElement,
-            onAddCallback = AddWeapon,
-            onRemoveCallback = RemoveWeapon,
-        };
+        layoutProfileProperty = serializedObject.FindProperty("layoutProfile");
+        legacyWeaponsProperty = serializedObject.FindProperty("weapons");
+        RebuildWeaponsList();
     }
 
     private void OnDisable()
@@ -40,13 +38,13 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         serializedObject.Update();
 
         EditorGUI.BeginChangeCheck();
-        DrawPropertiesExcluding(serializedObject, "m_Script", "interactionConfig", "weapons");
+        DrawPropertiesExcluding(serializedObject, "m_Script", "interactionConfig", "layoutProfile", "weapons");
         EditorGUILayout.PropertyField(interactionConfigProperty);
-        weaponsList.DoLayoutList();
+        EditorGUILayout.PropertyField(layoutProfileProperty);
 
         using (new EditorGUILayout.HorizontalScope())
         {
-            if (GUILayout.Button("Rebuild"))
+            if (GUILayout.Button("Rebuild Preview"))
             {
                 RebuildTargets();
             }
@@ -57,9 +55,11 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
             }
         }
 
-        if (EditorGUI.EndChangeCheck())
+        bool viewChanged = EditorGUI.EndChangeCheck();
+        if (viewChanged)
         {
             serializedObject.ApplyModifiedProperties();
+            RebuildWeaponsList();
             RebuildTargets();
         }
         else
@@ -67,6 +67,7 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
             serializedObject.ApplyModifiedProperties();
         }
 
+        DrawLayoutProfileInspector();
         DrawInteractionConfigInspector();
     }
 
@@ -76,12 +77,14 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         view.SyncWeaponPosesFromScene();
         Transform root = view.transform;
 
-        serializedObject.Update();
+        SerializedObject layoutObject = CreateLayoutSerializedObject(view);
+        SerializedProperty layoutWeapons = layoutObject.FindProperty("weapons");
+        layoutObject.Update();
 
         bool changed = false;
-        for (int i = 0; i < weaponsProperty.arraySize; i++)
+        for (int i = 0; i < layoutWeapons.arraySize; i++)
         {
-            SerializedProperty weapon = weaponsProperty.GetArrayElementAtIndex(i);
+            SerializedProperty weapon = layoutWeapons.GetArrayElementAtIndex(i);
             SerializedProperty name = weapon.FindPropertyRelative("name");
             SerializedProperty localPosition = weapon.FindPropertyRelative("localPosition");
             SerializedProperty localEulerAngles = weapon.FindPropertyRelative("localEulerAngles");
@@ -107,7 +110,7 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
 
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(view, "Edit First Person Weapon Pose");
+                Undo.RecordObject(layoutObject.targetObject, "Edit First Person Weapon Pose");
                 localPosition.vector3Value = root.InverseTransformPoint(newWorldPosition);
                 localEulerAngles.vector3Value = (Quaternion.Inverse(root.rotation) * newWorldRotation).eulerAngles;
                 width.floatValue = Mathf.Max(0.01f, newWidth);
@@ -117,16 +120,25 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
 
         if (changed)
         {
-            serializedObject.ApplyModifiedProperties();
+            layoutObject.ApplyModifiedProperties();
             view.RebuildWeapons();
-            EditorUtility.SetDirty(view);
+            EditorUtility.SetDirty(layoutObject.targetObject);
+            if (layoutObject.targetObject == view)
+            {
+                PrefabUtility.RecordPrefabInstancePropertyModifications(view);
+            }
+
             SceneView.RepaintAll();
+        }
+        else
+        {
+            layoutObject.ApplyModifiedProperties();
         }
     }
 
     private void DrawWeaponElement(Rect rect, int index, bool isActive, bool isFocused)
     {
-        SerializedProperty weapon = weaponsProperty.GetArrayElementAtIndex(index);
+        SerializedProperty weapon = weaponsList.serializedProperty.GetArrayElementAtIndex(index);
         SerializedProperty name = weapon.FindPropertyRelative("name");
         SerializedProperty localPosition = weapon.FindPropertyRelative("localPosition");
         SerializedProperty localEulerAngles = weapon.FindPropertyRelative("localEulerAngles");
@@ -148,6 +160,37 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
         EditorGUI.PropertyField(new Rect(rect.x, y, rect.width, lineHeight), localEulerAngles);
         y += lineHeight + 2f;
         EditorGUI.PropertyField(new Rect(rect.x, y, rect.width, lineHeight), width);
+    }
+
+    private void DrawLayoutProfileInspector()
+    {
+        FirstPersonWeaponLayoutProfile profile = layoutProfileProperty.objectReferenceValue as FirstPersonWeaponLayoutProfile;
+        if (profile == null)
+        {
+            EditorGUILayout.HelpBox("Assign a layout profile to make HUD weapon positions reusable and editable by artists.", MessageType.Info);
+            if (GUILayout.Button("Create/Assign Default Layout"))
+            {
+                AssignDefaultLayoutProfile();
+            }
+
+            return;
+        }
+
+        EnsureLayoutList(profile);
+        layoutSerializedObject.Update();
+        EditorGUI.BeginChangeCheck();
+        weaponsList.DoLayoutList();
+        if (EditorGUI.EndChangeCheck())
+        {
+            layoutSerializedObject.ApplyModifiedProperties();
+            EditorUtility.SetDirty(profile);
+            RebuildTargets();
+            SceneView.RepaintAll();
+        }
+        else
+        {
+            layoutSerializedObject.ApplyModifiedProperties();
+        }
     }
 
     private void DrawInteractionConfigInspector()
@@ -174,25 +217,126 @@ public sealed class PrototypeFirstPersonWeaponViewEditor : Editor
 
     private void AddWeapon(ReorderableList list)
     {
-        int index = weaponsProperty.arraySize;
-        weaponsProperty.InsertArrayElementAtIndex(index);
+        SerializedProperty property = list.serializedProperty;
+        property.serializedObject.Update();
+        int index = property.arraySize;
+        property.InsertArrayElementAtIndex(index);
 
-        SerializedProperty weapon = weaponsProperty.GetArrayElementAtIndex(index);
+        SerializedProperty weapon = property.GetArrayElementAtIndex(index);
         weapon.FindPropertyRelative("name").stringValue = "Weapon " + (index + 1);
         weapon.FindPropertyRelative("localPosition").vector3Value = new Vector3(0f, -0.35f, 1.35f);
         weapon.FindPropertyRelative("localEulerAngles").vector3Value = Vector3.zero;
         weapon.FindPropertyRelative("width").floatValue = 0.75f;
         weapon.FindPropertyRelative("sortingOrder").intValue = index;
 
-        serializedObject.ApplyModifiedProperties();
+        property.serializedObject.ApplyModifiedProperties();
+        EditorUtility.SetDirty(property.serializedObject.targetObject);
         RebuildTargets();
     }
 
     private void RemoveWeapon(ReorderableList list)
     {
+        list.serializedProperty.serializedObject.Update();
         ReorderableList.defaultBehaviours.DoRemoveButton(list);
-        serializedObject.ApplyModifiedProperties();
+        list.serializedProperty.serializedObject.ApplyModifiedProperties();
+        EditorUtility.SetDirty(list.serializedProperty.serializedObject.targetObject);
         RebuildTargets();
+    }
+
+    private void RebuildWeaponsList()
+    {
+        FirstPersonWeaponLayoutProfile profile = layoutProfileProperty != null
+            ? layoutProfileProperty.objectReferenceValue as FirstPersonWeaponLayoutProfile
+            : null;
+
+        if (profile != null)
+        {
+            EnsureLayoutList(profile);
+            return;
+        }
+
+        cachedLayoutProfile = null;
+        layoutSerializedObject = null;
+        layoutWeaponsProperty = null;
+        weaponsList = CreateWeaponsList(legacyWeaponsProperty);
+    }
+
+    private void EnsureLayoutList(FirstPersonWeaponLayoutProfile profile)
+    {
+        if (profile == cachedLayoutProfile && layoutSerializedObject != null && weaponsList != null)
+        {
+            return;
+        }
+
+        cachedLayoutProfile = profile;
+        layoutSerializedObject = new SerializedObject(profile);
+        layoutWeaponsProperty = layoutSerializedObject.FindProperty("weapons");
+        weaponsList = CreateWeaponsList(layoutWeaponsProperty);
+    }
+
+    private ReorderableList CreateWeaponsList(SerializedProperty weaponsProperty)
+    {
+        return new ReorderableList(weaponsProperty.serializedObject, weaponsProperty, true, true, true, true)
+        {
+            drawHeaderCallback = rect => EditorGUI.LabelField(rect, "HUD Weapon Layout"),
+            elementHeightCallback = _ => (EditorGUIUtility.singleLineHeight + 2f) * 5f + 6f,
+            drawElementCallback = DrawWeaponElement,
+            onAddCallback = AddWeapon,
+            onRemoveCallback = RemoveWeapon,
+        };
+    }
+
+    private SerializedObject CreateLayoutSerializedObject(PrototypeFirstPersonWeaponView view)
+    {
+        if (view.LayoutProfile != null)
+        {
+            return new SerializedObject(view.LayoutProfile);
+        }
+
+        return new SerializedObject(view);
+    }
+
+    private void AssignDefaultLayoutProfile()
+    {
+        FirstPersonWeaponLayoutProfile profile = AssetDatabase.LoadAssetAtPath<FirstPersonWeaponLayoutProfile>(
+            FirstPersonWeaponLayoutProfile.DefaultAssetPath);
+        if (profile == null)
+        {
+            EnsureFolder("Assets/Settings");
+            EnsureFolder("Assets/Settings/Prototype");
+            profile = CreateInstance<FirstPersonWeaponLayoutProfile>();
+            profile.ResetToDefaultLayout();
+            AssetDatabase.CreateAsset(profile, FirstPersonWeaponLayoutProfile.DefaultAssetPath);
+            AssetDatabase.SaveAssets();
+        }
+
+        serializedObject.Update();
+        layoutProfileProperty.objectReferenceValue = profile;
+        serializedObject.ApplyModifiedProperties();
+        RebuildWeaponsList();
+        RebuildTargets();
+        EditorGUIUtility.PingObject(profile);
+    }
+
+    private static void EnsureFolder(string folderPath)
+    {
+        if (AssetDatabase.IsValidFolder(folderPath))
+        {
+            return;
+        }
+
+        string[] parts = folderPath.Split('/');
+        string current = parts[0];
+        for (int i = 1; i < parts.Length; i++)
+        {
+            string next = current + "/" + parts[i];
+            if (!AssetDatabase.IsValidFolder(next))
+            {
+                AssetDatabase.CreateFolder(current, parts[i]);
+            }
+
+            current = next;
+        }
     }
 
     private void RebuildTargets()

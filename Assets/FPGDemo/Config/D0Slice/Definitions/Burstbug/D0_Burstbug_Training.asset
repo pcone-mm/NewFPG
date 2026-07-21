@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b22b03119c0561418f09cb64beef21a, type: 3}
+  m_Name: D0_Burstbug_Training
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0EncounterDefinition
+  encounterId: burstbug-training
+  displayName: Burstbug Training
+  designerNotes: Six-beat CombatLab Burstbug training schedule.
+  spawnSlots:
+  - definitionId: 1
+    enemy: {fileID: 11400000, guid: b4cadb7f37226754c850d796d0913245, type: 2}
+    spawnPointId: enemy-main
+    spawnTick: 0
+    posePolicy: 0
+  attackSchedule:
+  - scheduleSequence: 1
+    dueTick: 120
+    attack: {fileID: 11400000, guid: 001a610a822745cb8cb170032ac8b7dc, type: 2}
+  - scheduleSequence: 2
+    dueTick: 300
+    attack: {fileID: 11400000, guid: 8c8fe9ea3edf4d65aaa0a36015a0f1b2, type: 2}
+  - scheduleSequence: 3
+    dueTick: 540
+    attack: {fileID: 11400000, guid: b5b64a5371dd42329f4637ee87869434, type: 2}
+  - scheduleSequence: 4
+    dueTick: 780
+    attack: {fileID: 11400000, guid: 001a610a822745cb8cb170032ac8b7dc, type: 2}
+  - scheduleSequence: 5
+    dueTick: 960
+    attack: {fileID: 11400000, guid: 8c8fe9ea3edf4d65aaa0a36015a0f1b2, type: 2}
+  - scheduleSequence: 6
+    dueTick: 1200
+    attack: {fileID: 11400000, guid: b5b64a5371dd42329f4637ee87869434, type: 2}
+  threatSchedule: []

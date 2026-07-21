@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afb0e22c21db4984a39398d62f184403, type: 3}
+  m_Name: FPG_L1_01_Profile
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEncounterProfile
+  profileId: l1-01-fixed-three-wave-v1
+  displayName: L1_01 Fixed Three-Wave v1
+  designerNotes: Shared by the four L1_01 fixed-wave presets. Two simultaneous enemies
+    match the current CombatLab marker capacity.
+  baseBudget: 12
+  depthRamp: 0
+  minBudget: 12
+  defaultDifficultyMultiplierBasisPoints: 10000
+  waveBudgetTemplate: 3
+  customWaveShares:
+  - basisPoints: 3334
+  - basisPoints: 3333
+  - basisPoints: 3333
+  weightedWaveLayouts:
+  - layoutId: l1-01-triple-equal
+    selectionWeight: 1
+    waveShares:
+    - basisPoints: 3334
+    - basisPoints: 3333
+    - basisPoints: 3333
+  maxConcurrentCapWeight: 3
+  maxConcurrentEntities: 2
+  spawnIntervalTicks: 18
+  warningDurationTicks: 30
+  waveIntervalTicks: 60
+  spawnSafetyDistanceUnits: 4
+  entrySafetyDistanceUnits: 2
+  softDistanceRelaxationStepUnits: 1
+  softDistanceRelaxationAttempts: 4
+  maxSpawnWaitTicks: 120
+  enemyRosterCapacity: 24
+  entityPoolCapacity: 24
+  hitboxCapacity: 64
+  threatCapacity: 48
+  projectileCapacity: 32
+  warningCapacity: 8
+  overheadHealthBarCapacity: 8
+  enemyPool: {fileID: 11400000, guid: a465431d523981844a6989dd6a6c8184, type: 2}

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewFPG.Combat.WeaponDefinition
   weaponId:
   displayName: "\u6843\u6728\u5251"
-  icon: {fileID: 21300000, guid: b815b2820e044b9ca79fd4157deb52bc, type: 3}
+  icon: {fileID: 21300000, guid: 3a6df8952be88ef4da5f91e6ad92589e, type: 3}
   resourceCost: 0
   damage: 0
   cooldown: 0.3

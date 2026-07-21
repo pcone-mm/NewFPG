@@ -34,8 +34,8 @@ MonoBehaviour:
     10% \u6C34\u5C5E\u6027\u4F24\u5BB3\uFF0C\u5E76\u83B7\u5F97 20% \u6728\u5C5E\u6027\u62A4\u76FE\u3002"
   weaponDefinitionAsset: {fileID: 11400000, guid: 2595487b69a4d65459749911c4365a5e, type: 2}
   weaponDefinitionAssetPath: Assets/Settings/Forging/Weapons/WPN_HeartMirror.asset
-  hudIcon: {fileID: 21300000, guid: cfcd112288aa4c29aaea04119071dd0e, type: 3}
-  hudIconPath: Assets/Art/Weapons/HUD/Xianxia_RitualDagger.png
+  hudIcon: {fileID: 21300000, guid: 9e13dc864933adc4ab43f68014cb5f4b, type: 3}
+  hudIconPath: Assets/Art/Weapons/HUD/2d_huxinjing.png
   indicatorConfigPath: Assets/Settings/Combat/HudDebug/IND_HUD_Debug_Cone.asset
   releaseEffectPrefab: {fileID: 0}
   releaseEffectPrefabPath: Assets/Art/Effect/TemporaryWeaponAttacks/PF_TempAttack_HeartMirror_Release.prefab

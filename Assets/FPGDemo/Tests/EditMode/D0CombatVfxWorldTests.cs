@@ -1,0 +1,99 @@
+using FPG.Demo.Unity;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace FPG.Demo.Tests.EditMode
+{
+    public sealed class D0CombatVfxWorldTests
+    {
+        [Test]
+        public void ScenarioKeysAreRegisteredBeforePrepareWithoutRequiringPrefabAssets()
+        {
+            GameObject root = new GameObject("D0CombatVfxWorldTestRoot");
+            try
+            {
+                D0CombatVfxWorld world = root.AddComponent<D0CombatVfxWorld>();
+                D0CombatVfxAssetReference reference = new D0CombatVfxAssetReference(
+                    "test.logical.attack",
+                    null,
+                    3,
+                    0.25f,
+                    "animation",
+                    0,
+                    D0CombatVfxCategory.EnemyAttack);
+
+                Assert.That(world.TryPrepareForScenario(
+                    new[] { reference },
+                    out string error), Is.True, error);
+                Assert.That(world.IsPrepared, Is.True);
+                Assert.That(world.PoolCount, Is.EqualTo(1));
+                Assert.That(world.PrewarmedInstanceCount, Is.Zero);
+                Assert.That(world.TryAcquire(
+                    "test.logical.attack",
+                    Vector3.zero,
+                    Quaternion.identity,
+                    Vector3.one,
+                    out _), Is.False);
+                Assert.That(
+                    world.TryPresent(
+                        "test.logical.attack",
+                        root.transform,
+                        out GameObject logicalInstance),
+                    Is.True);
+                Assert.That(logicalInstance, Is.Null);
+                Assert.That(world.HotPathInstantiateCount, Is.Zero);
+                Assert.That(world.HotPathDestroyCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void AcquireAndAdvanceReusePrewarmedObjectsWithoutHotPathAllocation()
+        {
+            GameObject root = new GameObject("D0CombatVfxWorldTestRoot");
+            GameObject prefab = new GameObject("D0CombatVfxWorldTestPrefab");
+            try
+            {
+                D0CombatVfxWorld world = root.AddComponent<D0CombatVfxWorld>();
+                D0CombatVfxAssetReference reference = new D0CombatVfxAssetReference(
+                    "test.concrete.attack",
+                    prefab,
+                    1,
+                    0.1f,
+                    "animation",
+                    0,
+                    D0CombatVfxCategory.EnemyAttack);
+
+                Assert.That(world.TryPrepareForScenario(
+                    new[] { reference },
+                    out string error), Is.True, error);
+                Assert.That(world.PrewarmedInstanceCount, Is.EqualTo(1));
+                world.BeginCombat();
+
+                Assert.That(world.TryAcquire(
+                    "test.concrete.attack",
+                    Vector3.one,
+                    Quaternion.identity,
+                    Vector3.one,
+                    out GameObject instance), Is.True);
+                Assert.That(instance, Is.Not.Null);
+                Assert.That(instance.activeSelf, Is.True);
+                Assert.That(world.ActiveInstanceCount, Is.EqualTo(1));
+
+                world.Advance(0.2f);
+                Assert.That(instance.activeSelf, Is.False);
+                Assert.That(world.ActiveInstanceCount, Is.Zero);
+                Assert.That(world.HotPathInstantiateCount, Is.Zero);
+                Assert.That(world.HotPathDestroyCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(prefab);
+            }
+        }
+    }
+}

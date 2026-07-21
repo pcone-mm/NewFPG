@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 265720d78861484cb3c4a860e28c2d25, type: 3}
+  m_Name: FPG_Burstbug_Enemy
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyDefinition
+  enemyDefinitionId: burstbug
+  displayName: Burstbug
+  designerNotes: 
+  role: 1
+  life: 120
+  breakValue: 30
+  spawnCost: 2
+  capWeight: 1
+  maxPerEncounter: 0
+  themeEligible: 1
+  entityViewPrefab: {fileID: 895130845856430207, guid: 8da2482b0dd310f459459d11a0f42e5f, type: 3}
+  behavior: {fileID: 11400000, guid: 9e7698398ad10ae42b10e06f9b540e8b, type: 2}
+  attackPatterns:
+  - {fileID: 11400000, guid: 171a04fc3d1b99b4884d1ea1f449cdcf, type: 2}

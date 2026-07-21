@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 138e037c4463445583a7c079b0121c35, type: 3}
+  m_Name: D0_Burstbug_Attack_Volley
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0EnemyAttackDefinition
+  attackId: burstbug-interceptable-volley
+  displayName: Burstbug Interceptable Volley
+  designerNotes: Three slow interceptable projectiles. Read the longer telegraph,
+    aim and remove the projectile before it reaches Fei.
+  definitionId: 202
+  attackLanguage: 1
+  warningSlot: enemy-source-volley
+  telegraphTicks: 48
+  windupTicks: 18
+  recoveryTicks: 30
+  recoveryRule: 0
+  payloadKind: 0
+  payloadCount: 3
+  projectileDefinitionId: 302
+  projectileFlightTicks: 120
+  projectileExpireTicks: 135
+  projectileDamage: 12
+  projectileBreakDamage: 0
+  projectileHitPoints: 4
+  projectileInterceptable: 1
+  projectileBudgetUnits: 1
+  presentationKey: 2
+  sweepRadiusKey: 250
+  timedImpactDamage: 0
+  timedImpactBreakDamage: 0
+  timedImpactTargetPolicy: 0
+  timedImpactDelayTicks: 0
+  retryPolicy: 0
+  presentation:
+    socketId: attack.default.origin
+    animationName: normal_skill2
+    releaseAnimationName: normal_skill2
+    visualEffectKey: burstbug-interceptable-volley
+    visualEffectPrefab: {fileID: 8524296626473021037, guid: 571c28de0bc35de4fb91e915f85f2088, type: 3}
+    prewarmCapacity: 2
+    effectDuration: 1.0334
+    sortingOrderOffset: 0
+    audioCue: 11
+    releaseMarkerTicks: 0

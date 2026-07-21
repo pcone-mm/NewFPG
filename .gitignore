@@ -23,10 +23,29 @@
 # Agent 和生成流程的临时输出
 /[Oo]utput/
 /[Tt]mp/
-/.codex/
+/TestResults/
+/.codex/*
+!/.codex/skills/
+/.codex/skills/*
+!/.codex/skills/czn-character-spine-unity-import/
+!/.codex/skills/czn-character-spine-unity-import/**
 /.codex-backups/
+/.workbuddy/
 /[Aa]ssets/_Recovery/
 /[Aa]ssets/_Recovery.meta
+/[Aa]ssets/Screenshots/
+
+# Local-only extracted study assets from third-party game clients.
+# Keep the reusable pipeline/editor tooling tracked, but do not accidentally
+# commit or redistribute the extracted character payloads themselves.
+/External/CZN/
+/Assets/Imported/CZN/Heidemarie_30093/
+/Assets/Imported/CZN/Heidemarie_30093.meta
+/Assets/Imported/CZN/Fei_30048/
+/Assets/Imported/CZN/Fei_30048.meta
+/Assets/Imported/CZN/Monsters/
+/Assets/Imported/CZN/Monsters.meta
+/Tools/CznResourcePipeline/__pycache__/
 
 # Local research/scrape scratch files
 /apex_sitemap.cache
@@ -41,6 +60,7 @@
 /clean_hextech_review.py
 /set_feishu_tag_dropdowns.py
 /write_feishu_hextech.py
+/wp2_patch_*.xml
 
 # By default unity supports Blender asset imports, *.blend1 blender files do not need to be committed to version control.
 *.blend1

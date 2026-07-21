@@ -674,7 +674,12 @@ namespace NewFPG.Combat
 
             if (weaponRig == null)
             {
-                Transform rig = transform.Find("FirstPersonWeaponRig");
+                Transform rig = weaponView != null ? weaponView.WeaponRig : null;
+                if (rig == null)
+                {
+                    rig = transform.Find("FirstPersonWeaponRig");
+                }
+
                 if (rig != null)
                 {
                     weaponRig = rig;
@@ -683,10 +688,14 @@ namespace NewFPG.Combat
 
             if (weaponCamera == null)
             {
-                Transform cameraTransform = transform.Find("FirstPersonWeaponCamera");
-                if (cameraTransform != null)
+                weaponCamera = weaponView != null ? weaponView.WeaponCamera : null;
+                if (weaponCamera == null)
                 {
-                    weaponCamera = cameraTransform.GetComponent<Camera>();
+                    Transform cameraTransform = transform.Find("FirstPersonWeaponCamera");
+                    if (cameraTransform != null)
+                    {
+                        weaponCamera = cameraTransform.GetComponent<Camera>();
+                    }
                 }
             }
         }

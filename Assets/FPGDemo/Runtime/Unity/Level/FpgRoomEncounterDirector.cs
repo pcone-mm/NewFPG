@@ -17,6 +17,30 @@ namespace FPG.Demo.Unity
     [DisallowMultipleComponent]
     public sealed class FpgRoomEncounterDirector : MonoBehaviour
     {
+        private readonly struct PendingEnemyAttackPresentation
+        {
+            public PendingEnemyAttackPresentation(
+                RuntimeId ownerRuntimeId,
+                int spawnSequence,
+                string attackPatternId,
+                TickIndex dueTick)
+            {
+                OwnerRuntimeId = ownerRuntimeId;
+                SpawnSequence = spawnSequence;
+                AttackPatternId = attackPatternId;
+                DueTick = dueTick;
+            }
+
+            public RuntimeId OwnerRuntimeId { get; }
+            public int SpawnSequence { get; }
+            public string AttackPatternId { get; }
+            public TickIndex DueTick { get; }
+            public bool IsUsed => OwnerRuntimeId.IsValid
+                && SpawnSequence >= 0
+                && !string.IsNullOrWhiteSpace(AttackPatternId)
+                && DueTick.IsValid;
+        }
+
         [Header("Room Runtime")]
         [SerializeField] private FpgRoomInstance roomInstance;
         [SerializeField] private FpgEnemyEntityPool enemyEntityPool;
@@ -30,6 +54,7 @@ namespace FPG.Demo.Unity
             Array.Empty<FpgRoomExitRuntime>();
         [SerializeField] private GameObject exitRuntimePrefab;
         [SerializeField] private Transform exitRuntimeRoot;
+        [SerializeField] private HitboxRegistry exitHitboxRegistry;
 
         [Header("Spatial Anchors")]
         [SerializeField] private Transform playerAnchor;
@@ -51,6 +76,8 @@ namespace FPG.Demo.Unity
         private FpgRoomExitRuntime[] activeExits = Array.Empty<FpgRoomExitRuntime>();
         private readonly List<FpgRoomExitRuntime> ownedExitRuntimes =
             new List<FpgRoomExitRuntime>();
+        private readonly FpgExitAttackRegistry exitAttackRegistry =
+            new FpgExitAttackRegistry();
         private FpgRoomRunRequest request;
         private FpgEncounterPlan encounterPlan;
         private FpgEnemyDefinitionCatalog enemyCatalog;
@@ -61,6 +88,12 @@ namespace FPG.Demo.Unity
         private bool combatStarted;
         private bool roomClearedRaised;
         private bool disposed;
+        private FpgVitalsSnapshot[] enemyVitalsBuffer =
+            Array.Empty<FpgVitalsSnapshot>();
+        private long enemyVitalsCursor;
+        private PendingEnemyAttackPresentation[] pendingEnemyAttackPresentations =
+            Array.Empty<PendingEnemyAttackPresentation>();
+        private int pendingEnemyAttackPresentationCount;
         [NonSerialized] private D0PlayerEntityView configuredPlayerEntity;
         [NonSerialized] private bool playerBindingConfigured;
         [NonSerialized] private bool playerBindingLocked;
@@ -68,8 +101,13 @@ namespace FPG.Demo.Unity
         public FpgEncounterPhase Phase { get; private set; } = FpgEncounterPhase.None;
         public FpgEncounterPlan Plan => encounterPlan;
         public FpgEncounterRunContext RunContext => request.RunContext;
+        public TickIndex CurrentTick => currentTick;
         public FpgEncounterSession Session => session;
         public FpgFormalCombatRuntimeBundle CombatRuntime => combatRuntime;
+        public IFpgFormalPlayerRunResourceImportPort PlayerRunResourceImportPort =>
+            (configuredFactory ?? formalCombatPortFactoryComponent
+                as IFpgFormalCombatPortFactory)
+            as IFpgFormalPlayerRunResourceImportPort;
         public D0PlayerEntityView ConfiguredPlayerEntity => configuredPlayerEntity;
         public Transform PlayerAnchor => playerAnchor;
         public bool HasPlayerBinding => playerBindingConfigured
@@ -93,10 +131,15 @@ namespace FPG.Demo.Unity
             || Phase == FpgEncounterPhase.Failed
             || Phase == FpgEncounterPhase.Faulted
             || Phase == FpgEncounterPhase.Disposed;
+        public int PresentationFaultCount { get; private set; }
+        public int EnemyVitalsGapCount { get; private set; }
+        public FpgExitAttackRegistry ExitAttackRegistry => exitAttackRegistry;
+        public bool HasAvailableExits => exitAttackRegistry.Count > 0;
 
         public event Action<FpgEncounterLifecycleEvent> LifecycleEvent;
         public event Action<FpgRoomClearedEvent> RoomCleared;
         public event Action<string> ExitSelected;
+        public event Action<FpgExitSelectionEvent> ExitOfferSelected;
         public event Action<FpgEncounterFailureReason, string> Failed;
 
         public bool TryConfigurePlayer(
@@ -186,6 +229,20 @@ namespace FPG.Demo.Unity
 
             configuredFactory = combatPortFactory;
             configuredPlayerDriver = playerTickDriver;
+            if (exitHitboxRegistry == null
+                && combatPortFactory is FpgFormalCombatPortFactory concreteFactory)
+            {
+                exitHitboxRegistry = concreteFactory.StaticHitboxRegistry;
+            }
+
+            if (exitHitboxRegistry == null)
+            {
+                configuredFactory = null;
+                configuredPlayerDriver = null;
+                error = "Formal session requires an exit hitbox registry.";
+                return false;
+            }
+
             error = string.Empty;
             return true;
         }
@@ -243,7 +300,7 @@ namespace FPG.Demo.Unity
             if (!(nextRequest.RoomDefinition is FpgRoomDefinitionSourceAdapter roomSource)
                 || roomSource.Room == null || roomInstance == null
                 || enemyEntityPool == null || combatantAnchorMap == null
-                || formalHitboxRegistry == null || overheadHealthBarPool == null)
+                || formalHitboxRegistry == null)
             {
                 return FailPreparation(
                     FpgEncounterFailureReason.InvalidRequest,
@@ -252,6 +309,8 @@ namespace FPG.Demo.Unity
             }
 
             ClearPreparedRuntime(disposePools: true);
+            PresentationFaultCount = 0;
+            EnemyVitalsGapCount = 0;
             request = nextRequest;
             encounterPlan = nextPlan;
             enemyCatalog = nextEnemyCatalog;
@@ -292,25 +351,24 @@ namespace FPG.Demo.Unity
             if (enemyEntityPool.Capacity < requirements.EntitySlots
                 || combatantAnchorMap.Capacity < requirements.EntitySlots + 1
                 || profile.HitboxCapacity < requiredConcurrentHitboxes
-                || formalHitboxRegistry.Capacity < requiredConcurrentHitboxes
-                || overheadHealthBarPool.Capacity < requirements.SimultaneousCombatants)
+                || formalHitboxRegistry.Capacity < requiredConcurrentHitboxes)
             {
                 return FailPreparation(
                     FpgEncounterFailureReason.EntityCapacity,
-                    "Formal entity, anchor, hitbox or overhead-bar capacity is below preflight.",
+                    "Formal entity, anchor or hitbox capacity is below preflight.",
                     out error);
             }
 
             if (!enemyEntityPool.TryPrewarm(warmup, out error)
                 || !combatantAnchorMap.TryInitialize(out error)
-                || !formalHitboxRegistry.TryInitialize(out error)
-                || !overheadHealthBarPool.TryPrewarm(
-                    requirements.SimultaneousCombatants,
-                    overheadHealthBarCamera,
-                    out error))
+                || !formalHitboxRegistry.TryInitialize(out error))
             {
                 return FailPreparation(FpgEncounterFailureReason.EntityCapacity, error, out error);
             }
+
+            TryPrewarmOverheadHealthBars(
+                requirements.SimultaneousCombatants,
+                overheadHealthBarCamera);
 
             spawnResolver = new FpgRoomSpawnPointResolver(
                 profile,
@@ -337,6 +395,14 @@ namespace FPG.Demo.Unity
                 presentationLeaseTicks);
             FpgEnemyRoster roster = new FpgEnemyRoster(profile.EnemyRosterCapacity);
             FpgMultiEnemyCombatCapacity combatCapacity = factory.Capacity;
+            enemyVitalsBuffer = new FpgVitalsSnapshot[
+                combatCapacity.VitalsEventCapacity];
+            enemyVitalsCursor = 0L;
+            pendingEnemyAttackPresentations =
+                new PendingEnemyAttackPresentation[
+                    Math.Max(1, combatCapacity.ThreatAdvanceCapacity)];
+            pendingEnemyAttackPresentationCount = 0;
+
             FpgSummonLedger summonLedger = new FpgSummonLedger(
                 combatCapacity.SummonCapacity,
                 requirements.SummonUpperBound,
@@ -393,8 +459,10 @@ namespace FPG.Demo.Unity
                 HandleLifecycle,
                 combatRuntime.PlayerSnapshotPort);
             combatRuntime.CombatPort.EnemyDied += HandleEnemyDied;
-
-            combatRuntime.CombatPort.HealthChanged += HandleHealthChanged;
+            combatRuntime.CombatPort.EnemyAttackStarted +=
+                HandleEnemyAttackStarted;
+            combatRuntime.CombatPort.HealthChanged +=
+                HandleCombatHealthChanged;
             playerBindingLocked = true;
             prepared = true;
             combatStarted = false;
@@ -443,11 +511,19 @@ namespace FPG.Demo.Unity
             try
             {
                 enemyEntityPool.BeginCombat();
-                overheadHealthBarPool.BeginCombat();
             }
             catch (Exception exception)
             {
                 return FailRuntime(FpgEncounterFailureReason.EntityCapacity, exception.Message, out error);
+            }
+
+            try
+            {
+                TryBeginOverheadHealthBars();
+            }
+            catch (Exception)
+            {
+                PresentationFaultCount++;
             }
 
             DomainResult started = session.Start(new TickIndex(0L));
@@ -462,6 +538,7 @@ namespace FPG.Demo.Unity
             combatStarted = true;
             currentTick = new TickIndex(0L);
             Phase = session.Runtime.Phase;
+            ConsumeEnemyVitalsPresentation();
             LockExits(true);
             EmitLocal(FpgEncounterLifecycleEventType.ExitLocked);
             error = string.Empty;
@@ -512,6 +589,63 @@ namespace FPG.Demo.Unity
                     out error);
             }
 
+            ConsumeEnemyVitalsPresentation();
+            ProcessPendingEnemyAttackPresentations(tick);
+
+            return true;
+        }
+
+        public bool BeginRoomInteraction(out string error)
+        {
+            IFpgFormalPlayerTickDriver driver = configuredPlayerDriver
+                ?? formalPlayerTickDriverComponent as IFpgFormalPlayerTickDriver;
+            if (Phase != FpgEncounterPhase.Cleared
+                || combatRuntime == null
+                || driver == null)
+            {
+                error = "Room interaction requires a cleared formal session.";
+                return false;
+            }
+
+            driver.BeginRoomInteraction();
+            error = string.Empty;
+            return true;
+        }
+
+        public bool ProcessRoomInteractionTick(
+            TickIndex tick,
+            out string error)
+        {
+            IFpgFormalPlayerTickDriver driver = configuredPlayerDriver
+                ?? formalPlayerTickDriverComponent as IFpgFormalPlayerTickDriver;
+            if (Phase != FpgEncounterPhase.Cleared
+                || combatRuntime == null
+                || driver == null
+                || !HasAvailableExits
+                || !tick.IsValid
+                || currentTick.IsValid && tick <= currentTick)
+            {
+                error = "Room interaction tick is not available.";
+                return false;
+            }
+
+            Physics.SyncTransforms();
+            TickIndex previousTick = currentTick;
+            currentTick = tick;
+            DomainResult result =
+                driver.ProcessRoomInteractionTick(tick, combatRuntime);
+            if (!result.IsSuccess)
+            {
+                currentTick = previousTick;
+                error = "Room interaction tick failed: " + result.RejectReason;
+                FailRuntime(
+                    FpgEncounterFailureReason.SynchronizerFault,
+                    error,
+                    out error);
+                return false;
+            }
+
+            error = string.Empty;
             return true;
         }
 
@@ -532,6 +666,7 @@ namespace FPG.Demo.Unity
             if (result.IsSuccess)
             {
                 Phase = FpgEncounterPhase.Paused;
+                TrySetOverheadHealthBarsPaused(true);
             }
             error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
             return result.IsSuccess;
@@ -545,6 +680,7 @@ namespace FPG.Demo.Unity
             if (result.IsSuccess)
             {
                 Phase = session.Runtime.Phase;
+                TrySetOverheadHealthBarsPaused(false);
             }
             error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
             return result.IsSuccess;
@@ -559,7 +695,6 @@ namespace FPG.Demo.Unity
             }
 
             DomainResult restarted = session.Restart();
-            combatRuntime.ClearForRestart();
             if (!restarted.IsSuccess)
             {
                 return FailRuntime(
@@ -568,8 +703,15 @@ namespace FPG.Demo.Unity
                     out error);
             }
 
-            LockExits(true);
+            combatRuntime.ClearForRestart();
+            DeactivateAndClearExits();
             roomClearedRaised = false;
+            PresentationFaultCount = 0;
+            EnemyVitalsGapCount = 0;
+            TrySetOverheadHealthBarsPaused(false);
+            enemyVitalsCursor = 0L;
+            Array.Clear(enemyVitalsBuffer, 0, enemyVitalsBuffer.Length);
+            ClearPendingEnemyAttackPresentations();
             currentTick = TickIndex.Invalid;
             Phase = FpgEncounterPhase.Preparing;
             DomainResult started = session.Start(new TickIndex(0L));
@@ -583,6 +725,7 @@ namespace FPG.Demo.Unity
 
             currentTick = new TickIndex(0L);
             Phase = session.Runtime.Phase;
+            ConsumeEnemyVitalsPresentation();
             error = string.Empty;
             return true;
         }
@@ -618,13 +761,14 @@ namespace FPG.Demo.Unity
             }
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.RoomCleared)
             {
-                LockExits(false);
-                EmitLocal(FpgEncounterLifecycleEventType.ExitUnlocked);
+                ClearPendingEnemyAttackPresentations();
+                LockExits(true);
                 RaiseRoomCleared(lifecycle.Tick);
             }
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.Failed
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Faulted)
             {
+                exitAttackRegistry.Clear();
                 LockExits(true);
             }
 
@@ -659,8 +803,47 @@ namespace FPG.Demo.Unity
             }
         }
 
+        private void HandleEnemyAttackStarted(
+            FpgEnemyAttackStartedEvent started)
+        {
+            try
+            {
+                if (started.PayloadKind == FpgEnemyAttackPayloadKind.Summon)
+                {
+                    PlayEnemyAttackPresentation(started);
+                    return;
+                }
+
+                if (!TryFindAttackDefinition(
+                        started,
+                        out FpgEnemyAttackDefinition attack))
+                {
+                    PresentationFaultCount++;
+                    return;
+                }
+
+                if (attack.TelegraphTicks <= 0)
+                {
+                    PlayEnemyAttackPresentation(started);
+                    return;
+                }
+
+                if (!TryQueueEnemyAttackPresentation(
+                        started,
+                        attack.TelegraphTicks))
+                {
+                    PresentationFaultCount++;
+                }
+            }
+            catch (Exception)
+            {
+                PresentationFaultCount++;
+            }
+        }
+
         private void HandleEnemyDied(FpgEnemyDiedEvent died)
         {
+            CancelPendingEnemyAttackPresentations(died.RuntimeId);
             if (combatRuntime == null || session == null)
             {
                 return;
@@ -679,17 +862,337 @@ namespace FPG.Demo.Unity
             }
         }
 
-        private void HandleHealthChanged(FpgCombatHealthChangedEvent changed)
+        private void HandleCombatHealthChanged(
+            FpgCombatHealthChangedEvent changed)
         {
-            if (changed.Kind == FPG.Demo.Combat.CombatantKind.Enemy
-                && (entityPort == null
-                    || !entityPort.TryUpdateHealth(
-                        changed.RuntimeId,
-                        changed.Life,
-                        changed.MaxLife)))
+            if (changed.Kind != FPG.Demo.Combat.CombatantKind.Enemy
+                || (!changed.BreakTriggered && !changed.Groggy && !changed.Dead))
             {
-                ReportCallbackFailure(RejectReason.InvalidTarget);
+                return;
             }
+
+            CancelPendingEnemyAttackPresentations(changed.RuntimeId);
+            if (!changed.BreakTriggered || changed.Dead)
+            {
+                return;
+            }
+
+            FpgEnemySlot slot = default(FpgEnemySlot);
+            bool canInterrupt = session != null
+                && session.Roster.TryGet(
+                    changed.RuntimeId,
+                    out slot)
+                && slot.IsActive;
+            if (!canInterrupt
+                || entityPort == null
+                || !entityPort.TryInterruptAttack(
+                    changed.RuntimeId,
+                    slot.SpawnSequence))
+            {
+                PresentationFaultCount++;
+            }
+        }
+
+        private bool TryFindAttackDefinition(
+            FpgEnemyAttackStartedEvent started,
+            out FpgEnemyAttackDefinition attack)
+        {
+            attack = null;
+            if (session == null
+                || !session.Roster.TryGet(
+                    started.OwnerRuntimeId,
+                    out FpgEnemySlot slot)
+                || slot.SpawnSequence != started.SpawnSequence)
+            {
+                return false;
+            }
+
+            FpgEnemyDefinition definition = FindDefinition(
+                slot.EnemyDefinitionId);
+            if (definition == null)
+            {
+                return false;
+            }
+
+            for (int index = 0;
+                 index < definition.AttackPatternCount;
+                 index++)
+            {
+                FpgEnemyAttackDefinition candidate =
+                    definition.GetAttackPattern(index);
+                if (candidate != null
+                    && string.Equals(
+                        candidate.AttackId,
+                        started.AttackPatternId,
+                        StringComparison.Ordinal))
+                {
+                    attack = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryQueueEnemyAttackPresentation(
+            FpgEnemyAttackStartedEvent started,
+            int delayTicks)
+        {
+            if (delayTicks <= 0
+                || !started.Tick.IsValid
+                || started.Tick.Value > long.MaxValue - delayTicks)
+            {
+                return false;
+            }
+
+            for (int index = 0;
+                 index < pendingEnemyAttackPresentations.Length;
+                 index++)
+            {
+                if (pendingEnemyAttackPresentations[index].IsUsed)
+                {
+                    continue;
+                }
+
+                pendingEnemyAttackPresentations[index] =
+                    new PendingEnemyAttackPresentation(
+                        started.OwnerRuntimeId,
+                        started.SpawnSequence,
+                        started.AttackPatternId,
+                        new TickIndex(started.Tick.Value + delayTicks));
+                pendingEnemyAttackPresentationCount++;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ProcessPendingEnemyAttackPresentations(TickIndex tick)
+        {
+            if (!tick.IsValid
+                || pendingEnemyAttackPresentationCount <= 0
+                || session == null
+                || combatRuntime == null)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < pendingEnemyAttackPresentations.Length;
+                 index++)
+            {
+                PendingEnemyAttackPresentation pending =
+                    pendingEnemyAttackPresentations[index];
+                if (!pending.IsUsed || pending.DueTick > tick)
+                {
+                    continue;
+                }
+
+                bool ownerIsCurrent = session.Roster.TryGet(
+                        pending.OwnerRuntimeId,
+                        out FpgEnemySlot slot)
+                    && slot.SpawnSequence == pending.SpawnSequence
+                    && slot.IsActive;
+                bool canPlay = ownerIsCurrent
+                    && combatRuntime.CombatPort.CanAttack(
+                        pending.OwnerRuntimeId);
+                if (canPlay
+                    && (entityPort == null
+                        || !entityPort.TryPlayAttack(
+                            pending.OwnerRuntimeId,
+                            pending.SpawnSequence,
+                            pending.AttackPatternId)))
+                {
+                    PresentationFaultCount++;
+                }
+
+                RemovePendingEnemyAttackPresentation(index);
+            }
+        }
+
+        private void PlayEnemyAttackPresentation(
+            FpgEnemyAttackStartedEvent started)
+        {
+            if (entityPort == null
+                || !entityPort.TryPlayAttack(
+                    started.OwnerRuntimeId,
+                    started.SpawnSequence,
+                    started.AttackPatternId))
+            {
+                PresentationFaultCount++;
+            }
+        }
+
+        private void CancelPendingEnemyAttackPresentations(
+            RuntimeId runtimeId)
+        {
+            if (!runtimeId.IsValid
+                || pendingEnemyAttackPresentationCount <= 0)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                 index < pendingEnemyAttackPresentations.Length;
+                 index++)
+            {
+                if (pendingEnemyAttackPresentations[index].IsUsed
+                    && pendingEnemyAttackPresentations[index].OwnerRuntimeId
+                        == runtimeId)
+                {
+                    RemovePendingEnemyAttackPresentation(index);
+                }
+            }
+        }
+
+        private void RemovePendingEnemyAttackPresentation(int index)
+        {
+            if (index < 0
+                || index >= pendingEnemyAttackPresentations.Length
+                || !pendingEnemyAttackPresentations[index].IsUsed)
+            {
+                return;
+            }
+
+            pendingEnemyAttackPresentations[index] =
+                default(PendingEnemyAttackPresentation);
+            pendingEnemyAttackPresentationCount = Math.Max(
+                0,
+                pendingEnemyAttackPresentationCount - 1);
+        }
+
+        private void ClearPendingEnemyAttackPresentations()
+        {
+            if (pendingEnemyAttackPresentations != null
+                && pendingEnemyAttackPresentations.Length > 0)
+            {
+                Array.Clear(
+                    pendingEnemyAttackPresentations,
+                    0,
+                    pendingEnemyAttackPresentations.Length);
+            }
+
+            pendingEnemyAttackPresentationCount = 0;
+        }
+
+        private void ConsumeEnemyVitalsPresentation()
+        {
+            try
+            {
+                ConsumeEnemyVitalsPresentationCore();
+            }
+            catch (Exception)
+            {
+                PresentationFaultCount++;
+                RecoverEnemyVitalsPresentationAfterFault();
+            }
+        }
+
+        private void RecoverEnemyVitalsPresentationAfterFault()
+        {
+            try
+            {
+                IFpgVitalsView vitals = combatRuntime == null
+                    ? null
+                    : combatRuntime.CombatPort.Vitals;
+                enemyVitalsCursor = vitals == null ? 0L : vitals.LastSequence;
+            }
+            catch (Exception)
+            {
+                enemyVitalsCursor = 0L;
+            }
+
+            try
+            {
+                if (enemyVitalsBuffer != null && enemyVitalsBuffer.Length > 0)
+                {
+                    Array.Clear(
+                        enemyVitalsBuffer,
+                        0,
+                        enemyVitalsBuffer.Length);
+                }
+            }
+            catch (Exception)
+            {
+                enemyVitalsBuffer = Array.Empty<FpgVitalsSnapshot>();
+            }
+        }
+
+        private void ConsumeEnemyVitalsPresentationCore()
+        {
+            if (combatRuntime == null || entityPort == null
+                || enemyVitalsBuffer == null || enemyVitalsBuffer.Length == 0)
+            {
+                return;
+            }
+
+            IFpgVitalsView vitals = combatRuntime.CombatPort.Vitals;
+            if (vitals == null)
+            {
+                PresentationFaultCount++;
+                return;
+            }
+
+            int copied;
+            bool hasGap;
+            try
+            {
+                copied = vitals.CopyChangesAfter(
+                    enemyVitalsCursor,
+                    enemyVitalsBuffer,
+                    out hasGap);
+            }
+            catch (ArgumentException)
+            {
+                PresentationFaultCount++;
+                ResynchronizeEnemyHealthBars(vitals);
+                enemyVitalsCursor = vitals.LastSequence;
+                Array.Clear(enemyVitalsBuffer, 0, enemyVitalsBuffer.Length);
+                return;
+            }
+
+            if (hasGap)
+            {
+                EnemyVitalsGapCount++;
+                ResynchronizeEnemyHealthBars(vitals);
+                enemyVitalsCursor = vitals.LastSequence;
+                Array.Clear(enemyVitalsBuffer, 0, enemyVitalsBuffer.Length);
+                return;
+            }
+
+            for (int index = 0; index < copied; index++)
+            {
+                FpgVitalsSnapshot snapshot = enemyVitalsBuffer[index];
+                enemyVitalsCursor = Math.Max(enemyVitalsCursor, snapshot.Sequence);
+                if (snapshot.Kind == FPG.Demo.Combat.CombatantKind.Enemy
+                    && !snapshot.Dead
+                    && overheadHealthBarPool != null
+                    && overheadHealthBarPool.IsPrepared
+                    && !entityPort.TryUpdateHealth(
+                        snapshot.RuntimeId,
+                        snapshot.Life,
+                        snapshot.MaxLife))
+                {
+                    PresentationFaultCount++;
+                }
+
+                enemyVitalsBuffer[index] = default(FpgVitalsSnapshot);
+            }
+        }
+
+        private void ResynchronizeEnemyHealthBars(IFpgVitalsView vitals)
+        {
+            if (overheadHealthBarPool == null
+                || !overheadHealthBarPool.IsPrepared)
+            {
+                return;
+            }
+
+            int failureCountBefore = entityPort.HealthBarUpdateFailureCount;
+            entityPort.ResynchronizeHealthBars(vitals);
+            PresentationFaultCount += Math.Max(
+                0,
+                entityPort.HealthBarUpdateFailureCount - failureCountBefore);
         }
 
         private void ReportCallbackFailure(RejectReason reason)
@@ -966,8 +1469,6 @@ namespace FPG.Demo.Unity
                     return false;
                 }
 
-                runtime.Selected -= HandleExitSelected;
-                runtime.Selected += HandleExitSelected;
                 nextExits[index] = runtime;
             }
 
@@ -984,7 +1485,6 @@ namespace FPG.Demo.Unity
                     continue;
                 }
 
-                previous.Selected -= HandleExitSelected;
                 previous.SetLocked(true);
                 if (ownedExitRuntimes.Contains(previous))
                 {
@@ -1003,6 +1503,98 @@ namespace FPG.Demo.Unity
             activeExits = nextExits;
             error = string.Empty;
             return true;
+        }
+
+        public bool TryRevealExits(
+            IReadOnlyList<FpgExitOffer> offers,
+            out string error)
+        {
+            if (Phase != FpgEncounterPhase.Cleared
+                || offers == null
+                || offers.Count != activeExits.Length
+                || exitHitboxRegistry == null)
+            {
+                error = "Cleared room exits require one offer per runtime and a hitbox registry.";
+                return false;
+            }
+
+            exitAttackRegistry.Clear();
+            LockExits(true);
+            int geometryValue = FpgExitAttackRegistry.GeometryIdStart;
+            for (int index = 0; index < activeExits.Length; index++)
+            {
+                FpgRoomExitRuntime runtime = activeExits[index];
+                FpgExitOffer offer = FindOffer(offers, runtime.ExitId);
+                if (offer == null)
+                {
+                    error = $"Missing room exit offer for '{runtime.ExitId}'.";
+                    exitAttackRegistry.Clear();
+                    LockExits(true);
+                    return false;
+                }
+
+                if (!runtime.TryReveal(offer, out error)
+                    || !exitAttackRegistry.TryRegisterRuntime(
+                        runtime,
+                        exitHitboxRegistry,
+                        ref geometryValue,
+                        out error))
+                {
+                    exitAttackRegistry.Clear();
+                    LockExits(true);
+                    return false;
+                }
+            }
+
+            if (!BeginRoomInteraction(out error))
+            {
+                exitAttackRegistry.Clear();
+                LockExits(true);
+                return false;
+            }
+
+            EmitLocal(FpgEncounterLifecycleEventType.ExitUnlocked);
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TrySelectExit(GeometryId geometryId, out string error)
+        {
+            if (Phase != FpgEncounterPhase.Cleared
+                || !exitAttackRegistry.TryGetRuntime(
+                    geometryId,
+                    out FpgRoomExitRuntime runtime)
+                || runtime.Offer == null
+                || !runtime.TrySelect())
+            {
+                error = "Attack did not hit an available room exit.";
+                return false;
+            }
+
+            FpgExitOffer selectedOffer = runtime.Offer;
+            for (int index = 0; index < activeExits.Length; index++)
+            {
+                if (activeExits[index] != runtime)
+                {
+                    activeExits[index]?.ConsumeSilently();
+                }
+            }
+
+            exitAttackRegistry.Clear();
+            FpgExitSelectionEvent selection = new FpgExitSelectionEvent(
+                geometryId,
+                selectedOffer,
+                currentTick);
+            ExitOfferSelected?.Invoke(selection);
+            ExitSelected?.Invoke(selectedOffer.ExitId);
+            error = string.Empty;
+            return true;
+        }
+
+        public void DeactivateAndClearExits()
+        {
+            exitAttackRegistry.Clear();
+            LockExits(true);
         }
 
         private FpgRoomExitRuntime FindExitRuntime(string id)
@@ -1040,6 +1632,23 @@ namespace FPG.Demo.Unity
             return null;
         }
 
+        private static FpgExitOffer FindOffer(
+            IReadOnlyList<FpgExitOffer> offers,
+            string exitId)
+        {
+            for (int index = 0; index < offers.Count; index++)
+            {
+                FpgExitOffer offer = offers[index];
+                if (offer != null
+                    && string.Equals(offer.ExitId, exitId, StringComparison.Ordinal))
+                {
+                    return offer;
+                }
+            }
+
+            return null;
+        }
+
         private FpgEnemyDefinition FindDefinition(string id)
         {
             if (enemyCatalog == null) return null;
@@ -1054,14 +1663,6 @@ namespace FPG.Demo.Unity
                 }
             }
             return null;
-        }
-
-        private void HandleExitSelected(FpgRoomExitRuntime exitRuntime)
-        {
-            if (exitRuntime != null && Phase == FpgEncounterPhase.Cleared)
-            {
-                ExitSelected?.Invoke(exitRuntime.ExitId);
-            }
         }
 
         private void LockExits(bool locked)
@@ -1117,13 +1718,14 @@ namespace FPG.Demo.Unity
             out string error)
         {
             Phase = FpgEncounterPhase.Faulted;
-            LockExits(true);
+            DeactivateAndClearExits();
 
             // Session.Fault clears pure encounter/combat state. These Unity
             // ports are independent fixed stores and must also terminate now.
             entityPort?.ClearAll();
+            ClearPendingEnemyAttackPresentations();
             combatRuntime?.ClearForFault();
-            overheadHealthBarPool?.ClearActive();
+            TryClearOverheadHealthBars();
             formalHitboxRegistry?.Clear();
             combatantAnchorMap?.Clear();
             enemyEntityPool?.ClearActive();
@@ -1138,10 +1740,14 @@ namespace FPG.Demo.Unity
 
         private void ClearPreparedRuntime(bool disposePools)
         {
+            DeactivateAndClearExits();
             if (combatRuntime != null)
             {
                 combatRuntime.CombatPort.EnemyDied -= HandleEnemyDied;
-                combatRuntime.CombatPort.HealthChanged -= HandleHealthChanged;
+                combatRuntime.CombatPort.EnemyAttackStarted -=
+                    HandleEnemyAttackStarted;
+                combatRuntime.CombatPort.HealthChanged -=
+                    HandleCombatHealthChanged;
             }
 
             session?.Dispose();
@@ -1150,16 +1756,88 @@ namespace FPG.Demo.Unity
             combatRuntime = null;
             entityPort = null;
             spawnResolver = null;
+            enemyVitalsBuffer = Array.Empty<FpgVitalsSnapshot>();
+            enemyVitalsCursor = 0L;
+            pendingEnemyAttackPresentations =
+                Array.Empty<PendingEnemyAttackPresentation>();
+            pendingEnemyAttackPresentationCount = 0;
             prepared = false;
             combatStarted = false;
 
             if (disposePools)
             {
-                overheadHealthBarPool?.Dispose();
+                DestroyOwnedExits();
+                TryDisposeOverheadHealthBars();
                 formalHitboxRegistry?.Clear();
                 combatantAnchorMap?.Clear();
                 enemyEntityPool?.Dispose();
                 roomInstance?.Clear();
+            }
+        }
+
+        private void TryPrewarmOverheadHealthBars(
+            int requestedCapacity,
+            Camera targetCamera)
+        {
+            if (overheadHealthBarPool == null)
+            {
+                return;
+            }
+
+            try
+            {
+                int capacity = Math.Min(
+                    requestedCapacity,
+                    overheadHealthBarPool.Capacity);
+                if (!overheadHealthBarPool.TryPrewarm(
+                        capacity,
+                        targetCamera,
+                        out _))
+                {
+                    PresentationFaultCount++;
+                }
+            }
+            catch (Exception)
+            {
+                PresentationFaultCount++;
+            }
+        }
+
+        private void TryBeginOverheadHealthBars()
+        {
+            TryRunOverheadHealthBarAction(pool => pool.BeginCombat());
+        }
+
+        private void TrySetOverheadHealthBarsPaused(bool paused)
+        {
+            TryRunOverheadHealthBarAction(pool => pool.SetPaused(paused));
+        }
+
+        private void TryClearOverheadHealthBars()
+        {
+            TryRunOverheadHealthBarAction(pool => pool.ClearActive());
+        }
+
+        private void TryDisposeOverheadHealthBars()
+        {
+            TryRunOverheadHealthBarAction(pool => pool.Dispose());
+        }
+
+        private void TryRunOverheadHealthBarAction(
+            Action<FpgOverheadHealthBarPool> action)
+        {
+            if (overheadHealthBarPool == null || action == null)
+            {
+                return;
+            }
+
+            try
+            {
+                action(overheadHealthBarPool);
+            }
+            catch (Exception)
+            {
+                PresentationFaultCount++;
             }
         }
 
@@ -1169,7 +1847,6 @@ namespace FPG.Demo.Unity
             {
                 FpgRoomExitRuntime runtime = exits[index];
                 if (runtime == null) continue;
-                runtime.Selected -= HandleExitSelected;
                 if (Application.isPlaying) Destroy(runtime.gameObject);
                 else DestroyImmediate(runtime.gameObject);
             }
@@ -1251,6 +1928,3 @@ namespace FPG.Demo.Unity
         public FpgEncounterRunContext RunContext { get; }
     }
 }
-
-
-

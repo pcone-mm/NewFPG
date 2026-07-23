@@ -6,6 +6,90 @@ using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
+    public enum FpgAimSolutionKind
+    {
+        Idle = 0,
+        Hittable,
+        Blocked
+    }
+
+    public readonly struct FpgFormalAimSolution
+    {
+        private FpgFormalAimSolution(
+            FpgAimSolutionKind kind,
+            RuntimeId targetId,
+            QueryTargetKind targetKind,
+            HitPart hitPart,
+            GeometryId geometryId,
+            SpatialVectorKey impactPointKey,
+            int distanceKey)
+        {
+            Kind = kind;
+            TargetId = targetId;
+            TargetKind = targetKind;
+            HitPart = hitPart;
+            GeometryId = geometryId;
+            ImpactPointKey = impactPointKey;
+            DistanceKey = distanceKey;
+        }
+
+        public static FpgFormalAimSolution Idle => default(FpgFormalAimSolution);
+
+        public FpgAimSolutionKind Kind { get; }
+        public RuntimeId TargetId { get; }
+        public QueryTargetKind TargetKind { get; }
+        public HitPart HitPart { get; }
+        public GeometryId GeometryId { get; }
+        public SpatialVectorKey ImpactPointKey { get; }
+        public int DistanceKey { get; }
+        public bool HasSurface => Kind != FpgAimSolutionKind.Idle;
+
+        internal static FpgFormalAimSolution FromCandidate(
+            in QueryCandidate candidate)
+        {
+            return new FpgFormalAimSolution(
+                candidate.TargetKind == QueryTargetKind.EnvironmentBlocker
+                    ? FpgAimSolutionKind.Blocked
+                    : FpgAimSolutionKind.Hittable,
+                candidate.TargetId,
+                candidate.TargetKind,
+                candidate.HitPart,
+                candidate.GeometryId,
+                candidate.ImpactPointKey,
+                candidate.DistanceKey);
+        }
+    }
+
+    [Serializable]
+    public struct UnityAttackQueryTechnicalSettings
+    {
+        [SerializeField] private int hitboxLayerMask;
+        [SerializeField] private int blockerLayerMask;
+
+        public UnityAttackQueryTechnicalSettings(
+            int hitboxLayerMask,
+            int blockerLayerMask)
+        {
+            this.hitboxLayerMask = hitboxLayerMask;
+            this.blockerLayerMask = blockerLayerMask;
+            if (!IsValid)
+            {
+                throw new ArgumentException(
+                    "Attack-query technical settings require separate non-empty layer masks.");
+            }
+        }
+
+        public int HitboxLayerMask => hitboxLayerMask;
+        public int BlockerLayerMask => blockerLayerMask;
+        public int PhysicsLayerMask => hitboxLayerMask | blockerLayerMask;
+        public bool IsValid => hitboxLayerMask != 0
+            && blockerLayerMask != 0
+            && (hitboxLayerMask & blockerLayerMask) == 0;
+
+        public static UnityAttackQueryTechnicalSettings Default =>
+            new UnityAttackQueryTechnicalSettings(1 << 29, 1 << 28);
+    }
+
     [Serializable]
     public struct UnityAttackQuerySettings
     {
@@ -158,6 +242,75 @@ namespace FPG.Demo.Unity
         /// This counter never affects a query result or combat transaction.
         /// </summary>
         public int PresentationCaptureFaultCount { get; private set; }
+
+        /// <summary>
+        /// Resolves the current formal reticle state through the same registry,
+        /// layer and owner/team qualification used by submitted attacks. The
+        /// result is presentation-only and never changes query or combat state.
+        /// </summary>
+        public DomainResult SolveAim(
+            Vector3 origin,
+            Vector3 direction,
+            RuntimeId ownerId,
+            Team ownerTeam,
+            AttackTargetKinds allowedTargetKinds,
+            out FpgFormalAimSolution solution)
+        {
+            solution = FpgFormalAimSolution.Idle;
+            if (!IsHitboxLookupReady || !settings.IsValid
+                || !ownerId.IsValid || ownerTeam == Team.Neutral
+                || !IsFinite(origin) || !IsUsableDirection(direction)
+                || allowedTargetKinds == AttackTargetKinds.None
+                || (allowedTargetKinds & ~AttackSnapshot.DefaultAllowedTargetKinds)
+                    != AttackTargetKinds.None)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            direction.Normalize();
+            physics.SyncTransforms();
+            NonAllocPhysicsQueryResult batch = physics.RaycastNonAlloc(
+                origin,
+                direction,
+                hitBuffer,
+                settings.MaxDistance,
+                settings.PhysicsLayerMask,
+                QueryTriggerInteraction.Collide);
+            DomainResult validated = ValidateBatch(
+                batch,
+                hitBuffer.Length,
+                out _);
+            if (!validated.IsSuccess)
+            {
+                return validated;
+            }
+
+            bool found = false;
+            QueryCandidate nearest = default(QueryCandidate);
+            for (int index = 0; index < batch.Count; index++)
+            {
+                if (!TryCreateAimCandidate(
+                        hitBuffer[index],
+                        ownerId,
+                        ownerTeam,
+                        allowedTargetKinds,
+                        out QueryCandidate candidate)
+                    || found && CompareFirstSurface(candidate, nearest) >= 0)
+                {
+                    continue;
+                }
+
+                nearest = candidate;
+                found = true;
+            }
+
+            if (found)
+            {
+                solution = FpgFormalAimSolution.FromCandidate(nearest);
+            }
+
+            return DomainResult.Success;
+        }
 
         public DomainResult Query(
             in AttackQueryRequest request,
@@ -485,7 +638,11 @@ namespace FPG.Demo.Unity
                     continue;
                 }
 
-                if (!hasDirectAnchor || CompareCanonical(candidate, directAnchor) < 0)
+                int comparison = request.Attack.QueryMode
+                    == AttackQueryMode.AreaAtFirstSurface
+                        ? CompareFirstSurface(candidate, directAnchor)
+                        : CompareCanonical(candidate, directAnchor);
+                if (!hasDirectAnchor || comparison < 0)
                 {
                     directAnchor = candidate;
                     areaCenter = hit.Point;
@@ -523,7 +680,9 @@ namespace FPG.Demo.Unity
                 areaCenter,
                 settings.SecondaryAreaRadius,
                 overlapBuffer,
-                settings.PhysicsLayerMask,
+                request.Attack.QueryMode == AttackQueryMode.AreaAtFirstSurface
+                    ? settings.HitboxLayerMask
+                    : settings.PhysicsLayerMask,
                 QueryTriggerInteraction.Collide);
             DomainResult areaValidation = ValidateBatch(
                 areaBatch,
@@ -616,13 +775,64 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        private bool TryCreateAimCandidate(
+            in UnityPhysicsHit hit,
+            RuntimeId ownerId,
+            Team ownerTeam,
+            AttackTargetKinds allowedTargetKinds,
+            out QueryCandidate candidate)
+        {
+            candidate = default(QueryCandidate);
+            if (!TryResolveSurface(
+                    hit.Collider,
+                    ownerId,
+                    ownerTeam,
+                    allowedTargetKinds,
+                    out RegisteredHitbox registered)
+                || !IsFinite(hit.Point) || !IsFinite(hit.Distance)
+                || hit.Distance < 0f
+                || !TryQuantizeDistance(hit.Distance, out int distanceKey)
+                || !TryQuantizePosition(hit.Point, out SpatialVectorKey pointKey))
+            {
+                return false;
+            }
+
+            candidate = new QueryCandidate(
+                AttackQueryStage.Direct,
+                -1,
+                registered.RuntimeId,
+                registered.TargetKind,
+                registered.HitPart,
+                registered.GeometryId,
+                distanceKey,
+                pointKey,
+                0);
+            return true;
+        }
+
         private bool TryResolveEligible(
             Collider collider,
             in AttackSnapshot attack,
             out RegisteredHitbox registered)
         {
+            return TryResolveSurface(
+                collider,
+                attack.OwnerId,
+                attack.Team,
+                attack.AllowedTargetKinds,
+                out registered);
+        }
+
+        private bool TryResolveSurface(
+            Collider collider,
+            RuntimeId ownerId,
+            Team ownerTeam,
+            AttackTargetKinds allowedTargetKinds,
+            out RegisteredHitbox registered)
+        {
             registered = default(RegisteredHitbox);
-            if (collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy
+            if (collider == null || !collider.enabled
+                || !collider.gameObject.activeInHierarchy
                 || !TryResolveRegisteredHitbox(collider, out RegisteredHitbox candidate)
                 || !IsLayerIncluded(collider.gameObject.layer, candidate.TargetKind)
                 || collider.isTrigger && !candidate.AllowTrigger)
@@ -631,13 +841,31 @@ namespace FPG.Demo.Unity
             }
 
             if (candidate.TargetKind != QueryTargetKind.EnvironmentBlocker
-                && (candidate.RuntimeId == attack.OwnerId || candidate.Team == attack.Team))
+                && (candidate.RuntimeId == ownerId || candidate.Team == ownerTeam
+                    || !IsAllowedTargetKind(
+                        allowedTargetKinds,
+                        candidate.TargetKind)))
             {
                 return false;
             }
 
             registered = candidate;
             return true;
+        }
+
+        private static bool IsAllowedTargetKind(
+            AttackTargetKinds allowedTargetKinds,
+            QueryTargetKind targetKind)
+        {
+            switch (targetKind)
+            {
+                case QueryTargetKind.Combatant:
+                    return (allowedTargetKinds & AttackTargetKinds.Combatant) != 0;
+                case QueryTargetKind.Projectile:
+                    return (allowedTargetKinds & AttackTargetKinds.Projectile) != 0;
+                default:
+                    return false;
+            }
         }
 
         private bool TryResolveRegisteredHitbox(
@@ -767,6 +995,26 @@ namespace FPG.Demo.Unity
                 : left.ImpactPointKey.Z.CompareTo(right.ImpactPointKey.Z);
         }
 
+        private static int CompareFirstSurface(
+            in QueryCandidate left,
+            in QueryCandidate right)
+        {
+            int distance = left.DistanceKey.CompareTo(right.DistanceKey);
+            if (distance != 0)
+            {
+                return distance;
+            }
+
+            bool leftBlocks = left.TargetKind == QueryTargetKind.EnvironmentBlocker;
+            bool rightBlocks = right.TargetKind == QueryTargetKind.EnvironmentBlocker;
+            if (leftBlocks != rightBlocks)
+            {
+                return leftBlocks ? -1 : 1;
+            }
+
+            return CompareCanonical(left, right);
+        }
+
         private bool IsLayerIncluded(int layer, QueryTargetKind targetKind)
         {
             int expectedMask = targetKind == QueryTargetKind.EnvironmentBlocker
@@ -784,6 +1032,7 @@ namespace FPG.Demo.Unity
                 && request.Attack.OwnerId.IsValid
                 && request.Attack.ReleaseTick == request.TickInput.Tick
                 && request.Attack.Team != Team.Neutral
+                && request.Attack.IsQueryConfigurationValid
                 && (request.Attack.QueryPolicy == QueryPolicy.PelletRays
                     && request.PelletCount == request.Attack.PayloadCount
                     || request.Attack.QueryPolicy == QueryPolicy.DirectThenArea
@@ -942,7 +1191,3 @@ namespace FPG.Demo.Unity
         }
     }
 }
-
-
-
-

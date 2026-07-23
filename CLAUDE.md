@@ -44,7 +44,7 @@
 - 面向策划开放 Unity Inspector 字段时，保留 C# 字段名和已有 YAML 键；通过显示层提供准确的中文名称与中文说明。说明必须基于实际生效逻辑写清所有权、单位、取值约束、条件和生效路径，不能逐词直译或把未实现能力包装成可配置功能。配置说明文档按 `Docs/Workflow/Planner_Configuration_Delivery_Guide.zh-CN.md` 交付。技术容量、LayerMask、物理/命中盒与运行时状态默认不向策划开放。
 - 保留 Unity `.meta` 文件，并让它始终跟随对应资源。移动资源时，同步移动匹配的 `.meta` 文件。
 - 除非用户明确要求真正重整 Unity 资源目录，否则避免大规模搬动资源。场景和 prefab 引用稳定性比目录名好看更重要。
-- 生成物和探索性输出不要进入日常上下文：`Library/`、`Temp/`、`Logs/`、`UserSettings/`、`output/`、`tmp/`、`TestResults/`、`.workbuddy/`、`Assets/Screenshots/` 和根目录 `wp*_patch_*.xml`，除非任务明确要求读取生成物、测试结果、截图或日志。
+- 生成物和探索性输出不要进入日常上下文：`Library/`、`Temp/`、`Logs/`、`UserSettings/`、`output/`、`tmp/`、`TestResults/`、`.workbuddy/`、根目录 `.tmp*`、`Assets/Screenshots/` 和根目录 `wp*_patch_*.xml`，除非任务明确要求读取生成物、测试结果、截图或日志。
 - 搜索时先在最可能相关的小目录里查，再考虑读取大型 Unity YAML 文件。
 - 编辑 C# 脚本时，命名空间要和目录边界一致：神器领域规则用 `NewFPG.Battle`，实时战斗组件用 `NewFPG.Combat`，关卡流程用 `NewFPG.Level`，炼器系统用 `NewFPG.Forging`，怪物配置和 AI 用 `NewFPG.Monsters`，原型场景胶水用 `NewFPG.Prototype`，CZN Spine 运行时用 `NewFPG.CZN`，CZN Editor 生成器用 `NewFPG.CZN.Editor`。
 - 不要把 Unity 项目设置、包版本、渲染管线资源、构建设置当作顺手清理项一起改。

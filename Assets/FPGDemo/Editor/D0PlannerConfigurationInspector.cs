@@ -614,6 +614,9 @@ private static void DrawField(SerializedProperty property, FieldInfo field)
             serializedObject.Update();
             DrawProperty("threatDefinitions", "Threat Styles");
             DrawProperty("hitDefinitions", "Hit Feedback");
+            DrawProperty("formalHudResources", "正式战斗 HUD 资源");
+            DrawProperty("formalDamagePopup", "正式伤害跳字");
+            DrawProperty("formalReticle", "正式战斗准星");
             DrawProperty("sorting", "Global Sorting");
             DrawProperty("poolCapacities", "Shared Pool Budget");
             serializedObject.ApplyModifiedProperties();

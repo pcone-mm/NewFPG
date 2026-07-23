@@ -1,11 +1,12 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace FPG.Demo.Unity
 {
     /// <summary>
     /// Owns the D0 virtual free cursor. The operating-system cursor remains
-    /// locked while mouse delta moves this reticle inside the authored safe area.
+    /// locked while the project-wide Look action moves this reticle inside the
+    /// authored safe area.
     /// BattleSessionHost consumes only the normalized viewport coordinate.
     /// </summary>
     [DefaultExecutionOrder(-500)]
@@ -35,6 +36,15 @@ namespace FPG.Demo.Unity
             CombatAimViewportMath.SafeMaximumY - CombatAimViewportMath.SafeMinimumY);
         private bool inputFrozen;
         private bool systemCursorLocked;
+        private bool aimHeld;
+        private Graphic[] strokes;
+        private Vector2[] strokeBaseSizes;
+        private FpgReticlePresentation presentation;
+        private FpgReticleTargetState targetState;
+        private FpgReticlePulseState pulseState;
+        private float pulseTimeRemaining;
+        private readonly ProjectWideBattleInputAdapter inputAdapter =
+            new ProjectWideBattleInputAdapter();
 
         public BattleSessionHost SessionHost => sessionHost;
 
@@ -44,16 +54,26 @@ namespace FPG.Demo.Unity
 
         public bool IsSystemCursorLocked => systemCursorLocked;
 
+        public bool IsAimHeld => aimHeld;
+
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
 
         public Rect SafeViewport => safeViewport;
 
+        public FpgReticleTargetState TargetState => targetState;
+
+        public FpgReticlePulseState PulseState => pulseState;
+
+        public float PulseTimeRemaining => pulseTimeRemaining;
+
         private void Awake()
         {
             reticleRect = transform as RectTransform;
+            CacheStrokes();
             ApplyThreeCProfileIfPresent();
             viewport = CombatAimViewportMath.ClampToSafeArea(viewport, safeViewport);
             ApplyViewportToRect();
+            ApplyFeedbackVisual();
         }
 
         private void OnEnable()
@@ -69,6 +89,11 @@ namespace FPG.Demo.Unity
 
         private void Update()
         {
+            AdvanceFeedback(
+                Time.unscaledDeltaTime,
+                inputFrozen
+                    || (sessionHost != null && !sessionHost.IsSessionRunning));
+
             if (lockSystemCursor && Application.isFocused && !systemCursorLocked)
             {
                 SetSystemCursorLocked(true);
@@ -80,24 +105,34 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            Mouse mouse = Mouse.current;
-            if (mouse == null)
+            if (!inputAdapter.TryReadAimInput(
+                    out ProjectWideAimInputSnapshot input))
             {
+                aimHeld = false;
                 return;
             }
 
-            Vector2 delta = mouse.delta.ReadValue();
-            if (delta.sqrMagnitude <= 0f)
+            aimHeld = input.AimHeld;
+            Vector2 screenSize = new Vector2(Screen.width, Screen.height);
+            if (input.LookDelta.sqrMagnitude > 0f)
             {
+                SetViewport(CombatAimViewportMath.ApplyMouseDelta(
+                    viewport,
+                    input.LookDelta,
+                    screenSize,
+                    pointerSensitivity,
+                    safeViewport));
                 return;
             }
 
-            SetViewport(CombatAimViewportMath.ApplyMouseDelta(
-                viewport,
-                delta,
-                new Vector2(Screen.width, Screen.height),
-                pointerSensitivity,
-                safeViewport));
+            if (!systemCursorLocked && input.HasPoint)
+            {
+                SetViewport(CombatAimViewportMath.ApplyScreenPoint(
+                    viewport,
+                    input.Point,
+                    screenSize,
+                    safeViewport));
+            }
         }
 
         private void OnApplicationFocus(bool hasFocus)
@@ -121,6 +156,8 @@ namespace FPG.Demo.Unity
 
         private void OnDisable()
         {
+            aimHeld = false;
+            ResetFeedback();
             SetSystemCursorLocked(false);
         }
 
@@ -181,6 +218,100 @@ namespace FPG.Demo.Unity
             inputFrozen = frozen;
         }
 
+        public bool TrySetPresentationProfile(
+            CombatPresentationProfile profile,
+            out string error)
+        {
+            error = string.Empty;
+            if (profile == null)
+            {
+                error = "CombatAimReticle requires a valid presentation profile.";
+
+                return false;
+            }
+
+            if (!profile.TryValidateStatic(out error))
+            {
+
+                return false;
+            }
+
+            presentation = profile.FormalReticle;
+            ApplyFeedbackVisual();
+            error = string.Empty;
+            return true;
+        }
+
+        public void SetTargetState(FpgReticleTargetState state)
+        {
+            if (!System.Enum.IsDefined(typeof(FpgReticleTargetState), state))
+            {
+                state = FpgReticleTargetState.Idle;
+            }
+
+            if (targetState == state)
+            {
+                return;
+            }
+
+            targetState = state;
+            if (pulseState == FpgReticlePulseState.None)
+            {
+                ApplyFeedbackVisual();
+            }
+        }
+
+        public void PresentShot()
+        {
+            if (presentation == null)
+            {
+                return;
+            }
+
+            pulseState = FpgReticlePulseState.Shot;
+            pulseTimeRemaining = presentation.ShotPulseDuration;
+            ApplyFeedbackVisual();
+        }
+
+        public void PresentHit()
+        {
+            if (presentation == null)
+            {
+                return;
+            }
+
+            pulseState = FpgReticlePulseState.Hit;
+            pulseTimeRemaining = presentation.HitPulseDuration;
+            ApplyFeedbackVisual();
+        }
+
+        public void AdvanceFeedback(float deltaTime, bool paused)
+        {
+            if (paused || pulseState == FpgReticlePulseState.None
+                || deltaTime <= 0f || float.IsNaN(deltaTime)
+                || float.IsInfinity(deltaTime))
+            {
+                return;
+            }
+
+            pulseTimeRemaining = Mathf.Max(0f, pulseTimeRemaining - deltaTime);
+            if (pulseTimeRemaining > 0f)
+            {
+                return;
+            }
+
+            pulseState = FpgReticlePulseState.None;
+            ApplyFeedbackVisual();
+        }
+
+        public void ResetFeedback()
+        {
+            targetState = FpgReticleTargetState.Idle;
+            pulseState = FpgReticlePulseState.None;
+            pulseTimeRemaining = 0f;
+            ApplyFeedbackVisual();
+        }
+
         public bool TryValidate(out string error)
         {
             if (reticleRect == null && !(transform is RectTransform))
@@ -205,6 +336,97 @@ namespace FPG.Demo.Unity
 
             error = string.Empty;
             return true;
+        }
+
+        private void ApplyFeedbackVisual()
+        {
+            if (presentation == null)
+            {
+                return;
+            }
+
+            Color color;
+            float size;
+            switch (pulseState)
+            {
+                case FpgReticlePulseState.Hit:
+                    color = presentation.HitColor;
+                    size = presentation.HitPulseSize;
+                    break;
+                case FpgReticlePulseState.Shot:
+                    color = presentation.ShotColor;
+                    size = presentation.ShotPulseSize;
+                    break;
+                default:
+                    switch (targetState)
+                    {
+                        case FpgReticleTargetState.Hittable:
+                            color = presentation.HittableColor;
+                            size = presentation.HittableSize;
+                            break;
+                        case FpgReticleTargetState.Blocked:
+                            color = presentation.BlockedColor;
+                            size = presentation.BlockedSize;
+                            break;
+                        default:
+                            color = presentation.IdleColor;
+                            size = presentation.IdleSize;
+                            break;
+                    }
+                    break;
+            }
+
+            if (reticleRect == null)
+            {
+                reticleRect = transform as RectTransform;
+            }
+
+            if (reticleRect != null)
+            {
+                reticleRect.sizeDelta = new Vector2(size, size);
+            }
+
+            if (strokes == null || strokes.Length == 0
+                || strokeBaseSizes == null
+                || strokeBaseSizes.Length != strokes.Length)
+            {
+                CacheStrokes();
+            }
+
+            for (int index = 0; index < strokes.Length; index++)
+            {
+                Graphic stroke = strokes[index];
+                if (stroke == null)
+                {
+                    continue;
+                }
+
+                stroke.color = color;
+                RectTransform strokeRect = stroke.rectTransform;
+                if (strokeRect == null || strokeRect == reticleRect)
+                {
+                    continue;
+                }
+
+                Vector2 baseSize = strokeBaseSizes[index];
+                strokeRect.sizeDelta = Mathf.Abs(baseSize.x)
+                    >= Mathf.Abs(baseSize.y)
+                        ? new Vector2(size, baseSize.y)
+                        : new Vector2(baseSize.x, size);
+            }
+        }
+
+        private void CacheStrokes()
+        {
+            strokes = GetComponentsInChildren<Graphic>(true);
+            strokeBaseSizes = new Vector2[strokes.Length];
+            for (int index = 0; index < strokes.Length; index++)
+            {
+                Graphic stroke = strokes[index];
+                strokeBaseSizes[index] = stroke == null
+                    ? Vector2.zero
+                    : stroke.rectTransform.sizeDelta;
+            }
         }
 
         private void ApplyViewportToRect()

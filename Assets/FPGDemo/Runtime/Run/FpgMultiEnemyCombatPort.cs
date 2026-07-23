@@ -12,7 +12,10 @@ namespace FPG.Demo.Run
     /// ProjectileRuntime while keeping every collection fixed-capacity and
     /// every combatant lookup keyed by RuntimeId.
     /// </summary>
-    public sealed class FpgMultiEnemyCombatPort : IFpgEncounterCombatTickPort, IFpgAttackOwnerEligibility
+    public sealed class FpgMultiEnemyCombatPort :
+        IFpgEncounterCombatTickPort,
+        IFpgAttackOwnerEligibility,
+        IFpgAttackScheduleEligibility
     {
         private readonly CombatKernel combatKernel;
         private readonly PlayerRuntime player;
@@ -30,6 +33,8 @@ namespace FPG.Demo.Run
         private readonly QueuedImpact[] dueImpactBuffer;
         private readonly IProjectileWorldPort projectileWorldPort;
         private readonly IFpgSummonRequestSink summonRequestSink;
+        private readonly FixedFpgVitalsStream vitalsStream;
+        private readonly FixedResolvedDamageFeedbackStream damageFeedbackStream;
 
         private TickIndex currentTick = TickIndex.Invalid;
         private int enemyCount;
@@ -80,7 +85,16 @@ namespace FPG.Demo.Run
             projectiles = new ProjectileBinding[capacity.ProjectileCapacity];
             threatAdvanceBuffer = new ThreatAdvanceBinding[capacity.ThreatAdvanceCapacity];
             dueImpactBuffer = new QueuedImpact[combatKernel.ImpactQueue.Capacity];
-
+            vitalsStream = new FixedFpgVitalsStream(
+                capacity.EnemyCapacity + 1,
+                capacity.VitalsEventCapacity);
+            damageFeedbackStream = new FixedResolvedDamageFeedbackStream(
+                capacity.DamageFeedbackCapacity);
+            PublishVitals(
+                player.Combatant,
+                new TickIndex(0L),
+                FpgVitalsChangeReason.Spawn,
+                force: true);
         }
 
         public bool IsPlayerAlive => !player.Combatant.IsDead;
@@ -91,8 +105,12 @@ namespace FPG.Demo.Run
         public TickIndex CurrentTick => currentTick;
         public CombatKernel CombatKernel => combatKernel;
         public PlayerRuntime Player => player;
+        public IFpgVitalsView Vitals => vitalsStream;
+        public IFpgResolvedDamageFeedbackView DamageFeedback => damageFeedbackStream;
+        public int PresentationCallbackFaultCount { get; private set; }
 
         public event Action<FpgEnemyDiedEvent> EnemyDied;
+        public event Action<FpgEnemyAttackStartedEvent> EnemyAttackStarted;
         public event Action<FpgCombatHealthChangedEvent> HealthChanged;
         public event Action<FpgSummonRequest> SummonRequested;
 
@@ -123,6 +141,137 @@ namespace FPG.Demo.Run
 
             playerHitCommands[playerHitCommandCount++] = command;
             lastPlayerHitCommandSequence = command.CommandSequence;
+            return DomainResult.Success;
+        }
+
+        public DomainResult ValidatePlayerHitBatch(
+            RuntimeId sourceId,
+            TickIndex impactTick,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            long firstCommandSequence)
+        {
+            if (sourceId != player.RuntimeId)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            if (!impactTick.IsValid || candidates == null
+                || candidateCount < 0 || candidateCount > candidates.Length)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (currentTick.IsValid && impactTick < currentTick)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            if (candidateCount == 0)
+            {
+                return DomainResult.Success;
+            }
+
+            if (firstCommandSequence < 0
+                || firstCommandSequence > long.MaxValue - candidateCount
+                || playerHitCommandCount > playerHitCommands.Length - candidateCount)
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            if (firstCommandSequence <= lastPlayerHitCommandSequence)
+            {
+                return DomainResult.Rejected(
+                    firstCommandSequence == lastPlayerHitCommandSequence
+                        ? RejectReason.DuplicateSequence
+                        : RejectReason.ExpiredSequence);
+            }
+
+            for (int index = 0; index < candidateCount; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (!candidate.IsValid
+                    || (candidate.TargetKind != QueryTargetKind.Combatant
+                        && candidate.TargetKind != QueryTargetKind.Projectile)
+                    || !IsPlayerHitTargetLive(candidate.TargetId))
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidTarget);
+                }
+            }
+
+            return DomainResult.Success;
+        }
+
+        public DomainResult TrySubmitPlayerHits(
+            FpgPlayerHitCommand[] commands,
+            int commandCount)
+        {
+            if (commands == null || commandCount < 0 || commandCount > commands.Length)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (commandCount == 0)
+            {
+                return DomainResult.Success;
+            }
+
+            if (playerHitCommandCount > playerHitCommands.Length - commandCount)
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            long firstSequence = commands[0].CommandSequence;
+            if (firstSequence < 0 || firstSequence > long.MaxValue - commandCount
+                || firstSequence <= lastPlayerHitCommandSequence)
+            {
+                return DomainResult.Rejected(
+                    firstSequence == lastPlayerHitCommandSequence
+                        ? RejectReason.DuplicateSequence
+                        : firstSequence < lastPlayerHitCommandSequence
+                            ? RejectReason.ExpiredSequence
+                            : RejectReason.BufferCapacity);
+            }
+
+            TickIndex impactTick = commands[0].Intent.ImpactTick;
+            for (int index = 0; index < commandCount; index++)
+            {
+                FpgPlayerHitCommand command = commands[index];
+                if (command.CommandSequence != firstSequence + index
+                    || command.Intent.SourceId != player.RuntimeId
+                    || command.Intent.ImpactTick != impactTick)
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
+                if (currentTick.IsValid && command.Intent.ImpactTick < currentTick)
+                {
+                    return DomainResult.Rejected(RejectReason.WrongTick);
+                }
+
+                if (!IsPlayerHitTargetLive(command.Intent.TargetId))
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidTarget);
+                }
+
+                for (int prior = 0; prior < index; prior++)
+                {
+                    if (commands[prior].Intent.ImpactId == command.Intent.ImpactId)
+                    {
+                        return DomainResult.Rejected(RejectReason.DuplicateImpact);
+                    }
+                }
+            }
+
+            Array.Copy(
+                commands,
+                0,
+                playerHitCommands,
+                playerHitCommandCount,
+                commandCount);
+            playerHitCommandCount += commandCount;
+            lastPlayerHitCommandSequence =
+                commands[commandCount - 1].CommandSequence;
             return DomainResult.Success;
         }
 
@@ -224,6 +373,7 @@ namespace FPG.Demo.Run
                         result = ProcessImpactResolution(tick);
                         break;
                     case FpgBattleTickPhase.EncounterCompletion:
+                        combatKernel.ImpactLedger.Clear();
                         result = DomainResult.Success;
                         break;
                     default:
@@ -258,9 +408,58 @@ namespace FPG.Demo.Run
                 && runtime.ControlState == EnemyControlState.Active;
         }
 
+        bool IFpgAttackScheduleEligibility.CanProcessScheduledAttack(
+            FpgAttackScheduleRequest request,
+            int spawnSequence)
+        {
+            if (CanAttack(request.OwnerRuntimeId))
+            {
+                return true;
+            }
+
+            int ownerIndex = FindEnemy(request.OwnerRuntimeId);
+            if (ownerIndex < 0)
+            {
+                return false;
+            }
+
+            EnemyRuntime owner = enemies[ownerIndex].Runtime;
+            if (owner == null || owner.Combatant.IsDead)
+            {
+                return false;
+            }
+
+            int payloadIndex = FindScheduledPayload(request.ScheduleSequence);
+            if (payloadIndex < 0)
+            {
+                return false;
+            }
+
+            ScheduledPayload scheduled = scheduledPayloads[payloadIndex];
+            return scheduled.OwnerRuntimeId == request.OwnerRuntimeId
+                && scheduled.SpawnSequence == spawnSequence
+                && scheduled.IsCommittedSummon;
+        }
+
         public void ClearAll()
         {
             ClearState(preserveTrace: false);
+        }
+
+        public void ResetPresentationState(TickIndex tick)
+        {
+            if (!tick.IsValid)
+            {
+                return;
+            }
+
+            vitalsStream.Clear();
+            damageFeedbackStream.Clear();
+            PublishVitals(
+                player.Combatant,
+                tick,
+                FpgVitalsChangeReason.Restart,
+                force: true);
         }
 
         private DomainResult ProcessEnemyRecovery(FpgEnemyRoster roster, TickIndex tick)
@@ -271,7 +470,13 @@ namespace FPG.Demo.Run
                 return synchronized;
             }
 
-            player.Combatant.TryRestoreBarrier(tick);
+            if (player.Combatant.TryRestoreBarrier(tick))
+            {
+                PublishVitals(
+                    player.Combatant,
+                    tick,
+                    FpgVitalsChangeReason.BarrierRestore);
+            }
             for (int index = 0; index < enemies.Length; index++)
             {
                 EnemyRuntime runtime = enemies[index].Runtime;
@@ -371,6 +576,11 @@ namespace FPG.Demo.Run
                 ImpactId.Invalid,
                 registration.SpawnSequence,
                 registration.Life);
+            PublishVitals(
+                runtime.Combatant,
+                registration.ActivationTick,
+                FpgVitalsChangeReason.Spawn,
+                force: true);
             return DomainResult.Success;
         }
 
@@ -458,6 +668,10 @@ namespace FPG.Demo.Run
                 if (!runtimeDead)
                 {
                     binding.Runtime.Combatant.ForceDeath();
+                    PublishVitals(
+                        binding.Runtime.Combatant,
+                        tick,
+                        FpgVitalsChangeReason.Death);
                 }
 
                 DomainResult marked = MarkEnemyDead(ref binding, tick, RuntimeId.Invalid, AttackId.Invalid);
@@ -489,7 +703,11 @@ namespace FPG.Demo.Run
         {
             int attempts = 0;
             while (attempts++ < attackSchedule.Capacity
-                && attackSchedule.TryDequeueDue(tick, this, out FpgAttackScheduleRequest request, out int spawnSequence))
+                && attackSchedule.TryDequeueDueForSchedule(
+                    tick,
+                    (IFpgAttackScheduleEligibility)this,
+                    out FpgAttackScheduleRequest request,
+                    out int spawnSequence))
             {
                 int payloadIndex = FindScheduledPayload(request.ScheduleSequence);
                 if (payloadIndex < 0)
@@ -505,7 +723,13 @@ namespace FPG.Demo.Run
                 }
 
                 int ownerIndex = FindEnemy(request.OwnerRuntimeId);
-                if (ownerIndex < 0 || !CanAttack(request.OwnerRuntimeId))
+                EnemyRuntime owner = ownerIndex < 0
+                    ? null
+                    : enemies[ownerIndex].Runtime;
+                if (owner == null
+                    || owner.Combatant.IsDead
+                    || (!scheduled.IsCommittedSummon
+                        && !CanAttack(request.OwnerRuntimeId)))
                 {
                     return DomainResult.Rejected(RejectReason.InvalidTarget);
                 }
@@ -589,6 +813,11 @@ namespace FPG.Demo.Run
                 ImpactId.Invalid,
                 scheduled.SpawnSequence,
                 definition.DefinitionId);
+            PublishEnemyAttackStarted(
+                request,
+                scheduled.SpawnSequence,
+                scheduled.Payload.Kind,
+                tick);
             return DomainResult.Success;
         }
 
@@ -598,7 +827,42 @@ namespace FPG.Demo.Run
             int payloadIndex,
             TickIndex tick)
         {
-            FpgSummonRequest summonRequest = scheduled.Payload.Summon.Request;
+            FpgFormalSummonPayload summon = scheduled.Payload.Summon;
+            if (scheduled.PresentationStarted && summon.ReleaseDelayTicks <= 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            if (!scheduled.PresentationStarted && summon.ReleaseDelayTicks > 0)
+            {
+                if (!TryAddTicks(
+                        tick,
+                        summon.ReleaseDelayTicks,
+                        out TickIndex releaseTick))
+                {
+                    return DomainResult.Rejected(RejectReason.BufferCapacity);
+                }
+
+                DomainResult delayed = RescheduleAt(
+                    request,
+                    scheduled.SpawnSequence,
+                    releaseTick);
+                if (!delayed.IsSuccess)
+                {
+                    return delayed;
+                }
+
+                scheduledPayloads[payloadIndex] =
+                    scheduled.WithPresentationStarted();
+                PublishEnemyAttackStarted(
+                    request,
+                    scheduled.SpawnSequence,
+                    scheduled.Payload.Kind,
+                    tick);
+                return DomainResult.Success;
+            }
+
+            FpgSummonRequest summonRequest = summon.Request;
             FpgSummonQueueAck acknowledgement = summonRequestSink.TryQueueSummon(
                 summonRequest,
                 tick);
@@ -606,8 +870,20 @@ namespace FPG.Demo.Run
             {
                 case FpgSummonQueueDisposition.Queued:
                     scheduledPayloads[payloadIndex] = default(ScheduledPayload);
-                    SummonRequested?.Invoke(summonRequest);
-                    return DomainResult.Success;
+                    if (!scheduled.PresentationStarted)
+                    {
+                        PublishEnemyAttackStarted(
+                            request,
+                            scheduled.SpawnSequence,
+                            scheduled.Payload.Kind,
+                            tick);
+                    }
+
+                    PublishSummonRequested(summonRequest);
+                    return ApplySummonOwnerOutcome(
+                        summonRequest.OwnerRuntimeId,
+                        summon.OwnerOutcome,
+                        tick);
 
                 case FpgSummonQueueDisposition.RetryNextTick:
                     return RescheduleForNextTick(request, scheduled.SpawnSequence, tick);
@@ -625,18 +901,100 @@ namespace FPG.Demo.Run
                     return DomainResult.Rejected(RejectReason.InvariantFault);
             }
         }
+
+        private DomainResult ApplySummonOwnerOutcome(
+            RuntimeId ownerRuntimeId,
+            FpgSummonOwnerOutcome outcome,
+            TickIndex tick)
+        {
+            if (outcome == FpgSummonOwnerOutcome.RemainAlive)
+            {
+                return DomainResult.Success;
+            }
+
+            if (outcome != FpgSummonOwnerOutcome.DieAfterSuccessfulSummon)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            int ownerIndex = FindEnemy(ownerRuntimeId);
+            if (ownerIndex < 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            EnemyBinding binding = enemies[ownerIndex];
+            if (binding.Runtime == null || binding.Runtime.Combatant.IsDead)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            binding.Runtime.Combatant.ForceDeath();
+            PublishVitals(
+                binding.Runtime.Combatant,
+                tick,
+                FpgVitalsChangeReason.Death);
+            DomainResult marked = MarkEnemyDead(
+                ref binding,
+                tick,
+                RuntimeId.Invalid,
+                AttackId.Invalid);
+            if (!marked.IsSuccess)
+            {
+                return marked;
+            }
+
+            NotifyEnemyDied(
+                ref binding,
+                tick,
+                RuntimeId.Invalid,
+                AttackId.Invalid);
+            enemies[ownerIndex] = binding;
+            return DomainResult.Success;
+        }
+
         private DomainResult RescheduleForNextTick(
             FpgAttackScheduleRequest request,
             int spawnSequence,
             TickIndex tick)
         {
-            FpgAttackScheduleRequest retry = new FpgAttackScheduleRequest(
+            if (!TryAddTicks(tick, 1, out TickIndex retryTick))
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            return RescheduleAt(request, spawnSequence, retryTick);
+        }
+
+        private DomainResult RescheduleAt(
+            FpgAttackScheduleRequest request,
+            int spawnSequence,
+            TickIndex readyTick)
+        {
+            FpgAttackScheduleRequest rescheduled = new FpgAttackScheduleRequest(
                 request.OwnerRuntimeId,
-                tick + new TickDuration(1),
+                readyTick,
                 request.Priority,
                 request.ScheduleSequence,
                 request.AttackPatternId);
-            return attackSchedule.TrySchedule(retry, spawnSequence);
+            return attackSchedule.TrySchedule(rescheduled, spawnSequence);
+        }
+
+        private static bool TryAddTicks(
+            TickIndex start,
+            int duration,
+            out TickIndex result)
+        {
+            if (!start.IsValid
+                || duration < 0
+                || start.Value > long.MaxValue - duration)
+            {
+                result = TickIndex.Invalid;
+                return false;
+            }
+
+            result = new TickIndex(start.Value + duration);
+            return true;
         }
 
         private static bool IsRetryableAttackStart(DomainResult result)
@@ -1176,6 +1534,12 @@ namespace FPG.Demo.Run
                         0);
                 }
 
+                PublishVitals(
+                    binding.Runtime.Combatant,
+                    intent.ImpactTick,
+                    resolution.Death
+                        ? FpgVitalsChangeReason.Death
+                        : FpgVitalsChangeReason.Damage);
                 PublishHealthChanged(binding.Runtime, intent.ImpactTick, resolution);
                 if (resolution.Death)
                 {
@@ -1218,6 +1582,12 @@ namespace FPG.Demo.Run
                 }
 
                 RecordResolution(intent, resolution);
+                PublishVitals(
+                    player.Combatant,
+                    intent.ImpactTick,
+                    resolution.Death
+                        ? FpgVitalsChangeReason.Death
+                        : FpgVitalsChangeReason.Damage);
                 PublishHealthChanged(player.Combatant, intent.ImpactTick, resolution);
                 return DomainResult.Success;
             }
@@ -1277,6 +1647,30 @@ namespace FPG.Demo.Run
                 packet.Channel,
                 packet.AppliedBreakAmount,
                 resolution.PerfectRetract);
+            try
+            {
+                damageFeedbackStream.TryRecord(intent, resolution);
+            }
+            catch (Exception)
+            {
+                // Presentation feedback is diagnostic-only and cannot fail combat.
+            }
+        }
+
+        private void PublishVitals(
+            CombatantState combatant,
+            TickIndex tick,
+            FpgVitalsChangeReason reason,
+            bool force = false)
+        {
+            try
+            {
+                vitalsStream.TryPublish(combatant, tick, reason, force);
+            }
+            catch (Exception)
+            {
+                // Presentation state is recoverable from CombatantState.
+            }
         }
 
         private void PublishHealthChanged(
@@ -1285,7 +1679,7 @@ namespace FPG.Demo.Run
             ImpactResolution resolution)
         {
             CombatantState combatant = runtime.Combatant;
-            HealthChanged?.Invoke(new FpgCombatHealthChangedEvent(
+            PublishHealthChangedEvent(new FpgCombatHealthChangedEvent(
                 combatant.RuntimeId,
                 CombatantKind.Enemy,
                 tick,
@@ -1304,7 +1698,7 @@ namespace FPG.Demo.Run
             TickIndex tick,
             ImpactResolution resolution)
         {
-            HealthChanged?.Invoke(new FpgCombatHealthChangedEvent(
+            PublishHealthChangedEvent(new FpgCombatHealthChangedEvent(
                 combatant.RuntimeId,
                 combatant.Kind,
                 tick,
@@ -1316,6 +1710,102 @@ namespace FPG.Demo.Run
                 resolution.BreakTriggered,
                 false,
                 combatant.IsDead));
+        }
+
+        private void PublishEnemyAttackStarted(
+            FpgAttackScheduleRequest request,
+            int spawnSequence,
+            FpgEnemyAttackPayloadKind payloadKind,
+            TickIndex tick)
+        {
+            Action<FpgEnemyAttackStartedEvent> callbacks = EnemyAttackStarted;
+            if (callbacks == null)
+            {
+                return;
+            }
+
+            FpgEnemyAttackStartedEvent started;
+            try
+            {
+                started = new FpgEnemyAttackStartedEvent(
+                    request.OwnerRuntimeId,
+                    spawnSequence,
+                    request.AttackPatternId,
+                    tick,
+                    request.ScheduleSequence,
+                    payloadKind);
+            }
+            catch (Exception)
+            {
+                IncrementPresentationCallbackFaultCount();
+                return;
+            }
+
+            Delegate[] subscribers = callbacks.GetInvocationList();
+            for (int index = 0; index < subscribers.Length; index++)
+            {
+                try
+                {
+                    ((Action<FpgEnemyAttackStartedEvent>)subscribers[index])(
+                        started);
+                }
+                catch (Exception)
+                {
+                    IncrementPresentationCallbackFaultCount();
+                }
+            }
+        }
+
+        private void PublishSummonRequested(FpgSummonRequest request)
+        {
+            Action<FpgSummonRequest> callbacks = SummonRequested;
+            if (callbacks == null)
+            {
+                return;
+            }
+
+            Delegate[] subscribers = callbacks.GetInvocationList();
+            for (int index = 0; index < subscribers.Length; index++)
+            {
+                try
+                {
+                    ((Action<FpgSummonRequest>)subscribers[index])(request);
+                }
+                catch (Exception)
+                {
+                    IncrementPresentationCallbackFaultCount();
+                }
+            }
+        }
+
+        private void PublishHealthChangedEvent(FpgCombatHealthChangedEvent changed)
+        {
+            Action<FpgCombatHealthChangedEvent> callbacks = HealthChanged;
+            if (callbacks == null)
+            {
+                return;
+            }
+
+            Delegate[] subscribers = callbacks.GetInvocationList();
+            for (int index = 0; index < subscribers.Length; index++)
+            {
+                try
+                {
+                    ((Action<FpgCombatHealthChangedEvent>)subscribers[index])(changed);
+                }
+                catch (Exception)
+                {
+                    IncrementPresentationCallbackFaultCount();
+                }
+            }
+        }
+
+        private void IncrementPresentationCallbackFaultCount()
+        {
+            if (PresentationCallbackFaultCount < int.MaxValue)
+            {
+                PresentationCallbackFaultCount++;
+            }
         }
 
         private DomainResult MarkEnemyDead(
@@ -1519,10 +2009,14 @@ namespace FPG.Demo.Run
                 combatKernel.Trace.Reset();
             }
 
+            vitalsStream.Clear();
+            damageFeedbackStream.Clear();
+
             enemyCount = 0;
             playerHitCommandCount = 0;
             lastPlayerHitCommandSequence = -1L;
             currentTick = TickIndex.Invalid;
+            PresentationCallbackFaultCount = 0;
         }
 
         private int FindEnemy(RuntimeId runtimeId)
@@ -1758,11 +2252,27 @@ namespace FPG.Demo.Run
         private readonly struct ScheduledPayload
         {
             public ScheduledPayload(FpgEnemyAttackCommand command)
+                : this(
+                    command.Schedule.OwnerRuntimeId,
+                    command.Schedule.ScheduleSequence,
+                    command.SpawnSequence,
+                    command.Payload,
+                    false)
             {
-                OwnerRuntimeId = command.Schedule.OwnerRuntimeId;
-                ScheduleSequence = command.Schedule.ScheduleSequence;
-                SpawnSequence = command.SpawnSequence;
-                Payload = command.Payload;
+            }
+
+            private ScheduledPayload(
+                RuntimeId ownerRuntimeId,
+                long scheduleSequence,
+                int spawnSequence,
+                FpgEnemyAttackPayload payload,
+                bool presentationStarted)
+            {
+                OwnerRuntimeId = ownerRuntimeId;
+                ScheduleSequence = scheduleSequence;
+                SpawnSequence = spawnSequence;
+                Payload = payload;
+                PresentationStarted = presentationStarted;
                 IsUsed = true;
             }
 
@@ -1770,7 +2280,24 @@ namespace FPG.Demo.Run
             public long ScheduleSequence { get; }
             public int SpawnSequence { get; }
             public FpgEnemyAttackPayload Payload { get; }
+            public bool PresentationStarted { get; }
             public bool IsUsed { get; }
+
+            public bool IsCommittedSummon =>
+                IsUsed
+                && PresentationStarted
+                && Payload.Kind == FpgEnemyAttackPayloadKind.Summon
+                && Payload.Summon.ReleaseDelayTicks > 0;
+
+            public ScheduledPayload WithPresentationStarted()
+            {
+                return new ScheduledPayload(
+                    OwnerRuntimeId,
+                    ScheduleSequence,
+                    SpawnSequence,
+                    Payload,
+                    true);
+            }
         }
 
         private struct ProjectileBinding

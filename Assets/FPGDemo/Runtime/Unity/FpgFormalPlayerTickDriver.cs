@@ -47,6 +47,8 @@ namespace FPG.Demo.Unity
             new QueryCandidate[TargetSelector.DefaultCandidateCapacity];
         private readonly QueryCandidate[] selectedCandidates =
             new QueryCandidate[TargetSelector.DefaultCandidateCapacity];
+        private readonly FpgPlayerHitCommand[] playerHitBatch =
+            new FpgPlayerHitCommand[TargetSelector.DefaultCandidateCapacity];
         private readonly WeaponReleaseBuffer weaponRelease = new WeaponReleaseBuffer();
         private readonly ProjectWideBattleInputAdapter projectWideBattleInputAdapter =
             new ProjectWideBattleInputAdapter();
@@ -60,8 +62,10 @@ namespace FPG.Demo.Unity
         private TickIndex lastProcessedTick = TickIndex.Invalid;
         private long nextCommandSequence;
         private RejectReason captureFault = RejectReason.None;
+        private FpgFormalAimSolution aimSolution = FpgFormalAimSolution.Idle;
         private bool playerConfigured;
         private bool runtimeObserved;
+        private bool roomInteractionArmed;
 
         public FpgRoomEncounterDirector EncounterDirector => encounterDirector;
         public Transform AimAnchor => aimAnchor;
@@ -76,6 +80,9 @@ namespace FPG.Demo.Unity
         public bool HasCaptureFault => playerConfigured
             && captureFault != RejectReason.None;
         public TickIndex LastProcessedTick => lastProcessedTick;
+        public FpgFormalAimSolution AimSolution => aimSolution;
+        public int AimPreviewFaultCount { get; private set; }
+        public int AimPresentationFaultCount { get; private set; }
         public FpgFormalPlayerPresentationSource PresentationSource =>
             presentationSource;
 
@@ -109,7 +116,9 @@ namespace FPG.Demo.Unity
             {
                 if (!projectWideBattleInputAdapter.TryCapture(inputSource))
                 {
-                    inputSource.CaptureFromDevices();
+                    inputSource.ClearGameplayInput();
+                    captureFault = RejectReason.InvalidState;
+                    return;
                 }
             }
 
@@ -174,6 +183,7 @@ namespace FPG.Demo.Unity
             D0CharacterDefinition definition,
             D0PlayerEntityView entity,
             D0ThreeCProfile profile,
+            UnityAttackQuerySettings querySettings,
             out string error)
         {
             if (playerConfigured || runtimeObserved)
@@ -182,7 +192,8 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (definition == null || entity == null || profile == null)
+            if (definition == null || entity == null || profile == null
+                || !querySettings.IsValid)
             {
                 error = "Formal player tick driver requires a definition, scene entity and 3C profile.";
                 return false;
@@ -213,6 +224,8 @@ namespace FPG.Demo.Unity
             aimAnchor = entity.AimAnchor;
             playerRoot = entity.transform;
             aimDistance = profile.MaximumAimDistance;
+            aimLayerMask = querySettings.HitboxLayerMask
+                | querySettings.BlockerLayerMask;
             inputBufferTicks = profile.InputBufferTicks;
             playerConfigured = true;
             ResetRuntimeState();
@@ -303,6 +316,7 @@ if (aimViewportSource != null
             if (!aimFromPointerPosition || aimCamera == null)
             {
                 inputSource.CaptureAimPose(aimAnchor);
+                UpdateAimSolution(aimAnchor.position, aimAnchor.forward);
                 return;
             }
 
@@ -361,6 +375,67 @@ if (aimViewportSource != null
                 aimAnchor.position,
                 aimDirection,
                 aimCamera.transform.up);
+            UpdateAimSolution(aimAnchor.position, aimDirection);
+        }
+
+        private void UpdateAimSolution(Vector3 origin, Vector3 direction)
+        {
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            if (runtime == null || runtime.IsDisposed
+                || runtime.AttackQueryPort == null)
+            {
+                SetAimSolution(FpgFormalAimSolution.Idle);
+                return;
+            }
+
+            DomainResult solved = runtime.AttackQueryPort.SolveAim(
+                origin,
+                direction,
+                runtime.Player.RuntimeId,
+                Team.Player,
+                runtime.Player.Weapon.Definition.PrimaryAllowedTargetKinds,
+                out FpgFormalAimSolution next);
+            if (!solved.IsSuccess)
+            {
+                AimPreviewFaultCount++;
+                next = FpgFormalAimSolution.Idle;
+            }
+
+            SetAimSolution(next);
+        }
+
+        private void SetAimSolution(in FpgFormalAimSolution next)
+        {
+            aimSolution = next;
+            if (!(aimViewportSource is CombatAimReticle reticle))
+            {
+                return;
+            }
+
+            FpgReticleTargetState state;
+            switch (next.Kind)
+            {
+                case FpgAimSolutionKind.Hittable:
+                    state = FpgReticleTargetState.Hittable;
+                    break;
+                case FpgAimSolutionKind.Blocked:
+                    state = FpgReticleTargetState.Blocked;
+                    break;
+                default:
+                    state = FpgReticleTargetState.Idle;
+                    break;
+            }
+
+            try
+            {
+                reticle.SetTargetState(state);
+            }
+            catch (Exception)
+            {
+                AimPresentationFaultCount++;
+            }
         }
 
         public void Capture(UnityInputSnapshot snapshot)
@@ -386,6 +461,17 @@ if (aimViewportSource != null
         public bool ConsumeRestartPressed()
         {
             return inputSource != null && inputSource.ConsumeRestartPressed();
+        }
+
+        public void BeginRoomInteraction()
+        {
+            roomInteractionArmed = inputSource == null
+                || !inputSource.PrimaryHeld && !inputSource.SecondaryHeld;
+            bool cancelSecondary =
+                encounterDirector?.CombatRuntime?.Player?.Weapon?.State
+                    == WeaponState.AltCharging;
+            weaponRelease.Reset();
+            inputSource?.BeginRoomInteraction(cancelSecondary);
         }
 
         public DomainResult ProcessPlayerTick(
@@ -431,7 +517,9 @@ if (aimViewportSource != null
             }
 
             ulong playerSeed = runtime.RunContext.DeriveSeed(PlayerAttackRandomDomain);
-            DomainResult weapon = runtime.Player.Weapon.ProcessFrame(
+            WeaponRuntimeSnapshot weaponSnapshot =
+                runtime.Player.Weapon.CaptureRoomSnapshot();
+            DomainResult weapon = runtime.Player.Weapon.PrepareFrame(
                 frame,
                 runtime.Player.Exposure,
                 runtime.Player.RuntimeId,
@@ -448,8 +536,112 @@ if (aimViewportSource != null
                 DomainResult submitted = QueryAndSubmitHits(runtime, tickInput, tick);
                 if (!submitted.IsSuccess)
                 {
+                    if (!weaponRelease.IsCommitted)
+                    {
+                        DomainResult restored =
+                            runtime.Player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
+                        weaponRelease.Reset();
+                        if (!restored.IsSuccess)
+                        {
+                            return DomainResult.Rejected(RejectReason.InvariantFault);
+                        }
+                    }
+
                     PublishSnapshot(runtime, tick);
                     return submitted;
+                }
+            }
+
+            PublishCommittedActions(
+                tick,
+                stateAtTickStart,
+                runtime.Player.Weapon.State,
+                ammoAtTickStart,
+                runtime.Player.Weapon.Magazine.Ammo);
+            lastProcessedTick = tick;
+            PublishSnapshot(runtime, tick);
+            return DomainResult.Success;
+        }
+
+        public DomainResult ProcessRoomInteractionTick(
+            TickIndex tick,
+            FpgFormalCombatRuntimeBundle runtime)
+        {
+            if (!playerConfigured || !tick.IsValid || runtime == null
+                || runtime.IsDisposed || inputSource == null
+                || captureFault != RejectReason.None)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (lastProcessedTick.IsValid
+                && tick.Value != lastProcessedTick.Value + 1L)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            WeaponState stateAtTickStart = runtime.Player.Weapon.State;
+            int ammoAtTickStart = runtime.Player.Weapon.Magazine.Ammo;
+            if (runtime.Player.Combatant.IsDead)
+            {
+                lastProcessedTick = tick;
+                PublishSnapshot(runtime, tick);
+                return DomainResult.Success;
+            }
+
+            runtime.Player.Combatant.TryRestoreBarrier(tick);
+            BattleTickInput tickInput = inputSource.GetTickInput(tick);
+            if (!tickInput.IsValid || tickInput.Tick != tick)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            PlayerInputFrame capturedFrame =
+                tickInput.CopyToPlayerInputFrame(edgeBuffer);
+            PlayerInputFrame frame =
+                FilterRoomInteractionFrame(capturedFrame, tick);
+            DomainResult posture = ApplyPosture(runtime.Player, frame, tick);
+            if (!posture.IsSuccess
+                && posture.RejectReason != RejectReason.BarrierLocked)
+            {
+                return posture;
+            }
+
+            ulong playerSeed = runtime.RunContext.DeriveSeed(
+                PlayerAttackRandomDomain);
+            WeaponRuntimeSnapshot weaponSnapshot =
+                runtime.Player.Weapon.CaptureRoomSnapshot();
+            DomainResult weapon = runtime.Player.Weapon.PrepareFrame(
+                frame,
+                runtime.Player.Exposure,
+                runtime.Player.RuntimeId,
+                runtime.IdAllocator,
+                playerSeed,
+                weaponRelease);
+            if (!weapon.IsSuccess)
+            {
+                return weapon;
+            }
+
+            if (weaponRelease.HasRelease)
+            {
+                DomainResult committed = QueryAndCommitRoomInteraction(
+                    runtime,
+                    tickInput,
+                    tick);
+                if (!committed.IsSuccess)
+                {
+                    if (!weaponRelease.IsCommitted)
+                    {
+                        DomainResult restored =
+                            runtime.Player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
+                        weaponRelease.Reset();
+                        if (!restored.IsSuccess)
+                        {
+                            return DomainResult.Rejected(RejectReason.InvariantFault);
+                        }
+                    }
+                    return committed;
                 }
             }
 
@@ -501,9 +693,44 @@ if (aimViewportSource != null
             threeCProfile = null;
             aimAnchor = null;
             playerRoot = null;
+            SetAimSolution(FpgFormalAimSolution.Idle);
             playerConfigured = false;
             inputSource = null;
             presentationSource.Clear();
+        }
+
+        private PlayerInputFrame FilterRoomInteractionFrame(
+            PlayerInputFrame captured,
+            TickIndex tick)
+        {
+            if (roomInteractionArmed)
+            {
+                return captured;
+            }
+
+            int retainedCount = 0;
+            for (int index = 0; index < captured.EdgeCommandCount; index++)
+            {
+                InputEdgeCommand edge = captured.EdgeCommands[index];
+                if (edge.Type == InputEdgeType.ReloadPressed)
+                {
+                    edgeBuffer[retainedCount++] = edge;
+                }
+            }
+
+            if (!captured.PrimaryHeld && !captured.SecondaryHeld)
+            {
+                roomInteractionArmed = true;
+            }
+
+            return new PlayerInputFrame(
+                tick,
+                captured.AimHeld,
+                false,
+                retainedCount == 0 ? null : edgeBuffer,
+                retainedCount,
+                cancelSecondary: true,
+                secondaryHeld: false);
         }
 
         private DomainResult QueryAndSubmitHits(
@@ -513,6 +740,7 @@ if (aimViewportSource != null
         {
             Array.Clear(queryCandidates, 0, queryCandidates.Length);
             Array.Clear(selectedCandidates, 0, selectedCandidates.Length);
+            Array.Clear(playerHitBatch, 0, playerHitBatch.Length);
 
             AttackQueryRequest request;
             try
@@ -548,32 +776,21 @@ if (aimViewportSource != null
                 return selected;
             }
 
-            if (selectedCount > 0 && nextCommandSequence > long.MaxValue - selectedCount)
+            DomainResult preflight = runtime.CombatPort.ValidatePlayerHitBatch(
+                runtime.Player.RuntimeId,
+                tick,
+                selectedCandidates,
+                selectedCount,
+                nextCommandSequence);
+            if (!preflight.IsSuccess)
             {
-                return DomainResult.Rejected(RejectReason.BufferCapacity);
+                return preflight;
             }
 
             for (int index = 0; index < selectedCount; index++)
             {
                 QueryCandidate candidate = selectedCandidates[index];
                 bool projectile = candidate.TargetKind == QueryTargetKind.Projectile;
-                if (projectile)
-                {
-                    if (!runtime.CombatPort.TryGetProjectile(
-                            candidate.TargetId,
-                            out ProjectileRuntime ignoredProjectile))
-                    {
-                        return DomainResult.Rejected(RejectReason.InvalidTarget);
-                    }
-                }
-                else if (candidate.TargetKind != QueryTargetKind.Combatant
-                    || !runtime.CombatPort.TryGetEnemyRuntime(
-                        candidate.TargetId,
-                        out EnemyRuntime ignoredEnemy))
-                {
-                    return DomainResult.Rejected(RejectReason.InvalidTarget);
-                }
-
                 ImpactIntent intent = new ImpactIntent(
                     runtime.IdAllocator.NextImpactId(),
                     weaponRelease.Attack.AttackId,
@@ -594,18 +811,98 @@ if (aimViewportSource != null
                     weaponRelease.Kind == WeaponReleaseKind.Primary
                         ? candidate.SampleIndex
                         : -1,
-                    index);
+                    index,
+                    new ImpactSpatialContext(
+                        candidate.ImpactPointKey,
+                        candidate.GeometryId,
+                        candidate.TargetKind,
+                        candidate.HitPart));
                 ImpactPhasePriority priority = projectile
                     ? ImpactPhasePriority.PlayerProjectileIntercept
                     : ImpactPhasePriority.PlayerCombatantHit;
-                DomainResult submitted = runtime.CombatPort.TrySubmitPlayerHit(
-                    new FpgPlayerHitCommand(nextCommandSequence, intent, priority));
-                if (!submitted.IsSuccess)
-                {
-                    return submitted;
-                }
+                playerHitBatch[index] = new FpgPlayerHitCommand(
+                    nextCommandSequence + index,
+                    intent,
+                    priority);
+            }
 
-                nextCommandSequence++;
+            DomainResult committed = runtime.Player.Weapon.CommitPreparedRelease(
+                weaponRelease,
+                runtime.IdAllocator);
+            if (!committed.IsSuccess)
+            {
+                return committed;
+            }
+
+            DomainResult submittedBatch = runtime.CombatPort.TrySubmitPlayerHits(
+                playerHitBatch,
+                selectedCount);
+            if (!submittedBatch.IsSuccess)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            nextCommandSequence += selectedCount;
+            return DomainResult.Success;
+        }
+
+        private DomainResult QueryAndCommitRoomInteraction(
+            FpgFormalCombatRuntimeBundle runtime,
+            BattleTickInput tickInput,
+            TickIndex tick)
+        {
+            Array.Clear(queryCandidates, 0, queryCandidates.Length);
+            AttackQueryRequest request;
+            try
+            {
+                request = new AttackQueryRequest(
+                    tickInput,
+                    weaponRelease.Attack,
+                    weaponRelease.Pellets,
+                    weaponRelease.PelletCount);
+            }
+            catch (Exception)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            DomainResult query = runtime.AttackQueryPort.Query(
+                request,
+                queryCandidates,
+                out AttackQueryResult result);
+            if (!query.IsSuccess)
+            {
+                return query;
+            }
+
+            if (result.DroppedCandidateCount > 0)
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            GeometryId exitGeometryId = GeometryId.Invalid;
+            if (encounterDirector != null)
+            {
+                encounterDirector.ExitAttackRegistry.TryFindFirstVisibleExit(
+                    queryCandidates,
+                    result.CandidateCount,
+                    out exitGeometryId);
+            }
+
+            DomainResult committed =
+                runtime.Player.Weapon.CommitPreparedRelease(
+                    weaponRelease,
+                    runtime.IdAllocator);
+            if (!committed.IsSuccess)
+            {
+                return committed;
+            }
+
+            if (exitGeometryId.IsValid
+                && (encounterDirector == null
+                    || !encounterDirector.TrySelectExit(exitGeometryId, out _)))
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
             return DomainResult.Success;
@@ -777,16 +1074,22 @@ if (aimViewportSource != null
             Array.Clear(edgeBuffer, 0, edgeBuffer.Length);
             Array.Clear(queryCandidates, 0, queryCandidates.Length);
             Array.Clear(selectedCandidates, 0, selectedCandidates.Length);
+            Array.Clear(playerHitBatch, 0, playerHitBatch.Length);
             weaponRelease.Reset();
             lastProcessedTick = TickIndex.Invalid;
             nextCommandSequence = 0L;
             captureFault = RejectReason.None;
+            AimPreviewFaultCount = 0;
+            AimPresentationFaultCount = 0;
+            aimSolution = FpgFormalAimSolution.Idle;
             presentationSource.Clear();
+            roomInteractionArmed = false;
             cameraFeedback?.ResetRuntimeFeedback();
             if (aimViewportSource is CombatAimReticle reticle)
             {
                 reticle.SetInputFrozen(false);
                 reticle.ResetToCenter();
+                reticle.ResetFeedback();
             }
             ResetInputSource();
         }
@@ -836,15 +1139,8 @@ if (aimViewportSource != null
         private void OnDisable()
         {
             inputSource?.ClearGameplayInput();
+            SetAimSolution(FpgFormalAimSolution.Idle);
             SetAimViewportFrozen(false);
         }
     }
 }
-
-
-
-
-
-
-
-

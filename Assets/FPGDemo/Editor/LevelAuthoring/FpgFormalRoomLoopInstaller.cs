@@ -16,6 +16,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string FormalRoomScenePath = "Assets/FPGDemo/Scenes/FormalRoom.unity";
         private const string RoomPath = "Assets/FPGDemo/Config/Level/Rooms/Room_combatlab-forest.asset";
         private const string ConfigPath = "Assets/FPGDemo/Config/GameBootstrapConfig.asset";
+        private const string RoomCatalogPath =
+            "Assets/FPGDemo/Config/Level/FPG_RoomCatalog.asset";
+        private const string ExitRoomRefreshRulePath =
+            "Assets/FPGDemo/Config/Level/FPG_ExitRoomRefreshRule.asset";
         private const string PlayableCharacterCatalogPath =
             "Assets/FPGDemo/Config/FormalEncounter/FPG_PlayableCharacterCatalog.asset";
         private const string FeiCharacterPath =
@@ -33,6 +37,16 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string PresentationRoot = "Assets/FPGDemo/Presentation/FormalEncounter";
         private const string ExitPrefabPath = PresentationRoot + "/PF_FPG_RoomExit.prefab";
         private const string HealthBarPrefabPath = PresentationRoot + "/PF_FPG_OverheadHealthBar.prefab";
+        private const string DamagePopupPrefabPath =
+            PresentationRoot + "/PF_FPG_DamagePopup.prefab";
+        private const string HitTipArtRoot = "Assets/Art/HUD/Hit_tip";
+        private const string HitTipNormalDigits = HitTipArtRoot + "/zi_normal";
+        private const string HitTipCriticalDigits = HitTipArtRoot + "/zi_critcal";
+        private const string HitTipElementalDigits = HitTipArtRoot + "/zi_elemental";
+        private const string HitTipNormalBackground =
+            HitTipArtRoot + "/di_nomal&critical.png";
+        private const string HitTipElementalBackground =
+            HitTipArtRoot + "/di_elemental.png";
         private const string MaterialRoot = PresentationRoot + "/Materials";
         private const string BootMaterialPath = MaterialRoot + "/M_FPG_BootEntrance.mat";
         private const string FrameMaterialPath = MaterialRoot + "/M_FPG_BootFrame.mat";
@@ -42,6 +56,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const int HitboxLayer = 29;
         private const int BlockerMask = 1 << BlockerLayer;
         private const int HitboxMask = 1 << HitboxLayer;
+        private const int DamagePopupDigitCapacity = 10;
         private const string InstallationMarkerName = "__FormalFirst_v2";
 
         [MenuItem("FPG Demo/Formal Encounter/Install Boot Formal Room Loop", priority = 131)]
@@ -59,11 +74,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 EnsureFolder(PresentationRoot);
                 EnsureFolder(MaterialRoot);
                 FpgFormalEncounterDefaultsInstaller.Install();
+                EnsureFormalPresentationProfileSerialized();
 
                 FpgRoomDefinition room = LoadRequired<FpgRoomDefinition>(RoomPath);
                 ConfigureRoom(room);
                 AssetDatabase.SaveAssets();
                 room = LoadRequired<FpgRoomDefinition>(RoomPath);
+                FpgExitRoomRefreshRule exitRoomRefreshRule =
+                    EnsureExitRoomRefreshRule(room);
 
 
                 Material bootMaterial = EnsureMaterial(
@@ -78,15 +96,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
                 GameObject exitPrefab = CreateExitPrefab(exitMaterial);
                 FpgOverheadHealthBarView healthBarPrefab = CreateHealthBarPrefab();
+                FpgDamagePopupView damagePopupPrefab =
+                    CreateDamagePopupPrefab();
                 FpgPlayableCharacterCatalog playableCharacterCatalog =
                     EnsurePlayableCharacterCatalog();
-                ConfigureBootstrapConfig();
+                ConfigureBootstrapConfig(exitRoomRefreshRule);
                 if (!HasCurrentSceneInstallation(playableCharacterCatalog))
                 {
                     BuildFormalRoomScene(
                         room,
                         exitPrefab,
                         healthBarPrefab,
+                        damagePopupPrefab,
                         playableCharacterCatalog);
                     ConfigureBootScene(
                         room,
@@ -102,6 +123,129 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 Debug.Log(
                     "[FPG Formal Room] Boot shot entrance, L1_01 formal encounter, "
                     + "room-clear exit unlock and build settings are installed.");
+            }
+            finally
+            {
+                if (previousSetup != null && previousSetup.Length > 0)
+                {
+                    EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
+                }
+            }
+        }
+
+        [MenuItem("FPG Demo/Formal Encounter/Refresh Formal HUD Assets", priority = 132)]
+        public static void RefreshFormalHudAssets()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Formal HUD refresh requires Edit Mode.");
+            }
+
+            EnsureNoDirtyScenes();
+            SceneSetup[] previousSetup =
+                EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                EnsureFolder(PresentationRoot);
+                EnsureFormalPresentationProfileSerialized();
+                FpgOverheadHealthBarView healthBarPrefab =
+                    CreateHealthBarPrefab();
+                FpgDamagePopupView damagePopupPrefab =
+                    CreateDamagePopupPrefab();
+                RefreshFormalRoomHudScene(
+                    healthBarPrefab,
+                    damagePopupPrefab);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                Debug.Log(
+                    "[FPG Formal Room] RectTransform HUD bars and Sprite damage popups refreshed.");
+            }
+            finally
+            {
+                if (previousSetup != null && previousSetup.Length > 0)
+                {
+                    EditorSceneManager.RestoreSceneManagerSetup(previousSetup);
+                }
+            }
+        }
+
+        [MenuItem(
+            "FPG Demo/Formal Encounter/Refresh Exit Room Flow Assets",
+            priority = 133)]
+        public static void RefreshExitRoomFlowAssets()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Exit room flow refresh requires Edit Mode.");
+            }
+
+            EnsureNoDirtyScenes();
+            SceneSetup[] previousSetup = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                EnsureFolder(PresentationRoot);
+                EnsureFolder(MaterialRoot);
+                FpgRoomDefinition room =
+                    LoadRequired<FpgRoomDefinition>(RoomPath);
+                FpgExitRoomRefreshRule rule =
+                    EnsureExitRoomRefreshRule(room);
+                Material exitMaterial = EnsureMaterial(
+                    ExitMaterialPath,
+                    new Color(0.9f, 0.15f, 0.1f, 1f));
+                GameObject exitPrefab = CreateExitPrefab(exitMaterial);
+
+                GameBootstrapConfig bootstrapConfig =
+                    LoadRequired<GameBootstrapConfig>(ConfigPath);
+                SerializedObject configData =
+                    new SerializedObject(bootstrapConfig);
+                SetObject(configData, "exitRoomRefreshRule", rule);
+                configData.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(bootstrapConfig);
+                AssetDatabase.SaveAssets();
+                exitPrefab = LoadRequired<GameObject>(ExitPrefabPath);
+                bool ruleValid =
+                    rule.TryValidate(out string ruleError);
+                bool prefabValid =
+                    TryValidateExitPrefab(exitPrefab, out string prefabError);
+                if (!ruleValid || !prefabValid)
+                {
+                    throw new InvalidOperationException(
+                        !string.IsNullOrWhiteSpace(ruleError)
+                            ? ruleError
+                            : prefabError);
+                }
+
+                Scene formalScene = EditorSceneManager.OpenScene(
+                    FormalRoomScenePath,
+                    OpenSceneMode.Single);
+                FpgRoomEncounterDirector director =
+                    FindSingleSceneComponent<FpgRoomEncounterDirector>(
+                        formalScene);
+                HitboxRegistry registry =
+                    FindSingleSceneComponent<HitboxRegistry>(formalScene);
+                SerializedObject directorData = new SerializedObject(director);
+                SetObject(directorData, "exitHitboxRegistry", registry);
+                directorData.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(director);
+                EditorSceneManager.MarkSceneDirty(formalScene);
+                EditorSceneManager.SaveScene(formalScene);
+
+                if (GetSerializedReference<HitboxRegistry>(
+                        director,
+                        "exitHitboxRegistry") != registry
+                    || bootstrapConfig.ExitRoomRefreshRule != rule)
+                {
+                    throw new InvalidOperationException(
+                        "Exit room flow references are incomplete.");
+                }
+
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                Debug.Log(
+                    "[FPG Formal Room] Exit catalog, refresh rule, prefab "
+                    + "and FormalRoom bindings are refreshed.");
             }
             finally
             {
@@ -189,6 +333,95 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Required(marker, "role").intValue = 0;
         }
 
+        private static FpgExitRoomRefreshRule EnsureExitRoomRefreshRule(
+            FpgRoomDefinition room)
+        {
+            if (room == null)
+            {
+                throw new ArgumentNullException(nameof(room));
+            }
+
+            EnsureFolder("Assets/FPGDemo/Config/Level");
+            FpgRoomCatalog catalog =
+                AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(RoomCatalogPath);
+            if (catalog == null)
+            {
+                catalog = ScriptableObject.CreateInstance<FpgRoomCatalog>();
+                AssetDatabase.CreateAsset(catalog, RoomCatalogPath);
+            }
+
+            EnsureCatalogContainsRoom(catalog, room);
+            if (!catalog.TryValidate(out string catalogError))
+            {
+                throw new InvalidOperationException(catalogError);
+            }
+
+            FpgExitRoomRefreshRule rule =
+                AssetDatabase.LoadAssetAtPath<FpgExitRoomRefreshRule>(
+                    ExitRoomRefreshRulePath);
+            if (rule == null)
+            {
+                rule = ScriptableObject.CreateInstance<FpgExitRoomRefreshRule>();
+                AssetDatabase.CreateAsset(rule, ExitRoomRefreshRulePath);
+            }
+
+            SerializedObject ruleData = new SerializedObject(rule);
+            SetObject(ruleData, "roomCatalog", catalog);
+            ruleData.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(rule);
+            if (!rule.TryValidate(out string ruleError))
+            {
+                throw new InvalidOperationException(ruleError);
+            }
+
+            AssetDatabase.SaveAssetIfDirty(catalog);
+            AssetDatabase.SaveAssetIfDirty(rule);
+            return rule;
+        }
+
+        private static void EnsureCatalogContainsRoom(
+            FpgRoomCatalog catalog,
+            FpgRoomDefinition room)
+        {
+            if (ContainsRoom(catalog, room))
+            {
+                return;
+            }
+
+            UnityEngine.Object[] entries =
+                new UnityEngine.Object[catalog.Count + 1];
+            for (int index = 0; index < catalog.Count; index++)
+            {
+                entries[index] = catalog.Rooms[index];
+            }
+
+            entries[entries.Length - 1] = room;
+            SerializedObject catalogData = new SerializedObject(catalog);
+            SetObjectArray(catalogData, "rooms", entries);
+            catalogData.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(catalog);
+        }
+
+        private static bool ContainsRoom(
+            FpgRoomCatalog catalog,
+            FpgRoomDefinition room)
+        {
+            if (catalog == null || room == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < catalog.Rooms.Count; index++)
+            {
+                if (catalog.Rooms[index] == room)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static FpgPlayableCharacterCatalog EnsurePlayableCharacterCatalog()
         {
             D0CharacterDefinition feiCharacter =
@@ -238,9 +471,135 @@ namespace FPG.Demo.Editor.LevelAuthoring
             return catalog;
         }
 
+        private static CombatPresentationProfile
+            EnsureFormalPresentationProfileSerialized()
+        {
+            CombatPresentationProfile profile =
+                LoadRequired<CombatPresentationProfile>(
+                    CombatPresentationProfilePath);
+            SerializedObject data = new SerializedObject(profile);
+            data.Update();
+            Required(data, "formalHudResources");
+            SerializedProperty damagePopup =
+                Required(data, "formalDamagePopup");
+            EnsureDamagePopupSpriteStyles(damagePopup);
+            Required(data, "formalReticle");
+            data.ApplyModifiedPropertiesWithoutUndo();
+
+            if (!profile.TryValidateStatic(out string error))
+            {
+                throw new InvalidOperationException(
+                    "Formal combat presentation profile is invalid: " + error);
+            }
+
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssetIfDirty(profile);
+            return profile;
+        }
+
+        private static void EnsureDamagePopupSpriteStyles(
+            SerializedProperty damagePopup)
+        {
+            SerializedProperty styles = Required(damagePopup, "spriteStyles");
+            if (HasCompleteDamagePopupSpriteStyles(styles))
+            {
+                return;
+            }
+
+            styles.arraySize = 3;
+            ConfigureDamagePopupSpriteStyle(
+                styles.GetArrayElementAtIndex(0),
+                CombatHitPresentationKind.Body,
+                HitTipNormalBackground,
+                HitTipNormalDigits);
+            ConfigureDamagePopupSpriteStyle(
+                styles.GetArrayElementAtIndex(1),
+                CombatHitPresentationKind.Weakpoint,
+                HitTipNormalBackground,
+                HitTipCriticalDigits);
+            ConfigureDamagePopupSpriteStyle(
+                styles.GetArrayElementAtIndex(2),
+                CombatHitPresentationKind.Intercept,
+                HitTipElementalBackground,
+                HitTipElementalDigits);
+        }
+
+        private static bool HasCompleteDamagePopupSpriteStyles(
+            SerializedProperty styles)
+        {
+            if (styles == null || !styles.isArray || styles.arraySize != 3)
+            {
+                return false;
+            }
+
+            bool[] kinds = new bool[3];
+            for (int index = 0; index < styles.arraySize; index++)
+            {
+                SerializedProperty style = styles.GetArrayElementAtIndex(index);
+                int kind = Required(style, "kind").intValue;
+                SerializedProperty digits = Required(style, "digitSprites");
+                Vector2 minimumSize = Required(style, "backgroundMinSize").vector2Value;
+                if (kind < 0 || kind >= kinds.Length || kinds[kind]
+                    || Required(style, "backgroundSprite").objectReferenceValue == null
+                    || !digits.isArray
+                    || digits.arraySize != DamagePopupDigitCapacity
+                    || Required(style, "digitHeight").floatValue <= 0f
+                    || Required(style, "backgroundHorizontalPadding").floatValue < 0f
+                    || minimumSize.x <= 0f || minimumSize.y <= 0f)
+                {
+                    return false;
+                }
+
+                for (int digit = 0; digit < digits.arraySize; digit++)
+                {
+                    if (digits.GetArrayElementAtIndex(digit).objectReferenceValue == null)
+                    {
+                        return false;
+                    }
+                }
+
+                kinds[kind] = true;
+            }
+
+            return kinds[0] && kinds[1] && kinds[2];
+        }
+
+        private static void ConfigureDamagePopupSpriteStyle(
+            SerializedProperty style,
+            CombatHitPresentationKind kind,
+            string backgroundPath,
+            string digitsFolder)
+        {
+            Required(style, "kind").intValue = (int)kind;
+            Required(style, "backgroundSprite").objectReferenceValue =
+                LoadRequired<Sprite>(backgroundPath);
+            SerializedProperty digits = Required(style, "digitSprites");
+            digits.arraySize = DamagePopupDigitCapacity;
+            for (int digit = 0; digit < digits.arraySize; digit++)
+            {
+                digits.GetArrayElementAtIndex(digit).objectReferenceValue =
+                    LoadRequired<Sprite>(
+                        digitsFolder + "/" + digit + ".png");
+            }
+
+            Required(style, "digitHeight").floatValue = 60f;
+            Required(style, "digitSpacing").floatValue = -2f;
+            Required(style, "backgroundHorizontalPadding").floatValue = 34f;
+            Required(style, "backgroundMinSize").vector2Value =
+                new Vector2(133f, 50f);
+        }
+
 
         private static GameObject CreateExitPrefab(Material material)
         {
+            Type textType = Type.GetType("UnityEngine.UI.Text, UnityEngine.UI");
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (textType == null || font == null)
+            {
+                throw new InvalidOperationException(
+                    "Formal room exit requires Unity UI Text and the built-in runtime font.");
+            }
+
             GameObject root = GameObject.CreatePrimitive(PrimitiveType.Cube);
             root.name = "PF_FPG_RoomExit";
             root.layer = BlockerLayer;
@@ -251,8 +610,45 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Renderer renderer = root.GetComponent<Renderer>();
             renderer.sharedMaterial = material;
 
+            GameObject labelCanvasObject = new GameObject(
+                "DestinationLabelCanvas",
+                typeof(RectTransform),
+                typeof(Canvas));
+            labelCanvasObject.transform.SetParent(root.transform, false);
+            RectTransform labelCanvasRect =
+                (RectTransform)labelCanvasObject.transform;
+            labelCanvasRect.localPosition = new Vector3(0f, 0.66f, -0.57f);
+            labelCanvasRect.localRotation = Quaternion.identity;
+            labelCanvasRect.localScale = Vector3.one * 0.003f;
+            labelCanvasRect.sizeDelta = new Vector2(340f, 64f);
+            Canvas labelCanvas = labelCanvasObject.GetComponent<Canvas>();
+            labelCanvas.renderMode = RenderMode.WorldSpace;
+            labelCanvas.sortingOrder = 30;
+
+            Component destinationLabel = CreateHudText(
+                labelCanvasRect,
+                "DestinationLabel",
+                string.Empty,
+                Vector2.zero,
+                labelCanvasRect.sizeDelta,
+                30,
+                TextAnchor.MiddleCenter,
+                Color.white,
+                textType,
+                font);
+            Stretch(
+                (RectTransform)destinationLabel.transform,
+                Vector2.zero,
+                Vector2.zero);
+
             FpgRoomExitRuntime runtime = root.AddComponent<FpgRoomExitRuntime>();
-            runtime.BindComponents(new Collider[] { collider }, Array.Empty<Behaviour>());
+            SerializedObject runtimeData = new SerializedObject(runtime);
+            SetObject(runtimeData, "destinationLabel", destinationLabel);
+            SetString(runtimeData, "destinationLabelPrefix", "\u524D\u5F80\uFF1A");
+            runtimeData.ApplyModifiedPropertiesWithoutUndo();
+            runtime.BindComponents(
+                new Collider[] { collider },
+                new Behaviour[] { labelCanvas });
             runtime.BindStatusRenderers(new Renderer[] { renderer });
             runtime.SetLocked(true);
 
@@ -286,6 +682,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 "PF_FPG_OverheadHealthBar",
                 typeof(RectTransform),
                 typeof(Canvas),
+                typeof(FpgFormalBarView),
                 typeof(FpgOverheadHealthBarView));
             RectTransform rootRect = (RectTransform)root.transform;
             rootRect.sizeDelta = new Vector2(180f, 18f);
@@ -300,25 +697,40 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Stretch((RectTransform)background.transform, Vector2.zero, Vector2.zero);
             Component backgroundImage = background.AddComponent(imageType);
             SetImageColor(backgroundImage, new Color(0.02f, 0.025f, 0.03f, 0.92f));
+            SetGraphicRaycastTarget(backgroundImage, false);
 
+            GameObject fillArea = new GameObject(
+                "FillArea",
+                typeof(RectTransform));
+            fillArea.transform.SetParent(root.transform, false);
+            Stretch(
+                (RectTransform)fillArea.transform,
+                new Vector2(2f, 2f),
+                new Vector2(-2f, -2f));
             GameObject fillObject = new GameObject("Fill", typeof(RectTransform));
-            fillObject.transform.SetParent(root.transform, false);
-            Stretch((RectTransform)fillObject.transform, new Vector2(2f, 2f), new Vector2(-2f, -2f));
+            fillObject.transform.SetParent(fillArea.transform, false);
+            RectTransform fillRect = (RectTransform)fillObject.transform;
+            Stretch(fillRect, Vector2.zero, Vector2.zero);
+            fillRect.pivot = new Vector2(0f, 0.5f);
             Component fillImage = fillObject.AddComponent(imageType);
             SetImageColor(fillImage, new Color(0.2f, 0.95f, 0.35f, 1f));
-            SerializedObject fillData = new SerializedObject(fillImage);
-            SetInt(fillData, "m_Type", 3);
-            SetInt(fillData, "m_FillMethod", 0);
-            SetInt(fillData, "m_FillOrigin", 0);
-            SetBool(fillData, "m_FillClockwise", true);
-            SetFloat(fillData, "m_FillAmount", 1f);
-            fillData.ApplyModifiedPropertiesWithoutUndo();
+            SetGraphicRaycastTarget(fillImage, false);
+
+            FpgFormalBarView bar = root.GetComponent<FpgFormalBarView>();
+            SerializedObject barData = new SerializedObject(bar);
+            SetObject(barData, "fillRect", fillRect);
+            barData.ApplyModifiedPropertiesWithoutUndo();
+            bar.SetNormalizedValue(1f);
 
             FpgOverheadHealthBarView view = root.GetComponent<FpgOverheadHealthBarView>();
             SerializedObject viewData = new SerializedObject(view);
-            SetObject(viewData, "fill", fillImage);
+            SetObject(viewData, "lifeBar", bar);
             SetVector3(viewData, "worldOffset", new Vector3(0f, 2.1f, 0f));
             viewData.ApplyModifiedPropertiesWithoutUndo();
+            if (!view.TryValidate(out string viewError))
+            {
+                throw new InvalidOperationException(viewError);
+            }
 
             GameObject saved = null;
             try
@@ -336,18 +748,268 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             FpgOverheadHealthBarView savedView = saved.GetComponent<FpgOverheadHealthBarView>();
-            if (savedView == null)
+            string savedViewError = string.Empty;
+            if (savedView == null
+                || !savedView.TryValidate(out savedViewError))
             {
-                throw new InvalidOperationException("Saved overhead health-bar prefab has no view component.");
+                throw new InvalidOperationException(
+                    savedView == null
+                        ? "Saved overhead health-bar prefab has no view component."
+                        : savedViewError);
             }
 
             return savedView;
+        }
+
+        private static FpgDamagePopupView CreateDamagePopupPrefab()
+        {
+            Type imageType = Type.GetType("UnityEngine.UI.Image, UnityEngine.UI");
+            if (imageType == null)
+            {
+                throw new InvalidOperationException(
+                    "Formal damage popup requires Unity UI Image.");
+            }
+
+            GameObject root = new GameObject(
+                "PF_FPG_DamagePopup",
+                typeof(RectTransform));
+            RectTransform rootRect = (RectTransform)root.transform;
+            rootRect.anchorMin = new Vector2(0.5f, 0.5f);
+            rootRect.anchorMax = new Vector2(0.5f, 0.5f);
+            rootRect.pivot = new Vector2(0.5f, 0.5f);
+            rootRect.sizeDelta = new Vector2(133f, 60f);
+
+            GameObject backgroundObject = new GameObject(
+                "Background",
+                typeof(RectTransform));
+            backgroundObject.transform.SetParent(rootRect, false);
+            RectTransform backgroundRect =
+                (RectTransform)backgroundObject.transform;
+            Stretch(backgroundRect, Vector2.zero, Vector2.zero);
+            Component background = backgroundObject.AddComponent(imageType);
+            SerializedObject backgroundData = new SerializedObject(background);
+            SetColor(backgroundData, "m_Color", Color.white);
+            SetBool(backgroundData, "m_RaycastTarget", false);
+            SetBool(backgroundData, "m_PreserveAspect", false);
+            SetInt(backgroundData, "m_Type", 1);
+            backgroundData.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject digitsObject = new GameObject(
+                "Digits",
+                typeof(RectTransform));
+            digitsObject.transform.SetParent(rootRect, false);
+            RectTransform digitsRoot = (RectTransform)digitsObject.transform;
+            digitsRoot.anchorMin = new Vector2(0.5f, 0.5f);
+            digitsRoot.anchorMax = new Vector2(0.5f, 0.5f);
+            digitsRoot.pivot = new Vector2(0.5f, 0.5f);
+            digitsRoot.anchoredPosition = Vector2.zero;
+            digitsRoot.sizeDelta = Vector2.zero;
+
+            Component[] digitImages =
+                new Component[DamagePopupDigitCapacity];
+            for (int digit = 0; digit < digitImages.Length; digit++)
+            {
+                GameObject digitObject = new GameObject(
+                    "Digit_" + digit,
+                    typeof(RectTransform));
+                digitObject.transform.SetParent(digitsRoot, false);
+                Component digitImage = digitObject.AddComponent(imageType);
+                SerializedObject digitData = new SerializedObject(digitImage);
+                SetColor(digitData, "m_Color", Color.white);
+                SetBool(digitData, "m_RaycastTarget", false);
+                SetBool(digitData, "m_PreserveAspect", true);
+                SetInt(digitData, "m_Type", 0);
+                digitData.ApplyModifiedPropertiesWithoutUndo();
+                digitObject.SetActive(false);
+                digitImages[digit] = digitImage;
+            }
+
+            CanvasGroup canvasGroup = root.AddComponent<CanvasGroup>();
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+
+            FpgDamagePopupView view =
+                root.AddComponent<FpgDamagePopupView>();
+            SerializedObject viewData = new SerializedObject(view);
+            SetObject(viewData, "root", rootRect);
+            SetObject(viewData, "background", background);
+            SetObject(viewData, "digitsRoot", digitsRoot);
+            SerializedProperty digitReferences =
+                Required(viewData, "digitImages");
+            digitReferences.arraySize = digitImages.Length;
+            for (int digit = 0; digit < digitImages.Length; digit++)
+            {
+                digitReferences.GetArrayElementAtIndex(digit)
+                    .objectReferenceValue = digitImages[digit];
+            }
+            SetObject(viewData, "canvasGroup", canvasGroup);
+            viewData.ApplyModifiedPropertiesWithoutUndo();
+            if (!view.TryValidate(out string viewError))
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                throw new InvalidOperationException(viewError);
+            }
+
+            root.SetActive(false);
+            GameObject saved = null;
+            try
+            {
+                saved = PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    DamagePopupPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+
+            if (saved == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not save formal damage-popup prefab.");
+            }
+
+            FpgDamagePopupView savedView =
+                saved.GetComponent<FpgDamagePopupView>();
+            string savedViewError = string.Empty;
+            if (savedView == null
+                || !savedView.TryValidate(out savedViewError))
+            {
+                throw new InvalidOperationException(
+                    savedView == null
+                        ? "Saved formal damage-popup prefab has no view component."
+                        : savedViewError);
+            }
+
+            return savedView;
+        }
+
+        private static void RefreshFormalRoomHudScene(
+            FpgOverheadHealthBarView healthBarPrefab,
+            FpgDamagePopupView damagePopupPrefab)
+        {
+            LoadRequired<SceneAsset>(FormalRoomScenePath);
+            Scene scene = EditorSceneManager.OpenScene(
+                FormalRoomScenePath,
+                OpenSceneMode.Single);
+            healthBarPrefab =
+                LoadRequired<FpgOverheadHealthBarView>(HealthBarPrefabPath);
+            damagePopupPrefab =
+                LoadRequired<FpgDamagePopupView>(DamagePopupPrefabPath);
+            FpgFormalEncounterHost formalHost =
+                FindSingleSceneComponent<FpgFormalEncounterHost>(scene);
+            FpgFormalPlayerPresentationBridge presentationBridge =
+                FindSingleSceneComponent<FpgFormalPlayerPresentationBridge>(
+                    scene);
+            FpgFormalPlayerTickDriver playerDriver =
+                FindSingleSceneComponent<FpgFormalPlayerTickDriver>(scene);
+            FpgOverheadHealthBarPool healthBarPool =
+                FindSingleSceneComponent<FpgOverheadHealthBarPool>(scene);
+            FpgFormalPlayerHudPresenter currentHud =
+                FindSingleSceneComponent<FpgFormalPlayerHudPresenter>(scene);
+            FpgRoomEncounterDirector director =
+                FindSingleSceneComponent<FpgRoomEncounterDirector>(scene);
+            FpgFormalCombatPortFactory factory =
+                FindSingleSceneComponent<FpgFormalCombatPortFactory>(scene);
+            Camera worldCamera = FindSingleSceneComponent<Camera>(scene);
+            CombatPresentationProfile presentationProfile =
+                LoadRequired<CombatPresentationProfile>(
+                    CombatPresentationProfilePath);
+
+            Transform presentationRoot = formalHost.PresentationRoot;
+            if (presentationRoot == null)
+            {
+                throw new InvalidOperationException(
+                    "FormalRoom requires a presentation root before HUD refresh.");
+            }
+
+            List<FpgFormalCombatFeedbackBridge> feedbackBridges =
+                FindSceneComponents<FpgFormalCombatFeedbackBridge>(scene);
+            for (int index = 0; index < feedbackBridges.Count; index++)
+            {
+                UnityEngine.Object.DestroyImmediate(feedbackBridges[index]);
+            }
+
+            UnityEngine.Object.DestroyImmediate(currentHud.gameObject);
+            CombatAimReticle aimReticle = CreateFormalPlayerHud(
+                presentationRoot,
+                presentationProfile,
+                out FpgFormalPlayerHudPresenter playerHud,
+                out Canvas targetCanvas,
+                out RectTransform popupRoot);
+            FpgFormalCombatFeedbackBridge feedbackBridge =
+                presentationRoot.gameObject.AddComponent<
+                    FpgFormalCombatFeedbackBridge>();
+            ConfigureFormalCombatFeedbackBridge(
+                feedbackBridge,
+                director,
+                playerDriver,
+                aimReticle,
+                presentationProfile,
+                worldCamera,
+                targetCanvas,
+                popupRoot,
+                damagePopupPrefab);
+
+            SerializedObject driverData = new SerializedObject(playerDriver);
+            SetObject(driverData, "aimViewportSource", aimReticle);
+            driverData.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject bridgeData =
+                new SerializedObject(presentationBridge);
+            SetObject(bridgeData, "playerHud", playerHud);
+            bridgeData.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject poolData = new SerializedObject(healthBarPool);
+            SetObject(poolData, "viewPrefab", healthBarPrefab);
+            poolData.ApplyModifiedPropertiesWithoutUndo();
+
+            SerializedObject factoryData = new SerializedObject(factory);
+            ConfigureAttackQueryTechnicalSettings(factoryData);
+            factoryData.ApplyModifiedPropertiesWithoutUndo();
+
+            bool barValid =
+                healthBarPrefab.TryValidate(out string barError);
+            bool hudValid = playerHud.TryValidate(out string hudError);
+            bool bridgeValid = presentationBridge.TryValidateAuthoring(
+                out string bridgeError);
+            bool feedbackValid = TryValidateFormalCombatFeedbackAuthoring(
+                feedbackBridge,
+                presentationRoot,
+                director,
+                playerDriver,
+                aimReticle,
+                presentationProfile,
+                worldCamera,
+                targetCanvas,
+                damagePopupPrefab,
+                out string feedbackError);
+            if (!barValid || !hudValid || !bridgeValid || !feedbackValid)
+            {
+                string error = !string.IsNullOrWhiteSpace(barError)
+                    ? barError
+                    : !string.IsNullOrWhiteSpace(hudError)
+                        ? hudError
+                        : !string.IsNullOrWhiteSpace(bridgeError)
+                            ? bridgeError
+                            : feedbackError;
+                throw new InvalidOperationException(error);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!EditorSceneManager.SaveScene(scene, FormalRoomScenePath))
+            {
+                throw new InvalidOperationException(
+                    "Could not save the refreshed FormalRoom HUD.");
+            }
         }
 
         private static void BuildFormalRoomScene(
             FpgRoomDefinition room,
             GameObject exitPrefab,
             FpgOverheadHealthBarView healthBarPrefab,
+            FpgDamagePopupView damagePopupPrefab,
             FpgPlayableCharacterCatalog playableCharacterCatalog)
         {
             Scene scene = EditorSceneManager.NewScene(
@@ -358,9 +1020,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
             exitPrefab = LoadRequired<GameObject>(ExitPrefabPath);
             healthBarPrefab =
                 LoadRequired<FpgOverheadHealthBarView>(HealthBarPrefabPath);
+            damagePopupPrefab =
+                LoadRequired<FpgDamagePopupView>(DamagePopupPrefabPath);
             playableCharacterCatalog =
                 LoadRequired<FpgPlayableCharacterCatalog>(
                     PlayableCharacterCatalogPath);
+            CombatPresentationProfile presentationProfile =
+                LoadRequired<CombatPresentationProfile>(
+                    CombatPresentationProfilePath);
 
             GameObject hostObject = new GameObject("__FormalRoom");
             FpgFormalEncounterHost formalSceneHost =
@@ -428,7 +1095,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FpgFormalPlayerPresentationBridge>();
             CombatAimReticle aimReticle = CreateFormalPlayerHud(
                 presentationRoot,
-                out FpgFormalPlayerHudPresenter playerHud);
+                presentationProfile,
+                out FpgFormalPlayerHudPresenter playerHud,
+                out Canvas targetCanvas,
+                out RectTransform popupRoot);
+            FpgFormalCombatFeedbackBridge feedbackBridge =
+                presentationRoot.gameObject.AddComponent<
+                    FpgFormalCombatFeedbackBridge>();
 
             FpgEncounterProfile profile =
                 LoadRequired<FpgEncounterProfile>(ProfilePath);
@@ -438,9 +1111,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 LoadRequired<FpgEnemyDefinitionCatalog>(EnemyCatalogPath);
             FpgFormalAttackRuntimeCatalog attackCatalog =
                 LoadRequired<FpgFormalAttackRuntimeCatalog>(AttackCatalogPath);
-            CombatPresentationProfile presentationProfile =
-                LoadRequired<CombatPresentationProfile>(
-                    CombatPresentationProfilePath);
 
             ConfigureEnemyPool(enemyPool, enemyPoolRoot);
             ConfigureAnchorMap(anchorMap);
@@ -461,6 +1131,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 anchorMap,
                 formalHitboxes,
                 healthBars,
+                staticHitboxes,
                 camera,
                 exitPrefab,
                 exitRoot,
@@ -477,6 +1148,16 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 cameraFeedback,
                 cameraRoot,
                 camera);
+            ConfigureFormalCombatFeedbackBridge(
+                feedbackBridge,
+                director,
+                playerDriver,
+                aimReticle,
+                presentationProfile,
+                camera,
+                targetCanvas,
+                popupRoot,
+                damagePopupPrefab);
             ConfigurePlayerComposer(
                 playerComposer,
                 actorsRoot,
@@ -551,7 +1232,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private static CombatAimReticle CreateFormalPlayerHud(
             Transform presentationRoot,
-            out FpgFormalPlayerHudPresenter presenter)
+            CombatPresentationProfile presentationProfile,
+            out FpgFormalPlayerHudPresenter presenter,
+            out Canvas targetCanvas,
+            out RectTransform popupRoot)
         {
             Type imageType = Type.GetType("UnityEngine.UI.Image, UnityEngine.UI");
             Type textType = Type.GetType("UnityEngine.UI.Text, UnityEngine.UI");
@@ -576,9 +1260,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 typeof(Canvas),
                 typeof(FpgFormalPlayerHudPresenter));
             canvasObject.transform.SetParent(presentationRoot, false);
-            Canvas canvas = canvasObject.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 30;
+            targetCanvas = canvasObject.GetComponent<Canvas>();
+            targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            targetCanvas.sortingOrder = 30;
 
             Component scaler = canvasObject.AddComponent(scalerType);
             SerializedObject scalerData = new SerializedObject(scaler);
@@ -611,7 +1295,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 imageType,
                 textType,
                 font,
-                out Component lifeFill,
+                out FpgFormalBarView lifeBar,
                 out Component lifeText);
             CreateHudBar(
                 valuesRect,
@@ -622,7 +1306,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 imageType,
                 textType,
                 font,
-                out Component barrierFill,
+                out FpgFormalBarView barrierBar,
                 out Component barrierText);
             CreateHudBar(
                 valuesRect,
@@ -633,7 +1317,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 imageType,
                 textType,
                 font,
-                out Component ammoFill,
+                out FpgFormalBarView ammoBar,
                 out Component ammoText);
             Component stateText = CreateHudText(
                 valuesRect,
@@ -669,15 +1353,27 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 new Vector2(2f, 30f),
                 imageType);
 
+            GameObject popupRootObject = new GameObject(
+                "DamagePopupRoot",
+                typeof(RectTransform));
+            popupRootObject.transform.SetParent(canvasObject.transform, false);
+            popupRoot = (RectTransform)popupRootObject.transform;
+            Stretch(popupRoot, Vector2.zero, Vector2.zero);
+            popupRoot.SetAsLastSibling();
+
             presenter = canvasObject.GetComponent<FpgFormalPlayerHudPresenter>();
             SerializedObject presenterData = new SerializedObject(presenter);
-            SetObject(presenterData, "lifeFill", lifeFill);
-            SetObject(presenterData, "barrierFill", barrierFill);
-            SetObject(presenterData, "ammoFill", ammoFill);
+            SetObject(presenterData, "lifeBar", lifeBar);
+            SetObject(presenterData, "barrierBar", barrierBar);
+            SetObject(presenterData, "ammoBar", ammoBar);
             SetObject(presenterData, "lifeText", lifeText);
             SetObject(presenterData, "barrierText", barrierText);
             SetObject(presenterData, "ammoText", ammoText);
             SetObject(presenterData, "stateText", stateText);
+            SetObject(
+                presenterData,
+                "presentationProfile",
+                presentationProfile);
             presenterData.ApplyModifiedPropertiesWithoutUndo();
 
             if (!presenter.TryValidate(out string hudError))
@@ -710,12 +1406,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Type imageType,
             Type textType,
             Font font,
-            out Component fillImage,
+            out FpgFormalBarView fillBar,
             out Component valueText)
         {
             GameObject backgroundObject = new GameObject(
                 name + "Bar",
-                typeof(RectTransform));
+                typeof(RectTransform),
+                typeof(FpgFormalBarView));
             backgroundObject.transform.SetParent(parent, false);
             RectTransform backgroundRect =
                 (RectTransform)backgroundObject.transform;
@@ -728,22 +1425,31 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetImageColor(backgroundImage, backgroundColor);
             SetGraphicRaycastTarget(backgroundImage, false);
 
+            GameObject fillAreaObject = new GameObject(
+                "FillArea",
+                typeof(RectTransform));
+            fillAreaObject.transform.SetParent(backgroundObject.transform, false);
+            Stretch(
+                (RectTransform)fillAreaObject.transform,
+                new Vector2(3f, 3f),
+                new Vector2(-3f, -3f));
+
             GameObject fillObject = new GameObject(
                 "Fill",
                 typeof(RectTransform));
-            fillObject.transform.SetParent(backgroundObject.transform, false);
+            fillObject.transform.SetParent(fillAreaObject.transform, false);
             RectTransform fillRect = (RectTransform)fillObject.transform;
-            Stretch(fillRect, new Vector2(3f, 3f), new Vector2(-3f, -3f));
-            fillImage = fillObject.AddComponent(imageType);
+            Stretch(fillRect, Vector2.zero, Vector2.zero);
+            fillRect.pivot = new Vector2(0f, 0.5f);
+            Component fillImage = fillObject.AddComponent(imageType);
             SetImageColor(fillImage, fillColor);
             SetGraphicRaycastTarget(fillImage, false);
-            SerializedObject fillData = new SerializedObject(fillImage);
-            SetInt(fillData, "m_Type", 3);
-            SetInt(fillData, "m_FillMethod", 0);
-            SetInt(fillData, "m_FillOrigin", 0);
-            SetBool(fillData, "m_FillClockwise", true);
-            SetFloat(fillData, "m_FillAmount", 0f);
-            fillData.ApplyModifiedPropertiesWithoutUndo();
+
+            fillBar = backgroundObject.GetComponent<FpgFormalBarView>();
+            SerializedObject barData = new SerializedObject(fillBar);
+            SetObject(barData, "fillRect", fillRect);
+            barData.ApplyModifiedPropertiesWithoutUndo();
+            fillBar.SetNormalizedValue(0f);
 
             valueText = CreateHudText(
                 backgroundRect,
@@ -889,11 +1595,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObject(data, "staticHitboxRegistry", staticHitboxes);
             SetObject(data, "projectileProxyRoot", projectileProxyRoot);
 
-            SetFloat(data, "attackQuerySettings.maxDistance", 50f);
-            SetFloat(data, "attackQuerySettings.primarySpreadTangent", 0.04f);
-            SetFloat(data, "attackQuerySettings.secondaryAreaRadius", 3f);
-            SetInt(data, "attackQuerySettings.hitboxLayerMask", HitboxMask);
-            SetInt(data, "attackQuerySettings.blockerLayerMask", BlockerMask);
+            ConfigureAttackQueryTechnicalSettings(data);
             SetInt(data, "projectileWorldSettings.hitboxLayerMask", HitboxMask);
             SetInt(data, "projectileWorldSettings.blockerLayerMask", BlockerMask);
 
@@ -914,6 +1616,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetInt(data, "impactQueueCapacity", 128);
             SetInt(data, "projectileReservationCapacity", 32);
             data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureAttackQueryTechnicalSettings(
+            SerializedObject data)
+        {
+            SetInt(
+                data,
+                "attackQueryTechnicalSettings.hitboxLayerMask",
+                HitboxMask);
+            SetInt(
+                data,
+                "attackQueryTechnicalSettings.blockerLayerMask",
+                BlockerMask);
         }
 
         private static void ConfigurePlayerDriver(
@@ -946,6 +1661,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FPG.Demo.Unity.FpgCombatantAnchorMap anchorMap,
             FpgFormalHitboxRegistry formalHitboxes,
             FpgOverheadHealthBarPool healthBars,
+            HitboxRegistry staticHitboxes,
             Camera camera,
             GameObject exitPrefab,
             Transform exitRoot,
@@ -964,6 +1680,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObjectArray(data, "exitRuntimes", Array.Empty<UnityEngine.Object>());
             SetObject(data, "exitRuntimePrefab", exitPrefab);
             SetObject(data, "exitRuntimeRoot", exitRoot);
+            SetObject(data, "exitHitboxRegistry", staticHitboxes);
             SetObject(data, "playerAnchor", null);
             SetObject(data, "entrySafetyAnchor", entrySafetyAnchor);
             SetObject(data, "formalCombatPortFactoryComponent", factory);
@@ -1001,6 +1718,134 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObject(data, "cameraRig", cameraRig);
             SetObject(data, "targetCamera", targetCamera);
             data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void ConfigureFormalCombatFeedbackBridge(
+            FpgFormalCombatFeedbackBridge bridge,
+            FpgRoomEncounterDirector director,
+            FpgFormalPlayerTickDriver playerTickDriver,
+            CombatAimReticle aimReticle,
+            CombatPresentationProfile presentationProfile,
+            Camera worldCamera,
+            Canvas targetCanvas,
+            RectTransform popupRoot,
+            FpgDamagePopupView popupPrefab)
+        {
+            SerializedObject data = new SerializedObject(bridge);
+            SetObject(data, "encounterDirector", director);
+            SetObject(data, "playerTickDriver", playerTickDriver);
+            SetObject(data, "aimReticle", aimReticle);
+            SetObject(data, "presentationProfile", presentationProfile);
+            SetObject(data, "worldCamera", worldCamera);
+            SetObject(data, "targetCanvas", targetCanvas);
+            SetObject(data, "popupRoot", popupRoot);
+            SetObject(data, "popupPrefab", popupPrefab);
+            SetInt(data, "feedbackReadCapacity", 128);
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static bool TryValidateFormalCombatFeedbackAuthoring(
+            FpgFormalCombatFeedbackBridge bridge,
+            Transform presentationRoot,
+            FpgRoomEncounterDirector director,
+            FpgFormalPlayerTickDriver playerTickDriver,
+            CombatAimReticle aimReticle,
+            CombatPresentationProfile presentationProfile,
+            Camera worldCamera,
+            Canvas targetCanvas,
+            FpgDamagePopupView popupPrefab,
+            out string error)
+        {
+            if (bridge == null)
+            {
+                error = "Formal combat feedback bridge is missing.";
+                return false;
+            }
+            if (presentationRoot == null)
+            {
+                error = "Formal combat feedback presentation root is missing.";
+                return false;
+            }
+            if (director == null)
+            {
+                error = "Formal combat feedback encounter director is missing.";
+                return false;
+            }
+            if (playerTickDriver == null)
+            {
+                error = "Formal combat feedback player tick driver is missing.";
+                return false;
+            }
+            if (aimReticle == null)
+            {
+                error = "Formal combat feedback aim reticle is missing.";
+                return false;
+            }
+            if (presentationProfile == null)
+            {
+                error = "Formal combat feedback presentation profile is missing.";
+                return false;
+            }
+            if (worldCamera == null)
+            {
+                error = "Formal combat feedback world camera is missing.";
+                return false;
+            }
+            if (targetCanvas == null)
+            {
+                error = "Formal combat feedback target Canvas is missing.";
+                return false;
+            }
+            if (popupPrefab == null)
+            {
+                error = "Formal combat feedback popup prefab is missing.";
+                return false;
+            }
+
+            SerializedObject data = new SerializedObject(bridge);
+            RectTransform popupRoot =
+                Required(data, "popupRoot").objectReferenceValue
+                    as RectTransform;
+            if (bridge.transform != presentationRoot
+                || Required(data, "encounterDirector").objectReferenceValue
+                    != director
+                || Required(data, "playerTickDriver").objectReferenceValue
+                    != playerTickDriver
+                || Required(data, "aimReticle").objectReferenceValue
+                    != aimReticle
+                || Required(data, "presentationProfile").objectReferenceValue
+                    != presentationProfile
+                || Required(data, "worldCamera").objectReferenceValue
+                    != worldCamera
+                || Required(data, "targetCanvas").objectReferenceValue
+                    != targetCanvas
+                || Required(data, "popupPrefab").objectReferenceValue
+                    != popupPrefab
+                || Required(data, "feedbackReadCapacity").intValue != 128)
+            {
+                error =
+                    "Formal combat feedback bridge bindings are incomplete.";
+                return false;
+            }
+
+            if (popupRoot == null || popupRoot.parent != targetCanvas.transform
+                || popupRoot.anchorMin != Vector2.zero
+                || popupRoot.anchorMax != Vector2.one
+                || popupRoot.offsetMin != Vector2.zero
+                || popupRoot.offsetMax != Vector2.zero)
+            {
+                error =
+                    "Formal damage-popup root must stretch under the HUD Canvas.";
+                return false;
+            }
+
+            if (!popupPrefab.TryValidate(out error))
+            {
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         private static void ConfigurePlayerComposer(
@@ -1078,8 +1923,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
             data.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void ConfigureBootstrapConfig()
+        private static void ConfigureBootstrapConfig(
+            FpgExitRoomRefreshRule exitRoomRefreshRule)
         {
+            if (exitRoomRefreshRule == null)
+            {
+                throw new ArgumentNullException(nameof(exitRoomRefreshRule));
+            }
+
             GameBootstrapConfig config =
                 LoadRequired<GameBootstrapConfig>(ConfigPath);
             SerializedObject data = new SerializedObject(config);
@@ -1087,6 +1938,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetBool(data, "loadCombatLabOnStart", true);
             SetBool(data, "requireEntranceSelection", true);
             SetBool(data, "requireCharacterSelection", true);
+            SetObject(data, "exitRoomRefreshRule", exitRoomRefreshRule);
             SetInt(data, "frameRateMode", 1);
             SetInt(data, "lockedFramesPerSecond", 60);
             SetInt(data, "vSyncCount", 0);
@@ -1451,6 +2303,33 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 LoadRequired<FpgEnemyDefinitionCatalog>(EnemyCatalogPath);
             FpgFormalAttackRuntimeCatalog attackCatalog =
                 LoadRequired<FpgFormalAttackRuntimeCatalog>(AttackCatalogPath);
+            CombatPresentationProfile presentationProfile =
+                LoadRequired<CombatPresentationProfile>(
+                    CombatPresentationProfilePath);
+            FpgDamagePopupView damagePopupPrefab =
+                LoadRequired<FpgDamagePopupView>(DamagePopupPrefabPath);
+            FpgRoomCatalog roomCatalog =
+                LoadRequired<FpgRoomCatalog>(RoomCatalogPath);
+            FpgExitRoomRefreshRule exitRoomRefreshRule =
+                LoadRequired<FpgExitRoomRefreshRule>(ExitRoomRefreshRulePath);
+
+            string roomCatalogError = string.Empty;
+            string exitRoomRefreshRuleError = string.Empty;
+            bool roomCatalogValid = roomCatalog.TryValidate(out roomCatalogError);
+            bool exitRoomRefreshRuleValid =
+                exitRoomRefreshRule.TryValidate(out exitRoomRefreshRuleError);
+            if (!roomCatalogValid
+                || !ContainsRoom(roomCatalog, room)
+                || exitRoomRefreshRule.RoomCatalog != roomCatalog
+                || !exitRoomRefreshRuleValid)
+            {
+                throw new InvalidOperationException(
+                    !string.IsNullOrWhiteSpace(roomCatalogError)
+                        ? roomCatalogError
+                        : !string.IsNullOrWhiteSpace(exitRoomRefreshRuleError)
+                            ? exitRoomRefreshRuleError
+                            : "Formal exit routing catalog must include the combatlab forest room.");
+            }
 
             string catalogError = string.Empty;
             string selectionError = string.Empty;
@@ -1537,10 +2416,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             if (FindSceneComponents<FpgFormalPlayerComposer>(formalScene).Count != 1
-                || FindSceneComponents<FpgFormalEncounterHost>(formalScene).Count != 1)
+                || FindSceneComponents<FpgFormalEncounterHost>(formalScene).Count != 1
+                || FindSceneComponents<FpgFormalCombatFeedbackBridge>(
+                    formalScene).Count != 1)
             {
                 throw new InvalidOperationException(
-                    "FormalRoom requires exactly one formal player composer and scene host.");
+                    "FormalRoom requires exactly one formal composer, scene host "
+                    + "and combat feedback bridge.");
             }
 
             if (FindSceneComponents<BattleSessionHost>(formalScene).Count != 0
@@ -1559,6 +2441,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgFormalPlayerPresentationBridge bridge =
                 FindSingleSceneComponent<FpgFormalPlayerPresentationBridge>(
                     formalScene);
+            FpgFormalCombatFeedbackBridge feedbackBridge =
+                FindSingleSceneComponent<FpgFormalCombatFeedbackBridge>(
+                    formalScene);
             FpgFormalPlayerHudPresenter playerHud =
                 FindSingleSceneComponent<FpgFormalPlayerHudPresenter>(
                     formalScene);
@@ -1575,19 +2460,42 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     formalScene);
             FpgRoomEncounterDirector director =
                 FindSingleSceneComponent<FpgRoomEncounterDirector>(formalScene);
+            Camera worldCamera =
+                FindSingleSceneComponent<Camera>(formalScene);
+            Canvas targetCanvas = playerHud.GetComponent<Canvas>();
             HitboxRegistry registry =
                 FindSingleSceneComponent<HitboxRegistry>(formalScene);
+
+            if (GetSerializedReference<HitboxRegistry>(
+                    director,
+                    "exitHitboxRegistry") != registry)
+            {
+                throw new InvalidOperationException(
+                    "FormalRoom director must use the static hitbox registry for exit attacks.");
+            }
 
             string hostError = string.Empty;
             string composerError = string.Empty;
             string bridgeError = string.Empty;
             string hudError = string.Empty;
             string cameraError = string.Empty;
+            string feedbackError = string.Empty;
             if (!formalHost.TryValidateAuthoring(out hostError)
                 || !composer.TryValidateAuthoring(out composerError)
                 || !bridge.TryValidateAuthoring(out bridgeError)
                 || !playerHud.TryValidate(out hudError)
-                || !cameraFeedback.TryValidate(out cameraError))
+                || !cameraFeedback.TryValidate(out cameraError)
+                || !TryValidateFormalCombatFeedbackAuthoring(
+                    feedbackBridge,
+                    formalHost.PresentationRoot,
+                    director,
+                    driver,
+                    reticle,
+                    presentationProfile,
+                    worldCamera,
+                    targetCanvas,
+                    damagePopupPrefab,
+                    out feedbackError))
             {
                 string error = !string.IsNullOrWhiteSpace(hostError)
                     ? hostError
@@ -1597,7 +2505,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
                             ? bridgeError
                             : !string.IsNullOrWhiteSpace(hudError)
                                 ? hudError
-                                : cameraError;
+                                : !string.IsNullOrWhiteSpace(cameraError)
+                                    ? cameraError
+                                    : feedbackError;
                 throw new InvalidOperationException(error);
             }
 
@@ -1639,19 +2549,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             GameObject exitPrefab = LoadRequired<GameObject>(ExitPrefabPath);
-            if (exitPrefab.GetComponent<FpgRoomExitRuntime>() == null)
+            if (!TryValidateExitPrefab(exitPrefab, out string exitPrefabError))
             {
-                throw new InvalidOperationException(
-                    "Formal exit prefab has no FpgRoomExitRuntime.");
+                throw new InvalidOperationException(exitPrefabError);
             }
 
             FpgOverheadHealthBarView healthBar =
                 LoadRequired<FpgOverheadHealthBarView>(HealthBarPrefabPath);
             SerializedObject healthData = new SerializedObject(healthBar);
-            if (Required(healthData, "fill").objectReferenceValue == null)
+            if (Required(healthData, "lifeBar").objectReferenceValue == null)
             {
                 throw new InvalidOperationException(
-                    "Formal overhead health bar has no fill Image.");
+                    "Formal overhead health bar has no formal life bar.");
             }
 
             Scene bootScene = EditorSceneManager.OpenScene(
@@ -1698,10 +2607,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     StringComparison.Ordinal)
                 || !config.LoadRoomOnStart
                 || !config.RequireCharacterSelection
-                || !config.RequireEntranceSelection)
+                || !config.RequireEntranceSelection
+                || config.ExitRoomRefreshRule != exitRoomRefreshRule)
             {
                 throw new InvalidOperationException(
-                    "Bootstrap config must target FormalRoom and require character and room selection.");
+                    "Bootstrap config must target FormalRoom, require character and room selection, and reference the formal exit refresh rule.");
             }
 
             EditorBuildSettingsScene[] buildScenes = EditorBuildSettings.scenes;
@@ -1725,6 +2635,93 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 throw new InvalidOperationException(
                     "Build Settings must keep Boot, CombatLab editor harness and FormalRoom at stable indices 0, 1 and 2.");
             }
+        }
+
+        private static bool TryValidateExitPrefab(
+            GameObject exitPrefab,
+            out string error)
+        {
+            if (exitPrefab == null)
+            {
+                error = "Formal exit prefab is missing.";
+                return false;
+            }
+
+            FpgRoomExitRuntime runtime =
+                exitPrefab.GetComponent<FpgRoomExitRuntime>();
+            if (runtime == null)
+            {
+                error = "Formal exit prefab has no FpgRoomExitRuntime.";
+                return false;
+            }
+
+            SerializedObject runtimeData = new SerializedObject(runtime);
+            Component destinationLabel =
+                Required(runtimeData, "destinationLabel")
+                    .objectReferenceValue as Component;
+            Canvas destinationCanvas = destinationLabel == null
+                ? null
+                : destinationLabel.GetComponentInParent<Canvas>(true);
+            if (destinationLabel == null
+                || !string.Equals(
+                    destinationLabel.GetType().FullName,
+                    "UnityEngine.UI.Text",
+                    StringComparison.Ordinal)
+                || destinationCanvas == null
+                || destinationCanvas.renderMode != RenderMode.WorldSpace
+                || !string.Equals(
+                    Required(runtimeData, "destinationLabelPrefix").stringValue,
+                    "\u524D\u5F80\uFF1A",
+                    StringComparison.Ordinal))
+            {
+                error =
+                    "Formal exit prefab requires a bound world-space UGUI destination label.";
+                return false;
+            }
+
+            SerializedProperty interactions =
+                Required(runtimeData, "interactionBehaviours");
+            bool canvasBound = false;
+            for (int index = 0; index < interactions.arraySize; index++)
+            {
+                if (interactions.GetArrayElementAtIndex(index)
+                        .objectReferenceValue == destinationCanvas)
+                {
+                    canvasBound = true;
+                    break;
+                }
+            }
+
+            IReadOnlyList<Collider> attackColliders = runtime.AttackColliders;
+            bool hasAttackCollider = false;
+            for (int index = 0; index < attackColliders.Count; index++)
+            {
+                Collider attackCollider = attackColliders[index];
+                if (attackCollider != null)
+                {
+                    hasAttackCollider = true;
+                    if (attackCollider.enabled)
+                    {
+                        error =
+                            "Formal exit attack colliders must be disabled while hidden.";
+                        return false;
+                    }
+                }
+            }
+
+            if (!canvasBound || !hasAttackCollider
+                || runtime.State != FpgRoomExitRuntimeState.Hidden
+                || destinationCanvas.enabled
+                || (destinationLabel is Behaviour labelBehaviour
+                    && labelBehaviour.enabled))
+            {
+                error =
+                    "Formal exit prefab must start hidden with its label and attack collider disabled.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         private static Material EnsureMaterial(string path, Color color)
@@ -2015,9 +3012,34 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private static bool HasCurrentSceneInstallation(
             FpgPlayableCharacterCatalog playableCharacterCatalog)
         {
+            FpgRoomDefinition room =
+                AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(RoomPath);
+            FpgRoomCatalog roomCatalog =
+                AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(RoomCatalogPath);
+            FpgExitRoomRefreshRule exitRoomRefreshRule =
+                AssetDatabase.LoadAssetAtPath<FpgExitRoomRefreshRule>(
+                    ExitRoomRefreshRulePath);
+            GameObject exitPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(ExitPrefabPath);
             if (playableCharacterCatalog == null
+                || room == null
+                || roomCatalog == null
+                || exitRoomRefreshRule == null
+                || exitPrefab == null
                 || AssetDatabase.LoadAssetAtPath<SceneAsset>(BootScenePath) == null
-                || AssetDatabase.LoadAssetAtPath<SceneAsset>(FormalRoomScenePath) == null)
+                || AssetDatabase.LoadAssetAtPath<SceneAsset>(FormalRoomScenePath) == null
+                || AssetDatabase.LoadAssetAtPath<FpgDamagePopupView>(
+                    DamagePopupPrefabPath) == null)
+            {
+                return false;
+            }
+
+            if (!roomCatalog.TryValidate(out _)
+                || roomCatalog.Count != 1
+                || roomCatalog.Rooms[0] != room
+                || exitRoomRefreshRule.RoomCatalog != roomCatalog
+                || !exitRoomRefreshRule.TryValidate(out _)
+                || !TryValidateExitPrefab(exitPrefab, out _))
             {
                 return false;
             }
@@ -2032,6 +3054,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     || FindSceneComponents<FpgFormalPlayerComposer>(formalScene).Count != 1
                     || FindSceneComponents<FpgFormalEncounterHost>(formalScene).Count != 1
                     || FindSceneComponents<FpgFormalPlayerPresentationBridge>(formalScene).Count != 1
+                    || FindSceneComponents<FpgFormalCombatFeedbackBridge>(
+                        formalScene).Count != 1
                     || FindSceneComponents<FpgFormalPlayerHudPresenter>(formalScene).Count != 1
                     || FindSceneComponents<CombatAimReticle>(formalScene).Count != 1
                     || FindSceneComponents<BattleSessionHost>(formalScene).Count != 0
@@ -2048,11 +3072,40 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FindSingleSceneComponent<FpgFormalPlayerTickDriver>(formalScene);
                 FpgRoomEncounterDirector director =
                     FindSingleSceneComponent<FpgRoomEncounterDirector>(formalScene);
+                HitboxRegistry staticHitboxes =
+                    FindSingleSceneComponent<HitboxRegistry>(formalScene);
+                FpgFormalCombatFeedbackBridge feedbackBridge =
+                    FindSingleSceneComponent<FpgFormalCombatFeedbackBridge>(
+                        formalScene);
+                FpgFormalPlayerHudPresenter playerHud =
+                    FindSingleSceneComponent<FpgFormalPlayerHudPresenter>(
+                        formalScene);
+                Camera worldCamera =
+                    FindSingleSceneComponent<Camera>(formalScene);
+                CombatPresentationProfile presentationProfile =
+                    LoadRequired<CombatPresentationProfile>(
+                        CombatPresentationProfilePath);
+                FpgDamagePopupView damagePopupPrefab =
+                    LoadRequired<FpgDamagePopupView>(DamagePopupPrefabPath);
                 if (!formalHost.TryValidateAuthoring(out _)
                     || formalHost.PlayableCharacterCatalog != playableCharacterCatalog
                     || factory.HasPlayerBinding
                     || driver.IsPlayerConfigured
-                    || director.HasPlayerBinding)
+                    || director.HasPlayerBinding
+                    || GetSerializedReference<HitboxRegistry>(
+                        director,
+                        "exitHitboxRegistry") != staticHitboxes
+                    || !TryValidateFormalCombatFeedbackAuthoring(
+                        feedbackBridge,
+                        formalHost.PresentationRoot,
+                        director,
+                        driver,
+                        FindSingleSceneComponent<CombatAimReticle>(formalScene),
+                        presentationProfile,
+                        worldCamera,
+                        playerHud.GetComponent<Canvas>(),
+                        damagePopupPrefab,
+                        out _))
                 {
                     return false;
                 }
@@ -2071,6 +3124,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 GameBootstrap bootstrap =
                     FindSingleSceneComponent<GameBootstrap>(bootScene);
                 return bootstrap.PlayableCharacterCatalog == playableCharacterCatalog
+                    && bootstrap.Config != null
+                    && bootstrap.Config.ExitRoomRefreshRule
+                        == exitRoomRefreshRule
                     && bootstrap.TryValidateConfiguration(out _);
             }
             catch (Exception)

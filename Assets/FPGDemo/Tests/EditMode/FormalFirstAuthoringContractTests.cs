@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using FPG.Demo.Run;
 using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 namespace FPG.Demo.Tests.EditMode
 {
@@ -15,6 +17,8 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/FormalEncounter/FPG_PlayableCharacterCatalog.asset";
         private const string BootScenePath =
             "Assets/FPGDemo/Scenes/Boot.unity";
+        private const string RoomEditorLayoutPath =
+            "Assets/FPGDemo/Editor/LevelAuthoring/FpgRoomEditor.uxml";
         private const string FormalRoomScenePath =
             "Assets/FPGDemo/Scenes/FormalRoom.unity";
 
@@ -125,6 +129,53 @@ namespace FPG.Demo.Tests.EditMode
                         Is.True,
                         authoringError);
                 });
+        }
+
+        [Test]
+        public void FormalLuanSummonChainTargetsHudie()
+        {
+            const string attackPath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_Attack_Summon.asset";
+            const string summonPath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_SummonHudie.asset";
+            const string hudiePath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_Hudie_Enemy.asset";
+
+            FpgEnemyAttackDefinition attack =
+                AssetDatabase.LoadAssetAtPath<FpgEnemyAttackDefinition>(attackPath);
+            FpgSummonActionDefinition summon =
+                AssetDatabase.LoadAssetAtPath<FpgSummonActionDefinition>(summonPath);
+            FpgEnemyDefinition hudie =
+                AssetDatabase.LoadAssetAtPath<FpgEnemyDefinition>(hudiePath);
+
+            Assert.That(attack, Is.Not.Null, attackPath);
+            Assert.That(summon, Is.Not.Null, summonPath);
+            Assert.That(hudie, Is.Not.Null, hudiePath);
+            Assert.That(attack.TryValidate(out string attackError), Is.True, attackError);
+            Assert.That(summon.TryValidate(out string summonError), Is.True, summonError);
+            Assert.That(hudie.TryValidate(out string hudieError), Is.True, hudieError);
+            Assert.That(attack.Summon, Is.SameAs(summon));
+            Assert.That(
+                attack.SummonOwnerOutcome,
+                Is.EqualTo(FpgSummonOwnerOutcome.DieAfterSuccessfulSummon));
+            Assert.That(summon.MaxSummonsPerOwner, Is.EqualTo(1));
+            Assert.That(summon.CandidateEnemies, Has.Length.EqualTo(1));
+            Assert.That(summon.CandidateEnemies[0], Is.SameAs(hudie));
+            Assert.That(hudie.EnemyDefinitionId, Is.EqualTo("hudie"));
+        }
+
+        [Test]
+        public void RoomEditorDoesNotExposeLegacyD0ScenarioControls()
+        {
+            VisualTreeAsset layout = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
+                RoomEditorLayoutPath);
+            Assert.That(layout, Is.Not.Null, RoomEditorLayoutPath);
+
+            VisualElement root = new VisualElement();
+            layout.CloneTree(root);
+
+            Assert.That(root.Q("scenario-field"), Is.Null);
+            Assert.That(root.Q("play-room-button"), Is.Null);
         }
 
         private static List<T> FindComponents<T>(Scene scene)

@@ -12,22 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
   m_Name: FPG_Burstbug_Attack
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
-  attackId: burstbug-projectile
-  displayName: Burstbug Projectile
+  attackId: burstbug-fast
+  displayName: Burstbug Fast Attack
   priority: 0
   kind: 0
-  firstReadyOffsetTicks: 45
-  cooldownTicks: 80
-  telegraphTicks: 20
-  windupTicks: 10
-  recoveryTicks: 25
-  damage: 12
+  firstReadyOffsetTicks: 120
+  cooldownTicks: 660
+  telegraphTicks: 24
+  windupTicks: 12
+  recoveryTicks: 30
+  damage: 28
   breakDamage: 0
   projectileCount: 1
-  projectileDefinitionId: 101
-  projectileFlightTicks: 30
-  projectileLifetimeTicks: 45
+  projectileDefinitionId: 301
+  projectileFlightTicks: 36
+  projectileLifetimeTicks: 51
   interceptable: 0
   summon: {fileID: 0}
-  animationSlot: attack
-  warningSlot: enemy-warning
+  animationSlot: normal_skill1
+  warningSlot: enemy-source-fast

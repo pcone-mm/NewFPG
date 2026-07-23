@@ -27,6 +27,12 @@ namespace FPG.Demo.Unity
         [Tooltip("When enabled, Boot requires an authored playable-character choice before room selection.")]
         private bool requireCharacterSelection = true;
 
+        [SerializeField]
+        [D0PlannerField(
+            "出口房间刷新规则",
+            "房间清空后为每个出口决定并冻结目的地。规则引用可进入的房间目录；当前房间也参与等概率抽取。")]
+        private FpgExitRoomRefreshRule exitRoomRefreshRule;
+
         [Header("Runtime")]
         [SerializeField]
         private FrameRateMode frameRateMode = FrameRateMode.Locked;
@@ -56,6 +62,9 @@ namespace FPG.Demo.Unity
 
         public bool RequireCharacterSelection => requireCharacterSelection;
 
+        public FpgExitRoomRefreshRule ExitRoomRefreshRule =>
+            exitRoomRefreshRule;
+
         public FrameRateMode FrameRateMode => frameRateMode;
 
         public int LockedFramesPerSecond => lockedFramesPerSecond;
@@ -81,6 +90,18 @@ namespace FPG.Demo.Unity
             if (vSyncCount < 0 || vSyncCount > 4)
             {
                 error = "VSync count must be between 0 and 4.";
+                return false;
+            }
+
+            if (exitRoomRefreshRule == null)
+            {
+                error = "Exit room refresh rule is required.";
+                return false;
+            }
+
+            if (!exitRoomRefreshRule.TryValidate(out error))
+            {
+                error = "Exit room refresh rule is invalid: " + error;
                 return false;
             }
 

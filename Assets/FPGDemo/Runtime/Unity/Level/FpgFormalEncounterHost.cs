@@ -211,6 +211,56 @@ namespace FPG.Demo.Unity
             return encounterHost.TryPrepareAndStart(out error);
         }
 
+        public bool TryPrepareAndStart(
+            in FpgEncounterStartRequest startRequest,
+            out string error)
+        {
+            if (disposed || encounterHost == null)
+            {
+                error = nameof(encounterHost);
+                return false;
+            }
+
+            return encounterHost.TryPrepareAndStart(startRequest, out error);
+        }
+
+        public bool TryCapturePlayerRunResources(
+            out FpgPlayerRunResourceState state,
+            out string error)
+        {
+            TickIndex tick = encounterDirector == null
+                ? TickIndex.Invalid
+                : encounterDirector.CurrentTick;
+            return TryCapturePlayerRunResources(tick, out state, out error);
+        }
+
+        public bool TryCapturePlayerRunResources(
+            TickIndex currentTick,
+            out FpgPlayerRunResourceState state,
+            out string error)
+        {
+            FpgFormalCombatRuntimeBundle runtime = CombatRuntime;
+            D0CharacterDefinition definition = ActivePlayerDefinition;
+            string characterId = definition == null
+                ? null
+                : definition.CharacterId;
+            string weaponId = definition == null || definition.Weapon == null
+                ? null
+                : definition.Weapon.WeaponId;
+            DomainResult result = FpgPlayerRunResourceTransfer.TryCapture(
+                disposed || runtime == null || runtime.IsDisposed
+                    ? null
+                    : runtime.Player,
+                characterId,
+                weaponId,
+                currentTick,
+                out state);
+            error = result.IsSuccess
+                ? string.Empty
+                : result.RejectReason.ToString();
+            return result.IsSuccess;
+        }
+
         public void StopAndClear()
         {
             encounterHost?.StopAndClear();

@@ -17,10 +17,10 @@ namespace FPG.Demo.Tests.EditMode
                 report);
             Assert.That(report, Does.Contain("No assets or scenes were modified."));
             Assert.That(report, Does.Contain(
-                "CombatLab: Fei vs Luan and Hudie (combatlab-fei-vs-luan-hudie)"));
+                "CombatLab: Fei vs Burstbug (combatlab-fei-vs-burstbug)"));
             Assert.That(report, Does.Contain(
-                "Enemy: Luan; fixed-position behavior, a repeated single-projectile attack "
-                + "and Luan/Hudie presentation are valid."));
+                "Enemy: Burstbug; entry/patrol behavior, three reusable attack languages "
+                + "and four death-state FX pools are valid."));
         }
 
         [Test]

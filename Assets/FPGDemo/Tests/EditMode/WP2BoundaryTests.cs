@@ -261,7 +261,14 @@ namespace FPG.Demo.Tests.EditMode
                 weapon.SecondaryRecovery,
                 weapon.SecondaryDamage,
                 weapon.ReloadDuration,
-                weapon.SecondaryMaxImpactCount);
+                weapon.SecondaryMaxImpactCount,
+                weapon.SecondaryTriggerMode,
+                weapon.PrimaryQueryMode,
+                weapon.PrimaryAdditionalPenetrationCount,
+                weapon.SecondaryQueryMode,
+                weapon.SecondaryAreaProjectileLimit,
+                weapon.PrimaryAllowedTargetKinds,
+                weapon.SecondaryAllowedTargetKinds);
             ScenarioDefinition changedWeaponScenario = CopyScenario(
                 baseline,
                 changedWeapon,
@@ -278,10 +285,89 @@ namespace FPG.Demo.Tests.EditMode
                 weapon.SecondaryRecovery,
                 weapon.SecondaryDamage,
                 weapon.ReloadDuration,
-                weapon.SecondaryMaxImpactCount);
+                weapon.SecondaryMaxImpactCount,
+                weapon.SecondaryTriggerMode,
+                weapon.PrimaryQueryMode,
+                weapon.PrimaryAdditionalPenetrationCount,
+                weapon.SecondaryQueryMode,
+                weapon.SecondaryAreaProjectileLimit,
+                weapon.PrimaryAllowedTargetKinds,
+                weapon.SecondaryAllowedTargetKinds);
             ScenarioDefinition changedSecondaryChargeScenario = CopyScenario(
                 baseline,
                 changedSecondaryCharge,
+                baseline.ProjectileCapacity,
+                baseline.ThreatCapacity);
+            WeaponDefinition changedSecondaryTriggerMode = new WeaponDefinition(
+                weapon.DefinitionId,
+                weapon.MagazineCapacity,
+                weapon.PrimaryAmmoCost,
+                weapon.PrimaryInterval,
+                weapon.PrimaryDamage,
+                weapon.SecondaryAmmoCost,
+                weapon.SecondaryMinimumCharge,
+                weapon.SecondaryRecovery,
+                weapon.SecondaryDamage,
+                weapon.ReloadDuration,
+                weapon.SecondaryMaxImpactCount,
+                SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                weapon.PrimaryQueryMode,
+                weapon.PrimaryAdditionalPenetrationCount,
+                weapon.SecondaryQueryMode,
+                weapon.SecondaryAreaProjectileLimit,
+                weapon.PrimaryAllowedTargetKinds,
+                weapon.SecondaryAllowedTargetKinds);
+            ScenarioDefinition changedSecondaryTriggerModeScenario = CopyScenario(
+                baseline,
+                changedSecondaryTriggerMode,
+                baseline.ProjectileCapacity,
+                baseline.ThreatCapacity);
+            WeaponDefinition changedPrimaryPenetration = new WeaponDefinition(
+                weapon.DefinitionId,
+                weapon.MagazineCapacity,
+                weapon.PrimaryAmmoCost,
+                weapon.PrimaryInterval,
+                weapon.PrimaryDamage,
+                weapon.SecondaryAmmoCost,
+                weapon.SecondaryMinimumCharge,
+                weapon.SecondaryRecovery,
+                weapon.SecondaryDamage,
+                weapon.ReloadDuration,
+                weapon.SecondaryMaxImpactCount,
+                weapon.SecondaryTriggerMode,
+                weapon.PrimaryQueryMode,
+                weapon.PrimaryAdditionalPenetrationCount + 1,
+                weapon.SecondaryQueryMode,
+                weapon.SecondaryAreaProjectileLimit,
+                weapon.PrimaryAllowedTargetKinds,
+                weapon.SecondaryAllowedTargetKinds);
+            ScenarioDefinition changedPrimaryPenetrationScenario = CopyScenario(
+                baseline,
+                changedPrimaryPenetration,
+                baseline.ProjectileCapacity,
+                baseline.ThreatCapacity);
+            WeaponDefinition changedSecondaryProjectileLimit = new WeaponDefinition(
+                weapon.DefinitionId,
+                weapon.MagazineCapacity,
+                weapon.PrimaryAmmoCost,
+                weapon.PrimaryInterval,
+                weapon.PrimaryDamage,
+                weapon.SecondaryAmmoCost,
+                weapon.SecondaryMinimumCharge,
+                weapon.SecondaryRecovery,
+                weapon.SecondaryDamage,
+                weapon.ReloadDuration,
+                weapon.SecondaryMaxImpactCount,
+                weapon.SecondaryTriggerMode,
+                weapon.PrimaryQueryMode,
+                weapon.PrimaryAdditionalPenetrationCount,
+                weapon.SecondaryQueryMode,
+                weapon.SecondaryAreaProjectileLimit + 1,
+                weapon.PrimaryAllowedTargetKinds,
+                weapon.SecondaryAllowedTargetKinds);
+            ScenarioDefinition changedSecondaryProjectileLimitScenario = CopyScenario(
+                baseline,
+                changedSecondaryProjectileLimit,
                 baseline.ProjectileCapacity,
                 baseline.ThreatCapacity);
             ScenarioDefinition changedCapacityScenario = CopyScenario(
@@ -293,6 +379,15 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(changedWeaponScenario.DefinitionHash, Is.Not.EqualTo(baseline.DefinitionHash));
             Assert.That(
                 changedSecondaryChargeScenario.DefinitionHash,
+                Is.Not.EqualTo(baseline.DefinitionHash));
+            Assert.That(
+                changedSecondaryTriggerModeScenario.DefinitionHash,
+                Is.Not.EqualTo(baseline.DefinitionHash));
+            Assert.That(
+                changedPrimaryPenetrationScenario.DefinitionHash,
+                Is.Not.EqualTo(baseline.DefinitionHash));
+            Assert.That(
+                changedSecondaryProjectileLimitScenario.DefinitionHash,
                 Is.Not.EqualTo(baseline.DefinitionHash));
             Assert.That(changedCapacityScenario.DefinitionHash, Is.Not.EqualTo(baseline.DefinitionHash));
         }
@@ -312,7 +407,14 @@ namespace FPG.Demo.Tests.EditMode
                 source.PlayerWeapon.SecondaryRecovery,
                 source.PlayerWeapon.SecondaryDamage,
                 source.PlayerWeapon.ReloadDuration,
-                source.PlayerWeapon.SecondaryMaxImpactCount);
+                source.PlayerWeapon.SecondaryMaxImpactCount,
+                source.PlayerWeapon.SecondaryTriggerMode,
+                source.PlayerWeapon.PrimaryQueryMode,
+                source.PlayerWeapon.PrimaryAdditionalPenetrationCount,
+                source.PlayerWeapon.SecondaryQueryMode,
+                source.PlayerWeapon.SecondaryAreaProjectileLimit,
+                source.PlayerWeapon.PrimaryAllowedTargetKinds,
+                source.PlayerWeapon.SecondaryAllowedTargetKinds);
             ScenarioDefinition scenario = CopyScenario(
                 source,
                 lethalWeapon,

@@ -14,7 +14,8 @@ namespace FPG.Demo.Tests.EditMode
             try
             {
                 string error;
-                Assert.That(config.TryValidate(out error), Is.True, error);
+                Assert.That(config.TryValidate(out error), Is.False);
+                Assert.That(error, Is.Not.Empty);
                 Assert.That(config.RoomSceneName, Is.EqualTo("FormalRoom"));
                 Assert.That(config.FrameRateMode, Is.EqualTo(FrameRateMode.Locked));
                 Assert.That(config.LockedFramesPerSecond, Is.EqualTo(60));

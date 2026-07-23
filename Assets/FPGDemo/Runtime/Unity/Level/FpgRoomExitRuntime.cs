@@ -1,45 +1,43 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FPG.Demo.Unity
 {
-    /// <summary>
-    /// Runtime lock/selection boundary for one authored room exit. The room
-    /// asset only stores the marker; this component owns collision and
-    /// interaction state for the live room instance.
-    /// </summary>
+    public enum FpgRoomExitRuntimeState
+    {
+        Hidden = 0,
+        Available = 1,
+        Consumed = 2
+    }
+
     [DisallowMultipleComponent]
     public sealed class FpgRoomExitRuntime : MonoBehaviour
     {
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        [SerializeField]
-        private string exitId;
-
-        [Tooltip("Blocking colliders: enabled while locked, disabled after the room clears.")]
-        [SerializeField]
-        private Collider[] lockColliders = Array.Empty<Collider>();
-
-        [SerializeField]
-        private Behaviour[] interactionBehaviours = Array.Empty<Behaviour>();
-
-        [SerializeField]
-        private Renderer[] statusRenderers = Array.Empty<Renderer>();
-
-        [SerializeField]
-        private Color lockedColor = new Color(0.9f, 0.15f, 0.1f, 1f);
-
-        [SerializeField]
-        private Color unlockedColor = new Color(0.15f, 0.9f, 0.3f, 1f);
+        [SerializeField] private string exitId;
+        [SerializeField] private Collider[] lockColliders = Array.Empty<Collider>();
+        [SerializeField] private Behaviour[] interactionBehaviours = Array.Empty<Behaviour>();
+        [SerializeField] private Renderer[] statusRenderers = Array.Empty<Renderer>();
+        [SerializeField] private Text destinationLabel;
+        [SerializeField] private string destinationLabelPrefix = "前往：";
+        [SerializeField] private Color lockedColor = new Color(0.9f, 0.15f, 0.1f, 1f);
+        [SerializeField] private Color unlockedColor = new Color(0.15f, 0.9f, 0.3f, 1f);
 
         private bool configured;
-        private bool locked = true;
+        private FpgExitOffer offer;
         private MaterialPropertyBlock propertyBlock;
+        private FpgRoomExitRuntimeState state = FpgRoomExitRuntimeState.Hidden;
 
         public string ExitId => exitId;
         public bool IsConfigured => configured;
-        public bool IsLocked => locked;
+        public bool IsLocked => state != FpgRoomExitRuntimeState.Available;
+        public FpgRoomExitRuntimeState State => state;
+        public FpgExitOffer Offer => offer;
+        public IReadOnlyList<Collider> AttackColliders => lockColliders ?? Array.Empty<Collider>();
 
         public event Action<FpgRoomExitRuntime> Selected;
 
@@ -63,75 +61,174 @@ namespace FPG.Demo.Unity
             transform.SetPositionAndRotation(worldPose.position, worldPose.rotation);
             exitId = stableExitId;
             configured = true;
-            SetLocked(true);
+            Hide();
             error = string.Empty;
             return true;
         }
 
-public void SetLocked(bool value)
+        public bool TryReveal(FpgExitOffer nextOffer, out string error)
         {
-            locked = value;
-            if (lockColliders != null)
+            if (!configured)
             {
-                for (int index = 0; index < lockColliders.Length; index++)
-                {
-                    Collider collider = lockColliders[index];
-                    if (collider != null)
-                    {
-                        collider.enabled = value;
-                    }
-                }
+                error = "Room exit runtime must be configured before it is revealed.";
+                return false;
             }
 
-            if (interactionBehaviours != null)
+            if (nextOffer == null || !nextOffer.IsValid
+                || !string.Equals(nextOffer.ExitId, exitId, StringComparison.Ordinal))
             {
-                for (int index = 0; index < interactionBehaviours.Length; index++)
-                {
-                    Behaviour behaviour = interactionBehaviours[index];
-                    if (behaviour != null)
-                    {
-                        behaviour.enabled = !value;
-                    }
-                }
+                error = "Room exit offer must be valid and match the configured exit ID.";
+                return false;
             }
 
-            ApplyStatusColor(value ? lockedColor : unlockedColor);
+            if (state != FpgRoomExitRuntimeState.Hidden || offer != null)
+            {
+                error = "Room exit destination can only be bound once per reveal.";
+                return false;
+            }
+
+            if (!HasAttackCollider())
+            {
+                error = "Room exit requires at least one attack collider.";
+                return false;
+            }
+
+            offer = nextOffer;
+            state = FpgRoomExitRuntimeState.Available;
+            ApplyState();
+            error = string.Empty;
+            return true;
+        }
+
+        public void SetLocked(bool value)
+        {
+            if (value)
+            {
+                Hide();
+                return;
+            }
+
+            if (configured
+                && offer != null
+                && state == FpgRoomExitRuntimeState.Available)
+            {
+                ApplyState();
+            }
+        }
+
+        public void Hide()
+        {
+            offer = null;
+            state = FpgRoomExitRuntimeState.Hidden;
+            ApplyState();
         }
 
         public bool TrySelect()
         {
-            if (!configured || locked)
+            if (!configured || offer == null
+                || state != FpgRoomExitRuntimeState.Available)
             {
                 return false;
             }
 
+            state = FpgRoomExitRuntimeState.Consumed;
+            ApplyState();
             Selected?.Invoke(this);
             return true;
         }
 
-        public void BindComponents(
-            Collider[] colliders,
-            Behaviour[] interactions)
+        internal void ConsumeSilently()
+        {
+            if (state == FpgRoomExitRuntimeState.Hidden)
+            {
+                return;
+            }
+
+            state = FpgRoomExitRuntimeState.Consumed;
+            ApplyState();
+        }
+
+        public void BindComponents(Collider[] colliders, Behaviour[] interactions)
         {
             lockColliders = colliders ?? Array.Empty<Collider>();
             interactionBehaviours = interactions ?? Array.Empty<Behaviour>();
-            SetLocked(locked);
+            ApplyState();
         }
 
-public void BindStatusRenderers(Renderer[] renderers)
+        public void BindStatusRenderers(Renderer[] renderers)
         {
             statusRenderers = renderers ?? Array.Empty<Renderer>();
-            ApplyStatusColor(locked ? lockedColor : unlockedColor);
+            ApplyState();
+        }
+
+        public void BindDestinationLabel(Text label)
+        {
+            destinationLabel = label;
+            ApplyState();
+        }
+
+        private bool HasAttackCollider()
+        {
+            Collider[] colliders = lockColliders ?? Array.Empty<Collider>();
+            for (int index = 0; index < colliders.Length; index++)
+            {
+                if (colliders[index] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ApplyState()
+        {
+            bool available = configured
+                && offer != null
+                && state == FpgRoomExitRuntimeState.Available;
+            Collider[] colliders = lockColliders ?? Array.Empty<Collider>();
+            for (int index = 0; index < colliders.Length; index++)
+            {
+                Collider collider = colliders[index];
+                if (collider != null)
+                {
+                    collider.enabled = available;
+                }
+            }
+
+            Behaviour[] interactions = interactionBehaviours ?? Array.Empty<Behaviour>();
+            for (int index = 0; index < interactions.Length; index++)
+            {
+                Behaviour behaviour = interactions[index];
+                if (behaviour != null && behaviour != destinationLabel)
+                {
+                    behaviour.enabled = available;
+                }
+            }
+
+            ApplyStatusColor(available ? unlockedColor : lockedColor);
+            Renderer[] renderers = statusRenderers ?? Array.Empty<Renderer>();
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Renderer renderer = renderers[index];
+                if (renderer != null)
+                {
+                    renderer.enabled = available;
+                }
+            }
+
+            if (destinationLabel != null)
+            {
+                destinationLabel.text = available
+                    ? destinationLabelPrefix + offer.DestinationDisplayName
+                    : string.Empty;
+                destinationLabel.enabled = available;
+            }
         }
 
         private void ApplyStatusColor(Color color)
         {
             Renderer[] renderers = statusRenderers ?? Array.Empty<Renderer>();
-            if (renderers.Length == 0)
-            {
-                return;
-            }
-
             propertyBlock ??= new MaterialPropertyBlock();
             for (int index = 0; index < renderers.Length; index++)
             {
@@ -147,14 +244,5 @@ public void BindStatusRenderers(Renderer[] renderers)
                 renderer.SetPropertyBlock(propertyBlock);
             }
         }
-
-
-        private void OnDisable()
-        {
-            // A disabled exit must return to a fail-closed state before reuse.
-            SetLocked(true);
-        }
     }
 }
-
-

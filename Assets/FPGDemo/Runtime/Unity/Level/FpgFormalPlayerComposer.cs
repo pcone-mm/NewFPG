@@ -225,6 +225,8 @@ namespace FPG.Demo.Unity
                 if (!combatPortFactory.TryConfigurePlayer(
                         definition,
                         stagedEntity,
+                        selection.ThreeCProfile,
+                        selection.CombatFeelProfile,
                         out error))
                 {
                     return FailComposition(
@@ -242,6 +244,7 @@ namespace FPG.Demo.Unity
                         definition,
                         stagedEntity,
                         selection.ThreeCProfile,
+                        combatPortFactory.EffectiveAttackQuerySettings,
                         out error))
                 {
                     return FailComposition(

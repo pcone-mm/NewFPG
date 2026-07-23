@@ -174,8 +174,8 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private ThreatRetryPolicy retryPolicy = ThreatRetryPolicy.HoldPendingNextTick;
 
-        [D0PlannerSection("Attack-owned presentation")]
-        [D0PlannerField("Attack presentation contract", "Animation, visual socket, VFX pool and release timing belong to this attack asset.")]
+        [D0PlannerSection("攻击专属表现")]
+        [D0PlannerField("攻击表现契约", "动画、视觉 Socket、VFX 池和释放时序均归属当前攻击资产，遭遇配置只负责调度。")]
         [SerializeField]
         private D0EnemyAttackPresentationDefinition presentation =
             D0EnemyAttackPresentationDefinition.CreateDefaults();

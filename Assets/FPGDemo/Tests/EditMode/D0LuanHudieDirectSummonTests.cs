@@ -8,24 +8,19 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class D0LuanHudieDirectSummonTests
     {
-        private const string ScenarioPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsLuanSummonsHudie.asset";
         private const string SummonPath =
             "Assets/FPGDemo/Config/D0Slice/Definitions/Luan/D0_Luan_SummonHudie.asset";
         private const string AudioBankPath =
             "Assets/FPGDemo/Config/D0Slice/CombatAudioBank.asset";
 
         [Test]
-        public void InstalledScenarioOwnsTheDirectExecutableSummonContract()
+        public void FormalInstallerSourceOwnsTheExpectedSummonContract()
         {
-            D0CombatScenarioDefinition scenario =
-                LoadRequired<D0CombatScenarioDefinition>(ScenarioPath);
             D0LuanSummonHudieDefinition summon =
                 LoadRequired<D0LuanSummonHudieDefinition>(SummonPath);
             CombatAudioBank audioBank =
                 LoadRequired<CombatAudioBank>(AudioBankPath);
 
-            Assert.That(scenario.LuanSummonHudie, Is.SameAs(summon));
             Assert.That(summon.SummonTick, Is.EqualTo(240));
             Assert.That(summon.AppearanceTick, Is.EqualTo(284));
             Assert.That(
@@ -43,48 +38,6 @@ namespace FPG.Demo.Tests.EditMode
                 audioBank.TryGetCueEntry(summon.AppearanceAudioCue, out _),
                 Is.True);
             Assert.That(summon.TryValidate(out string summonError), Is.True, summonError);
-            Assert.That(scenario.TryValidate(out string scenarioError), Is.True, scenarioError);
-        }
-
-        [Test]
-        public void TimelineConsumesTick240AndTick284ExactlyOnce()
-        {
-            D0CombatScenarioDefinition scenario =
-                LoadRequired<D0CombatScenarioDefinition>(ScenarioPath);
-            D0LuanHudieSummonPresentationTimeline timeline =
-                new D0LuanHudieSummonPresentationTimeline();
-            int luanDefinitionId =
-                scenario.Encounter.InitialSpawnSlot.DefinitionId;
-            int hudieDefinitionId =
-                scenario.Encounter.GetSpawnSlot(1).DefinitionId;
-
-            Assert.That(
-                timeline.TryConsumeSummon(scenario, 239, luanDefinitionId),
-                Is.False);
-            Assert.That(
-                timeline.TryConsumeSummon(scenario, 240, hudieDefinitionId),
-                Is.False);
-            Assert.That(
-                timeline.TryConsumeSummon(scenario, 240, luanDefinitionId),
-                Is.True);
-            Assert.That(
-                timeline.TryConsumeSummon(scenario, 240, luanDefinitionId),
-                Is.False);
-
-            Assert.That(
-                timeline.TryConsumeAppearance(scenario, 283, hudieDefinitionId),
-                Is.False);
-            Assert.That(
-                timeline.TryConsumeAppearance(scenario, 284, luanDefinitionId),
-                Is.False);
-            Assert.That(
-                timeline.TryConsumeAppearance(scenario, 284, hudieDefinitionId),
-                Is.True);
-            Assert.That(
-                timeline.TryConsumeAppearance(scenario, 500, hudieDefinitionId),
-                Is.False);
-            Assert.That(timeline.SummonConsumeCount, Is.EqualTo(1));
-            Assert.That(timeline.AppearanceConsumeCount, Is.EqualTo(1));
         }
 
         [Test]

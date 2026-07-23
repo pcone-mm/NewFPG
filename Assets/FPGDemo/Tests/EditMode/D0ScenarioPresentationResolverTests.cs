@@ -13,25 +13,17 @@ namespace FPG.Demo.Tests.EditMode
         private const string FeiPresentationPath =
             "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_Presentation.asset";
 
-        private const string LuanPresentationPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Luan/D0_Luan_Presentation.asset";
-
-        private const string HudiePresentationPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Hudie/D0_Hudie_Presentation.asset";
-
         private const string BurstbugPresentationPath =
             "Assets/FPGDemo/Config/D0Slice/Definitions/Burstbug/D0_Burstbug_Presentation.asset";
 
         [Test]
-        public void InstalledLuanHudieScenarioResolvesFeiAndLuanActorDefinitions()
+        public void InstalledBurstbugScenarioResolvesFeiAndBurstbugActorDefinitions()
         {
             BattleScenarioConfig config = LoadRequired<BattleScenarioConfig>(ScenarioConfigPath);
             D0ActorPresentationDefinition fei =
                 LoadRequired<D0ActorPresentationDefinition>(FeiPresentationPath);
-            D0ActorPresentationDefinition luan =
-                LoadRequired<D0ActorPresentationDefinition>(LuanPresentationPath);
-            D0ActorPresentationDefinition hudie =
-                LoadRequired<D0ActorPresentationDefinition>(HudiePresentationPath);
+            D0ActorPresentationDefinition burstbug =
+                LoadRequired<D0ActorPresentationDefinition>(BurstbugPresentationPath);
 
             Assert.That(
                 D0ScenarioPresentationResolver.TryResolve(
@@ -42,26 +34,18 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True,
                 error);
             Assert.That(player, Is.SameAs(fei));
-            Assert.That(enemy, Is.SameAs(luan));
-            Assert.That(enemy.ActorId, Is.EqualTo("luan"));
-            Assert.That(enemy, Is.Not.SameAs(hudie),
-                "Hudie owns the summoned attack presentation, not the encounter's initial actor slot.");
+            Assert.That(enemy, Is.SameAs(burstbug));
+            Assert.That(enemy.ActorId, Is.EqualTo("burstbug"));
             Assert.That(config.AuthoredScenario.EncounterContract,
-                Is.EqualTo(D0EncounterContract.LuanHudieSingleProjectile));
+                Is.EqualTo(D0EncounterContract.BurstbugStandard));
             Assert.That(config.AuthoredScenario.Encounter.InitialSpawnSlot.Enemy.ActorPresentation,
-                Is.SameAs(luan));
-            Assert.That(config.AuthoredScenario.LuanSummonHudie.HudieEnemy.ActorPresentation,
-                Is.SameAs(hudie));
+                Is.SameAs(burstbug));
+            Assert.That(config.AuthoredScenario.LuanSummonHudie, Is.Null);
             Assert.That(
                 enemy.TryGetEnemyEffects(out D0EnemyEffectPresentationDefinition effects),
-                Is.False,
-                "Luan must not inherit Burstbug's character-specific VFX pools.");
-            Assert.That(effects, Is.Null);
-            Assert.That(
-                hudie.TryGetEnemyEffects(out D0EnemyEffectPresentationDefinition hudieEffects),
-                Is.False,
-                "Hudie attack VFX belongs to its attack definition.");
-            Assert.That(hudieEffects, Is.Null);
+                Is.True);
+            Assert.That(effects, Is.Not.Null);
+            Assert.That(effects.TryValidate(out string effectsError), Is.True, effectsError);
         }
 
         [Test]

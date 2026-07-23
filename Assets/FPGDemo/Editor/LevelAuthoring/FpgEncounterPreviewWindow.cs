@@ -26,7 +26,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private FpgEncounterPlan plan;
         private string error = string.Empty;
 
-        [MenuItem("FPG Demo/Room Editor/Formal Encounter Preview", priority = 121)]
+        [MenuItem("FPG Demo/Formal Encounter/Preview", priority = 130)]
         public static void Open()
         {
             FpgEncounterPreviewWindow window = GetWindow<FpgEncounterPreviewWindow>();

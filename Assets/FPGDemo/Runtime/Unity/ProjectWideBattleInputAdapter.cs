@@ -4,6 +4,26 @@ using UnityEngine.InputSystem;
 
 namespace FPG.Demo.Unity
 {
+    internal readonly struct ProjectWideAimInputSnapshot
+    {
+        public ProjectWideAimInputSnapshot(
+            bool aimHeld,
+            Vector2 lookDelta,
+            Vector2 point,
+            bool hasPoint)
+        {
+            AimHeld = aimHeld;
+            LookDelta = lookDelta;
+            Point = point;
+            HasPoint = hasPoint;
+        }
+
+        public bool AimHeld { get; }
+        public Vector2 LookDelta { get; }
+        public Vector2 Point { get; }
+        public bool HasPoint { get; }
+    }
+
     /// <summary>
     /// Reads the project-wide Battle action map and forwards its exact snapshot
     /// to the existing deterministic input source. This bridge never enables or
@@ -18,6 +38,8 @@ namespace FPG.Demo.Unity
         private const string ReloadActionPath = "Battle/Reload";
         private const string PauseActionPath = "Battle/Pause";
         private const string RestartActionPath = "Battle/Restart";
+        private const string LookActionPath = "Player/Look";
+        private const string PointActionPath = "UI/Point";
 
         private InputActionAsset actionAsset;
         private InputAction aimAction;
@@ -26,6 +48,8 @@ namespace FPG.Demo.Unity
         private InputAction reloadAction;
         private InputAction pauseAction;
         private InputAction restartAction;
+        private InputAction lookAction;
+        private InputAction pointAction;
         private InputAction subscribedPauseAction;
         private Func<bool> earlyPausePressedHandler;
         private int lastForwardedPauseFrame = -1;
@@ -89,7 +113,24 @@ namespace FPG.Demo.Unity
                 secondaryAction.WasReleasedThisFrame(),
                 reloadAction.WasPressedThisFrame(),
                 pauseAction.WasPressedThisFrame(),
-                restartAction.WasPressedThisFrame()));
+                restartAction.WasPressedThisFrame(),
+                secondaryAction.IsPressed()));
+            return true;
+        }
+
+        public bool TryReadAimInput(out ProjectWideAimInputSnapshot snapshot)
+        {
+            snapshot = default(ProjectWideAimInputSnapshot);
+            if (!TryResolveAimActions())
+            {
+                return false;
+            }
+
+            snapshot = new ProjectWideAimInputSnapshot(
+                aimAction.IsPressed(),
+                lookAction.ReadValue<Vector2>(),
+                pointAction.ReadValue<Vector2>(),
+                pointAction.activeControl != null);
             return true;
         }
 
@@ -148,6 +189,39 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        private bool TryResolveAimActions()
+        {
+            InputActionAsset projectWideActions = InputSystem.actions;
+            if (projectWideActions == null)
+            {
+                ClearCachedActions();
+                return false;
+            }
+
+            if (!ReferenceEquals(actionAsset, projectWideActions))
+            {
+                ClearCachedActions();
+                actionAsset = projectWideActions;
+            }
+
+            if (aimAction == null)
+            {
+                aimAction = actionAsset.FindAction(AimActionPath);
+            }
+
+            if (lookAction == null)
+            {
+                lookAction = actionAsset.FindAction(LookActionPath);
+            }
+
+            if (pointAction == null)
+            {
+                pointAction = actionAsset.FindAction(PointActionPath);
+            }
+
+            return aimAction != null && lookAction != null && pointAction != null;
+        }
+
         private void ClearCachedActions()
         {
             UnsubscribePausePerformed();
@@ -158,6 +232,8 @@ namespace FPG.Demo.Unity
             reloadAction = null;
             pauseAction = null;
             restartAction = null;
+            lookAction = null;
+            pointAction = null;
             lastForwardedPauseFrame = -1;
         }
 

@@ -14,6 +14,12 @@ namespace FPG.Demo.Unity
             TickIndex tick,
             FpgFormalCombatRuntimeBundle runtime);
 
+        DomainResult ProcessRoomInteractionTick(
+            TickIndex tick,
+            FpgFormalCombatRuntimeBundle runtime);
+
+        void BeginRoomInteraction();
+
         void Clear();
     }
 
@@ -36,6 +42,20 @@ namespace FPG.Demo.Unity
             FpgFormalAttackRuntimeCatalog attackRuntimeCatalog,
             out FpgFormalCombatRuntimeBundle bundle,
             out string error);
+    }
+
+    /// <summary>
+    /// One-shot room-entry resource import. The encounter host clears this
+    /// port after every preparation attempt so failed starts cannot leak state
+    /// into a later room.
+    /// </summary>
+    public interface IFpgFormalPlayerRunResourceImportPort
+    {
+        bool TrySetNextPlayerRunResources(
+            in FpgPlayerRunResourceState state,
+            out string error);
+
+        void ClearNextPlayerRunResources();
     }
 
     public sealed class FpgFormalCombatRuntimeBundle : IDisposable
@@ -104,6 +124,7 @@ namespace FPG.Demo.Unity
         public void ClearForRestart()
         {
             playerEntity.SetGameplayCollidersEnabled(true);
+            CombatPort.ResetPresentationState(new TickIndex(0L));
             AttackScheduler.Clear();
             ProjectileWorldPort.ClearAll();
             anchorMap.Clear();
@@ -156,7 +177,9 @@ namespace FPG.Demo.Unity
     }
 
     [DisallowMultipleComponent]
-    public sealed class FpgFormalCombatPortFactory : MonoBehaviour, IFpgFormalCombatPortFactory
+    public sealed class FpgFormalCombatPortFactory : MonoBehaviour,
+        IFpgFormalCombatPortFactory,
+        IFpgFormalPlayerRunResourceImportPort
     {
         [Header("Player")]
         [SerializeField] private D0CharacterDefinition playerDefinition;
@@ -165,11 +188,19 @@ namespace FPG.Demo.Unity
 
         [NonSerialized] private bool playerBindingConfigured;
         [NonSerialized] private bool playerBindingLocked;
+        [NonSerialized] private D0ThreeCProfile playerThreeCProfile;
+        [NonSerialized] private D0CombatFeelProfile playerCombatFeelProfile;
+        [NonSerialized] private UnityAttackQuerySettings runtimeAttackQuerySettings;
+        [NonSerialized] private int playerMaximumAttackImpactCount;
+        [NonSerialized] private bool hasNextPlayerRunResources;
+        [NonSerialized] private FpgPlayerRunResourceState nextPlayerRunResources;
 
         [Header("Spatial")]
         [SerializeField] private HitboxRegistry staticHitboxRegistry;
         [SerializeField] private Transform projectileProxyRoot;
-        [SerializeField] private UnityAttackQuerySettings attackQuerySettings = default(UnityAttackQuerySettings);
+        [SerializeField]
+        private UnityAttackQueryTechnicalSettings attackQueryTechnicalSettings =
+            default(UnityAttackQueryTechnicalSettings);
         [SerializeField] private UnityProjectileWorldSettings projectileWorldSettings = default(UnityProjectileWorldSettings);
 
         [NonSerialized] private ProjectileCollisionProxyPool projectileProxyPool;
@@ -187,6 +218,8 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)] private int maxSummonRecursionDepth = 2;
         [SerializeField, Min(1)] private int attackPatternCapacity = 128;
         [SerializeField, Min(1)] private int groggyDurationTicks = 120;
+        [SerializeField, Min(1)] private int vitalsEventCapacity = 128;
+        [SerializeField, Min(1)] private int damageFeedbackCapacity = 128;
 
         [Header("Kernel capacities")]
         [SerializeField, Min(1)] private int projectileBudgetCapacity = 64;
@@ -204,21 +237,33 @@ namespace FPG.Demo.Unity
             perEnemyThreatCapacity,
             summonCapacity,
             maxTotalSummons,
-            maxSummonRecursionDepth);
+            maxSummonRecursionDepth,
+            vitalsEventCapacity,
+            damageFeedbackCapacity);
 
         public int AttackPatternCapacity => attackPatternCapacity;
         public D0CharacterDefinition PlayerDefinition => playerDefinition;
         public D0PlayerEntityView PlayerEntity => playerEntity;
+        public HitboxRegistry StaticHitboxRegistry => staticHitboxRegistry;
+        public D0ThreeCProfile PlayerThreeCProfile => playerThreeCProfile;
+        public D0CombatFeelProfile PlayerCombatFeelProfile => playerCombatFeelProfile;
+        public UnityAttackQueryTechnicalSettings AttackQueryTechnicalSettings =>
+            attackQueryTechnicalSettings;
+        public UnityAttackQuerySettings EffectiveAttackQuerySettings =>
+            runtimeAttackQuerySettings;
         public bool HasPlayerBinding => playerBindingConfigured
             && playerDefinition != null
             && playerEntity != null;
         public bool IsPlayerBindingLocked => playerBindingLocked;
         public bool HasActiveRuntime => activeBundle != null
             && !activeBundle.IsDisposed;
+        public bool HasNextPlayerRunResources => hasNextPlayerRunResources;
 
         public bool TryConfigurePlayer(
             D0CharacterDefinition definition,
             D0PlayerEntityView entity,
+            D0ThreeCProfile threeCProfile,
+            D0CombatFeelProfile combatFeelProfile,
             out string error)
         {
             if (playerBindingLocked)
@@ -227,13 +272,27 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (definition == null || entity == null)
+            if (definition == null || entity == null
+                || threeCProfile == null || combatFeelProfile == null)
             {
                 error = "Formal combat factory requires an explicit player definition and entity.";
                 return false;
             }
 
-            if (!definition.TryValidate(out error) || !entity.TryValidate(out error))
+            if (!definition.TryValidate(out error)
+                || !entity.TryValidate(out error)
+                || !definition.Weapon.TryCreate(
+                    out WeaponDefinition configuredWeapon,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!combatFeelProfile.TryCreateAttackQuerySettings(
+                    threeCProfile,
+                    attackQueryTechnicalSettings,
+                    out UnityAttackQuerySettings composedQuerySettings,
+                    out error))
             {
                 return false;
             }
@@ -247,7 +306,11 @@ namespace FPG.Demo.Unity
 
             if (playerBindingConfigured)
             {
-                if (playerDefinition == definition && playerEntity == entity)
+                if (playerDefinition == definition && playerEntity == entity
+                    && playerThreeCProfile == threeCProfile
+                    && playerCombatFeelProfile == combatFeelProfile
+                    && playerMaximumAttackImpactCount
+                        == configuredWeapon.MaximumAttackImpactCount)
                 {
                     error = string.Empty;
                     return true;
@@ -259,6 +322,11 @@ namespace FPG.Demo.Unity
 
             playerDefinition = definition;
             playerEntity = entity;
+            playerThreeCProfile = threeCProfile;
+            playerCombatFeelProfile = combatFeelProfile;
+            runtimeAttackQuerySettings = composedQuerySettings;
+            playerMaximumAttackImpactCount =
+                configuredWeapon.MaximumAttackImpactCount;
             playerBindingConfigured = true;
             error = string.Empty;
             return true;
@@ -274,8 +342,71 @@ namespace FPG.Demo.Unity
             activeBundle = null;
             playerDefinition = null;
             playerEntity = null;
+            playerThreeCProfile = null;
+            playerCombatFeelProfile = null;
+            runtimeAttackQuerySettings = default(UnityAttackQuerySettings);
+            playerMaximumAttackImpactCount = 0;
+            ClearNextPlayerRunResources();
             playerBindingConfigured = false;
             playerBindingLocked = false;
+        }
+
+        public bool TrySetNextPlayerRunResources(
+            in FpgPlayerRunResourceState state,
+            out string error)
+        {
+            if (playerBindingLocked || HasActiveRuntime)
+            {
+                error = "Player run resources cannot change after runtime creation.";
+                return false;
+            }
+
+            if (!playerBindingConfigured || playerDefinition == null
+                || playerDefinition.Weapon == null)
+            {
+                error = "Player run resources require a composed player binding.";
+                return false;
+            }
+
+            if (!state.IsValid)
+            {
+                error = "Player run resources are invalid.";
+                return false;
+            }
+
+            if (!string.Equals(
+                    state.CharacterId,
+                    playerDefinition.CharacterId,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    state.WeaponId,
+                    playerDefinition.Weapon.WeaponId,
+                    StringComparison.Ordinal))
+            {
+                error =
+                    "Player run resources do not match the composed character and weapon.";
+                return false;
+            }
+
+            if (state.Life > playerDefinition.Life
+                || state.Barrier > playerDefinition.Barrier
+                || state.Ammo > playerDefinition.Weapon.MagazineCapacity)
+            {
+                error =
+                    "Player run resources exceed the composed character or weapon capacity.";
+                return false;
+            }
+
+            nextPlayerRunResources = state;
+            hasNextPlayerRunResources = true;
+            error = string.Empty;
+            return true;
+        }
+
+        public void ClearNextPlayerRunResources()
+        {
+            hasNextPlayerRunResources = false;
+            nextPlayerRunResources = default(FpgPlayerRunResourceState);
         }
 
         public bool TryValidateCapacity(
@@ -289,6 +420,23 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!playerBindingConfigured || playerMaximumAttackImpactCount <= 0)
+            {
+                error = "Formal combat factory requires a configured player weapon.";
+                return false;
+            }
+
+            if (!TryValidatePlayerAttackCapacity(
+                    playerMaximumAttackImpactCount,
+                    playerHitCommandCapacity,
+                    impactHistoryCapacity,
+                    impactQueueCapacity,
+                    TargetSelector.DefaultCandidateCapacity,
+                    out error))
+            {
+                return false;
+            }
+
             if (enemyCapacity < requirements.SimultaneousCombatants
                 || projectileCapacity < profile.ProjectileCapacity
                 || threatAdvanceCapacity < profile.ThreatCapacity
@@ -298,15 +446,19 @@ namespace FPG.Demo.Unity
                 || perEnemyThreatCapacity <= 0
                 || projectileBudgetCapacity < profile.ProjectileCapacity
                 || projectileReservationCapacity < profile.ProjectileCapacity
-                || impactQueueCapacity < profile.ThreatCapacity + profile.ProjectileCapacity)
+                || impactQueueCapacity < profile.ThreatCapacity + profile.ProjectileCapacity
+                || vitalsEventCapacity < requirements.SimultaneousCombatants + 1
+                || damageFeedbackCapacity < playerHitCommandCapacity)
             {
                 error = "Formal combat factory fixed capacities are below encounter preflight requirements.";
                 return false;
             }
 
-            if (!attackQuerySettings.IsValid || !projectileWorldSettings.IsValid
-                || attackQuerySettings.HitboxLayerMask != projectileWorldSettings.HitboxLayerMask
-                || attackQuerySettings.BlockerLayerMask != projectileWorldSettings.BlockerLayerMask)
+            UnityAttackQuerySettings querySettings = EffectiveAttackQuerySettings;
+            if (!attackQueryTechnicalSettings.IsValid
+                || !querySettings.IsValid || !projectileWorldSettings.IsValid
+                || querySettings.HitboxLayerMask != projectileWorldSettings.HitboxLayerMask
+                || querySettings.BlockerLayerMask != projectileWorldSettings.BlockerLayerMask)
             {
                 error = "Formal combat factory spatial settings are invalid.";
                 return false;
@@ -325,9 +477,37 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        internal static bool TryValidatePlayerAttackCapacity(
+            int maximumAttackImpactCount,
+            int commandCapacity,
+            int ledgerCapacity,
+            int queueCapacity,
+            int queryCandidateCapacity,
+            out string error)
+        {
+            long requiredLedgerCapacity =
+                (long)queueCapacity + maximumAttackImpactCount;
+            if (maximumAttackImpactCount <= 0
+                || commandCapacity < maximumAttackImpactCount
+                || queueCapacity < maximumAttackImpactCount
+                || queryCandidateCapacity < maximumAttackImpactCount
+                || ledgerCapacity < requiredLedgerCapacity)
+            {
+                error =
+                    "Formal player attack capacities cannot hold one maximum-impact release and the active impact queue.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
         private bool TryEnsureProjectileProxyPool(out string error)
         {
-            int hitboxLayerMask = attackQuerySettings.HitboxLayerMask;
+            int hitboxLayerMask = playerBindingConfigured
+                && runtimeAttackQuerySettings.IsValid
+                    ? runtimeAttackQuerySettings.HitboxLayerMask
+                    : attackQueryTechnicalSettings.HitboxLayerMask;
             if (projectileCapacity <= 0 || hitboxLayerMask == 0)
             {
                 error = "Formal projectile proxy configuration is invalid.";
@@ -356,6 +536,17 @@ namespace FPG.Demo.Unity
             projectileProxyPool = null;
         }
 
+        private DomainResult ImportPlayerRunResources(
+            PlayerRuntime player,
+            in FpgPlayerRunResourceState state)
+        {
+            return FpgPlayerRunResourceTransfer.TryRestoreRoomEntry(
+                player,
+                playerDefinition.CharacterId,
+                playerDefinition.Weapon.WeaponId,
+                state);
+        }
+
 
         public bool TryCreate(
             SessionIdAllocator idAllocator,
@@ -368,6 +559,10 @@ namespace FPG.Demo.Unity
             out string error)
         {
             bundle = null;
+            bool importPlayerRunResources = hasNextPlayerRunResources;
+            FpgPlayerRunResourceState playerRunResources =
+                nextPlayerRunResources;
+            ClearNextPlayerRunResources();
             if (playerBindingLocked)
             {
                 error = "Formal combat factory already created a runtime for its player binding.";
@@ -392,9 +587,17 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (weaponDefinition.MaximumAttackImpactCount
+                != playerMaximumAttackImpactCount)
+            {
+                error = "Formal player weapon changed after its runtime binding was configured.";
+                return false;
+            }
+
             RuntimeId playerRuntimeId = idAllocator.NextRuntimeId();
             RuntimeId staticEnemyPlaceholder = idAllocator.NextRuntimeId();
-            if (!staticHitboxRegistry.TryValidateStaticBindings(attackQuerySettings, out error)
+            UnityAttackQuerySettings querySettings = EffectiveAttackQuerySettings;
+            if (!staticHitboxRegistry.TryValidateStaticBindings(querySettings, out error)
                 || !staticHitboxRegistry.ResetForSession(
                     playerRuntimeId,
                     staticEnemyPlaceholder,
@@ -446,7 +649,7 @@ namespace FPG.Demo.Unity
                     formalHitboxRegistry);
                 UnityAttackQueryPort attackQueryPort = new UnityAttackQueryPort(
                     combinedLookup,
-                    attackQuerySettings,
+                    querySettings,
                     physics);
                 FpgFormalProjectileWorldPort projectileWorldPort =
                     new FpgFormalProjectileWorldPort(
@@ -471,6 +674,17 @@ namespace FPG.Demo.Unity
                         0),
                     new ExposureRuntime(PlayerExposureState.Exposed),
                     new WeaponRuntime(weaponDefinition));
+                if (importPlayerRunResources)
+                {
+                    DomainResult imported = ImportPlayerRunResources(
+                        player,
+                        playerRunResources);
+                    if (!imported.IsSuccess)
+                    {
+                        throw new InvalidOperationException(imported.ToString());
+                    }
+                }
+
                 FpgEncounterRuntimeSummonSink summonSink =
                     new FpgEncounterRuntimeSummonSink(encounterRuntime);
                 FpgMultiEnemyCombatPort combatPort = new FpgMultiEnemyCombatPort(
@@ -725,5 +939,3 @@ namespace FPG.Demo.Unity
     }
 
 }
-
-

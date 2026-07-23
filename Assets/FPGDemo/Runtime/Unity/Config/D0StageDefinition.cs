@@ -154,7 +154,7 @@ namespace FPG.Demo.Unity
         private string designerNotes;
 
         [D0PlannerSection("遭遇出生点")]
-        [D0PlannerField("出生点列表", "舞台只定义可复用的位置与朝向。玩家选择哪个点由场景配置决定，敌人和生成 Tick 由遭遇 SpawnSlot 决定。")]
+        [D0PlannerField("出生点列表", "舞台只定义可复用的具名 SpawnPoint 位置与朝向。玩家选择哪个点由场景配置决定，敌人和生成 Tick 由遭遇 SpawnSlot 决定。")]
         [SerializeField]
         private D0StageSpawnPointDefinition[] spawnPoints =
             Array.Empty<D0StageSpawnPointDefinition>();

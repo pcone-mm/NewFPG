@@ -155,6 +155,7 @@ namespace FPG.Demo.Run
             Tick = playerInput.Tick;
             AimHeld = playerInput.AimHeld;
             PrimaryHeld = playerInput.PrimaryHeld;
+            SecondaryHeld = playerInput.SecondaryHeld;
             CancelSecondary = playerInput.CancelSecondary;
             AimPose = aimPose;
             EdgeCommandCount = playerInput.EdgeCommandCount;
@@ -166,6 +167,7 @@ namespace FPG.Demo.Run
         public TickIndex Tick { get; }
         public bool AimHeld { get; }
         public bool PrimaryHeld { get; }
+        public bool SecondaryHeld { get; }
         public bool CancelSecondary { get; }
         public AimPoseSnapshot AimPose { get; }
         public int EdgeCommandCount { get; }
@@ -202,7 +204,8 @@ namespace FPG.Demo.Run
                 PrimaryHeld,
                 EdgeCommandCount == 0 ? null : edgeBuffer,
                 EdgeCommandCount,
-                CancelSecondary);
+                CancelSecondary,
+                SecondaryHeld);
         }
     }
 

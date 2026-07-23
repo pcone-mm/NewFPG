@@ -324,6 +324,11 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)weapon.PrimaryAmmoCost));
             hash = StableHash.Append(hash, unchecked((ulong)weapon.PrimaryInterval.Value));
             hash = AppendDamageSpec(hash, weapon.PrimaryDamage);
+            hash = StableHash.Append(hash, (ulong)weapon.PrimaryQueryMode);
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)weapon.PrimaryAdditionalPenetrationCount));
+            hash = StableHash.Append(hash, (ulong)weapon.PrimaryAllowedTargetKinds);
             hash = StableHash.Append(hash, unchecked((ulong)weapon.SecondaryAmmoCost));
             hash = StableHash.Append(
                 hash,
@@ -331,7 +336,13 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)weapon.SecondaryRecovery.Value));
             hash = AppendDamageSpec(hash, weapon.SecondaryDamage);
             hash = StableHash.Append(hash, unchecked((ulong)weapon.ReloadDuration.Value));
-            return StableHash.Append(hash, unchecked((ulong)weapon.SecondaryMaxImpactCount));
+            hash = StableHash.Append(hash, unchecked((ulong)weapon.SecondaryMaxImpactCount));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)weapon.SecondaryAreaProjectileLimit));
+            hash = StableHash.Append(hash, (ulong)weapon.SecondaryQueryMode);
+            hash = StableHash.Append(hash, (ulong)weapon.SecondaryAllowedTargetKinds);
+            return StableHash.Append(hash, (ulong)weapon.SecondaryTriggerMode);
         }
 
         internal static ulong AppendThreatDefinition(ulong hash, ThreatDefinition threat)
@@ -387,9 +398,7 @@ namespace FPG.Demo.Run
             }
 
             SessionIdAllocator idAllocator = new SessionIdAllocator();
-            int maxHits = Math.Max(
-                WeaponDefinition.PrimaryPelletCount,
-                definition.PlayerWeapon.SecondaryMaxImpactCount);
+            int maxHits = definition.PlayerWeapon.MaximumAttackImpactCount;
             int impactQueueCapacity = checked(
                 maxHits
                 + definition.ProjectileCapacity

@@ -16,9 +16,6 @@ namespace FPG.Demo.Tests.EditMode
         private const string HudieScenarioPath =
             "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsHudie.asset";
 
-        private const string LuanHudieScenarioPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsLuanSummonsHudie.asset";
-
         private const string RoomPath =
             "Assets/FPGDemo/Config/Level/Rooms/Room_combatlab-forest.asset";
 
@@ -75,7 +72,6 @@ namespace FPG.Demo.Tests.EditMode
 
         [TestCase(BurstbugScenarioPath, 1)]
         [TestCase(HudieScenarioPath, 1)]
-        [TestCase(LuanHudieScenarioPath, 2)]
         public void InstalledScenariosCrossReferenceOnlyNamedStageSpawnPoints(
             string scenarioPath,
             int expectedEnemySlotCount)

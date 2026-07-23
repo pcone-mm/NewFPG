@@ -16,7 +16,8 @@ namespace FPG.Demo.Unity
             bool secondaryReleased,
             bool reloadPressed,
             bool pausePressed,
-            bool restartPressed)
+            bool restartPressed,
+            bool secondaryHeld = false)
         {
             AimHeld = aimHeld;
             PrimaryHeld = primaryHeld;
@@ -25,6 +26,7 @@ namespace FPG.Demo.Unity
             ReloadPressed = reloadPressed;
             PausePressed = pausePressed;
             RestartPressed = restartPressed;
+            SecondaryHeld = secondaryHeld;
         }
 
         public bool AimHeld { get; }
@@ -34,6 +36,7 @@ namespace FPG.Demo.Unity
         public bool ReloadPressed { get; }
         public bool PausePressed { get; }
         public bool RestartPressed { get; }
+        public bool SecondaryHeld { get; }
     }
 
     public sealed class UnityBattleInputSource : IPlayerInputSource, IBattleTickInputSource
@@ -52,6 +55,7 @@ namespace FPG.Demo.Unity
 
         private bool aimHeld;
         private bool primaryHeld;
+        private bool secondaryHeld;
         private bool pausePressed;
         private bool restartPressed;
         private bool cancelSecondaryOnNextFrame;
@@ -69,6 +73,8 @@ namespace FPG.Demo.Unity
 
         public int ConfiguredInputBufferTicks => gameplayEdgeQueueCapacity
             / BattleTickInput.MaxEdgeCommandCount;
+        public bool PrimaryHeld => primaryHeld;
+        public bool SecondaryHeld => secondaryHeld;
 
         /// <summary>
         /// Limits the preallocated edge backlog to a planner-authored number of
@@ -102,7 +108,8 @@ namespace FPG.Demo.Unity
                 secondaryReleased,
                 keyboard != null && keyboard.rKey.wasPressedThisFrame,
                 keyboard != null && keyboard.escapeKey.wasPressedThisFrame,
-                keyboard != null && keyboard.f5Key.wasPressedThisFrame));
+                keyboard != null && keyboard.f5Key.wasPressedThisFrame,
+                mouse != null && mouse.rightButton.isPressed));
         }
 
         public void Capture(UnityInputSnapshot snapshot)
@@ -110,6 +117,7 @@ namespace FPG.Demo.Unity
             bool aimWasHeld = aimHeld;
             aimHeld = snapshot.AimHeld;
             primaryHeld = snapshot.PrimaryHeld;
+            secondaryHeld = snapshot.SecondaryHeld;
             // When Aim and Secondary share one physical control, the release
             // edge must commit the charged attack instead of also cancelling it.
             // A pure aim withdrawal still requests one cancellation tick.
@@ -159,7 +167,8 @@ namespace FPG.Demo.Unity
                 primaryHeld,
                 edgeCount == 0 ? null : edgeBuffer,
                 edgeCount,
-                cancelSecondary);
+                cancelSecondary,
+                secondaryHeld);
         }
 
         public BattleTickInput GetTickInput(TickIndex tick)
@@ -286,10 +295,23 @@ namespace FPG.Demo.Unity
         {
             aimHeld = false;
             primaryHeld = false;
+            secondaryHeld = false;
             gameplayEdgeHead = 0;
             gameplayEdgeCount = 0;
             cancelSecondaryOnNextFrame = true;
             hasCaptured = false;
+        }
+
+        public void BeginRoomInteraction()
+        {
+            BeginRoomInteraction(cancelSecondary: false);
+        }
+
+        public void BeginRoomInteraction(bool cancelSecondary)
+        {
+            gameplayEdgeHead = 0;
+            gameplayEdgeCount = 0;
+            cancelSecondaryOnNextFrame = cancelSecondary || secondaryHeld;
         }
 
         private void EnqueueGameplayEdge(bool requested, InputEdgeType type)

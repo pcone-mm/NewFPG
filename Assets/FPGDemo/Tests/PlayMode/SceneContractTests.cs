@@ -44,6 +44,15 @@ namespace FPG.Demo.Tests.PlayMode
             GameBootstrap bootstrap =
                 FindComponentInScene<GameBootstrap>(bootScene);
             Assert.That(bootstrap, Is.Not.Null);
+            FpgExitRoomRefreshRule exitRefreshRule =
+                bootstrap.Config.ExitRoomRefreshRule;
+            Assert.That(exitRefreshRule, Is.Not.Null);
+            Assert.That(
+                exitRefreshRule.TryValidate(out string exitRuleError),
+                Is.True,
+                exitRuleError);
+            Assert.That(exitRefreshRule.RoomCatalog, Is.Not.Null);
+            Assert.That(exitRefreshRule.RoomCatalog.Count, Is.EqualTo(1));
 
             yield return WaitForBootstrapState(
                 bootstrap,
@@ -88,7 +97,9 @@ namespace FPG.Demo.Tests.PlayMode
                 Is.True,
                 roomError);
             yield return WaitForBootstrap(bootstrap, 10f);
-            yield return new WaitForEndOfFrame();
+            yield return Application.isBatchMode
+                ? null
+                : new WaitForEndOfFrame();
 
             Scene formalRoom = SceneManager.GetSceneByName("FormalRoom");
             Assert.That(bootScene.isLoaded, Is.True);
@@ -99,6 +110,52 @@ namespace FPG.Demo.Tests.PlayMode
             Assert.That(bootstrap.ActiveFormalHost, Is.Not.Null);
             Assert.That(bootstrap.ActiveFormalSceneHost, Is.Not.Null);
             Assert.That(bootstrap.ActiveEncounterDirector, Is.Not.Null);
+            Assert.That(
+                exitRefreshRule.RoomCatalog.Rooms[0],
+                Is.SameAs(bootstrap.SelectedRoom));
+
+            FpgRoomExitRuntime[] preparedExits =
+                FindComponentsInScene<FpgRoomExitRuntime>(formalRoom);
+            Assert.That(
+                preparedExits,
+                Has.Length.EqualTo(bootstrap.SelectedRoom.ExitSlots.Count));
+            Assert.That(
+                bootstrap.ActiveEncounterDirector.ExitAttackRegistry.Count,
+                Is.Zero);
+            for (int exitIndex = 0;
+                exitIndex < preparedExits.Length;
+                exitIndex++)
+            {
+                FpgRoomExitRuntime preparedExit = preparedExits[exitIndex];
+                Assert.That(
+                    preparedExit.State,
+                    Is.EqualTo(FpgRoomExitRuntimeState.Hidden));
+                Assert.That(preparedExit.Offer, Is.Null);
+                for (int colliderIndex = 0;
+                    colliderIndex < preparedExit.AttackColliders.Count;
+                    colliderIndex++)
+                {
+                    Assert.That(
+                        preparedExit.AttackColliders[colliderIndex].enabled,
+                        Is.False);
+                }
+
+                Renderer[] exitRenderers =
+                    preparedExit.GetComponentsInChildren<Renderer>(true);
+                Assert.That(exitRenderers, Is.Not.Empty);
+                for (int rendererIndex = 0;
+                    rendererIndex < exitRenderers.Length;
+                    rendererIndex++)
+                {
+                    Assert.That(exitRenderers[rendererIndex].enabled, Is.False);
+                }
+
+                Text[] exitLabels =
+                    preparedExit.GetComponentsInChildren<Text>(true);
+                Assert.That(exitLabels, Has.Length.EqualTo(1));
+                Assert.That(exitLabels[0].enabled, Is.False);
+                Assert.That(exitLabels[0].text, Is.Empty);
+            }
 
             D0PlayerEntityView[] players =
                 FindComponentsInScene<D0PlayerEntityView>(formalRoom);
@@ -177,7 +234,9 @@ namespace FPG.Demo.Tests.PlayMode
                 bootstrap.ActiveFormalHost.TryRestart(out string restartError),
                 Is.True,
                 restartError);
-            yield return new WaitForEndOfFrame();
+            yield return Application.isBatchMode
+                ? null
+                : new WaitForEndOfFrame();
 
             D0PlayerEntityView[] restartedPlayers =
                 FindComponentsInScene<D0PlayerEntityView>(formalRoom);
@@ -233,6 +292,437 @@ namespace FPG.Demo.Tests.PlayMode
                 Is.Not.EqualTo(FpgEncounterPhase.Faulted)
                     .And.Not.EqualTo(FpgEncounterPhase.Failed),
                 observedFailureReason + ": " + observedFailureMessage);
+        }
+
+[UnityTest]
+        public IEnumerator FormalRoomExitAttackSelfLoopsFiveVisits()
+        {
+            yield return SceneManager.LoadSceneAsync("Boot", LoadSceneMode.Single);
+
+            Scene bootScene = SceneManager.GetSceneByName("Boot");
+            GameBootstrap bootstrap =
+                FindComponentInScene<GameBootstrap>(bootScene);
+            Assert.That(bootstrap, Is.Not.Null);
+            yield return WaitForBootstrapState(
+                bootstrap,
+                BootstrapState.WaitingForCharacterSelection,
+                5f);
+
+            Assert.That(
+                bootstrap.TrySelectCharacter(
+                    bootstrap.CharacterChoices[0],
+                    out string characterError),
+                Is.True,
+                characterError);
+            Assert.That(
+                bootstrap.TryEnterRoom(
+                    bootstrap.RoomEntrances[0],
+                    out string roomError),
+                Is.True,
+                roomError);
+            yield return WaitForBootstrap(bootstrap, 10f);
+            yield return null;
+
+            FpgFormalEncounterHost retainedHost =
+                bootstrap.ActiveFormalSceneHost;
+            Assert.That(retainedHost, Is.Not.Null);
+            FpgEncounterRunContext initialContext =
+                retainedHost.EncounterHost.RunContext;
+
+            for (int visit = 0; visit < 5; visit++)
+            {
+                FpgRoomEncounterDirector director =
+                    bootstrap.ActiveEncounterDirector;
+                FpgFormalPlayerTickDriver driver =
+                    retainedHost.PlayerInputPort as FpgFormalPlayerTickDriver;
+                Assert.That(director, Is.Not.Null);
+                Assert.That(driver, Is.Not.Null);
+
+                float tickDeadline = Time.realtimeSinceStartup + 5f;
+                while (!director.CurrentTick.IsValid
+                    && Time.realtimeSinceStartup < tickDeadline)
+                {
+                    yield return null;
+                }
+                Assert.That(director.CurrentTick.IsValid, Is.True);
+
+                bool heldAcrossClear = visit == 0;
+                SetPrivateField(driver, "captureFromDevices", false);
+                SetPrivateField(driver, "aimFromPointerPosition", false);
+                if (heldAcrossClear)
+                {
+                    driver.Capture(new UnityInputSnapshot(
+                        aimHeld: true,
+                        primaryHeld: true,
+                        secondaryPressed: true,
+                        secondaryReleased: false,
+                        reloadPressed: false,
+                        pausePressed: false,
+                        restartPressed: false,
+                        secondaryHeld: true));
+                }
+
+                PlayerRuntime beforePlayer =
+                    retainedHost.CombatRuntime.Player;
+                D0PlayerEntityView oldPlayerEntity =
+                    retainedHost.ActivePlayerEntity;
+                int lifeBefore = beforePlayer.Combatant.Life;
+                int barrierBefore = beforePlayer.Combatant.Barrier;
+                int ammoBefore = beforePlayer.Weapon.Magazine.Ammo;
+                Assert.That(ammoBefore, Is.GreaterThan(0));
+
+                SetPrivateField(
+                    director,
+                    "<Phase>k__BackingField",
+                    FpgEncounterPhase.Cleared);
+                InvokePrivateMethod(
+                    director,
+                    "RaiseRoomCleared",
+                    director.CurrentTick);
+
+                Assert.That(
+                    bootstrap.RunFlowController.State,
+                    Is.EqualTo(FpgRunFlowState.AwaitingExit),
+                    bootstrap.RunFlowController.LastError);
+                Assert.That(director.ExitAttackRegistry.Count, Is.GreaterThan(0));
+                Assert.That(
+                    GetPrivateField<bool>(driver, "roomInteractionArmed"),
+                    Is.EqualTo(!heldAcrossClear),
+                    $"Visit {visit} room interaction arming mismatch.");
+
+                FpgRoomExitRuntime[] exits =
+                    FindComponentsInScene<FpgRoomExitRuntime>(
+                        retainedHost.gameObject.scene);
+                Assert.That(exits, Has.Length.EqualTo(1));
+                FpgRoomExitRuntime exit = exits[0];
+                Assert.That(
+                    exit.State,
+                    Is.EqualTo(FpgRoomExitRuntimeState.Available));
+                Assert.That(exit.Offer, Is.Not.Null);
+                Assert.That(
+                    exit.Offer.DestinationRoom,
+                    Is.SameAs(bootstrap.SelectedRoom));
+                Text label = exit.GetComponentInChildren<Text>(true);
+                Assert.That(label, Is.Not.Null);
+                Assert.That(label.enabled, Is.True);
+                Assert.That(
+                    label.text,
+                    Is.EqualTo(
+                        "前往：" + bootstrap.SelectedRoom.DisplayName));
+
+                Transform aimAnchor = oldPlayerEntity.AimAnchor;
+                Collider exitCollider = exit.AttackColliders[0];
+                exit.transform.position =
+                    aimAnchor.position + aimAnchor.forward * 3f;
+                Physics.SyncTransforms();
+                aimAnchor.rotation = Quaternion.LookRotation(
+                    exitCollider.bounds.center - aimAnchor.position,
+                    Vector3.up);
+
+                long nextInteractionTick = director.CurrentTick.Value + 1L;
+                if (heldAcrossClear)
+                {
+                    driver.Capture(new UnityInputSnapshot(
+                        aimHeld: true,
+                        primaryHeld: true,
+                        secondaryPressed: false,
+                        secondaryReleased: false,
+                        reloadPressed: false,
+                        pausePressed: false,
+                        restartPressed: false,
+                        secondaryHeld: true));
+                    InvokePrivateMethod(driver, "CaptureAimPose");
+                    Assert.That(
+                        director.ProcessRoomInteractionTick(
+                            new TickIndex(nextInteractionTick++),
+                            out string heldError),
+                        Is.True,
+                        heldError);
+                    Assert.That(
+                        bootstrap.RunFlowController.State,
+                        Is.EqualTo(FpgRunFlowState.AwaitingExit));
+                    Assert.That(
+                        beforePlayer.Weapon.Magazine.Ammo,
+                        Is.EqualTo(ammoBefore));
+                }
+
+                if (heldAcrossClear || visit != 1)
+                {
+                    driver.Capture(new UnityInputSnapshot(
+                        aimHeld: true,
+                        primaryHeld: false,
+                        secondaryPressed: false,
+                        secondaryReleased: false,
+                        reloadPressed: false,
+                        pausePressed: false,
+                        restartPressed: false));
+                    InvokePrivateMethod(driver, "CaptureAimPose");
+                    Assert.That(
+                        director.ProcessRoomInteractionTick(
+                            new TickIndex(nextInteractionTick++),
+                            out string releaseError),
+                        Is.True,
+                        releaseError);
+                    Assert.That(
+                        GetPrivateField<bool>(driver, "roomInteractionArmed"),
+                        Is.True);
+                }
+
+                bool useSecondary = visit == 4;
+                SetPrivateField(
+                    retainedHost.EncounterHost,
+                    "driveFromFixedUpdate",
+                    false);
+                driver.Capture(new UnityInputSnapshot(
+                    aimHeld: true,
+                    primaryHeld: !useSecondary,
+                    secondaryPressed: useSecondary,
+                    secondaryReleased: false,
+                    reloadPressed: false,
+                    pausePressed: false,
+                    restartPressed: false,
+                    secondaryHeld: useSecondary));
+                InvokePrivateMethod(driver, "CaptureAimPose");
+                TickIndex attackTick = new TickIndex(nextInteractionTick);
+                Assert.That(
+                    director.ProcessRoomInteractionTick(
+                        attackTick,
+                        out string attackError),
+                    Is.True,
+                    attackError);
+                bool armedAfterAttack =
+                    GetPrivateField<bool>(driver, "roomInteractionArmed");
+                Assert.That(
+                    bootstrap.RunFlowController.State,
+                    Is.EqualTo(FpgRunFlowState.Transitioning),
+                    $"Visit {visit}, secondary={useSecondary}, "
+                        + $"ammo={beforePlayer.Weapon.Magazine.Ammo}, "
+                        + $"armed={armedAfterAttack}: "
+                        + bootstrap.RunFlowController.LastError);
+
+                int expectedOrdinal =
+                    initialContext.RoomVisitOrdinal + visit + 1;
+                int expectedDepth = initialContext.Depth + visit + 1;
+                float transitionDeadline = Time.realtimeSinceStartup + 10f;
+                while ((bootstrap.RunFlowController.State
+                            != FpgRunFlowState.Running
+                        || bootstrap.ActiveFormalHost == null
+                        || bootstrap.ActiveFormalHost.RunContext
+                            .RoomVisitOrdinal != expectedOrdinal)
+                    && Time.realtimeSinceStartup < transitionDeadline)
+                {
+                    yield return null;
+                }
+
+                Assert.That(
+                    bootstrap.RunFlowController.State,
+                    Is.EqualTo(FpgRunFlowState.Running),
+                    bootstrap.LastError);
+                Assert.That(
+                    bootstrap.ActiveFormalSceneHost,
+                    Is.SameAs(retainedHost));
+                Assert.That(
+                    bootstrap.ActiveFormalHost.RunContext.Depth,
+                    Is.EqualTo(expectedDepth));
+                Assert.That(
+                    bootstrap.ActiveFormalHost.RunContext.RoomVisitOrdinal,
+                    Is.EqualTo(expectedOrdinal));
+                Assert.That(
+                    bootstrap.ActiveFormalHost.RunContext.RunSeed,
+                    Is.EqualTo(initialContext.RunSeed));
+                Assert.That(
+                    bootstrap.ActiveFormalHost.RunContext.RegionId,
+                    Is.EqualTo(initialContext.RegionId));
+                Assert.That(
+                    bootstrap.ActiveFormalHost.RunContext
+                        .DifficultyMultiplierBasisPoints,
+                    Is.EqualTo(
+                        initialContext.DifficultyMultiplierBasisPoints));
+
+                PlayerRuntime afterPlayer =
+                    retainedHost.CombatRuntime.Player;
+                Assert.That(afterPlayer.Combatant.Life, Is.EqualTo(lifeBefore));
+                Assert.That(
+                    afterPlayer.Combatant.Barrier,
+                    Is.EqualTo(barrierBefore));
+                Assert.That(
+                    afterPlayer.Weapon.Magazine.Ammo,
+                    Is.EqualTo(ammoBefore - (useSecondary ? 2 : 1)));
+                Assert.That(afterPlayer.Weapon.State, Is.EqualTo(WeaponState.Ready));
+                Assert.That(
+                    afterPlayer.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Exposed));
+                SetPrivateField(
+                    retainedHost.EncounterHost,
+                    "driveFromFixedUpdate",
+                    true);
+                Assert.That(oldPlayerEntity == null, Is.True);
+
+                FpgRoomExitRuntime[] nextExits =
+                    FindComponentsInScene<FpgRoomExitRuntime>(
+                        retainedHost.gameObject.scene);
+                Assert.That(nextExits, Has.Length.EqualTo(1));
+                Assert.That(
+                    nextExits[0].State,
+                    Is.EqualTo(FpgRoomExitRuntimeState.Hidden));
+                Assert.That(
+                    bootstrap.ActiveEncounterDirector.ExitAttackRegistry.Count,
+                    Is.Zero);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator NaturalThreeWaveClearRevealsExit()
+        {
+            yield return SceneManager.LoadSceneAsync("Boot", LoadSceneMode.Single);
+
+            Scene bootScene = SceneManager.GetSceneByName("Boot");
+            GameBootstrap bootstrap =
+                FindComponentInScene<GameBootstrap>(bootScene);
+            Assert.That(bootstrap, Is.Not.Null);
+            yield return WaitForBootstrapState(
+                bootstrap,
+                BootstrapState.WaitingForCharacterSelection,
+                5f);
+
+            Assert.That(
+                bootstrap.TrySelectCharacter(
+                    bootstrap.CharacterChoices[0],
+                    out string characterError),
+                Is.True,
+                characterError);
+            Assert.That(
+                bootstrap.TryEnterRoom(
+                    bootstrap.RoomEntrances[0],
+                    out string roomError),
+                Is.True,
+                roomError);
+            yield return WaitForBootstrap(bootstrap, 10f);
+            yield return null;
+
+            FpgRoomEncounterDirector director =
+                bootstrap.ActiveEncounterDirector;
+            FpgFormalCombatRuntimeBundle combatRuntime =
+                bootstrap.ActiveFormalSceneHost.CombatRuntime;
+            Assert.That(director, Is.Not.Null);
+            Assert.That(combatRuntime, Is.Not.Null);
+            Assert.That(director.Plan.WaveCount, Is.EqualTo(3));
+
+            int waveClearedCount = 0;
+            int roomClearedCount = 0;
+            director.LifecycleEvent += lifecycle =>
+            {
+                if (lifecycle.Type == FpgEncounterLifecycleEventType.WaveCleared)
+                {
+                    waveClearedCount++;
+                }
+                else if (lifecycle.Type
+                    == FpgEncounterLifecycleEventType.RoomCleared)
+                {
+                    roomClearedCount++;
+                }
+            };
+
+            int[] expectedLivingByWave = { 2, 2, 1 };
+            for (int wave = 0; wave < expectedLivingByWave.Length; wave++)
+            {
+                int expectedLiving = expectedLivingByWave[wave];
+                float spawnDeadline = Time.realtimeSinceStartup + 10f;
+                while ((director.CurrentWaveIndex != wave
+                        || director.PendingEntryCount != 0
+                        || director.ActiveEnemyCount != expectedLiving)
+                    && !director.IsTerminal
+                    && Time.realtimeSinceStartup < spawnDeadline)
+                {
+                    yield return null;
+                }
+
+                string state =
+                    $"phase={director.Phase}, wave={director.CurrentWaveIndex}, "
+                    + $"pending={director.PendingEntryCount}, "
+                    + $"living={director.ActiveEnemyCount}";
+                Assert.That(director.CurrentWaveIndex, Is.EqualTo(wave), state);
+                Assert.That(director.PendingEntryCount, Is.Zero, state);
+                Assert.That(
+                    director.ActiveEnemyCount,
+                    Is.EqualTo(expectedLiving),
+                    state);
+
+                int killed = 0;
+                FpgEnemyRoster roster = director.Session.Roster;
+                for (int slotIndex = 0;
+                     slotIndex < roster.Capacity;
+                     slotIndex++)
+                {
+                    FpgEnemySlot slot = roster.GetSlot(slotIndex);
+                    if (!slot.IsActive || slot.WaveIndex != wave)
+                    {
+                        continue;
+                    }
+
+                    Assert.That(
+                        combatRuntime.CombatPort.TryGetEnemyRuntime(
+                            slot.RuntimeId,
+                            out EnemyRuntime enemy),
+                        Is.True,
+                        slot.RuntimeId.ToString());
+                    enemy.Combatant.ForceDeath();
+                    killed++;
+                }
+
+                Assert.That(killed, Is.EqualTo(expectedLiving), state);
+
+                float completionDeadline = Time.realtimeSinceStartup + 10f;
+                if (wave < expectedLivingByWave.Length - 1)
+                {
+                    while (director.CurrentWaveIndex == wave
+                        && !director.IsTerminal
+                        && Time.realtimeSinceStartup < completionDeadline)
+                    {
+                        yield return null;
+                    }
+
+                    Assert.That(
+                        director.CurrentWaveIndex,
+                        Is.EqualTo(wave + 1),
+                        $"Wave {wave} never advanced. phase={director.Phase}, "
+                            + $"pending={director.PendingEntryCount}, "
+                            + $"living={director.ActiveEnemyCount}");
+                    Assert.That(
+                        waveClearedCount,
+                        Is.EqualTo(wave + 1),
+                        "Each completed wave must publish exactly one event.");
+                }
+                else
+                {
+                    while (director.Phase != FpgEncounterPhase.Cleared
+                        && !director.IsTerminal
+                        && Time.realtimeSinceStartup < completionDeadline)
+                    {
+                        yield return null;
+                    }
+                }
+            }
+
+            Assert.That(
+                director.Phase,
+                Is.EqualTo(FpgEncounterPhase.Cleared));
+            Assert.That(waveClearedCount, Is.EqualTo(3));
+            Assert.That(roomClearedCount, Is.EqualTo(1));
+            Assert.That(
+                bootstrap.RunFlowController.State,
+                Is.EqualTo(FpgRunFlowState.AwaitingExit),
+                bootstrap.RunFlowController.LastError);
+            Assert.That(director.HasAvailableExits, Is.True);
+            Assert.That(director.ExitAttackRegistry.Count, Is.GreaterThan(0));
+
+            FpgRoomExitRuntime[] exits =
+                FindComponentsInScene<FpgRoomExitRuntime>(
+                    bootstrap.ActiveFormalSceneHost.gameObject.scene);
+            Assert.That(exits, Has.Length.EqualTo(1));
+            Assert.That(
+                exits[0].State,
+                Is.EqualTo(FpgRoomExitRuntimeState.Available));
         }
 
 [UnityTest]
@@ -500,6 +990,7 @@ namespace FPG.Demo.Tests.PlayMode
                     new FpgPlayableCharacterSelection(
                         clonedDefinition,
                         catalogSelection.ThreeCProfile,
+                        catalogSelection.CombatFeelProfile,
                         catalogSelection.SelectionPreviewPrefab);
                 Assert.That(foreignSelection.TryValidate(out string selectionError),
                     Is.True,
@@ -557,10 +1048,40 @@ namespace FPG.Demo.Tests.PlayMode
             Assert.That(formalHost.Session.ExecutedTickCount,
                 Is.GreaterThanOrEqualTo(30));
 
+            FpgRoomEncounterDirector restartDirector =
+                formalHost.EncounterDirector;
+            FpgRoomExitRuntime[] restartExits =
+                FindComponentsInScene<FpgRoomExitRuntime>(scene);
+            Assert.That(restartExits, Has.Length.EqualTo(1));
+            FpgRoomExitRuntime restartExit = restartExits[0];
+            FpgEncounterRunContext restartContext =
+                encounterHost.RunContext;
+            FpgExitOffer restartOffer = new FpgExitOffer(
+                new FpgExitRouteDecision(
+                    formalHost.RoomDefinition.RoomId,
+                    restartExit.ExitId,
+                    formalHost.RoomDefinition.RoomId,
+                    restartContext.RoomVisitOrdinal),
+                formalHost.RoomDefinition);
+            SetPrivateField(
+                restartDirector,
+                "<Phase>k__BackingField",
+                FpgEncounterPhase.Cleared);
             Assert.That(
-                formalHost.EncounterDirector.TryRestart(out string restartError),
+                restartDirector.TryRevealExits(
+                    new[] { restartOffer },
+                    out string revealError),
+                Is.True,
+                revealError);
+            Assert.That(
+                restartDirector.ExitAttackRegistry.Count,
+                Is.GreaterThan(0));
+
+            Assert.That(
+                restartDirector.TryRestart(out string restartError),
                 Is.True,
                 restartError);
+            Assert.That(restartDirector.ExitAttackRegistry.Count, Is.Zero);
 
             float secondDeadline = Time.realtimeSinceStartup + 5f;
             while (formalHost.Session.ExecutedTickCount < 20
@@ -583,7 +1104,7 @@ namespace FPG.Demo.Tests.PlayMode
         }
 
 [UnityTest]
-        public IEnumerator FormalPlayerInputCommitsCombatReloadAndHudState()
+        public IEnumerator FormalPlayerInputCommitsImmediateSecondaryReloadAndHudState()
         {
             yield return SceneManager.LoadSceneAsync(
                 "FormalRoom",
@@ -613,9 +1134,9 @@ namespace FPG.Demo.Tests.PlayMode
                     out string presentationError),
                 Is.True,
                 presentationError);
+            formalHost.SetPresentationEnabled(true);
 
             int primaryCommitted = 0;
-            int secondaryStarted = 0;
             int secondaryCommitted = 0;
             int reloadStarted = 0;
             int reloadCompleted = 0;
@@ -625,9 +1146,6 @@ namespace FPG.Demo.Tests.PlayMode
                 {
                     case FpgFormalPlayerActionType.PrimaryReleaseCommitted:
                         primaryCommitted++;
-                        break;
-                    case FpgFormalPlayerActionType.SecondaryChargeStarted:
-                        secondaryStarted++;
                         break;
                     case FpgFormalPlayerActionType.SecondaryReleaseCommitted:
                         secondaryCommitted++;
@@ -787,6 +1305,9 @@ namespace FPG.Demo.Tests.PlayMode
                 targetViewport =
                     camera.WorldToViewportPoint(enemyCollider.bounds.center);
                 reticle.SetViewport(targetViewport);
+                int secondaryAmmoBefore =
+                    formalHost.CombatRuntime.Player.Weapon.Magazine.Ammo;
+                int secondaryLifeBefore = enemyRuntime.Combatant.Life;
                 driver.Capture(new UnityInputSnapshot(
                     aimHeld: true,
                     primaryHeld: false,
@@ -794,31 +1315,8 @@ namespace FPG.Demo.Tests.PlayMode
                     secondaryReleased: false,
                     reloadPressed: false,
                     pausePressed: false,
-                    restartPressed: false));
-
-                float chargeDeadline = Time.realtimeSinceStartup + 3f;
-                while (secondaryStarted == 0
-                    && !formalHost.EncounterDirector.IsTerminal
-                    && Time.realtimeSinceStartup < chargeDeadline)
-                {
-                    yield return null;
-                }
-                Assert.That(secondaryStarted, Is.GreaterThan(0));
-
-                int secondaryAmmoBefore =
-                    formalHost.CombatRuntime.Player.Weapon.Magazine.Ammo;
-                int secondaryLifeBefore = enemyRuntime.Combatant.Life;
-                targetViewport =
-                    camera.WorldToViewportPoint(enemyCollider.bounds.center);
-                reticle.SetViewport(targetViewport);
-                driver.Capture(new UnityInputSnapshot(
-                    aimHeld: false,
-                    primaryHeld: false,
-                    secondaryPressed: false,
-                    secondaryReleased: true,
-                    reloadPressed: false,
-                    pausePressed: false,
-                    restartPressed: false));
+                    restartPressed: false,
+                    secondaryHeld: true));
 
                 float secondaryDeadline = Time.realtimeSinceStartup + 5f;
                 while (secondaryCommitted == 0
@@ -829,17 +1327,39 @@ namespace FPG.Demo.Tests.PlayMode
                 }
 
                 Assert.That(secondaryCommitted, Is.GreaterThan(0));
+                driver.Capture(new UnityInputSnapshot(
+                    aimHeld: false,
+                    primaryHeld: false,
+                    secondaryPressed: false,
+                    secondaryReleased: true,
+                    reloadPressed: false,
+                    pausePressed: false,
+                    restartPressed: false,
+                    secondaryHeld: false));
                 Assert.That(
                     formalHost.CombatRuntime.Player.Weapon.Magazine.Ammo,
                     Is.LessThan(secondaryAmmoBefore));
                 Assert.That(enemyRuntime.Combatant.Life,
                     Is.LessThan(secondaryLifeBefore));
 
-                yield return null;
                 FpgFormalPlayerPresentationBridge bridge =
                     formalHost.PlayerComposer.PresentationBridge;
+                float hudDeadline = Time.realtimeSinceStartup + 2f;
+                while ((!bridge.Snapshot.IsValid
+                        || !bridge.PlayerHud.Snapshot.IsValid
+                        || bridge.PlayerHud.Snapshot.Ammo
+                        != formalHost.CombatRuntime.Player.Weapon.Magazine.Ammo)
+                    && Time.realtimeSinceStartup < hudDeadline)
+                {
+                    yield return new WaitForEndOfFrame();
+                }
+
                 Assert.That(bridge.Snapshot.IsValid, Is.True);
                 Assert.That(bridge.PlayerHud.Snapshot.IsValid, Is.True);
+                Assert.That(
+                    bridge.Snapshot.Ammo,
+                    Is.EqualTo(
+                        formalHost.CombatRuntime.Player.Weapon.Magazine.Ammo));
                 Assert.That(
                     bridge.PlayerHud.Snapshot.Ammo,
                     Is.EqualTo(
@@ -3240,6 +3760,39 @@ Assert.That(bootstrap.ActiveHost.Session.State, Is.EqualTo(BattleSessionState.Ru
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, $"Missing private profile field '{fieldName}'.");
             field.SetValue(target, value);
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            Assert.That(target, Is.Not.Null);
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null);
+            return (T)field.GetValue(target);
+        }
+
+        private static object InvokePrivateMethod(
+            object target,
+            string methodName,
+            params object[] arguments)
+        {
+            Assert.That(target, Is.Not.Null);
+            MethodInfo method = target.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(
+                method,
+                Is.Not.Null,
+                $"Missing private method '{methodName}'.");
+            try
+            {
+                return method.Invoke(target, arguments);
+            }
+            catch (TargetInvocationException exception)
+            {
+                throw exception.InnerException ?? exception;
+            }
         }
 
         private static Type FindLoadedType(string fullName)

@@ -193,6 +193,191 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void AimSolutionUsesFormalEligibilityAndNearestBlocker()
+        {
+            HitboxRegistry registry = CreateRegistry();
+            BoxCollider friendly = CreateCollider("AimFriendly", Vector3.zero);
+            BoxCollider enemy = CreateCollider("AimEnemy", Vector3.zero);
+            BoxCollider blocker = CreateCollider(
+                "AimBlocker",
+                Vector3.zero,
+                false,
+                BlockerLayer);
+            Assert.That(
+                registry.Register(CombatantBinding(
+                    friendly,
+                    10,
+                    10,
+                    Team.Player)).IsSuccess,
+                Is.True);
+            Assert.That(
+                registry.Register(CombatantBinding(
+                    enemy,
+                    20,
+                    20,
+                    Team.Enemy,
+                    HitPart.Weakpoint)).IsSuccess,
+                Is.True);
+            Assert.That(
+                registry.Register(new HitboxBinding(
+                    blocker,
+                    RuntimeId.Invalid,
+                    QueryTargetKind.EnvironmentBlocker,
+                    HitPart.Body,
+                    new GeometryId(30),
+                    Team.Neutral)).IsSuccess,
+                Is.True);
+
+            FakePhysicsBackend physics = new FakePhysicsBackend
+            {
+                RaycastHits = new[]
+                {
+                    Hit(enemy, 4f),
+                    Hit(friendly, 1f),
+                    Hit(blocker, 3f)
+                }
+            };
+            UnityAttackQueryPort port = CreatePort(registry, physics);
+
+            DomainResult blockedResult = port.SolveAim(
+                Vector3.zero,
+                Vector3.forward,
+                new RuntimeId(1),
+                Team.Player,
+                AttackTargetKinds.Combatant,
+                out FpgFormalAimSolution blocked);
+
+            Assert.That(blockedResult.IsSuccess, Is.True);
+            Assert.That(blocked.Kind, Is.EqualTo(FpgAimSolutionKind.Blocked));
+            Assert.That(blocked.GeometryId, Is.EqualTo(new GeometryId(30)));
+
+            physics.RaycastHits = new[]
+            {
+                Hit(blocker, 3f),
+                Hit(enemy, 2f)
+            };
+            Assert.That(
+                port.SolveAim(
+                    Vector3.zero,
+                    Vector3.forward,
+                    new RuntimeId(1),
+                    Team.Player,
+                    AttackTargetKinds.Combatant,
+                    out FpgFormalAimSolution hittable).IsSuccess,
+                Is.True);
+            Assert.That(hittable.Kind, Is.EqualTo(FpgAimSolutionKind.Hittable));
+            Assert.That(hittable.TargetId, Is.EqualTo(new RuntimeId(20)));
+            Assert.That(hittable.HitPart, Is.EqualTo(HitPart.Weakpoint));
+
+            Assert.That(
+                port.SolveAim(
+                    Vector3.zero,
+                    Vector3.forward,
+                    new RuntimeId(1),
+                    Team.Player,
+                    AttackTargetKinds.Projectile,
+                    out FpgFormalAimSolution projectileOnly).IsSuccess,
+                Is.True);
+            Assert.That(
+                projectileOnly.Kind,
+                Is.EqualTo(FpgAimSolutionKind.Blocked));
+            Assert.That(physics.SyncCallCount, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void AimSolutionPrefersBlockerAtTheSameQuantizedDistance()
+        {
+            HitboxRegistry registry = CreateRegistry();
+            BoxCollider enemy = CreateCollider("EqualDistanceAimEnemy", Vector3.zero);
+            BoxCollider blocker = CreateCollider(
+                "EqualDistanceAimBlocker",
+                Vector3.zero,
+                false,
+                BlockerLayer);
+            Assert.That(
+                registry.Register(
+                    CombatantBinding(enemy, 20, 10, Team.Enemy)).IsSuccess,
+                Is.True);
+            Assert.That(
+                registry.Register(new HitboxBinding(
+                    blocker,
+                    RuntimeId.Invalid,
+                    QueryTargetKind.EnvironmentBlocker,
+                    HitPart.Body,
+                    new GeometryId(30),
+                    Team.Neutral)).IsSuccess,
+                Is.True);
+
+            FakePhysicsBackend physics = new FakePhysicsBackend
+            {
+                RaycastHits = new[]
+                {
+                    Hit(enemy, 4f),
+                    Hit(blocker, 4f)
+                }
+            };
+            UnityAttackQueryPort port = CreatePort(registry, physics);
+
+            DomainResult result = port.SolveAim(
+                Vector3.zero,
+                Vector3.forward,
+                new RuntimeId(1),
+                Team.Player,
+                AttackTargetKinds.Combatant,
+                out FpgFormalAimSolution solution);
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(solution.Kind, Is.EqualTo(FpgAimSolutionKind.Blocked));
+            Assert.That(solution.GeometryId, Is.EqualTo(new GeometryId(30)));
+        }
+
+        [Test]
+        public void AreaAtFirstSurfacePrefersBlockerAsEqualDistanceExplosionAnchor()
+        {
+            HitboxRegistry registry = CreateRegistry();
+            BoxCollider enemy = CreateCollider("EqualDistanceAreaEnemy", Vector3.zero);
+            BoxCollider blocker = CreateCollider(
+                "EqualDistanceAreaBlocker",
+                Vector3.zero,
+                false,
+                BlockerLayer);
+            Assert.That(
+                registry.Register(
+                    CombatantBinding(enemy, 20, 10, Team.Enemy)).IsSuccess,
+                Is.True);
+            Assert.That(
+                registry.Register(new HitboxBinding(
+                    blocker,
+                    RuntimeId.Invalid,
+                    QueryTargetKind.EnvironmentBlocker,
+                    HitPart.Body,
+                    new GeometryId(30),
+                    Team.Neutral)).IsSuccess,
+                Is.True);
+
+            Vector3 enemyPoint = new Vector3(1f, 0f, 4f);
+            Vector3 blockerPoint = new Vector3(0f, 0f, 4f);
+            FakePhysicsBackend physics = new FakePhysicsBackend
+            {
+                RaycastHits = new[]
+                {
+                    new UnityPhysicsHit(enemy, enemyPoint, Vector3.back, 4f),
+                    new UnityPhysicsHit(blocker, blockerPoint, Vector3.back, 4f)
+                }
+            };
+            UnityAttackQueryPort port = CreatePort(registry, physics);
+
+            DomainResult result = port.Query(
+                CreateAreaAtFirstSurfaceRequest(),
+                new QueryCandidate[8],
+                out AttackQueryResult queryResult);
+
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(queryResult.CandidateCount, Is.EqualTo(2));
+            Assert.That(physics.LastOverlapPosition, Is.EqualTo(blockerPoint));
+        }
+
+        [Test]
         public void SuccessfulQueryCapturesTheFrozenMissPathWithoutExtraPhysicsQueries()
         {
             HitboxRegistry registry = CreateRegistry();
@@ -324,6 +509,61 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(output[index - 1].DistanceKey, Is.LessThanOrEqualTo(output[index].DistanceKey));
                 Assert.That(output[index].QueryOrdinal, Is.EqualTo(index));
             }
+        }
+
+        [Test]
+        public void AreaAtFirstSurfaceUsesRayOnlyForAnchorAndHitboxOnlyOverlap()
+        {
+            HitboxRegistry registry = CreateRegistry();
+            BoxCollider blocker = CreateCollider(
+                nameof(AreaAtFirstSurfaceUsesRayOnlyForAnchorAndHitboxOnlyOverlap),
+                new Vector3(0f, 0f, 4f),
+                false,
+                BlockerLayer);
+            BoxCollider far = CreateCollider(
+                nameof(UnityAttackQueryPortTests),
+                new Vector3(0f, 0f, 8f));
+            BoxCollider area = CreateCollider(
+                nameof(AttackQueryMode),
+                new Vector3(1f, 0f, 4f));
+            Assert.That(registry.Register(new HitboxBinding(
+                blocker,
+                RuntimeId.Invalid,
+                QueryTargetKind.EnvironmentBlocker,
+                HitPart.Body,
+                new GeometryId(40),
+                Team.Neutral)).IsSuccess, Is.True);
+            Assert.That(registry.Register(CombatantBinding(far, 30, 30, Team.Enemy)).IsSuccess, Is.True);
+            Assert.That(registry.Register(CombatantBinding(area, 10, 10, Team.Enemy)).IsSuccess, Is.True);
+
+            FakePhysicsBackend physics = new FakePhysicsBackend
+            {
+                RaycastHits = new[] { Hit(far, 8f), Hit(blocker, 4f) },
+                OverlapColliders = new Collider[] { blocker, area }
+            };
+            UnityAttackQueryPort port = CreatePort(registry, physics);
+            AttackQueryRequest request = CreateAreaAtFirstSurfaceRequest();
+            QueryCandidate[] candidates = new QueryCandidate[8];
+
+            DomainResult queried = port.Query(
+                request,
+                candidates,
+                out AttackQueryResult queryResult);
+            QueryCandidate[] selected = new QueryCandidate[3];
+            DomainResult selectedResult = TargetSelector.Select(
+                request.Attack,
+                candidates,
+                queryResult,
+                selected,
+                out int selectedCount);
+
+            Assert.That(queried.IsSuccess, Is.True);
+            Assert.That(physics.LastOverlapPosition, Is.EqualTo(new Vector3(0f, 0f, 4f)));
+            Assert.That(physics.LastOverlapLayerMask, Is.EqualTo(1 << HitboxLayer));
+            Assert.That(selectedResult.IsSuccess, Is.True);
+            Assert.That(selectedCount, Is.EqualTo(1));
+            Assert.That(selected[0].QueryStage, Is.EqualTo(AttackQueryStage.Area));
+            Assert.That(selected[0].TargetId, Is.EqualTo(new RuntimeId(10)));
         }
 
         [Test]
@@ -594,6 +834,33 @@ namespace FPG.Demo.Tests.EditMode
                 0);
         }
 
+        private static AttackQueryRequest CreateAreaAtFirstSurfaceRequest()
+        {
+            TickIndex tick = new TickIndex(0);
+            AttackSnapshot attack = new AttackSnapshot(
+                new AttackId(1),
+                new ShotId(1),
+                1,
+                new RuntimeId(1),
+                Team.Player,
+                tick,
+                new DamageSpec(10, 2),
+                QueryPolicy.DirectThenArea,
+                1,
+                3,
+                1,
+                1,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                2,
+                1);
+            return new AttackQueryRequest(
+                CreateTickInput(tick),
+                attack,
+                null,
+                0);
+        }
+
         private static AttackSnapshot CreateAttack(
             TickIndex tick,
             QueryPolicy policy,
@@ -689,6 +956,7 @@ namespace FPG.Demo.Tests.EditMode
             public int SphereCastCallCount { get; private set; }
             public int OverlapCallCount { get; private set; }
             public Vector3 LastOverlapPosition { get; private set; }
+            public int LastOverlapLayerMask { get; private set; }
             public List<Vector3> CapturedRayDirections { get; } = new List<Vector3>();
 
             public void SyncTransforms()
@@ -738,6 +1006,7 @@ namespace FPG.Demo.Tests.EditMode
             {
                 OverlapCallCount++;
                 LastOverlapPosition = position;
+                LastOverlapLayerMask = layerMask;
                 int count = Math.Min(OverlapColliders.Length, output.Length);
                 Array.Copy(OverlapColliders, output, count);
                 return new NonAllocPhysicsQueryResult(count, OverlapColliders.Length > output.Length);

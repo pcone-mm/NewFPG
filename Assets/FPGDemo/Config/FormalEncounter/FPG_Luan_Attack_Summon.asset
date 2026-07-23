@@ -16,12 +16,12 @@ MonoBehaviour:
   displayName: Luan Summon
   priority: 0
   kind: 2
-  firstReadyOffsetTicks: 90
-  cooldownTicks: 150
-  telegraphTicks: 30
-  windupTicks: 15
-  recoveryTicks: 30
-  damage: 10
+  firstReadyOffsetTicks: 240
+  cooldownTicks: 240
+  telegraphTicks: 0
+  windupTicks: 44
+  recoveryTicks: 0
+  damage: 0
   breakDamage: 0
   projectileCount: 1
   projectileDefinitionId: 1
@@ -29,5 +29,6 @@ MonoBehaviour:
   projectileLifetimeTicks: 45
   interceptable: 0
   summon: {fileID: 11400000, guid: d80d2b5f558ec7549ab98e38c73bd9f2, type: 2}
-  animationSlot: summon
+  summonOwnerOutcome: 1
+  animationSlot: die&broken
   warningSlot: enemy-summon-warning

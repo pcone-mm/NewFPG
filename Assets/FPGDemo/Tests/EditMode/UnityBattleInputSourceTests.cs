@@ -38,6 +38,34 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void SecondaryHeldPersistsAcrossCatchUpTicksAndClearsExplicitly()
+        {
+            UnityBattleInputSource source = new UnityBattleInputSource();
+            source.Capture(new UnityInputSnapshot(
+                aimHeld: true,
+                primaryHeld: false,
+                secondaryPressed: true,
+                secondaryReleased: false,
+                reloadPressed: false,
+                pausePressed: false,
+                restartPressed: false,
+                secondaryHeld: true));
+
+            PlayerInputFrame pressed = source.GetFrame(new TickIndex(0));
+            PlayerInputFrame catchUp = source.GetFrame(new TickIndex(1));
+
+            Assert.That(pressed.SecondaryHeld, Is.True);
+            Assert.That(pressed.HasSecondaryInput, Is.True);
+            Assert.That(catchUp.SecondaryHeld, Is.True);
+            Assert.That(catchUp.HasSecondaryInput, Is.True);
+
+            source.ClearGameplayInput();
+            PlayerInputFrame cleared = source.GetFrame(new TickIndex(2));
+            Assert.That(cleared.SecondaryHeld, Is.False);
+            Assert.That(cleared.HasSecondaryInput, Is.False);
+        }
+
+        [Test]
         public void CapturesAppendEdgesAndRetainThoseBeyondOneBattleTick()
         {
             UnityBattleInputSource source = new UnityBattleInputSource();
@@ -156,6 +184,51 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(afterClear.EdgeCommandCount, Is.EqualTo(1));
             Assert.That(afterClear.EdgeCommands[0].Type, Is.EqualTo(InputEdgeType.ReloadPressed));
             Assert.That(afterClear.EdgeCommands[0].Sequence.Value, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void BeginRoomInteractionPreservesHeldAttacksAndDropsOldEdges()
+        {
+            UnityBattleInputSource source = new UnityBattleInputSource();
+            source.Capture(new UnityInputSnapshot(
+                aimHeld: true,
+                primaryHeld: true,
+                secondaryPressed: true,
+                secondaryReleased: false,
+                reloadPressed: true,
+                pausePressed: false,
+                restartPressed: false,
+                secondaryHeld: true));
+
+            source.BeginRoomInteraction();
+            PlayerInputFrame frame = source.GetFrame(new TickIndex(0L));
+
+            Assert.That(source.PrimaryHeld, Is.True);
+            Assert.That(source.SecondaryHeld, Is.True);
+            Assert.That(frame.PrimaryHeld, Is.True);
+            Assert.That(frame.SecondaryHeld, Is.True);
+            Assert.That(frame.EdgeCommandCount, Is.Zero);
+            Assert.That(frame.CancelSecondary, Is.True);
+        }
+
+        [Test]
+        public void BeginRoomInteractionWithoutHeldSecondaryDoesNotInjectCancellation()
+        {
+            UnityBattleInputSource source = new UnityBattleInputSource();
+            source.Capture(new UnityInputSnapshot(
+                aimHeld: true,
+                primaryHeld: false,
+                secondaryPressed: false,
+                secondaryReleased: false,
+                reloadPressed: false,
+                pausePressed: false,
+                restartPressed: false,
+                secondaryHeld: false));
+
+            source.BeginRoomInteraction();
+            PlayerInputFrame frame = source.GetFrame(new TickIndex(0L));
+
+            Assert.That(frame.CancelSecondary, Is.False);
         }
 
         [Test]

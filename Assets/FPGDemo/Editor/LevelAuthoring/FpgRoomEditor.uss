@@ -168,9 +168,6 @@
     margin-right: 8px;
 }
 
-.scenario-field {
-    width: 280px;
-}
 
 .details-pane {
     width: 54%;
@@ -281,10 +278,6 @@
     color: var(--muted);
     border-top-width: 1px;
     border-top-color: var(--line);
-}
-
-.play-button {
-    background-color: #346b4a;
 }
 
 .danger-button {

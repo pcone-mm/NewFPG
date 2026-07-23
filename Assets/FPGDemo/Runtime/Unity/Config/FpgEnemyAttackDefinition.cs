@@ -1,4 +1,5 @@
 using System;
+using FPG.Demo.Run;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -83,6 +84,13 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private FpgSummonActionDefinition summon;
 
+        [D0PlannerField(
+            "召唤成功后的施法者结果",
+            "枚举，可选“保持存活（RemainAlive，默认）”或“成功召唤后死亡（DieAfterSuccessfulSummon）”，仅用于召唤攻击。后者只在召唤条目成功进入统一 Spawn Queue 后，通过正式死亡流程结束施法者；容量不足重试或召唤失败时不会触发死亡。")]
+        [SerializeField]
+        private FpgSummonOwnerOutcome summonOwnerOutcome =
+            FpgSummonOwnerOutcome.RemainAlive;
+
         [D0PlannerSection("Presentation")]
         [D0PlannerField("Animation Slot", "Stable animation key for the formal entity view.")]
         [SerializeField]
@@ -109,6 +117,7 @@ namespace FPG.Demo.Unity
         public int ProjectileLifetimeTicks => projectileLifetimeTicks;
         public bool Interceptable => interceptable;
         public FpgSummonActionDefinition Summon => summon;
+        public FpgSummonOwnerOutcome SummonOwnerOutcome => summonOwnerOutcome;
         public string AnimationSlot => animationSlot;
         public string WarningSlot => warningSlot;
 
@@ -126,6 +135,7 @@ namespace FPG.Demo.Unity
             }
 
             if (!Enum.IsDefined(typeof(FpgEnemyAttackKind), kind)
+                || !Enum.IsDefined(typeof(FpgSummonOwnerOutcome), summonOwnerOutcome)
                 || firstReadyOffsetTicks < 0
                 || cooldownTicks < 0
                 || telegraphTicks < 0
@@ -174,12 +184,26 @@ namespace FPG.Demo.Unity
                         return false;
                     }
 
+                    if (summonOwnerOutcome == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon
+                        && summon.MaxSummonsPerOwner != 1)
+                    {
+                        error = $"Formal terminal summon attack '{attackId}' must allow exactly one summon per owner.";
+                        return false;
+                    }
+
                     break;
             }
 
             if (kind != FpgEnemyAttackKind.Summon && summon != null)
             {
                 error = $"Formal attack '{attackId}' has a summon action but is not a Summon attack.";
+                return false;
+            }
+
+            if (kind != FpgEnemyAttackKind.Summon
+                && summonOwnerOutcome != FpgSummonOwnerOutcome.RemainAlive)
+            {
+                error = $"Formal attack '{attackId}' has a summon owner outcome but is not a Summon attack.";
                 return false;
             }
 

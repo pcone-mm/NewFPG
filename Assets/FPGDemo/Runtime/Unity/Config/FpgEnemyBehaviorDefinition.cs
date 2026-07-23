@@ -6,6 +6,7 @@ namespace FPG.Demo.Unity
     /// <summary>
     /// Formal behavior data. Navigation is intentionally outside this asset;
     /// the v1 room supplies authored positions and the runtime owns movement queries.
+    /// This type owns the stable MonoScript GUID referenced by behavior assets.
     /// </summary>
     [CreateAssetMenu(
         fileName = "FpgEnemyBehaviorDefinition",

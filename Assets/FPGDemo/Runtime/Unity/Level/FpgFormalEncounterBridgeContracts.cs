@@ -138,6 +138,28 @@ namespace FPG.Demo.Unity
         void UnbindFormalRuntime();
     }
 
+    /// <summary>
+    /// Best-effort presentation endpoint for an already bound formal enemy.
+    /// Presentation failures are diagnostic only and never change combat state.
+    /// </summary>
+    public interface IFpgFormalEnemyPresentationView
+    {
+        bool TryPlayAttack(FpgEnemyAttackDefinition attack);
+        bool TryInterruptAttack();
+    }
+
+    public interface IFpgFormalEnemyPresentationPort
+    {
+        bool TryPlayAttack(
+            RuntimeId runtimeId,
+            int spawnSequence,
+            string attackPatternId);
+
+        bool TryInterruptAttack(
+            RuntimeId runtimeId,
+            int spawnSequence);
+    }
+
     public static class FpgFormalGeometryId
     {
         public const int HitPartOrdinalBits = 10;

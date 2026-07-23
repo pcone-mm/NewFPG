@@ -16,4 +16,5 @@ MonoBehaviour:
   entries:
   - character: {fileID: 11400000, guid: 01f983f4cf769f54389f4d1fd953b05b, type: 2}
     threeCProfile: {fileID: 11400000, guid: 755c9bd22ef742f8b9471748ed088db1, type: 2}
+    combatFeelProfile: {fileID: 11400000, guid: 735269d4a7982f7409df98618fbcc10f, type: 2}
     selectionPreviewPrefab: {fileID: 3887859762420120384, guid: b0b355a0cb746b440960d44a01eaff5a, type: 3}

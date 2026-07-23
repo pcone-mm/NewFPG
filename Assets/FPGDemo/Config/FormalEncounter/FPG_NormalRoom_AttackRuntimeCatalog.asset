@@ -14,25 +14,45 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgFormalAttackRuntimeCatalog
   entries:
   - attack: {fileID: 11400000, guid: 171a04fc3d1b99b4884d1ea1f449cdcf, type: 2}
-    threatDefinitionId: 1001
+    threatDefinitionId: 201
     weakpointDamageMultiplierBasisPoints: 10000
     weakpointBreakMultiplierBasisPoints: 10000
     projectileMaxHitPoints: 0
     projectileBudgetUnits: 1
-    projectilePresentationKey: 101
-    projectileSweepRadiusKey: 101
+    projectilePresentationKey: 1
+    projectileSweepRadiusKey: 250
     timedImpactDelayTicks: 0
-    timedImpactPresentationKey: 101
+    timedImpactPresentationKey: 1
+  - attack: {fileID: 11400000, guid: dca28c7dcd3f2d949b22930f5f69fd60, type: 2}
+    threatDefinitionId: 202
+    weakpointDamageMultiplierBasisPoints: 10000
+    weakpointBreakMultiplierBasisPoints: 10000
+    projectileMaxHitPoints: 4
+    projectileBudgetUnits: 1
+    projectilePresentationKey: 2
+    projectileSweepRadiusKey: 250
+    timedImpactDelayTicks: 0
+    timedImpactPresentationKey: 2
+  - attack: {fileID: 11400000, guid: 4d73894a0b669114bb681eb26b9e5c12, type: 2}
+    threatDefinitionId: 203
+    weakpointDamageMultiplierBasisPoints: 10000
+    weakpointBreakMultiplierBasisPoints: 10000
+    projectileMaxHitPoints: 0
+    projectileBudgetUnits: 1
+    projectilePresentationKey: 3
+    projectileSweepRadiusKey: 250
+    timedImpactDelayTicks: 0
+    timedImpactPresentationKey: 3
   - attack: {fileID: 11400000, guid: a1a02c58df512ba46aecccaf722dc50c, type: 2}
-    threatDefinitionId: 1002
+    threatDefinitionId: 401
     weakpointDamageMultiplierBasisPoints: 10000
     weakpointBreakMultiplierBasisPoints: 10000
     projectileMaxHitPoints: 0
     projectileBudgetUnits: 1
-    projectilePresentationKey: 102
-    projectileSweepRadiusKey: 102
+    projectilePresentationKey: 1
+    projectileSweepRadiusKey: 250
     timedImpactDelayTicks: 0
-    timedImpactPresentationKey: 102
+    timedImpactPresentationKey: 1
   - attack: {fileID: 11400000, guid: fbc7640a72ae77748ab60423d5df983f, type: 2}
     threatDefinitionId: 1003
     weakpointDamageMultiplierBasisPoints: 10000

@@ -62,6 +62,21 @@ namespace FPG.Demo.Combat
         TimedImpact
     }
 
+    public enum AttackQueryMode
+    {
+        Legacy = 0,
+        FirstSurfacePenetration,
+        AreaAtFirstSurface
+    }
+
+    [Flags]
+    public enum AttackTargetKinds
+    {
+        None = 0,
+        Combatant = 1 << 0,
+        Projectile = 1 << 1
+    }
+
     public readonly struct DamageSpec
     {
         public const int BasisPoints = 10000;
@@ -109,6 +124,9 @@ namespace FPG.Demo.Combat
 
     public readonly struct AttackSnapshot
     {
+        public const AttackTargetKinds DefaultAllowedTargetKinds =
+            AttackTargetKinds.Combatant | AttackTargetKinds.Projectile;
+
         public AttackSnapshot(
             AttackId attackId,
             ShotId shotId,
@@ -122,6 +140,82 @@ namespace FPG.Demo.Combat
             int maxImpactCount,
             int ammoCost,
             int rngVersion)
+            : this(
+                attackId,
+                shotId,
+                definitionId,
+                ownerId,
+                team,
+                releaseTick,
+                damageSpec,
+                queryPolicy,
+                payloadCount,
+                maxImpactCount,
+                ammoCost,
+                rngVersion,
+                AttackQueryMode.Legacy,
+                0,
+                0,
+                0)
+        {
+        }
+
+        public AttackSnapshot(
+            AttackId attackId,
+            ShotId shotId,
+            int definitionId,
+            RuntimeId ownerId,
+            Team team,
+            TickIndex releaseTick,
+            DamageSpec damageSpec,
+            QueryPolicy queryPolicy,
+            int payloadCount,
+            int maxImpactCount,
+            int ammoCost,
+            int rngVersion,
+            AttackQueryMode queryMode,
+            int additionalPenetrationCount,
+            int areaCombatantLimit,
+            int areaProjectileLimit)
+            : this(
+                attackId,
+                shotId,
+                definitionId,
+                ownerId,
+                team,
+                releaseTick,
+                damageSpec,
+                queryPolicy,
+                payloadCount,
+                maxImpactCount,
+                ammoCost,
+                rngVersion,
+                queryMode,
+                additionalPenetrationCount,
+                areaCombatantLimit,
+                areaProjectileLimit,
+                DefaultAllowedTargetKinds)
+        {
+        }
+
+        public AttackSnapshot(
+            AttackId attackId,
+            ShotId shotId,
+            int definitionId,
+            RuntimeId ownerId,
+            Team team,
+            TickIndex releaseTick,
+            DamageSpec damageSpec,
+            QueryPolicy queryPolicy,
+            int payloadCount,
+            int maxImpactCount,
+            int ammoCost,
+            int rngVersion,
+            AttackQueryMode queryMode,
+            int additionalPenetrationCount,
+            int areaCombatantLimit,
+            int areaProjectileLimit,
+            AttackTargetKinds allowedTargetKinds)
         {
             AttackId = attackId;
             ShotId = shotId;
@@ -135,6 +229,11 @@ namespace FPG.Demo.Combat
             MaxImpactCount = maxImpactCount;
             AmmoCost = ammoCost;
             RngVersion = rngVersion;
+            QueryMode = queryMode;
+            AdditionalPenetrationCount = additionalPenetrationCount;
+            AreaCombatantLimit = areaCombatantLimit;
+            AreaProjectileLimit = areaProjectileLimit;
+            AllowedTargetKinds = allowedTargetKinds;
         }
 
         public AttackId AttackId { get; }
@@ -149,6 +248,56 @@ namespace FPG.Demo.Combat
         public int MaxImpactCount { get; }
         public int AmmoCost { get; }
         public int RngVersion { get; }
+        public AttackQueryMode QueryMode { get; }
+        public int AdditionalPenetrationCount { get; }
+        public int AreaCombatantLimit { get; }
+        public int AreaProjectileLimit { get; }
+        public AttackTargetKinds AllowedTargetKinds { get; }
+        public bool IsQueryConfigurationValid
+        {
+            get
+            {
+                if (AllowedTargetKinds == AttackTargetKinds.None
+                    || (AllowedTargetKinds & ~DefaultAllowedTargetKinds) != AttackTargetKinds.None)
+                {
+                    return false;
+                }
+
+                switch (QueryMode)
+                {
+                    case AttackQueryMode.Legacy:
+                        return AdditionalPenetrationCount == 0
+                            && AreaCombatantLimit == 0
+                            && AreaProjectileLimit == 0
+                            && (QueryPolicy == QueryPolicy.PelletRays
+                                || QueryPolicy == QueryPolicy.DirectThenArea);
+                    case AttackQueryMode.FirstSurfacePenetration:
+                        long impactCapacity = (long)PayloadCount
+                            * (AdditionalPenetrationCount + 1L);
+                        return QueryPolicy == QueryPolicy.PelletRays
+                            && AdditionalPenetrationCount >= 0
+                            && AreaCombatantLimit == 0
+                            && AreaProjectileLimit == 0
+                            && impactCapacity <= MaxImpactCount;
+                    case AttackQueryMode.AreaAtFirstSurface:
+                        long areaCapacity = (long)AreaCombatantLimit + AreaProjectileLimit;
+                        bool hasAllowedAreaCapacity =
+                            ((AllowedTargetKinds & AttackTargetKinds.Combatant) != AttackTargetKinds.None
+                                && AreaCombatantLimit > 0)
+                            || ((AllowedTargetKinds & AttackTargetKinds.Projectile) != AttackTargetKinds.None
+                                && AreaProjectileLimit > 0);
+                        return QueryPolicy == QueryPolicy.DirectThenArea
+                            && AdditionalPenetrationCount == 0
+                            && AreaCombatantLimit >= 0
+                            && AreaProjectileLimit >= 0
+                            && areaCapacity > 0
+                            && areaCapacity <= MaxImpactCount
+                            && hasAllowedAreaCapacity;
+                    default:
+                        return false;
+                }
+            }
+        }
     }
 
     public readonly struct PelletSample
@@ -215,8 +364,14 @@ namespace FPG.Demo.Combat
             DamageType damageType,
             CombatTags tags,
             int pelletIndex = -1,
-            int impactOrdinal = -1)
+            int impactOrdinal = -1,
+            ImpactSpatialContext spatialContext = default(ImpactSpatialContext))
         {
+            if (!spatialContext.IsValid)
+            {
+                throw new ArgumentException(null, nameof(spatialContext));
+            }
+
             ImpactId = impactId;
             AttackId = attackId;
             ShotId = shotId;
@@ -229,6 +384,7 @@ namespace FPG.Demo.Combat
             Tags = tags;
             PelletIndex = pelletIndex;
             ImpactOrdinal = impactOrdinal;
+            SpatialContext = spatialContext;
         }
 
         public ImpactId ImpactId { get; }
@@ -243,6 +399,7 @@ namespace FPG.Demo.Combat
         public CombatTags Tags { get; }
         public int PelletIndex { get; }
         public int ImpactOrdinal { get; }
+        public ImpactSpatialContext SpatialContext { get; }
     }
 
     public readonly struct DamagePacket

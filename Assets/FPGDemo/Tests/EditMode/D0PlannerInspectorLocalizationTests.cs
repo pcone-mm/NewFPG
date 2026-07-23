@@ -80,20 +80,83 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void SecondaryFireMetadataStatesTheSharedMagazineAndCancellationRule()
+        public void FormalPresentationNestedFieldsExposeChineseInspectorMetadata()
+        {
+            Type[] presentationTypes =
+            {
+                typeof(FpgHudResourcePresentation),
+                typeof(FpgDamagePopupPresentation),
+                typeof(FpgReticlePresentation)
+            };
+
+            for (int typeIndex = 0; typeIndex < presentationTypes.Length; typeIndex++)
+            {
+                Type type = presentationTypes[typeIndex];
+                FieldInfo[] fields = type.GetFields(
+                    BindingFlags.Instance
+                    | BindingFlags.Public
+                    | BindingFlags.NonPublic
+                    | BindingFlags.DeclaredOnly);
+                for (int fieldIndex = 0; fieldIndex < fields.Length; fieldIndex++)
+                {
+                    FieldInfo field = fields[fieldIndex];
+                    if (!IsSerializedUnityField(field))
+                    {
+                        continue;
+                    }
+
+                    InspectorNameAttribute inspectorName =
+                        field.GetCustomAttribute<InspectorNameAttribute>();
+                    TooltipAttribute tooltip =
+                        field.GetCustomAttribute<TooltipAttribute>();
+                    Assert.That(
+                        inspectorName,
+                        Is.Not.Null,
+                        $"Formal presentation field '{type.Name}.{field.Name}' requires an Inspector name.");
+                    Assert.That(
+                        tooltip,
+                        Is.Not.Null,
+                        $"Formal presentation field '{type.Name}.{field.Name}' requires an Inspector tooltip.");
+                    Assert.That(
+                        ContainsChinese(inspectorName.displayName),
+                        Is.True,
+                        $"Formal presentation field '{type.Name}.{field.Name}' requires a Chinese Inspector name.");
+                    Assert.That(
+                        ContainsChinese(tooltip.tooltip),
+                        Is.True,
+                        $"Formal presentation field '{type.Name}.{field.Name}' requires a Chinese Inspector tooltip.");
+                }
+            }
+        }
+
+        [Test]
+        public void SecondaryFireMetadataStatesTheFormalSubmissionAndQueryRules()
         {
             D0PlannerFieldAttribute secondaryAmmo = GetPlannerField(
                 typeof(D0WeaponDefinition),
                 "secondaryAmmoCost");
+            D0PlannerFieldAttribute triggerMode = GetPlannerField(
+                typeof(D0WeaponDefinition),
+                "secondaryTriggerMode");
+            D0PlannerFieldAttribute queryMode = GetPlannerField(
+                typeof(D0WeaponDefinition),
+                "secondaryQueryMode");
             D0PlannerFieldAttribute minimumCharge = GetPlannerField(
                 typeof(D0WeaponDefinition),
                 "secondaryMinimumChargeTicks");
+            D0PlannerFieldAttribute recovery = GetPlannerField(
+                typeof(D0WeaponDefinition),
+                "secondaryRecoveryTicks");
 
             Assert.That(secondaryAmmo.DisplayName, Is.EqualTo("副射弹药消耗"));
             Assert.That(secondaryAmmo.Tooltip, Does.Contain("共享弹匣"));
             Assert.That(secondaryAmmo.Tooltip, Does.Contain("取消蓄力"));
-            Assert.That(minimumCharge.Tooltip, Does.Contain("独立副射攻击"));
-            Assert.That(minimumCharge.Tooltip, Does.Not.Contain("瞄准模式"));
+            Assert.That(triggerMode.Tooltip, Does.Contain("ImmediateRepeatWhileHeld"));
+            Assert.That(queryMode.Tooltip, Does.Contain("AreaAtFirstSurface"));
+            Assert.That(minimumCharge.Tooltip, Does.Contain("ChargeRelease"));
+            Assert.That(minimumCharge.Tooltip, Does.Contain("ImmediateRepeatWhileHeld"));
+            Assert.That(recovery.Tooltip, Does.Contain("成功提交"));
+            Assert.That(recovery.Tooltip, Does.Contain("不另设第二份连发间隔"));
         }
 
         [Test]

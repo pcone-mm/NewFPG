@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using FPG.Demo.Player;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,10 +14,12 @@ namespace FPG.Demo.Unity
     [DisallowMultipleComponent]
     public sealed class FpgFormalPlayerHudPresenter : MonoBehaviour
     {
+        [SerializeField] private CombatPresentationProfile presentationProfile;
+
         [Header("Player bars")]
-        [SerializeField] private Image lifeFill;
-        [SerializeField] private Image barrierFill;
-        [SerializeField] private Image ammoFill;
+        [SerializeField] private FpgFormalBarView lifeBar;
+        [SerializeField] private FpgFormalBarView barrierBar;
+        [SerializeField] private FpgFormalBarView ammoBar;
 
         [Header("Player values")]
         [SerializeField] private Text lifeText;
@@ -26,22 +30,50 @@ namespace FPG.Demo.Unity
         private FpgFormalPlayerPresentationSnapshot snapshot =
             FpgFormalPlayerPresentationSnapshot.Unavailable;
         private int lastLife = int.MinValue;
+        private int lastMaxLife = int.MinValue;
         private int lastBarrier = int.MinValue;
+        private int lastMaxBarrier = int.MinValue;
         private int lastAmmo = int.MinValue;
+        private int lastMagazineCapacity = int.MinValue;
         private FpgFormalPlayerPresentationState lastState =
             (FpgFormalPlayerPresentationState)(-1);
+        private FpgHudResourcePresentation lifePresentation;
+        private FpgHudResourcePresentation barrierPresentation;
+        private FpgHudResourcePresentation ammoPresentation;
 
         public FpgFormalPlayerPresentationSnapshot Snapshot => snapshot;
         public FpgFormalPlayerPresentationState CurrentState =>
             snapshot.PresentationState;
+        public FpgFormalBarView LifeBar => lifeBar;
+        public FpgFormalBarView BarrierBar => barrierBar;
+        public FpgFormalBarView AmmoBar => ammoBar;
+        public CombatPresentationProfile PresentationProfile =>
+            presentationProfile;
 
         public bool TryValidate(out string error)
         {
-            if (lifeFill == null || barrierFill == null || ammoFill == null
+            if (presentationProfile == null
+                || lifeBar == null || barrierBar == null || ammoBar == null
                 || lifeText == null || barrierText == null || ammoText == null
-                || stateText == null)
+                || stateText == null
+                || !(lifeBar.transform is RectTransform)
+                || !(barrierBar.transform is RectTransform)
+                || !(ammoBar.transform is RectTransform))
             {
                 error = "Formal player HUD requires life, barrier, ammo and state references.";
+                return false;
+            }
+
+            if (!presentationProfile.TryValidateStatic(out error)
+                || !TryResolveResourcePresentations(out error))
+            {
+                return false;
+            }
+
+            if (!lifeBar.TryValidate(out error)
+                || !barrierBar.TryValidate(out error)
+                || !ammoBar.TryValidate(out error))
+            {
                 return false;
             }
 
@@ -65,6 +97,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            ApplyResourcePresentations();
             Clear();
             error = string.Empty;
             return true;
@@ -72,6 +105,7 @@ namespace FPG.Demo.Unity
 
         public void Refresh(in FpgFormalPlayerPresentationSnapshot nextSnapshot)
         {
+            bool immediate = !snapshot.IsValid;
             snapshot = nextSnapshot;
             if (!snapshot.IsValid)
             {
@@ -79,29 +113,58 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            if (snapshot.Life != lastLife)
+            if (lifePresentation == null && !TryResolveResourcePresentations(out _))
             {
-                SetFill(lifeFill, snapshot.Life, snapshot.MaxLife);
-                SetText(lifeText, FormatValue("LIFE", snapshot.Life, snapshot.MaxLife));
-                lastLife = snapshot.Life;
+                ClearVisuals();
+                return;
             }
 
-            if (snapshot.Barrier != lastBarrier)
+            lifeBar.SetPaused(snapshot.IsPaused);
+            barrierBar.SetPaused(snapshot.IsPaused);
+            ammoBar.SetPaused(snapshot.IsPaused);
+
+            if (snapshot.Life != lastLife || snapshot.MaxLife != lastMaxLife)
             {
-                SetFill(barrierFill, snapshot.Barrier, snapshot.MaxBarrier);
+                lifeBar.SetValue(snapshot.Life, snapshot.MaxLife, immediate);
+                SetText(
+                    lifeText,
+                    FormatValue(lifePresentation, snapshot.Life, snapshot.MaxLife));
+                lastLife = snapshot.Life;
+                lastMaxLife = snapshot.MaxLife;
+            }
+
+            if (snapshot.Barrier != lastBarrier
+                || snapshot.MaxBarrier != lastMaxBarrier)
+            {
+                barrierBar.SetValue(
+                    snapshot.Barrier,
+                    snapshot.MaxBarrier,
+                    immediate);
                 SetText(
                     barrierText,
-                    FormatValue("BARRIER", snapshot.Barrier, snapshot.MaxBarrier));
+                    FormatValue(
+                        barrierPresentation,
+                        snapshot.Barrier,
+                        snapshot.MaxBarrier));
                 lastBarrier = snapshot.Barrier;
+                lastMaxBarrier = snapshot.MaxBarrier;
             }
 
-            if (snapshot.Ammo != lastAmmo)
+            if (snapshot.Ammo != lastAmmo
+                || snapshot.MagazineCapacity != lastMagazineCapacity)
             {
-                SetFill(ammoFill, snapshot.Ammo, snapshot.MagazineCapacity);
+                ammoBar.SetValue(
+                    snapshot.Ammo,
+                    snapshot.MagazineCapacity,
+                    immediate);
                 SetText(
                     ammoText,
-                    FormatValue("AMMO", snapshot.Ammo, snapshot.MagazineCapacity));
+                    FormatValue(
+                        ammoPresentation,
+                        snapshot.Ammo,
+                        snapshot.MagazineCapacity));
                 lastAmmo = snapshot.Ammo;
+                lastMagazineCapacity = snapshot.MagazineCapacity;
             }
 
             if (snapshot.PresentationState != lastState
@@ -123,23 +186,117 @@ namespace FPG.Demo.Unity
 
         private void ClearVisuals()
         {
-            SetFill(lifeFill, 0, 1);
-            SetFill(barrierFill, 0, 1);
-            SetFill(ammoFill, 0, 1);
-            SetText(lifeText, "LIFE --");
-            SetText(barrierText, "BARRIER --");
-            SetText(ammoText, "AMMO --");
+            lifeBar?.SetNormalizedValue(0f);
+            barrierBar?.SetNormalizedValue(0f);
+            ammoBar?.SetNormalizedValue(0f);
+            lifeBar?.SetPaused(false);
+            barrierBar?.SetPaused(false);
+            ammoBar?.SetPaused(false);
+            SetText(lifeText, FormatUnavailable(lifePresentation));
+            SetText(barrierText, FormatUnavailable(barrierPresentation));
+            SetText(ammoText, FormatUnavailable(ammoPresentation));
             SetText(stateText, "PLAYER UNAVAILABLE");
             lastLife = int.MinValue;
+            lastMaxLife = int.MinValue;
             lastBarrier = int.MinValue;
+            lastMaxBarrier = int.MinValue;
             lastAmmo = int.MinValue;
+            lastMagazineCapacity = int.MinValue;
             lastState = (FpgFormalPlayerPresentationState)(-1);
             snapshotForStateWeapon = (WeaponState)(-1);
         }
 
-        private static string FormatValue(string label, int value, int maximum)
+        private bool TryResolveResourcePresentations(out string error)
         {
-            return label + " " + Mathf.Max(0, value) + " / " + Mathf.Max(0, maximum);
+            if (!presentationProfile.TryGetFormalHudResource(
+                    FpgHudResourceKind.Life,
+                    out lifePresentation)
+                || !presentationProfile.TryGetFormalHudResource(
+                    FpgHudResourceKind.Barrier,
+                    out barrierPresentation)
+                || !presentationProfile.TryGetFormalHudResource(
+                    FpgHudResourceKind.Ammo,
+                    out ammoPresentation))
+            {
+                error = "Formal HUD profile has incomplete resource definitions.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private void ApplyResourcePresentations()
+        {
+            ApplyResourcePresentation(lifeBar, lifePresentation);
+            ApplyResourcePresentation(barrierBar, barrierPresentation);
+            ApplyResourcePresentation(ammoBar, ammoPresentation);
+            ApplyResourceOrderToExistingSlots();
+        }
+
+        private static void ApplyResourcePresentation(
+            FpgFormalBarView bar,
+            FpgHudResourcePresentation presentation)
+        {
+            if (bar == null || presentation == null)
+            {
+                return;
+            }
+
+            bar.TrySetTransitionDuration(presentation.BarEaseDuration);
+            bar.TrySetFillColor(presentation.Color);
+        }
+
+        private void ApplyResourceOrderToExistingSlots()
+        {
+            ResourceLayoutEntry[] resources =
+            {
+                new ResourceLayoutEntry(lifeBar, lifePresentation),
+                new ResourceLayoutEntry(barrierBar, barrierPresentation),
+                new ResourceLayoutEntry(ammoBar, ammoPresentation)
+            };
+            float[] slots =
+            {
+                ((RectTransform)lifeBar.transform).anchoredPosition.y,
+                ((RectTransform)barrierBar.transform).anchoredPosition.y,
+                ((RectTransform)ammoBar.transform).anchoredPosition.y
+            };
+
+            Array.Sort(resources, CompareResourceOrder);
+            Array.Sort(slots);
+            for (int index = 0; index < resources.Length; index++)
+            {
+                RectTransform rect =
+                    (RectTransform)resources[index].Bar.transform;
+                Vector2 position = rect.anchoredPosition;
+                position.y = slots[slots.Length - 1 - index];
+                rect.anchoredPosition = position;
+            }
+        }
+
+        private static int CompareResourceOrder(
+            ResourceLayoutEntry left,
+            ResourceLayoutEntry right)
+        {
+            return left.Presentation.Order.CompareTo(right.Presentation.Order);
+        }
+
+        private static string FormatValue(
+            FpgHudResourcePresentation presentation,
+            int value,
+            int maximum)
+        {
+            return presentation.Label + " " + string.Format(
+                CultureInfo.InvariantCulture,
+                presentation.ValueFormat,
+                Mathf.Max(0, value),
+                Mathf.Max(0, maximum));
+        }
+
+        private static string FormatUnavailable(
+            FpgHudResourcePresentation presentation)
+        {
+            return presentation == null ? string.Empty : presentation.Label + " --";
         }
 
         private static string FormatState(
@@ -177,22 +334,26 @@ namespace FPG.Demo.Unity
             }
         }
 
-        private static void SetFill(Image image, int value, int maximum)
-        {
-            if (image != null)
-            {
-                image.fillAmount = maximum <= 0
-                    ? 0f
-                    : Mathf.Clamp01(value / (float)maximum);
-            }
-        }
-
         private static void SetText(Text text, string value)
         {
             if (text != null && text.text != value)
             {
                 text.text = value;
             }
+        }
+
+        private readonly struct ResourceLayoutEntry
+        {
+            public ResourceLayoutEntry(
+                FpgFormalBarView bar,
+                FpgHudResourcePresentation presentation)
+            {
+                Bar = bar;
+                Presentation = presentation;
+            }
+
+            public FpgFormalBarView Bar { get; }
+            public FpgHudResourcePresentation Presentation { get; }
         }
     }
 }

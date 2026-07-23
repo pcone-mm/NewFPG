@@ -82,6 +82,28 @@ namespace FPG.Demo.Unity
             return ClampToSafeArea(safeCurrent + viewportDelta, safeArea);
         }
 
+        public static Vector2 ApplyScreenPoint(
+            Vector2 currentViewport,
+            Vector2 screenPointPixels,
+            Vector2 screenSizePixels,
+            Rect safeArea)
+        {
+            Vector2 safeCurrent = ClampToSafeArea(currentViewport, safeArea);
+            if (!IsFinite(screenPointPixels)
+                || !IsFinite(screenSizePixels)
+                || screenSizePixels.x <= 0f
+                || screenSizePixels.y <= 0f)
+            {
+                return safeCurrent;
+            }
+
+            return ClampToSafeArea(
+                new Vector2(
+                    screenPointPixels.x / screenSizePixels.x,
+                    screenPointPixels.y / screenSizePixels.y),
+                safeArea);
+        }
+
         public static bool IsInsideSafeArea(Vector2 viewport)
         {
             return IsInsideSafeArea(viewport, DefaultSafeArea);

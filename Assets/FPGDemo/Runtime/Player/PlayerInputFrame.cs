@@ -30,7 +30,8 @@ namespace FPG.Demo.Player
             bool primaryHeld,
             InputEdgeCommand[] edgeCommands,
             int edgeCommandCount,
-            bool cancelSecondary = false)
+            bool cancelSecondary = false,
+            bool secondaryHeld = false)
         {
             if (edgeCommands == null)
             {
@@ -47,6 +48,7 @@ namespace FPG.Demo.Player
             Tick = tick;
             AimHeld = aimHeld;
             PrimaryHeld = primaryHeld;
+            SecondaryHeld = secondaryHeld;
             EdgeCommands = edgeCommands;
             EdgeCommandCount = edgeCommandCount;
             CancelSecondary = cancelSecondary;
@@ -55,6 +57,7 @@ namespace FPG.Demo.Player
         public TickIndex Tick { get; }
         public bool AimHeld { get; }
         public bool PrimaryHeld { get; }
+        public bool SecondaryHeld { get; }
         public InputEdgeCommand[] EdgeCommands { get; }
         public int EdgeCommandCount { get; }
 
@@ -70,6 +73,11 @@ namespace FPG.Demo.Player
         {
             get
             {
+                if (SecondaryHeld)
+                {
+                    return true;
+                }
+
                 for (int index = 0; index < EdgeCommandCount; index++)
                 {
                     InputEdgeType type = EdgeCommands[index].Type;
@@ -104,7 +112,8 @@ namespace FPG.Demo.Player
             TickIndex tick,
             bool aimHeld = false,
             bool primaryHeld = false,
-            bool cancelSecondary = false)
+            bool cancelSecondary = false,
+            bool secondaryHeld = false)
         {
             return new PlayerInputFrame(
                 tick,
@@ -112,7 +121,8 @@ namespace FPG.Demo.Player
                 primaryHeld,
                 null,
                 0,
-                cancelSecondary);
+                cancelSecondary,
+                secondaryHeld);
         }
     }
 }

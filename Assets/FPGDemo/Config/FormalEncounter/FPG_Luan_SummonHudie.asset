@@ -17,7 +17,7 @@ MonoBehaviour:
   candidateEnemies:
   - {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}
   candidateWeights: 01000000
-  maxSummonsPerOwner: 2
+  maxSummonsPerOwner: 1
   maxTotalSummonsPerEncounter: 6
   maxRecursionDepth: 1
-  cooldownTicks: 120
+  cooldownTicks: 240

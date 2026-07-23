@@ -35,7 +35,7 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private D0WeaponDefinition weapon;
 
-        [D0PlannerField("Entity Prefab", "玩家完整实体预制体。它是 GameplayRoot、VisualRoot、命中体、弱点、Socket 和本地表现组件的唯一人工编辑入口；场景和角色表现资产不得另存一份玩家实体结构。")]
+        [D0PlannerField("玩家 Entity Prefab", "玩家完整实体预制体。它是 GameplayRoot、VisualRoot、命中体、弱点、Socket 和本地表现组件的唯一人工编辑入口；场景和角色表现资产不得另存一份玩家实体结构。")]
         [SerializeField]
         private D0PlayerEntityView entityPrefab;
 

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BattleScenarioConfig
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.BattleScenarioConfig
   scenarioSeed: 1
-  authoredScenario: {fileID: 11400000, guid: 8e8eaef11a1c09546862fd782068e977, type: 2}
+  authoredScenario: {fileID: 11400000, guid: c7c5bb171c3d1624383b5f666c420439, type: 2}
   playerLife: 100
   playerBarrier: 100
   enemyLife: 800

@@ -1,14 +1,13 @@
 using System;
 using FPG.Demo.Core;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace FPG.Demo.Unity
 {
     [DisallowMultipleComponent]
     public sealed class FpgOverheadHealthBarView : MonoBehaviour
     {
-        [SerializeField] private Image fill;
+        [SerializeField] private FpgFormalBarView lifeBar;
         [SerializeField] private Vector3 worldOffset = new Vector3(0f, 1.5f, 0f);
 
         private Transform followAnchor;
@@ -16,6 +15,18 @@ namespace FPG.Demo.Unity
 
         public RuntimeId RuntimeId { get; private set; } = RuntimeId.Invalid;
         public bool IsBound => RuntimeId.IsValid;
+        public FpgFormalBarView LifeBar => lifeBar;
+
+        public bool TryValidate(out string error)
+        {
+            if (lifeBar == null)
+            {
+                error = "Formal overhead health bar requires a bar view.";
+                return false;
+            }
+
+            return lifeBar.TryValidate(out error);
+        }
 
         public bool TryBind(
             RuntimeId runtimeId,
@@ -24,7 +35,8 @@ namespace FPG.Demo.Unity
             int life,
             int maxLife)
         {
-            if (!runtimeId.IsValid || anchor == null || maxLife <= 0)
+            if (!runtimeId.IsValid || anchor == null || maxLife <= 0
+                || !TryValidate(out _))
             {
                 return false;
             }
@@ -32,7 +44,13 @@ namespace FPG.Demo.Unity
             RuntimeId = runtimeId;
             followAnchor = anchor;
             facingCamera = camera;
-            SetLife(life, maxLife);
+            if (!lifeBar.SetValue(Math.Max(0, life), maxLife, immediate: true))
+            {
+                RuntimeId = RuntimeId.Invalid;
+                followAnchor = null;
+                facingCamera = null;
+                return false;
+            }
             gameObject.SetActive(true);
             RefreshTransform();
             return true;
@@ -45,12 +63,12 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (fill != null)
-            {
-                fill.fillAmount = Mathf.Clamp01((float)Math.Max(0, life) / maxLife);
-            }
+            return lifeBar != null && lifeBar.SetValue(Math.Max(0, life), maxLife);
+        }
 
-            return true;
+        public void SetPaused(bool paused)
+        {
+            lifeBar?.SetPaused(paused);
         }
 
         public void Release()
@@ -58,6 +76,7 @@ namespace FPG.Demo.Unity
             RuntimeId = RuntimeId.Invalid;
             followAnchor = null;
             facingCamera = null;
+            lifeBar?.SetNormalizedValue(0f);
             gameObject.SetActive(false);
         }
 

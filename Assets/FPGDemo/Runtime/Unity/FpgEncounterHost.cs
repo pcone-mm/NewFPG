@@ -112,6 +112,29 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
 
         public bool TryPrepareAndStart(out string error)
         {
+            return TryPrepareAndStartInternal(
+                false,
+                default(FpgEncounterStartRequest),
+                out error);
+        }
+
+        public bool TryPrepareAndStart(
+            in FpgEncounterStartRequest startRequest,
+            out string error)
+        {
+            if (!startRequest.TryValidate(out error))
+            {
+                return Fail(error, out error);
+            }
+
+            return TryPrepareAndStartInternal(true, startRequest, out error);
+        }
+
+        private bool TryPrepareAndStartInternal(
+            bool hasExplicitRequest,
+            in FpgEncounterStartRequest startRequest,
+            out string error)
+        {
             prepared = false;
             Plan = null;
             LastError = string.Empty;
@@ -120,9 +143,11 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
             {
                 bool playtestOverrideActive =
                     FpgFormalEncounterPlaytestOverrides.IsActive;
-                FpgRoomDefinition effectiveRoom = playtestOverrideActive
-                    ? FpgFormalEncounterPlaytestOverrides.RoomDefinition
-                    : roomDefinition;
+                FpgRoomDefinition effectiveRoom = hasExplicitRequest
+                    ? startRequest.RoomDefinition
+                    : playtestOverrideActive
+                        ? FpgFormalEncounterPlaytestOverrides.RoomDefinition
+                        : roomDefinition;
                 FpgEncounterProfile effectiveProfile = playtestOverrideActive
                     ? FpgFormalEncounterPlaytestOverrides.EncounterProfile
                     : encounterProfile;
@@ -131,9 +156,11 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
                         ? FpgFormalEncounterPlaytestOverrides.EncounterOverride
                         : encounterOverride;
                 FpgEncounterRunContext effectiveRunContext =
-                    playtestOverrideActive
-                        ? FpgFormalEncounterPlaytestOverrides.RunContext
-                        : new FpgEncounterRunContext(
+                    hasExplicitRequest
+                        ? startRequest.RunContext
+                        : playtestOverrideActive
+                            ? FpgFormalEncounterPlaytestOverrides.RunContext
+                            : new FpgEncounterRunContext(
                             unchecked((ulong)runSeed),
                             string.IsNullOrWhiteSpace(regionId)
                                 ? "default"
@@ -195,12 +222,40 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
                     return Fail(preflight.Error, out error);
                 }
 
-                if (!director.TryPrepareSession(
+                IFpgFormalPlayerRunResourceImportPort importPort =
+                    director.PlayerRunResourceImportPort;
+                importPort?.ClearNextPlayerRunResources();
+                if (hasExplicitRequest && startRequest.HasPlayerRunResources
+                    && importPort == null)
+                {
+                    return Fail(
+                        typeof(IFpgFormalPlayerRunResourceImportPort).Name,
+                        out error);
+                }
+                if (hasExplicitRequest && startRequest.HasPlayerRunResources
+                    && !importPort.TrySetNextPlayerRunResources(
+                        startRequest.PlayerRunResources,
+                        out error))
+                {
+                    return Fail(error, out error);
+                }
+
+                bool sessionPrepared;
+                try
+                {
+                    sessionPrepared = director.TryPrepareSession(
                         request,
                         Plan,
                         enemyCatalog,
                         attackRuntimeCatalog,
-                        out error))
+                        out error);
+                }
+                finally
+                {
+                    importPort?.ClearNextPlayerRunResources();
+                }
+
+                if (!sessionPrepared)
                 {
                     return Fail(error, out error);
                 }
@@ -216,6 +271,7 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
                 }
 
                 nextTick = 1L;
+                roomDefinition = effectiveRoom;
                 prepared = true;
                 LastError = string.Empty;
                 return true;
@@ -243,7 +299,7 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
             return result;
         }
 
-public void StopAndClear()
+        public void StopAndClear()
         {
             prepared = false;
             director?.ClearPlayerBinding();
@@ -286,13 +342,24 @@ public void StopAndClear()
         private void FixedUpdate()
         {
             if (!driveFromFixedUpdate || !prepared || director == null
-                || director.IsTerminal || director.IsPaused)
+                || director.IsPaused)
             {
                 return;
             }
 
             TickIndex tick = new TickIndex(nextTick);
-            if (Tick(tick, out _))
+            bool advanced;
+            if (director.Phase == FpgEncounterPhase.Cleared)
+            {
+                advanced = director.HasAvailableExits
+                    && director.ProcessRoomInteractionTick(tick, out _);
+            }
+            else
+            {
+                advanced = !director.IsTerminal && Tick(tick, out _);
+            }
+
+            if (advanced)
             {
                 nextTick++;
             }
@@ -335,7 +402,3 @@ private void HandleDirectorLifecycle(
         }
 }
 }
-
-
-
-

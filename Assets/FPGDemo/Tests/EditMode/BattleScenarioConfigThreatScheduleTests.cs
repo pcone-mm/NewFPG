@@ -11,7 +11,7 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class BattleScenarioConfigThreatScheduleTests
     {
         [Test]
-        public void CombatLabConfigCreatesTheAuthoredD0Encounter()
+        public void CombatLabConfigCreatesTheAuthoredBurstbugEncounter()
         {
             BattleScenarioConfig config = AssetDatabase.LoadAssetAtPath<BattleScenarioConfig>(
                 "Assets/FPGDemo/Config/BattleScenarioConfig.asset");
@@ -19,15 +19,12 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(config, Is.Not.Null);
             Assert.That(config.UsesAuthoredScenario, Is.True);
             Assert.That(config.AuthoredScenario.ScenarioId,
-                Is.EqualTo("combatlab-fei-vs-luan-hudie"));
+                Is.EqualTo("combatlab-fei-vs-burstbug"));
             Assert.That(config.AuthoredScenario.EncounterContract,
-                Is.EqualTo(D0EncounterContract.LuanHudieSingleProjectile));
-            Assert.That(config.AuthoredScenario.Encounter.Enemy.EnemyId, Is.EqualTo("luan"));
-            Assert.That(config.AuthoredScenario.LuanSummonHudie, Is.Not.Null);
-            Assert.That(config.AuthoredScenario.LuanSummonHudie.HudieEnemy.EnemyId,
-                Is.EqualTo("hudie"));
-            Assert.That(config.AuthoredScenario.LuanSummonHudie.HudieEnemy,
-                Is.SameAs(config.AuthoredScenario.Encounter.GetSpawnSlot(1).Enemy));
+                Is.EqualTo(D0EncounterContract.BurstbugStandard));
+            Assert.That(config.AuthoredScenario.Encounter.Enemy.EnemyId,
+                Is.EqualTo("burstbug"));
+            Assert.That(config.AuthoredScenario.LuanSummonHudie, Is.Null);
             Assert.That(config.TryCreateDefinition(
                 out ScenarioDefinition definition,
                 out string error), Is.True, error);
@@ -56,12 +53,12 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(config.AttackQuerySettings.SecondaryAreaRadius, Is.EqualTo(3f));
 
             Assert.That(definition.ThreatScheduleCount, Is.EqualTo(6));
-            AssertHudieProjectileThreat(definition.GetThreatScheduleEntry(0), 1, 390);
-            AssertHudieProjectileThreat(definition.GetThreatScheduleEntry(1), 2, 570);
-            AssertHudieProjectileThreat(definition.GetThreatScheduleEntry(2), 3, 750);
-            AssertHudieProjectileThreat(definition.GetThreatScheduleEntry(3), 4, 930);
-            AssertHudieProjectileThreat(definition.GetThreatScheduleEntry(4), 5, 1110);
-            AssertHudieProjectileThreat(definition.GetThreatScheduleEntry(5), 6, 1290);
+            AssertFastThreat(definition.GetThreatScheduleEntry(0), 1, 120, 201, 301);
+            AssertSlowTripleThreat(definition.GetThreatScheduleEntry(1), 2, 300, 202, 302);
+            AssertHeavyWarningThreat(definition.GetThreatScheduleEntry(2), 3, 540, 203);
+            AssertFastThreat(definition.GetThreatScheduleEntry(3), 4, 780, 201, 301);
+            AssertSlowTripleThreat(definition.GetThreatScheduleEntry(4), 5, 960, 202, 302);
+            AssertHeavyWarningThreat(definition.GetThreatScheduleEntry(5), 6, 1200, 203);
         }
 
         [Test]
@@ -93,27 +90,6 @@ namespace FPG.Demo.Tests.EditMode
             {
                 Object.DestroyImmediate(config);
             }
-        }
-
-        private static void AssertHudieProjectileThreat(
-            ThreatScheduleEntry entry,
-            long sequence,
-            long dueTick)
-        {
-            Assert.That(entry.ScheduleSequence, Is.EqualTo(sequence));
-            Assert.That(entry.DueTick.Value, Is.EqualTo(dueTick));
-            Assert.That(entry.DefinitionId, Is.EqualTo(401));
-            Assert.That(entry.TelegraphDuration.Value, Is.Zero);
-            Assert.That(entry.WindupDuration.Value, Is.EqualTo(30));
-            Assert.That(entry.Payload.Kind, Is.EqualTo(ThreatPayloadKind.SweptProjectile));
-            Assert.That(entry.Payload.PayloadCount, Is.EqualTo(1));
-            Assert.That(entry.Payload.PresentationKey, Is.EqualTo(1));
-            Assert.That(entry.Payload.TotalBudgetUnits, Is.EqualTo(1));
-            Assert.That(entry.Payload.ProjectileDefinition.DefinitionId, Is.EqualTo(401));
-            Assert.That(entry.Payload.ProjectileDefinition.FlightDuration.Value, Is.EqualTo(36));
-            Assert.That(entry.Payload.ProjectileDefinition.DamageSpec.BaseDamage, Is.EqualTo(28));
-            Assert.That(entry.Payload.ProjectileDefinition.MaxHitPoints, Is.Zero);
-            Assert.That(entry.Payload.ProjectileDefinition.Interceptable, Is.False);
         }
 
         private static void AssertFastThreat(

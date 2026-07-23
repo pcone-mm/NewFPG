@@ -47,6 +47,19 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(1)]
         private int primaryIntervalTicks = 39;
 
+        [D0PlannerField(
+            "主射查询模式",
+            "主射使用首表面穿透查询；该字段必须保持为 FirstSurfacePenetration，以便每颗弹丸独立计算首个表面与后续穿透。")]
+        [SerializeField]
+        private AttackQueryMode primaryQueryMode =
+            AttackQueryMode.FirstSurfacePenetration;
+
+        [D0PlannerField(
+            "主射额外穿透数",
+            "每颗主射弹丸越过首个有效表面后还能继续结算的表面数量。0 表示只结算首表面，1 表示首表面后还可再命中一个表面。")]
+        [SerializeField, Min(0)]
+        private int primaryAdditionalPenetrationCount;
+
         [D0PlannerField("主射单颗弹丸生命伤害", "主射固定发射 8 颗弹丸；每颗命中普通部位时造成该基础生命伤害。弱点命中会再应用下方的弱点生命伤害倍率。")]
         [SerializeField, Min(0)]
         private int primaryDamage = 4;
@@ -63,24 +76,38 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)]
         private int primaryWeakpointBreakMultiplierBasisPoints = 25000;
 
-        [D0PlannerSection("副射：独立蓄力攻击")]
-        [D0PlannerField("副射弹药消耗", "副射达到最低蓄力后松开并成功释放时，从共享弹匣扣除的弹药数。必须大于 0 且不超过弹匣容量；取消蓄力或未达到最低蓄力时不扣弹。")]
+        [D0PlannerSection("副射：首表面范围攻击")]
+        [D0PlannerField("副射弹药消耗", "每次副射成功提交时从共享弹匣原子扣除的弹药数。必须大于 0 且不超过弹匣容量；查询或提交失败、取消蓄力、弹药不足时不扣弹，也不会自动换弹。")]
         [SerializeField, Min(1)]
         private int secondaryAmmoCost = 2;
 
-        [D0PlannerField("副射最低蓄力（Tick）", "按住副射到可释放所需的最短时间。单位为 Tick；达到该时长后松开才会释放独立副射攻击。可设为 0，此时按下后在同一 Tick 松开即可成功释放。")]
+        [D0PlannerField(
+            "副射触发模式",
+            "ChargeRelease 在达到最低蓄力后松开提交；ImmediateRepeatWhileHeld 在按下时立即尝试，成功提交后按副射恢复时长重复，松开只停止后续攻击。")]
+        [SerializeField]
+        private SecondaryTriggerMode secondaryTriggerMode =
+            SecondaryTriggerMode.ChargeRelease;
+
+        [D0PlannerField(
+            "副射查询模式",
+            "副射以射线遇到的首个表面为范围中心；该字段必须保持为 AreaAtFirstSurface，范围内的敌人与弹体分别按独立上限结算。")]
+        [SerializeField]
+        private AttackQueryMode secondaryQueryMode =
+            AttackQueryMode.AreaAtFirstSurface;
+
+        [D0PlannerField("副射最低蓄力（Tick）", "仅 ChargeRelease 模式读取。单位为 Tick；达到该时长后松开才会提交副射。ImmediateRepeatWhileHeld 模式不把该字段作为射速或触发门槛。")]
         [SerializeField, Min(0)]
         private int secondaryMinimumChargeTicks = 0;
 
-        [D0PlannerField("副射射速（发/秒）", "成功释放副射后每秒最多可再次释放的次数。Inspector 会按 60Hz 战斗时钟自动换算为恢复时间；恢复结束前主射、副射和换弹都不能开始。")]
+        [D0PlannerField("副射射速（发/秒）", "只有成功提交副射才启动恢复。Inspector 会按 60Hz 战斗时钟换算该 Tick 值；ImmediateRepeatWhileHeld 在恢复结束且仍按住时再次尝试，不另设第二份连发间隔。")]
         [SerializeField, Min(1)]
         private int secondaryRecoveryTicks = 30;
 
-        [D0PlannerField("副射生命伤害", "副射命中普通部位时造成的基础生命伤害。弱点命中会再应用下方的弱点生命伤害倍率。")]
+        [D0PlannerField("副射生命伤害", "首表面只决定爆心，不产生直击伤害；范围内每个敌人按重叠命中部位结算该基础生命伤害，同一 RuntimeId 弱点优先。")]
         [SerializeField, Min(0)]
         private int secondaryDamage = 28;
 
-        [D0PlannerField("副射削韧伤害", "副射命中时对敌人韧性条造成的基础削减值。弱点命中会再应用下方的弱点削韧倍率。")]
+        [D0PlannerField("副射削韧伤害", "范围内每个敌人按战斗域规则结算的基础削韧值。爆心到范围目标不做遮挡检查，弱点命中会再应用下方倍率。")]
         [SerializeField, Min(0)]
         private int secondaryBreakDamage = 20;
 
@@ -92,9 +119,14 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)]
         private int secondaryWeakpointBreakMultiplierBasisPoints = 25000;
 
-        [D0PlannerField("副射最大命中数", "一次副射最多结算的命中目标数。这是攻击结果上限，不代表当前 D0 场景已经支持多敌人或多波次。")]
+        [D0PlannerField("副射敌人命中上限", "一次副射最多结算的敌人数量。弹体使用独立上限，不会占用这里配置的敌人名额。")]
         [SerializeField, Min(1)]
         private int secondaryMaxImpactCount = 4;
+
+        [D0PlannerField("副射弹体命中上限", "一次副射最多结算的敌方弹体数量。该容量独立于敌人命中上限，设为 0 可关闭副射的弹体结算。")]
+        [SerializeField, Min(0)]
+        private int secondaryProjectileMaxImpactCount =
+            WeaponDefinition.DefaultSecondaryAreaProjectileLimit;
 
         [D0PlannerSection("换弹")]
         [D0PlannerField("换弹时长（Tick）", "从开始换弹到共享弹匣恢复的时长。单位为 Tick；当前 D0 默认时钟为 60 Tick/秒。")]
@@ -128,8 +160,16 @@ namespace FPG.Demo.Unity
         public string DisplayName => displayName;
         public int MagazineCapacity => magazineCapacity;
         public int PrimaryIntervalTicks => primaryIntervalTicks;
+        public AttackQueryMode PrimaryQueryMode => primaryQueryMode;
+        public int PrimaryAdditionalPenetrationCount =>
+            primaryAdditionalPenetrationCount;
+        public SecondaryTriggerMode SecondaryTriggerMode => secondaryTriggerMode;
+        public AttackQueryMode SecondaryQueryMode => secondaryQueryMode;
         public int SecondaryMinimumChargeTicks => secondaryMinimumChargeTicks;
         public int SecondaryAmmoCost => secondaryAmmoCost;
+        public int SecondaryEnemyMaxImpactCount => secondaryMaxImpactCount;
+        public int SecondaryProjectileMaxImpactCount =>
+            secondaryProjectileMaxImpactCount;
         public int ReloadDurationTicks => reloadDurationTicks;
 
 
@@ -247,7 +287,14 @@ namespace FPG.Demo.Unity
                         secondaryWeakpointDamageMultiplierBasisPoints,
                         secondaryWeakpointBreakMultiplierBasisPoints),
                     new TickDuration(reloadDurationTicks),
-                    secondaryMaxImpactCount);
+                    secondaryMaxImpactCount,
+                    secondaryTriggerMode,
+                    primaryQueryMode,
+                    primaryAdditionalPenetrationCount,
+                    secondaryQueryMode,
+                    secondaryProjectileMaxImpactCount,
+                    WeaponDefinition.PlayerAttackTargetKinds,
+                    WeaponDefinition.PlayerAttackTargetKinds);
                 error = string.Empty;
                 return true;
             }

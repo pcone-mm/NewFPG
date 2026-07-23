@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyBehaviorDefinition
   behaviorId: burstbug-behavior
   displayName: Burstbug Behavior
-  mode: 2
-  entrySpeed: 3.5
-  moveSpeed: 2.5
+  mode: 1
+  entrySpeed: 5
+  moveSpeed: 1.4
   stopDuringAttack: 1
-  entryAnimation: enter
-  idleAnimation: idle
-  deathAnimation: death
+  entryAnimation: normal_enter
+  idleAnimation: normal_idle
+  deathAnimation: normal_death

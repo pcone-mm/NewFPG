@@ -1,3 +1,5 @@
+using FPG.Demo.Combat;
+using FPG.Demo.Player;
 using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
@@ -85,6 +87,63 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(enemy.IdleAnimation, Is.EqualTo("normal_idle"));
             Assert.That(enemy.HitAnimation, Is.EqualTo("normal_hit"));
             Assert.That(enemy.DeathAnimation, Is.EqualTo("normal_death"));
+        }
+
+        [Test]
+        public void FeiWeaponUsesImmediateRepeatSecondaryTriggerMode()
+        {
+            D0WeaponDefinition weapon =
+                LoadRequired<D0WeaponDefinition>(FeiWeaponPath);
+
+            Assert.That(
+                weapon.SecondaryTriggerMode,
+                Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            Assert.That(
+                weapon.TryCreate(out WeaponDefinition runtimeWeapon, out string definitionError),
+                Is.True,
+                definitionError);
+            Assert.That(
+                runtimeWeapon.SecondaryTriggerMode,
+                Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+        }
+
+        [Test]
+        public void FeiWeaponQueryContractMigratesWithZeroPenetrationAndIndependentLimits()
+        {
+            D0WeaponDefinition weapon =
+                LoadRequired<D0WeaponDefinition>(FeiWeaponPath);
+
+            Assert.That(
+                weapon.PrimaryQueryMode,
+                Is.EqualTo(AttackQueryMode.FirstSurfacePenetration));
+            Assert.That(weapon.PrimaryAdditionalPenetrationCount, Is.Zero);
+            Assert.That(
+                weapon.SecondaryQueryMode,
+                Is.EqualTo(AttackQueryMode.AreaAtFirstSurface));
+            Assert.That(weapon.SecondaryEnemyMaxImpactCount, Is.EqualTo(4));
+            Assert.That(weapon.SecondaryProjectileMaxImpactCount, Is.EqualTo(4));
+
+            Assert.That(
+                weapon.TryCreate(out WeaponDefinition runtimeWeapon, out string error),
+                Is.True,
+                error);
+            Assert.That(
+                runtimeWeapon.PrimaryQueryMode,
+                Is.EqualTo(AttackQueryMode.FirstSurfacePenetration));
+            Assert.That(runtimeWeapon.PrimaryAdditionalPenetrationCount, Is.Zero);
+            Assert.That(runtimeWeapon.PrimaryMaxImpactCount, Is.EqualTo(8));
+            Assert.That(
+                runtimeWeapon.PrimaryAllowedTargetKinds,
+                Is.EqualTo(WeaponDefinition.PlayerAttackTargetKinds));
+            Assert.That(
+                runtimeWeapon.SecondaryQueryMode,
+                Is.EqualTo(AttackQueryMode.AreaAtFirstSurface));
+            Assert.That(runtimeWeapon.SecondaryAreaCombatantLimit, Is.EqualTo(4));
+            Assert.That(runtimeWeapon.SecondaryAreaProjectileLimit, Is.EqualTo(4));
+            Assert.That(runtimeWeapon.SecondaryQueryMaxImpactCount, Is.EqualTo(8));
+            Assert.That(
+                runtimeWeapon.SecondaryAllowedTargetKinds,
+                Is.EqualTo(WeaponDefinition.PlayerAttackTargetKinds));
         }
 
         [Test]

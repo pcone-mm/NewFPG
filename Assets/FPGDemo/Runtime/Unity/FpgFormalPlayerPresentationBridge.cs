@@ -1,3 +1,4 @@
+using System;
 using FPG.Demo.Combat;
 using FPG.Demo.Run;
 using FPG.Demo.Player;
@@ -16,7 +17,6 @@ namespace FPG.Demo.Unity
         IFpgFormalPlayerPresentationSource
     {
         private const int ActionQueueCapacity = 32;
-
         [Header("Formal runtime")]
         [SerializeField] private FpgRoomEncounterDirector encounterDirector;
         [SerializeField] private FpgFormalPlayerTickDriver playerTickDriver;
@@ -31,14 +31,18 @@ namespace FPG.Demo.Unity
 
         private readonly FpgFormalPlayerActionEvent[] actionQueue =
             new FpgFormalPlayerActionEvent[ActionQueueCapacity];
+        private FpgVitalsSnapshot[] vitalsBuffer =
+            Array.Empty<FpgVitalsSnapshot>();
 
         private FpgPlayableCharacterSelection selection;
         private D0PlayerEntityView playerEntity;
         private Actor2DPresenter actorPresenter;
         private CombatTrace observedTrace;
+        private FpgFormalCombatRuntimeBundle observedVitalsRuntime;
         private FpgFormalPlayerPresentationSnapshot snapshot =
             FpgFormalPlayerPresentationSnapshot.Unavailable;
         private long nextCombatEventOrdinal;
+        private long vitalsCursor;
         private int actionHead;
         private int actionCount;
         private bool actionGap;
@@ -57,6 +61,8 @@ namespace FPG.Demo.Unity
         public FpgFormalPlayerPresentationSnapshot Snapshot => snapshot;
         public bool IsPrepared => prepared;
         public bool IsActive => active;
+        public int VitalsGapCount { get; private set; }
+        public int VitalsReadCapacity => vitalsBuffer.Length;
 
         private void LateUpdate()
         {
@@ -70,6 +76,8 @@ namespace FPG.Demo.Unity
             {
                 return;
             }
+
+            nextSnapshot = ApplyVitalsChanges(nextSnapshot);
 
             FpgFormalPlayerPresentationSnapshot previous = snapshot;
             snapshot = nextSnapshot;
@@ -199,6 +207,14 @@ namespace FPG.Demo.Unity
                 error = "Formal player presentation requires a prepared combat runtime.";
                 return false;
             }
+
+            int vitalsReadCapacity = runtime.CombatPort.Vitals.EventCapacity;
+            if (vitalsReadCapacity <= 0)
+            {
+                error = "Formal player presentation requires a positive Vitals event capacity.";
+                return false;
+            }
+            vitalsBuffer = new FpgVitalsSnapshot[vitalsReadCapacity];
 
             playerEntity.gameObject.SetActive(true);
             if (playerEntity.VisualRoot != null)
@@ -526,6 +542,131 @@ namespace FPG.Demo.Unity
             }
         }
 
+        private FpgFormalPlayerPresentationSnapshot ApplyVitalsChanges(
+            in FpgFormalPlayerPresentationSnapshot fallback)
+        {
+            try
+            {
+                return ApplyVitalsChangesCore(fallback);
+            }
+            catch (Exception)
+            {
+                VitalsGapCount++;
+                observedVitalsRuntime = null;
+                vitalsCursor = 0L;
+                if (vitalsBuffer != null && vitalsBuffer.Length > 0)
+                {
+                    Array.Clear(vitalsBuffer, 0, vitalsBuffer.Length);
+                }
+                return fallback;
+            }
+        }
+
+        private FpgFormalPlayerPresentationSnapshot ApplyVitalsChangesCore(
+            in FpgFormalPlayerPresentationSnapshot fallback)
+        {
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            if (!ReferenceEquals(runtime, observedVitalsRuntime))
+            {
+                observedVitalsRuntime = runtime;
+                vitalsCursor = 0L;
+            }
+
+            if (runtime == null || runtime.IsDisposed
+                || !fallback.PlayerRuntimeId.IsValid)
+            {
+                return fallback;
+            }
+
+            IFpgVitalsView view = runtime.CombatPort.Vitals;
+            FpgVitalsSnapshot latest = default(FpgVitalsSnapshot);
+            bool hasLatest = false;
+            if (view.LastSequence < vitalsCursor)
+            {
+                VitalsGapCount++;
+                vitalsCursor = 0L;
+            }
+
+            if (view.EventCapacity > vitalsBuffer.Length)
+            {
+                if (vitalsCursor != view.LastSequence)
+                {
+                    VitalsGapCount++;
+                }
+                vitalsCursor = view.LastSequence;
+                hasLatest = view.TryGetLatest(
+                    fallback.PlayerRuntimeId,
+                    out latest);
+            }
+            else
+            {
+                try
+                {
+                    int count = view.CopyChangesAfter(
+                        vitalsCursor,
+                        vitalsBuffer,
+                        out bool hasGap);
+                    if (hasGap)
+                    {
+                        VitalsGapCount++;
+                        hasLatest = view.TryGetLatest(
+                            fallback.PlayerRuntimeId,
+                            out latest);
+                    }
+                    else
+                    {
+                        for (int index = 0; index < count; index++)
+                        {
+                            FpgVitalsSnapshot candidate = vitalsBuffer[index];
+                            vitalsCursor = Math.Max(
+                                vitalsCursor,
+                                candidate.Sequence);
+                            if (candidate.RuntimeId == fallback.PlayerRuntimeId)
+                            {
+                                latest = candidate;
+                                hasLatest = true;
+                            }
+                            vitalsBuffer[index] = default(FpgVitalsSnapshot);
+                        }
+                    }
+
+                    if (hasGap)
+                    {
+                        vitalsCursor = view.LastSequence;
+                    }
+                }
+                catch (Exception)
+                {
+                    VitalsGapCount++;
+                    vitalsCursor = view.LastSequence;
+                    hasLatest = view.TryGetLatest(
+                        fallback.PlayerRuntimeId,
+                        out latest);
+                }
+            }
+
+            if (!hasLatest)
+            {
+                return fallback;
+            }
+
+            return new FpgFormalPlayerPresentationSnapshot(
+                fallback.Tick,
+                fallback.PlayerRuntimeId,
+                fallback.EncounterPhase,
+                fallback.IsPaused,
+                latest.Life,
+                latest.MaxLife,
+                latest.Barrier,
+                latest.MaxBarrier,
+                fallback.Ammo,
+                fallback.MagazineCapacity,
+                fallback.ExposureState,
+                fallback.WeaponState);
+        }
+
         private void ResetEventCursors()
         {
             for (int index = 0; index < actionQueue.Length; index++)
@@ -536,6 +677,34 @@ namespace FPG.Demo.Unity
             actionCount = 0;
             actionGap = false;
             nextCombatEventOrdinal = 0L;
+            observedVitalsRuntime = null;
+            vitalsCursor = 0L;
+            if (vitalsBuffer.Length > 0)
+            {
+                Array.Clear(vitalsBuffer, 0, vitalsBuffer.Length);
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            Subscribe();
+            actorPresenter?.ClearAndReturnToIdle();
+            cameraFeedback?.ResetRuntimeFeedback();
+            playerHud?.Clear();
+            snapshot = FpgFormalPlayerPresentationSnapshot.Unavailable;
+            ResetEventCursors();
+            observedTrace = encounterDirector == null
+                || encounterDirector.CombatRuntime == null
+                || encounterDirector.CombatRuntime.IsDisposed
+                ? null
+                : encounterDirector.CombatRuntime.CombatKernel.Trace;
+            nextCombatEventOrdinal =
+                observedTrace == null ? 0L : observedTrace.TotalEventCount;
         }
 
         private void OnDisable()

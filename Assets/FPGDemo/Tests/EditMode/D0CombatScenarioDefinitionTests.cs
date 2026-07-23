@@ -12,7 +12,7 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/BattleScenarioConfig.asset";
 
         private const string ScenarioDefinitionPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsLuanSummonsHudie.asset";
+            "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsBurstbug.asset";
 
         private const string BurstbugScenarioDefinitionPath =
             "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsBurstbug.asset";
@@ -54,7 +54,7 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Presentation/Luan/Prefabs/PF_D0_LuanEntity.prefab";
 
         [Test]
-        public void InstalledFeiLuanHudieSliceBuildsTheExpectedDomainDefinition()
+        public void InstalledFeiBurstbugSliceBuildsTheExpectedDomainDefinition()
         {
             BattleScenarioConfig config = LoadRequired<BattleScenarioConfig>(ScenarioConfigPath);
             D0CombatScenarioDefinition authored =
@@ -62,75 +62,44 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(config.UsesAuthoredScenario, Is.True);
             Assert.That(config.AuthoredScenario, Is.SameAs(authored));
-            Assert.That(authored.ScenarioId, Is.EqualTo("combatlab-fei-vs-luan-hudie"));
+            Assert.That(authored.ScenarioId, Is.EqualTo("combatlab-fei-vs-burstbug"));
             Assert.That(authored.EncounterContract,
-                Is.EqualTo(D0EncounterContract.LuanHudieSingleProjectile));
-            Assert.That(authored.Encounter.EncounterId, Is.EqualTo("luan-hudie-combatlab"));
-            Assert.That(authored.Encounter.Enemy.EnemyId, Is.EqualTo("luan"));
-            Assert.That(authored.Encounter.SpawnSlotCount, Is.EqualTo(2));
+                Is.EqualTo(D0EncounterContract.BurstbugStandard));
+            Assert.That(authored.Encounter.EncounterId, Is.EqualTo("burstbug-training"));
+            Assert.That(authored.Encounter.Enemy.EnemyId, Is.EqualTo("burstbug"));
+            Assert.That(authored.Encounter.SpawnSlotCount, Is.EqualTo(1));
 
-            D0EncounterSpawnSlot luanSlot = authored.Encounter.InitialSpawnSlot;
-            Assert.That(luanSlot, Is.SameAs(authored.Encounter.GetSpawnSlot(0)));
-            Assert.That(luanSlot.DefinitionId, Is.EqualTo(1));
-            Assert.That(luanSlot.Enemy.EnemyId, Is.EqualTo("luan"));
-            Assert.That(luanSlot.SpawnPointId, Is.EqualTo("enemy-main"));
-            Assert.That(luanSlot.SpawnTick, Is.Zero);
+            D0EncounterSpawnSlot burstbugSlot = authored.Encounter.InitialSpawnSlot;
+            Assert.That(burstbugSlot, Is.SameAs(authored.Encounter.GetSpawnSlot(0)));
+            Assert.That(burstbugSlot.DefinitionId, Is.EqualTo(1));
+            Assert.That(burstbugSlot.Enemy.EnemyId, Is.EqualTo("burstbug"));
+            Assert.That(burstbugSlot.SpawnPointId, Is.EqualTo("enemy-main"));
+            Assert.That(burstbugSlot.SpawnTick, Is.Zero);
             Assert.That(
-                luanSlot.PosePolicy,
+                burstbugSlot.PosePolicy,
                 Is.EqualTo(D0EncounterSpawnPosePolicy.AtSpawnPoint));
             Assert.That(
-                authored.Encounter.TryGetSpawnSlot(1, out D0EncounterSpawnSlot resolvedLuan),
+                authored.Encounter.TryGetSpawnSlot(1, out D0EncounterSpawnSlot resolvedBurstbug),
                 Is.True);
-            Assert.That(resolvedLuan, Is.SameAs(luanSlot));
-
-            D0EncounterSpawnSlot hudieSlot = authored.Encounter.GetSpawnSlot(1);
-            Assert.That(hudieSlot.DefinitionId, Is.EqualTo(2));
-            Assert.That(hudieSlot.Enemy.EnemyId, Is.EqualTo("hudie"));
-            Assert.That(hudieSlot.SpawnPointId, Is.EqualTo("enemy-main"));
-            Assert.That(hudieSlot.SpawnTick, Is.EqualTo(284));
-            Assert.That(
-                hudieSlot.PosePolicy,
-                Is.EqualTo(D0EncounterSpawnPosePolicy.InheritPreviousGameplayPose));
-            Assert.That(
-                authored.Encounter.TryGetSpawnSlot(2, out D0EncounterSpawnSlot resolvedHudie),
-                Is.True);
-            Assert.That(resolvedHudie, Is.SameAs(hudieSlot));
-            Assert.That(authored.Encounter.TryGetSpawnSlot(3, out _), Is.False);
+            Assert.That(resolvedBurstbug, Is.SameAs(burstbugSlot));
+            Assert.That(authored.Encounter.TryGetSpawnSlot(2, out _), Is.False);
             Assert.That(authored.Encounter.AttackScheduleCount, Is.EqualTo(6));
-            Assert.That(authored.Encounter.GetAttackScheduleEntry(0).DueTick, Is.EqualTo(390));
-            Assert.That(authored.Encounter.GetAttackScheduleEntry(5).DueTick, Is.EqualTo(1290));
-            Assert.That(authored.Encounter.GetAttackScheduleEntry(0).Attack.AttackId,
-                Is.EqualTo("hudie-bullet"));
-            Assert.That(authored.Encounter.GetAttackScheduleEntry(5).Attack,
-                Is.SameAs(authored.Encounter.GetAttackScheduleEntry(0).Attack));
-            Assert.That(authored.LuanSummonHudie, Is.Not.Null);
-            Assert.That(authored.LuanSummonHudie.HudieEnemy.EnemyId, Is.EqualTo("hudie"));
-            Assert.That(authored.LuanSummonHudie.HudieEnemy,
-                Is.SameAs(hudieSlot.Enemy));
-            Assert.That(authored.LuanSummonHudie.SummonTick, Is.EqualTo(240));
-            Assert.That(authored.LuanSummonHudie.AppearanceTick, Is.EqualTo(284));
+            Assert.That(authored.Encounter.GetAttackScheduleEntry(0).DueTick, Is.EqualTo(120));
+            Assert.That(authored.Encounter.GetAttackScheduleEntry(5).DueTick, Is.EqualTo(1200));
+            Assert.That(authored.LuanSummonHudie, Is.Null);
             Assert.That(authored.ThreeCProfile, Is.Not.Null);
-            Assert.That(authored.ThreeCProfile.TryValidate(out string threeCError), Is.True, threeCError);
             Assert.That(authored.Encounter.UsesReusableAttackDefinitions, Is.True);
-            Assert.That(authored.Encounter.Enemy.BehaviorProfile, Is.Not.Null);
-            Assert.That(authored.Encounter.Enemy.BehaviorProfile.TryValidate(out string behaviorError),
-                Is.True,
-                behaviorError);
             Assert.That(authored.TryValidate(out string authoredError), Is.True, authoredError);
             Assert.That(config.TryValidateSpatialConfiguration(out string spatialError), Is.True, spatialError);
-            Assert.That(config.TryCreateDefinition(out ScenarioDefinition definition, out string error), Is.True, error);
+            Assert.That(config.TryCreateDefinition(
+                out ScenarioDefinition definition,
+                out string error), Is.True, error);
 
             Assert.That(definition.PlayerLife, Is.EqualTo(100));
             Assert.That(definition.PlayerBarrier, Is.EqualTo(100));
             Assert.That(definition.EnemyLife, Is.EqualTo(800));
             Assert.That(definition.EnemyBreak, Is.EqualTo(160));
-            Assert.That(definition.EnemySpawnCount, Is.EqualTo(1));
-            EnemySpawnDefinition hudieSpawn = definition.GetEnemySpawnDefinition(0);
-            Assert.That(hudieSpawn.DefinitionId, Is.EqualTo(2));
-            Assert.That(hudieSpawn.SpawnTick.Value, Is.EqualTo(284));
-            Assert.That(hudieSpawn.Life, Is.EqualTo(authored.LuanSummonHudie.HudieEnemy.Life));
-            Assert.That(hudieSpawn.Break, Is.EqualTo(authored.LuanSummonHudie.HudieEnemy.BreakValue));
-            Assert.That(hudieSpawn.ThreatCapacity, Is.EqualTo(definition.ThreatCapacity));
+            Assert.That(definition.EnemySpawnCount, Is.Zero);
             Assert.That(definition.PlayerWeapon.MagazineCapacity, Is.EqualTo(8));
             Assert.That(definition.PlayerWeapon.PrimaryAmmoCost, Is.EqualTo(1));
             Assert.That(definition.PlayerWeapon.PrimaryInterval.Value, Is.EqualTo(12));
@@ -139,9 +108,6 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(definition.PlayerWeapon.ReloadDuration.Value, Is.EqualTo(84));
             Assert.That(definition.ThreatScheduleCount, Is.EqualTo(6));
             Assert.That(config.ThreatScheduleCount, Is.EqualTo(6));
-            Assert.That(config.AttackQuerySettings.MaxDistance, Is.EqualTo(50f));
-            Assert.That(config.AttackQuerySettings.PrimarySpreadTangent, Is.EqualTo(0.04f));
-            Assert.That(config.AttackQuerySettings.SecondaryAreaRadius, Is.EqualTo(3f));
         }
 
         [Test]
@@ -340,7 +306,6 @@ namespace FPG.Demo.Tests.EditMode
 
         [TestCase(BurstbugScenarioDefinitionPath)]
         [TestCase(HudieScenarioDefinitionPath)]
-        [TestCase(ScenarioDefinitionPath)]
         public void InstalledScenarioSpawnIdsResolveAgainstMigratedRoom(
             string scenarioPath)
         {

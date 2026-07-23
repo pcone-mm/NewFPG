@@ -15,7 +15,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
     {
         private const string LayoutPath = "Assets/FPGDemo/Editor/LevelAuthoring/FpgRoomEditor.uxml";
         private const string SelectedRoomSessionKey = "FPGDemo.RoomAuthoring.SelectedRoomGuid";
-        private const string SelectedScenarioSessionKey = "FPGDemo.RoomAuthoring.SelectedScenarioGuid";
 
         private readonly List<FpgRoomRecord> allRooms = new List<FpgRoomRecord>();
         private readonly List<FpgRoomRecord> filteredRooms = new List<FpgRoomRecord>();
@@ -24,7 +23,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private FpgRoomSceneTool sceneTool;
         private ScriptableObject selectedRoom;
-        private ScriptableObject selectedScenario;
         private SerializedObject serializedRoom;
         private bool refreshQueued;
 
@@ -48,7 +46,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private ListView validationList;
         private Label validationSummaryLabel;
         private Label statusLabel;
-        private ObjectField scenarioField;
         private VisualElement formalPreviewOutput;
         private readonly Dictionary<FpgRoomMarkerKind, Button> markerToolButtons =
             new Dictionary<FpgRoomMarkerKind, Button>();
@@ -97,7 +94,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             QueryElements();
             ConfigureLists();
             RegisterCallbacks();
-            RestoreScenarioSelection();
             RefreshRoomAssets();
             RestoreRoomSelection();
         }
@@ -116,7 +112,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             validationList = rootVisualElement.Q<ListView>("validation-list");
             validationSummaryLabel = rootVisualElement.Q<Label>("validation-summary-label");
             statusLabel = rootVisualElement.Q<Label>("status-label");
-            scenarioField = rootVisualElement.Q<ObjectField>("scenario-field");
 
             markerToolButtons.Clear();
             markerToolButtons[FpgRoomMarkerKind.Exit] = rootVisualElement.Q<Button>("place-exit-button");
@@ -146,8 +141,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             validationList.makeItem = MakeValidationListItem;
             validationList.bindItem = BindValidationListItem;
 
-            scenarioField.objectType = FpgRoomAuthoringSchema.ScenarioType ?? typeof(ScriptableObject);
-            scenarioField.allowSceneObjects = false;
         }
 
         private void RegisterCallbacks()
@@ -164,7 +157,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             rootVisualElement.Q<Button>("duplicate-room-button").clicked += DuplicateRoom;
             rootVisualElement.Q<Button>("save-room-button").clicked += SaveRoom;
             rootVisualElement.Q<Button>("frame-room-button").clicked += () => sceneTool?.FrameSelection();
-            rootVisualElement.Q<Button>("play-room-button").clicked += StartPlaytest;
             rootVisualElement.Q<Button>("duplicate-marker-button").clicked += () => sceneTool?.DuplicateSelectedMarker();
             rootVisualElement.Q<Button>("delete-marker-button").clicked += () => sceneTool?.DeleteSelectedMarker();
 
@@ -197,13 +189,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
             });
 
-            scenarioField.RegisterValueChangedCallback(evt =>
-            {
-                selectedScenario = evt.newValue as ScriptableObject;
-                string path = AssetDatabase.GetAssetPath(selectedScenario);
-                SessionState.SetString(SelectedScenarioSessionKey, AssetDatabase.AssetPathToGUID(path));
-                RefreshValidation();
-            });
         }
 
         private void BindVisibility(string toggleName, FpgRoomMarkerKind kind)
@@ -1029,7 +1014,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 validation.AddRange(FpgRoomAuthoringSchema.Validate(selectedRoom, idCounts));
             }
 
-            validation.AddRange(FpgRoomAuthoringSchema.ValidateScenarioCompatibility(selectedRoom, selectedScenario));
             if (selectedRoom != null && validation.Count == 0)
             {
                 validation.Add(new FpgRoomValidationItem(FpgRoomValidationSeverity.Info, "Room validation passed."));
@@ -1180,28 +1164,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             statusLabel.text = $"Saved: {AssetDatabase.GetAssetPath(selectedRoom)}";
         }
 
-        private void StartPlaytest()
-        {
-            RefreshValidation();
-            FpgRoomValidationItem blocking = validation.FirstOrDefault(item =>
-                item.Severity == FpgRoomValidationSeverity.Error);
-            if (blocking != null)
-            {
-                EditorUtility.DisplayDialog("Cannot Start Playtest", "Fix validation errors first: " + blocking.Message, "OK");
-                return;
-            }
-
-            if (selectedScenario == null)
-            {
-                EditorUtility.DisplayDialog("Cannot Start Playtest", "Select a D0 encounter scenario.", "OK");
-                return;
-            }
-
-            if (!FpgRoomPlaytestController.TryStart(selectedRoom, selectedScenario, out string error))
-            {
-                EditorUtility.DisplayDialog("Cannot Start Playtest", error, "OK");
-            }
-        }
 
         private void RefreshMarkerToolStyles()
         {
@@ -1232,26 +1194,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
         }
 
-        private void RestoreScenarioSelection()
-        {
-            string path = AssetDatabase.GUIDToAssetPath(
-                SessionState.GetString(SelectedScenarioSessionKey, string.Empty));
-            Type type = FpgRoomAuthoringSchema.ScenarioType;
-            selectedScenario = type == null
-                ? null
-                : AssetDatabase.LoadAssetAtPath(path, type) as ScriptableObject;
-            if (selectedScenario == null)
-            {
-                FPG.Demo.Unity.BattleScenarioConfig defaultConfig =
-                    AssetDatabase.LoadAssetAtPath<FPG.Demo.Unity.BattleScenarioConfig>(
-                        "Assets/FPGDemo/Config/BattleScenarioConfig.asset");
-                selectedScenario = defaultConfig == null
-                    ? null
-                    : defaultConfig.AuthoredScenario;
-            }
-
-            scenarioField.SetValueWithoutNotify(selectedScenario);
-        }
 
         private static string GenerateRoomId()
         {

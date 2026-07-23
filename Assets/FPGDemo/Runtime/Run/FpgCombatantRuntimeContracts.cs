@@ -74,6 +74,13 @@ namespace FPG.Demo.Run
         bool CanAttack(RuntimeId ownerRuntimeId);
     }
 
+    public interface IFpgAttackScheduleEligibility
+    {
+        bool CanProcessScheduledAttack(
+            FpgAttackScheduleRequest request,
+            int spawnSequence);
+    }
+
     /// <summary>
     /// Fixed attack director queue. Ordering is the formal contract:
     /// (ReadyTick, SpawnSequence, Priority, ScheduleSequence).
@@ -172,6 +179,34 @@ namespace FPG.Demo.Run
             return true;
         }
 
+        public bool TryDequeueDueForSchedule(
+            TickIndex currentTick,
+            IFpgAttackScheduleEligibility eligibility,
+            out FpgAttackScheduleRequest request,
+            out int spawnSequence)
+        {
+            if (eligibility == null)
+            {
+                return TryDequeueDue(
+                    currentTick,
+                    out request,
+                    out spawnSequence);
+            }
+
+            int best = FindBestDue(currentTick, eligibility);
+            if (best < 0)
+            {
+                request = default(FpgAttackScheduleRequest);
+                spawnSequence = -1;
+                return false;
+            }
+
+            request = requests[best];
+            spawnSequence = spawnSequences[best];
+            RemoveAt(best);
+            return true;
+        }
+
         public int CancelOwner(RuntimeId ownerRuntimeId)
         {
             int canceled = 0;
@@ -238,6 +273,36 @@ namespace FPG.Demo.Run
                 FpgAttackScheduleRequest candidate = requests[index];
                 if (candidate.ReadyTick > currentTick
                     || !eligibility.CanAttack(candidate.OwnerRuntimeId))
+                {
+                    continue;
+                }
+
+                if (best < 0 || Compare(index, best) < 0)
+                {
+                    best = index;
+                }
+            }
+
+            return best;
+        }
+
+        private int FindBestDue(
+            TickIndex currentTick,
+            IFpgAttackScheduleEligibility eligibility)
+        {
+            if (!currentTick.IsValid)
+            {
+                return -1;
+            }
+
+            int best = -1;
+            for (int index = 0; index < count; index++)
+            {
+                FpgAttackScheduleRequest candidate = requests[index];
+                if (candidate.ReadyTick > currentTick
+                    || !eligibility.CanProcessScheduledAttack(
+                        candidate,
+                        spawnSequences[index]))
                 {
                     continue;
                 }

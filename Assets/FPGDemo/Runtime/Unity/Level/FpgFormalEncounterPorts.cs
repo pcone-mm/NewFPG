@@ -284,7 +284,9 @@ namespace FPG.Demo.Unity
     /// gameplay and a per-entity health bar at Activate, and never creates or
     /// destroys objects during a battle tick.
     /// </summary>
-    public sealed class FpgUnityEncounterEntityPort : IFpgEncounterEntityPort
+    public sealed class FpgUnityEncounterEntityPort :
+        IFpgEncounterEntityPort,
+        IFpgFormalEnemyPresentationPort
     {
         private const int DefaultPresentationLeaseTicks = 12;
 
@@ -329,6 +331,11 @@ namespace FPG.Demo.Unity
 
         public int Capacity => bindings.Length;
         public IFpgFormalHitboxLookup HitboxLookup => hitboxRegistry;
+        public int HealthBarBindFailureCount { get; private set; }
+        public int HealthBarUpdateFailureCount { get; private set; }
+        public int HealthBarReleaseFailureCount { get; private set; }
+        public int HealthBarCallbackFaultCount { get; private set; }
+        public int EnemyPresentationFailureCount { get; private set; }
 
         public DomainResult Prepare(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId)
         {
@@ -468,23 +475,28 @@ namespace FPG.Demo.Unity
 
             if (healthBarPool != null)
             {
-                if (!healthBarPool.TryBind(
+                if (TryBindHealthBar(
                         runtimeId,
                         binding.Binder.OverheadHealthBarAnchor,
                         binding.Definition.Life,
                         binding.Definition.Life))
                 {
-                    return DomainResult.Rejected(RejectReason.BufferCapacity);
+                    binding.HealthBarBound = true;
                 }
-
-                binding.HealthBarBound = true;
+                else
+                {
+                    HealthBarBindFailureCount++;
+                }
             }
 
             if (!entityPool.TrySetGameplayEnabled(runtimeId, true))
             {
                 if (binding.HealthBarBound)
                 {
-                    healthBarPool.TryRelease(runtimeId);
+                    if (!TryReleaseHealthBar(runtimeId))
+                    {
+                        HealthBarReleaseFailureCount++;
+                    }
                     binding.HealthBarBound = false;
                 }
 
@@ -494,6 +506,99 @@ namespace FPG.Demo.Unity
             binding.Activated = true;
             bindings[index] = binding;
             return DomainResult.Success;
+        }
+
+        public bool TryPlayAttack(
+            RuntimeId runtimeId,
+            int spawnSequence,
+            string attackPatternId)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0
+                || spawnSequence < 0
+                || string.IsNullOrWhiteSpace(attackPatternId))
+            {
+                IncrementEnemyPresentationFailureCount();
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated
+                || binding.SpawnSequence != spawnSequence
+                || !(binding.Binder is IFpgFormalEnemyPresentationView view))
+            {
+                IncrementEnemyPresentationFailureCount();
+                return false;
+            }
+
+            FpgEnemyAttackDefinition attack = null;
+            for (int attackIndex = 0;
+                 attackIndex < binding.Definition.AttackPatternCount;
+                 attackIndex++)
+            {
+                FpgEnemyAttackDefinition candidate =
+                    binding.Definition.GetAttackPattern(attackIndex);
+                if (candidate != null
+                    && string.Equals(
+                        candidate.AttackId,
+                        attackPatternId,
+                        StringComparison.Ordinal))
+                {
+                    attack = candidate;
+                    break;
+                }
+            }
+
+            try
+            {
+                if (attack != null && view.TryPlayAttack(attack))
+                {
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                // Presentation callbacks cannot affect encounter simulation.
+            }
+
+            IncrementEnemyPresentationFailureCount();
+            return false;
+        }
+
+        public bool TryInterruptAttack(
+            RuntimeId runtimeId,
+            int spawnSequence)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0 || spawnSequence < 0)
+            {
+                IncrementEnemyPresentationFailureCount();
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated
+                || binding.SpawnSequence != spawnSequence
+                || !(binding.Binder is IFpgFormalEnemyPresentationView view))
+            {
+                IncrementEnemyPresentationFailureCount();
+                return false;
+            }
+
+            try
+            {
+                if (view.TryInterruptAttack())
+                {
+                    return true;
+                }
+            }
+            catch (Exception)
+            {
+                // Presentation callbacks cannot affect encounter simulation.
+            }
+
+            IncrementEnemyPresentationFailureCount();
+            return false;
         }
 
         public DomainResult Despawn(RuntimeId runtimeId, bool preservePresentationLease)
@@ -520,8 +625,11 @@ namespace FPG.Demo.Unity
             bool hitboxesRemoved = hitboxRegistry == null
                 || removedHitParts == binding.RegisteredHitPartCount;
 
-            bool healthBarRemoved = !binding.HealthBarBound
-                || healthBarPool != null && healthBarPool.TryRelease(runtimeId);
+            if (binding.HealthBarBound
+                && !TryReleaseHealthBar(runtimeId))
+            {
+                HealthBarReleaseFailureCount++;
+            }
 
             // All external references are gone before the entity becomes
             // available to another RuntimeId.
@@ -532,7 +640,6 @@ namespace FPG.Demo.Unity
             return anchorRemoved
                 && gameplayDisabled
                 && hitboxesRemoved
-                && healthBarRemoved
                 && entityReleased
                     ? DomainResult.Success
                     : DomainResult.Rejected(RejectReason.InvariantFault);
@@ -541,12 +648,67 @@ namespace FPG.Demo.Unity
         public bool TryUpdateHealth(RuntimeId runtimeId, int life, int maxLife)
         {
             int index = FindBinding(runtimeId);
-            return index >= 0
-                && bindings[index].Activated
-                && bindings[index].HealthBarBound
-                && healthBarPool != null
-                && maxLife > 0
-                && healthBarPool.TryUpdate(runtimeId, life, maxLife);
+            if (index < 0 || !bindings[index].Activated
+                || healthBarPool == null || maxLife <= 0)
+            {
+                HealthBarUpdateFailureCount++;
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (TryUpdateHealthBar(runtimeId, life, maxLife))
+            {
+                binding.HealthBarBound = true;
+                bindings[index] = binding;
+                return true;
+            }
+
+            if (TryBindHealthBar(
+                    runtimeId,
+                    binding.Binder.OverheadHealthBarAnchor,
+                    life,
+                    maxLife))
+            {
+                binding.HealthBarBound = true;
+                bindings[index] = binding;
+                return true;
+            }
+
+            binding.HealthBarBound = false;
+            bindings[index] = binding;
+            HealthBarUpdateFailureCount++;
+            return false;
+        }
+
+        public void ResynchronizeHealthBars(IFpgVitalsView vitals)
+        {
+            if (vitals == null)
+            {
+                HealthBarUpdateFailureCount++;
+                return;
+            }
+
+            for (int index = 0; index < bindings.Length; index++)
+            {
+                RuntimeBinding binding = bindings[index];
+                if (!binding.RuntimeId.IsValid || !binding.Activated)
+                {
+                    continue;
+                }
+
+                if (!vitals.TryGetLatest(
+                        binding.RuntimeId,
+                        out FpgVitalsSnapshot snapshot))
+                {
+                    HealthBarUpdateFailureCount++;
+                    continue;
+                }
+
+                TryUpdateHealth(
+                    binding.RuntimeId,
+                    snapshot.Life,
+                    snapshot.MaxLife);
+            }
         }
 
         public void ClearAll()
@@ -558,6 +720,75 @@ namespace FPG.Demo.Unity
                 {
                     Despawn(runtimeId, false);
                 }
+            }
+        }
+
+        private bool TryBindHealthBar(
+            RuntimeId runtimeId,
+            Transform anchor,
+            int life,
+            int maxLife)
+        {
+            if (healthBarPool == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return healthBarPool.TryBind(runtimeId, anchor, life, maxLife);
+            }
+            catch (Exception)
+            {
+                HealthBarCallbackFaultCount++;
+                return false;
+            }
+        }
+
+        private bool TryUpdateHealthBar(
+            RuntimeId runtimeId,
+            int life,
+            int maxLife)
+        {
+            if (healthBarPool == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return healthBarPool.TryUpdate(runtimeId, life, maxLife);
+            }
+            catch (Exception)
+            {
+                HealthBarCallbackFaultCount++;
+                return false;
+            }
+        }
+
+        private bool TryReleaseHealthBar(RuntimeId runtimeId)
+        {
+            if (healthBarPool == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return healthBarPool.TryRelease(runtimeId);
+            }
+            catch (Exception)
+            {
+                HealthBarCallbackFaultCount++;
+                return false;
+            }
+        }
+
+        private void IncrementEnemyPresentationFailureCount()
+        {
+            if (EnemyPresentationFailureCount < int.MaxValue)
+            {
+                EnemyPresentationFailureCount++;
             }
         }
 
@@ -660,4 +891,3 @@ namespace FPG.Demo.Unity
         }
     }
 }
-

@@ -480,6 +480,11 @@ namespace FPG.Demo.Run
 
         public void Reset()
         {
+            Reset(emitRestarted: true);
+        }
+
+        internal void Reset(bool emitRestarted)
+        {
             if (disposed)
             {
                 return;
@@ -498,7 +503,21 @@ namespace FPG.Demo.Run
             dynamicSpawnSequenceCursor = dynamicSpawnSequenceStart;
             waveEntriesIssued = false;
             phase = FpgEncounterPhase.Preparing;
-            Emit(new FpgEncounterLifecycleEvent(FpgEncounterLifecycleEventType.Restarted, currentTick, phase));
+            if (emitRestarted)
+            {
+                EmitRestarted();
+            }
+        }
+
+        internal void EmitRestarted()
+        {
+            if (!disposed && phase == FpgEncounterPhase.Preparing)
+            {
+                Emit(new FpgEncounterLifecycleEvent(
+                    FpgEncounterLifecycleEventType.Restarted,
+                    currentTick,
+                    phase));
+            }
         }
 
         public void Dispose()
@@ -726,7 +745,11 @@ namespace FPG.Demo.Run
 
         private void TryCompleteWaveOrRoom(TickIndex tick)
         {
-            if (!waveEntriesIssued || spawnQueue.Count != 0 || roster.LivingCount != 0)
+            if ((phase != FpgEncounterPhase.Spawning
+                    && phase != FpgEncounterPhase.Combat)
+                || !waveEntriesIssued
+                || spawnQueue.Count != 0
+                || roster.LivingCount != 0)
             {
                 return;
             }
@@ -874,8 +897,6 @@ namespace FPG.Demo.Run
         }
     }
 }
-
-
 
 
 

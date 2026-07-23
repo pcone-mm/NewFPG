@@ -96,6 +96,14 @@ namespace FPG.Demo.Unity
             }
         }
 
+        public void SetPaused(bool paused)
+        {
+            for (int index = 0; index < views.Length; index++)
+            {
+                views[index]?.SetPaused(paused);
+            }
+        }
+
         public void EndCombat()
         {
             ClearActive();

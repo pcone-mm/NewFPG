@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using FPG.Demo.Run;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -49,6 +50,10 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private LayerMask entranceLayerMask = ~0;
 
+        private readonly FpgRunFlowController runFlowController =
+            new FpgRunFlowController();
+        private Coroutine roomTransitionCoroutine;
+
         public GameBootstrapConfig Config => config;
         public FpgPlayableCharacterCatalog PlayableCharacterCatalog =>
             playableCharacterCatalog;
@@ -63,6 +68,7 @@ namespace FPG.Demo.Unity
         public FpgEncounterHost ActiveFormalHost { get; private set; }
         public FpgFormalEncounterHost ActiveFormalSceneHost { get; private set; }
         public FpgRoomEncounterDirector ActiveEncounterDirector { get; private set; }
+        public FpgRunFlowController RunFlowController => runFlowController;
 
         [Obsolete("Legacy CombatLab context is unavailable in the formal room flow.")]
         public BattleSceneContext ActiveContext { get; private set; }
@@ -98,6 +104,14 @@ namespace FPG.Demo.Unity
 
             if (!config.TryValidate(out error))
             {
+                return false;
+            }
+
+            if (config.ExitRoomRefreshRule == null
+                || !config.ExitRoomRefreshRule.TryValidate(out error))
+            {
+                error = "GameBootstrap requires a valid exit room refresh rule: "
+                    + error;
                 return false;
             }
 
@@ -479,6 +493,18 @@ namespace FPG.Demo.Unity
             ActiveFormalHost = formalSceneHost.EncounterHost;
             ActiveFormalSceneHost = formalSceneHost;
             ActiveEncounterDirector = formalSceneHost.EncounterDirector;
+            if (!runFlowController.TryBind(
+                    this,
+                    formalSceneHost,
+                    out string runFlowError))
+            {
+                FailRoomBootstrap(
+                    "Formal room run flow failed to bind: " + runFlowError,
+                    roomScene,
+                    loadedByBootstrap);
+                return;
+            }
+
             formalSceneHost.SetPresentationEnabled(true);
             DisableBootPresentation();
             State = BootstrapState.Running;
@@ -492,6 +518,219 @@ namespace FPG.Demo.Unity
                     $"[{nameof(GameBootstrap)}] Character '{SelectedPlayerSelection.CharacterId}' entered formal room '{roomId}'.",
                     this);
             }
+        }
+
+        internal void HandleRunFlowRoomCleared(
+            FpgRunFlowController sender,
+            FpgRoomClearedEvent clearedEvent)
+        {
+            if (!ReferenceEquals(sender, runFlowController)
+                || State != BootstrapState.Running
+                || SelectedRoom == null
+                || ActiveEncounterDirector == null
+                || !clearedEvent.RunContext.IsValid
+                || !string.Equals(
+                    clearedEvent.RoomId,
+                    SelectedRoom.RoomId,
+                    StringComparison.Ordinal))
+            {
+                BeginRunFlowFault("Room clear arrived without an active run flow.");
+                return;
+            }
+
+            IReadOnlyList<FpgRoomExitSlot> slots = SelectedRoom.ExitSlots;
+            string[] exitIds = new string[slots.Count];
+            for (int index = 0; index < slots.Count; index++)
+            {
+                exitIds[index] = slots[index].MarkerId;
+            }
+
+            FpgExitRefreshContext context = new FpgExitRefreshContext(
+                clearedEvent.RunContext,
+                clearedEvent.RoomId);
+            if (!config.ExitRoomRefreshRule.TryCreateOffers(
+                    context,
+                    exitIds,
+                    out FpgExitOffer[] offers,
+                    out string error)
+                || !ActiveEncounterDirector.TryRevealExits(offers, out error)
+                || !runFlowController.TryMarkAwaitingExit(out error))
+            {
+                BeginRunFlowFault("Exit refresh failed: " + error);
+            }
+        }
+
+        internal void HandleRunFlowExitSelected(
+            FpgRunFlowController sender,
+            FpgExitSelectionEvent selectionEvent)
+        {
+            if (!ReferenceEquals(sender, runFlowController)
+                || selectionEvent.Offer == null
+                || !selectionEvent.Offer.IsValid
+                || ActiveFormalSceneHost == null
+                || ActiveFormalSceneHost.CombatRuntime == null
+                || ActiveFormalSceneHost.ActivePlayerDefinition == null
+                || !runFlowController.TryBeginTransition(out string error))
+            {
+                BeginRunFlowFault("Exit selection is invalid.");
+                return;
+            }
+
+            ActiveEncounterDirector?.DeactivateAndClearExits();
+            if (!ActiveFormalSceneHost.TryCapturePlayerRunResources(
+                selectionEvent.Tick,
+                out FpgPlayerRunResourceState resources,
+                out string captureError))
+            {
+                BeginRunFlowFault(
+                    "Player resources could not be captured: "
+                    + captureError);
+                return;
+            }
+
+            FpgEncounterRunContext current =
+                ActiveFormalSceneHost.EncounterHost.RunContext;
+            if (current.Depth == int.MaxValue
+                || current.RoomVisitOrdinal == int.MaxValue)
+            {
+                BeginRunFlowFault("Run depth or room visit ordinal is exhausted.");
+                return;
+            }
+
+            FpgEncounterRunContext next = new FpgEncounterRunContext(
+                current.RunSeed,
+                current.RegionId,
+                current.Depth + 1,
+                current.DifficultyMultiplierBasisPoints,
+                current.RoomVisitOrdinal + 1);
+            roomTransitionCoroutine = StartCoroutine(
+                TransitionToRoom(
+                    selectionEvent.Offer,
+                    next,
+                    resources));
+        }
+
+        internal void HandleRunFlowFailed(
+            FpgRunFlowController sender,
+            FpgEncounterFailureReason reason,
+            string message)
+        {
+            if (!ReferenceEquals(sender, runFlowController))
+            {
+                return;
+            }
+
+            BeginRunFlowFault(
+                string.IsNullOrWhiteSpace(message)
+                    ? reason.ToString()
+                    : message);
+        }
+
+        private IEnumerator TransitionToRoom(
+            FpgExitOffer offer,
+            FpgEncounterRunContext nextContext,
+            FpgPlayerRunResourceState resources)
+        {
+            FpgFormalEncounterHost formalHost = ActiveFormalSceneHost;
+            FpgPlayableCharacterSelection playerSelection =
+                SelectedPlayerSelection;
+            yield return null;
+
+            if (formalHost == null || offer == null || !offer.IsValid)
+            {
+                FailRetainedRoomTransition(
+                    "Room transition lost its retained formal host.",
+                    formalHost);
+                yield break;
+            }
+
+            formalHost.StopAndClear();
+            yield return Application.isBatchMode
+                ? null
+                : new WaitForEndOfFrame();
+
+            if (!formalHost.TrySetRoomDefinition(
+                    offer.DestinationRoom,
+                    out string error)
+                || !formalHost.TryComposePlayer(playerSelection, out error)
+                || !formalHost.TryValidate(out error))
+            {
+                FailRetainedRoomTransition(
+                    "Next room composition failed: " + error,
+                    formalHost);
+                yield break;
+            }
+
+            FpgEncounterStartRequest request =
+                new FpgEncounterStartRequest(
+                    offer.DestinationRoom,
+                    nextContext,
+                    resources);
+            if (!formalHost.TryPrepareAndStart(request, out error)
+                || !formalHost.TryActivatePlayerPresentation(out error)
+                || !runFlowController.TryBind(this, formalHost, out error))
+            {
+                FailRetainedRoomTransition(
+                    "Next room startup failed: " + error,
+                    formalHost);
+                yield break;
+            }
+
+            formalHost.SetPresentationEnabled(true);
+            SelectedPlayerSelection = playerSelection;
+            SelectedRoom = offer.DestinationRoom;
+            ActiveFormalHost = formalHost.EncounterHost;
+            ActiveFormalSceneHost = formalHost;
+            ActiveEncounterDirector = formalHost.EncounterDirector;
+            LastError = string.Empty;
+            State = BootstrapState.Running;
+            roomTransitionCoroutine = null;
+        }
+
+        private void BeginRunFlowFault(string error)
+        {
+            LastError = string.IsNullOrWhiteSpace(error)
+                ? "Formal room run flow failed."
+                : error;
+            runFlowController.SetFault(LastError);
+            ActiveEncounterDirector?.DeactivateAndClearExits();
+            if (roomTransitionCoroutine == null)
+            {
+                roomTransitionCoroutine =
+                    StartCoroutine(FailRunFlowNextFrame());
+            }
+        }
+
+        private IEnumerator FailRunFlowNextFrame()
+        {
+            yield return null;
+            FailRetainedRoomTransition(LastError, ActiveFormalSceneHost);
+        }
+
+        private void FailRetainedRoomTransition(
+            string error,
+            FpgFormalEncounterHost formalHost)
+        {
+            LastError = string.IsNullOrWhiteSpace(error)
+                ? "Formal room transition failed."
+                : error;
+            Debug.LogError("[" + nameof(GameBootstrap) + "] " + LastError, this);
+            runFlowController.SetFault(LastError);
+            formalHost?.StopAndClear();
+
+            Scene bootScene = gameObject.scene;
+            if (bootScene.IsValid() && bootScene.isLoaded)
+            {
+                SceneManager.SetActiveScene(bootScene);
+            }
+
+            ActiveFormalHost = null;
+            ActiveFormalSceneHost = null;
+            ActiveEncounterDirector = null;
+            SelectedRoom = null;
+            roomTransitionCoroutine = null;
+            State = BootstrapState.Loading;
+            RestoreBootInteractionAfterFailure();
         }
 
         private void ApplyFrameRateStrategy()
@@ -527,6 +766,8 @@ namespace FPG.Demo.Unity
                 : error;
             State = BootstrapState.Loading;
             Debug.LogError($"[{nameof(GameBootstrap)}] {LastError}", this);
+            runFlowController.SetFault(LastError);
+            roomTransitionCoroutine = null;
 
             RollbackRoomRuntime(roomScene);
 
@@ -803,6 +1044,11 @@ namespace FPG.Demo.Unity
                     entrance.gameObject.SetActive(visible);
                 }
             }
+        }
+
+        private void OnDestroy()
+        {
+            runFlowController.Dispose();
         }
 
         private static bool TryGetSingleComponent<T>(

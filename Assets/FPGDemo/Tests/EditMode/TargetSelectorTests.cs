@@ -7,6 +7,21 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class TargetSelectorTests
     {
         [Test]
+        public void ExistingAttackConstructorDefaultsToLegacyQueryMode()
+        {
+            AttackSnapshot attack = CreateAttack(QueryPolicy.PelletRays, 1, 1);
+
+            Assert.That(attack.QueryMode, Is.EqualTo(AttackQueryMode.Legacy));
+            Assert.That(attack.AdditionalPenetrationCount, Is.Zero);
+            Assert.That(attack.AreaCombatantLimit, Is.Zero);
+            Assert.That(attack.AreaProjectileLimit, Is.Zero);
+            Assert.That(
+                attack.AllowedTargetKinds,
+                Is.EqualTo(AttackTargetKinds.Combatant | AttackTargetKinds.Projectile));
+            Assert.That(attack.IsQueryConfigurationValid, Is.True);
+        }
+
+        [Test]
         public void CandidateCountMustFitInputAndTailIsNotRead()
         {
             AttackSnapshot attack = CreateAttack(QueryPolicy.DirectThenArea, 1, 2);
@@ -125,6 +140,43 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void FirstSurfacePenetrationUsesPerPelletBlockersAndSharedDistanceSlots()
+        {
+            AttackSnapshot attack = CreateAttack(
+                QueryPolicy.PelletRays,
+                2,
+                4,
+                AttackQueryMode.FirstSurfacePenetration,
+                1,
+                0,
+                0);
+            QueryCandidate[] first =
+            {
+                Combatant(AttackQueryStage.Pellet, 0, 20, HitPart.Body, 5, 4, 0),
+                Projectile(AttackQueryStage.Pellet, 0, 30, 6, 3, 1),
+                Combatant(AttackQueryStage.Pellet, 0, 10, HitPart.Weakpoint, 2, 8, 2),
+                Blocker(AttackQueryStage.Pellet, 0, 9, 10, 3),
+                Combatant(AttackQueryStage.Pellet, 0, 10, HitPart.Body, 1, 2, 4),
+                Projectile(AttackQueryStage.Pellet, 0, 40, 7, 10, 5),
+                Combatant(AttackQueryStage.Pellet, 1, 60, HitPart.Weakpoint, 12, 6, 6),
+                Blocker(AttackQueryStage.Pellet, 1, 13, 5, 7),
+                Projectile(AttackQueryStage.Pellet, 1, 70, 14, 5, 8),
+                Combatant(AttackQueryStage.Pellet, 1, 60, HitPart.Body, 11, 4, 9)
+            };
+
+            QueryCandidate[] firstOutput = Select(attack, first, 3);
+            QueryCandidate[] secondOutput = Select(attack, Reverse(first), 3);
+
+            AssertSameCandidates(firstOutput, secondOutput);
+            Assert.That(firstOutput[0].TargetId.Value, Is.EqualTo(10));
+            Assert.That(firstOutput[0].HitPart, Is.EqualTo(HitPart.Weakpoint));
+            Assert.That(firstOutput[1].TargetId.Value, Is.EqualTo(30));
+            Assert.That(firstOutput[1].TargetKind, Is.EqualTo(QueryTargetKind.Projectile));
+            Assert.That(firstOutput[2].TargetId.Value, Is.EqualTo(60));
+            Assert.That(firstOutput[2].HitPart, Is.EqualTo(HitPart.Body));
+        }
+
+        [Test]
         public void SecondaryUsesPriorityAndStableDistanceRuntimeGeometryOrder()
         {
             AttackSnapshot attack = CreateAttack(QueryPolicy.DirectThenArea, 1, 8);
@@ -184,6 +236,195 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(output[0].TargetId.Value, Is.EqualTo(20));
             Assert.That(output[0].HitPart, Is.EqualTo(HitPart.Weakpoint));
             Assert.That(output[1].TargetId.Value, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void AreaAtFirstSurfaceIgnoresDirectAndBlockersAndKeepsIndependentLimits()
+        {
+            AttackSnapshot attack = CreateAttack(
+                QueryPolicy.DirectThenArea,
+                1,
+                3,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                2,
+                1);
+            QueryCandidate[] first =
+            {
+                Combatant(AttackQueryStage.Direct, -1, 999, HitPart.Weakpoint, 1, 1, 0),
+                Blocker(AttackQueryStage.Area, -1, 2, 0, 1),
+                Combatant(AttackQueryStage.Area, -1, 10, HitPart.Body, 3, 1, 2),
+                Combatant(AttackQueryStage.Area, -1, 10, HitPart.Weakpoint, 4, 5, 3),
+                Combatant(AttackQueryStage.Area, -1, 20, HitPart.Body, 5, 2, 4),
+                Combatant(AttackQueryStage.Area, -1, 30, HitPart.Body, 6, 3, 5),
+                Projectile(AttackQueryStage.Area, -1, 100, 7, 10, 6),
+                Projectile(AttackQueryStage.Area, -1, 101, 8, 4, 7),
+                Projectile(AttackQueryStage.Area, -1, 101, 9, 6, 8)
+            };
+
+            QueryCandidate[] firstOutput = Select(attack, first, 3);
+            QueryCandidate[] secondOutput = Select(attack, Reverse(first), 3);
+
+            AssertSameCandidates(firstOutput, secondOutput);
+            Assert.That(firstOutput[0].TargetId.Value, Is.EqualTo(10));
+            Assert.That(firstOutput[0].HitPart, Is.EqualTo(HitPart.Weakpoint));
+            Assert.That(firstOutput[1].TargetId.Value, Is.EqualTo(20));
+            Assert.That(firstOutput[2].TargetId.Value, Is.EqualTo(101));
+            Assert.That(firstOutput[2].TargetKind, Is.EqualTo(QueryTargetKind.Projectile));
+        }
+
+        [Test]
+        public void AllowedTargetKindsFilterEveryModeWhileBlockersStillTruncate()
+        {
+            AttackSnapshot legacy = CreateAttack(
+                QueryPolicy.DirectThenArea,
+                1,
+                1,
+                AttackQueryMode.Legacy,
+                0,
+                0,
+                0,
+                AttackTargetKinds.Combatant);
+            QueryCandidate[] legacyOutput = Select(
+                legacy,
+                new[]
+                {
+                    Projectile(AttackQueryStage.Direct, -1, 10, 1, 1, 0),
+                    Combatant(AttackQueryStage.Direct, -1, 20, HitPart.Body, 2, 2, 1)
+                },
+                1);
+            Assert.That(legacyOutput[0].TargetId.Value, Is.EqualTo(20));
+
+            AttackSnapshot penetration = CreateAttack(
+                QueryPolicy.PelletRays,
+                1,
+                2,
+                AttackQueryMode.FirstSurfacePenetration,
+                1,
+                0,
+                0,
+                AttackTargetKinds.Combatant);
+            QueryCandidate[] penetrationOutput = Select(
+                penetration,
+                new[]
+                {
+                    Projectile(AttackQueryStage.Pellet, 0, 10, 3, 1, 0),
+                    Combatant(AttackQueryStage.Pellet, 0, 20, HitPart.Body, 4, 2, 1),
+                    Blocker(AttackQueryStage.Pellet, 0, 5, 3, 2),
+                    Combatant(AttackQueryStage.Pellet, 0, 30, HitPart.Body, 6, 4, 3)
+                },
+                1);
+            Assert.That(penetrationOutput[0].TargetId.Value, Is.EqualTo(20));
+
+            AttackSnapshot area = CreateAttack(
+                QueryPolicy.DirectThenArea,
+                1,
+                2,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                1,
+                1,
+                AttackTargetKinds.Projectile);
+            QueryCandidate[] areaOutput = Select(
+                area,
+                new[]
+                {
+                    Combatant(AttackQueryStage.Area, -1, 20, HitPart.Body, 7, 1, 0),
+                    Projectile(AttackQueryStage.Area, -1, 10, 8, 2, 1),
+                    Blocker(AttackQueryStage.Area, -1, 9, 3, 2)
+                },
+                1);
+            Assert.That(areaOutput[0].TargetId.Value, Is.EqualTo(10));
+            Assert.That(areaOutput[0].TargetKind, Is.EqualTo(QueryTargetKind.Projectile));
+        }
+
+        [Test]
+        public void InvalidAllowedTargetConfigurationsAreRejected()
+        {
+            AttackSnapshot none = CreateAttack(
+                QueryPolicy.PelletRays,
+                1,
+                1,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0,
+                AttackTargetKinds.None);
+            AttackSnapshot unknown = CreateAttack(
+                QueryPolicy.PelletRays,
+                1,
+                1,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0,
+                (AttackTargetKinds)(1 << 2));
+            AttackSnapshot noAllowedAreaCapacity = CreateAttack(
+                QueryPolicy.DirectThenArea,
+                1,
+                1,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                1,
+                0,
+                AttackTargetKinds.Projectile);
+
+            Assert.That(none.IsQueryConfigurationValid, Is.False);
+            Assert.That(unknown.IsQueryConfigurationValid, Is.False);
+            Assert.That(noAllowedAreaCapacity.IsQueryConfigurationValid, Is.False);
+            Assert.That(TargetSelector.Select(
+                none,
+                new QueryCandidate[0],
+                AttackQueryResult.Empty,
+                new QueryCandidate[0],
+                out int noneCount).RejectReason, Is.EqualTo(RejectReason.InvalidState));
+            Assert.That(noneCount, Is.Zero);
+            Assert.That(TargetSelector.Select(
+                unknown,
+                new QueryCandidate[0],
+                AttackQueryResult.Empty,
+                new QueryCandidate[0],
+                out int unknownCount).RejectReason, Is.EqualTo(RejectReason.InvalidState));
+            Assert.That(unknownCount, Is.Zero);
+        }
+
+        [Test]
+        public void NewModesRejectImpactCapacityBelowTheirIndependentLimits()
+        {
+            AttackSnapshot penetrating = CreateAttack(
+                QueryPolicy.PelletRays,
+                2,
+                3,
+                AttackQueryMode.FirstSurfacePenetration,
+                1,
+                0,
+                0);
+            AttackSnapshot area = CreateAttack(
+                QueryPolicy.DirectThenArea,
+                1,
+                2,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                2,
+                1);
+
+            DomainResult penetratingResult = TargetSelector.Select(
+                penetrating,
+                new QueryCandidate[0],
+                AttackQueryResult.Empty,
+                new QueryCandidate[0],
+                out int penetratingCount);
+            DomainResult areaResult = TargetSelector.Select(
+                area,
+                new QueryCandidate[0],
+                AttackQueryResult.Empty,
+                new QueryCandidate[0],
+                out int areaCount);
+
+            Assert.That(penetratingResult.RejectReason, Is.EqualTo(RejectReason.InvalidState));
+            Assert.That(penetratingCount, Is.Zero);
+            Assert.That(areaResult.RejectReason, Is.EqualTo(RejectReason.InvalidState));
+            Assert.That(areaCount, Is.Zero);
         }
 
         [Test]
@@ -254,6 +495,36 @@ namespace FPG.Demo.Tests.EditMode
                 maxImpactCount,
                 1,
                 1);
+        }
+
+        private static AttackSnapshot CreateAttack(
+            QueryPolicy policy,
+            int payloadCount,
+            int maxImpactCount,
+            AttackQueryMode queryMode,
+            int additionalPenetrationCount,
+            int areaCombatantLimit,
+            int areaProjectileLimit,
+            AttackTargetKinds allowedTargetKinds = AttackSnapshot.DefaultAllowedTargetKinds)
+        {
+            return new AttackSnapshot(
+                new AttackId(1),
+                new ShotId(1),
+                100,
+                new RuntimeId(1),
+                Team.Player,
+                new TickIndex(0),
+                new DamageSpec(10, 2),
+                policy,
+                payloadCount,
+                maxImpactCount,
+                1,
+                1,
+                queryMode,
+                additionalPenetrationCount,
+                areaCombatantLimit,
+                areaProjectileLimit,
+                allowedTargetKinds);
         }
 
         private static QueryCandidate Combatant(

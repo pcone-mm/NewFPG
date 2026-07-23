@@ -24,6 +24,38 @@ namespace FPG.Demo.Tests.EditMode
             AssertBattleBinding(battle, "Restart", "<Keyboard>/f5");
         }
 
+        [Test]
+        public void AimSurfaceUsesTheProjectWideAimLookAndPointActions()
+        {
+            InputActionAsset actions =
+                AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
+            Assert.That(actions, Is.Not.Null);
+
+            InputAction aim = actions.FindActionMap(
+                "Battle",
+                throwIfNotFound: true).FindAction(
+                    "Aim",
+                    throwIfNotFound: true);
+            InputAction look = actions.FindActionMap(
+                "Player",
+                throwIfNotFound: true).FindAction(
+                    "Look",
+                    throwIfNotFound: true);
+            InputAction point = actions.FindActionMap(
+                "UI",
+                throwIfNotFound: true).FindAction(
+                    "Point",
+                    throwIfNotFound: true);
+
+            Assert.That(aim.type, Is.EqualTo(InputActionType.Button));
+            Assert.That(look.type, Is.EqualTo(InputActionType.Value));
+            Assert.That(look.expectedControlType, Is.EqualTo("Vector2"));
+            Assert.That(point.type, Is.EqualTo(InputActionType.PassThrough));
+            Assert.That(point.expectedControlType, Is.EqualTo("Vector2"));
+            AssertHasBinding(look, "<Pointer>/delta");
+            AssertHasBinding(point, "<Mouse>/position");
+        }
+
         private static void AssertBattleBinding(InputActionMap battle, string actionName, string path)
         {
             InputAction action = battle.FindAction(actionName, throwIfNotFound: true);
@@ -39,6 +71,19 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(binding.processors, Is.Empty, actionName);
             Assert.That(binding.isComposite, Is.False, actionName);
             Assert.That(binding.isPartOfComposite, Is.False, actionName);
+        }
+
+        private static void AssertHasBinding(InputAction action, string path)
+        {
+            for (int index = 0; index < action.bindings.Count; index++)
+            {
+                if (action.bindings[index].path == path)
+                {
+                    return;
+                }
+            }
+
+            Assert.Fail(action.name + " is missing binding " + path + ".");
         }
     }
 }

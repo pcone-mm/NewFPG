@@ -12,7 +12,7 @@
 
 - 移动或重命名怪物美术资产时同步处理 `.meta`，优先保持现有引用稳定。
 - CZN/Spine 怪物资源重导时，先确认来源目录、PMA/straight-alpha 转换目标和目标 prefab 位置，不要让源资源承担战斗命中、投射物或伤害逻辑。
-- `luan`/`hudie` 的召唤与出现动画、视觉时序由 `Docs/Workflow/Luan_Summons_Hudie_Configuration.zh-CN.md` 和 `D0LuanSummonHudieDefinition` 约束；普通攻击归具体攻击定义，待机、受击、Break、死亡归 Actor 状态表现。资源没有可靠发射事件时，不要用 Spine event 替代 D0 投射物链路。
+- `luan`/`hudie` 的正式召唤关系由 `Assets/FPGDemo/Docs/Workflow/FPG_Level1_Encounter_Presets_Configuration.zh-CN.md` 约束；D0 召唤资产只作为正式配置安装器的迁移源。资源没有可靠发射事件时，不要用 Spine event 替代运行时攻击或召唤链路。
 
 ## 验证方式
 

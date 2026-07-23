@@ -18,6 +18,6 @@ MonoBehaviour:
   entrySpeed: 2.5
   moveSpeed: 0
   stopDuringAttack: 1
-  entryAnimation: enter
+  entryAnimation: idle
   idleAnimation: idle
-  deathAnimation: death
+  deathAnimation: die&broken

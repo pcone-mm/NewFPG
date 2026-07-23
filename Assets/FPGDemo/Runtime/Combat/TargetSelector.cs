@@ -5,8 +5,9 @@ namespace FPG.Demo.Combat
 {
     /// <summary>
     /// Converts unordered spatial query candidates into deterministic domain targets.
-    /// Blockers are isolated by query lane: pellet sample for primary attacks and query
-    /// stage for secondary attacks. A target at the same DistanceKey as a blocker is blocked.
+    /// Legacy attacks retain their original priority rules. Formal pellet attacks truncate
+    /// each sample at its first blocker, then order deduplicated runtime targets by first
+    /// intersection. Formal area attacks select only overlap candidates with per-kind limits.
     /// </summary>
     public static class TargetSelector
     {
@@ -49,9 +50,23 @@ namespace FPG.Demo.Combat
                 }
             }
 
-            int requiredCount = attack.QueryPolicy == QueryPolicy.PelletRays
-                ? CountPrimarySelections(attack, candidates, candidateCount)
-                : CountSecondarySelections(attack, candidates, candidateCount);
+            int requiredCount;
+            switch (attack.QueryMode)
+            {
+                case AttackQueryMode.Legacy:
+                    requiredCount = attack.QueryPolicy == QueryPolicy.PelletRays
+                        ? CountPrimarySelections(attack, candidates, candidateCount)
+                        : CountSecondarySelections(attack, candidates, candidateCount);
+                    break;
+                case AttackQueryMode.FirstSurfacePenetration:
+                    requiredCount = CountFirstSurfaceSelections(attack, candidates, candidateCount);
+                    break;
+                case AttackQueryMode.AreaAtFirstSurface:
+                    requiredCount = CountAreaAtFirstSurfaceSelections(attack, candidates, candidateCount);
+                    break;
+                default:
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+            }
             if (requiredCount > output.Length)
             {
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
@@ -62,7 +77,25 @@ namespace FPG.Demo.Combat
                 return DomainResult.Success;
             }
 
-            if (attack.QueryPolicy == QueryPolicy.PelletRays)
+            if (attack.QueryMode == AttackQueryMode.FirstSurfacePenetration)
+            {
+                FillFirstSurfaceSelections(
+                    attack,
+                    candidates,
+                    candidateCount,
+                    output,
+                    requiredCount);
+            }
+            else if (attack.QueryMode == AttackQueryMode.AreaAtFirstSurface)
+            {
+                FillAreaAtFirstSurfaceSelections(
+                    attack,
+                    candidates,
+                    candidateCount,
+                    output,
+                    requiredCount);
+            }
+            else if (attack.QueryPolicy == QueryPolicy.PelletRays)
             {
                 FillPrimarySelections(attack, candidates, candidateCount, output, requiredCount);
             }
@@ -77,19 +110,24 @@ namespace FPG.Demo.Combat
 
         private static bool IsAttackValid(in AttackSnapshot attack)
         {
-            return attack.AttackId.IsValid
-                && attack.ShotId.IsValid
-                && attack.OwnerId.IsValid
-                && attack.ReleaseTick.IsValid
-                && attack.PayloadCount > 0
-                && attack.MaxImpactCount > 0
-                && (attack.QueryPolicy == QueryPolicy.PelletRays
-                    || attack.QueryPolicy == QueryPolicy.DirectThenArea);
+            if (!attack.AttackId.IsValid
+                || !attack.ShotId.IsValid
+                || !attack.OwnerId.IsValid
+                || !attack.ReleaseTick.IsValid
+                || attack.PayloadCount <= 0
+                || attack.MaxImpactCount <= 0
+                || !attack.IsQueryConfigurationValid)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private static bool MatchesPolicy(in QueryCandidate candidate, in AttackSnapshot attack)
         {
-            if (attack.QueryPolicy == QueryPolicy.PelletRays)
+            if (attack.QueryMode == AttackQueryMode.FirstSurfacePenetration
+                || attack.QueryPolicy == QueryPolicy.PelletRays)
             {
                 return candidate.QueryStage == AttackQueryStage.Pellet
                     && candidate.SampleIndex < attack.PayloadCount;
@@ -111,6 +149,7 @@ namespace FPG.Demo.Combat
             {
                 previousSample = sampleIndex;
                 if (TryFindBestPrimaryCandidate(
+                    attack,
                     candidates,
                     candidateCount,
                     sampleIndex,
@@ -138,6 +177,7 @@ namespace FPG.Demo.Combat
             {
                 previousSample = sampleIndex;
                 if (TryFindBestPrimaryCandidate(
+                    attack,
                     candidates,
                     candidateCount,
                     sampleIndex,
@@ -168,6 +208,7 @@ namespace FPG.Demo.Combat
         }
 
         private static bool TryFindBestPrimaryCandidate(
+            in AttackSnapshot attack,
             QueryCandidate[] candidates,
             int candidateCount,
             int sampleIndex,
@@ -184,7 +225,7 @@ namespace FPG.Demo.Combat
             {
                 QueryCandidate candidate = candidates[index];
                 if (candidate.SampleIndex != sampleIndex
-                    || candidate.TargetKind == QueryTargetKind.EnvironmentBlocker
+                    || !IsImpactTargetAllowed(attack, candidate.TargetKind)
                     || candidate.DistanceKey >= blockerDistance)
                 {
                     continue;
@@ -198,6 +239,490 @@ namespace FPG.Demo.Combat
             }
 
             return found;
+        }
+
+        private static int CountFirstSurfaceSelections(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount)
+        {
+            int totalCount = 0;
+            int perPelletLimit = attack.AdditionalPenetrationCount + 1;
+            int previousSample = -1;
+            while (TryFindNextSample(candidates, candidateCount, previousSample, out int sampleIndex))
+            {
+                previousSample = sampleIndex;
+                long blockerDistance = FindNearestBlockerDistance(
+                    candidates,
+                    candidateCount,
+                    AttackQueryStage.Pellet,
+                    sampleIndex);
+                int laneCount = CountUniqueTargetsInPelletLane(
+                    attack,
+                    candidates,
+                    candidateCount,
+                    sampleIndex,
+                    blockerDistance,
+                    perPelletLimit);
+                totalCount += laneCount;
+            }
+
+            return totalCount;
+        }
+
+        private static int CountUniqueTargetsInPelletLane(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            int sampleIndex,
+            long blockerDistance,
+            int limit)
+        {
+            int count = 0;
+            for (int index = 0; index < candidateCount && count < limit; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (!IsEligiblePelletTarget(attack, candidate, sampleIndex, blockerDistance)
+                    || HasPriorEligibleTarget(
+                        attack,
+                        candidates,
+                        index,
+                        candidate.TargetId,
+                        AttackQueryStage.Pellet,
+                        sampleIndex,
+                        blockerDistance))
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private static void FillFirstSurfaceSelections(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            QueryCandidate[] output,
+            int requiredCount)
+        {
+            int outputCount = 0;
+            int perPelletLimit = attack.AdditionalPenetrationCount + 1;
+            int previousSample = -1;
+            while (outputCount < requiredCount
+                && TryFindNextSample(candidates, candidateCount, previousSample, out int sampleIndex))
+            {
+                previousSample = sampleIndex;
+                long blockerDistance = FindNearestBlockerDistance(
+                    candidates,
+                    candidateCount,
+                    AttackQueryStage.Pellet,
+                    sampleIndex);
+                int pelletStart = outputCount;
+                while (outputCount - pelletStart < perPelletLimit
+                    && TryFindNextPelletTarget(
+                        attack,
+                        candidates,
+                        candidateCount,
+                        sampleIndex,
+                        blockerDistance,
+                        output,
+                        pelletStart,
+                        outputCount,
+                        out QueryCandidate selected))
+                {
+                    output[outputCount++] = selected;
+                }
+            }
+        }
+
+        private static bool TryFindNextPelletTarget(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            int sampleIndex,
+            long blockerDistance,
+            QueryCandidate[] output,
+            int selectedStart,
+            int selectedCount,
+            out QueryCandidate selected)
+        {
+            bool found = false;
+            int selectedFirstDistance = 0;
+            selected = default(QueryCandidate);
+            for (int index = 0; index < candidateCount; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (!IsEligiblePelletTarget(attack, candidate, sampleIndex, blockerDistance)
+                    || ContainsTarget(
+                        output,
+                        selectedStart,
+                        selectedCount,
+                        candidate.TargetId)
+                    || !TryFindPreferredTargetObservation(
+                        attack,
+                        candidates,
+                        candidateCount,
+                        candidate.TargetId,
+                        AttackQueryStage.Pellet,
+                        sampleIndex,
+                        blockerDistance,
+                        out QueryCandidate representative,
+                        out int firstDistance))
+                {
+                    continue;
+                }
+
+                if (!found || CompareTargetGroup(
+                    firstDistance,
+                    representative,
+                    selectedFirstDistance,
+                    selected) < 0)
+                {
+                    selected = representative;
+                    selectedFirstDistance = firstDistance;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private static int CountAreaAtFirstSurfaceSelections(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount)
+        {
+            int combatantCount = CountUniqueAreaTargets(
+                attack,
+                candidates,
+                candidateCount,
+                QueryTargetKind.Combatant,
+                attack.AreaCombatantLimit);
+            int projectileCount = CountUniqueAreaTargets(
+                attack,
+                candidates,
+                candidateCount,
+                QueryTargetKind.Projectile,
+                attack.AreaProjectileLimit);
+            return combatantCount + projectileCount;
+        }
+
+        private static int CountUniqueAreaTargets(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            QueryTargetKind targetKind,
+            int limit)
+        {
+            int count = 0;
+            for (int index = 0; index < candidateCount && count < limit; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (!IsEligibleAreaTarget(attack, candidate, targetKind)
+                    || HasPriorEligibleAreaTarget(
+                        attack,
+                        candidates,
+                        index,
+                        candidate.TargetId,
+                        targetKind))
+                {
+                    continue;
+                }
+
+                count++;
+            }
+
+            return count;
+        }
+
+        private static void FillAreaAtFirstSurfaceSelections(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            QueryCandidate[] output,
+            int requiredCount)
+        {
+            int outputCount = 0;
+            int combatantCount = 0;
+            int projectileCount = 0;
+            while (outputCount < requiredCount)
+            {
+                bool found = false;
+                int selectedFirstDistance = 0;
+                QueryCandidate selected = default(QueryCandidate);
+                for (int index = 0; index < candidateCount; index++)
+                {
+                    QueryCandidate candidate = candidates[index];
+                    if (!IsEligibleAreaTarget(attack, candidate)
+                        || candidate.TargetKind == QueryTargetKind.Combatant
+                            && combatantCount >= attack.AreaCombatantLimit
+                        || candidate.TargetKind == QueryTargetKind.Projectile
+                            && projectileCount >= attack.AreaProjectileLimit
+                        || ContainsTarget(
+                            output,
+                            0,
+                            outputCount,
+                            candidate.TargetId,
+                            candidate.TargetKind)
+                        || !TryFindPreferredAreaTargetObservation(
+                            attack,
+                            candidates,
+                            candidateCount,
+                            candidate.TargetId,
+                            candidate.TargetKind,
+                            out QueryCandidate representative,
+                            out int firstDistance))
+                    {
+                        continue;
+                    }
+
+                    if (!found || CompareTargetGroup(
+                        firstDistance,
+                        representative,
+                        selectedFirstDistance,
+                        selected) < 0)
+                    {
+                        selected = representative;
+                        selectedFirstDistance = firstDistance;
+                        found = true;
+                    }
+                }
+
+                if (!found)
+                {
+                    break;
+                }
+
+                output[outputCount++] = selected;
+                if (selected.TargetKind == QueryTargetKind.Combatant)
+                {
+                    combatantCount++;
+                }
+                else
+                {
+                    projectileCount++;
+                }
+            }
+        }
+
+        private static bool IsEligiblePelletTarget(
+            in AttackSnapshot attack,
+            in QueryCandidate candidate,
+            int sampleIndex,
+            long blockerDistance)
+        {
+            return candidate.QueryStage == AttackQueryStage.Pellet
+                && candidate.SampleIndex == sampleIndex
+                && IsImpactTargetAllowed(attack, candidate.TargetKind)
+                && candidate.DistanceKey < blockerDistance;
+        }
+
+        private static bool IsEligibleAreaTarget(
+            in AttackSnapshot attack,
+            in QueryCandidate candidate)
+        {
+            return candidate.QueryStage == AttackQueryStage.Area
+                && IsImpactTargetAllowed(attack, candidate.TargetKind);
+        }
+
+        private static bool IsEligibleAreaTarget(
+            in AttackSnapshot attack,
+            in QueryCandidate candidate,
+            QueryTargetKind targetKind)
+        {
+            return IsEligibleAreaTarget(attack, candidate)
+                && candidate.TargetKind == targetKind;
+        }
+
+        private static bool HasPriorEligibleTarget(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateIndex,
+            RuntimeId targetId,
+            AttackQueryStage stage,
+            int sampleIndex,
+            long blockerDistance)
+        {
+            for (int index = 0; index < candidateIndex; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (candidate.TargetId == targetId
+                    && candidate.QueryStage == stage
+                    && candidate.SampleIndex == sampleIndex
+                    && IsImpactTargetAllowed(attack, candidate.TargetKind)
+                    && candidate.DistanceKey < blockerDistance)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasPriorEligibleAreaTarget(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateIndex,
+            RuntimeId targetId,
+            QueryTargetKind targetKind)
+        {
+            for (int index = 0; index < candidateIndex; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (candidate.TargetId == targetId
+                    && IsEligibleAreaTarget(attack, candidate, targetKind))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryFindPreferredTargetObservation(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            RuntimeId targetId,
+            AttackQueryStage stage,
+            int sampleIndex,
+            long blockerDistance,
+            out QueryCandidate representative,
+            out int firstDistance)
+        {
+            bool found = false;
+            representative = default(QueryCandidate);
+            firstDistance = int.MaxValue;
+            for (int index = 0; index < candidateCount; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (candidate.TargetId != targetId
+                    || candidate.QueryStage != stage
+                    || candidate.SampleIndex != sampleIndex
+                    || !IsImpactTargetAllowed(attack, candidate.TargetKind)
+                    || candidate.DistanceKey >= blockerDistance)
+                {
+                    continue;
+                }
+
+                if (candidate.DistanceKey < firstDistance)
+                {
+                    firstDistance = candidate.DistanceKey;
+                }
+
+                if (!found || CompareWithinRuntime(candidate, representative) < 0)
+                {
+                    representative = candidate;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private static bool TryFindPreferredAreaTargetObservation(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            int candidateCount,
+            RuntimeId targetId,
+            QueryTargetKind targetKind,
+            out QueryCandidate representative,
+            out int firstDistance)
+        {
+            bool found = false;
+            representative = default(QueryCandidate);
+            firstDistance = int.MaxValue;
+            for (int index = 0; index < candidateCount; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (candidate.TargetId != targetId
+                    || !IsEligibleAreaTarget(attack, candidate, targetKind))
+                {
+                    continue;
+                }
+
+                if (candidate.DistanceKey < firstDistance)
+                {
+                    firstDistance = candidate.DistanceKey;
+                }
+
+                if (!found || CompareWithinRuntime(candidate, representative) < 0)
+                {
+                    representative = candidate;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        private static int CompareTargetGroup(
+            int leftFirstDistance,
+            in QueryCandidate left,
+            int rightFirstDistance,
+            in QueryCandidate right)
+        {
+            int distance = leftFirstDistance.CompareTo(rightFirstDistance);
+            if (distance != 0)
+            {
+                return distance;
+            }
+
+            int runtime = left.TargetId.CompareTo(right.TargetId);
+            if (runtime != 0)
+            {
+                return runtime;
+            }
+
+            int kind = left.TargetKind.CompareTo(right.TargetKind);
+            return kind != 0 ? kind : CompareWithinRuntime(left, right);
+        }
+
+        private static int CompareWithinRuntime(
+            in QueryCandidate left,
+            in QueryCandidate right)
+        {
+            int hitPart = GetWithinRuntimePriority(left)
+                .CompareTo(GetWithinRuntimePriority(right));
+            if (hitPart != 0)
+            {
+                return hitPart;
+            }
+
+            int distance = left.DistanceKey.CompareTo(right.DistanceKey);
+            if (distance != 0)
+            {
+                return distance;
+            }
+
+            int geometry = left.GeometryId.CompareTo(right.GeometryId);
+            if (geometry != 0)
+            {
+                return geometry;
+            }
+
+            int pointX = left.ImpactPointKey.X.CompareTo(right.ImpactPointKey.X);
+            if (pointX != 0)
+            {
+                return pointX;
+            }
+
+            int pointY = left.ImpactPointKey.Y.CompareTo(right.ImpactPointKey.Y);
+            if (pointY != 0)
+            {
+                return pointY;
+            }
+
+            int pointZ = left.ImpactPointKey.Z.CompareTo(right.ImpactPointKey.Z);
+            return pointZ != 0 ? pointZ : left.QueryOrdinal.CompareTo(right.QueryOrdinal);
+        }
+
+        private static int GetWithinRuntimePriority(in QueryCandidate candidate)
+        {
+            return candidate.HitPart == HitPart.Weakpoint ? 0 : 1;
         }
 
         private static int CountSecondarySelections(
@@ -219,7 +744,11 @@ namespace FPG.Demo.Combat
             for (int index = 0; index < candidateCount; index++)
             {
                 QueryCandidate candidate = candidates[index];
-                if (!IsSecondaryEligible(candidate, directBlockerDistance, areaBlockerDistance))
+                if (!IsSecondaryEligible(
+                    attack,
+                    candidate,
+                    directBlockerDistance,
+                    areaBlockerDistance))
                 {
                     continue;
                 }
@@ -228,7 +757,11 @@ namespace FPG.Demo.Combat
                 for (int previous = 0; previous < index; previous++)
                 {
                     QueryCandidate prior = candidates[previous];
-                    if (IsSecondaryEligible(prior, directBlockerDistance, areaBlockerDistance)
+                    if (IsSecondaryEligible(
+                            attack,
+                            prior,
+                            directBlockerDistance,
+                            areaBlockerDistance)
                         && prior.TargetId == candidate.TargetId)
                     {
                         duplicateTarget = true;
@@ -270,7 +803,11 @@ namespace FPG.Demo.Combat
                 for (int index = 0; index < candidateCount; index++)
                 {
                     QueryCandidate candidate = candidates[index];
-                    if (!IsSecondaryEligible(candidate, directBlockerDistance, areaBlockerDistance)
+                    if (!IsSecondaryEligible(
+                            attack,
+                            candidate,
+                            directBlockerDistance,
+                            areaBlockerDistance)
                         || ContainsTarget(output, count, candidate.TargetId))
                     {
                         continue;
@@ -293,11 +830,12 @@ namespace FPG.Demo.Combat
         }
 
         private static bool IsSecondaryEligible(
+            in AttackSnapshot attack,
             in QueryCandidate candidate,
             long directBlockerDistance,
             long areaBlockerDistance)
         {
-            if (candidate.TargetKind == QueryTargetKind.EnvironmentBlocker)
+            if (!IsImpactTargetAllowed(attack, candidate.TargetKind))
             {
                 return false;
             }
@@ -306,6 +844,23 @@ namespace FPG.Demo.Combat
                 ? directBlockerDistance
                 : areaBlockerDistance;
             return candidate.DistanceKey < blockerDistance;
+        }
+
+        private static bool IsImpactTargetAllowed(
+            in AttackSnapshot attack,
+            QueryTargetKind targetKind)
+        {
+            switch (targetKind)
+            {
+                case QueryTargetKind.Combatant:
+                    return (attack.AllowedTargetKinds & AttackTargetKinds.Combatant)
+                        != AttackTargetKinds.None;
+                case QueryTargetKind.Projectile:
+                    return (attack.AllowedTargetKinds & AttackTargetKinds.Projectile)
+                        != AttackTargetKinds.None;
+                default:
+                    return false;
+            }
         }
 
         private static long FindNearestBlockerDistance(
@@ -335,9 +890,37 @@ namespace FPG.Demo.Combat
             int selectedCount,
             RuntimeId targetId)
         {
-            for (int index = 0; index < selectedCount; index++)
+            return ContainsTarget(selected, 0, selectedCount, targetId);
+        }
+
+        private static bool ContainsTarget(
+            QueryCandidate[] selected,
+            int startIndex,
+            int endIndex,
+            RuntimeId targetId)
+        {
+            for (int index = startIndex; index < endIndex; index++)
             {
                 if (selected[index].TargetId == targetId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsTarget(
+            QueryCandidate[] selected,
+            int startIndex,
+            int endIndex,
+            RuntimeId targetId,
+            QueryTargetKind targetKind)
+        {
+            for (int index = startIndex; index < endIndex; index++)
+            {
+                if (selected[index].TargetId == targetId
+                    && selected[index].TargetKind == targetKind)
                 {
                     return true;
                 }

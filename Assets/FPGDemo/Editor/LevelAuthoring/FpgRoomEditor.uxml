@@ -9,7 +9,6 @@
             <uie:ToolbarButton name="duplicate-room-button" text="复制" tooltip="复制房间并生成新房间 ID" />
             <uie:ToolbarButton name="save-room-button" text="保存" tooltip="保存当前房间资产" />
             <uie:ToolbarButton name="frame-room-button" text="聚焦" tooltip="在 SceneView 中聚焦所选标记或房间" />
-            <uie:ToolbarButton name="play-room-button" text="试玩" class="play-button" tooltip="临时载入 CombatLab 并试玩" />
         </uie:Toolbar>
 
         <ui:VisualElement class="content-split">
@@ -42,8 +41,6 @@
                     <ui:Toggle name="show-enemy-toggle" label="敌人" value="true" />
                     <ui:Toggle name="show-destructible-toggle" label="可破坏物" value="true" />
                     <ui:Toggle name="show-reachable-toggle" label="可到达点" value="true" />
-                    <ui:VisualElement class="toolbar-spacer" />
-                    <uie:ObjectField name="scenario-field" label="遭遇配置" allow-scene-objects="false" class="scenario-field" />
                 </ui:VisualElement>
 
                 <ui:VisualElement class="authoring-split">

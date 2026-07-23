@@ -27,8 +27,8 @@ MonoBehaviour:
     selectionWeight: 4
     minDepth: 0
     maxDepth: 99
-    maxPerWave: 8
-    maxPerRoom: 16
+    maxPerWave: 16
+    maxPerRoom: 32
     themeEligible: 1
   - enemy: {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
     selectionWeight: 2

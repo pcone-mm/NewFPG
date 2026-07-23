@@ -93,7 +93,7 @@ namespace FPG.Demo.Run
             uncommittedPlayerShotPresentationSink = committedPlayerShotPresentationSink
                 as IUncommittedPlayerShotPresentationSink;
 
-            int maxHits = Math.Max(WeaponDefinition.PrimaryPelletCount, definition.PlayerWeapon.SecondaryMaxImpactCount);
+            int maxHits = definition.PlayerWeapon.MaximumAttackImpactCount;
             weaponReleaseBuffer = new WeaponReleaseBuffer();
             inputEdgeBuffer = new InputEdgeCommand[BattleTickInput.MaxEdgeCommandCount];
             // The query adapter writes raw candidates into this fixed buffer. A

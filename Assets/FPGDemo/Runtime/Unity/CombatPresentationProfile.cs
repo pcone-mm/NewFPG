@@ -289,6 +289,40 @@ namespace FPG.Demo.Unity
         };
 
         [SerializeField]
+        private FpgHudResourcePresentation[] formalHudResources =
+        {
+            new FpgHudResourcePresentation(
+                FpgHudResourceKind.Life,
+                "LIFE",
+                new Color(0.95f, 0.24f, 0.2f, 1f),
+                0,
+                "{0}/{1}",
+                0.16f),
+            new FpgHudResourcePresentation(
+                FpgHudResourceKind.Barrier,
+                "BARRIER",
+                new Color(0.22f, 0.75f, 1f, 1f),
+                1,
+                "{0}/{1}",
+                0.18f),
+            new FpgHudResourcePresentation(
+                FpgHudResourceKind.Ammo,
+                "AMMO",
+                new Color(1f, 0.78f, 0.16f, 1f),
+                2,
+                "{0}/{1}",
+                0.12f)
+        };
+
+        [SerializeField]
+        private FpgDamagePopupPresentation formalDamagePopup =
+            new FpgDamagePopupPresentation();
+
+        [SerializeField]
+        private FpgReticlePresentation formalReticle =
+            new FpgReticlePresentation();
+
+        [SerializeField]
         private CombatPresentationSorting sorting = new CombatPresentationSorting();
 
         [SerializeField]
@@ -297,6 +331,10 @@ namespace FPG.Demo.Unity
 
         public CombatPresentationSorting Sorting => sorting;
         public CombatPresentationPoolCapacities PoolCapacities => poolCapacities;
+        public FpgDamagePopupPresentation FormalDamagePopup => formalDamagePopup;
+        public FpgReticlePresentation FormalReticle => formalReticle;
+        public int FormalHudResourceCount =>
+            formalHudResources == null ? 0 : formalHudResources.Length;
         public int ThreatDefinitionCount =>
             threatDefinitions == null ? 0 : threatDefinitions.Length;
         public int HitDefinitionCount =>
@@ -310,6 +348,36 @@ namespace FPG.Demo.Unity
             }
 
             return threatDefinitions[index];
+        }
+
+        public FpgHudResourcePresentation GetFormalHudResource(int index)
+        {
+            if (index < 0 || index >= FormalHudResourceCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return formalHudResources[index];
+        }
+
+        public bool TryGetFormalHudResource(
+            FpgHudResourceKind kind,
+            out FpgHudResourcePresentation definition)
+        {
+            FpgHudResourcePresentation[] definitions = formalHudResources
+                ?? Array.Empty<FpgHudResourcePresentation>();
+            for (int index = 0; index < definitions.Length; index++)
+            {
+                FpgHudResourcePresentation candidate = definitions[index];
+                if (candidate != null && candidate.Kind == kind)
+                {
+                    definition = candidate;
+                    return true;
+                }
+            }
+
+            definition = null;
+            return false;
         }
 
         public bool TryGetThreatDefinition(
@@ -358,7 +426,12 @@ namespace FPG.Demo.Unity
             if (sorting == null || !sorting.TryValidate(out error)
                 || poolCapacities == null || !poolCapacities.TryValidate(out error)
                 || !TryValidateThreatDefinitions(out error)
-                || !TryValidateHitDefinitions(out error))
+                || !TryValidateHitDefinitions(out error)
+                || !TryValidateFormalHudResources(out error)
+                || formalDamagePopup == null
+                || !formalDamagePopup.TryValidate(out error)
+                || formalReticle == null
+                || !formalReticle.TryValidate(out error))
             {
                 if (string.IsNullOrEmpty(error))
                 {
@@ -555,6 +628,69 @@ namespace FPG.Demo.Unity
             {
                 error =
                     "Combat presentation profile must cover every shared hit kind.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private bool TryValidateFormalHudResources(out string error)
+        {
+            error = string.Empty;
+            if (formalHudResources == null || formalHudResources.Length != 3)
+            {
+                error = "Formal HUD requires life, barrier and ammo definitions.";
+                return false;
+            }
+
+            bool hasLife = false;
+            bool hasBarrier = false;
+            bool hasAmmo = false;
+            for (int index = 0; index < formalHudResources.Length; index++)
+            {
+                FpgHudResourcePresentation definition = formalHudResources[index];
+                if (definition == null)
+                {
+                    error = "Formal HUD resource definition is missing.";
+                    return false;
+                }
+
+                if (!definition.TryValidate(out error))
+                {
+                    return false;
+                }
+
+                for (int previousIndex = 0; previousIndex < index; previousIndex++)
+                {
+                    FpgHudResourcePresentation previous =
+                        formalHudResources[previousIndex];
+                    if (previous != null
+                        && (previous.Kind == definition.Kind
+                            || previous.Order == definition.Order))
+                    {
+                        error = "Formal HUD resource kinds and orders must be unique.";
+                        return false;
+                    }
+                }
+
+                switch (definition.Kind)
+                {
+                    case FpgHudResourceKind.Life:
+                        hasLife = true;
+                        break;
+                    case FpgHudResourceKind.Barrier:
+                        hasBarrier = true;
+                        break;
+                    case FpgHudResourceKind.Ammo:
+                        hasAmmo = true;
+                        break;
+                }
+            }
+
+            if (!hasLife || !hasBarrier || !hasAmmo)
+            {
+                error = "Formal HUD resource coverage is incomplete.";
                 return false;
             }
 

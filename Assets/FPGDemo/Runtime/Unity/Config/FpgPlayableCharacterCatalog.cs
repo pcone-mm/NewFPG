@@ -9,15 +9,18 @@ namespace FPG.Demo.Unity
         public FpgPlayableCharacterSelection(
             D0CharacterDefinition characterDefinition,
             D0ThreeCProfile threeCProfile,
+            D0CombatFeelProfile combatFeelProfile,
             GameObject selectionPreviewPrefab)
         {
             CharacterDefinition = characterDefinition;
             ThreeCProfile = threeCProfile;
+            CombatFeelProfile = combatFeelProfile;
             SelectionPreviewPrefab = selectionPreviewPrefab;
         }
 
         public D0CharacterDefinition CharacterDefinition { get; }
         public D0ThreeCProfile ThreeCProfile { get; }
+        public D0CombatFeelProfile CombatFeelProfile { get; }
         public GameObject SelectionPreviewPrefab { get; }
         public string CharacterId => CharacterDefinition == null
             ? string.Empty
@@ -45,6 +48,17 @@ namespace FPG.Demo.Unity
                     error = "Playable character selection requires a valid 3C profile.";
                 }
 
+                return false;
+            }
+
+            if (CombatFeelProfile == null)
+            {
+                error = "Playable character selection requires a combat-feel profile.";
+                return false;
+            }
+
+            if (!CombatFeelProfile.TryValidate(out error))
+            {
                 return false;
             }
 
@@ -76,11 +90,15 @@ namespace FPG.Demo.Unity
         private D0ThreeCProfile threeCProfile;
 
         [SerializeField]
+        private D0CombatFeelProfile combatFeelProfile;
+
+        [SerializeField]
         [Tooltip("Visual-only prefab used by Boot. It must not contain a D0 actor Entity.")]
         private GameObject selectionPreviewPrefab;
 
         public D0CharacterDefinition Character => character;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
+        public D0CombatFeelProfile CombatFeelProfile => combatFeelProfile;
         public GameObject SelectionPreviewPrefab => selectionPreviewPrefab;
 
         public bool TryCreateSelection(
@@ -90,6 +108,7 @@ namespace FPG.Demo.Unity
             selection = new FpgPlayableCharacterSelection(
                 character,
                 threeCProfile,
+                combatFeelProfile,
                 selectionPreviewPrefab);
             return selection.TryValidate(out error);
         }

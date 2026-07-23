@@ -8,13 +8,13 @@
 - `Runtime/Combat/` 是无 UnityEngine 依赖的伤害、投射物、目标选择、战斗队列和命中合同，asmdef 是 `FPG.Combat`。
 - `Runtime/Player/` 与 `Runtime/Enemy/` 是无 UnityEngine 依赖的玩家武器、曝光状态、敌人和 threat runtime，分别依赖 Core/Combat。
 - `Runtime/Run/` 编排 `BattleSession`、场景定义、空间查询端口、投射物世界端口和 replay/transcript，不能反向依赖 Unity 层。
-- `Runtime/Unity/` 是 Unity 桥接层，负责 `GameBootstrap`、`BattleSessionHost`、HitboxRegistry、物理查询、输入、表现池和 HUD。
+- `Runtime/Unity/` 是 Unity 桥接层，负责 Boot、会话 host、输入快照、正式玩家 tick/port/presentation 组合、物理查询、表现池和 HUD；改这里先读该目录指南。
 - `Runtime/Unity/Config/` 放 D0 与正式遭遇的 ScriptableObject 定义和运行时适配器，命名空间是 `FPG.Demo.Unity`；改这里先读该子目录指南。
 - `Runtime/Unity/Level/` 是 FPGDemo 自己的房间运行时与正式遭遇桥接层，命名空间仍是 `FPG.Demo.Unity`；改这里先读该子目录指南，不要和根项目 `NewFPG.Level` 混用。
 - `Config/` 放 `BattleScenarioConfig`、`BattlePresentationCatalog` 和 `GameBootstrapConfig` 的默认资产。
 - `Config/FormalEncounter/` 放正式遭遇敌人、池、Profile、Override、Catalog 和 Level1 预设资产；改这里先读该子目录指南。
 - `Config/Level/` 放 FPGDemo 房间、房间组和房间标签资产，`roomId`、marker ID、group/tag ID 都是运行时和 Editor 工具共享的稳定合同。
-- `Presentation/` 放 demo 专用材质、投射物/预警/命中特效 prefab 和 greybox 表现资源。
+- `Presentation/` 放 demo 专用材质、投射物/预警/命中特效 prefab 和 D0 派生表现资源；改这里先读该目录指南。
 - `Presentation/FormalEncounter/` 放正式遭遇实体、血条、出口和配套材质 prefab；改这里先读该子目录指南。
 - `Editor/LevelAuthoring/` 放 FPGDemo 房间编辑器、Scene View 标记工具、CombatLab 房间安装器和 Formal Encounter 预览/试玩桥；改这里先读该子目录指南。
 - `Scenes/Boot.unity`、`Scenes/CombatLab.unity` 和 `Scenes/FormalRoom.unity` 是当前 build 场景入口；场景职责和验证入口见 `Scenes/CLAUDE.md`。
@@ -32,7 +32,7 @@
 - 改配置资产时同步检查对应 runtime `TryValidate`/`TryCreateDefinition` 逻辑，不要只修 Inspector 默认值。
 - D0 策划资产的 Inspector 字段必须使用 `D0PlannerField` 提供中文显示名与基于真实数据流的中文说明；新增字段先明确单位、约束、条件和生效方式。保留原字段名/YAML 键，不用重命名迁移来做本地化；工程容量、LayerMask、物理、命中盒和运行时状态用 `D0PlannerTechnicalField` 明确隔离。
 - 制作或修改 D0 功能时，先判断是否需要让策划调整其数值、行为、表现或遭遇编排；需要开放时，复用 `BattleScenarioConfig → D0CombatScenarioDefinition` 及其 Profile/Definition 引用链，不建立平行入口。同步更新对应的策划配置说明文档，至少写清资产入口、引用关系、字段含义/单位/默认值/约束/生效条件、创建步骤和可验证结果；具体模板见 `Docs/Workflow/Planner_Configuration_Delivery_Guide.zh-CN.md`。
-- 修改陆鸾/蝴蝶 CombatLab 表现时，先读 `Docs/Workflow/Luan_Summons_Hudie_Configuration.zh-CN.md`；Scenario 直接引用 `D0LuanSummonHudieDefinition`，Encounter 管替换 Tick 与姿态策略，`D0EnemyEntityWorld` 管实体替换。场景不得建立专用桥、隐藏 Presenter 或分离的角色视觉树。
+- 修改正式关卡的陆鸾召唤蝴蝶配置时，先读 `Docs/Workflow/FPG_Level1_Encounter_Presets_Configuration.zh-CN.md`；正式运行走 `FpgEnemyAttackDefinition -> FpgSummonActionDefinition -> FpgEnemyDefinition`。`D0_Luan_SummonHudie.asset` 只作为安装器迁移源，CombatLab 不再提供陆鸾到蝴蝶的替换 Scenario。
 
 ## 验证映射（仅在用户明确要求自动测试时使用）
 

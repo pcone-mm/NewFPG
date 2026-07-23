@@ -62,6 +62,94 @@ MonoBehaviour:
     secondaryColor: {r: 0.88, g: 1, b: 1, a: 1}
     duration: 0.24
     sortingOrder: 40
+  formalHudResources:
+  - kind: 0
+    label: LIFE
+    color: {r: 0.95, g: 0.24, b: 0.2, a: 1}
+    order: 0
+    valueFormat: '{0}/{1}'
+    barEaseDuration: 0.16
+  - kind: 1
+    label: BARRIER
+    color: {r: 0.22, g: 0.75, b: 1, a: 1}
+    order: 1
+    valueFormat: '{0}/{1}'
+    barEaseDuration: 0.18
+  - kind: 2
+    label: AMMO
+    color: {r: 1, g: 0.78, b: 0.16, a: 1}
+    order: 2
+    valueFormat: '{0}/{1}'
+    barEaseDuration: 0.12
+  formalDamagePopup:
+    spriteStyles:
+    - kind: 0
+      backgroundSprite: {fileID: 21300000, guid: 2d0738d553479264c88b2604a1b3f403, type: 3}
+      digitSprites:
+      - {fileID: 21300000, guid: 3d156223438aad844addccc898a7305c, type: 3}
+      - {fileID: 21300000, guid: c9f1c198b21c21940947240585ab0940, type: 3}
+      - {fileID: 21300000, guid: c98f7f7fa4cb4064fae9d0b58f15f670, type: 3}
+      - {fileID: 21300000, guid: faac3facc16007842b4d7a6d7a1d374d, type: 3}
+      - {fileID: 21300000, guid: 7ae21a9aaf474874a9ddfccb92a98b15, type: 3}
+      - {fileID: 21300000, guid: 9f12be4130989644f8fdf54676ba93f9, type: 3}
+      - {fileID: 21300000, guid: 64260db91f0bea9438b9dfb92f962d34, type: 3}
+      - {fileID: 21300000, guid: f1138e82cb4ae3a40babdc9f038c0b53, type: 3}
+      - {fileID: 21300000, guid: 1580f22da6265d94fb7c1b377fd316d7, type: 3}
+      - {fileID: 21300000, guid: 813e83d93e399c24c9d0a99d1e11926e, type: 3}
+      digitHeight: 60
+      digitSpacing: -2
+      backgroundHorizontalPadding: 34
+      backgroundMinSize: {x: 133, y: 50}
+    - kind: 1
+      backgroundSprite: {fileID: 21300000, guid: 2d0738d553479264c88b2604a1b3f403, type: 3}
+      digitSprites:
+      - {fileID: 21300000, guid: 4c07ed1eef819f44fbb8f4ad531cc4ff, type: 3}
+      - {fileID: 21300000, guid: 260d40fc4c185b54f86368d2e9342ef4, type: 3}
+      - {fileID: 21300000, guid: 5913a8063a5c91a43bf598bb6f269c12, type: 3}
+      - {fileID: 21300000, guid: 18700a9074db6284695b32ef62528da0, type: 3}
+      - {fileID: 21300000, guid: 5fa1fa3059b46d04e92a5e1bd00c2c55, type: 3}
+      - {fileID: 21300000, guid: 35de5bef663a14f45b7588e367c163b2, type: 3}
+      - {fileID: 21300000, guid: 714caf67f28393946bbc036ecb1517ce, type: 3}
+      - {fileID: 21300000, guid: 82db3f3268fd54e4dabd5c318be88d8b, type: 3}
+      - {fileID: 21300000, guid: 0db03738d4a8bb5438b43c0fdced1a84, type: 3}
+      - {fileID: 21300000, guid: d67e7acf841fffb4599ac1dd0327093c, type: 3}
+      digitHeight: 60
+      digitSpacing: -2
+      backgroundHorizontalPadding: 34
+      backgroundMinSize: {x: 133, y: 50}
+    - kind: 2
+      backgroundSprite: {fileID: 21300000, guid: 40757c80c52098c419a127a01bc787d9, type: 3}
+      digitSprites:
+      - {fileID: 21300000, guid: bb0a5fd56ff0bb242ae727c9af88775f, type: 3}
+      - {fileID: 21300000, guid: 75858b31362e2044dae64999208b831a, type: 3}
+      - {fileID: 21300000, guid: 3195a4a87850bd84a86ea31eac0d2e29, type: 3}
+      - {fileID: 21300000, guid: ea9f29c42c7c9ea4a8bc162cef20fd6f, type: 3}
+      - {fileID: 21300000, guid: 036cf8f24f0ef344ba289456942ec6d1, type: 3}
+      - {fileID: 21300000, guid: 7f8a66dcfe46cb4469fa2b2a143a6472, type: 3}
+      - {fileID: 21300000, guid: 5058ef2d3ae7bc5488d9f7a0509bfc48, type: 3}
+      - {fileID: 21300000, guid: e0f3c8e29a9363a478ac5a459897dd97, type: 3}
+      - {fileID: 21300000, guid: 25c95b7df5cd28c4f8bd76ac5dd79cbe, type: 3}
+      - {fileID: 21300000, guid: c5869842a4b1f9f4192f9b1160aa2caf, type: 3}
+      digitHeight: 60
+      digitSpacing: -2
+      backgroundHorizontalPadding: 34
+      backgroundMinSize: {x: 133, y: 50}
+    screenVerticalOffset: 24
+    nearbyDistance: 42
+    nearbyVerticalStep: 20
+  formalReticle:
+    idleColor: {r: 1, g: 1, b: 1, a: 1}
+    hittableColor: {r: 0.3, g: 1, b: 0.55, a: 1}
+    blockedColor: {r: 1, g: 0.45, b: 0.16, a: 1}
+    shotColor: {r: 0.4, g: 0.9, b: 1, a: 1}
+    hitColor: {r: 1, g: 0.9, b: 0.2, a: 1}
+    idleSize: 18
+    hittableSize: 20
+    blockedSize: 22
+    shotPulseSize: 28
+    hitPulseSize: 30
+    shotPulseDuration: 0.08
+    hitPulseDuration: 0.14
   sorting:
     sortingLayerName: Default
     backgroundOrder: -100

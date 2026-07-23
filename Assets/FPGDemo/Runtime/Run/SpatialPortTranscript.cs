@@ -7,6 +7,8 @@ namespace FPG.Demo.Run
 {
     public sealed class SpatialPortTranscript : ISpatialDigestView
     {
+        private const ulong AttackQueryConfigurationExtensionTag = 0x5152595F4D4F4445UL;
+
         private readonly Operation[] operations;
         private readonly QueryCandidate[] queryCandidates;
         private readonly int operationCapacity;
@@ -474,6 +476,7 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)input.Tick.Value));
             hash = StableHash.Append(hash, input.AimHeld ? 1UL : 0UL);
             hash = StableHash.Append(hash, input.PrimaryHeld ? 1UL : 0UL);
+            hash = StableHash.Append(hash, input.SecondaryHeld ? 1UL : 0UL);
             hash = AppendAimPose(hash, input.AimPose);
             hash = StableHash.Append(hash, unchecked((ulong)input.EdgeCommandCount));
             for (int index = 0; index < input.EdgeCommandCount; index++)
@@ -496,6 +499,20 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)attack.MaxImpactCount));
             hash = StableHash.Append(hash, unchecked((ulong)attack.AmmoCost));
             hash = StableHash.Append(hash, unchecked((ulong)attack.RngVersion));
+            if (attack.QueryMode != AttackQueryMode.Legacy
+                || attack.AdditionalPenetrationCount != 0
+                || attack.AreaCombatantLimit != 0
+                || attack.AreaProjectileLimit != 0
+                || attack.AllowedTargetKinds != AttackSnapshot.DefaultAllowedTargetKinds)
+            {
+                hash = StableHash.Append(hash, AttackQueryConfigurationExtensionTag);
+                hash = StableHash.Append(hash, (ulong)attack.QueryMode);
+                hash = StableHash.Append(hash, unchecked((ulong)attack.AdditionalPenetrationCount));
+                hash = StableHash.Append(hash, unchecked((ulong)attack.AreaCombatantLimit));
+                hash = StableHash.Append(hash, unchecked((ulong)attack.AreaProjectileLimit));
+                hash = StableHash.Append(hash, (ulong)attack.AllowedTargetKinds);
+            }
+
             hash = StableHash.Append(hash, unchecked((ulong)request.PelletCount));
             for (int index = 0; index < request.PelletCount; index++)
             {

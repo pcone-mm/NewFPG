@@ -53,6 +53,24 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void ScreenPointUsesAbsoluteViewportSpaceAndPreservesLastValidValue()
+        {
+            Vector2 moved = CombatAimViewportMath.ApplyScreenPoint(
+                CombatAimViewportMath.Center,
+                new Vector2(1440f, 270f),
+                new Vector2(1920f, 1080f),
+                CombatAimViewportMath.DefaultSafeArea);
+            Assert.That(moved, Is.EqualTo(new Vector2(0.75f, 0.25f)));
+
+            Vector2 preserved = CombatAimViewportMath.ApplyScreenPoint(
+                moved,
+                new Vector2(float.NaN, 20f),
+                Vector2.zero,
+                CombatAimViewportMath.DefaultSafeArea);
+            Assert.That(preserved, Is.EqualTo(moved));
+        }
+
+        [Test]
         public void ReticleResetKeepsItsVirtualCursorInTheSafeArea()
         {
             GameObject reticleObject = new GameObject(

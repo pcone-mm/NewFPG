@@ -16,6 +16,7 @@ MonoBehaviour:
   loadCombatLabOnStart: 1
   requireEntranceSelection: 1
   requireCharacterSelection: 1
+  exitRoomRefreshRule: {fileID: 11400000, guid: 4379bf079520a1f42bb015ba933a269c, type: 2}
   frameRateMode: 1
   lockedFramesPerSecond: 60
   vSyncCount: 0

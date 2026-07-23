@@ -235,6 +235,47 @@ namespace FPG.Demo.Unity
                     return payloadResult;
                 }
 
+                int summonActionIndex = -1;
+                bool disableAfterSubmit = false;
+                int cooldownTicks = pattern.Attack.CooldownTicks;
+                TickIndex cooldownAnchor = tick;
+                if (pattern.Attack.Kind == FpgEnemyAttackKind.Summon)
+                {
+                    summonActionIndex =
+                        FindSummonAction(pattern.Attack.Summon);
+                    if (summonActionIndex < 0)
+                    {
+                        return DomainResult.Rejected(
+                            RejectReason.InvariantFault);
+                    }
+
+                    cooldownTicks = Math.Max(
+                        cooldownTicks,
+                        pattern.Attack.Summon.CooldownTicks);
+                    disableAfterSubmit =
+                        pattern.Occurrence + 1L
+                        >= pattern.Attack.Summon.MaxSummonsPerOwner;
+                    if (!TryAddTicks(
+                            tick,
+                            payload.Summon.ReleaseDelayTicks,
+                            out cooldownAnchor))
+                    {
+                        return DomainResult.Rejected(
+                            RejectReason.BufferCapacity);
+                    }
+                }
+
+                TickIndex nextReadyTick = TickIndex.Invalid;
+                if (!disableAfterSubmit
+                    && !TryAddTicks(
+                        cooldownAnchor,
+                        cooldownTicks,
+                        out nextReadyTick))
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.BufferCapacity);
+                }
+
                 FpgAttackScheduleRequest schedule = new FpgAttackScheduleRequest(
                     owner.RuntimeId,
                     pattern.NextReadyTick,
@@ -251,33 +292,18 @@ namespace FPG.Demo.Unity
                 nextScheduleSequence++;
                 pattern = patterns[patternIndex];
                 pattern.Occurrence++;
-                if (pattern.Attack.Kind == FpgEnemyAttackKind.Summon)
+                if (summonActionIndex >= 0)
                 {
-                    int actionIndex = FindSummonAction(pattern.Attack.Summon);
-                    if (actionIndex < 0)
-                    {
-                        return DomainResult.Rejected(RejectReason.InvariantFault);
-                    }
-
-                    SummonActionState actionState = summonActions[actionIndex];
+                    SummonActionState actionState =
+                        summonActions[summonActionIndex];
                     actionState.Occurrence++;
-                    summonActions[actionIndex] = actionState;
+                    summonActions[summonActionIndex] = actionState;
                 }
 
-                int cooldownTicks = pattern.Attack.CooldownTicks;
-                if (pattern.Attack.Kind == FpgEnemyAttackKind.Summon)
+                pattern.IsDisabled = disableAfterSubmit;
+                if (!pattern.IsDisabled)
                 {
-                    cooldownTicks = Math.Max(cooldownTicks, pattern.Attack.Summon.CooldownTicks);
-                    if (pattern.Occurrence >= pattern.Attack.Summon.MaxSummonsPerOwner)
-                    {
-                        pattern.IsDisabled = true;
-                    }
-                }
-
-                if (!pattern.IsDisabled
-                    && !TryAddTicks(tick, cooldownTicks, out pattern.NextReadyTick))
-                {
-                    return DomainResult.Rejected(RejectReason.BufferCapacity);
+                    pattern.NextReadyTick = nextReadyTick;
                 }
 
                 patterns[patternIndex] = pattern;
@@ -367,6 +393,14 @@ namespace FPG.Demo.Unity
         {
             payload = default(FpgEnemyAttackPayload);
             FpgSummonActionDefinition summon = pattern.Attack.Summon;
+            if (!TryGetSummonReleaseDelay(
+                    pattern.Attack,
+                    out int releaseDelayTicks))
+            {
+                return DomainResult.Rejected(
+                    RejectReason.InvalidDefinition);
+            }
+
             if (summon == null
                 || owner.RecursionDepth >= summon.MaxRecursionDepth
                 || owner.RecursionDepth == int.MaxValue)
@@ -428,7 +462,11 @@ namespace FPG.Demo.Unity
                 scheduleSequence,
                 summon.MaxSummonsPerOwner);
             payload = FpgEnemyAttackPayload.ForSummon(
-                new FpgFormalSummonPayload(request, summon.MaxSummonsPerOwner));
+                new FpgFormalSummonPayload(
+                    request,
+                    summon.MaxSummonsPerOwner,
+                    releaseDelayTicks,
+                    pattern.Attack.SummonOwnerOutcome));
             return DomainResult.Success;
         }
 
@@ -620,6 +658,25 @@ namespace FPG.Demo.Unity
         private int CountFreePatterns()
         {
             return patterns.Length - patternCount;
+        }
+
+        private static bool TryGetSummonReleaseDelay(
+            FpgEnemyAttackDefinition attack,
+            out int releaseDelayTicks)
+        {
+            releaseDelayTicks = 0;
+            if (attack == null
+                || attack.TelegraphTicks < 0
+                || attack.WindupTicks < 0
+                || attack.TelegraphTicks
+                    > int.MaxValue - attack.WindupTicks)
+            {
+                return false;
+            }
+
+            releaseDelayTicks =
+                attack.TelegraphTicks + attack.WindupTicks;
+            return true;
         }
 
         private static bool TryAddTicks(TickIndex start, int duration, out TickIndex result)

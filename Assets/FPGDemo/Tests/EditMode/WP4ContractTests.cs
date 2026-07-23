@@ -9,6 +9,8 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class WP4ContractTests
     {
+        private const ulong LegacyAttackQueryDigest = 18326669108299386086UL;
+
         [Test]
         public void BattleTickInputCopiesEdgeCommandsAndRejectsMismatchedPoseTick()
         {
@@ -36,7 +38,14 @@ namespace FPG.Demo.Tests.EditMode
                 new InputEdgeCommand(new InputSequence(2), InputEdgeType.SecondaryReleased)
             };
             BattleTickInput input = new BattleTickInput(
-                new PlayerInputFrame(new TickIndex(0), true, true, edges, 2, cancelSecondary: true),
+                new PlayerInputFrame(
+                    new TickIndex(0),
+                    true,
+                    true,
+                    edges,
+                    2,
+                    cancelSecondary: true,
+                    secondaryHeld: true),
                 CreateAimPose(new TickIndex(0)));
 
             InputEdgeCommand[] destination = new InputEdgeCommand[2];
@@ -44,6 +53,8 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(copy.EdgeCommandCount, Is.EqualTo(2));
             Assert.That(copy.EdgeCommands[1].Type, Is.EqualTo(InputEdgeType.SecondaryReleased));
             Assert.That(copy.CancelSecondary, Is.True);
+            Assert.That(input.SecondaryHeld, Is.True);
+            Assert.That(copy.SecondaryHeld, Is.True);
         }
 
         [Test]
@@ -258,6 +269,162 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(replay.Register(recordedRequest, out ProjectilePathSnapshot replayedPath).IsSuccess, Is.True);
             Assert.That(replayedPath.Start, Is.EqualTo(recordedPath.Start));
             Assert.That(replayedPath.End, Is.EqualTo(recordedPath.End));
+            Assert.That(transcript.ReplayRemaining, Is.Zero);
+        }
+
+        [Test]
+        public void AttackQueryTranscriptPreservesLegacyDigestAndHashesFormalQueryConfiguration()
+        {
+            TickIndex tick = new TickIndex(0);
+            AttackSnapshot legacy = CreateAttack(tick);
+            AttackSnapshot explicitLegacy = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                1,
+                AttackQueryMode.Legacy,
+                0,
+                0,
+                0);
+
+            ulong legacyDigest = RecordAttackQueryDigest(legacy);
+            Assert.That(legacyDigest, Is.EqualTo(LegacyAttackQueryDigest));
+            Assert.That(RecordAttackQueryDigest(explicitLegacy), Is.EqualTo(legacyDigest));
+
+            AttackSnapshot formalMode = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                1,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0);
+            Assert.That(RecordAttackQueryDigest(formalMode), Is.Not.EqualTo(legacyDigest));
+
+            AttackSnapshot combatantTargets = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                1,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0,
+                AttackTargetKinds.Combatant);
+            AttackSnapshot projectileTargets = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                1,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0,
+                AttackTargetKinds.Projectile);
+            Assert.That(
+                RecordAttackQueryDigest(projectileTargets),
+                Is.Not.EqualTo(RecordAttackQueryDigest(combatantTargets)));
+
+            AttackSnapshot noAdditionalPenetration = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                2,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0);
+            AttackSnapshot oneAdditionalPenetration = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                2,
+                AttackQueryMode.FirstSurfacePenetration,
+                1,
+                0,
+                0);
+            Assert.That(
+                RecordAttackQueryDigest(oneAdditionalPenetration),
+                Is.Not.EqualTo(RecordAttackQueryDigest(noAdditionalPenetration)));
+
+            AttackSnapshot oneCombatant = CreateAttack(
+                tick,
+                QueryPolicy.DirectThenArea,
+                3,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                1,
+                1);
+            AttackSnapshot twoCombatants = CreateAttack(
+                tick,
+                QueryPolicy.DirectThenArea,
+                3,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                2,
+                1);
+            Assert.That(
+                RecordAttackQueryDigest(twoCombatants),
+                Is.Not.EqualTo(RecordAttackQueryDigest(oneCombatant)));
+
+            AttackSnapshot twoProjectiles = CreateAttack(
+                tick,
+                QueryPolicy.DirectThenArea,
+                3,
+                AttackQueryMode.AreaAtFirstSurface,
+                0,
+                1,
+                2);
+            Assert.That(
+                RecordAttackQueryDigest(twoProjectiles),
+                Is.Not.EqualTo(RecordAttackQueryDigest(oneCombatant)));
+        }
+
+        [Test]
+        public void AttackQueryReplayRejectsChangedAllowedTargetKindsWithoutAdvancing()
+        {
+            TickIndex tick = new TickIndex(0);
+            AttackSnapshot recordedAttack = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                2,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0,
+                AttackTargetKinds.Combatant);
+            AttackSnapshot changedAttack = CreateAttack(
+                tick,
+                QueryPolicy.PelletRays,
+                2,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0,
+                AttackTargetKinds.Projectile);
+            AttackQueryRequest recordedRequest = CreateAttackQueryRequest(recordedAttack);
+            AttackQueryRequest changedRequest = CreateAttackQueryRequest(changedAttack);
+            SpatialPortTranscript transcript = new SpatialPortTranscript(1, 1);
+            RecordingAttackQueryPort recording = new RecordingAttackQueryPort(
+                new EmptyAttackQueryPort(),
+                transcript);
+            QueryCandidate[] output = new QueryCandidate[1];
+
+            Assert.That(recording.Query(
+                recordedRequest,
+                output,
+                out AttackQueryResult recordedResult).IsSuccess, Is.True);
+            Assert.That(recordedResult.CandidateCount, Is.Zero);
+
+            transcript.ResetReplay();
+            ReplayAttackQueryPort replay = new ReplayAttackQueryPort(transcript);
+            Assert.That(replay.Query(
+                changedRequest,
+                output,
+                out AttackQueryResult rejectedResult).RejectReason,
+                Is.EqualTo(RejectReason.InvariantFault));
+            Assert.That(rejectedResult.CandidateCount, Is.Zero);
+            Assert.That(transcript.ReplayRemaining, Is.EqualTo(1));
+            Assert.That(replay.Query(
+                recordedRequest,
+                output,
+                out AttackQueryResult replayedResult).IsSuccess, Is.True);
+            Assert.That(replayedResult.CandidateCount, Is.Zero);
             Assert.That(transcript.ReplayRemaining, Is.Zero);
         }
 
@@ -523,6 +690,75 @@ namespace FPG.Demo.Tests.EditMode
                 1,
                 1,
                 1);
+        }
+
+        private static AttackSnapshot CreateAttack(
+            TickIndex tick,
+            QueryPolicy queryPolicy,
+            int maxImpactCount,
+            AttackQueryMode queryMode,
+            int additionalPenetrationCount,
+            int areaCombatantLimit,
+            int areaProjectileLimit,
+            AttackTargetKinds allowedTargetKinds = AttackSnapshot.DefaultAllowedTargetKinds)
+        {
+            return new AttackSnapshot(
+                new AttackId(1),
+                new ShotId(1),
+                1,
+                new RuntimeId(1),
+                Team.Player,
+                tick,
+                new DamageSpec(10, 2),
+                queryPolicy,
+                1,
+                maxImpactCount,
+                1,
+                1,
+                queryMode,
+                additionalPenetrationCount,
+                areaCombatantLimit,
+                areaProjectileLimit,
+                allowedTargetKinds);
+        }
+
+        private static ulong RecordAttackQueryDigest(AttackSnapshot attack)
+        {
+            Assert.That(attack.IsQueryConfigurationValid, Is.True);
+            AttackQueryRequest request = CreateAttackQueryRequest(attack);
+            SpatialPortTranscript transcript = new SpatialPortTranscript(1, 1);
+            RecordingAttackQueryPort recording = new RecordingAttackQueryPort(
+                new EmptyAttackQueryPort(),
+                transcript);
+            Assert.That(recording.Query(
+                request,
+                new QueryCandidate[1],
+                out AttackQueryResult result).IsSuccess, Is.True);
+            Assert.That(result.CandidateCount, Is.Zero);
+            return transcript.CanonicalDigest;
+        }
+
+        private static AttackQueryRequest CreateAttackQueryRequest(AttackSnapshot attack)
+        {
+            PelletSample[] pellets = null;
+            int pelletCount = 0;
+            if (attack.QueryPolicy == QueryPolicy.PelletRays)
+            {
+                pelletCount = attack.PayloadCount;
+                pellets = new PelletSample[pelletCount];
+                for (int index = 0; index < pelletCount; index++)
+                {
+                    pellets[index] = new PelletSample(attack.ShotId, index, index + 1, index + 2);
+                }
+            }
+
+            return new AttackQueryRequest(
+                new BattleTickInput(
+                    PlayerInputFrame.Empty(attack.ReleaseTick),
+                    CreateAimPose(attack.ReleaseTick)),
+                attack,
+                pellets,
+                pelletCount);
         }
 
         private static ProjectileRuntime CreateProjectile()

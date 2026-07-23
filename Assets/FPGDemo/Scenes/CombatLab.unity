@@ -6606,7 +6606,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomCombatLabBinding
   roomDefinition: {fileID: 11400000, guid: ca8c6d458baf6834095c3da1e572d971, type: 2}
-  scenarioDefinition: {fileID: 11400000, guid: 8e8eaef11a1c09546862fd782068e977, type: 2}
+  scenarioDefinition: {fileID: 11400000, guid: c7c5bb171c3d1624383b5f666c420439, type: 2}
   roomInstance: {fileID: 1104219379}
   legacyEnvironmentRoot: {fileID: 1048281676}
 --- !u!1 &1712093623

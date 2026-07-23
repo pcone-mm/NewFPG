@@ -135,6 +135,23 @@ namespace FPG.Demo.Unity
                 }
             }
 
+            FpgEnemyEntityView entityView =
+                entityViewPrefab.GetComponent<FpgEnemyEntityView>();
+            if (entityView == null)
+            {
+                error = $"Formal enemy '{enemyDefinitionId}' prefab requires "
+                    + "an FpgEnemyEntityView.";
+                return false;
+            }
+
+            if (!entityView.TryValidate(out error)
+                || !entityView.TryValidatePresentation(this, out error))
+            {
+                error = $"Formal enemy '{enemyDefinitionId}' entity view is "
+                    + "invalid: " + error;
+                return false;
+            }
+
             error = string.Empty;
             return true;
         }

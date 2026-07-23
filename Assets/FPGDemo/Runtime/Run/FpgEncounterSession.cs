@@ -268,7 +268,9 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(RejectReason.Disposed);
             }
 
-            runtime.Reset();
+            // Clear authoritative encounter/combat state without publishing a
+            // successful restart until the entry snapshot is restored.
+            runtime.Reset(emitRestarted: false);
             combatPort.ClearAll();
             if (entrySnapshotCaptured)
             {
@@ -281,6 +283,7 @@ namespace FPG.Demo.Run
                 }
             }
 
+            runtime.EmitRestarted();
             executedTickCount = 0L;
             State = FpgEncounterSessionState.NotStarted;
             return DomainResult.Success;
@@ -368,7 +371,5 @@ namespace FPG.Demo.Run
         }
     }
 }
-
-
 
 

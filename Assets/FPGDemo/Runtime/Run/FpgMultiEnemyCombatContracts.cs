@@ -21,7 +21,9 @@ namespace FPG.Demo.Run
             int perEnemyThreatCapacity,
             int summonCapacity,
             int maxTotalSummons,
-            int maxSummonRecursionDepth)
+            int maxSummonRecursionDepth,
+            int vitalsEventCapacity = 128,
+            int damageFeedbackCapacity = 128)
         {
             if (enemyCapacity <= 0
                 || playerHitCommandCapacity <= 0
@@ -31,7 +33,9 @@ namespace FPG.Demo.Run
                 || perEnemyThreatCapacity <= 0
                 || summonCapacity <= 0
                 || maxTotalSummons < 0
-                || maxSummonRecursionDepth < 0)
+                || maxSummonRecursionDepth < 0
+                || vitalsEventCapacity <= 0
+                || damageFeedbackCapacity <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(enemyCapacity));
             }
@@ -45,6 +49,8 @@ namespace FPG.Demo.Run
             SummonCapacity = summonCapacity;
             MaxTotalSummons = maxTotalSummons;
             MaxSummonRecursionDepth = maxSummonRecursionDepth;
+            VitalsEventCapacity = vitalsEventCapacity;
+            DamageFeedbackCapacity = damageFeedbackCapacity;
         }
 
         public int EnemyCapacity { get; }
@@ -56,6 +62,8 @@ namespace FPG.Demo.Run
         public int SummonCapacity { get; }
         public int MaxTotalSummons { get; }
         public int MaxSummonRecursionDepth { get; }
+        public int VitalsEventCapacity { get; }
+        public int DamageFeedbackCapacity { get; }
     }
 
     /// <summary>
@@ -141,15 +149,72 @@ namespace FPG.Demo.Run
         Summon
     }
 
+    /// <summary>
+    /// Authoritative owner result applied only after the encounter Spawn Queue
+    /// acknowledges a summon. Retry and rejection never consume the owner.
+    /// </summary>
+    public enum FpgSummonOwnerOutcome
+    {
+        RemainAlive = 0,
+        DieAfterSuccessfulSummon = 1
+    }
+
+    /// <summary>
+    /// Presentation-only notice emitted after an authored enemy attack has
+    /// actually started. A delayed summon enters SpawnQueue at its release tick.
+    /// </summary>
+    public readonly struct FpgEnemyAttackStartedEvent
+    {
+        public FpgEnemyAttackStartedEvent(
+            RuntimeId ownerRuntimeId,
+            int spawnSequence,
+            string attackPatternId,
+            TickIndex tick,
+            long scheduleSequence,
+            FpgEnemyAttackPayloadKind payloadKind)
+        {
+            if (!ownerRuntimeId.IsValid
+                || spawnSequence < 0
+                || string.IsNullOrWhiteSpace(attackPatternId)
+                || !tick.IsValid
+                || scheduleSequence < 0
+                || !Enum.IsDefined(typeof(FpgEnemyAttackPayloadKind), payloadKind))
+            {
+                throw new ArgumentException(
+                    "Formal enemy attack presentation event is invalid.");
+            }
+
+            OwnerRuntimeId = ownerRuntimeId;
+            SpawnSequence = spawnSequence;
+            AttackPatternId = attackPatternId;
+            Tick = tick;
+            ScheduleSequence = scheduleSequence;
+            PayloadKind = payloadKind;
+        }
+
+        public RuntimeId OwnerRuntimeId { get; }
+        public int SpawnSequence { get; }
+        public string AttackPatternId { get; }
+        public TickIndex Tick { get; }
+        public long ScheduleSequence { get; }
+        public FpgEnemyAttackPayloadKind PayloadKind { get; }
+    }
+
     public readonly struct FpgFormalSummonPayload
     {
-        public FpgFormalSummonPayload(FpgSummonRequest request, int maxSummonsPerOwner)
+        public FpgFormalSummonPayload(
+            FpgSummonRequest request,
+            int maxSummonsPerOwner,
+            int releaseDelayTicks = 0,
+            FpgSummonOwnerOutcome ownerOutcome = FpgSummonOwnerOutcome.RemainAlive)
         {
             if (!request.OwnerRuntimeId.IsValid
                 || string.IsNullOrWhiteSpace(request.EnemyDefinitionId)
                 || request.RecursionDepth < 0
                 || request.RequestSequence < 0
-                || maxSummonsPerOwner <= 0)
+                || maxSummonsPerOwner <= 0
+                || releaseDelayTicks < 0
+                || !Enum.IsDefined(typeof(FpgSummonOwnerOutcome), ownerOutcome))
             {
                 throw new ArgumentException("Formal summon payload is invalid.", nameof(request));
             }
@@ -163,16 +228,22 @@ namespace FPG.Demo.Run
                     request.RequestSequence,
                     maxSummonsPerOwner);
             MaxSummonsPerOwner = maxSummonsPerOwner;
+            ReleaseDelayTicks = releaseDelayTicks;
+            OwnerOutcome = ownerOutcome;
         }
 
         public FpgSummonRequest Request { get; }
         public int MaxSummonsPerOwner { get; }
+        public int ReleaseDelayTicks { get; }
+        public FpgSummonOwnerOutcome OwnerOutcome { get; }
         public bool IsValid => Request.OwnerRuntimeId.IsValid
             && !string.IsNullOrWhiteSpace(Request.EnemyDefinitionId)
             && Request.RecursionDepth >= 0
             && Request.RequestSequence >= 0
             && Request.MaxSummonsPerOwner == MaxSummonsPerOwner
-            && MaxSummonsPerOwner > 0;
+            && MaxSummonsPerOwner > 0
+            && ReleaseDelayTicks >= 0
+            && Enum.IsDefined(typeof(FpgSummonOwnerOutcome), OwnerOutcome);
     }
 
     /// <summary>

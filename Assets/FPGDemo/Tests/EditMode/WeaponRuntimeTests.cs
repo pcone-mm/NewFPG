@@ -35,6 +35,16 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(output.Attack.PayloadCount, Is.EqualTo(WeaponDefinition.PrimaryPelletCount));
                 Assert.That(output.Attack.MaxImpactCount, Is.EqualTo(WeaponDefinition.PrimaryPelletCount));
                 Assert.That(output.Attack.QueryPolicy, Is.EqualTo(QueryPolicy.PelletRays));
+                Assert.That(
+                    output.Attack.QueryMode,
+                    Is.EqualTo(AttackQueryMode.FirstSurfacePenetration));
+                Assert.That(output.Attack.AdditionalPenetrationCount, Is.Zero);
+                Assert.That(output.Attack.AreaCombatantLimit, Is.Zero);
+                Assert.That(output.Attack.AreaProjectileLimit, Is.Zero);
+                Assert.That(
+                    output.Attack.AllowedTargetKinds,
+                    Is.EqualTo(WeaponDefinition.PlayerAttackTargetKinds));
+                Assert.That(output.Attack.IsQueryConfigurationValid, Is.True);
                 Assert.That(output.Attack.AttackId, Is.EqualTo(new AttackId(1L)));
                 Assert.That(output.Attack.ShotId, Is.EqualTo(new ShotId(1L)));
                 Assert.That(output.Attack.ReleaseTick, Is.EqualTo(new TickIndex(0L)));
@@ -60,6 +70,30 @@ namespace FPG.Demo.Tests.EditMode
             {
                 Assert.That(next.AttackId, Is.EqualTo(new AttackId(2L)));
                 Assert.That(next.ShotId, Is.EqualTo(new ShotId(2L)));
+            });
+        }
+
+        [Test]
+        public void PrimarySnapshotTreatsOneAsOneSurfaceAfterTheFirstPerPellet()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition(
+                primaryAdditionalPenetrationCount: 1));
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+
+            ProcessPrimary(weapon, exposure, ids, output, 0L);
+
+            AssertAll(() =>
+            {
+                Assert.That(
+                    output.Attack.QueryMode,
+                    Is.EqualTo(AttackQueryMode.FirstSurfacePenetration));
+                Assert.That(output.Attack.AdditionalPenetrationCount, Is.EqualTo(1));
+                Assert.That(
+                    output.Attack.MaxImpactCount,
+                    Is.EqualTo(WeaponDefinition.PrimaryPelletCount * 2));
+                Assert.That(output.Attack.IsQueryConfigurationValid, Is.True);
             });
         }
 
@@ -116,6 +150,19 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(output.Attack.ShotId, Is.EqualTo(new ShotId(1L)));
                 Assert.That(output.Attack.AmmoCost, Is.EqualTo(4));
                 Assert.That(output.Attack.QueryPolicy, Is.EqualTo(QueryPolicy.DirectThenArea));
+                Assert.That(
+                    output.Attack.QueryMode,
+                    Is.EqualTo(AttackQueryMode.AreaAtFirstSurface));
+                Assert.That(output.Attack.AdditionalPenetrationCount, Is.Zero);
+                Assert.That(output.Attack.AreaCombatantLimit, Is.EqualTo(4));
+                Assert.That(
+                    output.Attack.AreaProjectileLimit,
+                    Is.EqualTo(WeaponDefinition.DefaultSecondaryAreaProjectileLimit));
+                Assert.That(output.Attack.MaxImpactCount, Is.EqualTo(8));
+                Assert.That(
+                    output.Attack.AllowedTargetKinds,
+                    Is.EqualTo(WeaponDefinition.PlayerAttackTargetKinds));
+                Assert.That(output.Attack.IsQueryConfigurationValid, Is.True);
                 Assert.That(weapon.Magazine.Ammo, Is.Zero);
                 Assert.That(weapon.State, Is.EqualTo(WeaponState.AltRecovery));
             });
@@ -133,6 +180,36 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(weapon.Magazine.Ammo, Is.Zero);
                 Assert.That(next.AttackId, Is.EqualTo(new AttackId(2L)));
                 Assert.That(next.ShotId, Is.EqualTo(new ShotId(2L)));
+            });
+        }
+
+        [Test]
+        public void SecondarySnapshotFreezesIndependentEnemyAndProjectileLimits()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition(
+                secondaryMaxImpactCount: 3,
+                secondaryAreaProjectileLimit: 2));
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+
+            ProcessEdge(weapon, exposure, ids, output, 0L, 1L, InputEdgeType.SecondaryPressed);
+            ProcessEdge(weapon, exposure, ids, output, 1L, 2L, InputEdgeType.SecondaryReleased);
+
+            AssertAll(() =>
+            {
+                Assert.That(output.Attack.QueryMode, Is.Not.EqualTo(AttackQueryMode.Legacy));
+                Assert.That(
+                    output.Attack.QueryMode,
+                    Is.EqualTo(AttackQueryMode.AreaAtFirstSurface));
+                Assert.That(output.Attack.AreaCombatantLimit, Is.EqualTo(3));
+                Assert.That(output.Attack.AreaProjectileLimit, Is.EqualTo(2));
+                Assert.That(output.Attack.MaxImpactCount, Is.EqualTo(5));
+                Assert.That(
+                    output.Attack.AllowedTargetKinds,
+                    Is.EqualTo(
+                        AttackTargetKinds.Combatant | AttackTargetKinds.Projectile));
+                Assert.That(output.Attack.IsQueryConfigurationValid, Is.True);
             });
         }
 
@@ -203,6 +280,113 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(next.AttackId, Is.EqualTo(new AttackId(1L)));
                 Assert.That(next.ShotId, Is.EqualTo(new ShotId(1L)));
             });
+        }
+
+        [Test]
+        public void ImmediateSecondaryFiresOnPressAndRepeatsAtRecoveryBoundary()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition(
+                secondaryAmmoCost: 2,
+                secondaryMinimumCharge: 29,
+                secondaryTriggerMode: SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+
+            ProcessSecondaryInput(
+                weapon,
+                exposure,
+                ids,
+                output,
+                tick: 0L,
+                held: true,
+                sequence: 1L,
+                edgeType: InputEdgeType.SecondaryPressed);
+            AssertAll(() =>
+            {
+                Assert.That(output.HasRelease, Is.True);
+                Assert.That(output.Kind, Is.EqualTo(WeaponReleaseKind.Secondary));
+                Assert.That(output.Attack.AttackId, Is.EqualTo(new AttackId(1L)));
+                Assert.That(output.Attack.ReleaseTick, Is.EqualTo(new TickIndex(0L)));
+                Assert.That(weapon.Magazine.Ammo, Is.EqualTo(6));
+                Assert.That(weapon.State, Is.EqualTo(WeaponState.AltRecovery));
+                Assert.That(weapon.StateUntilTick, Is.EqualTo(new TickIndex(3L)));
+            });
+
+            ProcessSecondaryInput(weapon, exposure, ids, output, 1L, held: true);
+            Assert.That(output.HasRelease, Is.False);
+            ProcessSecondaryInput(weapon, exposure, ids, output, 2L, held: true);
+            Assert.That(output.HasRelease, Is.False);
+            ProcessSecondaryInput(weapon, exposure, ids, output, 3L, held: true);
+            AssertAll(() =>
+            {
+                Assert.That(output.HasRelease, Is.True);
+                Assert.That(output.Attack.AttackId, Is.EqualTo(new AttackId(2L)));
+                Assert.That(output.Attack.ReleaseTick, Is.EqualTo(new TickIndex(3L)));
+                Assert.That(weapon.Magazine.Ammo, Is.EqualTo(4));
+                Assert.That(weapon.StateUntilTick, Is.EqualTo(new TickIndex(6L)));
+            });
+
+            ProcessSecondaryInput(
+                weapon,
+                exposure,
+                ids,
+                output,
+                tick: 4L,
+                held: false,
+                sequence: 2L,
+                edgeType: InputEdgeType.SecondaryReleased);
+            Assert.That(output.HasRelease, Is.False);
+            Assert.That(weapon.Magazine.Ammo, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ImmediateSecondaryWithoutAmmoStaysReadyAndNeverAutoReloads()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition(
+                magazineCapacity: 2,
+                secondaryAmmoCost: 2,
+                secondaryTriggerMode: SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+
+            ProcessSecondaryInput(
+                weapon,
+                exposure,
+                ids,
+                output,
+                tick: 0L,
+                held: true,
+                sequence: 1L,
+                edgeType: InputEdgeType.SecondaryPressed);
+            ProcessSecondaryInput(weapon, exposure, ids, output, 1L, held: true);
+            ProcessSecondaryInput(weapon, exposure, ids, output, 2L, held: true);
+            ProcessSecondaryInput(weapon, exposure, ids, output, 3L, held: true);
+            AttackShotReservation next = ids.ReserveAttackAndShot();
+
+            AssertAll(() =>
+            {
+                Assert.That(output.HasRelease, Is.False);
+                Assert.That(weapon.LastRejectReason, Is.EqualTo(RejectReason.NotEnoughAmmo));
+                Assert.That(weapon.Magazine.Ammo, Is.Zero);
+                Assert.That(weapon.State, Is.EqualTo(WeaponState.Ready));
+                Assert.That(weapon.StateUntilTick, Is.EqualTo(TickIndex.Invalid));
+                Assert.That(next.AttackId, Is.EqualTo(new AttackId(2L)));
+                Assert.That(next.ShotId, Is.EqualTo(new ShotId(2L)));
+            });
+
+            ProcessSecondaryInput(
+                weapon,
+                exposure,
+                ids,
+                output,
+                tick: 4L,
+                held: false,
+                sequence: 2L,
+                edgeType: InputEdgeType.SecondaryReleased);
+            Assert.That(output.HasRelease, Is.False);
+            Assert.That(weapon.State, Is.EqualTo(WeaponState.Ready));
         }
 
         [Test]
@@ -396,12 +580,94 @@ namespace FPG.Demo.Tests.EditMode
             });
         }
 
+        [Test]
+        public void PreparedPrimaryCommitsAmmoRecoveryAndIdsOnlyOnExplicitCommit()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition());
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+
+            DomainResult prepared = weapon.PrepareFrame(
+                PlayerInputFrame.Empty(new TickIndex(0L), true, true),
+                exposure,
+                OwnerId,
+                ids,
+                123UL,
+                output);
+            AttackShotReservation beforeCommit = ids.ReserveAttackAndShot();
+
+            AssertAll(() =>
+            {
+                Assert.That(prepared.IsSuccess, Is.True);
+                Assert.That(output.HasRelease, Is.True);
+                Assert.That(output.IsCommitted, Is.False);
+                Assert.That(weapon.Magazine.Ammo, Is.EqualTo(8));
+                Assert.That(weapon.State, Is.EqualTo(WeaponState.Ready));
+                Assert.That(beforeCommit.AttackId, Is.EqualTo(new AttackId(1L)));
+                Assert.That(beforeCommit.ShotId, Is.EqualTo(new ShotId(1L)));
+            });
+
+            DomainResult committed = weapon.CommitPreparedRelease(output, ids);
+            DomainResult duplicateCommit = weapon.CommitPreparedRelease(output, ids);
+            AttackShotReservation afterCommit = ids.ReserveAttackAndShot();
+
+            AssertAll(() =>
+            {
+                Assert.That(committed.IsSuccess, Is.True);
+                Assert.That(duplicateCommit.RejectReason, Is.EqualTo(RejectReason.InvalidState));
+                Assert.That(output.IsCommitted, Is.True);
+                Assert.That(weapon.Magazine.Ammo, Is.EqualTo(7));
+                Assert.That(weapon.State, Is.EqualTo(WeaponState.PrimaryRecovery));
+                Assert.That(afterCommit.AttackId, Is.EqualTo(new AttackId(2L)));
+                Assert.That(afterCommit.ShotId, Is.EqualTo(new ShotId(2L)));
+            });
+        }
+
+        [Test]
+        public void AbandonedPreparedPrimaryRestoresQueryFailureWithoutConsumingIds()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition());
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+            WeaponRuntimeSnapshot beforeQuery = weapon.CaptureRoomSnapshot();
+
+            DomainResult prepared = weapon.PrepareFrame(
+                PlayerInputFrame.Empty(new TickIndex(0L), true, true),
+                exposure,
+                OwnerId,
+                ids,
+                123UL,
+                output);
+            DomainResult restored = weapon.RestoreRoomSnapshot(beforeQuery);
+            output.Reset();
+            AttackShotReservation next = ids.ReserveAttackAndShot();
+
+            AssertAll(() =>
+            {
+                Assert.That(prepared.IsSuccess, Is.True);
+                Assert.That(restored.IsSuccess, Is.True);
+                Assert.That(output.HasRelease, Is.False);
+                Assert.That(weapon.LastProcessedTick.IsValid, Is.False);
+                Assert.That(weapon.Magazine.Ammo, Is.EqualTo(8));
+                Assert.That(weapon.State, Is.EqualTo(WeaponState.Ready));
+                Assert.That(next.AttackId, Is.EqualTo(new AttackId(1L)));
+                Assert.That(next.ShotId, Is.EqualTo(new ShotId(1L)));
+            });
+        }
+
         private static WeaponDefinition CreateDefinition(
             int magazineCapacity = 8,
             int secondaryAmmoCost = 4,
             int secondaryMinimumCharge = 0,
             int primaryInterval = 2,
-            int reloadDuration = 2)
+            int reloadDuration = 2,
+            SecondaryTriggerMode secondaryTriggerMode = SecondaryTriggerMode.ChargeRelease,
+            int secondaryMaxImpactCount = 4,
+            int primaryAdditionalPenetrationCount = 0,
+            int secondaryAreaProjectileLimit =
+                WeaponDefinition.DefaultSecondaryAreaProjectileLimit)
         {
             return new WeaponDefinition(
                 101,
@@ -414,7 +680,14 @@ namespace FPG.Demo.Tests.EditMode
                 new TickDuration(3),
                 new DamageSpec(20, 5),
                 new TickDuration(reloadDuration),
-                4);
+                secondaryMaxImpactCount,
+                secondaryTriggerMode,
+                primaryQueryMode: AttackQueryMode.FirstSurfacePenetration,
+                primaryAdditionalPenetrationCount: primaryAdditionalPenetrationCount,
+                secondaryQueryMode: AttackQueryMode.AreaAtFirstSurface,
+                secondaryAreaProjectileLimit: secondaryAreaProjectileLimit,
+                primaryAllowedTargetKinds: WeaponDefinition.PlayerAttackTargetKinds,
+                secondaryAllowedTargetKinds: WeaponDefinition.PlayerAttackTargetKinds);
         }
 
         private static void ProcessPrimary(
@@ -473,6 +746,40 @@ namespace FPG.Demo.Tests.EditMode
                     false,
                     commands,
                     commands.Length),
+                exposure,
+                OwnerId,
+                ids,
+                123UL,
+                output);
+            Assert.That(result.IsSuccess, Is.True);
+        }
+
+        private static void ProcessSecondaryInput(
+            WeaponRuntime weapon,
+            ExposureRuntime exposure,
+            SessionIdAllocator ids,
+            WeaponReleaseBuffer output,
+            long tick,
+            bool held,
+            long sequence = 0L,
+            InputEdgeType? edgeType = null)
+        {
+            InputEdgeCommand[] commands = edgeType.HasValue
+                ? new[]
+                {
+                    new InputEdgeCommand(
+                        new InputSequence(sequence),
+                        edgeType.Value)
+                }
+                : null;
+            DomainResult result = weapon.ProcessFrame(
+                new PlayerInputFrame(
+                    new TickIndex(tick),
+                    aimHeld: true,
+                    primaryHeld: false,
+                    edgeCommands: commands,
+                    edgeCommandCount: commands == null ? 0 : commands.Length,
+                    secondaryHeld: held),
                 exposure,
                 OwnerId,
                 ids,

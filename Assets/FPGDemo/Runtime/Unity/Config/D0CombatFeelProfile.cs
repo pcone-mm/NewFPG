@@ -32,7 +32,7 @@ namespace FPG.Demo.Unity
         [SerializeField, Range(0f, 0.5f)]
         private float primaryBaseSpreadTangent = 0.04f;
 
-        [D0PlannerField("副射范围半径", "副射先进行直线命中，再以该半径做范围查询。单位为 Unity 世界单位，不等同于特效缩放。")]
+        [D0PlannerField("副射范围半径", "副射射线只确定首表面爆心，不产生直击伤害；随后以该半径做范围查询。单位为 Unity 世界单位，不等同于特效缩放。")]
         [SerializeField, Min(0.01f)]
         private float secondaryAreaRadius = 3f;
 
@@ -88,6 +88,90 @@ namespace FPG.Demo.Unity
             {
                 settings = new UnityAttackQuerySettings(
                     maximumAimDistance,
+                    primaryBaseSpreadTangent,
+                    secondaryAreaRadius,
+                    technicalSettings.HitboxLayerMask,
+                    technicalSettings.BlockerLayerMask);
+                error = string.Empty;
+                return true;
+            }
+            catch (ArgumentException exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+        }
+
+        public bool TryCreateAttackQuerySettings(
+            D0ThreeCProfile threeCProfile,
+            UnityAttackQuerySettings technicalSettings,
+            out UnityAttackQuerySettings settings,
+            out string error)
+        {
+            settings = default(UnityAttackQuerySettings);
+            if (threeCProfile == null)
+            {
+                error = "Formal attack-query composition requires a 3C profile.";
+                return false;
+            }
+
+            if (!threeCProfile.TryValidate(out error) || !TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (!technicalSettings.IsValid)
+            {
+                error = "Technical attack-query layer configuration is invalid.";
+                return false;
+            }
+
+            try
+            {
+                settings = new UnityAttackQuerySettings(
+                    threeCProfile.MaximumAimDistance,
+                    primaryBaseSpreadTangent,
+                    secondaryAreaRadius,
+                    technicalSettings.HitboxLayerMask,
+                    technicalSettings.BlockerLayerMask);
+                error = string.Empty;
+                return true;
+            }
+            catch (ArgumentException exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+        }
+
+        public bool TryCreateAttackQuerySettings(
+            D0ThreeCProfile threeCProfile,
+            UnityAttackQueryTechnicalSettings technicalSettings,
+            out UnityAttackQuerySettings settings,
+            out string error)
+        {
+            settings = default(UnityAttackQuerySettings);
+            if (threeCProfile == null)
+            {
+                error = "Formal attack-query composition requires a 3C profile.";
+                return false;
+            }
+
+            if (!threeCProfile.TryValidate(out error) || !TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (!technicalSettings.IsValid)
+            {
+                error = "Technical attack-query layer configuration is invalid.";
+                return false;
+            }
+
+            try
+            {
+                settings = new UnityAttackQuerySettings(
+                    threeCProfile.MaximumAimDistance,
                     primaryBaseSpreadTangent,
                     secondaryAreaRadius,
                     technicalSettings.HitboxLayerMask,

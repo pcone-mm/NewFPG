@@ -13,21 +13,21 @@ MonoBehaviour:
   m_Name: FPG_Hudie_Attack
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
   attackId: hudie-projectile
-  displayName: Hudie Projectile
+  displayName: Hudie Bullet
   priority: 0
   kind: 0
   firstReadyOffsetTicks: 60
-  cooldownTicks: 105
-  telegraphTicks: 20
-  windupTicks: 10
-  recoveryTicks: 25
-  damage: 8
+  cooldownTicks: 60
+  telegraphTicks: 0
+  windupTicks: 30
+  recoveryTicks: 30
+  damage: 28
   breakDamage: 0
-  projectileCount: 3
-  projectileDefinitionId: 102
-  projectileFlightTicks: 30
-  projectileLifetimeTicks: 45
+  projectileCount: 1
+  projectileDefinitionId: 401
+  projectileFlightTicks: 36
+  projectileLifetimeTicks: 51
   interceptable: 0
   summon: {fileID: 0}
   animationSlot: attack
-  warningSlot: enemy-warning
+  warningSlot: enemy-source-fast

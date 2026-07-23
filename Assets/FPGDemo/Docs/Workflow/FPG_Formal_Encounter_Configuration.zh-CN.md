@@ -80,6 +80,8 @@ SpawnPoint 只声明 `Any/Melee/Ranged/Support`，不绑定敌种。敌人只能
 - `cooldownTicks`：同一 owner 的召唤间隔；
 - 候选权重、空引用、重复 ID 和循环引用。
 
+召唤攻击资产还必须声明 `summonOwnerOutcome`（Inspector 中文名“召唤成功后的施法者结果”）。它是 enum，默认值为 `RemainAlive`，只在 `kind = Summon` 时生效；`DieAfterSuccessfulSummon` 要求 `maxSummonsPerOwner = 1`，并且只在请求获得 Spawn Queue 的 `Queued` 确认后，通过正式死亡流程结束施法者。`RetryNextTick`、静态上限或拒绝均不触发死亡。
+
 任一静态上限达到后停止入队；循环或超深图在 Preparing 阶段拒绝，不得靠运行时超时兜底。
 
 ## 生命周期与清理
@@ -96,12 +98,12 @@ SpawnPoint 只声明 `Any/Melee/Ranged/Support`，不绑定敌种。敌人只能
 
 ## 默认三敌与编辑器入口
 
-执行菜单 `FPG Demo > Formal Encounter > Install Burstbug Hudie Luan Defaults`，生成 Burstbug、Hudie、Luan 的正式 Enemy/Behavior/Attack、Luan→Hudie Summon、EnemyPool、Catalog、Profile、`FpgFormalAttackRuntimeCatalog` 和正式 Entity Prefab。Installer 可重复执行，但不得修改旧 D0 Prefab 或 CombatLab 场景。
+执行菜单 `FPG Demo > Formal Encounter > Install Burstbug Luan Hudie Defaults`，生成 Burstbug、Hudie、Luan 的正式 Enemy/Behavior/Attack、Luan→Hudie Summon、三种正式 Entity Prefab、3 项 Enemy Pool/Catalog 与 5 项 `FpgFormalAttackRuntimeCatalog`。Burstbug 复用既有 Fast 正式 Attack GUID，并新增 Volley 与 HeavyBreak；Behavior、Presentation 和 120/300/540 首次 Ready、660 重复间隔仅由 installer 在编辑器阶段从已导入 D0 source 迁移。Installer 可重复执行，但不得修改旧 D0 Prefab 或 CombatLab 场景；正式运行仍只走 `FpgRoomRunRequest -> FpgEncounterPlan -> FpgEncounterSession -> FpgRoomEncounterDirector`。
 
 打开 `FPG Demo > Room Editor`，在房间资料底部展开 `Formal Encounter Preview`：选择 Profile/Override，输入 Seed、Depth、Difficulty basis points 和 Room Visit Ordinal。预览显示 digest、选中布局、每波 basis-points 份额、请求/实际预算、敌种数量、并发估算和逐 SpawnPoint 角色兼容性；该操作只生成内存 Plan。
 
-`Run in Active Formal Host` 只在 Play Mode 中查找已加载、非持久化且唯一的 `FpgEncounterHost`，通过内存覆盖提交与预览相同的四项请求，并校验运行时 Plan digest。缺少 Host、存在多个 Host、Host 启动失败或 digest 不一致时全部 Fail-Closed，绝不回退到 CombatLab。当前仓库未安装正式 Encounter 场景资产，使用该按钮前必须先在独立正式场景中配置完整 Host、Director、对象池、端口和表现根。
+`Run in Active Formal Host` 只在 Play Mode 中查找已加载、非持久化且唯一的 `FpgEncounterHost`，通过内存覆盖提交与预览相同的四项请求，并校验运行时 Plan digest。缺少 Host、存在多个 Host、Host 启动失败或 digest 不一致时全部 Fail-Closed，绝不回退到 CombatLab。当前正式链为 `Boot -> FormalRoom -> room-combatlab-forest`；`FormalRoom` 已配置唯一 Host/Director、对象池、正式 Catalog/端口和表现根，默认使用 `FPG_L1_01_01_Intro`。
 
 ## D0 边界
 
-旧 `BattleSession`、`CombatLab` 和单敌替换链是冻结合同，不作为正式 Encounter 验收基线。详见 [D0_Formal_Encounter_Extension_Contract.zh-CN.md](D0_Formal_Encounter_Extension_Contract.zh-CN.md)。
+旧 `BattleSession`、`CombatLab` 和单敌替换链是冻结合同，不作为正式 Encounter 验收基线。Installer 在编辑器阶段读取 D0 source 只用于迁移字段，不表示运行时回退到 D0 Stage、D0 Encounter 或硬编码刷怪。详见 [D0_Formal_Encounter_Extension_Contract.zh-CN.md](D0_Formal_Encounter_Extension_Contract.zh-CN.md)。

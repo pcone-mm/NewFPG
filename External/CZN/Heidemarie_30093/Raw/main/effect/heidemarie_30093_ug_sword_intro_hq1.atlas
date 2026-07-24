@@ -1,0 +1,41 @@
+
+heidemarie_30093_ug_sword_intro_hq1.sct
+size: 1956,1812
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+line1_0001
+  rotate: true
+  xy: 2, 1410
+  size: 400, 1950
+  orig: 400, 1950
+  offset: 0, 0
+  index: -1
+line1_0002
+  rotate: true
+  xy: 2, 1008
+  size: 400, 1950
+  orig: 400, 1950
+  offset: 0, 0
+  index: -1
+line1_0003
+  rotate: true
+  xy: 2, 606
+  size: 400, 1950
+  orig: 400, 1950
+  offset: 0, 0
+  index: -1
+line1_0004
+  rotate: true
+  xy: 2, 204
+  size: 400, 1950
+  orig: 400, 1950
+  offset: 0, 0
+  index: -1
+sword_g
+  rotate: true
+  xy: 2, 2
+  size: 200, 975
+  orig: 200, 975
+  offset: 0, 0
+  index: -1

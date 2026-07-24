@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_self_f</string>
+        <key>ani</key>
+        <string>ready</string>
+        <key>z</key>
+        <string>1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_self_b</string>
+        <key>ani</key>
+        <string>ready</string>
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string />
+        <key>z</key>
+        <string>-1</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string />
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>spine</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+    </array>
+  </dict>
+</plist>

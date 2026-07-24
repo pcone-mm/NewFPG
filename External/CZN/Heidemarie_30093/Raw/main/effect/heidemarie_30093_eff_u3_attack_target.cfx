@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_u3_attack_target_par_1</string>
+        <key>y</key>
+        <string>100</string>
+        <key>z</key>
+        <string>0</string>
+        <key>delay</key>
+        <string>950</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_u3_attack_target_par_2</string>
+        <key>y</key>
+        <string>200</string>
+        <key>z</key>
+        <string>0</string>
+        <key>delay</key>
+        <string>880</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_ff3</string>
+        <key>z</key>
+        <string>11</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_ff2</string>
+        <key>z</key>
+        <string>10</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_ff</string>
+        <key>z</key>
+        <string>8</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_f2</string>
+        <key>z</key>
+        <string>6</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_f</string>
+        <key>z</key>
+        <string>3</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_b</string>
+        <key>z</key>
+        <string>-2</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_rcok</string>
+        <key>z</key>
+        <string>4</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_sword_1</string>
+        <key>ani</key>
+        <string>play</string>
+        <key>z</key>
+        <string>1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_sword_2</string>
+        <key>ani</key>
+        <string>play</string>
+        <key>z</key>
+        <string>2</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_attack_play1_target_pati3</string>
+        <key>y</key>
+        <string>100</string>
+        <key>scale</key>
+        <string>1.5</string>
+        <key>delay</key>
+        <string>800</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_rock_2</string>
+        <key>z</key>
+        <string>5</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_ff_rock</string>
+        <key>z</key>
+        <string>7</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_rock_b</string>
+        <key>z</key>
+        <string>-1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_rock_f</string>
+        <key>z</key>
+        <string>9</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_u3_attack_target_par_3</string>
+        <key>y</key>
+        <string>20</string>
+        <key>z</key>
+        <string>10</string>
+        <key>delay</key>
+        <string>700</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_wind_f</string>
+        <key>ani</key>
+        <string />
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string />
+        <key>z</key>
+        <string>300</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string />
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>spine</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u3_attack_target_wind_b</string>
+        <key>ani</key>
+        <string>u5_attack_play2</string>
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string />
+        <key>z</key>
+        <string>-4</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string />
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>spine</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+    </array>
+  </dict>
+</plist>

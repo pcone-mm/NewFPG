@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>mini_bite_skill1</string>
+        <key>z</key>
+        <string>1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>mini_bite_skill1</string>
+        <key>x</key>
+        <string>-100</string>
+        <key>y</key>
+        <string>40</string>
+        <key>z</key>
+        <string>2</string>
+        <key>delay</key>
+        <string>533</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>mini_bite_skill1</string>
+        <key>x</key>
+        <string>-20</string>
+        <key>y</key>
+        <string>40</string>
+        <key>z</key>
+        <string>2</string>
+        <key>rotate</key>
+        <string>180</string>
+        <key>delay</key>
+        <string>533</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

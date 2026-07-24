@@ -1,0 +1,132 @@
+
+fei_30048_u2_buff_play_b1.png
+size: 1672,1440
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fei_u2_b_03
+  rotate: true
+  xy: 2, 957
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_04
+  rotate: true
+  xy: 2, 475
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_05
+  rotate: false
+  xy: 2, 2
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_06
+  rotate: true
+  xy: 475, 957
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_07
+  rotate: true
+  xy: 475, 475
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_08
+  rotate: false
+  xy: 484, 2
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_09
+  rotate: false
+  xy: 948, 966
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_10
+  rotate: true
+  xy: 948, 484
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fei_u2_b_11
+  rotate: true
+  xy: 966, 2
+  size: 480, 471
+  orig: 480, 471
+  offset: 0, 0
+  index: -1
+fire13_1
+  rotate: true
+  xy: 1421, 713
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_2
+  rotate: true
+  xy: 1537, 1186
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_3
+  rotate: true
+  xy: 1537, 808
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_4
+  rotate: true
+  xy: 1439, 335
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_5
+  rotate: true
+  xy: 1555, 335
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+flame4_1
+  rotate: true
+  xy: 1421, 588
+  size: 123, 229
+  orig: 123, 229
+  offset: 0, 0
+  index: -1
+flame4_2
+  rotate: true
+  xy: 1430, 1061
+  size: 123, 229
+  orig: 123, 229
+  offset: 0, 0
+  index: -1
+flame4_3
+  rotate: true
+  xy: 1439, 210
+  size: 123, 229
+  orig: 123, 229
+  offset: 0, 0
+  index: -1
+flame4_4
+  rotate: true
+  xy: 1439, 85
+  size: 123, 229
+  orig: 123, 229
+  offset: 0, 0
+  index: -1

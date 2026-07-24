@@ -1,0 +1,76 @@
+
+fei_30048_ug_eff_s2_4.sct
+size: 1912,528
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow01
+  rotate: false
+  xy: 1550, 225
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+ni_ux_sparkle02
+  rotate: false
+  xy: 1722, 21
+  size: 92, 100
+  orig: 92, 100
+  offset: 0, 0
+  index: -1
+ni_ux_sparkle04
+  rotate: false
+  xy: 1722, 123
+  size: 114, 100
+  orig: 114, 100
+  offset: 0, 0
+  index: -1
+ni_ux_sparkle05
+  rotate: false
+  xy: 1816, 24
+  size: 88, 97
+  orig: 88, 97
+  offset: 0, 0
+  index: -1
+pei_ug_fire10_0000
+  rotate: true
+  xy: 2, 2
+  size: 523, 385
+  orig: 523, 385
+  offset: 0, 0
+  index: -1
+pei_ug_fire10_0001
+  rotate: true
+  xy: 389, 2
+  size: 523, 385
+  orig: 523, 385
+  offset: 0, 0
+  index: -1
+pei_ug_fire10_0002
+  rotate: true
+  xy: 776, 2
+  size: 523, 385
+  orig: 523, 385
+  offset: 0, 0
+  index: -1
+pei_ug_fire10_0003
+  rotate: true
+  xy: 1163, 2
+  size: 523, 385
+  orig: 523, 385
+  offset: 0, 0
+  index: -1
+r28
+  rotate: true
+  xy: 1550, 48
+  size: 175, 84
+  orig: 175, 84
+  offset: 0, 0
+  index: -1
+r28_light
+  rotate: true
+  xy: 1636, 48
+  size: 175, 84
+  orig: 175, 84
+  offset: 0, 0
+  index: -1

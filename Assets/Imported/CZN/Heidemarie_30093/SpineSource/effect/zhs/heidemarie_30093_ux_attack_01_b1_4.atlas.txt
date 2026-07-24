@@ -1,0 +1,13 @@
+
+heidemarie_30093_ux_attack_01_b1_4.png
+size: 2024,1332
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+hade_bg_01_02_zhs
+  rotate: false
+  xy: 2, 2
+  size: 2019, 1328
+  orig: 2019, 1328
+  offset: 0, 0
+  index: -1

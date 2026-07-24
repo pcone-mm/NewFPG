@@ -1,0 +1,51 @@
+{
+  "battle_ready_motion": null,
+  "char_collapse": {
+    "guilty_conscience": {
+      "name": "guilty_conscience",
+      "offset": "0,20",
+      "rotate": 0,
+      "scale": 1
+    }
+  },
+  "char_collapse_second": {
+    "guilty_conscience": {
+      "name": "guilty_conscience",
+      "offset": "-80,30",
+      "rotate": 0,
+      "scale": 1
+    }
+  },
+  "char_illust_info": {
+    "name": "guilty_conscience",
+    "offset": "0,20",
+    "rotate": 0,
+    "scale": 1
+  },
+  "gacha": {
+    "illust_scale": 1.309999942779541,
+    "illust_x": 66,
+    "illust_y": 19,
+    "scale": 1,
+    "x": 4,
+    "y": 141.00003051757812
+  },
+  "new_gacha": {
+    "angle1": -18,
+    "angle2": 14,
+    "angle3": 0,
+    "scale1": 2.62,
+    "scale2": 5.32,
+    "scale3": 1.46,
+    "speed1": 20,
+    "speed2": 8,
+    "speed3": 0,
+    "x1": 29,
+    "x2": -2,
+    "x3": -2,
+    "y1": -71,
+    "y2": 89,
+    "y3": 10
+  },
+  "support": null
+}

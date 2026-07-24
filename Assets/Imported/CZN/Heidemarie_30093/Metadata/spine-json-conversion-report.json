@@ -1,0 +1,5118 @@
+{
+  "converter": "CZN SCSP1U to Spine 3.8 JSON",
+  "converter_version": 1,
+  "started_utc": "2026-07-11T05:37:55.109490+00:00",
+  "finished_utc": "2026-07-11T05:37:58.422962+00:00",
+  "elapsed_seconds": 3.313,
+  "input": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Heidemarie_30093\\SpineSource",
+  "requested_files": 150,
+  "successful": 150,
+  "failed": 0,
+  "all_body_ends_valid": true,
+  "totals": {
+    "animations": 288,
+    "attachments": {
+      "clipping": 47,
+      "mesh": 5258,
+      "path": 8,
+      "region": 6436
+    },
+    "timelines": {
+      "attachment": 10147,
+      "color": 8715,
+      "deform": 2531,
+      "drawOrder": 50,
+      "ik": 10,
+      "pathMix": 12,
+      "pathPosition": 52,
+      "rotate": 21062,
+      "scale": 9185,
+      "shear": 3503,
+      "transform": 2,
+      "translate": 12672
+    },
+    "curves": {
+      "bezier": 12360,
+      "linear": 30702,
+      "stepped": 365655
+    }
+  },
+  "known_limits": [
+    "EventData/EventTimeline layout is not emitted; the audited corpus contains neither.",
+    "Attachment types bounding box, linked mesh, and point are valid Spine types but absent from the audited corpus.",
+    "CLI round-trips may normalize weighted mesh/deform data; generated JSON is canonical."
+  ],
+  "failures": [],
+  "files": [
+    {
+      "source": "effect/3000438_action0_idle.scsp1u.bytes",
+      "source_bytes": 529,
+      "source_sha256": "da806644f81b4ad934714f78e6e1f468bbbd6b369ea4282a82299a2497a33050",
+      "output": "effect/3000438_action0_idle.json",
+      "output_bytes": 412,
+      "output_sha256": "dda7b4256a40f8a6e75d157bbb0a5555ac14cdee46b9680a21c8accc05bf419f",
+      "body_end_valid": true,
+      "bones": 2,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {},
+      "curve_counts": {},
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_battle_ready_eff.scsp1u.bytes",
+      "source_bytes": 31502,
+      "source_sha256": "fdc70c63a97e4e1c87dfd4e8235e0965dffc14238b65a083f12fba668ee47fbd",
+      "output": "effect/30093_ug_battle_ready_eff.json",
+      "output_bytes": 29558,
+      "output_sha256": "262b47219ca5b16fda08c003ec9c31b45fcf9b5705a0bfa3bbe063746403918e",
+      "body_end_valid": true,
+      "bones": 31,
+      "slots": 28,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 10,
+        "region": 18
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 28,
+        "attachment": 6,
+        "translate": 9,
+        "scale": 24,
+        "rotate": 15,
+        "shear": 5,
+        "deform": 10
+      },
+      "curve_counts": {
+        "stepped": 41,
+        "linear": 57,
+        "bezier": 50
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_1.scsp1u.bytes",
+      "source_bytes": 731485,
+      "source_sha256": "f080bf3091a79c39a43854ec120d589297f389db9f86e771bf4981c27edbd532",
+      "output": "effect/30093_ug_portrait1_1.json",
+      "output_bytes": 607533,
+      "output_sha256": "fc940a8c8d4eb7128268eef3687ab75ff2d43a77d0b85e29e52a5140ed7ad4f8",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 49,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 49
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 49,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_2.scsp1u.bytes",
+      "source_bytes": 595504,
+      "source_sha256": "859f72ad6c7b0d0cad9ae2716b18409d606c16b2c10c9eb43fa48e2bf01d94fb",
+      "output": "effect/30093_ug_portrait1_2.json",
+      "output_bytes": 368438,
+      "output_sha256": "70755364fe0c9ad442c70c5eab8f36ff56790d658c426b3fed6890269beaf09b",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_3.scsp1u.bytes",
+      "source_bytes": 652297,
+      "source_sha256": "252529cb4a25bb3df486d79d9f2a7b4c38087ba6bb99e313dd24f9265bfb6797",
+      "output": "effect/30093_ug_portrait1_3.json",
+      "output_bytes": 460894,
+      "output_sha256": "c4198ab282a9348d015d967e04d0a94218fde8d45e5c94a1029d3f7f5906eceb",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 27,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 27
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 27,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_4.scsp1u.bytes",
+      "source_bytes": 602889,
+      "source_sha256": "879a4668538a3c5b392c548b062fd6d7af820e0828aa3a021445f3d35c36f69f",
+      "output": "effect/30093_ug_portrait1_4.json",
+      "output_bytes": 376358,
+      "output_sha256": "814f6eabcd12008d300ca87f78250796823204761b7ecf1305e2d0bd0cb12a44",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 8,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 8,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_5.scsp1u.bytes",
+      "source_bytes": 616248,
+      "source_sha256": "f078dd133de05168bd3f659387c9bbaa3c1576d66d21625d0a44373c3f396008",
+      "output": "effect/30093_ug_portrait1_5.json",
+      "output_bytes": 403072,
+      "output_sha256": "7ac7f3c4ce3264311a7e5b447fb2feb22dd439ce40c86d1db21d23b107173792",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 11,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 11,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_6.scsp1u.bytes",
+      "source_bytes": 602956,
+      "source_sha256": "bba4be1151acfe481b6ade027e3563e14ed7811d12c3a671478ec6fe1f59cacc",
+      "output": "effect/30093_ug_portrait1_6.json",
+      "output_bytes": 382721,
+      "output_sha256": "413a34cf221a29e52f2bd88faa03bae62b53545168b06723138226acb4149eaf",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_7.scsp1u.bytes",
+      "source_bytes": 594144,
+      "source_sha256": "245ef748cd03ff5c5c740ef605e2204a47cf63bf4749eda34417c60e12248e6b",
+      "output": "effect/30093_ug_portrait1_7.json",
+      "output_bytes": 365332,
+      "output_sha256": "9539acc2115007fc11031a46d165b8bf71dc0207b0f5ac96502dc035d1fcf5eb",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_8.scsp1u.bytes",
+      "source_bytes": 600506,
+      "source_sha256": "fb6e85c3243236b4d02f7664309f1ad35dfc6d11456253d59fcb3aa6ff46c45c",
+      "output": "effect/30093_ug_portrait1_8.json",
+      "output_bytes": 376563,
+      "output_sha256": "0bfeb080f372f4faa1c9b3bc82f2238525cb597b6c5d76fb197df2bc70d58d75",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 2,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait1_9.scsp1u.bytes",
+      "source_bytes": 613868,
+      "source_sha256": "57b2c4717a2545abd4cf0ba66cbdf6ce4c918bdb470aee5cb84824bd9d30d0f1",
+      "output": "effect/30093_ug_portrait1_9.json",
+      "output_bytes": 400308,
+      "output_sha256": "bc39d4e284f4ade0b4b6753e27eb17ff94c9e9753ec8e734e841cdd859f54dcd",
+      "body_end_valid": true,
+      "bones": 295,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 6
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 6,
+        "rotate": 221,
+        "translate": 26,
+        "shear": 15,
+        "scale": 20
+      },
+      "curve_counts": {
+        "stepped": 6706,
+        "linear": 2,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait2_1.scsp1u.bytes",
+      "source_bytes": 574134,
+      "source_sha256": "fc6127e479098995217731af9e142d854c4c130920a38cd126d8086f4a350e5d",
+      "output": "effect/30093_ug_portrait2_1.json",
+      "output_bytes": 499810,
+      "output_sha256": "48ea1ee26449e7467365cd99bcf5f2361ed57d27bbf36a745eed5bcbbf323061",
+      "body_end_valid": true,
+      "bones": 268,
+      "slots": 77,
+      "ik_constraints": 0,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 78
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 77,
+        "attachment": 76,
+        "translate": 34,
+        "rotate": 210,
+        "scale": 26,
+        "shear": 12,
+        "deform": 2
+      },
+      "curve_counts": {
+        "stepped": 4630,
+        "linear": 78,
+        "bezier": 77
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait2_2.scsp1u.bytes",
+      "source_bytes": 478109,
+      "source_sha256": "5c8e192807ba52ef80abdacd8d90231474a941208f4a9351be5566779c1648ba",
+      "output": "effect/30093_ug_portrait2_2.json",
+      "output_bytes": 356008,
+      "output_sha256": "d99b709fcacf66b78871a68799c73a1d7ed08f87c0c9ae62530acb95ce4c7de2",
+      "body_end_valid": true,
+      "bones": 268,
+      "slots": 28,
+      "ik_constraints": 0,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 30
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 28,
+        "attachment": 28,
+        "translate": 34,
+        "rotate": 210,
+        "scale": 26,
+        "shear": 12,
+        "deform": 1
+      },
+      "curve_counts": {
+        "stepped": 4580,
+        "linear": 29,
+        "bezier": 35
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/30093_ug_portrait2_3.scsp1u.bytes",
+      "source_bytes": 499241,
+      "source_sha256": "039f6f57b550558417c74f307e1770f6b4e22e08571c58a96d913bc35d2701c4",
+      "output": "effect/30093_ug_portrait2_3.json",
+      "output_bytes": 400415,
+      "output_sha256": "3782ec4bab4a4ca3fe9e4cd2b4fccf774792cc7129b974e4d5416d20b1caa821",
+      "body_end_valid": true,
+      "bones": 268,
+      "slots": 32,
+      "ik_constraints": 0,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 32
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 32,
+        "attachment": 31,
+        "translate": 34,
+        "rotate": 210,
+        "scale": 26,
+        "shear": 12
+      },
+      "curve_counts": {
+        "stepped": 4595,
+        "linear": 32,
+        "bezier": 33
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_battle_ready_eff_b.scsp1u.bytes",
+      "source_bytes": 369783,
+      "source_sha256": "e1a1ba8995a95f603e073824b5461619c3ae774ac9ec4e50bfdff90eda5251ff",
+      "output": "effect/heidemarie_30093_battle_ready_eff_b.json",
+      "output_bytes": 500639,
+      "output_sha256": "d048040a078d6f3b98bebb32d3892966cc100da6f33b10264ff7c0916cd52997",
+      "body_end_valid": true,
+      "bones": 23,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 38,
+        "region": 6
+      },
+      "animations": 3,
+      "timeline_counts": {
+        "color": 38,
+        "attachment": 4,
+        "translate": 20,
+        "scale": 16
+      },
+      "curve_counts": {
+        "stepped": 324,
+        "linear": 588,
+        "bezier": 42
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_battle_ready_eff_b_mask.scsp1u.bytes",
+      "source_bytes": 12986,
+      "source_sha256": "ab08d6b7605e64db136a945fbc769021ed27cbbe89c38bee75f1f35068350663",
+      "output": "effect/heidemarie_30093_battle_ready_eff_b_mask.json",
+      "output_bytes": 16429,
+      "output_sha256": "e7de284c564106e1437b4d06f88a20a813f428fc899bccf092058ed13dfba51b",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2
+      },
+      "animations": 3,
+      "timeline_counts": {
+        "color": 6,
+        "translate": 4,
+        "scale": 4
+      },
+      "curve_counts": {
+        "bezier": 22
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_battle_ready_eff_f.scsp1u.bytes",
+      "source_bytes": 370206,
+      "source_sha256": "e6320ffe60c75e31d11787c2ef060b48b9c8fa72282692cec8849efe3bb51fa4",
+      "output": "effect/heidemarie_30093_battle_ready_eff_f.json",
+      "output_bytes": 500850,
+      "output_sha256": "d957e989c5e49a0187aaf231df749235006c7a99635450652963549cb2e9edfc",
+      "body_end_valid": true,
+      "bones": 23,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 38,
+        "region": 6
+      },
+      "animations": 3,
+      "timeline_counts": {
+        "color": 38,
+        "attachment": 4,
+        "translate": 20,
+        "scale": 16
+      },
+      "curve_counts": {
+        "stepped": 324,
+        "linear": 592,
+        "bezier": 42
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_battle_ready_eff_f_mask.scsp1u.bytes",
+      "source_bytes": 12985,
+      "source_sha256": "8dc6b748ff9a1276e96b42b1acd53d16a9b110a8b41a7c1e61303c7898898641",
+      "output": "effect/heidemarie_30093_battle_ready_eff_f_mask.json",
+      "output_bytes": 16407,
+      "output_sha256": "a4d14269e170e56e8dcc048b4124f0409bb31db56d4969bba3ca4aa90d75f2bb",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2
+      },
+      "animations": 3,
+      "timeline_counts": {
+        "color": 6,
+        "translate": 4,
+        "scale": 4
+      },
+      "curve_counts": {
+        "bezier": 22
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_battle_ready_eff_mask.scsp1u.bytes",
+      "source_bytes": 1611,
+      "source_sha256": "813b70494d7b488207275b167f1e19f8a64a853f3be8588324f793196736eb96",
+      "output": "effect/heidemarie_30093_battle_ready_eff_mask.json",
+      "output_bytes": 1789,
+      "output_sha256": "ef8f720bbae831624eb408b431d9b11ca8c90b01e5e76b7e986787135c7a122d",
+      "body_end_valid": true,
+      "bones": 2,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "rotate": 1,
+        "translate": 1,
+        "deform": 1
+      },
+      "curve_counts": {
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play1_b.scsp1u.bytes",
+      "source_bytes": 3766,
+      "source_sha256": "106b2a9387dea3d21ebbf8c509d98938ad687d5599b675e83d3b0cd8cad7acb9",
+      "output": "effect/heidemarie_30093_eff_attack_play1_b.json",
+      "output_bytes": 2860,
+      "output_sha256": "d431234e37a43ddadb58ed3d306442bb349d262dd43ceb391358f671af6642bd",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 8
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 2,
+        "translate": 4,
+        "scale": 4
+      },
+      "curve_counts": {
+        "linear": 8,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play1_f.scsp1u.bytes",
+      "source_bytes": 39180,
+      "source_sha256": "a0b87b79b91032a0c736b6258438e2a85c9838a12f1b9e21756932c4ce00b3b4",
+      "output": "effect/heidemarie_30093_eff_attack_play1_f.json",
+      "output_bytes": 43014,
+      "output_sha256": "499c1aa8f9e5da9270fd8c8a467b018c336ffc0726dc0f9c1b924bfb3aff5265",
+      "body_end_valid": true,
+      "bones": 13,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 6,
+        "region": 12
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 36,
+        "rotate": 18,
+        "translate": 20,
+        "scale": 20,
+        "shear": 4,
+        "deform": 12
+      },
+      "curve_counts": {
+        "stepped": 19,
+        "linear": 81,
+        "bezier": 34
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play1_target.scsp1u.bytes",
+      "source_bytes": 55502,
+      "source_sha256": "144d9ea09fd0f97cd44d8c14b6ed93dc02d505628d1b6cd43289b157950054d1",
+      "output": "effect/heidemarie_30093_eff_attack_play1_target.json",
+      "output_bytes": 55659,
+      "output_sha256": "0abfd8aad7004f5399e8c419354b078167919a282811cc4d8aaa6a575bb8f0f8",
+      "body_end_valid": true,
+      "bones": 30,
+      "slots": 34,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9,
+        "region": 48
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 34,
+        "attachment": 9,
+        "rotate": 20,
+        "translate": 26,
+        "scale": 26,
+        "shear": 5,
+        "deform": 9
+      },
+      "curve_counts": {
+        "stepped": 69,
+        "linear": 83,
+        "bezier": 41
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play2_b.scsp1u.bytes",
+      "source_bytes": 37701,
+      "source_sha256": "39b5fed05d814135c42f2ae9eeb1cd095bc8685f623b594a6f037368f6d7f2db",
+      "output": "effect/heidemarie_30093_eff_attack_play2_b.json",
+      "output_bytes": 41976,
+      "output_sha256": "22476cb86216cbeb6ba558e6ba4638defc9d22a2dde4e0ec1712c50eaec0a36c",
+      "body_end_valid": true,
+      "bones": 12,
+      "slots": 16,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 6,
+        "region": 10
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 32,
+        "rotate": 16,
+        "translate": 16,
+        "scale": 16,
+        "shear": 4,
+        "deform": 12
+      },
+      "curve_counts": {
+        "stepped": 24,
+        "linear": 72,
+        "bezier": 32
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play2_f.scsp1u.bytes",
+      "source_bytes": 1530,
+      "source_sha256": "427ca99e0ba12c7b73424739ad05892c45f9eb6ef16b8389fd174f476b3fc5c8",
+      "output": "effect/heidemarie_30093_eff_attack_play2_f.json",
+      "output_bytes": 1393,
+      "output_sha256": "53bca7c54ddc80ea5b5f5831506fe6a4717f55d267fac83cba212631a95fb3e9",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 2
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 4,
+        "translate": 4,
+        "scale": 4
+      },
+      "curve_counts": {
+        "linear": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play2_target.scsp1u.bytes",
+      "source_bytes": 56735,
+      "source_sha256": "3f03863ea0872fcbcf9ff835d0590e944df2ccc47c13a58e219178a94987c599",
+      "output": "effect/heidemarie_30093_eff_attack_play2_target.json",
+      "output_bytes": 56283,
+      "output_sha256": "6b18566bc2acffede6c0d898ff4998ae37c9039a2d589d3126856da07c116cfc",
+      "body_end_valid": true,
+      "bones": 31,
+      "slots": 34,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9,
+        "region": 48
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 34,
+        "attachment": 9,
+        "rotate": 22,
+        "translate": 29,
+        "scale": 29,
+        "shear": 6,
+        "deform": 9
+      },
+      "curve_counts": {
+        "stepped": 81,
+        "linear": 85,
+        "bezier": 38
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play_target_b.scsp1u.bytes",
+      "source_bytes": 50277,
+      "source_sha256": "cd6013dc3cced4b8247fac2bdc60c9ac9e704b8136ad39d17d2a1fdd29c20174",
+      "output": "effect/heidemarie_30093_eff_attack_play_target_b.json",
+      "output_bytes": 50617,
+      "output_sha256": "17e0ad9a959e25b6c1c65b54eba3633cc38fff11fa709a3bc603235d22c7465a",
+      "body_end_valid": true,
+      "bones": 14,
+      "slots": 8,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5,
+        "region": 3
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "color": 32,
+        "translate": 40,
+        "scale": 42,
+        "rotate": 24,
+        "shear": 4,
+        "deform": 20
+      },
+      "curve_counts": {
+        "stepped": 96,
+        "linear": 84,
+        "bezier": 76
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play_target_f1.scsp1u.bytes",
+      "source_bytes": 244151,
+      "source_sha256": "68dd7ad08d6c6a6ce661a4d939a62e07ee833a85946747c81d3ede05319ac5b0",
+      "output": "effect/heidemarie_30093_eff_attack_play_target_f1.json",
+      "output_bytes": 210188,
+      "output_sha256": "8b2269d6b6b04adc328c219d5258600e6e31f00295660af17b8c4f1c621efabd",
+      "body_end_valid": true,
+      "bones": 49,
+      "slots": 79,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 10,
+        "region": 86
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "color": 312,
+        "attachment": 28,
+        "translate": 179,
+        "scale": 178,
+        "rotate": 140,
+        "shear": 32,
+        "deform": 40
+      },
+      "curve_counts": {
+        "stepped": 628,
+        "linear": 756,
+        "bezier": 280
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play_target_f2.scsp1u.bytes",
+      "source_bytes": 239486,
+      "source_sha256": "0a00a433c2cae369512680551709dd79d895e1f53f3e8d207444897082ce1842",
+      "output": "effect/heidemarie_30093_eff_attack_play_target_f2.json",
+      "output_bytes": 223304,
+      "output_sha256": "5e180ceb0bb27c0ff53d09c920ceee3d44c5976f6fba58417d98a102ce4d4029",
+      "body_end_valid": true,
+      "bones": 65,
+      "slots": 77,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 58,
+        "region": 236
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 154,
+        "color": 146,
+        "translate": 120,
+        "rotate": 80,
+        "scale": 119,
+        "shear": 16,
+        "deform": 68
+      },
+      "curve_counts": {
+        "linear": 290,
+        "stepped": 512,
+        "bezier": 30
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_attack_play_target_f3.scsp1u.bytes",
+      "source_bytes": 39201,
+      "source_sha256": "b04227498d02a1b0ab30a62f4befde3b41aec50e1bab854a5a019877dbdc2d45",
+      "output": "effect/heidemarie_30093_eff_attack_play_target_f3.json",
+      "output_bytes": 37498,
+      "output_sha256": "be4ac6c221805a4f06bc0ce4d8ae1902b4ca9b920b2e4f19d945e792bdc32cfd",
+      "body_end_valid": true,
+      "bones": 22,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 3,
+        "region": 6
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "color": 36,
+        "attachment": 4,
+        "translate": 64,
+        "scale": 62,
+        "rotate": 28,
+        "deform": 16
+      },
+      "curve_counts": {
+        "linear": 104,
+        "bezier": 116,
+        "stepped": 72
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_casting_ready.scsp1u.bytes",
+      "source_bytes": 2921,
+      "source_sha256": "724ce17d838c321e5912f908d2f12d5a1882a55438f95420370f26681c0952cc",
+      "output": "effect/heidemarie_30093_eff_casting_ready.json",
+      "output_bytes": 1982,
+      "output_sha256": "80ab151c560d70c23c747be6cafb9da52a53874bf8865334b7badb079a30d866",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 2,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 8,
+        "linear": 13,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_casting_ready_b.scsp1u.bytes",
+      "source_bytes": 87209,
+      "source_sha256": "8afdfae39d313a5e91a6757b7ff0844807ddbdac8768bdec56c4dd9b87895342",
+      "output": "effect/heidemarie_30093_eff_casting_ready_b.json",
+      "output_bytes": 70685,
+      "output_sha256": "158e7d175307cbdea875ca68487766295045a88abe21303d5f9934d372f570b4",
+      "body_end_valid": true,
+      "bones": 43,
+      "slots": 77,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 22,
+        "region": 55
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 77,
+        "attachment": 63,
+        "translate": 25,
+        "scale": 32,
+        "rotate": 24,
+        "shear": 9,
+        "deform": 22
+      },
+      "curve_counts": {
+        "bezier": 54,
+        "stepped": 263,
+        "linear": 176
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_sword_cat_target.scsp1u.bytes",
+      "source_bytes": 325568,
+      "source_sha256": "c81902634f802d1c49b292963fb163c67521300c90bd25b6bdb4aef802614fa1",
+      "output": "effect/heidemarie_30093_eff_sword_cat_target.json",
+      "output_bytes": 467284,
+      "output_sha256": "1b7b5d4022abf2c53fe60261202bb5bdf6ec00954ca4d8b82f14a5eaa86c9e72",
+      "body_end_valid": true,
+      "bones": 18,
+      "slots": 25,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 92,
+        "region": 12
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "color": 44,
+        "attachment": 22,
+        "rotate": 6,
+        "translate": 24,
+        "scale": 4,
+        "deform": 3,
+        "shear": 4
+      },
+      "curve_counts": {
+        "linear": 94,
+        "stepped": 14,
+        "bezier": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_sword_target.scsp1u.bytes",
+      "source_bytes": 322364,
+      "source_sha256": "2431c3324765364827ac7bbcc78b669a282e704ff5aa8ed979fd39e73bd6ff13",
+      "output": "effect/heidemarie_30093_eff_sword_target.json",
+      "output_bytes": 464267,
+      "output_sha256": "de4420ac42c6809dae5d565046ab06634fd992c9aec2992822895ede9fc3c422",
+      "body_end_valid": true,
+      "bones": 18,
+      "slots": 25,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 92,
+        "region": 12
+      },
+      "animations": 5,
+      "timeline_counts": {
+        "color": 36,
+        "attachment": 20,
+        "rotate": 4,
+        "translate": 20,
+        "scale": 4,
+        "deform": 4
+      },
+      "curve_counts": {
+        "linear": 77,
+        "stepped": 10,
+        "bezier": 10
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_b.scsp1u.bytes",
+      "source_bytes": 108625,
+      "source_sha256": "c0e5c9a79132539e0228f848a570707939ac9b00c71b167e554df61ec426cc3e",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_b.json",
+      "output_bytes": 89077,
+      "output_sha256": "f3ca87a28d1c46641cab849b7f1a9abb6922384a6d7c008a62f859c7397412c5",
+      "body_end_valid": true,
+      "bones": 57,
+      "slots": 88,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 60,
+        "region": 48
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 96,
+        "attachment": 92,
+        "rotate": 47,
+        "translate": 40,
+        "scale": 38,
+        "shear": 9,
+        "deform": 60
+      },
+      "curve_counts": {
+        "stepped": 239,
+        "linear": 202,
+        "bezier": 115
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_f.scsp1u.bytes",
+      "source_bytes": 97919,
+      "source_sha256": "4a8b357b353d976caceb114a9efe35e29b40ab4302fdf93f037ff5ce5565e858",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_f.json",
+      "output_bytes": 80001,
+      "output_sha256": "10d44c246c1524ad658aa0179cbf0650e0bb506913a85daa6d479ebe197d3ab3",
+      "body_end_valid": true,
+      "bones": 44,
+      "slots": 80,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 60,
+        "region": 40
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 80,
+        "attachment": 74,
+        "rotate": 27,
+        "translate": 29,
+        "scale": 22,
+        "shear": 9,
+        "deform": 60
+      },
+      "curve_counts": {
+        "linear": 173,
+        "stepped": 212,
+        "bezier": 106
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_shake.scsp1u.bytes",
+      "source_bytes": 2390,
+      "source_sha256": "ce330e102d33e455e358792c71dc558758c6faf51435bb72905185132361de84",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_shake.json",
+      "output_bytes": 1338,
+      "output_sha256": "c89257928dd01150d68825057331aa8c7818b572edee3192ee2b6c73dc39968f",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "translate": 2
+      },
+      "curve_counts": {
+        "stepped": 10,
+        "linear": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_target_b.scsp1u.bytes",
+      "source_bytes": 48153,
+      "source_sha256": "5dbb3d59104c80981ffb45d288e5ac3ad60d20deabcaa059d7b00d5fb2808381",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_target_b.json",
+      "output_bytes": 39930,
+      "output_sha256": "75e1aa0082c5faec70c955c8222a2829ba1dc6949bc5ee365ee642eea41335f4",
+      "body_end_valid": true,
+      "bones": 38,
+      "slots": 34,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 15,
+        "region": 18
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 33,
+        "attachment": 24,
+        "translate": 31,
+        "scale": 30,
+        "rotate": 21,
+        "shear": 7,
+        "deform": 14
+      },
+      "curve_counts": {
+        "stepped": 139,
+        "linear": 94,
+        "bezier": 55
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_target_f1.scsp1u.bytes",
+      "source_bytes": 485725,
+      "source_sha256": "f3ffc2b0372ec4d9287d41f6cbc502de5a1491b4915a2d5bf1560ddbff36cf35",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_target_f1.json",
+      "output_bytes": 432492,
+      "output_sha256": "b5740da11d7522ce8e48a839df81b98bfecc24240749560aaaefa1b4be04db24",
+      "body_end_valid": true,
+      "bones": 301,
+      "slots": 279,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 164,
+        "region": 115
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 279,
+        "attachment": 47,
+        "rotate": 280,
+        "translate": 286,
+        "scale": 285,
+        "shear": 109,
+        "deform": 160
+      },
+      "curve_counts": {
+        "stepped": 1576,
+        "bezier": 537,
+        "linear": 786
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_target_f2.scsp1u.bytes",
+      "source_bytes": 371961,
+      "source_sha256": "68ae3954a7aff22f4f0b1f520c66f0014e3b257d23c8794103a5cee432f668d5",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_target_f2.json",
+      "output_bytes": 342199,
+      "output_sha256": "569d082421404dd3bf6e343cd9551ea174b3bcdcabb0cc8af97cad7f40cb21a0",
+      "body_end_valid": true,
+      "bones": 301,
+      "slots": 125,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 55,
+        "region": 78
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 124,
+        "attachment": 124,
+        "rotate": 280,
+        "translate": 286,
+        "scale": 285,
+        "shear": 109,
+        "deform": 54
+      },
+      "curve_counts": {
+        "stepped": 1641,
+        "linear": 348,
+        "bezier": 542
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_play_target_f3.scsp1u.bytes",
+      "source_bytes": 368971,
+      "source_sha256": "868a8e21af1d2809586036ce204d316fa0c75199745b0aff24feaf3a0255545e",
+      "output": "effect/heidemarie_30093_eff_u1_attack_play_target_f3.json",
+      "output_bytes": 355185,
+      "output_sha256": "0878590e6fb5dc631cd6ab70189feae2ac8529296b38ca82ca26dda1e04cbd33",
+      "body_end_valid": true,
+      "bones": 301,
+      "slots": 115,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 119,
+        "region": 44
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 115,
+        "attachment": 30,
+        "rotate": 280,
+        "translate": 286,
+        "scale": 285,
+        "shear": 109,
+        "deform": 28
+      },
+      "curve_counts": {
+        "stepped": 1400,
+        "linear": 291,
+        "bezier": 522
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_ready_b.scsp1u.bytes",
+      "source_bytes": 161717,
+      "source_sha256": "fa525c0c6aa0ad71ec6c54c1f3f6f6e85ac6ef9768e176bf98a8efb9a75468f8",
+      "output": "effect/heidemarie_30093_eff_u1_attack_ready_b.json",
+      "output_bytes": 231852,
+      "output_sha256": "c248a8a4f81e34894d0e75178abe975c292c44964654f0b7b8f3ad24fb8e282a",
+      "body_end_valid": true,
+      "bones": 12,
+      "slots": 14,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 48,
+        "region": 6
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 16,
+        "attachment": 8,
+        "translate": 12,
+        "rotate": 4,
+        "scale": 2,
+        "shear": 1,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 22,
+        "stepped": 8,
+        "bezier": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_ready_f.scsp1u.bytes",
+      "source_bytes": 162095,
+      "source_sha256": "2a464ae35a1c2ea83ba7e34cd1a29f351d1a3d9d10db373538c5249cb2b33c79",
+      "output": "effect/heidemarie_30093_eff_u1_attack_ready_f.json",
+      "output_bytes": 231543,
+      "output_sha256": "96a0b9b8633569f3c4fd5de13da9edab85538b0e40ca112a7a78fff053e7c572",
+      "body_end_valid": true,
+      "bones": 10,
+      "slots": 14,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 54
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 16,
+        "attachment": 8,
+        "translate": 10,
+        "rotate": 2,
+        "scale": 2,
+        "shear": 1,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 22,
+        "stepped": 8,
+        "bezier": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u1_attack_sword.scsp1u.bytes",
+      "source_bytes": 359269,
+      "source_sha256": "24207b8fea346ff298983b3ceeba86b9ca16a7f8a8ac749c7a96864e69bea387",
+      "output": "effect/heidemarie_30093_eff_u1_attack_sword.json",
+      "output_bytes": 499364,
+      "output_sha256": "0d726e2bb40dec6ef1da6f1ec9467f0db4047997503f0080feee187491f1e82e",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 25,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 92,
+        "region": 12
+      },
+      "animations": 8,
+      "timeline_counts": {
+        "color": 115,
+        "attachment": 93,
+        "rotate": 10,
+        "translate": 73,
+        "scale": 20,
+        "deform": 7,
+        "shear": 9
+      },
+      "curve_counts": {
+        "linear": 230,
+        "stepped": 78,
+        "bezier": 37
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u2_buff_b.scsp1u.bytes",
+      "source_bytes": 105272,
+      "source_sha256": "05a2003da1aceadd3cffe9a2d991465c3428dd3d623c76fb3b73b1c53c63e4c0",
+      "output": "effect/heidemarie_30093_eff_u2_buff_b.json",
+      "output_bytes": 92288,
+      "output_sha256": "50cbfe1b7aae44e32d189fa22d3d8647184b456446d42d6e8681e702cbda8e4d",
+      "body_end_valid": true,
+      "bones": 33,
+      "slots": 66,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 33,
+        "region": 33
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 120,
+        "rotate": 35,
+        "translate": 52,
+        "scale": 52,
+        "shear": 9,
+        "deform": 58
+      },
+      "curve_counts": {
+        "stepped": 183,
+        "linear": 303,
+        "bezier": 127
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u2_buff_f.scsp1u.bytes",
+      "source_bytes": 137975,
+      "source_sha256": "b8a1ced1c5a470160862a9fe7b49cc6f37581446fa859ed1c51aa4c132db3626",
+      "output": "effect/heidemarie_30093_eff_u2_buff_f.json",
+      "output_bytes": 194701,
+      "output_sha256": "322a6e6361a1707dd7bb0b43e618f6d903bf84782f112fa4cee3204bb5a143a5",
+      "body_end_valid": true,
+      "bones": 32,
+      "slots": 37,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 24,
+        "region": 13
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 74,
+        "translate": 51,
+        "scale": 48,
+        "rotate": 36,
+        "shear": 3,
+        "deform": 33
+      },
+      "curve_counts": {
+        "linear": 156,
+        "stepped": 79,
+        "bezier": 45
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u2_buff_sword.scsp1u.bytes",
+      "source_bytes": 78340,
+      "source_sha256": "e193f19d4e72de079379eba52ae554429bce702726b3a6b42213d5462f2f743a",
+      "output": "effect/heidemarie_30093_eff_u2_buff_sword.json",
+      "output_bytes": 113271,
+      "output_sha256": "dc76a134db432e089ad753666fcdccb2ac31fe2fc251035d69aed2734d75baf8",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 23
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 10,
+        "attachment": 4,
+        "translate": 4,
+        "scale": 2,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 5,
+        "bezier": 5,
+        "stepped": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_self_b.scsp1u.bytes",
+      "source_bytes": 13687,
+      "source_sha256": "af52ec80b35b8acfe238902109ac9a6b1f83edfd3e29ef5d832ef828f59f3bd0",
+      "output": "effect/heidemarie_30093_eff_u3_attack_self_b.json",
+      "output_bytes": 10836,
+      "output_sha256": "fcce927c1fa5a21c5d6b12f9a36192dd504aa0b4110439b2e60f6f4dd195a679",
+      "body_end_valid": true,
+      "bones": 14,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 8
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 18,
+        "rotate": 14,
+        "translate": 18,
+        "scale": 18,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 48,
+        "bezier": 37,
+        "stepped": 12
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_self_f.scsp1u.bytes",
+      "source_bytes": 66188,
+      "source_sha256": "1497c38ddd173641d8c4f935e4a7467416dc5aa1702ea0032c6174cf2955a1e5",
+      "output": "effect/heidemarie_30093_eff_u3_attack_self_f.json",
+      "output_bytes": 59500,
+      "output_sha256": "75c69971d55010b4d8b5b8d0553439ab934addd59ef0f445fe9a68c4cad0e911",
+      "body_end_valid": true,
+      "bones": 31,
+      "slots": 53,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 30,
+        "region": 22
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 98,
+        "translate": 37,
+        "scale": 43,
+        "rotate": 26,
+        "shear": 2,
+        "deform": 21
+      },
+      "curve_counts": {
+        "stepped": 84,
+        "linear": 178,
+        "bezier": 67
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_sword_1.scsp1u.bytes",
+      "source_bytes": 86626,
+      "source_sha256": "e8f412b209de0dd295c958165b044eb84efd0fa25df1f31908a5d1216a68445d",
+      "output": "effect/heidemarie_30093_eff_u3_attack_sword_1.json",
+      "output_bytes": 121576,
+      "output_sha256": "fc0631c46cef561503914391b7722af71d65212526b622315d3d074630ce4c1e",
+      "body_end_valid": true,
+      "bones": 10,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 24,
+        "region": 5
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 16,
+        "attachment": 6,
+        "translate": 11,
+        "scale": 5,
+        "deform": 5
+      },
+      "curve_counts": {
+        "stepped": 9,
+        "linear": 20,
+        "bezier": 19
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_sword_2.scsp1u.bytes",
+      "source_bytes": 260868,
+      "source_sha256": "acd0126dc7d41920bb559553af290c095ddf825949d6dbb7d41d6c02c9d3cee5",
+      "output": "effect/heidemarie_30093_eff_u3_attack_sword_2.json",
+      "output_bytes": 220958,
+      "output_sha256": "7862c1cb3ddbd8e56e541fbaa1b0d244e5f7ef4e3dd53f0cfb9d4415e8459acd",
+      "body_end_valid": true,
+      "bones": 43,
+      "slots": 166,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 93,
+        "region": 73
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 301,
+        "rotate": 69,
+        "translate": 72,
+        "scale": 68,
+        "shear": 14,
+        "deform": 172
+      },
+      "curve_counts": {
+        "stepped": 514,
+        "linear": 797,
+        "bezier": 303
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_b.scsp1u.bytes",
+      "source_bytes": 51933,
+      "source_sha256": "8361b4f9c0587f24b939de6125b3077f63fe59aa26f93905330e637fd7c03327",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_b.json",
+      "output_bytes": 42612,
+      "output_sha256": "4cef98e829a99d04c67be610bdbf2dfd7937ead5636867668dea215f4d09792c",
+      "body_end_valid": true,
+      "bones": 57,
+      "slots": 71,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8,
+        "region": 63
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 71,
+        "attachment": 59,
+        "rotate": 43,
+        "translate": 47,
+        "scale": 51,
+        "shear": 5
+      },
+      "curve_counts": {
+        "linear": 97,
+        "stepped": 77,
+        "bezier": 92
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_f.scsp1u.bytes",
+      "source_bytes": 51235,
+      "source_sha256": "3b43cf7e10695df1988dfead4df217fad5fab0b1a668f8f8d6cdcdb26aac196f",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_f.json",
+      "output_bytes": 41631,
+      "output_sha256": "6634a60e337f9d8fd1fee5588c5a1a7295409abe37eb0ca54898072bf05e146d",
+      "body_end_valid": true,
+      "bones": 37,
+      "slots": 56,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 20,
+        "region": 36
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 56,
+        "attachment": 34,
+        "rotate": 18,
+        "scale": 25,
+        "shear": 10,
+        "translate": 27,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 121,
+        "linear": 87,
+        "bezier": 34
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_f2.scsp1u.bytes",
+      "source_bytes": 95947,
+      "source_sha256": "81738ea9257b90d40b59ea25cddade5db88b5abde4b0a50eb17ea5dbd067621b",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_f2.json",
+      "output_bytes": 91491,
+      "output_sha256": "71d4d4a93c6a58d210cd273efd087018b9a4af432c914c35669687d13979b696",
+      "body_end_valid": true,
+      "bones": 59,
+      "slots": 81,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 23,
+        "region": 58
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 81,
+        "attachment": 71,
+        "rotate": 38,
+        "translate": 50,
+        "scale": 49,
+        "shear": 6,
+        "deform": 20
+      },
+      "curve_counts": {
+        "stepped": 155,
+        "linear": 165,
+        "bezier": 121
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_ff.scsp1u.bytes",
+      "source_bytes": 97150,
+      "source_sha256": "96faae6ee05892a487511d69977a3fd45b721022f398d290f7ff16e908759a93",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_ff.json",
+      "output_bytes": 76418,
+      "output_sha256": "fbb6dd981a4dc51430a86534690552b93544c63bf24b17b752da0060b75562ec",
+      "body_end_valid": true,
+      "bones": 128,
+      "slots": 54,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 6,
+        "region": 92
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 53,
+        "attachment": 14,
+        "rotate": 107,
+        "translate": 114,
+        "scale": 118,
+        "shear": 40,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 300,
+        "linear": 161,
+        "bezier": 167
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_ff2.scsp1u.bytes",
+      "source_bytes": 134327,
+      "source_sha256": "ae54e1a30baa2c985b52824a19e77493e1bd22b09d1d77688fbce25066b685af",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_ff2.json",
+      "output_bytes": 139367,
+      "output_sha256": "8f61afdae9277525391255b1d1e9006f3da4d29bc6d7ea3a20fdf8b72c71827f",
+      "body_end_valid": true,
+      "bones": 128,
+      "slots": 57,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 33,
+        "region": 39
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 57,
+        "attachment": 11,
+        "rotate": 107,
+        "translate": 114,
+        "scale": 118,
+        "shear": 40,
+        "deform": 31
+      },
+      "curve_counts": {
+        "stepped": 276,
+        "linear": 141,
+        "bezier": 193
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_ff3.scsp1u.bytes",
+      "source_bytes": 111631,
+      "source_sha256": "6797a49827e5e25eb60a4f3092bc74ae3d2cef046ae6d83b9d4c01f651251bdb",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_ff3.json",
+      "output_bytes": 98378,
+      "output_sha256": "e266c123041cd0e196dbef797fec0eb16d1741e266ce401c4161873e5c329c6b",
+      "body_end_valid": true,
+      "bones": 128,
+      "slots": 62,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 27,
+        "region": 35
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 62,
+        "attachment": 11,
+        "rotate": 107,
+        "translate": 114,
+        "scale": 118,
+        "shear": 40,
+        "deform": 27
+      },
+      "curve_counts": {
+        "stepped": 291,
+        "linear": 211,
+        "bezier": 170
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_ff_flash.scsp1u.bytes",
+      "source_bytes": 58099,
+      "source_sha256": "c01c00a42d5acc655ee81ed64f2e61a243a0c9e7ea7d2b13d547499d7067216d",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_ff_flash.json",
+      "output_bytes": 50568,
+      "output_sha256": "014883cbb7a75e59dd6d004acb2e7d56e2ed3e91a0c1c27394a9a8a5b3c0f0cb",
+      "body_end_valid": true,
+      "bones": 128,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 4,
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "rotate": 107,
+        "translate": 114,
+        "scale": 118,
+        "shear": 40,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 227,
+        "linear": 81,
+        "bezier": 166
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_ff_rock.scsp1u.bytes",
+      "source_bytes": 64720,
+      "source_sha256": "35cbb6afe2f9ba08e1f34c011f7fcdfcc7e89b52a49fd1aff581bbbb69863413",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_ff_rock.json",
+      "output_bytes": 56203,
+      "output_sha256": "dc3bb33dd30fe0acd04020b562139a81b46dee10abaf337cc19966e9af8ebe28",
+      "body_end_valid": true,
+      "bones": 43,
+      "slots": 36,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8,
+        "region": 32
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 36,
+        "attachment": 35,
+        "rotate": 40,
+        "translate": 40,
+        "scale": 39,
+        "shear": 14,
+        "deform": 8
+      },
+      "curve_counts": {
+        "stepped": 278,
+        "linear": 45,
+        "bezier": 65
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_rcok.scsp1u.bytes",
+      "source_bytes": 33772,
+      "source_sha256": "bf4d0416ec03641366854825c5e414809267159638f4c8b11213dd8c4756218a",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_rcok.json",
+      "output_bytes": 33594,
+      "output_sha256": "5cfcace6e6551de6cc32a0ed83a135e9800c3f075ca37300e89382851b334306",
+      "body_end_valid": true,
+      "bones": 21,
+      "slots": 17,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 11,
+        "region": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 16,
+        "attachment": 16,
+        "rotate": 16,
+        "translate": 17,
+        "scale": 16,
+        "shear": 13,
+        "deform": 11
+      },
+      "curve_counts": {
+        "stepped": 87,
+        "bezier": 87,
+        "linear": 23
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_rock_2.scsp1u.bytes",
+      "source_bytes": 134252,
+      "source_sha256": "3784b37e6c99a594b9da307eeeae376086d164cc693bf06451b78017f1104b52",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_rock_2.json",
+      "output_bytes": 128691,
+      "output_sha256": "f2e2e3d9b201a206ee13f905e4584b67be50c356cf1038c528407b2fa090d9f4",
+      "body_end_valid": true,
+      "bones": 75,
+      "slots": 66,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 33,
+        "region": 33
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 66,
+        "attachment": 66,
+        "translate": 70,
+        "rotate": 66,
+        "scale": 65,
+        "shear": 30,
+        "deform": 32
+      },
+      "curve_counts": {
+        "stepped": 462,
+        "linear": 139,
+        "bezier": 169
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_rock_b.scsp1u.bytes",
+      "source_bytes": 26858,
+      "source_sha256": "06bd44b7d705c771fec32e0865174ef68766ddaba379ab0f5ba769e68e1bee46",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_rock_b.json",
+      "output_bytes": 24317,
+      "output_sha256": "c824f192f814dca9c0d76df4c1095f96993a0115c83e68412bd7ce00c152c745",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 11,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 14,
+        "attachment": 14,
+        "translate": 16,
+        "rotate": 15,
+        "scale": 16,
+        "shear": 6,
+        "deform": 10
+      },
+      "curve_counts": {
+        "linear": 30,
+        "stepped": 64,
+        "bezier": 70
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_rock_f.scsp1u.bytes",
+      "source_bytes": 261860,
+      "source_sha256": "bf3e845017326b5dd6a28dbc9d40038c10576685dde6752032d5228fe51b4713",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_rock_f.json",
+      "output_bytes": 256286,
+      "output_sha256": "f881bae54ba9d58ce754cfd8ed987598e641695bd613d3870189ac56120f82e6",
+      "body_end_valid": true,
+      "bones": 161,
+      "slots": 112,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 75,
+        "region": 45
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 111,
+        "attachment": 107,
+        "rotate": 151,
+        "translate": 155,
+        "scale": 154,
+        "shear": 85,
+        "deform": 73
+      },
+      "curve_counts": {
+        "stepped": 850,
+        "linear": 219,
+        "bezier": 391
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_wind_b.scsp1u.bytes",
+      "source_bytes": 21176,
+      "source_sha256": "b51404e5d07a4c18077d7d7f78bfb88ee3a8ef985a9da6c8930b53ae96c8cc96",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_wind_b.json",
+      "output_bytes": 24655,
+      "output_sha256": "adba14d5d10eee835ae195db7de1c9001c7ed25d0ad02168453a3313e81e3668",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "color": 8,
+        "translate": 7,
+        "scale": 6,
+        "deform": 8
+      },
+      "curve_counts": {
+        "linear": 14,
+        "bezier": 20,
+        "stepped": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u3_attack_target_wind_f.scsp1u.bytes",
+      "source_bytes": 55273,
+      "source_sha256": "14da3763990a9d5ef416fc21010aeebcaef7854bbfce346b9aed9d1be427744d",
+      "output": "effect/heidemarie_30093_eff_u3_attack_target_wind_f.json",
+      "output_bytes": 39696,
+      "output_sha256": "5fc2c8b5a04d3ef9765ca6ef175c8fcb81e868c24e1960d967bcf0aab9de3962",
+      "body_end_valid": true,
+      "bones": 44,
+      "slots": 72,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 72
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 72,
+        "translate": 40,
+        "scale": 39,
+        "rotate": 3
+      },
+      "curve_counts": {
+        "stepped": 156,
+        "linear": 113,
+        "bezier": 82
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u4_buff_self_b.scsp1u.bytes",
+      "source_bytes": 433255,
+      "source_sha256": "d7c12bb60f7c301ff7470208d672596e76dcd5a4f0999ddcd9b35e976f0bd8f4",
+      "output": "effect/heidemarie_30093_eff_u4_buff_self_b.json",
+      "output_bytes": 336775,
+      "output_sha256": "4895e380572a71ff24cf0019fbe62f10acd9384f9a12395518fc38795080c9cc",
+      "body_end_valid": true,
+      "bones": 156,
+      "slots": 266,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 10,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 131,
+        "path": 3,
+        "region": 130
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 427,
+        "attachment": 415,
+        "translate": 194,
+        "scale": 183,
+        "rotate": 88,
+        "shear": 52,
+        "pathPosition": 18,
+        "pathMix": 6,
+        "deform": 176
+      },
+      "curve_counts": {
+        "stepped": 1276,
+        "linear": 1166,
+        "bezier": 284
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u4_buff_self_f.scsp1u.bytes",
+      "source_bytes": 277156,
+      "source_sha256": "bacc736a14a53a20c59c297cc84d00b1603d0fafd4359faaa53d4fe836b859fd",
+      "output": "effect/heidemarie_30093_eff_u4_buff_self_f.json",
+      "output_bytes": 215700,
+      "output_sha256": "a53e3110dff17e9e544200c3cc54c6825f11a577672a196556456e42255a50e8",
+      "body_end_valid": true,
+      "bones": 100,
+      "slots": 169,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 10,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 59,
+        "path": 3,
+        "region": 105
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 226,
+        "attachment": 218,
+        "translate": 114,
+        "scale": 102,
+        "rotate": 50,
+        "shear": 26,
+        "pathPosition": 18,
+        "pathMix": 6,
+        "deform": 92
+      },
+      "curve_counts": {
+        "stepped": 843,
+        "linear": 789,
+        "bezier": 150
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u4_buff_sword_b.scsp1u.bytes",
+      "source_bytes": 272370,
+      "source_sha256": "3c95894793190b00d9b126b422387d9f03049aae47c5799d0115feaa7a565286",
+      "output": "effect/heidemarie_30093_eff_u4_buff_sword_b.json",
+      "output_bytes": 378306,
+      "output_sha256": "f869fe7521c9b45aedda7b8be68f09d1be97f8bbdf9d62151c0f1e9959d2b5c0",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 21,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 4,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 69,
+        "path": 1,
+        "region": 9
+      },
+      "animations": 8,
+      "timeline_counts": {
+        "color": 90,
+        "attachment": 62,
+        "rotate": 22,
+        "translate": 73,
+        "scale": 17,
+        "deform": 9,
+        "pathPosition": 8,
+        "shear": 10
+      },
+      "curve_counts": {
+        "linear": 195,
+        "stepped": 33,
+        "bezier": 35
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_eff_u4_buff_sword_f.scsp1u.bytes",
+      "source_bytes": 98167,
+      "source_sha256": "5d92db1c15631233f02b40491df7264197d383ff3943b862f4067ba858c2d6d9",
+      "output": "effect/heidemarie_30093_eff_u4_buff_sword_f.json",
+      "output_bytes": 136005,
+      "output_sha256": "a4a23b85b829917019484b4ee50ab2e7c29bb71c2137e3f995917e942dd6ffe8",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 4,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 23,
+        "path": 1,
+        "region": 3
+      },
+      "animations": 8,
+      "timeline_counts": {
+        "rotate": 22,
+        "translate": 73,
+        "scale": 17,
+        "deform": 9,
+        "attachment": 17,
+        "color": 25,
+        "pathPosition": 8,
+        "shear": 10
+      },
+      "curve_counts": {
+        "linear": 105,
+        "bezier": 27,
+        "stepped": 11
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_portrait_eff.scsp1u.bytes",
+      "source_bytes": 739293,
+      "source_sha256": "ad019d0772905c6bc191f3f582595e58614358c9ad91b41a6516ce2345b19bca",
+      "output": "effect/heidemarie_30093_portrait_eff.json",
+      "output_bytes": 1005716,
+      "output_sha256": "5590f29ce61b273803f897f38c7829990fabbab274f137212b0e252c68ec0cef",
+      "body_end_valid": true,
+      "bones": 43,
+      "slots": 36,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 76,
+        "region": 12
+      },
+      "animations": 5,
+      "timeline_counts": {
+        "color": 64,
+        "attachment": 8,
+        "translate": 40,
+        "scale": 32
+      },
+      "curve_counts": {
+        "stepped": 648,
+        "linear": 1180,
+        "bezier": 84
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_portrait_eff_mask.scsp1u.bytes",
+      "source_bytes": 55403,
+      "source_sha256": "6507528faa817a624c4595bd44e33376134520fa92416969e90c34e6c096dd0a",
+      "output": "effect/heidemarie_30093_portrait_eff_mask.json",
+      "output_bytes": 65567,
+      "output_sha256": "5396d92ba18e5d6a9215298eeb0f088f22ad00cfec54a3d5829eb636ed0422a5",
+      "body_end_valid": true,
+      "bones": 43,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 4
+      },
+      "animations": 5,
+      "timeline_counts": {
+        "color": 4,
+        "translate": 24,
+        "scale": 20
+      },
+      "curve_counts": {
+        "bezier": 64,
+        "stepped": 48,
+        "linear": 149
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_sword_eff_b.scsp1u.bytes",
+      "source_bytes": 185997,
+      "source_sha256": "216f1c27abf0e8471750cf3a203cd1e2a37e329970c37fe03aa56fdf36c8d784",
+      "output": "effect/heidemarie_30093_sword_eff_b.json",
+      "output_bytes": 272358,
+      "output_sha256": "6c6fc46c9cb09f03e12a5355cf0d63c10425083e52da9c70af0bfdc9d35377ad",
+      "body_end_valid": true,
+      "bones": 101,
+      "slots": 21,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 20
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 20,
+        "attachment": 20,
+        "translate": 67,
+        "scale": 64,
+        "shear": 24,
+        "rotate": 37,
+        "deform": 1
+      },
+      "curve_counts": {
+        "stepped": 113,
+        "bezier": 93,
+        "linear": 145
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_sword_eff_f.scsp1u.bytes",
+      "source_bytes": 436314,
+      "source_sha256": "350d0cb9fbdce431595a45ea8a45267ed890f79302aad18ccc64c9599e2a67f1",
+      "output": "effect/heidemarie_30093_sword_eff_f.json",
+      "output_bytes": 692559,
+      "output_sha256": "d900c0c37515944e1a7490c3b1c0ea15529917c43025363dc693b24c159821ec",
+      "body_end_valid": true,
+      "bones": 101,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 56
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 4,
+        "translate": 67,
+        "scale": 64,
+        "shear": 24,
+        "rotate": 37,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 121,
+        "bezier": 89,
+        "stepped": 85
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_sword_eff_g.scsp1u.bytes",
+      "source_bytes": 70742,
+      "source_sha256": "1326206f7fd4d9a14c3b91a63163f905c256c726ec272847467c10cddc0a1143",
+      "output": "effect/heidemarie_30093_sword_eff_g.json",
+      "output_bytes": 53390,
+      "output_sha256": "f4d7f04f38dde13fae3daed8a82e46e93decd39c9376d950ccc0730f21cc8f4a",
+      "body_end_valid": true,
+      "bones": 101,
+      "slots": 66,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "region": 65
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 65,
+        "attachment": 20,
+        "translate": 67,
+        "scale": 64,
+        "shear": 24,
+        "rotate": 37,
+        "deform": 1
+      },
+      "curve_counts": {
+        "bezier": 142,
+        "linear": 194,
+        "stepped": 139
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug1_1.scsp1u.bytes",
+      "source_bytes": 126443,
+      "source_sha256": "ae4dcaafa79174116b567c9d0c9e5f10f55cdb5d67e71e33ff4d64c2e6427cff",
+      "output": "effect/heidemarie_30093_ug1_1.json",
+      "output_bytes": 98001,
+      "output_sha256": "8c1047ae2611a751bd76a4c9bc78b050f28c72146f0faddce2fedfe598b49cec",
+      "body_end_valid": true,
+      "bones": 147,
+      "slots": 94,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 44,
+        "region": 50
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 94,
+        "attachment": 78,
+        "rotate": 122,
+        "scale": 129,
+        "shear": 33,
+        "translate": 132,
+        "deform": 19
+      },
+      "curve_counts": {
+        "stepped": 266,
+        "linear": 404,
+        "bezier": 163
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug1_2.scsp1u.bytes",
+      "source_bytes": 110928,
+      "source_sha256": "32bbd1ce7695e771b140a7ee816b46ad42f63a34d79d8be097d68833a7f55d3d",
+      "output": "effect/heidemarie_30093_ug1_2.json",
+      "output_bytes": 87765,
+      "output_sha256": "eb86ceea8b1d641a3137379fabeccdd417dc2dffcbe71e908530bbac072c0f28",
+      "body_end_valid": true,
+      "bones": 147,
+      "slots": 58,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 58
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 58,
+        "attachment": 8,
+        "rotate": 122,
+        "scale": 129,
+        "shear": 33,
+        "translate": 132,
+        "deform": 14
+      },
+      "curve_counts": {
+        "stepped": 253,
+        "linear": 375,
+        "bezier": 160
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug1_3.scsp1u.bytes",
+      "source_bytes": 76515,
+      "source_sha256": "18fd4f0d0403838ddfb7ddbb46b9258d513b2128202d9603f8d4a9c6081ff627",
+      "output": "effect/heidemarie_30093_ug1_3.json",
+      "output_bytes": 64723,
+      "output_sha256": "8c4fd15627d94da61331447a874c6b8888101385980d694fe3cff1493ef57fd2",
+      "body_end_valid": true,
+      "bones": 147,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 12
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 9,
+        "attachment": 5,
+        "rotate": 122,
+        "scale": 129,
+        "shear": 33,
+        "translate": 132,
+        "deform": 10
+      },
+      "curve_counts": {
+        "stepped": 157,
+        "linear": 291,
+        "bezier": 154
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug1_4.scsp1u.bytes",
+      "source_bytes": 116602,
+      "source_sha256": "e0cb7add4c931ccf6f00b96fa1bc80282ac6aaf8a94926491308642df3cdc97e",
+      "output": "effect/heidemarie_30093_ug1_4.json",
+      "output_bytes": 89120,
+      "output_sha256": "313d560209337b11a2395c9c65968c314bb6e159215f8393f315ad5977b6dead",
+      "body_end_valid": true,
+      "bones": 147,
+      "slots": 67,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 68
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 67,
+        "attachment": 3,
+        "rotate": 122,
+        "scale": 129,
+        "shear": 33,
+        "translate": 132,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 266,
+        "linear": 404,
+        "bezier": 154
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug1_5.scsp1u.bytes",
+      "source_bytes": 73611,
+      "source_sha256": "5c6f0b4dc6161aa4bbb602cef19310534c61873342fb399521ada0aabeeda307",
+      "output": "effect/heidemarie_30093_ug1_5.json",
+      "output_bytes": 62907,
+      "output_sha256": "0042403ce28ca21401289c85227c9f04d1f2c5d28e20d983c6df05aec321bd6b",
+      "body_end_valid": true,
+      "bones": 147,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 4,
+        "rotate": 122,
+        "scale": 129,
+        "shear": 33,
+        "translate": 132,
+        "deform": 9
+      },
+      "curve_counts": {
+        "stepped": 149,
+        "linear": 283,
+        "bezier": 157
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug1_6.scsp1u.bytes",
+      "source_bytes": 162135,
+      "source_sha256": "9fb440860f49a42d6bdefaf5f6b2bed5094fc1c4d53e71ef00de38e70659f086",
+      "output": "effect/heidemarie_30093_ug1_6.json",
+      "output_bytes": 118947,
+      "output_sha256": "185e106a50e5cdb857839934488eaa0f5aed47d28e6272472ed08339935f5d70",
+      "body_end_valid": true,
+      "bones": 147,
+      "slots": 128,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 128
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 128,
+        "rotate": 122,
+        "scale": 129,
+        "shear": 33,
+        "translate": 132
+      },
+      "curve_counts": {
+        "stepped": 375,
+        "linear": 520,
+        "bezier": 154
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug2_b.scsp1u.bytes",
+      "source_bytes": 162283,
+      "source_sha256": "4410e780108f2902277dc46c1e6d31f641d96036d75d5a8c344b0b78f9125767",
+      "output": "effect/heidemarie_30093_ug2_b.json",
+      "output_bytes": 166133,
+      "output_sha256": "ad60acde1fa2066cd83bbea2055c21fcbf83aaa9b9fa94d1e9782e75eded3537",
+      "body_end_valid": true,
+      "bones": 88,
+      "slots": 123,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 4,
+        "mesh": 77,
+        "region": 42
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 119,
+        "attachment": 32,
+        "translate": 71,
+        "scale": 81,
+        "rotate": 69,
+        "shear": 10,
+        "deform": 81
+      },
+      "curve_counts": {
+        "stepped": 351,
+        "linear": 169,
+        "bezier": 122
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug2_f.scsp1u.bytes",
+      "source_bytes": 26321,
+      "source_sha256": "879f8077e15ca26fb58fbc57a4ecd0c5f8bd1a0b9ff5bf2c8a87e656d25122ae",
+      "output": "effect/heidemarie_30093_ug2_f.json",
+      "output_bytes": 37392,
+      "output_sha256": "58bf2b0559829a9cb913143a5e6f7d1f2c47dd35e4eb31c89c5c9c5972311720",
+      "body_end_valid": true,
+      "bones": 12,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 1,
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 2,
+        "attachment": 1,
+        "scale": 5,
+        "rotate": 3,
+        "translate": 4,
+        "deform": 2
+      },
+      "curve_counts": {
+        "stepped": 8,
+        "linear": 5,
+        "bezier": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug3_1.scsp1u.bytes",
+      "source_bytes": 180764,
+      "source_sha256": "a7b133aa93ef501f996f6e66b325b8f254a9ea451e233819ddd6528ea8f2f387",
+      "output": "effect/heidemarie_30093_ug3_1.json",
+      "output_bytes": 137757,
+      "output_sha256": "27601345e1f72cace629a7a3142a4ba908e8db070801f718c4e0c2a448fd797c",
+      "body_end_valid": true,
+      "bones": 80,
+      "slots": 87,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 166,
+        "region": 41
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 87,
+        "attachment": 59,
+        "scale": 71,
+        "translate": 72,
+        "rotate": 67,
+        "shear": 15,
+        "deform": 13
+      },
+      "curve_counts": {
+        "stepped": 783,
+        "linear": 182,
+        "bezier": 94
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_aura.scsp1u.bytes",
+      "source_bytes": 7556,
+      "source_sha256": "4a2810175a20c48d940e1a60355eb89f322cd44e01a85ce6b331f0baf33da7f7",
+      "output": "effect/heidemarie_30093_ug_aura.json",
+      "output_bytes": 8133,
+      "output_sha256": "71af6114b8ab2d4ec74451d451ae7251f76db093028b0aff87c6b60b5929d69e",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "attachment": 5,
+        "rotate": 6,
+        "translate": 6,
+        "scale": 6,
+        "deform": 5
+      },
+      "curve_counts": {
+        "linear": 4,
+        "bezier": 19
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_bg_b.scsp1u.bytes",
+      "source_bytes": 80309,
+      "source_sha256": "a6465793153b9be6a3541b11eff686826b2bb7acbe30302d759edf44310e6cc8",
+      "output": "effect/heidemarie_30093_ug_bg_b.json",
+      "output_bytes": 69743,
+      "output_sha256": "60b9759772eb851c303c4f30c1510a60a659158bf9a7c249f63dc6cb60d29c7c",
+      "body_end_valid": true,
+      "bones": 57,
+      "slots": 74,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 2,
+        "mesh": 45,
+        "region": 27
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 72,
+        "attachment": 46,
+        "translate": 37,
+        "scale": 37,
+        "rotate": 33,
+        "shear": 11,
+        "deform": 31
+      },
+      "curve_counts": {
+        "stepped": 111,
+        "linear": 145,
+        "bezier": 80
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_bg_b2.scsp1u.bytes",
+      "source_bytes": 2636,
+      "source_sha256": "f720b8a3ed16b78e34904095664d67483833784c73e8372235b41aafeacf66e0",
+      "output": "effect/heidemarie_30093_ug_bg_b2.json",
+      "output_bytes": 1922,
+      "output_sha256": "c0f73438fa5df39d4a6e8f022b06717b00fc2fcfc7d5a40a27605b778c5ef46d",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 2,
+        "scale": 3
+      },
+      "curve_counts": {
+        "stepped": 8,
+        "linear": 8,
+        "bezier": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_bg_f.scsp1u.bytes",
+      "source_bytes": 35386,
+      "source_sha256": "e079d38608e8a70e53e4781ae4fcfced100d9e160bbdc4963709f0179b23739d",
+      "output": "effect/heidemarie_30093_ug_bg_f.json",
+      "output_bytes": 30285,
+      "output_sha256": "4e87b9dc52ac1cc57d674265ab480ecd30c6485cb6b098bf7b9fe780e0bdea6d",
+      "body_end_valid": true,
+      "bones": 39,
+      "slots": 44,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9,
+        "region": 35
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 44,
+        "attachment": 42,
+        "translate": 29,
+        "scale": 30,
+        "rotate": 26,
+        "shear": 4,
+        "deform": 8
+      },
+      "curve_counts": {
+        "stepped": 62,
+        "linear": 62,
+        "bezier": 20
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_bg_f2.scsp1u.bytes",
+      "source_bytes": 11260,
+      "source_sha256": "c94b4d8f85a11a9a2198dec28e7969568428d0f029f0fef7ea0c366a82577665",
+      "output": "effect/heidemarie_30093_ug_bg_f2.json",
+      "output_bytes": 8216,
+      "output_sha256": "8124577093a32ced8a98bb58886e15a246cf93eedb735f973d733b6bfd1b73e5",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 12
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 10,
+        "attachment": 10,
+        "translate": 12,
+        "scale": 12,
+        "rotate": 7,
+        "shear": 5
+      },
+      "curve_counts": {
+        "stepped": 26,
+        "linear": 26,
+        "bezier": 18
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_glass_pat.scsp1u.bytes",
+      "source_bytes": 268042,
+      "source_sha256": "cc37a610bd9fd241037b43e86435a946faec4340b6918c174b2075cd6defdfd5",
+      "output": "effect/heidemarie_30093_ug_glass_pat.json",
+      "output_bytes": 275391,
+      "output_sha256": "38354f91da374a68f29ee139c9c2f34b64e8425829362d0b783c159009393faa",
+      "body_end_valid": true,
+      "bones": 72,
+      "slots": 209,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 108,
+        "region": 100
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 208,
+        "attachment": 208,
+        "rotate": 63,
+        "translate": 66,
+        "scale": 66,
+        "shear": 33,
+        "deform": 109
+      },
+      "curve_counts": {
+        "stepped": 349,
+        "bezier": 270,
+        "linear": 461
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_impact.scsp1u.bytes",
+      "source_bytes": 1251,
+      "source_sha256": "ac3bf766dddd76dc29ba95905e378ba17ae1dbc4db0dc189e290febe14e56bc0",
+      "output": "effect/heidemarie_30093_ug_impact.json",
+      "output_bytes": 960,
+      "output_sha256": "7da48e068402c3b06cd60cdeb2dd1b37179f5067f41d5b8557d368b159b4cdd4",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1
+      },
+      "curve_counts": {},
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_screen_eff.scsp1u.bytes",
+      "source_bytes": 194834,
+      "source_sha256": "4a62d797802ef489aad93c8dbf762c0b93ce625dd9cf73ba282719b64ac1eeca",
+      "output": "effect/heidemarie_30093_ug_screen_eff.json",
+      "output_bytes": 142779,
+      "output_sha256": "149e2538392723a861401a4546d032acc2bc0653d4e8257e6b0dbeb5c617c3f1",
+      "body_end_valid": true,
+      "bones": 80,
+      "slots": 98,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 182,
+        "region": 48
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 98,
+        "attachment": 70,
+        "rotate": 72,
+        "translate": 74,
+        "scale": 76,
+        "shear": 11,
+        "deform": 18
+      },
+      "curve_counts": {
+        "stepped": 885,
+        "linear": 205,
+        "bezier": 64
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro2_b.scsp1u.bytes",
+      "source_bytes": 41293,
+      "source_sha256": "0ec35e27fcb55e7851418817e242ba55c855862ba0bd928dc2ce51d8a9ef6607",
+      "output": "effect/heidemarie_30093_ug_sword_intro2_b.json",
+      "output_bytes": 48329,
+      "output_sha256": "136db4fdd6280158b51e3aa848a7e6611baad6b35469a35a99eee2e9a47e495a",
+      "body_end_valid": true,
+      "bones": 23,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 13,
+        "region": 8
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 18,
+        "attachment": 15,
+        "rotate": 15,
+        "translate": 16,
+        "scale": 16,
+        "shear": 8,
+        "deform": 13
+      },
+      "curve_counts": {
+        "stepped": 37,
+        "linear": 70,
+        "bezier": 29
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro2_f.scsp1u.bytes",
+      "source_bytes": 43451,
+      "source_sha256": "8ae50aaab75f387f706cd409e795ae420049c92f56cc3c823622e6f87892786e",
+      "output": "effect/heidemarie_30093_ug_sword_intro2_f.json",
+      "output_bytes": 46290,
+      "output_sha256": "dc5e0a7f579cd3bc44554ebd6d762b7170fb39bcc80a5c8d68aeb78bbdecb014",
+      "body_end_valid": true,
+      "bones": 26,
+      "slots": 25,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 14,
+        "region": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 25,
+        "attachment": 22,
+        "rotate": 18,
+        "translate": 19,
+        "scale": 19,
+        "shear": 5,
+        "deform": 14
+      },
+      "curve_counts": {
+        "stepped": 53,
+        "linear": 77,
+        "bezier": 54
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_b.scsp1u.bytes",
+      "source_bytes": 217693,
+      "source_sha256": "abc85f7e0ffd4f26a5765d4b05d1dbd4f4abfdf9bc2dd42142ffe33c094170ba",
+      "output": "effect/heidemarie_30093_ug_sword_intro_b.json",
+      "output_bytes": 342222,
+      "output_sha256": "a665255c4e6e9489730d01ef34312774acd1b37cc8733fbefcdbc66cd25540ac",
+      "body_end_valid": true,
+      "bones": 28,
+      "slots": 12,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 28,
+        "region": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 12,
+        "attachment": 12,
+        "translate": 18,
+        "scale": 13,
+        "rotate": 2,
+        "shear": 2
+      },
+      "curve_counts": {
+        "stepped": 29,
+        "bezier": 15,
+        "linear": 84
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_b2.scsp1u.bytes",
+      "source_bytes": 91666,
+      "source_sha256": "f979440abe8903d20c590c45bc630fd8a971a41c3f42bd00e490b5c5f2993450",
+      "output": "effect/heidemarie_30093_ug_sword_intro_b2.json",
+      "output_bytes": 131195,
+      "output_sha256": "c6e05b4ef5ac9aa7e0363e2c36b430dada03c2d1ba142a152fadc37d92c9e0b6",
+      "body_end_valid": true,
+      "bones": 28,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 10,
+        "attachment": 10,
+        "translate": 18,
+        "scale": 13,
+        "rotate": 2,
+        "shear": 2
+      },
+      "curve_counts": {
+        "stepped": 67,
+        "linear": 100,
+        "bezier": 11
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_f.scsp1u.bytes",
+      "source_bytes": 46258,
+      "source_sha256": "ea4272b925de5926778278719045d36151c547b05cfcad0e51786a630af0930b",
+      "output": "effect/heidemarie_30093_ug_sword_intro_f.json",
+      "output_bytes": 65426,
+      "output_sha256": "8e9d6289df43a3907e171ad22eb416e9dc9505a9210f64ea91c191e68f99b0f5",
+      "body_end_valid": true,
+      "bones": 16,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "attachment": 5,
+        "translate": 10,
+        "scale": 7,
+        "rotate": 1,
+        "shear": 1
+      },
+      "curve_counts": {
+        "stepped": 33,
+        "linear": 49,
+        "bezier": 9
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_f2.scsp1u.bytes",
+      "source_bytes": 113453,
+      "source_sha256": "b667fbf710c17b80e7a82e3bffee770665192f926810080690cb4532020e6e99",
+      "output": "effect/heidemarie_30093_ug_sword_intro_f2.json",
+      "output_bytes": 172864,
+      "output_sha256": "fd9692e297f972e651ca78a3184989f6a65b297ef549e2b1cea72696bf0ccc8e",
+      "body_end_valid": true,
+      "bones": 16,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 14,
+        "region": 5
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 6,
+        "attachment": 6,
+        "translate": 20,
+        "scale": 14,
+        "rotate": 2,
+        "shear": 2
+      },
+      "curve_counts": {
+        "stepped": 24,
+        "bezier": 20,
+        "linear": 65
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_g1.scsp1u.bytes",
+      "source_bytes": 5768,
+      "source_sha256": "81f57fc3a92640fa9610e18a17dfe180f2674690dfa97ae62b4f497ea88b3ca9",
+      "output": "effect/heidemarie_30093_ug_sword_intro_g1.json",
+      "output_bytes": 5489,
+      "output_sha256": "2cbbad8613e68e27c7380c47222496261dd307cd8fbc11095a18718e18144850",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1,
+        "rotate": 1,
+        "translate": 3,
+        "scale": 2,
+        "shear": 1
+      },
+      "curve_counts": {
+        "stepped": 6,
+        "bezier": 22,
+        "linear": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_g2.scsp1u.bytes",
+      "source_bytes": 17455,
+      "source_sha256": "878acea840d75afd7e1f0e940600db0ab6255afa6df0c762e1faf1c6b22c95e5",
+      "output": "effect/heidemarie_30093_ug_sword_intro_g2.json",
+      "output_bytes": 15364,
+      "output_sha256": "254a800f69478a01d967c3b6225997155f41cb1ce6414980b89082e7cdcfba41",
+      "body_end_valid": true,
+      "bones": 13,
+      "slots": 7,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 4,
+        "region": 6
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 7,
+        "attachment": 2,
+        "rotate": 6,
+        "translate": 9,
+        "scale": 8,
+        "shear": 2,
+        "deform": 4
+      },
+      "curve_counts": {
+        "linear": 38,
+        "stepped": 30,
+        "bezier": 30
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_hq1.scsp1u.bytes",
+      "source_bytes": 47866,
+      "source_sha256": "d22f608ada95a84472d8e4e4a6ce5c6daf8b692ac54985f4045566144cda9b5f",
+      "output": "effect/heidemarie_30093_ug_sword_intro_hq1.json",
+      "output_bytes": 66854,
+      "output_sha256": "e5e5b2a06298b3fb1b24d18d2f13988f00547562dd0b53c7417ffce9b5279c31",
+      "body_end_valid": true,
+      "bones": 16,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "attachment": 5,
+        "translate": 10,
+        "scale": 7,
+        "rotate": 1,
+        "shear": 1
+      },
+      "curve_counts": {
+        "stepped": 38,
+        "bezier": 25,
+        "linear": 47
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_hq2.scsp1u.bytes",
+      "source_bytes": 51480,
+      "source_sha256": "2bf0e283bf21e8164058263a763028d31ea2c6130aff4b50bfc503162c27d0fd",
+      "output": "effect/heidemarie_30093_ug_sword_intro_hq2.json",
+      "output_bytes": 77484,
+      "output_sha256": "6f13ec336bd5b7eed5af901bc49b1c5d5ba16206c4c698556f544de010908288",
+      "body_end_valid": true,
+      "bones": 10,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 6
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 10,
+        "rotate": 2,
+        "scale": 4,
+        "shear": 2
+      },
+      "curve_counts": {
+        "linear": 14,
+        "stepped": 20,
+        "bezier": 48
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ug_sword_intro_hq3.scsp1u.bytes",
+      "source_bytes": 52344,
+      "source_sha256": "2f10967056bd5274ea5c234bb29f12bae7cc53c68db60ede706bce92c15a0bd0",
+      "output": "effect/heidemarie_30093_ug_sword_intro_hq3.json",
+      "output_bytes": 70967,
+      "output_sha256": "9a07e5cdf7161155cad67caef69a529f574c2141d6ac5983fe2058c8f85546a7",
+      "body_end_valid": true,
+      "bones": 16,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 1,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5,
+        "region": 5
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 6,
+        "attachment": 6,
+        "translate": 20,
+        "scale": 14,
+        "rotate": 2,
+        "shear": 2
+      },
+      "curve_counts": {
+        "stepped": 34,
+        "bezier": 50,
+        "linear": 63
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_01_b1.scsp1u.bytes",
+      "source_bytes": 126380,
+      "source_sha256": "598e0bcda7a24f50e7974e262524ee4d9b230db60283109f861c515dba8c6e56",
+      "output": "effect/heidemarie_30093_ux_attack_01_b1.json",
+      "output_bytes": 118222,
+      "output_sha256": "107256fb86c3f837d5384613da9b2417854bd79b9150e4d3b13908eba3644902",
+      "body_end_valid": true,
+      "bones": 64,
+      "slots": 62,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 55,
+        "region": 7
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 62,
+        "attachment": 62,
+        "translate": 61,
+        "scale": 60,
+        "rotate": 48,
+        "shear": 30,
+        "deform": 31
+      },
+      "curve_counts": {
+        "linear": 455,
+        "stepped": 193,
+        "bezier": 34
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_01_b1_2.scsp1u.bytes",
+      "source_bytes": 45718,
+      "source_sha256": "24a3d7a058a2eb5e3716ee2bf928bdfe5910705a7633c03055d83f0ad1d53190",
+      "output": "effect/heidemarie_30093_ux_attack_01_b1_2.json",
+      "output_bytes": 29942,
+      "output_sha256": "4e83a5798140d915a6728216c9c2b7893b8431d9e7701032619296cacea030cb",
+      "body_end_valid": true,
+      "bones": 64,
+      "slots": 23,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 23
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 23,
+        "attachment": 23,
+        "translate": 61,
+        "scale": 60,
+        "rotate": 48,
+        "shear": 30
+      },
+      "curve_counts": {
+        "linear": 229,
+        "stepped": 108,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_01_b2_1.scsp1u.bytes",
+      "source_bytes": 6518,
+      "source_sha256": "b06148a5ac8d32795b96334e20a0fdcdbb9d3f01f2f55dcdeaa8113117aeb7ef",
+      "output": "effect/heidemarie_30093_ux_attack_01_b2_1.json",
+      "output_bytes": 5760,
+      "output_sha256": "1c2003f6ff9df32947a37159235dee85a55a3b8ac5c2445a847f69a5106bf63e",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 4,
+        "translate": 6,
+        "scale": 5,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 18,
+        "stepped": 13,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_01_b3.scsp1u.bytes",
+      "source_bytes": 7725,
+      "source_sha256": "e6c9b037b05787520a19a3d2a31126f0eb9d9afc84db4b28b3b8f556e3744abc",
+      "output": "effect/heidemarie_30093_ux_attack_01_b3.json",
+      "output_bytes": 6642,
+      "output_sha256": "ed2d0e183c5e664afe543108e35fc9ed0eae0f0a04907f4b3884fb2abb8470e1",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "attachment": 5,
+        "translate": 4,
+        "scale": 3,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 24,
+        "stepped": 16,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_01_b4.scsp1u.bytes",
+      "source_bytes": 6776,
+      "source_sha256": "4ce6d987b3099e6cfff25e210bd7701c11cde27bbb9de477a1be82bed2f89715",
+      "output": "effect/heidemarie_30093_ux_attack_01_b4.json",
+      "output_bytes": 6016,
+      "output_sha256": "b2cc17651cfc6b6cc70a14c941ffb07a6182e29a2a22ca780875b91bb34a8068",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "attachment": 5,
+        "translate": 3,
+        "scale": 2,
+        "shear": 1,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 23,
+        "stepped": 10,
+        "bezier": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_01_f.scsp1u.bytes",
+      "source_bytes": 831456,
+      "source_sha256": "540f4bfab3a95e8714352c754250072eca5d5337bebe7f303ec4d4e46db4d2b3",
+      "output": "effect/heidemarie_30093_ux_attack_01_f.json",
+      "output_bytes": 781300,
+      "output_sha256": "df4d94132732d814aaa6a716b9ccff72880230cb134c03efdcd80ccbd356a237",
+      "body_end_valid": true,
+      "bones": 182,
+      "slots": 301,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 263,
+        "region": 1090
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 252,
+        "attachment": 300,
+        "rotate": 140,
+        "translate": 151,
+        "scale": 175,
+        "shear": 38,
+        "deform": 244
+      },
+      "curve_counts": {
+        "linear": 1328,
+        "stepped": 478,
+        "bezier": 301
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_1.scsp1u.bytes",
+      "source_bytes": 5197,
+      "source_sha256": "9a0ecba7adb1b868c56b847fa35b3571367fa821be623d20b662a876544e13cd",
+      "output": "effect/heidemarie_30093_ux_attack_02_1.json",
+      "output_bytes": 4454,
+      "output_sha256": "f213f067753790bbfb9916933110e35372ef3e89ef4c636019044056dedc3c90",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 5
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 7,
+        "color": 5,
+        "translate": 4,
+        "scale": 1
+      },
+      "curve_counts": {
+        "linear": 13,
+        "stepped": 11,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_b1_2.scsp1u.bytes",
+      "source_bytes": 173281,
+      "source_sha256": "c0f15971180ef7b2621ca23ba2816e0d1841301bf3fd009ec89ea19173091b5f",
+      "output": "effect/heidemarie_30093_ux_attack_02_b1_2.json",
+      "output_bytes": 149410,
+      "output_sha256": "8fd363fe0072b6f35ab4ba336b96bae6a4b3eef38920d4d51a9f9c28639e8492",
+      "body_end_valid": true,
+      "bones": 96,
+      "slots": 117,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 38,
+        "region": 108
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 116,
+        "attachment": 117,
+        "translate": 86,
+        "scale": 84,
+        "shear": 43,
+        "rotate": 72,
+        "deform": 39
+      },
+      "curve_counts": {
+        "linear": 500,
+        "stepped": 57,
+        "bezier": 177
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_b1_3.scsp1u.bytes",
+      "source_bytes": 137439,
+      "source_sha256": "946bdbb9c098dd171e30deaa7bf15de1c5f62b30439740961d8a636b3348243c",
+      "output": "effect/heidemarie_30093_ux_attack_02_b1_3.json",
+      "output_bytes": 122187,
+      "output_sha256": "56b130ea1e7905d52f4ba1dae0a40024259a008901bcc1f7274c21eeee472cf4",
+      "body_end_valid": true,
+      "bones": 98,
+      "slots": 106,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 38,
+        "region": 107
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 104,
+        "attachment": 106,
+        "translate": 76,
+        "scale": 78,
+        "rotate": 57,
+        "shear": 21,
+        "deform": 39
+      },
+      "curve_counts": {
+        "linear": 368,
+        "stepped": 302,
+        "bezier": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_b2.scsp1u.bytes",
+      "source_bytes": 2562,
+      "source_sha256": "317cc66a1e615b07bfff7bcfe572a3ed67530130bf659241a1ea1b0077506e01",
+      "output": "effect/heidemarie_30093_ux_attack_02_b2.json",
+      "output_bytes": 1880,
+      "output_sha256": "cf99fe11e34f8cc32ce7d9b687dff7fdf888a0b80aeb04180b4aa2ab01b5384c",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 2,
+        "scale": 2
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 2,
+        "stepped": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_b2_1.scsp1u.bytes",
+      "source_bytes": 2387,
+      "source_sha256": "bc14c72762964950a8e5efca3a24e6a1c9b63054a0f84574a61aa0c20fcaf2df",
+      "output": "effect/heidemarie_30093_ux_attack_02_b2_1.json",
+      "output_bytes": 1912,
+      "output_sha256": "e943e3ca53af346618ae3e27b4024b18082965a8a0017305cac2650237d2e13e",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 3,
+        "scale": 3
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 2,
+        "stepped": 10
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_b3.scsp1u.bytes",
+      "source_bytes": 2641,
+      "source_sha256": "f364529f57edd8e38da2e7824514a20bc635d859d3a0d0274be9823e44155414",
+      "output": "effect/heidemarie_30093_ux_attack_02_b3.json",
+      "output_bytes": 1909,
+      "output_sha256": "bb939e95c0ffce5390644d443cc6d5a8d806368b66a1a39b0b70d48d0735a79f",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 2,
+        "scale": 2
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 2,
+        "stepped": 14
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_02_f1.scsp1u.bytes",
+      "source_bytes": 86165,
+      "source_sha256": "ca605070af484b03e6fa7a669ffef3cb99fb6e0fd20972bb9b907aef29d71551",
+      "output": "effect/heidemarie_30093_ux_attack_02_f1.json",
+      "output_bytes": 67162,
+      "output_sha256": "bfbe6c773b8c894f78106b7ea581d3ff205b5859f82d28225f886096cb5c06bd",
+      "body_end_valid": true,
+      "bones": 60,
+      "slots": 68,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 27,
+        "region": 64
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 61,
+        "attachment": 68,
+        "translate": 48,
+        "scale": 48,
+        "rotate": 37,
+        "shear": 4,
+        "deform": 27
+      },
+      "curve_counts": {
+        "linear": 220,
+        "stepped": 274,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_1_1_1.scsp1u.bytes",
+      "source_bytes": 1116,
+      "source_sha256": "a7219541c41753d970ca74f90dcc01687b52730068b3973c712edf185010085d",
+      "output": "effect/heidemarie_30093_ux_attack_03_1_1_1.json",
+      "output_bytes": 965,
+      "output_sha256": "ed8efe9178bb71817483a979011effed499b9bc66abb02cf66899b1b9b1efd75",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "translate": 1,
+        "scale": 1,
+        "shear": 1
+      },
+      "curve_counts": {
+        "bezier": 3,
+        "linear": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_1_1_2.scsp1u.bytes",
+      "source_bytes": 1299,
+      "source_sha256": "4495255178c5ec99e5279f2e3b6d3600d49f0001798bbe9d4b50938076c708c2",
+      "output": "effect/heidemarie_30093_ux_attack_03_1_1_2.json",
+      "output_bytes": 1067,
+      "output_sha256": "bef51e4729a88a676b90d5de83d65045d69b583bfc1403bd4513295ed9c3faa2",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 2,
+        "scale": 1,
+        "shear": 1
+      },
+      "curve_counts": {
+        "bezier": 3,
+        "linear": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_1_1_3.scsp1u.bytes",
+      "source_bytes": 25759,
+      "source_sha256": "94454be8b97eea88d82a7c12a7e70c2694c1ea2aa71db251f169ff90ba96f58e",
+      "output": "effect/heidemarie_30093_ux_attack_03_1_1_3.json",
+      "output_bytes": 40009,
+      "output_sha256": "1c9f98569770078f7a18ce45d05d8a50911b6870032d7bab442bfc2405ff6e4c",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 1,
+        "scale": 1,
+        "shear": 1,
+        "deform": 1
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_1_1_4.scsp1u.bytes",
+      "source_bytes": 30485,
+      "source_sha256": "20c3abff455e58933fc4db5fa03f662697c0aadf2694d36dc08560e4405c5dd5",
+      "output": "effect/heidemarie_30093_ux_attack_03_1_1_4.json",
+      "output_bytes": 63606,
+      "output_sha256": "c852f608fcaae5e302cb4117a5b720e8443e6e537f18d28e9953f162df5ce9bf",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 4,
+        "translate": 5,
+        "scale": 4,
+        "rotate": 3,
+        "deform": 1
+      },
+      "curve_counts": {
+        "stepped": 9,
+        "linear": 5,
+        "bezier": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_1_2.scsp1u.bytes",
+      "source_bytes": 70313,
+      "source_sha256": "638a01c7bd08096a95754ec66f0065a331a502c142daf2b46ad0f1dff2d5dc78",
+      "output": "effect/heidemarie_30093_ux_attack_03_1_2.json",
+      "output_bytes": 102828,
+      "output_sha256": "9c90f51f183ebdc8457e243e4f314c8b5c366fdc2ef32bbb0f2bb8afad0cb109",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 11,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 11,
+        "attachment": 11,
+        "translate": 1,
+        "scale": 1,
+        "deform": 11
+      },
+      "curve_counts": {
+        "bezier": 24,
+        "linear": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_1_3.scsp1u.bytes",
+      "source_bytes": 108347,
+      "source_sha256": "9f1153982e5b0210e1fb68e50e0cd4697fe48f02580e6ae8be5d7a718312e375",
+      "output": "effect/heidemarie_30093_ux_attack_03_1_3.json",
+      "output_bytes": 187197,
+      "output_sha256": "c4b5d2c0c207de24df13f56c1ab80b1f0c134cc305a560b73f88157ce70e1cbb",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 14,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 14
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 14,
+        "translate": 2,
+        "scale": 1,
+        "deform": 14
+      },
+      "curve_counts": {
+        "bezier": 29,
+        "linear": 2,
+        "stepped": 15
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_2.scsp1u.bytes",
+      "source_bytes": 159343,
+      "source_sha256": "225fa6378c73a95a03af4d97c26b3f22f46057cfa27cb5a1f55e3a21777f68a2",
+      "output": "effect/heidemarie_30093_ux_attack_03_2.json",
+      "output_bytes": 118444,
+      "output_sha256": "22d841d410673546aa6fd93e3e06e22251dcc8216c22657134eff1a8743f6fdd",
+      "body_end_valid": true,
+      "bones": 142,
+      "slots": 137,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 13,
+        "region": 134
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 134,
+        "attachment": 137,
+        "translate": 134,
+        "scale": 132,
+        "rotate": 130,
+        "shear": 32,
+        "deform": 5
+      },
+      "curve_counts": {
+        "stepped": 494,
+        "linear": 395,
+        "bezier": 180
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_2_1.scsp1u.bytes",
+      "source_bytes": 162928,
+      "source_sha256": "1944968b4dded4eea0e4e442ceba6bae4872e69b5754de0451fd378012dddaf4",
+      "output": "effect/heidemarie_30093_ux_attack_03_2_1.json",
+      "output_bytes": 124202,
+      "output_sha256": "32d5d8ff094205914573db6c933b41e3f33fd58a18225b1ff4bd119e9917c1df",
+      "body_end_valid": true,
+      "bones": 156,
+      "slots": 147,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 14,
+        "region": 143
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 144,
+        "attachment": 147,
+        "translate": 148,
+        "scale": 146,
+        "rotate": 143,
+        "shear": 40,
+        "deform": 10
+      },
+      "curve_counts": {
+        "stepped": 499,
+        "linear": 366,
+        "bezier": 177
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_2_2.scsp1u.bytes",
+      "source_bytes": 156520,
+      "source_sha256": "f4f3028aad87ef97b914bf3e90add792e1afbc24e86387d3e5cdcc0807943cde",
+      "output": "effect/heidemarie_30093_ux_attack_03_2_2.json",
+      "output_bytes": 192896,
+      "output_sha256": "3768aeb7b1ccb250a366013c567bf9f5df6702d1a026591300267b2b095534a6",
+      "body_end_valid": true,
+      "bones": 70,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 10,
+        "region": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 15,
+        "attachment": 3,
+        "rotate": 59,
+        "translate": 1,
+        "scale": 1,
+        "shear": 40,
+        "deform": 3
+      },
+      "curve_counts": {
+        "bezier": 451,
+        "linear": 122,
+        "stepped": 206
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_3.scsp1u.bytes",
+      "source_bytes": 97009,
+      "source_sha256": "7a1e0c5ca775b41393dfc4b443a91cc4457da80f3a52ac7afbc4d3e0590021f5",
+      "output": "effect/heidemarie_30093_ux_attack_03_3.json",
+      "output_bytes": 64697,
+      "output_sha256": "473b1d8ca60ceaf08cf581040b50edb6696baf6e1471a94e2abf229dcede37f6",
+      "body_end_valid": true,
+      "bones": 96,
+      "slots": 92,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 92
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 92,
+        "attachment": 92,
+        "translate": 93,
+        "scale": 93,
+        "rotate": 91,
+        "shear": 68
+      },
+      "curve_counts": {
+        "linear": 439,
+        "bezier": 2,
+        "stepped": 199
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_4.scsp1u.bytes",
+      "source_bytes": 11995,
+      "source_sha256": "066a7691a4bf61a34797eae096dfb036178ed6093c2d68f6146886d4e852ab0c",
+      "output": "effect/heidemarie_30093_ux_attack_03_4.json",
+      "output_bytes": 11366,
+      "output_sha256": "5bdb2088b84656e9706a89322cf3eb1b1ad006fea2d5e3b764e697234be79b9b",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 8,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 4,
+        "region": 4
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 8,
+        "attachment": 8,
+        "translate": 5,
+        "scale": 5,
+        "shear": 2,
+        "rotate": 3,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 11,
+        "linear": 36,
+        "bezier": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_5.scsp1u.bytes",
+      "source_bytes": 1180993,
+      "source_sha256": "34a8c3e56b2c60e21d7b1ad977083f84e8026ad290895b032460c6a9d61a81be",
+      "output": "effect/heidemarie_30093_ux_attack_03_5.json",
+      "output_bytes": 1066969,
+      "output_sha256": "3ee20b83428d599d401cd2f15d17199168f963c370e1cfa26deeea37d8981eb2",
+      "body_end_valid": true,
+      "bones": 695,
+      "slots": 723,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 13,
+        "mesh": 116,
+        "region": 654
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 695,
+        "attachment": 720,
+        "translate": 688,
+        "scale": 684,
+        "rotate": 677,
+        "shear": 337,
+        "deform": 129
+      },
+      "curve_counts": {
+        "linear": 3965,
+        "stepped": 189,
+        "bezier": 1227
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_03_6.scsp1u.bytes",
+      "source_bytes": 574539,
+      "source_sha256": "8c13cf498e841f6baef12d13c9951bd2032c097cfe51763d0c1b930831ca11a8",
+      "output": "effect/heidemarie_30093_ux_attack_03_6.json",
+      "output_bytes": 429907,
+      "output_sha256": "afba60fbebbb00bbf92a69ac9d92a54773f4fefe8abd4a711b4c99eefbe95563",
+      "body_end_valid": true,
+      "bones": 214,
+      "slots": 497,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 66,
+        "region": 1187
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 482,
+        "attachment": 497,
+        "translate": 147,
+        "scale": 204,
+        "rotate": 161,
+        "shear": 62,
+        "deform": 45
+      },
+      "curve_counts": {
+        "linear": 1382,
+        "stepped": 406,
+        "bezier": 390
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_04.scsp1u.bytes",
+      "source_bytes": 44676,
+      "source_sha256": "cdc2b982675f87e1ee6b79af0ad48c199f54755aeb99fdc0e7832256d37a6240",
+      "output": "effect/heidemarie_30093_ux_attack_04.json",
+      "output_bytes": 36104,
+      "output_sha256": "2b6f3f311e77491ba5c5ea49411b205de07591f61e2cba5a523913caa0d487bc",
+      "body_end_valid": true,
+      "bones": 34,
+      "slots": 34,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 12,
+        "region": 32
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 32,
+        "attachment": 34,
+        "translate": 27,
+        "scale": 27,
+        "rotate": 18,
+        "deform": 12
+      },
+      "curve_counts": {
+        "stepped": 112,
+        "linear": 111
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_04_1.scsp1u.bytes",
+      "source_bytes": 20213,
+      "source_sha256": "72be24d558f663735890e6d1f40b9ff1bbaa90c2939070f5a0f96c9f419265fc",
+      "output": "effect/heidemarie_30093_ux_attack_04_1.json",
+      "output_bytes": 19290,
+      "output_sha256": "144396fd99b76366d0e413da6f895659c0fdd48917a706321e12830b28ecd89c",
+      "body_end_valid": true,
+      "bones": 27,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 3,
+        "region": 8
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 8,
+        "attachment": 9,
+        "translate": 20,
+        "scale": 21,
+        "rotate": 7,
+        "shear": 2,
+        "deform": 3
+      },
+      "curve_counts": {
+        "linear": 51,
+        "stepped": 27
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_05.scsp1u.bytes",
+      "source_bytes": 117572,
+      "source_sha256": "524ced1e48337449dd5ca607b0e2647c61c04ea00bdbefb26b53f5494b6e1165",
+      "output": "effect/heidemarie_30093_ux_attack_05.json",
+      "output_bytes": 80895,
+      "output_sha256": "b7fe87430a0ea7db9951f83da37e59016aae2048ed84336d07be1d56c7b30c41",
+      "body_end_valid": true,
+      "bones": 92,
+      "slots": 112,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 12,
+        "region": 202
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 85,
+        "attachment": 112,
+        "scale": 83,
+        "rotate": 85,
+        "translate": 85,
+        "shear": 60,
+        "deform": 3
+      },
+      "curve_counts": {
+        "linear": 486,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_cutin_03_01.scsp1u.bytes",
+      "source_bytes": 245490,
+      "source_sha256": "5e554e1d51110b1e089700bdb06b9cc57ab49ad788a79753de515f0adcb6625f",
+      "output": "effect/heidemarie_30093_ux_attack_cutin_03_01.json",
+      "output_bytes": 281831,
+      "output_sha256": "48c2df96c95163c6ffe7b2c16b083063acb7fc74b7268bf999dc7873fad0879b",
+      "body_end_valid": true,
+      "bones": 224,
+      "slots": 54,
+      "ik_constraints": 6,
+      "transform_constraints": 2,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 54
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 108,
+        "rotate": 336,
+        "translate": 54,
+        "scale": 32,
+        "shear": 14
+      },
+      "curve_counts": {
+        "bezier": 164,
+        "stepped": 1274,
+        "linear": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_cutin_03_02.scsp1u.bytes",
+      "source_bytes": 243636,
+      "source_sha256": "01bcc23ea74750990ee9a0a46265d1ef79eb8304d2735fe02fd8d46429ff32dd",
+      "output": "effect/heidemarie_30093_ux_attack_cutin_03_02.json",
+      "output_bytes": 283585,
+      "output_sha256": "0ad7dce9cb9bfda005dde482c4c1c97e2b05b597de966b21397f7b0d97ef8003",
+      "body_end_valid": true,
+      "bones": 224,
+      "slots": 54,
+      "ik_constraints": 6,
+      "transform_constraints": 2,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 54
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 108,
+        "rotate": 336,
+        "translate": 56,
+        "scale": 34,
+        "shear": 14
+      },
+      "curve_counts": {
+        "bezier": 110,
+        "stepped": 1292,
+        "linear": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_cutin_03_03.scsp1u.bytes",
+      "source_bytes": 1348412,
+      "source_sha256": "0336af4730918f789f8ae733324b4f79c6af4b5edfc1d2e9aa32c9c4fca4b362",
+      "output": "effect/heidemarie_30093_ux_attack_cutin_03_03.json",
+      "output_bytes": 908007,
+      "output_sha256": "dd691a2b297371d7d64b913a9f69bc29a24d00769f0dd0d5cd5ac766cbf6b50c",
+      "body_end_valid": true,
+      "bones": 224,
+      "slots": 54,
+      "ik_constraints": 6,
+      "transform_constraints": 2,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 54
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 108,
+        "rotate": 336,
+        "translate": 58,
+        "scale": 40,
+        "shear": 14
+      },
+      "curve_counts": {
+        "bezier": 110,
+        "stepped": 14084,
+        "linear": 109
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_attack_cutin_03_glow.scsp1u.bytes",
+      "source_bytes": 22571,
+      "source_sha256": "95a2e6acba0f897d7572ed9a2bc0f1513fe5bee3fc6da695e1d961b7c8a98a65",
+      "output": "effect/heidemarie_30093_ux_attack_cutin_03_glow.json",
+      "output_bytes": 15752,
+      "output_sha256": "4cd2da8caa20882324ab32255b566dfdc164c2829c9b1d9ab623e48f70aa9990",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 13,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 40
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 13,
+        "attachment": 13,
+        "translate": 14,
+        "scale": 14,
+        "rotate": 9
+      },
+      "curve_counts": {
+        "linear": 14,
+        "stepped": 110,
+        "bezier": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_01.scsp1u.bytes",
+      "source_bytes": 436990,
+      "source_sha256": "d8f7e5a7c7b01c3934137d21037aab52562790e8ea03fdeb2697c05787bfd20c",
+      "output": "effect/heidemarie_30093_ux_cutin_01.json",
+      "output_bytes": 430543,
+      "output_sha256": "262a6c36bb52c122a8adbed97ec2a23365a9e317c39583004014779665f0411d",
+      "body_end_valid": true,
+      "bones": 224,
+      "slots": 79,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 91
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 158,
+        "translate": 115,
+        "rotate": 340,
+        "scale": 11,
+        "shear": 4,
+        "deform": 2,
+        "drawOrder": 2
+      },
+      "curve_counts": {
+        "linear": 152,
+        "stepped": 3062,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_02.scsp1u.bytes",
+      "source_bytes": 146222,
+      "source_sha256": "6a90d85b89fb0400b2cc7f31d6f933becbd66f3d4f6df4715064ac3e7cfda47c",
+      "output": "effect/heidemarie_30093_ux_cutin_02.json",
+      "output_bytes": 218612,
+      "output_sha256": "bbe8a60d5336508f8103fd4e54b9da1efde1ffc5d3a268dd68bda12686b09fd8",
+      "body_end_valid": true,
+      "bones": 134,
+      "slots": 63,
+      "ik_constraints": 0,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 63,
+        "region": 1
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 125,
+        "rotate": 199,
+        "scale": 11,
+        "shear": 8,
+        "translate": 21
+      },
+      "curve_counts": {
+        "linear": 109,
+        "stepped": 235,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_02_1.scsp1u.bytes",
+      "source_bytes": 1004381,
+      "source_sha256": "9d1b0e0ecbf763d368aa1ed20232542bd3f82cfcd57f4260f88f767928b615e9",
+      "output": "effect/heidemarie_30093_ux_cutin_02_1.json",
+      "output_bytes": 837221,
+      "output_sha256": "915a6e3db6138e886f8ec567924b0e32d03ae9b5ea0eae7d434ba0b4f049b3a8",
+      "body_end_valid": true,
+      "bones": 201,
+      "slots": 122,
+      "ik_constraints": 0,
+      "transform_constraints": 9,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 127
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 125,
+        "attachment": 230,
+        "rotate": 302,
+        "translate": 76,
+        "scale": 20,
+        "shear": 14,
+        "transform": 2,
+        "deform": 16
+      },
+      "curve_counts": {
+        "linear": 474,
+        "stepped": 8441,
+        "bezier": 27
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_02_2.scsp1u.bytes",
+      "source_bytes": 146134,
+      "source_sha256": "534d034b93cbfddfac4db5693e361d70f7e35a5a241a156e4e94325f3a9bc84e",
+      "output": "effect/heidemarie_30093_ux_cutin_02_2.json",
+      "output_bytes": 218498,
+      "output_sha256": "6c80914f0063a4f89f07a7931a53510e42ced002b8443daf08d07811f6e642c3",
+      "body_end_valid": true,
+      "bones": 134,
+      "slots": 63,
+      "ik_constraints": 0,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 63,
+        "region": 1
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 125,
+        "rotate": 199,
+        "scale": 11,
+        "shear": 8,
+        "translate": 21
+      },
+      "curve_counts": {
+        "linear": 109,
+        "stepped": 235,
+        "bezier": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_02_3.scsp1u.bytes",
+      "source_bytes": 126273,
+      "source_sha256": "9ebd50ff1304514acb6c8065207754cd6530d3aefdbc6cecaf72033efa7808ab",
+      "output": "effect/heidemarie_30093_ux_cutin_02_3.json",
+      "output_bytes": 186370,
+      "output_sha256": "9c9f5646f1b2b46f4f108e637cdbb893195dd639b14322f1a643f5d3048d6c57",
+      "body_end_valid": true,
+      "bones": 133,
+      "slots": 54,
+      "ik_constraints": 0,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 55
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 108,
+        "rotate": 198,
+        "scale": 6,
+        "shear": 8,
+        "translate": 19
+      },
+      "curve_counts": {
+        "linear": 104,
+        "stepped": 225,
+        "bezier": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_03.scsp1u.bytes",
+      "source_bytes": 353490,
+      "source_sha256": "7c845e0b7f62e9912f1ba34c3528cbeaee6b2a461153e533ff3624e644d0856b",
+      "output": "effect/heidemarie_30093_ux_cutin_03.json",
+      "output_bytes": 499641,
+      "output_sha256": "ae5c42b51644473ebdf210131c7362521091692d22246b2b452f14564d1ad02c",
+      "body_end_valid": true,
+      "bones": 308,
+      "slots": 94,
+      "ik_constraints": 5,
+      "transform_constraints": 13,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 93,
+        "region": 1
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 187,
+        "color": 1,
+        "translate": 49,
+        "rotate": 438,
+        "scale": 39,
+        "shear": 3
+      },
+      "curve_counts": {
+        "linear": 267,
+        "stepped": 1043,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_cutin_04.scsp1u.bytes",
+      "source_bytes": 1234116,
+      "source_sha256": "756c1a70ab3214dc8d584ef0d62237e37e149b0801b82a05e2311e5fcf551523",
+      "output": "effect/heidemarie_30093_ux_cutin_04.json",
+      "output_bytes": 1002799,
+      "output_sha256": "b5ec1c0ebde444c25c8f1dcb8c466f513b7614f0b3c333b38d5e27c55dd0ef41",
+      "body_end_valid": true,
+      "bones": 373,
+      "slots": 164,
+      "ik_constraints": 5,
+      "transform_constraints": 13,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 93,
+        "region": 70
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 163,
+        "attachment": 257,
+        "translate": 122,
+        "rotate": 520,
+        "scale": 108,
+        "shear": 22,
+        "deform": 1
+      },
+      "curve_counts": {
+        "stepped": 9951,
+        "linear": 1081,
+        "bezier": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_illust_1.scsp1u.bytes",
+      "source_bytes": 23506,
+      "source_sha256": "e5aa9124c42c981deab50870fb31adab342e61cf017b85c459df43e841e9b3bf",
+      "output": "effect/heidemarie_30093_ux_illust_1.json",
+      "output_bytes": 31236,
+      "output_sha256": "950ae3c9b92bf96202272f2da541a145bcb6118a6065730368e002d2d0e985d8",
+      "body_end_valid": true,
+      "bones": 49,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 3
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 4,
+        "scale": 2,
+        "translate": 5,
+        "rotate": 60
+      },
+      "curve_counts": {
+        "linear": 4,
+        "bezier": 123
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/heidemarie_30093_ux_illust_2.scsp1u.bytes",
+      "source_bytes": 14607,
+      "source_sha256": "adf9c01d67befdab4b0548468ff5a573678cef041594bff2d437dad94b74c863",
+      "output": "effect/heidemarie_30093_ux_illust_2.json",
+      "output_bytes": 15404,
+      "output_sha256": "0d5365b5282d37c82288a2b10f6bdaca4d11383ff0d130111b2286a7b5af3bda",
+      "body_end_valid": true,
+      "bones": 49,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 1,
+        "scale": 2,
+        "translate": 5,
+        "rotate": 60
+      },
+      "curve_counts": {
+        "linear": 1,
+        "bezier": 123
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/zhs/heidemarie_30093_ux_attack_01_b1_3.scsp1u.bytes",
+      "source_bytes": 42301,
+      "source_sha256": "1c1e3594a2e9f897aac06aaaf9d6097f4fb8939ed9ebd753a01bdc706aa32374",
+      "output": "effect/zhs/heidemarie_30093_ux_attack_01_b1_3.json",
+      "output_bytes": 27979,
+      "output_sha256": "1871e53913eed4a1c72858e73288184d59ed5449cd8e6b80900c58441eadd64f",
+      "body_end_valid": true,
+      "bones": 64,
+      "slots": 14,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 16
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 14,
+        "color": 13,
+        "translate": 61,
+        "scale": 60,
+        "rotate": 48,
+        "shear": 30,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 221,
+        "stepped": 90,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/zhs/heidemarie_30093_ux_attack_01_b1_4.scsp1u.bytes",
+      "source_bytes": 33902,
+      "source_sha256": "47935f085de90e339ab7338e15a564a07128fd06892a7affcb15dbb089d79ce3",
+      "output": "effect/zhs/heidemarie_30093_ux_attack_01_b1_4.json",
+      "output_bytes": 22364,
+      "output_sha256": "750a9b873f0953cfb3e24be9338daac9008b182a7bfd66dfc7ec0e9b1269645c",
+      "body_end_valid": true,
+      "bones": 64,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 61,
+        "scale": 60,
+        "rotate": 48,
+        "shear": 30
+      },
+      "curve_counts": {
+        "linear": 194,
+        "stepped": 84,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/zhs/heidemarie_30093_ux_attack_01_b2.scsp1u.bytes",
+      "source_bytes": 2552,
+      "source_sha256": "ffc82414f362338fbcef4cc5497badf46f054bf9b66b60317d0b26d121c1dfab",
+      "output": "effect/zhs/heidemarie_30093_ux_attack_01_b2.json",
+      "output_bytes": 1951,
+      "output_sha256": "05ece5f6a083d3e2e2c9abad8e1425f9bbdf0501c35347c0c9d57dfbe3e142f7",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 3,
+        "scale": 3
+      },
+      "curve_counts": {
+        "linear": 3,
+        "stepped": 12,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/zhs/heidemarie_30093_ux_attack_02_b1_1.scsp1u.bytes",
+      "source_bytes": 322878,
+      "source_sha256": "28aaabb892d0e6a09e72f3c769ee3d291677dc642a138417c990b7f25282a8b9",
+      "output": "effect/zhs/heidemarie_30093_ux_attack_02_b1_1.json",
+      "output_bytes": 330389,
+      "output_sha256": "05501e3c9b3d6ee5e2714899f0f76943d70155701f047c6dc8cc7f0e6535b443",
+      "body_end_valid": true,
+      "bones": 135,
+      "slots": 154,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 102,
+        "region": 105
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 128,
+        "attachment": 154,
+        "translate": 89,
+        "scale": 113,
+        "rotate": 71,
+        "shear": 28,
+        "deform": 89
+      },
+      "curve_counts": {
+        "linear": 572,
+        "stepped": 290,
+        "bezier": 7
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/zhs/heidemarie_30093_ux_illust_3.scsp1u.bytes",
+      "source_bytes": 19286,
+      "source_sha256": "ca5123268d8e4497aa3169eee0602b5a24522908843b42dcecc1251a38b41355",
+      "output": "effect/zhs/heidemarie_30093_ux_illust_3.json",
+      "output_bytes": 21162,
+      "output_sha256": "01e917f9ae2b61d0afe533895fddef2d53c02fd9a70c3d971f7db4d43a2b46ec",
+      "body_end_valid": true,
+      "bones": 49,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 6
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 5,
+        "scale": 2,
+        "translate": 5,
+        "rotate": 60,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 1,
+        "bezier": 128
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "model/30093.scsp1u.bytes",
+      "source_bytes": 18215578,
+      "source_sha256": "93952daa7d61fd4fdc85fca826898761e54698b03fe2a615d46a2b5b536cab54",
+      "output": "model/30093.json",
+      "output_bytes": 11772089,
+      "output_sha256": "01b1bad6fbd89f2e0a006e62d016649c0c74f40bf63ce369ff76e4fde52bf57b",
+      "body_end_valid": true,
+      "bones": 288,
+      "slots": 110,
+      "ik_constraints": 0,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 296
+      },
+      "animations": 46,
+      "timeline_counts": {
+        "attachment": 2995,
+        "rotate": 8475,
+        "translate": 4492,
+        "scale": 1734,
+        "shear": 1002,
+        "drawOrder": 46,
+        "color": 416,
+        "deform": 8
+      },
+      "curve_counts": {
+        "stepped": 204211,
+        "bezier": 8,
+        "linear": 4
+      },
+      "duplicate_attachment_replacements": [
+        {
+          "animation": "b_idle",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "b_idle_to_idle",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "buff_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "cure_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "debuff_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "defense_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "idle_to_b_idle",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "u1_attack_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "u2_buff_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "u4_buff_ready",
+          "slot": "f_dress_f_06"
+        },
+        {
+          "animation": "ug_attack",
+          "slot": "f_dress_f_06"
+        }
+      ]
+    },
+    {
+      "source": "model/30093_battle_ready.scsp1u.bytes",
+      "source_bytes": 2392512,
+      "source_sha256": "a7c698738cedd236f4a3c020face5cda6349f8a3f1a786a1ae31f09c89af6a4e",
+      "output": "model/30093_battle_ready.json",
+      "output_bytes": 1789037,
+      "output_sha256": "8bf3710e3dfbb49a79957dff4c6caf56263ad4aa87d7d935748714c75126470d",
+      "body_end_valid": true,
+      "bones": 326,
+      "slots": 113,
+      "ik_constraints": 12,
+      "transform_constraints": 7,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 122
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "translate": 251,
+        "rotate": 859,
+        "scale": 114,
+        "shear": 26,
+        "attachment": 29,
+        "color": 2,
+        "ik": 10,
+        "deform": 3,
+        "drawOrder": 2
+      },
+      "curve_counts": {
+        "stepped": 23547,
+        "bezier": 2
+      },
+      "duplicate_attachment_replacements": []
+    }
+  ]
+}

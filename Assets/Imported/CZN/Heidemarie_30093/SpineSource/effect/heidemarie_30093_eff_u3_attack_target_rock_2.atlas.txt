@@ -1,0 +1,139 @@
+
+heidemarie_30093_eff_u3_attack_target_rock_2.png
+size: 1976,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bdd26_3
+  rotate: false
+  xy: 698, 6
+  size: 200, 237
+  orig: 200, 237
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 2, 13
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+r02
+  rotate: true
+  xy: 1040, 304
+  size: 200, 182
+  orig: 200, 182
+  offset: 0, 0
+  index: -1
+r13
+  rotate: true
+  xy: 1581, 340
+  size: 164, 121
+  orig: 164, 121
+  offset: 0, 0
+  index: -1
+r14
+  rotate: true
+  xy: 1860, 99
+  size: 118, 85
+  orig: 118, 85
+  offset: 0, 0
+  index: -1
+r26
+  rotate: false
+  xy: 1755, 219
+  size: 142, 99
+  orig: 142, 99
+  offset: 0, 0
+  index: -1
+r_01_3
+  rotate: false
+  xy: 900, 13
+  size: 200, 230
+  orig: 200, 230
+  offset: 0, 0
+  index: -1
+s1_r_11
+  rotate: true
+  xy: 1102, 2
+  size: 300, 359
+  orig: 300, 359
+  offset: 0, 0
+  index: -1
+s1_r_12
+  rotate: true
+  xy: 1463, 12
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1
+sere_smoke02_0000
+  rotate: false
+  xy: 1799, 428
+  size: 142, 76
+  orig: 142, 76
+  offset: 0, 0
+  index: -1
+sere_smoke02_0001
+  rotate: false
+  xy: 1799, 350
+  size: 142, 76
+  orig: 142, 76
+  offset: 0, 0
+  index: -1
+sere_smoke20_0001
+  rotate: true
+  xy: 1704, 320
+  size: 184, 93
+  orig: 184, 93
+  offset: 0, 0
+  index: -1
+smoke2
+  rotate: false
+  xy: 491, 245
+  size: 547, 259
+  orig: 547, 259
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: true
+  xy: 1224, 322
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1
+smoke_p2
+  rotate: false
+  xy: 1407, 314
+  size: 172, 190
+  orig: 172, 190
+  offset: 0, 0
+  index: -1
+smoke_real_02
+  rotate: true
+  xy: 491, 2
+  size: 241, 205
+  orig: 241, 205
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 1755, 114
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: true
+  xy: 1755, 20
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1
+water_spray_04
+  rotate: false
+  xy: 1852, 20
+  size: 116, 77
+  orig: 116, 77
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,41 @@
+
+heidemarie_30093_ug_sword_intro_g2.png
+size: 1784,1568
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: false
+  xy: 1290, 1071
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+sword_light_0006
+  rotate: false
+  xy: 2, 2
+  size: 320, 1560
+  orig: 320, 1560
+  offset: 0, 0
+  index: -1
+sword_light_0007
+  rotate: false
+  xy: 324, 2
+  size: 320, 1560
+  orig: 320, 1560
+  offset: 0, 0
+  index: -1
+sword_light_0008
+  rotate: false
+  xy: 646, 2
+  size: 320, 1560
+  orig: 320, 1560
+  offset: 0, 0
+  index: -1
+sword_light_0009
+  rotate: false
+  xy: 968, 2
+  size: 320, 1560
+  orig: 320, 1560
+  offset: 0, 0
+  index: -1

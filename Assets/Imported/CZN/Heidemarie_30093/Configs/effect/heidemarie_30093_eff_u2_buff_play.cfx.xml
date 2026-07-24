@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u2_buff_f</string>
+        <key>ani</key>
+        <string>play</string>
+        <key>z</key>
+        <string>1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_u2_buff_par_1</string>
+        <key>x</key>
+        <string>50</string>
+        <key>y</key>
+        <string>250</string>
+        <key>scale</key>
+        <string>1.2</string>
+        <key>delay</key>
+        <string>100</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u2_buff_b</string>
+        <key>ani</key>
+        <string>play</string>
+        <key>z</key>
+        <string>-1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u2_buff_sword</string>
+        <key>ani</key>
+        <string>u2_buff_play</string>
+        <key>z</key>
+        <string>0</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

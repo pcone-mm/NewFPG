@@ -1,0 +1,167 @@
+
+killer_fly_skill3_front.png
+size: 1564,811
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud_crack_05
+  rotate: false
+  xy: 1388, 55
+  size: 66, 73
+  orig: 66, 73
+  offset: 0, 0
+  index: -1
+dust_1_1
+  rotate: false
+  xy: 1437, 374
+  size: 113, 113
+  orig: 113, 113
+  offset: 0, 0
+  index: -1
+dust_1_2
+  rotate: false
+  xy: 1340, 623
+  size: 222, 186
+  orig: 222, 186
+  offset: 0, 0
+  index: -1
+dust_si_1
+  rotate: true
+  xy: 1172, 48
+  size: 154, 109
+  orig: 154, 109
+  offset: 0, 0
+  index: -1
+dust_si_2
+  rotate: false
+  xy: 1307, 477
+  size: 118, 136
+  orig: 123, 141
+  offset: 3, 2
+  index: -1
+dust_soft_1
+  rotate: false
+  xy: 940, 615
+  size: 398, 194
+  orig: 423, 219
+  offset: 14, 12
+  index: -1
+dust_soft_2
+  rotate: false
+  xy: 566, 150
+  size: 380, 191
+  orig: 411, 227
+  offset: 19, 28
+  index: -1
+dust_soft_3
+  rotate: false
+  xy: 566, 2
+  size: 423, 146
+  orig: 444, 166
+  offset: 10, 10
+  index: -1
+dusts_midlle_1
+  rotate: true
+  xy: 339, 9
+  size: 330, 225
+  orig: 331, 225
+  offset: 0, 0
+  index: -1
+dusts_midlle_2
+  rotate: false
+  xy: 940, 405
+  size: 365, 208
+  orig: 365, 208
+  offset: 0, 0
+  index: -1
+dusts_midlle_3
+  rotate: false
+  xy: 2, 9
+  size: 335, 330
+  orig: 335, 331
+  offset: 0, 0
+  index: -1
+eff_adslash_1
+  rotate: true
+  xy: 1384, 130
+  size: 72, 87
+  orig: 116, 136
+  offset: 2, 1
+  index: -1
+eff_adslash_2
+  rotate: true
+  xy: 1307, 380
+  size: 95, 128
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_3
+  rotate: false
+  xy: 1280, 246
+  size: 107, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_4
+  rotate: false
+  xy: 1427, 489
+  size: 114, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_wave_1
+  rotate: false
+  xy: 2, 341
+  size: 468, 468
+  orig: 474, 474
+  offset: 3, 3
+  index: -1
+eff_wave_2
+  rotate: false
+  xy: 472, 343
+  size: 466, 466
+  orig: 474, 474
+  offset: 4, 4
+  index: -1
+sand_dust_1
+  rotate: false
+  xy: 948, 204
+  size: 330, 199
+  orig: 330, 199
+  offset: 0, 0
+  index: -1
+smoke_5
+  rotate: false
+  xy: 991, 35
+  size: 179, 167
+  orig: 179, 167
+  offset: 0, 0
+  index: -1
+smoke_s1
+  rotate: false
+  xy: 1283, 122
+  size: 99, 122
+  orig: 99, 122
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 1283, 18
+  size: 103, 102
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: true
+  xy: 1389, 204
+  size: 90, 93
+  orig: 92, 95
+  offset: 1, 2
+  index: -1
+water_spray_04
+  rotate: false
+  xy: 1389, 296
+  size: 115, 76
+  orig: 116, 77
+  offset: 0, 0
+  index: -1

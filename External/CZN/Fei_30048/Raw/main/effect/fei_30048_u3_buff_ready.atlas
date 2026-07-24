@@ -1,0 +1,69 @@
+
+fei_30048_u3_buff_ready.sct
+size: 512,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fei_u3_ready_01
+  rotate: false
+  xy: 255, 14
+  size: 93, 48
+  orig: 93, 48
+  offset: 0, 0
+  index: -1
+fei_u3_ready_02
+  rotate: false
+  xy: 2, 2
+  size: 251, 101
+  orig: 251, 101
+  offset: 0, 0
+  index: -1
+fei_u3_ready_03
+  rotate: false
+  xy: 2, 105
+  size: 278, 108
+  orig: 278, 108
+  offset: 0, 0
+  index: -1
+fei_u3_ready_04
+  rotate: true
+  xy: 299, 242
+  size: 268, 108
+  orig: 268, 108
+  offset: 0, 0
+  index: -1
+fei_u3_ready_05
+  rotate: true
+  xy: 409, 259
+  size: 251, 97
+  orig: 251, 97
+  offset: 0, 0
+  index: -1
+fei_u3_ready_06
+  rotate: false
+  xy: 282, 64
+  size: 217, 88
+  orig: 217, 88
+  offset: 0, 0
+  index: -1
+fei_u3_ready_07
+  rotate: false
+  xy: 299, 154
+  size: 185, 86
+  orig: 185, 86
+  offset: 0, 0
+  index: -1
+fei_u3_ready_08
+  rotate: true
+  xy: 350, 6
+  size: 56, 58
+  orig: 56, 58
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 2, 215
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1

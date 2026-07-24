@@ -1,0 +1,279 @@
+
+fei_30048_u5_buff_play_fire_f.png
+size: 1880,624
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+akkad_smoke_04_01
+  rotate: false
+  xy: 1704, 302
+  size: 150, 69
+  orig: 150, 69
+  offset: 0, 0
+  index: -1
+akkad_smoke_04_02
+  rotate: false
+  xy: 1659, 52
+  size: 150, 69
+  orig: 150, 69
+  offset: 0, 0
+  index: -1
+akkad_smoke_04_03
+  rotate: false
+  xy: 1307, 4
+  size: 150, 69
+  orig: 150, 69
+  offset: 0, 0
+  index: -1
+akkad_smoke_04_04
+  rotate: false
+  xy: 1459, 33
+  size: 150, 69
+  orig: 150, 69
+  offset: 0, 0
+  index: -1
+akkad_smoke_04_05
+  rotate: true
+  xy: 1808, 150
+  size: 150, 69
+  orig: 150, 69
+  offset: 0, 0
+  index: -1
+buff_fire1_f_1
+  rotate: false
+  xy: 2, 125
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_2
+  rotate: false
+  xy: 299, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_3
+  rotate: false
+  xy: 500, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_4
+  rotate: false
+  xy: 701, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_5
+  rotate: false
+  xy: 902, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_6
+  rotate: false
+  xy: 1103, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_7
+  rotate: false
+  xy: 1304, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_8
+  rotate: false
+  xy: 1505, 422
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+buff_fire1_f_9
+  rotate: false
+  xy: 1458, 104
+  size: 199, 200
+  orig: 199, 200
+  offset: 0, 0
+  index: -1
+debuff_smoke1_1
+  rotate: false
+  xy: 1659, 123
+  size: 147, 76
+  orig: 147, 76
+  offset: 0, 0
+  index: -1
+debuff_smoke1_2
+  rotate: false
+  xy: 956, 22
+  size: 196, 62
+  orig: 196, 62
+  offset: 0, 0
+  index: -1
+debuff_smoke1_3
+  rotate: false
+  xy: 956, 86
+  size: 201, 66
+  orig: 201, 66
+  offset: 0, 0
+  index: -1
+debuff_smoke1_4
+  rotate: false
+  xy: 2, 53
+  size: 189, 70
+  orig: 189, 70
+  offset: 0, 0
+  index: -1
+debuff_smoke1_5
+  rotate: false
+  xy: 1159, 80
+  size: 173, 72
+  orig: 173, 72
+  offset: 0, 0
+  index: -1
+debuff_smoke1_6
+  rotate: false
+  xy: 1154, 8
+  size: 151, 70
+  orig: 151, 70
+  offset: 0, 0
+  index: -1
+debuff_smoke_21
+  rotate: false
+  xy: 2, 11
+  size: 85, 40
+  orig: 85, 40
+  offset: 0, 0
+  index: -1
+debuff_smoke_22
+  rotate: false
+  xy: 1334, 75
+  size: 94, 77
+  orig: 94, 77
+  offset: 0, 0
+  index: -1
+debuff_smoke_23
+  rotate: false
+  xy: 1659, 201
+  size: 146, 99
+  orig: 146, 99
+  offset: 0, 0
+  index: -1
+debuff_smoke_24
+  rotate: false
+  xy: 1564, 324
+  size: 138, 96
+  orig: 138, 96
+  offset: 0, 0
+  index: -1
+fire13_1
+  rotate: false
+  xy: 299, 306
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_2
+  rotate: false
+  xy: 552, 306
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_3
+  rotate: false
+  xy: 805, 306
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_4
+  rotate: false
+  xy: 1058, 306
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+fire13_5
+  rotate: false
+  xy: 1311, 306
+  size: 251, 114
+  orig: 251, 114
+  offset: 0, 0
+  index: -1
+flame9_0001
+  rotate: false
+  xy: 1706, 373
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0002
+  rotate: true
+  xy: 203, 154
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0003
+  rotate: true
+  xy: 454, 154
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0004
+  rotate: true
+  xy: 705, 154
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0005
+  rotate: true
+  xy: 956, 154
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0006
+  rotate: true
+  xy: 1207, 154
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0007
+  rotate: true
+  xy: 203, 2
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0008
+  rotate: true
+  xy: 454, 2
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+flame9_0009
+  rotate: true
+  xy: 705, 2
+  size: 150, 249
+  orig: 150, 249
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 2, 327
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1

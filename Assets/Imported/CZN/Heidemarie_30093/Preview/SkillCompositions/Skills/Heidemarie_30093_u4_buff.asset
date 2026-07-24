@@ -1,0 +1,288 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Heidemarie_30093_u4_buff
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: u4_buff
+  displayName: "U4 \u589E\u76CA"
+  duration: 4
+  actorAnimations:
+  - phaseName: u4_buff_ready
+    animationName: u4_buff_ready
+    startTime: 0
+    duration: 0.46670002
+    loop: 0
+  - phaseName: u4_buff_play
+    animationName: u4_buff_play
+    startTime: 0.5
+    duration: 1.4667001
+    loop: 0
+  spineLayers:
+  - compositeName: heidemarie_30093_eff_u4_buff_ready
+    sourceName: heidemarie_30093_eff_u4_buff_self_f
+    skeletonDataAsset: {fileID: 11400000, guid: 8a1b360e5bca14f48bc76277a8e980ec, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4667
+    scale: 1
+    rotation: 0
+    sortingOrder: 100
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_ready
+    sourceName: heidemarie_30093_eff_u4_buff_sword_f
+    skeletonDataAsset: {fileID: 11400000, guid: 12dec34acfe19934a9c7dc95d3f03b4a, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5
+    scale: 1
+    rotation: 0
+    sortingOrder: 50
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_ready
+    sourceName: heidemarie_30093_eff_u4_buff_self_b
+    skeletonDataAsset: {fileID: 11400000, guid: 6905af925b91d7245b2e09ea86fd318b, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4667
+    scale: 1
+    rotation: 0
+    sortingOrder: -50
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_ready
+    sourceName: heidemarie_30093_eff_u4_buff_sword_b
+    skeletonDataAsset: {fileID: 11400000, guid: bd952ed4e6199e742a6145133de76d3c, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5
+    scale: 1
+    rotation: 0
+    sortingOrder: -100
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_eff_u4_buff_self_f
+    skeletonDataAsset: {fileID: 11400000, guid: 8a1b360e5bca14f48bc76277a8e980ec, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5
+    duration: 2
+    scale: 1
+    rotation: 0
+    sortingOrder: 100
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_eff_u4_buff_sword_f
+    skeletonDataAsset: {fileID: 11400000, guid: 12dec34acfe19934a9c7dc95d3f03b4a, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5
+    duration: 1.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 50
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_eff_u4_buff_sword_b
+    skeletonDataAsset: {fileID: 11400000, guid: bd952ed4e6199e742a6145133de76d3c, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5
+    duration: 1.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -50
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_eff_u4_buff_self_b
+    skeletonDataAsset: {fileID: 11400000, guid: 6905af925b91d7245b2e09ea86fd318b, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5
+    duration: 2
+    scale: 1
+    rotation: 0
+    sortingOrder: -100
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_u4_buff_play_pati02
+    emitterName: noname
+    originalTexturePath: particle/cross_02.sct
+    anchor: 0
+    offset: {x: 0, y: 1.5}
+    sourceVariance: {x: 0.39999998, y: 0.19999999}
+    force: {x: 0, y: 0}
+    startTime: 0.5
+    duration: 3.5
+    scale: 1
+    rotation: 0
+    sortingOrder: 200
+    maxParticles: 250
+    emissionRate: 10
+    lifetimeMin: 0.100000024
+    lifetimeMax: 1.5
+    speedMin: 0.39999998
+    speedMax: 0.79999995
+    sizeMin: 0.4
+    sizeMax: 0.6
+    angle: 0
+    angleVariance: 360
+    rotationVariance: 45
+    startColor: {r: 0.75686276, g: 0.24705882, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_u4_buff_play_pati02
+    emitterName: noname2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 0
+    offset: {x: 0, y: 1.5}
+    sourceVariance: {x: 0.39999998, y: 0.19999999}
+    force: {x: 0, y: 0}
+    startTime: 0.5
+    duration: 3.5
+    scale: 1
+    rotation: 0
+    sortingOrder: 200
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.100000024
+    lifetimeMax: 1.5
+    speedMin: 0.39999998
+    speedMax: 0.79999995
+    sizeMin: 0.00999999
+    sizeMax: 2.99
+    angle: 0
+    angleVariance: 360
+    rotationVariance: 45
+    startColor: {r: 0.75686276, g: 0.24705882, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_u4_buff_play_pati01
+    emitterName: digital_crack3
+    originalTexturePath: particle/ui_gacha_scene_star2.sct
+    anchor: 0
+    offset: {x: 0, y: 1.5}
+    sourceVariance: {x: 2.5, y: 2}
+    force: {x: 0, y: 0}
+    startTime: 1.6
+    duration: 1.05
+    scale: 1
+    rotation: 0
+    sortingOrder: 200
+    maxParticles: 60
+    emissionRate: 10
+    lifetimeMin: 0.20000002
+    lifetimeMax: 1
+    speedMin: 0.29999995
+    speedMax: 1.3
+    sizeMin: 0.01000005
+    sizeMax: 1.99
+    angle: 90
+    angleVariance: 10
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_u4_buff_play_pati01
+    emitterName: digital_crack3_3
+    originalTexturePath: particle/chain_01.sct
+    anchor: 0
+    offset: {x: 0, y: 1.5}
+    sourceVariance: {x: 2, y: 2}
+    force: {x: 0, y: 0}
+    startTime: 1.6
+    duration: 1.25
+    scale: 1
+    rotation: 0
+    sortingOrder: 200
+    maxParticles: 60
+    emissionRate: 10
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.2
+    speedMin: 0.29999995
+    speedMax: 1.3
+    sizeMin: 0.14999998
+    sizeMax: 0.65
+    angle: 90
+    angleVariance: 10
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u4_buff_play
+    sourceName: heidemarie_30093_u4_buff_play_pati01
+    emitterName: digital_crack3_2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 0
+    offset: {x: 0, y: 1.5}
+    sourceVariance: {x: 2, y: 2}
+    force: {x: 0, y: 0.29999998}
+    startTime: 1.7
+    duration: 2.05
+    scale: 1
+    rotation: 0
+    sortingOrder: 200
+    maxParticles: 60
+    emissionRate: 25
+    lifetimeMin: 0.40000004
+    lifetimeMax: 2
+    speedMin: 0.109999985
+    speedMax: 0.48999998
+    sizeMin: 0.8999999
+    sizeMax: 2.3
+    angle: 90
+    angleVariance: 10
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues: []
+  cameraZoomCues: []
+  markers:
+  - kind: HIT
+    label: HIT
+    startTime: 0.5
+    duration: 0
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, but shared SCT particle textures use a generated
+    soft fallback. Masks, custom shaders, color-blend and post-process nodes remain
+    diagnostic markers. Negative/sentinel CFX scales use a positive preview fallback,
+    ancillary Spine Bezier keys are sampled with linear interpolation, and only the
+    primary cam/camera/node bone is sampled from multi-bone ancillary skeletons.
+  unresolvedResources:
+  - 'Shared particle texture approximated with soft fallback: particle/chain_01.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/cross_02.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/pati_03.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/ui_gacha_scene_star2.sct'

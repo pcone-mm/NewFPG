@@ -8,32 +8,6 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class CombatAudioBankTests
     {
-        private const string InstalledBankPath =
-            "Assets/FPGDemo/Config/D0Slice/CombatAudioBank.asset";
-        private const string GeneratedAudioFolder =
-            "Assets/FPGDemo/Presentation/D0Slice/Audio";
-
-        private static readonly CombatAudioCue[] OfflineGeneratedCues =
-        {
-            CombatAudioCue.PlayerPrimaryShot,
-            CombatAudioCue.PlayerSecondaryCharge,
-            CombatAudioCue.PlayerSecondaryRelease,
-            CombatAudioCue.PlayerBodyHit,
-            CombatAudioCue.PlayerWeakpointHit,
-            CombatAudioCue.ProjectileIntercept,
-            CombatAudioCue.PlayerReload,
-            CombatAudioCue.EnemyFastThreatTelegraph,
-            CombatAudioCue.EnemyFastThreatRelease,
-            CombatAudioCue.EnemyInterceptableThreatTelegraph,
-            CombatAudioCue.EnemyInterceptableThreatRelease,
-            CombatAudioCue.EnemyHeavyThreatTelegraph,
-            CombatAudioCue.EnemyHeavyThreatRelease,
-            CombatAudioCue.PlayerDamaged,
-            CombatAudioCue.PlayerBarrierBroken,
-            CombatAudioCue.EnemyBreak,
-            CombatAudioCue.Victory,
-            CombatAudioCue.Defeat
-        };
 
         [Test]
         public void RequiredCueSetLocksEveryD0CombatFeedbackEvent()
@@ -263,54 +237,7 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
-        [Test]
-        public void InstalledD0BankIsPlaybackReadyAndKeepsItsOfflineWavCoverage()
-        {
-            CombatAudioBank bank = AssetDatabase.LoadAssetAtPath<CombatAudioBank>(
-                InstalledBankPath);
 
-            Assert.That(bank, Is.Not.Null,
-                "The installed D0 slice must own its replaceable CombatAudioBank asset.");
-            Assert.That(bank.TryValidatePlayback(out string error), Is.True, error);
-            Assert.That(
-                bank.ConcurrentVoiceLimit,
-                Is.EqualTo(CombatAudioBank.DefaultConcurrentVoiceLimit),
-                "The installed audio bank must preserve the fixed 16-voice D0 contract.");
-
-            for (int index = 0; index < CombatAudioBank.RequiredCueCount; index++)
-            {
-                CombatAudioCue cue = CombatAudioBank.GetRequiredCue(index);
-                Assert.That(bank.TryGetCueEntry(cue, out CombatAudioCueEntry entry), Is.True);
-                Assert.That(entry.Clip, Is.Not.Null, $"{cue} must have an installed AudioClip.");
-                Assert.That(entry.Volume, Is.EqualTo(1f).Within(0.0001f),
-                    $"{cue} must retain the safe default full-volume gain until intentionally rebalanced.");
-
-                string clipPath = AssetDatabase.GetAssetPath(entry.Clip);
-                Assert.That(clipPath, Does.StartWith("Assets/"),
-                    $"{cue} must reference a project-owned, replaceable audio asset.");
-                Assert.That(
-                    AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath),
-                    Is.SameAs(entry.Clip),
-                    $"{cue} must reference an imported AudioClip asset rather than a transient clip.");
-            }
-
-            string[] generatedClipGuids = AssetDatabase.FindAssets(
-                "t:AudioClip",
-                new[] { GeneratedAudioFolder });
-            Assert.That(
-                generatedClipGuids,
-                Has.Length.EqualTo(OfflineGeneratedCues.Length),
-                "G3 must keep the 18 offline-generated WAV cues that can later be replaced through the bank without code changes.");
-
-            for (int index = 0; index < generatedClipGuids.Length; index++)
-            {
-                string clipPath = AssetDatabase.GUIDToAssetPath(generatedClipGuids[index]);
-                Assert.That(clipPath, Does.StartWith(GeneratedAudioFolder + "/"));
-                Assert.That(clipPath, Does.EndWith(".wav").IgnoreCase,
-                    "The baseline procedural library must stay as editor-generated WAV assets, never runtime-synthesized clips.");
-                Assert.That(AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath), Is.Not.Null);
-            }
-        }
 
         private static void ConfigureCompleteBank(
             CombatAudioBank bank,

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_portrait_eff</string>
+        <key>ani</key>
+        <string>4</string>
+        <key>format</key>
+        <string>spine</string>
+        <key>loop</key>
+        <integer>1</integer>
+      </dict>
+    </array>
+  </dict>
+</plist>

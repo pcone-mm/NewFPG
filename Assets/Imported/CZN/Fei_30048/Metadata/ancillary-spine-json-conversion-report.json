@@ -1,0 +1,208 @@
+{
+  "converter": "CZN SCSP1U to Spine 3.8 JSON",
+  "converter_version": 1,
+  "started_utc": "2026-07-11T09:43:45.085640+00:00",
+  "finished_utc": "2026-07-11T09:43:45.112209+00:00",
+  "elapsed_seconds": 0.027,
+  "input": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Fei_30048\\AncillarySource",
+  "requested_files": 7,
+  "successful": 7,
+  "failed": 0,
+  "all_body_ends_valid": true,
+  "totals": {
+    "animations": 7,
+    "attachments": {},
+    "timelines": {
+      "rotate": 2,
+      "scale": 2,
+      "translate": 7
+    },
+    "curves": {
+      "bezier": 27,
+      "linear": 2,
+      "stepped": 12
+    }
+  },
+  "known_limits": [
+    "EventData/EventTimeline layout is not emitted; the audited corpus contains neither.",
+    "Attachment types bounding box, linked mesh, and point are valid Spine types but absent from the audited corpus.",
+    "CLI round-trips may normalize weighted mesh/deform data; generated JSON is canonical."
+  ],
+  "failures": [],
+  "files": [
+    {
+      "source": "camera/cm_shake_vb_lt.scsp1u.bytes",
+      "source_bytes": 826,
+      "source_sha256": "13db3042cc458606188cda4e05390b3e66cca626c0649c603fef66a5ed90dbb3",
+      "output": "camera/cm_shake_vb_lt.json",
+      "output_bytes": 704,
+      "output_sha256": "079d37b6e89e29edba2c318f69bc366d9c0ebd2de016aa5fc06ee09953a884a1",
+      "body_end_valid": true,
+      "bones": 2,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "translate": 1
+      },
+      "curve_counts": {
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "camera/cm_shake_vb_rt.scsp1u.bytes",
+      "source_bytes": 826,
+      "source_sha256": "9ae46577bd7015a0ee4bcc2bb9a2a4b81ad937897d556fedf6dd3d7901d32d13",
+      "output": "camera/cm_shake_vb_rt.json",
+      "output_bytes": 692,
+      "output_sha256": "25291672785c06698d69ef726fe65b11cf5dbc2982831e559f8d77cd8dc40fa4",
+      "body_end_valid": true,
+      "bones": 2,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "translate": 1
+      },
+      "curve_counts": {
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "camera/cm_shake_vb_up.scsp1u.bytes",
+      "source_bytes": 826,
+      "source_sha256": "f1a4995151877222dc6b8b345d10516ca7eaf5776395084bbc5393f217ee9828",
+      "output": "camera/cm_shake_vb_up.json",
+      "output_bytes": 719,
+      "output_sha256": "4251698ddf46ea35188995bee181d1de5246f9e9783c64fb9c186b4b90ed464c",
+      "body_end_valid": true,
+      "bones": 2,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "translate": 1
+      },
+      "curve_counts": {
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "camera/cm_shake_wk_up.scsp1u.bytes",
+      "source_bytes": 650,
+      "source_sha256": "9f77e7596cb338a4a31c114902c3d1b3870893d5d7fb2a3eda35bd7b03f7b4b1",
+      "output": "camera/cm_shake_wk_up.json",
+      "output_bytes": 529,
+      "output_sha256": "6352702c9e8406888e7459430d6af5187ccfb0ced9d3f46284779501a63a502b",
+      "body_end_valid": true,
+      "bones": 2,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "translate": 1
+      },
+      "curve_counts": {
+        "bezier": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "camera_path/fei_30048_ug_attack_cam.scsp1u.bytes",
+      "source_bytes": 1525,
+      "source_sha256": "5f22b25bb5ff8be2d76d60da661678e77e4b364bdcf7e65a13571b4b8d4d3e69",
+      "output": "camera_path/fei_30048_ug_attack_cam.json",
+      "output_bytes": 1200,
+      "output_sha256": "aac631ebdccc10e8bcddce8d7732d13710c4a278b9ee158f6032be7a5217d2fc",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "rotate": 1,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 7,
+        "bezier": 4,
+        "linear": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "node/fei_30048_ug_attack_mon_node.scsp1u.bytes",
+      "source_bytes": 817,
+      "source_sha256": "ad8d04668c1f42172fe56bb3f8054526e98578ad41ea99b919fbc24f3ee6b88c",
+      "output": "node/fei_30048_ug_attack_mon_node.json",
+      "output_bytes": 657,
+      "output_sha256": "c807942c5a1e0cff216b8c5dea0ea08178cfb3ffeb6fb87f179480ae05427473",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "rotate": 1,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "node/fei_30048_ug_node_standby.scsp1u.bytes",
+      "source_bytes": 434,
+      "source_sha256": "46bcb01357b6039c3f4b9c4ed83ea37e19554e9e5c7b624a801de1e383475bb6",
+      "output": "node/fei_30048_ug_node_standby.json",
+      "output_bytes": 377,
+      "output_sha256": "50a3d9fe9de9b5373918750076fb9e0ee9398e11947bb0b46bd7ee8f69720cbb",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 0,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 0,
+      "attachments": {},
+      "animations": 1,
+      "timeline_counts": {
+        "translate": 1
+      },
+      "curve_counts": {
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    }
+  ]
+}

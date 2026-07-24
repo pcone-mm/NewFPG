@@ -1,0 +1,167 @@
+
+hit_blunt_normal_02_f.sct
+size: 1920,728
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 458, 466
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+light_010000
+  rotate: false
+  xy: 1254, 70
+  size: 103, 512
+  orig: 103, 512
+  offset: 0, 0
+  index: -1
+light_010001
+  rotate: false
+  xy: 1359, 70
+  size: 103, 512
+  orig: 103, 512
+  offset: 0, 0
+  index: -1
+light_010002
+  rotate: false
+  xy: 1464, 8
+  size: 103, 512
+  orig: 103, 512
+  offset: 0, 0
+  index: -1
+light_010003
+  rotate: false
+  xy: 1569, 8
+  size: 103, 512
+  orig: 103, 512
+  offset: 0, 0
+  index: -1
+light_020000
+  rotate: true
+  xy: 974, 584
+  size: 138, 512
+  orig: 138, 512
+  offset: 0, 0
+  index: -1
+light_020001
+  rotate: false
+  xy: 1690, 210
+  size: 138, 512
+  orig: 138, 512
+  offset: 0, 0
+  index: -1
+light_020002
+  rotate: false
+  xy: 974, 70
+  size: 138, 512
+  orig: 138, 512
+  offset: 0, 0
+  index: -1
+light_020003
+  rotate: false
+  xy: 1114, 70
+  size: 138, 512
+  orig: 138, 512
+  offset: 0, 0
+  index: -1
+light_030000
+  rotate: true
+  xy: 406, 140
+  size: 63, 512
+  orig: 63, 512
+  offset: 0, 0
+  index: -1
+light_030001
+  rotate: true
+  xy: 406, 75
+  size: 63, 512
+  orig: 63, 512
+  offset: 0, 0
+  index: -1
+light_030002
+  rotate: true
+  xy: 2, 10
+  size: 63, 512
+  orig: 63, 512
+  offset: 0, 0
+  index: -1
+light_030003
+  rotate: true
+  xy: 516, 5
+  size: 63, 512
+  orig: 63, 512
+  offset: 0, 0
+  index: -1
+light_040000
+  rotate: false
+  xy: 1830, 210
+  size: 85, 512
+  orig: 85, 512
+  offset: 0, 0
+  index: -1
+light_040001
+  rotate: true
+  xy: 458, 379
+  size: 85, 512
+  orig: 85, 512
+  offset: 0, 0
+  index: -1
+light_040002
+  rotate: true
+  xy: 458, 292
+  size: 85, 512
+  orig: 85, 512
+  offset: 0, 0
+  index: -1
+light_040003
+  rotate: true
+  xy: 458, 205
+  size: 85, 512
+  orig: 85, 512
+  offset: 0, 0
+  index: -1
+shock
+  rotate: false
+  xy: 2, 277
+  size: 454, 445
+  orig: 454, 445
+  offset: 0, 0
+  index: -1
+shock_my_1
+  rotate: false
+  xy: 1488, 522
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+shock_my_2
+  rotate: false
+  xy: 2, 75
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+shock_my_3
+  rotate: false
+  xy: 204, 75
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+shock_my_4
+  rotate: true
+  xy: 1674, 2
+  size: 206, 185
+  orig: 206, 185
+  offset: 0, 0
+  index: -1
+shockwave03_01
+  rotate: false
+  xy: 716, 466
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1

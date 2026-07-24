@@ -1,0 +1,27 @@
+
+heidemarie_30093_eff_u3_attack_target_ff_flash.sct
+size: 1216,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+circle_05_2
+  rotate: false
+  xy: 495, 33
+  size: 456, 456
+  orig: 456, 456
+  offset: 0, 0
+  index: -1
+flare_rainbow2
+  rotate: true
+  xy: 953, 234
+  size: 255, 254
+  orig: 255, 254
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: true
+  xy: 2, 2
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1

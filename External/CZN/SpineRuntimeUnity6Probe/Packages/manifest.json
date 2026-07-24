@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "com.esotericsoftware.spine.spine-unity": "file:C:/Users/11418/AppData/Local/Temp/spine-runtimes-3.8-codex/spine-unity/Assets/Spine",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.physics2d": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0"
+  }
+}

@@ -1,0 +1,146 @@
+
+power_taker_attack.png
+size: 1756,348
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud_07
+  rotate: true
+  xy: 2, 15
+  size: 66, 35
+  orig: 66, 35
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 246, 88
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+heal_1_1
+  rotate: false
+  xy: 2, 83
+  size: 242, 261
+  orig: 242, 261
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_01
+  rotate: true
+  xy: 504, 2
+  size: 130, 182
+  orig: 130, 182
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_02
+  rotate: true
+  xy: 688, 2
+  size: 130, 182
+  orig: 130, 182
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_03
+  rotate: true
+  xy: 872, 2
+  size: 130, 182
+  orig: 130, 182
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_04
+  rotate: true
+  xy: 1056, 2
+  size: 130, 182
+  orig: 130, 182
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_05
+  rotate: true
+  xy: 1240, 2
+  size: 130, 182
+  orig: 130, 182
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_06
+  rotate: true
+  xy: 1424, 2
+  size: 130, 182
+  orig: 130, 182
+  offset: 0, 0
+  index: -1
+power_taker_oba_01_glow
+  rotate: false
+  xy: 1608, 46
+  size: 120, 115
+  orig: 120, 115
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_01
+  rotate: true
+  xy: 504, 134
+  size: 210, 160
+  orig: 210, 160
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_02
+  rotate: true
+  xy: 666, 134
+  size: 210, 160
+  orig: 210, 160
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_03
+  rotate: true
+  xy: 828, 134
+  size: 210, 160
+  orig: 210, 160
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_04
+  rotate: true
+  xy: 990, 134
+  size: 210, 160
+  orig: 210, 160
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_05
+  rotate: true
+  xy: 1152, 134
+  size: 210, 160
+  orig: 210, 160
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_06
+  rotate: true
+  xy: 1314, 134
+  size: 210, 160
+  orig: 210, 160
+  offset: 0, 0
+  index: -1
+power_taker_oba_02_glow
+  rotate: true
+  xy: 1476, 144
+  size: 200, 93
+  orig: 200, 93
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: false
+  xy: 1571, 163
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1
+smoke__2
+  rotate: true
+  xy: 39, 25
+  size: 56, 150
+  orig: 56, 150
+  offset: 0, 0
+  index: -1
+smoke__4
+  rotate: false
+  xy: 191, 27
+  size: 150, 54
+  orig: 150, 54
+  offset: 0, 0
+  index: -1

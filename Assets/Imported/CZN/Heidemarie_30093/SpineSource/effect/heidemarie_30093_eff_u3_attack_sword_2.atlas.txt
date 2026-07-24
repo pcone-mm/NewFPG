@@ -1,0 +1,111 @@
+
+heidemarie_30093_eff_u3_attack_sword_2.png
+size: 1024,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: true
+  xy: 2, 2
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+h_glass1_0002
+  rotate: true
+  xy: 495, 6
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0003
+  rotate: true
+  xy: 804, 93
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0004
+  rotate: false
+  xy: 931, 200
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0005
+  rotate: false
+  xy: 933, 71
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0006
+  rotate: true
+  xy: 756, 9
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass2_0001
+  rotate: false
+  xy: 495, 199
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0002
+  rotate: false
+  xy: 604, 199
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0003
+  rotate: false
+  xy: 713, 199
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0004
+  rotate: false
+  xy: 822, 177
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0005
+  rotate: true
+  xy: 495, 90
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0006
+  rotate: false
+  xy: 647, 47
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+pati5
+  rotate: true
+  xy: 495, 351
+  size: 138, 360
+  orig: 138, 360
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: false
+  xy: 857, 329
+  size: 137, 160
+  orig: 137, 160
+  offset: 0, 0
+  index: -1
+sword_g
+  rotate: true
+  xy: 756, 106
+  size: 91, 46
+  orig: 91, 46
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,13 @@
+
+mika_1039_skill_x_screen_hk3.png
+size: 800,368
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+eff/grad1
+  rotate: false
+  xy: 2, 2
+  size: 790, 360
+  orig: 790, 360
+  offset: 0, 0
+  index: -1

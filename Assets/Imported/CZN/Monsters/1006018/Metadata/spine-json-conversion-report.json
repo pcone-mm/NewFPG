@@ -1,0 +1,253 @@
+{
+  "converter": "CZN SCSP1U to Spine 3.8 JSON",
+  "converter_version": 2,
+  "started_utc": "2026-07-12T08:25:47.586216+00:00",
+  "finished_utc": "2026-07-12T08:25:47.633390+00:00",
+  "elapsed_seconds": 0.047,
+  "input": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1006018\\SpineSource",
+  "requested_files": 6,
+  "successful": 6,
+  "failed": 0,
+  "all_body_ends_valid": true,
+  "totals": {
+    "animations": 14,
+    "event_data": 2,
+    "attachments": {
+      "mesh": 50,
+      "region": 77
+    },
+    "timelines": {
+      "attachment": 102,
+      "color": 125,
+      "deform": 15,
+      "rotate": 166,
+      "scale": 93,
+      "shear": 6,
+      "translate": 125
+    },
+    "curves": {
+      "bezier": 117,
+      "linear": 142,
+      "stepped": 2598
+    }
+  },
+  "known_limits": [
+    "EventData defaults are emitted; EventTimeline type 7 remains unsupported because no audited file exercises its private layout.",
+    "Attachment types bounding box, linked mesh, and point are valid Spine types but absent from the audited corpus.",
+    "CLI round-trips may normalize weighted mesh/deform data; generated JSON is canonical."
+  ],
+  "failures": [],
+  "files": [
+    {
+      "source": "effect/dust_insect_normal_skill1_b.scsp1u.bytes",
+      "source_bytes": 31177,
+      "source_sha256": "79208542bdc66feadba4528b498bd744103468ee3c8200b824c7a6e78285c860",
+      "output": "effect/dust_insect_normal_skill1_b.json",
+      "output_bytes": 32435,
+      "output_sha256": "a04a3ab7b9712107b106c4775faa8f22397999b70d04f4b7c0c50a4ce7ae3d32",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 11,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 11,
+        "attachment": 11,
+        "translate": 13,
+        "scale": 13,
+        "rotate": 5,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 56,
+        "linear": 13,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/dust_insect_normal_skill1_f.scsp1u.bytes",
+      "source_bytes": 53568,
+      "source_sha256": "c750533d540815c33d3fc502d4d2227de505823bbb0b5f0a1ff55471078f3076",
+      "output": "effect/dust_insect_normal_skill1_f.json",
+      "output_bytes": 53887,
+      "output_sha256": "fcc54efa43ea2e8ae24f3544fcf2a339cc499cb3cd1be6eba6a76edd6c67e9cc",
+      "body_end_valid": true,
+      "bones": 24,
+      "slots": 24,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 17,
+        "region": 7
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 24,
+        "attachment": 24,
+        "translate": 20,
+        "scale": 20,
+        "rotate": 9,
+        "deform": 11
+      },
+      "curve_counts": {
+        "stepped": 101,
+        "linear": 19,
+        "bezier": 45
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/dust_insect_normal_skill2.scsp1u.bytes",
+      "source_bytes": 25976,
+      "source_sha256": "b36b8bb1f4bcbc29f29a38b23098c84db471808654c524658cd990e56f354312",
+      "output": "effect/dust_insect_normal_skill2.json",
+      "output_bytes": 18153,
+      "output_sha256": "5753b813070532f3388c50cab0669e3f7b615ce2b89afc3c6df8520b55074332",
+      "body_end_valid": true,
+      "bones": 31,
+      "slots": 25,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 1,
+        "region": 24
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 22,
+        "attachment": 22,
+        "translate": 23,
+        "scale": 24,
+        "rotate": 19,
+        "shear": 3
+      },
+      "curve_counts": {
+        "linear": 42,
+        "stepped": 110,
+        "bezier": 18
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/dust_insect_normal_skill3.scsp1u.bytes",
+      "source_bytes": 25300,
+      "source_sha256": "6dd243be684eef9d456a38cbe36969eb0c30bd3067583de75d2af85aab02b1af",
+      "output": "effect/dust_insect_normal_skill3.json",
+      "output_bytes": 17734,
+      "output_sha256": "ea53f96ec8034244c744183bc24af7933567f800c3a8140d2d167eb6c9369f92",
+      "body_end_valid": true,
+      "bones": 28,
+      "slots": 22,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 1,
+        "region": 21
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 22,
+        "attachment": 22,
+        "translate": 23,
+        "scale": 24,
+        "rotate": 19,
+        "shear": 3
+      },
+      "curve_counts": {
+        "stepped": 102,
+        "linear": 48,
+        "bezier": 22
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_slash_normal_01.scsp1u.bytes",
+      "source_bytes": 17374,
+      "source_sha256": "1f7d6b005659efcb8181051ebb58f1c62d6aff6d8755c4cfb6308c12d5ac4e02",
+      "output": "effect/hit_slash_normal_01.json",
+      "output_bytes": 11846,
+      "output_sha256": "30bfdb1117ad3c9c14afc829e0d7e17d8e2e9681b1797e6bf00ccc566156ab2a",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 25,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 25
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 25,
+        "rotate": 5,
+        "translate": 5,
+        "scale": 5
+      },
+      "curve_counts": {
+        "linear": 20,
+        "stepped": 71,
+        "bezier": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "model/1006018.scsp1u.bytes",
+      "source_bytes": 215670,
+      "source_sha256": "2475777b634e138e8cad640f326dacc1d0f879a2ad18f17c7db01223787f2ff4",
+      "output": "model/1006018.json",
+      "output_bytes": 151254,
+      "output_sha256": "ec8c0981892e59ec969572f6073fd575c10a1f2c6ddf5ed35af0c28b176e893d",
+      "body_end_valid": true,
+      "bones": 33,
+      "slots": 19,
+      "ik_constraints": 4,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 2,
+      "event_data_names": [
+        "hit",
+        "spell"
+      ],
+      "attachments": {
+        "mesh": 20
+      },
+      "animations": 9,
+      "timeline_counts": {
+        "attachment": 23,
+        "translate": 41,
+        "rotate": 109,
+        "scale": 7,
+        "color": 21
+      },
+      "curve_counts": {
+        "stepped": 2158
+      },
+      "duplicate_attachment_replacements": []
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+
+heidemarie_30093_eff_u2_buff_b.sct
+size: 2008,688
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flare_01
+  rotate: false
+  xy: 2, 114
+  size: 600, 165
+  orig: 600, 165
+  offset: 0, 0
+  index: -1
+flare_02
+  rotate: true
+  xy: 1517, 174
+  size: 512, 400
+  orig: 512, 400
+  offset: 0, 0
+  index: -1
+flash1
+  rotate: false
+  xy: 2, 281
+  size: 1024, 405
+  orig: 1024, 405
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1028, 195
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+grad1
+  rotate: true
+  xy: 966, 15
+  size: 157, 618
+  orig: 157, 618
+  offset: 0, 0
+  index: -1
+h_glass1_0002
+  rotate: false
+  xy: 1919, 559
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0003
+  rotate: false
+  xy: 1919, 430
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0004
+  rotate: false
+  xy: 1919, 301
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0005
+  rotate: false
+  xy: 1919, 172
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0006
+  rotate: false
+  xy: 1913, 43
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass2_0001
+  rotate: true
+  xy: 766, 32
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0002
+  rotate: false
+  xy: 1586, 22
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0003
+  rotate: false
+  xy: 1695, 22
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0004
+  rotate: false
+  xy: 1804, 22
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0005
+  rotate: true
+  xy: 2, 5
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0006
+  rotate: true
+  xy: 154, 5
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+pati5
+  rotate: true
+  xy: 604, 141
+  size: 138, 360
+  orig: 138, 360
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: true
+  xy: 604, 2
+  size: 137, 160
+  orig: 137, 160
+  offset: 0, 0
+  index: -1

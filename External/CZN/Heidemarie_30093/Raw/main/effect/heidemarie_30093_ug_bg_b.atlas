@@ -1,0 +1,174 @@
+
+heidemarie_30093_ug_bg_b.sct
+size: 1960,1360
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: false
+  xy: 1253, 426
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+ground
+  rotate: false
+  xy: 2, 1038
+  size: 1890, 319
+  orig: 1890, 319
+  offset: 0, 0
+  index: -1
+r10
+  rotate: true
+  xy: 743, 307
+  size: 375, 275
+  orig: 375, 275
+  offset: 0, 0
+  index: -1
+r10_g
+  rotate: false
+  xy: 848, 30
+  size: 375, 275
+  orig: 375, 275
+  offset: 0, 0
+  index: -1
+r11
+  rotate: false
+  xy: 2, 2
+  size: 421, 260
+  orig: 421, 260
+  offset: 0, 0
+  index: -1
+r11_g
+  rotate: false
+  xy: 425, 2
+  size: 421, 260
+  orig: 421, 260
+  offset: 0, 0
+  index: -1
+r12
+  rotate: false
+  xy: 1458, 2
+  size: 246, 148
+  orig: 246, 148
+  offset: 0, 0
+  index: -1
+r12_g
+  rotate: false
+  xy: 1706, 2
+  size: 246, 148
+  orig: 246, 148
+  offset: 0, 0
+  index: -1
+r7
+  rotate: true
+  xy: 1636, 152
+  size: 530, 115
+  orig: 530, 115
+  offset: 0, 0
+  index: -1
+r8
+  rotate: true
+  xy: 1511, 152
+  size: 530, 123
+  orig: 530, 123
+  offset: 0, 0
+  index: -1
+r9
+  rotate: true
+  xy: 1020, 347
+  size: 335, 231
+  orig: 335, 231
+  offset: 0, 0
+  index: -1
+r9_g
+  rotate: true
+  xy: 1225, 10
+  size: 335, 231
+  orig: 335, 231
+  offset: 0, 0
+  index: -1
+r_light1
+  rotate: false
+  xy: 743, 684
+  size: 1150, 352
+  orig: 1150, 352
+  offset: 0, 0
+  index: -1
+ring_a_7_1
+  rotate: false
+  xy: 2, 264
+  size: 245, 772
+  orig: 245, 772
+  offset: 0, 0
+  index: -1
+ring_a_7_2
+  rotate: false
+  xy: 249, 264
+  size: 245, 772
+  orig: 245, 772
+  offset: 0, 0
+  index: -1
+ring_a_7_3
+  rotate: false
+  xy: 496, 264
+  size: 245, 772
+  orig: 245, 772
+  offset: 0, 0
+  index: -1
+rock_b_1_1_1
+  rotate: true
+  xy: 1753, 582
+  size: 100, 167
+  orig: 100, 167
+  offset: 0, 0
+  index: -1
+rock_b_1_2_2
+  rotate: true
+  xy: 1753, 445
+  size: 135, 148
+  orig: 135, 148
+  offset: 0, 0
+  index: -1
+rock_b_1_2_3
+  rotate: false
+  xy: 1753, 196
+  size: 95, 118
+  orig: 95, 118
+  offset: 0, 0
+  index: -1
+rock_b_1_4_1
+  rotate: true
+  xy: 1753, 316
+  size: 127, 130
+  orig: 127, 130
+  offset: 0, 0
+  index: -1
+rock_s_2
+  rotate: true
+  xy: 1850, 207
+  size: 107, 95
+  orig: 107, 95
+  offset: 0, 0
+  index: -1
+rock_s_4
+  rotate: false
+  xy: 1253, 348
+  size: 84, 76
+  orig: 84, 76
+  offset: 0, 0
+  index: -1
+rock_s_7
+  rotate: true
+  xy: 1339, 348
+  size: 76, 79
+  orig: 76, 79
+  offset: 0, 0
+  index: -1
+rs_1
+  rotate: true
+  xy: 1894, 1324
+  size: 33, 38
+  orig: 33, 38
+  offset: 0, 0
+  index: -1

@@ -35,16 +35,7 @@
 /[Aa]ssets/_Recovery.meta
 /[Aa]ssets/Screenshots/
 
-# Local-only extracted study assets from third-party game clients.
-# Keep the reusable pipeline/editor tooling tracked, but do not accidentally
-# commit or redistribute the extracted character payloads themselves.
-/External/CZN/
-/Assets/Imported/CZN/Heidemarie_30093/
-/Assets/Imported/CZN/Heidemarie_30093.meta
-/Assets/Imported/CZN/Fei_30048/
-/Assets/Imported/CZN/Fei_30048.meta
-/Assets/Imported/CZN/Monsters/
-/Assets/Imported/CZN/Monsters.meta
+# CZN/Spine payloads are intentionally tracked for this project.
 /Tools/CznResourcePipeline/__pycache__/
 
 # Local research/scrape scratch files

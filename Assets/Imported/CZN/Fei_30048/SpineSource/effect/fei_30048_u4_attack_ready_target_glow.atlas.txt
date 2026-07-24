@@ -1,0 +1,27 @@
+
+fei_30048_u4_attack_ready_target_glow.png
+size: 400,424
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 2, 123
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1
+glow_obk
+  rotate: false
+  xy: 2, 2
+  size: 185, 119
+  orig: 185, 119
+  offset: 0, 0
+  index: -1
+shadow_light
+  rotate: true
+  xy: 299, 18
+  size: 400, 99
+  orig: 400, 99
+  offset: 0, 0
+  index: -1

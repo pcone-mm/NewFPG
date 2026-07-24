@@ -1,0 +1,48 @@
+
+30093_ug_portrait1_9.png
+size: 1612,1544
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a_cloth5
+  rotate: false
+  xy: 1469, 435
+  size: 136, 302
+  orig: 136, 302
+  offset: 0, 0
+  index: -1
+a_ear_acc5_1
+  rotate: false
+  xy: 1469, 19
+  size: 107, 156
+  orig: 107, 156
+  offset: 0, 0
+  index: -1
+a_ear_acc5_2
+  rotate: false
+  xy: 1469, 177
+  size: 139, 256
+  orig: 139, 256
+  offset: 0, 0
+  index: -1
+a_hair17_1
+  rotate: false
+  xy: 2, 2
+  size: 1104, 1537
+  orig: 1104, 1537
+  offset: 0, 0
+  index: -1
+a_hair17_2
+  rotate: false
+  xy: 1108, 35
+  size: 359, 702
+  orig: 359, 702
+  offset: 0, 0
+  index: -1
+a_hair18
+  rotate: true
+  xy: 1108, 739
+  size: 800, 423
+  orig: 800, 423
+  offset: 0, 0
+  index: -1

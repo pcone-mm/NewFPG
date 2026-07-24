@@ -11,7 +11,7 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class FpgExitRoomRefreshRuleTests
     {
         private const string RoomPath =
-            "Assets/FPGDemo/Config/Level/Rooms/Room_combatlab-forest.asset";
+            "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
 
         [Test]
         public void RouteSelectionIsDeterministicAndStableIdOrdered()

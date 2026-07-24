@@ -1,0 +1,111 @@
+
+fei_30048_u3_buff_play_b5.sct
+size: 2040,840
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+mask_left_g01
+  rotate: false
+  xy: 2, 425
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g02
+  rotate: false
+  xy: 2, 11
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g03
+  rotate: false
+  xy: 285, 425
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g04
+  rotate: false
+  xy: 285, 11
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g05
+  rotate: false
+  xy: 568, 425
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g06
+  rotate: false
+  xy: 568, 11
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g07
+  rotate: false
+  xy: 851, 425
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_left_g08
+  rotate: false
+  xy: 851, 11
+  size: 281, 412
+  orig: 281, 412
+  offset: 0, 0
+  index: -1
+mask_right_g01
+  rotate: false
+  xy: 1134, 153
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1
+mask_right_g02
+  rotate: true
+  xy: 1413, 560
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1
+mask_right_g03
+  rotate: false
+  xy: 1756, 496
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1
+mask_right_g04
+  rotate: true
+  xy: 1413, 281
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1
+mask_right_g05
+  rotate: false
+  xy: 1756, 153
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1
+mask_right_g06
+  rotate: true
+  xy: 1413, 2
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1
+mask_right_g07
+  rotate: false
+  xy: 1134, 496
+  size: 277, 341
+  orig: 277, 341
+  offset: 0, 0
+  index: -1

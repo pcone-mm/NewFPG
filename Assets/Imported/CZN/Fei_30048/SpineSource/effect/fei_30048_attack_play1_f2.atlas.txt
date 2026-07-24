@@ -1,0 +1,146 @@
+
+fei_30048_attack_play1_f2.png
+size: 1896,1768
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 1592, 935
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1
+glow_obk
+  rotate: true
+  xy: 1062, 1575
+  size: 185, 119
+  orig: 185, 119
+  offset: 0, 0
+  index: -1
+obk_a1_1
+  rotate: true
+  xy: 2, 1147
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_1_b
+  rotate: true
+  xy: 2, 532
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_2
+  rotate: false
+  xy: 2, 267
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_2_b
+  rotate: false
+  xy: 2, 2
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_3
+  rotate: true
+  xy: 267, 1147
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_3_b
+  rotate: true
+  xy: 267, 532
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_4
+  rotate: true
+  xy: 532, 1147
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_4_b
+  rotate: true
+  xy: 532, 532
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_5
+  rotate: false
+  xy: 617, 267
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_5_b
+  rotate: false
+  xy: 617, 2
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_6
+  rotate: false
+  xy: 1232, 1497
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_6_b
+  rotate: true
+  xy: 797, 1147
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_7
+  rotate: true
+  xy: 797, 532
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_7_b
+  rotate: false
+  xy: 1062, 1232
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_8
+  rotate: true
+  xy: 1062, 617
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_8_b
+  rotate: true
+  xy: 1232, 2
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_9
+  rotate: true
+  xy: 1327, 617
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1
+obk_a1_9_b
+  rotate: true
+  xy: 1497, 2
+  size: 613, 263
+  orig: 613, 263
+  offset: 0, 0
+  index: -1

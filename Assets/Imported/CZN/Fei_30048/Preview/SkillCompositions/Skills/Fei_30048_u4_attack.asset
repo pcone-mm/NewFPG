@@ -1,0 +1,498 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Fei_30048_u4_attack
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: u4_attack
+  displayName: "U4 \u653B\u51FB"
+  duration: 2.9164
+  actorAnimations:
+  - phaseName: u4_attack_ready
+    animationName: u4_attack_ready
+    startTime: 0
+    duration: 0.46670002
+    loop: 0
+  - phaseName: u4_attack_play
+    animationName: u4_attack_play
+    startTime: 0.46670002
+    duration: 0.86670005
+    loop: 0
+  - phaseName: u4_attack_end
+    animationName: u4_attack_end
+    startTime: 2.4496999
+    duration: 0.46670002
+    loop: 0
+  spineLayers:
+  - compositeName: fei_30048_u4_attack_ready
+    sourceName: fei_30048_u4_attack_ready
+    skeletonDataAsset: {fileID: 11400000, guid: fb71ec15189f8f3409b01d377add981e, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 10
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_ready
+    sourceName: fei_30048_u4_attack_ready_glow
+    skeletonDataAsset: {fileID: 11400000, guid: 10c2993a5d0ce3f429787a16f7a572e3, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -5000
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_ready_target
+    sourceName: fei_30048_u4_attack_ready_target
+    skeletonDataAsset: {fileID: 11400000, guid: d2a6ba1c863002e45a00deb55a22c519, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4667
+    scale: 0.75
+    alpha: 1
+    rotation: 0
+    sortingOrder: 10
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_ready_target_glow
+    sourceName: fei_30048_u4_attack_ready_target_glow
+    skeletonDataAsset: {fileID: 11400000, guid: 9b9dfbd78ec95634cb6f469cfa9d1553, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4667
+    scale: 0.75
+    alpha: 1
+    rotation: 0
+    sortingOrder: 0
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_play
+    sourceName: fei_30048_u4_attack_play
+    skeletonDataAsset: {fileID: 11400000, guid: c078a27e9bae2784bbec64738140915a, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 0.6
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 15
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_play
+    sourceName: fei_30048_u4_attack_play_glow
+    skeletonDataAsset: {fileID: 11400000, guid: 815bb488840d4754d839cca9dc35bf58, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 0.4333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -5000
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_f2
+    skeletonDataAsset: {fileID: 11400000, guid: 2c8df0ffdd8716746bf2ec031cb3ac30, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 1.0667
+    scale: 0.75
+    alpha: 1
+    rotation: 0
+    sortingOrder: 15
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_f1
+    skeletonDataAsset: {fileID: 11400000, guid: 78c2d68b24000ab4a9da8cd42f789af8, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 0.8333
+    scale: 0.75
+    alpha: 1
+    rotation: 0
+    sortingOrder: 10
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_play_target_b
+    sourceName: fei_30048_u4_attack_play_target_b
+    skeletonDataAsset: {fileID: 11400000, guid: c501238a0d91752428c47c0661772c7d, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 1.2333
+    scale: 0.75
+    alpha: 1
+    rotation: 0
+    sortingOrder: -1000
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u4_attack_play_target_ring
+    sourceName: fei_30048_u4_attack_play_target_f3
+    skeletonDataAsset: {fileID: 11400000, guid: a70c05fa2aefa5745b2f9e42657e5527, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 0.6
+    scale: 0.75
+    alpha: 1
+    rotation: 0
+    sortingOrder: 20
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: fei_30048_u4_attack_play
+    sourceName: fei_30048_attack_play1_pat1
+    emitterName: fei_obk1
+    originalTexturePath: particle/pati_03_h_long2.sct
+    texture: {fileID: 2800000, guid: 4166e36f4722f3944a7d78ad8bf1ec72, type: 3}
+    anchor: 0
+    offset: {x: 0.39999998, y: 2.6}
+    sourceVariance: {x: 0.39999998, y: 0.19999999}
+    force: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 1.25
+    scale: 1
+    rotation: -20
+    sortingOrder: 10
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.2
+    speedMin: 0.39999998
+    speedMax: 0.79999995
+    sizeMin: 0.39999998
+    sizeMax: 1.9999999
+    angle: 100
+    angleVariance: 50
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24705882, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_pat1
+    emitterName: fire_mid
+    originalTexturePath: particle/blur_ticle_03.sct
+    texture: {fileID: 2800000, guid: b44e6bb9a3a6b254ea1082406016e8a8, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0}
+    sourceVariance: {x: 0, y: 0}
+    force: {x: 0, y: 0}
+    startTime: 0.56670004
+    duration: 0.40000004
+    scale: 0.45000002
+    rotation: -60
+    sortingOrder: 13
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.049999997
+    lifetimeMax: 0.35000002
+    speedMin: 0.40000004
+    speedMax: 1.5999999
+    sizeMin: 0.100000024
+    sizeMax: 0.9
+    angle: -90
+    angleVariance: 40
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_pat1
+    emitterName: pat_slow
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0}
+    sourceVariance: {x: 0, y: 0}
+    force: {x: 0, y: 0}
+    startTime: 0.56670004
+    duration: 0.75000006
+    scale: 0.45000002
+    rotation: -60
+    sortingOrder: 13
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.099999994
+    lifetimeMax: 0.70000005
+    speedMin: 0.5
+    speedMax: 1.5
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: -90
+    angleVariance: 40
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_pat1
+    emitterName: pat_fast
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0}
+    sourceVariance: {x: 0, y: 0}
+    force: {x: 0, y: 0}
+    startTime: 0.56670004
+    duration: 0.40000004
+    scale: 0.45000002
+    rotation: -60
+    sortingOrder: 13
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.049999997
+    lifetimeMax: 0.35000002
+    speedMin: 0.5
+    speedMax: 1.5
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: -90
+    angleVariance: 40
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_pat1
+    emitterName: fire_mid
+    originalTexturePath: particle/blur_ticle_03.sct
+    texture: {fileID: 2800000, guid: b44e6bb9a3a6b254ea1082406016e8a8, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0}
+    sourceVariance: {x: 0, y: 0}
+    force: {x: 0, y: 0}
+    startTime: 0.56670004
+    duration: 0.40000004
+    scale: 0.75
+    rotation: 60
+    sortingOrder: 12
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.049999997
+    lifetimeMax: 0.35000002
+    speedMin: 0.40000004
+    speedMax: 1.5999999
+    sizeMin: 0.100000024
+    sizeMax: 0.9
+    angle: -90
+    angleVariance: 40
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_pat1
+    emitterName: pat_slow
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0}
+    sourceVariance: {x: 0, y: 0}
+    force: {x: 0, y: 0}
+    startTime: 0.56670004
+    duration: 0.75000006
+    scale: 0.75
+    rotation: 60
+    sortingOrder: 12
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.099999994
+    lifetimeMax: 0.70000005
+    speedMin: 0.5
+    speedMax: 1.5
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: -90
+    angleVariance: 40
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target
+    sourceName: fei_30048_u4_attack_play_target_pat1
+    emitterName: pat_fast
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0}
+    sourceVariance: {x: 0, y: 0}
+    force: {x: 0, y: 0}
+    startTime: 0.56670004
+    duration: 0.40000004
+    scale: 0.75
+    rotation: 60
+    sortingOrder: 12
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.049999997
+    lifetimeMax: 0.35000002
+    speedMin: 0.5
+    speedMax: 1.5
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: -90
+    angleVariance: 40
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u4_attack_play_target_b
+    sourceName: fei_30048_u4_attack_play_target_pat2
+    emitterName: fire_ticcle_f
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 1
+    offset: {x: 0, y: 0.4}
+    sourceVariance: {x: 3, y: 1}
+    force: {x: 0, y: 0.5}
+    startTime: 0.59970003
+    duration: 1.8499999
+    scale: 0.6
+    rotation: 0
+    sortingOrder: -10
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.8
+    speedMin: 0.099999994
+    speedMax: 0.099999994
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: 90
+    angleVariance: 60
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues:
+  - sourceName: cm_shake_wk_up
+    target: 0
+    startTime: 0.56670004
+    duration: 0.5
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 0.0333
+      value: {x: 50, y: 0}
+      stepped: 0
+    - time: 0.1
+      value: {x: -80, y: 0}
+      stepped: 0
+    - time: 0.2
+      value: {x: 15, y: 0}
+      stepped: 0
+    - time: 0.5
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  - sourceName: cm_shake_vb_up
+    target: 0
+    startTime: 0.6667
+    duration: 0.3667
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 0.0333
+      value: {x: 15, y: 0}
+      stepped: 0
+    - time: 0.1
+      value: {x: -13, y: 0}
+      stepped: 0
+    - time: 0.1667
+      value: {x: 7, y: 0}
+      stepped: 0
+    - time: 0.2333
+      value: {x: -4, y: 0}
+      stepped: 0
+    - time: 0.3
+      value: {x: 2, y: 0}
+      stepped: 0
+    - time: 0.3667
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  cameraZoomCues: []
+  markers:
+  - kind: HIT
+    label: HIT
+    startTime: 0.46670002
+    duration: 0
+    value: 0
+  - kind: CONTROL_ANI
+    label: CONTROL_ANI
+    startTime: 0.6327
+    duration: 0.05
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 0.6327
+    duration: 0.040000003
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 0.6327
+    duration: 0.060000002
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 0.6327
+    duration: 0.080000006
+    value: 0
+  - kind: CONTROL_ANI
+    label: CONTROL_ANI
+    startTime: 1.0157001
+    duration: 0
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, and exact audited particle textures are bound
+    when present; unresolved textures use a soft fallback. Particle additive flags
+    use the project's additive particle shader fallback. BattleReady standby visibility
+    and its BRMD node transform are composed for UG. FRONT effects are placed on
+    the screen foreground. Masks, custom shaders, color-blend and post-process nodes
+    remain diagnostic markers. Negative/sentinel CFX scales use a positive preview
+    fallback, ancillary Spine Bezier keys are sampled with linear interpolation,
+    and only the primary cam/camera/node bone is sampled from multi-bone ancillary
+    skeletons. UX CUTIN remains diagnostic because the source node has neither id
+    nor file_name.
+  unresolvedResources:
+  - 'Bone/slot attachment approximated at anchor root: fei_30048_u4_attack_ready
+    slot= id=]'

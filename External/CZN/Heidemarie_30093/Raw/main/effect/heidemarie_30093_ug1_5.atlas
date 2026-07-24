@@ -1,0 +1,69 @@
+
+heidemarie_30093_ug1_5.sct
+size: 1992,1488
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+sword1_0001
+  rotate: true
+  xy: 1005, 746
+  size: 735, 955
+  orig: 735, 955
+  offset: 0, 0
+  index: -1
+sword1_0002
+  rotate: true
+  xy: 1488, 85
+  size: 659, 499
+  orig: 659, 499
+  offset: 0, 0
+  index: -1
+sword1_0003
+  rotate: false
+  xy: 2, 2
+  size: 1001, 283
+  orig: 1001, 283
+  offset: 0, 0
+  index: -1
+sword1_0004
+  rotate: false
+  xy: 435, 527
+  size: 1051, 217
+  orig: 1051, 217
+  offset: 0, 0
+  index: -1
+sword1_0005
+  rotate: false
+  xy: 435, 308
+  size: 1051, 217
+  orig: 1051, 217
+  offset: 0, 0
+  index: -1
+sword2_0001
+  rotate: false
+  xy: 435, 886
+  size: 560, 595
+  orig: 560, 595
+  offset: 0, 0
+  index: -1
+sword2_0002
+  rotate: true
+  xy: 2, 287
+  size: 1194, 177
+  orig: 1194, 177
+  offset: 0, 0
+  index: -1
+sword2_0003
+  rotate: true
+  xy: 181, 307
+  size: 1174, 125
+  orig: 1174, 125
+  offset: 0, 0
+  index: -1
+sword2_0004
+  rotate: true
+  xy: 308, 325
+  size: 1156, 125
+  orig: 1156, 125
+  offset: 0, 0
+  index: -1

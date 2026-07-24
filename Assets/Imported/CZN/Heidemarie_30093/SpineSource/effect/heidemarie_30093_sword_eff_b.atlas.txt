@@ -1,0 +1,41 @@
+
+heidemarie_30093_sword_eff_b.png
+size: 1956,1492
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+line1_0001
+  rotate: true
+  xy: 2, 1170
+  size: 320, 1950
+  orig: 320, 1950
+  offset: 0, 0
+  index: -1
+line1_0002
+  rotate: true
+  xy: 2, 848
+  size: 320, 1950
+  orig: 320, 1950
+  offset: 0, 0
+  index: -1
+line1_0003
+  rotate: true
+  xy: 2, 526
+  size: 320, 1950
+  orig: 320, 1950
+  offset: 0, 0
+  index: -1
+line1_0004
+  rotate: true
+  xy: 2, 204
+  size: 320, 1950
+  orig: 320, 1950
+  offset: 0, 0
+  index: -1
+sword_g
+  rotate: true
+  xy: 2, 2
+  size: 200, 975
+  orig: 200, 975
+  offset: 0, 0
+  index: -1

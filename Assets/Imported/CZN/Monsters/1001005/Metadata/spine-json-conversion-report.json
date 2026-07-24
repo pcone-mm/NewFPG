@@ -1,0 +1,362 @@
+{
+  "converter": "CZN SCSP1U to Spine 3.8 JSON",
+  "converter_version": 2,
+  "started_utc": "2026-07-12T08:25:47.836920+00:00",
+  "finished_utc": "2026-07-12T08:25:47.928688+00:00",
+  "elapsed_seconds": 0.092,
+  "input": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1001005\\SpineSource",
+  "requested_files": 9,
+  "successful": 9,
+  "failed": 0,
+  "all_body_ends_valid": true,
+  "totals": {
+    "animations": 23,
+    "event_data": 2,
+    "attachments": {
+      "mesh": 122,
+      "path": 1,
+      "region": 382
+    },
+    "timelines": {
+      "attachment": 200,
+      "color": 267,
+      "deform": 107,
+      "drawOrder": 6,
+      "pathPosition": 15,
+      "rotate": 601,
+      "scale": 183,
+      "shear": 25,
+      "translate": 294
+    },
+    "curves": {
+      "bezier": 316,
+      "linear": 408,
+      "stepped": 7749
+    }
+  },
+  "known_limits": [
+    "EventData defaults are emitted; EventTimeline type 7 remains unsupported because no audited file exercises its private layout.",
+    "Attachment types bounding box, linked mesh, and point are valid Spine types but absent from the audited corpus.",
+    "CLI round-trips may normalize weighted mesh/deform data; generated JSON is canonical."
+  ],
+  "failures": [],
+  "files": [
+    {
+      "source": "effect/hit_blunt_normal_02_b.scsp1u.bytes",
+      "source_bytes": 67736,
+      "source_sha256": "d4c3a60cdc2caa899389e202b9ba8605e75838585f782f16a37546723f0cdd9b",
+      "output": "effect/hit_blunt_normal_02_b.json",
+      "output_bytes": 47300,
+      "output_sha256": "945473182165c40f7b1992a6c59bda518c8f865e63b47ddd5d7c0c702e2cbebe",
+      "body_end_valid": true,
+      "bones": 48,
+      "slots": 39,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 223
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 39,
+        "attachment": 39,
+        "rotate": 42,
+        "translate": 36,
+        "scale": 43,
+        "shear": 4
+      },
+      "curve_counts": {
+        "bezier": 88,
+        "linear": 22,
+        "stepped": 14
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_02_f.scsp1u.bytes",
+      "source_bytes": 12893,
+      "source_sha256": "c253776c8937467eae1db26f89f1ec4098ab1cec966199ada5a5b641a76d93ee",
+      "output": "effect/hit_blunt_normal_02_f.json",
+      "output_bytes": 9558,
+      "output_sha256": "0f64f7c52b8654acdac6af0ef00db413cc1a5ef2251745533af2e6e2f47385a8",
+      "body_end_valid": true,
+      "bones": 17,
+      "slots": 13,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 35
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 13,
+        "attachment": 13,
+        "rotate": 7,
+        "translate": 6,
+        "scale": 13,
+        "shear": 3
+      },
+      "curve_counts": {
+        "bezier": 23,
+        "linear": 6,
+        "stepped": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_b_01.scsp1u.bytes",
+      "source_bytes": 6469,
+      "source_sha256": "8d1e6ffa7d0464f2a110eab5523647bb928d3abe40606c40b43dc686959c88ee",
+      "output": "effect/hit_blunt_normal_b_01.json",
+      "output_bytes": 4594,
+      "output_sha256": "9893293ac4413424ccf5ca19a6f47c7690ac17d29fc4eaf1a4cafedb95ee346f",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 10,
+        "scale": 3,
+        "rotate": 1,
+        "translate": 1
+      },
+      "curve_counts": {
+        "stepped": 25,
+        "linear": 4,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_f_01.scsp1u.bytes",
+      "source_bytes": 33603,
+      "source_sha256": "85860f1f0122d991154a9bf36aaa452d8a0b45e35804bbb50d5561615f218a64",
+      "output": "effect/hit_blunt_normal_f_01.json",
+      "output_bytes": 34496,
+      "output_sha256": "695f409b585d7df363705daf2041b6d07033054a75462f8d184349a2904e8868",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 33,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 21,
+        "region": 12
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 33,
+        "translate": 12,
+        "scale": 13,
+        "rotate": 9,
+        "deform": 21
+      },
+      "curve_counts": {
+        "stepped": 63,
+        "linear": 39,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f1.scsp1u.bytes",
+      "source_bytes": 115828,
+      "source_sha256": "0965bc6c4fe353f4c48137157cb8016d436fe4eb1ba35fe2a174c483d752c45f",
+      "output": "effect/invader_death_01_f1.json",
+      "output_bytes": 126543,
+      "output_sha256": "473ed05727353fa49c90a012fbde2073af9b38235a640189326523c707ff7e50",
+      "body_end_valid": true,
+      "bones": 27,
+      "slots": 68,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 35,
+        "region": 33
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 68,
+        "attachment": 33,
+        "rotate": 18,
+        "scale": 24,
+        "translate": 13,
+        "deform": 35
+      },
+      "curve_counts": {
+        "linear": 144,
+        "stepped": 111,
+        "bezier": 57
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f2.scsp1u.bytes",
+      "source_bytes": 111663,
+      "source_sha256": "0cecd75b56ef06196b9a6b71ed5d23ab9d6c0928b4025e7cc91d4925e4c98183",
+      "output": "effect/invader_death_01_f2.json",
+      "output_bytes": 101497,
+      "output_sha256": "ad17ed53b52f8cb7dc1c239db8495de6648b158d2bff14afa64e41427f93daaa",
+      "body_end_valid": true,
+      "bones": 52,
+      "slots": 86,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 29,
+        "region": 57
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 86,
+        "attachment": 85,
+        "translate": 50,
+        "scale": 50,
+        "rotate": 46,
+        "shear": 1,
+        "deform": 29
+      },
+      "curve_counts": {
+        "linear": 160,
+        "stepped": 251,
+        "bezier": 105
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f3.scsp1u.bytes",
+      "source_bytes": 28351,
+      "source_sha256": "ace4e829b21234bcabbd0ebe1da16e6a524610cc2946b281511387cf80580c62",
+      "output": "effect/invader_death_01_f3.json",
+      "output_bytes": 31173,
+      "output_sha256": "d4ed6e25b8fffc10e164d5f870ef00f583a6b8c418f64fb6f02f590b1d8aa8a4",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 6,
+        "region": 9
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 15,
+        "attachment": 2,
+        "translate": 6,
+        "scale": 7,
+        "rotate": 4,
+        "deform": 6
+      },
+      "curve_counts": {
+        "stepped": 23,
+        "linear": 29,
+        "bezier": 15
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f4.scsp1u.bytes",
+      "source_bytes": 1989,
+      "source_sha256": "683484efc6ae9d7883913acf59c3c0e3e39895e52329d89e02d0101dba800483",
+      "output": "effect/invader_death_01_f4.json",
+      "output_bytes": 1372,
+      "output_sha256": "27ede70960bf8fc105c35b2a9fe214749e6f1d8af5288a2e344a58c4f4a9a674",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 3,
+        "linear": 4,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "model/1001005.scsp1u.bytes",
+      "source_bytes": 666408,
+      "source_sha256": "d8312f5060f24e20545431dae13d7661fff79efebf59a912d0b7a81a3585f3ba",
+      "output": "model/1001005.json",
+      "output_bytes": 446555,
+      "output_sha256": "ac4226d456941fac503657f4e40d32d5e640e07f8e54b03db3971b9fbddcab85",
+      "body_end_valid": true,
+      "bones": 51,
+      "slots": 20,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 1,
+      "skins": 1,
+      "event_data": 2,
+      "event_data_names": [
+        "hit",
+        "spell"
+      ],
+      "attachments": {
+        "mesh": 31,
+        "path": 1
+      },
+      "animations": 15,
+      "timeline_counts": {
+        "attachment": 28,
+        "rotate": 474,
+        "translate": 170,
+        "shear": 17,
+        "scale": 29,
+        "pathPosition": 15,
+        "deform": 16,
+        "drawOrder": 6
+      },
+      "curve_counts": {
+        "stepped": 7258
+      },
+      "duplicate_attachment_replacements": []
+    }
+  ]
+}

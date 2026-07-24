@@ -1,0 +1,13 @@
+
+power_taker_buff_debuff_b.sct
+size: 260,260
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 2, 2
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1

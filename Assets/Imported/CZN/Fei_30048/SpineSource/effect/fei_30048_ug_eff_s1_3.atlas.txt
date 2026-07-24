@@ -1,0 +1,69 @@
+
+fei_30048_ug_eff_s1_3.png
+size: 2008,860
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+c0_b
+  rotate: false
+  xy: 704, 30
+  size: 700, 143
+  orig: 700, 143
+  offset: 0, 0
+  index: -1
+c11_b
+  rotate: false
+  xy: 1406, 634
+  size: 600, 224
+  orig: 600, 224
+  offset: 0, 0
+  index: -1
+c11_b_light0000
+  rotate: true
+  xy: 1506, 32
+  size: 600, 224
+  orig: 600, 224
+  offset: 0, 0
+  index: -1
+c11_b_light0001
+  rotate: true
+  xy: 1732, 32
+  size: 600, 224
+  orig: 600, 224
+  offset: 0, 0
+  index: -1
+c1_b2
+  rotate: false
+  xy: 704, 546
+  size: 700, 312
+  orig: 700, 312
+  offset: 0, 0
+  index: -1
+c2_b2
+  rotate: false
+  xy: 704, 348
+  size: 800, 196
+  orig: 800, 196
+  offset: 0, 0
+  index: -1
+c2_b2_light0000
+  rotate: false
+  xy: 704, 175
+  size: 700, 171
+  orig: 700, 171
+  offset: 0, 0
+  index: -1
+c4_b
+  rotate: false
+  xy: 2, 431
+  size: 700, 427
+  orig: 700, 427
+  offset: 0, 0
+  index: -1
+c4_b_light0000
+  rotate: false
+  xy: 2, 2
+  size: 700, 427
+  orig: 700, 427
+  offset: 0, 0
+  index: -1

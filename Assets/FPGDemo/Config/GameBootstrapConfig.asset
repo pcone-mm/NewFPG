@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7569f7e2c8d284a40b733c1d99665a8a, type: 3}
   m_Name: GameBootstrapConfig
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.GameBootstrapConfig
-  combatLabSceneName: FormalRoom
-  loadCombatLabOnStart: 1
+  roomSceneName: FormalRoom
+  loadRoomOnStart: 1
   requireEntranceSelection: 1
   requireCharacterSelection: 1
   exitRoomRefreshRule: {fileID: 11400000, guid: 4379bf079520a1f42bb015ba933a269c, type: 2}

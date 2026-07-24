@@ -1,0 +1,55 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Fei_30048_fatal
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: fatal
+  displayName: "Fatal \u8FDE\u6BB5"
+  duration: 6
+  actorAnimations:
+  - phaseName: fatal_intro
+    animationName: fatal_intro
+    startTime: 0
+    duration: 0.3333
+    loop: 0
+  - phaseName: fatal1
+    animationName: fatal1
+    startTime: 0.3333
+    duration: 1.6667
+    loop: 0
+  - phaseName: fatal2
+    animationName: fatal2
+    startTime: 2
+    duration: 0.3333
+    loop: 0
+  - phaseName: fatal3
+    animationName: fatal3
+    startTime: 2.3333
+    duration: 3.6667001
+    loop: 0
+  spineLayers: []
+  particleLayers: []
+  transformCues: []
+  cameraZoomCues: []
+  markers: []
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, and exact audited particle textures are bound
+    when present; unresolved textures use a soft fallback. Particle additive flags
+    use the project's additive particle shader fallback. BattleReady standby visibility
+    and its BRMD node transform are composed for UG. FRONT effects are placed on
+    the screen foreground. Masks, custom shaders, color-blend and post-process nodes
+    remain diagnostic markers. Negative/sentinel CFX scales use a positive preview
+    fallback, ancillary Spine Bezier keys are sampled with linear interpolation,
+    and only the primary cam/camera/node bone is sampled from multi-bone ancillary
+    skeletons. UX CUTIN remains diagnostic because the source node has neither id
+    nor file_name.
+  unresolvedResources: []

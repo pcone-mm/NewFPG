@@ -1,0 +1,631 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Fei_30048_ug_attack
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: ug_attack
+  displayName: "UG \u7EC8\u7ED3\u6280"
+  duration: 5.333
+  actorAnimations:
+  - phaseName: ug_attack
+    animationName: ug_attack_1
+    startTime: 0
+    duration: 0.9333001
+    loop: 0
+  spineLayers:
+  - compositeName: fei_30048_ug_attack_hookup_s1_eff
+    sourceName: fei_30048_ug_hookup_s1_eff
+    skeletonDataAsset: {fileID: 11400000, guid: da35418c48cf1ee498b4e773ce7209ea, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 0.3
+    duration: 0.7667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 100
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_3
+    skeletonDataAsset: {fileID: 11400000, guid: cdf2b142618fe574da4311bbe7788c5b, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4200
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1_screen
+    sourceName: fei_30048_ug_eff_s1_screen
+    skeletonDataAsset: {fileID: 11400000, guid: 52892a29a3ea9ef49b63c4938c28bb36, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 0
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_cutin_1
+    skeletonDataAsset: {fileID: 11400000, guid: 984595dcb72985b41a44c6ad4612a98a, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.1333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -3900
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_1
+    skeletonDataAsset: {fileID: 11400000, guid: 960817bed0636f445b5b9f37aa998009, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4100
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_1_2
+    skeletonDataAsset: {fileID: 11400000, guid: 6ae0ca8979daeb947abb50be4a9084e0, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4125
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_2
+    skeletonDataAsset: {fileID: 11400000, guid: 22a56657da430ff448a25c86f9cc73f7, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4150
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_4
+    skeletonDataAsset: {fileID: 11400000, guid: 4ba2b64081930c4408925c71709adc4a, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4250
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_4_2
+    skeletonDataAsset: {fileID: 11400000, guid: f90f28f0f97d7d948af76f7354a5fbe1, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4275
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_6
+    skeletonDataAsset: {fileID: 11400000, guid: 33f705e591204ff4fa56dd95011a89ea, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4350
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s1
+    sourceName: fei_30048_ug_eff_s1_5
+    skeletonDataAsset: {fileID: 11400000, guid: 6a28548ea5050b6479dd2f9f5066e65a, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 0.56600004
+    duration: 1.8333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -4300
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_impact2
+    skeletonDataAsset: {fileID: 11400000, guid: 8dde59f524db14b48b407c34c1165505, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.2333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 400
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_4
+    skeletonDataAsset: {fileID: 11400000, guid: 0f9d475be463b5141bfae28d42996a5b, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.9333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 100
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_3
+    skeletonDataAsset: {fileID: 11400000, guid: f60a302dc8f955f42908b664bc422265, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.9333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 150
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_2
+    skeletonDataAsset: {fileID: 11400000, guid: 51dd8440131c4af4b8663e9c41afeb87, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.9333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 200
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_1
+    skeletonDataAsset: {fileID: 11400000, guid: 319448ac3bca33944b340244d2537a22, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.9333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 250
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_cutin_2
+    skeletonDataAsset: {fileID: 11400000, guid: 42198d1c0a6f82e42bc85f27a7b64eca, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.8
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 300
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_ld_eff
+    skeletonDataAsset: {fileID: 11400000, guid: 752fa603bc850834ea502c4f4a532010, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.8
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 325
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_impact
+    skeletonDataAsset: {fileID: 11400000, guid: 32a8ce63bd5e14c49a5067e598d0bed9, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.2333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 350
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_eff_s2
+    sourceName: fei_30048_ug_eff_s2_5
+    skeletonDataAsset: {fileID: 11400000, guid: f566f4772a49e514ea43fc50e9acf34a, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 2.4
+    duration: 0.9333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 50
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_ug_attack_hookup_s2_eff
+    sourceName: fei_30048_ug_hookup_s2_eff
+    skeletonDataAsset: {fileID: 11400000, guid: 8b035c8ead330a44493f67e46fe105b0, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 3.0000002
+    duration: 0.5333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 100
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_water_wo_02
+    sourceName: mika_1039_skill_x_screen_hk3
+    skeletonDataAsset: {fileID: 11400000, guid: a3514b96c2d5e214fa63d1c8e15bdaf7, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 3.1330001
+    duration: 0.6667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 2
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_water_wo_02
+    sourceName: screen_water_fx_all2
+    skeletonDataAsset: {fileID: 11400000, guid: d97edd12e6931a040a959a1c9248fd66, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 3.3330002
+    duration: 2
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_electricity_screen_ground_02
+    sourceName: screen_fx_electricity_screen_02_1
+    skeletonDataAsset: {fileID: 11400000, guid: bda068c71aa5166478bf48a8f6208c51, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 3.6000001
+    duration: 0.6
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 8000
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_electricity_target_01
+    sourceName: screen_fx_electricity_target_01_f
+    skeletonDataAsset: {fileID: 11400000, guid: 12ba3adc176c91249ae18b942aef155f, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 3.6000001
+    duration: 0.7333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 500
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_electricity_target_01
+    sourceName: screen_fx_electricity_target_01_b
+    skeletonDataAsset: {fileID: 11400000, guid: 39f6a2d9efc18ad4786065a8be741051, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 3.6000001
+    duration: 0.7333
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -2000
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_electricity_screen_03
+    sourceName: screen_fx_electricity_screen_01_2
+    skeletonDataAsset: {fileID: 11400000, guid: 13e44551d858c494c80e729f7cfccd6a, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 3.6000001
+    duration: 0.7667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: screen_fx_electricity_screen_ground_02
+    sourceName: screen_fx_electricity_screen_03_1
+    skeletonDataAsset: {fileID: 11400000, guid: 861b2b0107398fd428b1efbb4965e2ef, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 3.6000001
+    duration: 0.5667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 3000
+    loop: 0
+    attachmentBone: 
+  particleLayers: []
+  transformCues:
+  - sourceName: fei_30048_ug_node_standby
+    target: 3
+    startTime: 0
+    duration: 0.5
+    positionScale: 0.01
+    translateKeys:
+    - time: 0.1667
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 0.5
+      value: {x: 172, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  - sourceName: fei_30048_ug_attack_cam
+    target: 0
+    startTime: 0.53000003
+    duration: 1.8333
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: -12.07, y: -0.19}
+      stepped: 0
+    - time: 0.6
+      value: {x: -117.05, y: -68.89}
+      stepped: 0
+    - time: 1.4
+      value: {x: -915.45, y: -684.59}
+      stepped: 1
+    - time: 1.4333
+      value: {x: -198.91, y: -98.5}
+      stepped: 1
+    - time: 1.5667
+      value: {x: -1185.32, y: 404.34}
+      stepped: 0
+    - time: 1.6667
+      value: {x: -1026.86, y: 516.29}
+      stepped: 0
+    - time: 1.7333
+      value: {x: -432.32, y: 173.51}
+      stepped: 0
+    rotateKeys:
+    - time: 1.4333
+      value: 0
+      stepped: 1
+    - time: 1.5667
+      value: -12.87
+      stepped: 0
+    scaleKeys:
+    - time: 0.6
+      value: {x: 1, y: 1}
+      stepped: 0
+    - time: 1.4
+      value: {x: 2.079, y: 2.079}
+      stepped: 1
+    - time: 1.4333
+      value: {x: 0.942, y: 0.942}
+      stepped: 1
+    - time: 1.5667
+      value: {x: 3.151, y: 3.151}
+      stepped: 1
+    - time: 1.6667
+      value: {x: 3.151, y: 3.151}
+      stepped: 0
+    - time: 1.7333
+      value: {x: 1.412, y: 1.412}
+      stepped: 1
+    - time: 1.8333
+      value: {x: 1.412, y: 1.412}
+      stepped: 0
+  - sourceName: fei_30048_ug_attack_mon_node
+    target: 1
+    startTime: 2.3993
+    duration: 2
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 382.48, y: -118.39}
+      stepped: 1
+    - time: 0.5667
+      value: {x: 382.48, y: -118.39}
+      stepped: 1
+    - time: 1.8333
+      value: {x: 322.01, y: -196.56}
+      stepped: 1
+    - time: 2
+      value: {x: 322.01, y: -196.56}
+      stepped: 0
+    rotateKeys:
+    - time: 0
+      value: -3.05
+      stepped: 1
+    - time: 0.5667
+      value: -3.05
+      stepped: 1
+    - time: 1.8333
+      value: -22.31
+      stepped: 0
+    scaleKeys:
+    - time: 0
+      value: {x: 0.3, y: 0.3}
+      stepped: 0
+  cameraZoomCues: []
+  markers:
+  - kind: BG_BLEND
+    label: BG_BLEND
+    startTime: 0
+    duration: 0
+    value: 0
+  - kind: STANDBY_ACTION
+    label: STANDBY_ACTION
+    startTime: 0
+    duration: 0.5
+    value: 0
+  - kind: SETTING
+    label: SETTING
+    startTime: 0
+    duration: 0
+    value: 0
+  - kind: HIT
+    label: HIT
+    startTime: 0
+    duration: 0
+    value: 0
+  - kind: STANDBY_ON
+    label: STANDBY_ON
+    startTime: 0
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 0.2
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 0.333
+    duration: 0
+    value: 0
+  - kind: STANDBY_OFF
+    label: STANDBY_OFF
+    startTime: 0.5
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 1.1660001
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 1.9190001
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 2.2990003
+    duration: 0
+    value: 0
+  - kind: MOVE
+    label: MOVE
+    startTime: 2.6000001
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 2.6320002
+    duration: 0
+    value: 0
+  - kind: BG_BLEND
+    label: BG_BLEND
+    startTime: 2.6660001
+    duration: 0
+    value: 0
+  - kind: HIT_EX
+    label: HIT_EX
+    startTime: 2.766
+    duration: 0
+    value: 0
+  - kind: IDLE
+    label: IDLE
+    startTime: 2.9333
+    duration: 0
+    value: 0
+  - kind: MOVE
+    label: MOVE
+    startTime: 3.2660003
+    duration: 0
+    value: 0
+  - kind: CONTROL_ANI
+    label: CONTROL_ANI
+    startTime: 3.5000002
+    duration: 0
+    value: 0
+  - kind: SETTING
+    label: SETTING
+    startTime: 3.5000002
+    duration: 0
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, and exact audited particle textures are bound
+    when present; unresolved textures use a soft fallback. Particle additive flags
+    use the project's additive particle shader fallback. BattleReady standby visibility
+    and its BRMD node transform are composed for UG. FRONT effects are placed on
+    the screen foreground. Masks, custom shaders, color-blend and post-process nodes
+    remain diagnostic markers. Negative/sentinel CFX scales use a positive preview
+    fallback, ancillary Spine Bezier keys are sampled with linear interpolation,
+    and only the primary cam/camera/node bone is sampled from multi-bone ancillary
+    skeletons. UX CUTIN remains diagnostic because the source node has neither id
+    nor file_name.
+  unresolvedResources:
+  - 'FRONT CFX anchor mapped to the screen foreground: fei_30048_ug_attack_hookup_s1_eff'
+  - 'FRONT CFX anchor mapped to the screen foreground: fei_30048_ug_attack_hookup_s2_eff'

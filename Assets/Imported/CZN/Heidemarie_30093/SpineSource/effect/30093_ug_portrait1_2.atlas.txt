@@ -1,0 +1,13 @@
+
+30093_ug_portrait1_2.png
+size: 1296,1708
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a_cloak1
+  rotate: false
+  xy: 2, 2
+  size: 1289, 1701
+  orig: 1289, 1701
+  offset: 0, 0
+  index: -1

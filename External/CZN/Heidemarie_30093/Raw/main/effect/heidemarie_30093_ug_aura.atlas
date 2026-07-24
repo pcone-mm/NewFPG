@@ -1,0 +1,20 @@
+
+heidemarie_30093_ug_aura.sct
+size: 536,304
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura13
+  rotate: true
+  xy: 289, 2
+  size: 300, 243
+  orig: 300, 243
+  offset: 0, 0
+  index: -1
+aura16
+  rotate: true
+  xy: 2, 2
+  size: 300, 285
+  orig: 300, 285
+  offset: 0, 0
+  index: -1

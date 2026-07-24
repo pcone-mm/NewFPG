@@ -1,0 +1,69 @@
+
+fei_30048_u4_attack_ready.png
+size: 1048,568
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fire3_1
+  rotate: true
+  xy: 900, 126
+  size: 139, 122
+  orig: 139, 122
+  offset: 0, 0
+  index: -1
+fire3_2
+  rotate: false
+  xy: 900, 2
+  size: 139, 122
+  orig: 139, 122
+  offset: 0, 0
+  index: -1
+fire4_1
+  rotate: false
+  xy: 732, 59
+  size: 166, 102
+  orig: 166, 102
+  offset: 0, 0
+  index: -1
+fire4_2
+  rotate: false
+  xy: 732, 163
+  size: 166, 102
+  orig: 166, 102
+  offset: 0, 0
+  index: -1
+flame5_1
+  rotate: false
+  xy: 2, 288
+  size: 363, 274
+  orig: 363, 274
+  offset: 0, 0
+  index: -1
+flame5_2
+  rotate: false
+  xy: 2, 12
+  size: 363, 274
+  orig: 363, 274
+  offset: 0, 0
+  index: -1
+flame5_3
+  rotate: false
+  xy: 367, 288
+  size: 363, 274
+  orig: 363, 274
+  offset: 0, 0
+  index: -1
+flame5_4
+  rotate: false
+  xy: 367, 12
+  size: 363, 274
+  orig: 363, 274
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 732, 267
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1

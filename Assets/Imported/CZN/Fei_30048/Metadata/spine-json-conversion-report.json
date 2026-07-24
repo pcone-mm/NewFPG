@@ -1,0 +1,3918 @@
+{
+  "converter": "CZN SCSP1U to Spine 3.8 JSON",
+  "converter_version": 1,
+  "started_utc": "2026-07-11T09:43:45.134809+00:00",
+  "finished_utc": "2026-07-11T09:43:47.400900+00:00",
+  "elapsed_seconds": 2.266,
+  "input": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Fei_30048\\SpineSource",
+  "requested_files": 115,
+  "successful": 115,
+  "failed": 0,
+  "all_body_ends_valid": true,
+  "totals": {
+    "animations": 219,
+    "attachments": {
+      "clipping": 9,
+      "mesh": 3737,
+      "path": 15,
+      "region": 4819
+    },
+    "timelines": {
+      "attachment": 7340,
+      "color": 5641,
+      "deform": 1426,
+      "drawOrder": 73,
+      "pathPosition": 4,
+      "rotate": 16422,
+      "scale": 4316,
+      "shear": 1310,
+      "transform": 144,
+      "translate": 7716
+    },
+    "curves": {
+      "bezier": 6205,
+      "linear": 12953,
+      "stepped": 256681
+    }
+  },
+  "known_limits": [
+    "EventData/EventTimeline layout is not emitted; the audited corpus contains neither.",
+    "Attachment types bounding box, linked mesh, and point are valid Spine types but absent from the audited corpus.",
+    "CLI round-trips may normalize weighted mesh/deform data; generated JSON is canonical."
+  ],
+  "failures": [],
+  "files": [
+    {
+      "source": "effect/fei_30048_attack_play1_f1.scsp1u.bytes",
+      "source_bytes": 35223,
+      "source_sha256": "ecdcb642a6cb0ad4f6804ec9f36706d47c1d95e37be7b40aa0054ab72dd81574",
+      "output": "effect/fei_30048_attack_play1_f1.json",
+      "output_bytes": 39650,
+      "output_sha256": "6d7de87175c831b10bc242887c2a8391578f5969c49e2b932801d789d95cc174",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 24,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8,
+        "region": 16
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 24,
+        "attachment": 24,
+        "rotate": 6,
+        "translate": 6,
+        "scale": 6,
+        "shear": 5,
+        "deform": 5
+      },
+      "curve_counts": {
+        "linear": 44,
+        "stepped": 26,
+        "bezier": 32
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play1_f2.scsp1u.bytes",
+      "source_bytes": 20733,
+      "source_sha256": "11b126e50c64e2d77c089e18d04d52c832b6c5d73ac0b4cee277443d7af113db",
+      "output": "effect/fei_30048_attack_play1_f2.json",
+      "output_bytes": 25153,
+      "output_sha256": "ff44e62a1d3e0c486fdbb5cbfe7cd602ef6415ac9323063f3adb413e9bdfe769",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 8,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 21,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 7,
+        "attachment": 8,
+        "rotate": 7,
+        "translate": 7,
+        "scale": 7,
+        "shear": 3,
+        "deform": 3
+      },
+      "curve_counts": {
+        "linear": 20,
+        "stepped": 19,
+        "bezier": 17
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play1_glow.scsp1u.bytes",
+      "source_bytes": 1966,
+      "source_sha256": "f0819ed07539bd757c39948c26e26b09ac64a7fb2e1d79f42b4f439d6b750d5b",
+      "output": "effect/fei_30048_attack_play1_glow.json",
+      "output_bytes": 1600,
+      "output_sha256": "7bcd38496a23c5264e0cd47a089d2ed7c172226378aa819efc5ece3021590cdb",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 1,
+        "translate": 2,
+        "scale": 2,
+        "rotate": 1
+      },
+      "curve_counts": {
+        "linear": 2,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play2_b1.scsp1u.bytes",
+      "source_bytes": 6876,
+      "source_sha256": "373eefe0c69fb2d210ebbe537474b4612052f2618dd53f17cd1c56e73fe82234",
+      "output": "effect/fei_30048_attack_play2_b1.json",
+      "output_bytes": 4754,
+      "output_sha256": "83506572b6f1d6d96d1c4cb79c7dac79fc8bcd0d38cab31cc61e740507c32eef",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 16,
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 3,
+        "translate": 2,
+        "scale": 2,
+        "rotate": 1,
+        "shear": 1
+      },
+      "curve_counts": {
+        "linear": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play2_b2.scsp1u.bytes",
+      "source_bytes": 9517,
+      "source_sha256": "eeafb40de2d9e40f95053206250cee134b2fc6475a46ed75f65e98a7b2d2c988",
+      "output": "effect/fei_30048_attack_play2_b2.json",
+      "output_bytes": 6033,
+      "output_sha256": "0e476161f5ff061bdd62db53b35f3869f42d7f453bafac8243a2610dbc391112",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 14,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 14
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 14,
+        "attachment": 14,
+        "rotate": 2,
+        "translate": 2,
+        "scale": 2,
+        "shear": 2
+      },
+      "curve_counts": {
+        "linear": 29,
+        "stepped": 15,
+        "bezier": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play2_f1.scsp1u.bytes",
+      "source_bytes": 24813,
+      "source_sha256": "55cc13509b1bc838aa725a2b5160e04dad9ea1463c16a411b4cc6ace75ffeeca",
+      "output": "effect/fei_30048_attack_play2_f1.json",
+      "output_bytes": 28234,
+      "output_sha256": "ea11a91b4d7e9707c4ee5eb2eb37d193e04299d83a72b3edc87c8d5029eb88f6",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 17,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 6,
+        "region": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 17,
+        "attachment": 17,
+        "rotate": 4,
+        "translate": 4,
+        "scale": 4,
+        "shear": 4,
+        "deform": 3
+      },
+      "curve_counts": {
+        "stepped": 18,
+        "linear": 29,
+        "bezier": 19
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play2_f2.scsp1u.bytes",
+      "source_bytes": 16745,
+      "source_sha256": "a0f071e143c69b641256a2a7ffa505d70756e5a9a5622c27cf248a1dafbbd816",
+      "output": "effect/fei_30048_attack_play2_f2.json",
+      "output_bytes": 14077,
+      "output_sha256": "f03851d9e9e39141c29dcdc90ab8a34ba29f0078a228e6f1af160b1bd973a97c",
+      "body_end_valid": true,
+      "bones": 8,
+      "slots": 7,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 20,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 7,
+        "attachment": 7,
+        "rotate": 5,
+        "translate": 6,
+        "scale": 6,
+        "shear": 3,
+        "deform": 2
+      },
+      "curve_counts": {
+        "linear": 25,
+        "stepped": 19,
+        "bezier": 20
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play2_glow.scsp1u.bytes",
+      "source_bytes": 1870,
+      "source_sha256": "dff89817048495821b32c1ad42f5c761071239bde40f4110d9432273fe4ae0fe",
+      "output": "effect/fei_30048_attack_play2_glow.json",
+      "output_bytes": 1580,
+      "output_sha256": "3c4a597997e2c87e9f28cff0b0d2936c0a4dcd7138eeb6aa093ad236fb0f94be",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 1,
+        "translate": 2,
+        "scale": 2,
+        "rotate": 1
+      },
+      "curve_counts": {
+        "linear": 1,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play_target.scsp1u.bytes",
+      "source_bytes": 196951,
+      "source_sha256": "8a6f77251abc804728647464998cb96d58797aa1e3f09d3df741c52e07f8193b",
+      "output": "effect/fei_30048_attack_play_target.json",
+      "output_bytes": 201406,
+      "output_sha256": "98c1b4414bb42d77a5eb1d8270e8a45f71a77116f88ca4024106991356600495",
+      "body_end_valid": true,
+      "bones": 54,
+      "slots": 112,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 3,
+        "mesh": 50,
+        "region": 65
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 194,
+        "attachment": 156,
+        "rotate": 73,
+        "translate": 56,
+        "scale": 80,
+        "shear": 6,
+        "deform": 56
+      },
+      "curve_counts": {
+        "stepped": 114,
+        "linear": 472,
+        "bezier": 108
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_attack_play_target_glow.scsp1u.bytes",
+      "source_bytes": 2508,
+      "source_sha256": "6b4a703b6190276e37b2b6f21c0be07de72ec03cf28e67bc226b46086474705b",
+      "output": "effect/fei_30048_attack_play_target_glow.json",
+      "output_bytes": 1665,
+      "output_sha256": "1e20fb574ffca4567afb4c6972e4cc068436478912d0aca957020aa4879abb22",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 2,
+        "scale": 2
+      },
+      "curve_counts": {
+        "linear": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_buff_play.scsp1u.bytes",
+      "source_bytes": 29444,
+      "source_sha256": "06f8800624150a36fa76b67301286c82f4e5df173c0f3b11b50f6d22faca3c4f",
+      "output": "effect/fei_30048_buff_play.json",
+      "output_bytes": 26068,
+      "output_sha256": "cac72fd1753c34b04bcea7d7c4f55570d13f4abde7baaa0a62694128bd26bd90",
+      "body_end_valid": true,
+      "bones": 20,
+      "slots": 31,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 41
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 31,
+        "attachment": 31,
+        "scale": 16,
+        "rotate": 9,
+        "translate": 8,
+        "shear": 7,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 50,
+        "stepped": 28,
+        "bezier": 27
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_buff_play_glow.scsp1u.bytes",
+      "source_bytes": 1830,
+      "source_sha256": "04aa54473bb47b93125cbae65c063025dc2d1612eef9c37032f65a9ef0c57267",
+      "output": "effect/fei_30048_buff_play_glow.json",
+      "output_bytes": 1348,
+      "output_sha256": "5e7140c2b477599a1c7e09bd2556350f52585725afbaab9eb47f7ab6df4659c9",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 1,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "linear": 3,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u1_buff_play_b1.scsp1u.bytes",
+      "source_bytes": 82855,
+      "source_sha256": "889fdeed8f65ca97a2f10e4ab44f37cf5a987dd133e991d8cb5c401a5a2ad27e",
+      "output": "effect/fei_30048_u1_buff_play_b1.json",
+      "output_bytes": 80511,
+      "output_sha256": "5abf71aa41dffef7832e367eab42e770182dd9499953547d53885c3105eedb8a",
+      "body_end_valid": true,
+      "bones": 30,
+      "slots": 53,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 46,
+        "region": 7
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 53,
+        "attachment": 53,
+        "translate": 21,
+        "scale": 20,
+        "rotate": 19,
+        "shear": 6,
+        "deform": 20
+      },
+      "curve_counts": {
+        "stepped": 141,
+        "linear": 105,
+        "bezier": 74
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u1_buff_play_b2.scsp1u.bytes",
+      "source_bytes": 23734,
+      "source_sha256": "1529c28d456d054fc46f77ad5c91d63d4127ac08f9d9faa3f8013ff70671d35e",
+      "output": "effect/fei_30048_u1_buff_play_b2.json",
+      "output_bytes": 15391,
+      "output_sha256": "b7d13f21cdb7d23a5784dbfa6b4a65ea8e1d96e9e66b6f79b29aef079515ddcd",
+      "body_end_valid": true,
+      "bones": 8,
+      "slots": 31,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 31
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 31,
+        "attachment": 31,
+        "translate": 5,
+        "rotate": 4,
+        "scale": 4,
+        "shear": 4
+      },
+      "curve_counts": {
+        "stepped": 70,
+        "linear": 58,
+        "bezier": 14
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u1_buff_play_f1.scsp1u.bytes",
+      "source_bytes": 30390,
+      "source_sha256": "26613b243d66053d07d70124d5559e6158016746541da6549679c4b1654448f9",
+      "output": "effect/fei_30048_u1_buff_play_f1.json",
+      "output_bytes": 19666,
+      "output_sha256": "8bafa247ddef6be784dac96cba408cd04ee04c9c5e33b789c10152005119e262",
+      "body_end_valid": true,
+      "bones": 8,
+      "slots": 40,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 40
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 40,
+        "attachment": 40,
+        "translate": 6,
+        "rotate": 5,
+        "scale": 5,
+        "shear": 3
+      },
+      "curve_counts": {
+        "stepped": 85,
+        "linear": 81,
+        "bezier": 17
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u1_buff_play_f2.scsp1u.bytes",
+      "source_bytes": 70201,
+      "source_sha256": "91b3084e6bf9174089fef4b0ac3580571193822272403808c23b05b6e24fc514",
+      "output": "effect/fei_30048_u1_buff_play_f2.json",
+      "output_bytes": 79494,
+      "output_sha256": "61f1e26c686b384d6bab12e656e255f072efca05451edc46dc49325cc1ede7b8",
+      "body_end_valid": true,
+      "bones": 26,
+      "slots": 31,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 24,
+        "region": 7
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 31,
+        "attachment": 31,
+        "translate": 15,
+        "scale": 13,
+        "rotate": 10,
+        "shear": 5,
+        "deform": 19
+      },
+      "curve_counts": {
+        "stepped": 77,
+        "linear": 63,
+        "bezier": 54
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u2_buff_play_b1.scsp1u.bytes",
+      "source_bytes": 41157,
+      "source_sha256": "ed8ba73879f4af558c98d0876d0827a40f9231cbbf52986864cbcf190772ea2d",
+      "output": "effect/fei_30048_u2_buff_play_b1.json",
+      "output_bytes": 46147,
+      "output_sha256": "2b9c68a72573c5bbe54d17f5e653234f8a88c30aa0e6968e733d8bfd611c4d39",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9,
+        "region": 9
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 18,
+        "attachment": 18,
+        "translate": 3,
+        "rotate": 2,
+        "scale": 2,
+        "shear": 2,
+        "deform": 9
+      },
+      "curve_counts": {
+        "stepped": 44,
+        "linear": 36,
+        "bezier": 18
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u2_buff_play_b2.scsp1u.bytes",
+      "source_bytes": 27501,
+      "source_sha256": "ebb1889786f44540707d8770f70922d33d4b80f6e4b64e44ae31ae86c8bf5bc8",
+      "output": "effect/fei_30048_u2_buff_play_b2.json",
+      "output_bytes": 20960,
+      "output_sha256": "5c963f2b6f7acd05b0cd6083766827d9483dbed65f937f6563c8e54df08e8901",
+      "body_end_valid": true,
+      "bones": 12,
+      "slots": 28,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 27
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 28,
+        "attachment": 28,
+        "translate": 8,
+        "scale": 8,
+        "shear": 7,
+        "rotate": 7,
+        "deform": 1
+      },
+      "curve_counts": {
+        "stepped": 78,
+        "linear": 58,
+        "bezier": 29
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u2_buff_play_f1.scsp1u.bytes",
+      "source_bytes": 55566,
+      "source_sha256": "f83f22d5c33121a06b6d2cfca8cd1df54a5c20b29afa696e94451ba441abf563",
+      "output": "effect/fei_30048_u2_buff_play_f1.json",
+      "output_bytes": 56829,
+      "output_sha256": "cec5d69354796f3728ea943044f557867a88ee20b14c17c2cbdbb26b516331a1",
+      "body_end_valid": true,
+      "bones": 12,
+      "slots": 30,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 30
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 30,
+        "attachment": 30,
+        "translate": 8,
+        "rotate": 7,
+        "scale": 5,
+        "shear": 4,
+        "deform": 11
+      },
+      "curve_counts": {
+        "stepped": 81,
+        "linear": 56,
+        "bezier": 31
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u2_buff_play_f2.scsp1u.bytes",
+      "source_bytes": 68052,
+      "source_sha256": "90d1005f9790b22f8f1101287cad78f42db726dee01c8b40bc0095e9ec612365",
+      "output": "effect/fei_30048_u2_buff_play_f2.json",
+      "output_bytes": 45881,
+      "output_sha256": "ba6570eb112873dfec3ba8f2af68befa14d3f2167899737568954db3234b7f20",
+      "body_end_valid": true,
+      "bones": 30,
+      "slots": 78,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 78
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 78,
+        "attachment": 78,
+        "translate": 25,
+        "scale": 25,
+        "rotate": 22,
+        "shear": 17
+      },
+      "curve_counts": {
+        "stepped": 207,
+        "linear": 145,
+        "bezier": 95
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_b1.scsp1u.bytes",
+      "source_bytes": 51306,
+      "source_sha256": "fbbf593c8242ca5f63fc2ff9efa35fe1e443ec3bf1f5f407c9658af4d009ed6a",
+      "output": "effect/fei_30048_u3_buff_play_b1.json",
+      "output_bytes": 34007,
+      "output_sha256": "90a7a289e5ce6e37445866cd0eecb77a79eb210e7f33737f73b7fb7617389293",
+      "body_end_valid": true,
+      "bones": 18,
+      "slots": 54,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 83
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 54,
+        "rotate": 13,
+        "translate": 16,
+        "scale": 13,
+        "shear": 8
+      },
+      "curve_counts": {
+        "stepped": 123,
+        "linear": 115,
+        "bezier": 50
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_b2.scsp1u.bytes",
+      "source_bytes": 72732,
+      "source_sha256": "57f0e3e8f561666ef70e17b5d8d91f8cab02742ec3287d2ab64f432a13630809",
+      "output": "effect/fei_30048_u3_buff_play_b2.json",
+      "output_bytes": 46217,
+      "output_sha256": "e91b71c32a50470f2942eedadd09f48ab49ff14cf7a4062dd01b07a06cffab3d",
+      "body_end_valid": true,
+      "bones": 24,
+      "slots": 91,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 7,
+        "region": 84
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 91,
+        "attachment": 91,
+        "scale": 14,
+        "rotate": 13,
+        "translate": 19,
+        "shear": 1
+      },
+      "curve_counts": {
+        "linear": 197,
+        "stepped": 202,
+        "bezier": 40
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_b3.scsp1u.bytes",
+      "source_bytes": 74930,
+      "source_sha256": "d7661db76ab2501cc6c4fc8605cc0bd4c17f0b6821680e880b2279f1adb54e74",
+      "output": "effect/fei_30048_u3_buff_play_b3.json",
+      "output_bytes": 47117,
+      "output_sha256": "ce2c249136a01147c32723cabfae9157811b510fe3ac961ea9a15d05b6f375c3",
+      "body_end_valid": true,
+      "bones": 24,
+      "slots": 86,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 86
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 86,
+        "attachment": 86,
+        "translate": 21,
+        "rotate": 19,
+        "scale": 19,
+        "shear": 6
+      },
+      "curve_counts": {
+        "stepped": 234,
+        "linear": 221,
+        "bezier": 34
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_b4.scsp1u.bytes",
+      "source_bytes": 56731,
+      "source_sha256": "b4eb4a2158e15ebdf87a4fbb75bce629e65243a94c914208f4aa12ee8fdd38e3",
+      "output": "effect/fei_30048_u3_buff_play_b4.json",
+      "output_bytes": 35458,
+      "output_sha256": "8b210dc001e8f38cdcb69e12ef2d032def1eadde7442c1b95a690b8fe7758e0d",
+      "body_end_valid": true,
+      "bones": 17,
+      "slots": 67,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 67
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 67,
+        "attachment": 67,
+        "rotate": 9,
+        "translate": 14,
+        "scale": 10,
+        "shear": 5
+      },
+      "curve_counts": {
+        "stepped": 184,
+        "linear": 144,
+        "bezier": 30
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_b5.scsp1u.bytes",
+      "source_bytes": 5162,
+      "source_sha256": "173ae5fec25c7ab55f37a1e13aa8c5222637b0e14a113c4fbaa5b2b104af884b",
+      "output": "effect/fei_30048_u3_buff_play_b5.json",
+      "output_bytes": 3015,
+      "output_sha256": "a79f4a527076b7f99b888463498d712667266b717111f53f69c0db1a42d26446",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 15
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 2,
+        "attachment": 2,
+        "translate": 5
+      },
+      "curve_counts": {
+        "stepped": 5,
+        "linear": 5,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_f.scsp1u.bytes",
+      "source_bytes": 16006,
+      "source_sha256": "9017525c231b059277c34aa0c2ddf149f376a115b88006e777d4d0f7027c8c3d",
+      "output": "effect/fei_30048_u3_buff_play_f.json",
+      "output_bytes": 11387,
+      "output_sha256": "82b347bb7b3b4e877456c0b0d79f96d772646508c12d12436c52e686b79fe785",
+      "body_end_valid": true,
+      "bones": 11,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9,
+        "region": 6
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 15,
+        "attachment": 15,
+        "translate": 8,
+        "rotate": 6,
+        "scale": 6,
+        "shear": 2
+      },
+      "curve_counts": {
+        "stepped": 38,
+        "linear": 41,
+        "bezier": 23
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_play_glow.scsp1u.bytes",
+      "source_bytes": 2578,
+      "source_sha256": "e79b7abe7265523e32dd9882b04d5cd28ab9336d0c0d74dc0a8a5f0160e4ab0c",
+      "output": "effect/fei_30048_u3_buff_play_glow.json",
+      "output_bytes": 1718,
+      "output_sha256": "f176df5783f227869ca7973a2a8f55c309018e6889c6c9eaac583be3ab51ea71",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 1,
+        "rotate": 1,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 4,
+        "linear": 7,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_ready.scsp1u.bytes",
+      "source_bytes": 13650,
+      "source_sha256": "0afbdd6fa8f96a847d2e0755978efb44841a2164e7685dfc3cef038f804207cb",
+      "output": "effect/fei_30048_u3_buff_ready.json",
+      "output_bytes": 9325,
+      "output_sha256": "ba933369d213b0c8ea82fb4012e53faf2729b68185d6718f4f8a9166ada1d511",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 11,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 11,
+        "attachment": 11,
+        "rotate": 3,
+        "translate": 4,
+        "scale": 3,
+        "deform": 6
+      },
+      "curve_counts": {
+        "stepped": 34,
+        "linear": 58
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u3_buff_ready_glow.scsp1u.bytes",
+      "source_bytes": 3620,
+      "source_sha256": "a8183debc32a526fe450b13b33529683854c04b16ad8f19bff0eaec6ffa65987",
+      "output": "effect/fei_30048_u3_buff_ready_glow.json",
+      "output_bytes": 2289,
+      "output_sha256": "d8b413019b2df763b398f09e17b986cc3968a74ede58dd234322ad7930f203f5",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 2,
+        "translate": 2,
+        "scale": 2
+      },
+      "curve_counts": {
+        "stepped": 7,
+        "linear": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_play.scsp1u.bytes",
+      "source_bytes": 39475,
+      "source_sha256": "aae1c32eac28a073ddcfbd792137964592a9f1c9fa4f53dbbdeadcfa38138238",
+      "output": "effect/fei_30048_u4_attack_play.json",
+      "output_bytes": 39573,
+      "output_sha256": "e7e34446284ef29dbd2cbceaf104c3a6c2db06b2753251553fc18e740f92a897",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 31,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 16,
+        "region": 25
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 29,
+        "attachment": 31,
+        "rotate": 13,
+        "translate": 15,
+        "scale": 13,
+        "shear": 9,
+        "deform": 11
+      },
+      "curve_counts": {
+        "linear": 48,
+        "stepped": 62,
+        "bezier": 36
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_play_glow.scsp1u.bytes",
+      "source_bytes": 1830,
+      "source_sha256": "4eba203773fc126a0a4a8ab5497db89f9c21d9a6aec6dfd142e611f1bdc3c6a5",
+      "output": "effect/fei_30048_u4_attack_play_glow.json",
+      "output_bytes": 1378,
+      "output_sha256": "973bb5d7a074d73d93c5a61e19ce11b57c3fd0a29d3c7b6749276b87f7e01574",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 1,
+        "translate": 1,
+        "scale": 1,
+        "rotate": 1
+      },
+      "curve_counts": {
+        "linear": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_play_target_b.scsp1u.bytes",
+      "source_bytes": 102748,
+      "source_sha256": "c08b933688735e928f2799c9875f9e3e3f3028b3ce75826fde801a4e4142c07b",
+      "output": "effect/fei_30048_u4_attack_play_target_b.json",
+      "output_bytes": 94342,
+      "output_sha256": "0f958b0e04e824d12c0227ed27e809fd56fb13d820e1ab6459c80d98a765056a",
+      "body_end_valid": true,
+      "bones": 54,
+      "slots": 46,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 34,
+        "region": 37
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 46,
+        "attachment": 46,
+        "rotate": 42,
+        "translate": 43,
+        "scale": 49,
+        "shear": 4,
+        "deform": 23
+      },
+      "curve_counts": {
+        "stepped": 233,
+        "linear": 184,
+        "bezier": 42
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_play_target_f1.scsp1u.bytes",
+      "source_bytes": 387674,
+      "source_sha256": "2eb1b688dd1c3beb693db4e65618e4db78210924ab0f925335c6eb209c127464",
+      "output": "effect/fei_30048_u4_attack_play_target_f1.json",
+      "output_bytes": 601710,
+      "output_sha256": "6ed3c955a65e4921382f69559b58143267b2331b51422034d20edeb4013d9c30",
+      "body_end_valid": true,
+      "bones": 43,
+      "slots": 123,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 99,
+        "region": 24
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 123,
+        "attachment": 123,
+        "rotate": 36,
+        "translate": 38,
+        "scale": 36,
+        "shear": 8,
+        "deform": 91
+      },
+      "curve_counts": {
+        "stepped": 327,
+        "linear": 252,
+        "bezier": 288
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_play_target_f2.scsp1u.bytes",
+      "source_bytes": 62204,
+      "source_sha256": "da76c35aa4c82d8f124de22728cbccf7fe1ab91b90f2c03e670a561106c7283c",
+      "output": "effect/fei_30048_u4_attack_play_target_f2.json",
+      "output_bytes": 47316,
+      "output_sha256": "d13f053cb99552a212f7c415aee8fb30bd7c0db34d90021c3d9b72b55a54f02c",
+      "body_end_valid": true,
+      "bones": 35,
+      "slots": 54,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 4,
+        "region": 90
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 54,
+        "rotate": 25,
+        "translate": 24,
+        "scale": 31,
+        "shear": 12,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 139,
+        "linear": 105,
+        "bezier": 71
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_play_target_f3.scsp1u.bytes",
+      "source_bytes": 12978,
+      "source_sha256": "160274bdfdcedde84fa477a322f7e6823a736c20dde5e9b28cda393295aa9191",
+      "output": "effect/fei_30048_u4_attack_play_target_f3.json",
+      "output_bytes": 14193,
+      "output_sha256": "5fd5b202e8b079a0d33091972b4fe8f15b4eebc31ef9105a991fa6891ce69bff",
+      "body_end_valid": true,
+      "bones": 8,
+      "slots": 8,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 1,
+        "region": 6
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 7,
+        "attachment": 8,
+        "rotate": 3,
+        "translate": 4,
+        "scale": 4,
+        "deform": 2
+      },
+      "curve_counts": {
+        "stepped": 21,
+        "linear": 19,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_ready.scsp1u.bytes",
+      "source_bytes": 8843,
+      "source_sha256": "b73d2ca054b46457f1c6d90fb45eff15735d4aaecd306e3d59c45bb97ad1ff82",
+      "output": "effect/fei_30048_u4_attack_ready.json",
+      "output_bytes": 5425,
+      "output_sha256": "bae4e009e636d0bbf04b2d771c87a41b3ada00a59f3a9e89e3b948b0277ae4d8",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 9
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 9,
+        "attachment": 9,
+        "rotate": 4,
+        "translate": 5,
+        "scale": 4,
+        "shear": 1
+      },
+      "curve_counts": {
+        "stepped": 35,
+        "linear": 25
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_ready_glow.scsp1u.bytes",
+      "source_bytes": 2270,
+      "source_sha256": "76e24e7e1b6b29c3d5edfafd9948332b25bf4863ec4c24ff6288225ea67d156a",
+      "output": "effect/fei_30048_u4_attack_ready_glow.json",
+      "output_bytes": 1535,
+      "output_sha256": "195acb11bfddcbf7c6cf0f777cc467313ed1bd2af6f9fcc1573fc9f5f19ab865",
+      "body_end_valid": true,
+      "bones": 6,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 1,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 3,
+        "linear": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_ready_target.scsp1u.bytes",
+      "source_bytes": 80708,
+      "source_sha256": "9b1391e628e1155e82151eb39826489fc46d44da90c86d276050c068d038ec84",
+      "output": "effect/fei_30048_u4_attack_ready_target.json",
+      "output_bytes": 93357,
+      "output_sha256": "aa7b77ec9b633c303ef7b2f7bd2b36ab2e7eb115762e3d6edbb770fcb4afe95b",
+      "body_end_valid": true,
+      "bones": 34,
+      "slots": 37,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 30,
+        "region": 7
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 37,
+        "attachment": 37,
+        "rotate": 27,
+        "translate": 29,
+        "scale": 28,
+        "shear": 7,
+        "deform": 22
+      },
+      "curve_counts": {
+        "stepped": 134,
+        "linear": 127,
+        "bezier": 22
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u4_attack_ready_target_glow.scsp1u.bytes",
+      "source_bytes": 3620,
+      "source_sha256": "a839ce761943c05f2e97bbce0bc5ff866673d8aa46253fcefcb72074532ce1bf",
+      "output": "effect/fei_30048_u4_attack_ready_target_glow.json",
+      "output_bytes": 2308,
+      "output_sha256": "f122b1ed22b90b7a0af99c38b7bef81d588461441b124017af6d8d081e34d113",
+      "body_end_valid": true,
+      "bones": 7,
+      "slots": 4,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 1,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 4,
+        "attachment": 2,
+        "translate": 2,
+        "scale": 2
+      },
+      "curve_counts": {
+        "stepped": 8,
+        "linear": 12
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_play_cha_glow.scsp1u.bytes",
+      "source_bytes": 20456,
+      "source_sha256": "23e6a238a101e869f7f0a8ade1bb5ece57600c0eab73f37502246b384e16f137",
+      "output": "effect/fei_30048_u5_buff_play_cha_glow.json",
+      "output_bytes": 19993,
+      "output_sha256": "2cd171bd6dbd876b984c7c6ead152d7ee2ebaabc2eed998d86440e4000b981e0",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 7,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2,
+        "region": 21
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 7,
+        "attachment": 6,
+        "translate": 6,
+        "rotate": 1,
+        "scale": 1,
+        "deform": 2
+      },
+      "curve_counts": {
+        "stepped": 70,
+        "linear": 14
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_play_fire_b.scsp1u.bytes",
+      "source_bytes": 152244,
+      "source_sha256": "40f6d197f7ce72ba407f413f6dac1402fd80960a81830623d1f55c91aa829a4b",
+      "output": "effect/fei_30048_u5_buff_play_fire_b.json",
+      "output_bytes": 102880,
+      "output_sha256": "d444e827da95578dc128307f9bbfddf668daca3ceb52150686b1923a93435ec9",
+      "body_end_valid": true,
+      "bones": 53,
+      "slots": 184,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 26,
+        "region": 158
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 184,
+        "attachment": 184,
+        "rotate": 41,
+        "translate": 43,
+        "scale": 44,
+        "shear": 13
+      },
+      "curve_counts": {
+        "stepped": 490,
+        "linear": 332,
+        "bezier": 127
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_play_fire_f.scsp1u.bytes",
+      "source_bytes": 101600,
+      "source_sha256": "46e381de15cb5abf8521e2f8c6c2dfa9e81f205bdba22834e8b16bb306fccb48",
+      "output": "effect/fei_30048_u5_buff_play_fire_f.json",
+      "output_bytes": 68309,
+      "output_sha256": "da89e8d63ea072aa41400db82335749011d628ff0a5680388cd730bf53332891",
+      "body_end_valid": true,
+      "bones": 37,
+      "slots": 119,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8,
+        "region": 111
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 119,
+        "attachment": 119,
+        "rotate": 27,
+        "translate": 29,
+        "scale": 30,
+        "shear": 6
+      },
+      "curve_counts": {
+        "stepped": 315,
+        "linear": 229,
+        "bezier": 98
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_play_glow.scsp1u.bytes",
+      "source_bytes": 3317,
+      "source_sha256": "f673de10ed0f45be1cd540f103a76d8af02efb87d11fd455d8813c953cd1fe58",
+      "output": "effect/fei_30048_u5_buff_play_glow.json",
+      "output_bytes": 2260,
+      "output_sha256": "50c2dd2336a9b682f576f7a12caf27307fe37c19b88e346566875427e114bf23",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 3,
+        "translate": 3,
+        "scale": 3
+      },
+      "curve_counts": {
+        "stepped": 9,
+        "linear": 8,
+        "bezier": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_play_servant.scsp1u.bytes",
+      "source_bytes": 2981915,
+      "source_sha256": "bac846d942712a6e0f058f7d01be8a0f7175e49c633f6eabbed4a85a855be7b7",
+      "output": "effect/fei_30048_u5_buff_play_servant.json",
+      "output_bytes": 1920775,
+      "output_sha256": "a78da3208bd4dd1589ebab63d7a0c48cb48e50a4cfee3ac434025b232cd38e52",
+      "body_end_valid": true,
+      "bones": 564,
+      "slots": 171,
+      "ik_constraints": 2,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 750,
+        "region": 10
+      },
+      "animations": 4,
+      "timeline_counts": {
+        "color": 170,
+        "attachment": 290,
+        "translate": 528,
+        "rotate": 1200,
+        "scale": 200,
+        "drawOrder": 1
+      },
+      "curve_counts": {
+        "stepped": 29596,
+        "linear": 226,
+        "bezier": 10
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_play_sun.scsp1u.bytes",
+      "source_bytes": 50080,
+      "source_sha256": "1b22a23bb3c330affd2e2f31f714957798cbbe0764c620364c847a0dd53cfc0e",
+      "output": "effect/fei_30048_u5_buff_play_sun.json",
+      "output_bytes": 66309,
+      "output_sha256": "2939ba14589feb1c50fc4060e3b1c9686e503e3bc1c969c94d4fb4f4b8184b5c",
+      "body_end_valid": true,
+      "bones": 80,
+      "slots": 36,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 4,
+      "skins": 1,
+      "attachments": {
+        "mesh": 21,
+        "path": 4,
+        "region": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 36,
+        "attachment": 20,
+        "translate": 9,
+        "scale": 18,
+        "rotate": 8,
+        "shear": 2,
+        "pathPosition": 4,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 54,
+        "linear": 32,
+        "bezier": 31
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_ready_b.scsp1u.bytes",
+      "source_bytes": 38956,
+      "source_sha256": "f77194ab9de800e3b7ef37847d0b475ca60e184d03bb5a75198eb8986273f2d0",
+      "output": "effect/fei_30048_u5_buff_ready_b.json",
+      "output_bytes": 49918,
+      "output_sha256": "09b43fab1c93f1814063d1dd78a99cc24e9b4872df15056cb8931e36ff3034fe",
+      "body_end_valid": true,
+      "bones": 14,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 12,
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 15,
+        "attachment": 15,
+        "rotate": 8,
+        "translate": 10,
+        "scale": 12,
+        "shear": 7,
+        "deform": 12
+      },
+      "curve_counts": {
+        "stepped": 53,
+        "linear": 24,
+        "bezier": 38
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_u5_buff_ready_f.scsp1u.bytes",
+      "source_bytes": 132797,
+      "source_sha256": "926654158cba16306ede0e50004331ef889f76bf278ca77b59d347007422739b",
+      "output": "effect/fei_30048_u5_buff_ready_f.json",
+      "output_bytes": 128187,
+      "output_sha256": "a9542a9a8907d663466269b11d5f4d13eded191cc17acc93da563395466df985",
+      "body_end_valid": true,
+      "bones": 74,
+      "slots": 78,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 28,
+        "region": 50
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 78,
+        "attachment": 77,
+        "rotate": 66,
+        "translate": 70,
+        "scale": 70,
+        "shear": 56,
+        "deform": 24
+      },
+      "curve_counts": {
+        "stepped": 337,
+        "linear": 121,
+        "bezier": 198
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_cutin_1.scsp1u.bytes",
+      "source_bytes": 647894,
+      "source_sha256": "040699284a1e7f6a6a7c9d92ed5674041eaccc0f9fc96286827dd4c2b1106df7",
+      "output": "effect/fei_30048_ug_cutin_1.json",
+      "output_bytes": 644014,
+      "output_sha256": "cfe56d34f18d3e178b1106ad19bbfc6d04e7c311193b86a18689331fc39a01a5",
+      "body_end_valid": true,
+      "bones": 379,
+      "slots": 127,
+      "ik_constraints": 0,
+      "transform_constraints": 22,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 127
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 127,
+        "attachment": 254,
+        "scale": 6,
+        "rotate": 516,
+        "translate": 28,
+        "shear": 24,
+        "deform": 2
+      },
+      "curve_counts": {
+        "stepped": 4661,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_cutin_2.scsp1u.bytes",
+      "source_bytes": 395114,
+      "source_sha256": "942398a4418094b3747a6f47f42ecb3b83e75c64c5c9acb7f527cec8b90ad44c",
+      "output": "effect/fei_30048_ug_cutin_2.json",
+      "output_bytes": 403585,
+      "output_sha256": "49228b05f741a986ac8f87d86c0e200613a5b6977dc6a2a8ed03687d2a11c272",
+      "body_end_valid": true,
+      "bones": 218,
+      "slots": 64,
+      "ik_constraints": 0,
+      "transform_constraints": 13,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 64
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 64,
+        "attachment": 128,
+        "rotate": 284,
+        "shear": 12,
+        "scale": 12,
+        "translate": 18
+      },
+      "curve_counts": {
+        "stepped": 2587,
+        "bezier": 9,
+        "linear": 8
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_1.scsp1u.bytes",
+      "source_bytes": 103421,
+      "source_sha256": "037aa174af3439a01b75a59b46ceac25f13fc99923cc230d308be62e7a071817",
+      "output": "effect/fei_30048_ug_eff_s1_1.json",
+      "output_bytes": 76448,
+      "output_sha256": "4838a2d3b0d1dab920efc80f82b7ec8fdb7598a4e7ca7dd81087ca95d08247e1",
+      "body_end_valid": true,
+      "bones": 45,
+      "slots": 31,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 13,
+        "region": 29
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 55,
+        "attachment": 61,
+        "scale": 60,
+        "rotate": 52,
+        "translate": 62,
+        "shear": 2
+      },
+      "curve_counts": {
+        "stepped": 683,
+        "linear": 177,
+        "bezier": 27
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_1_2.scsp1u.bytes",
+      "source_bytes": 80840,
+      "source_sha256": "37d5f426456c4ff817465509a149baf553bb51f92b18762432a068de539d492f",
+      "output": "effect/fei_30048_ug_eff_s1_1_2.json",
+      "output_bytes": 64365,
+      "output_sha256": "21817d544482603207dbd515a59cb0cfdbbf6c55ec775794a5169ca8f58ae689",
+      "body_end_valid": true,
+      "bones": 58,
+      "slots": 37,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 27,
+        "region": 29
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 66,
+        "attachment": 74,
+        "rotate": 57,
+        "translate": 75,
+        "scale": 73,
+        "shear": 1
+      },
+      "curve_counts": {
+        "stepped": 587,
+        "linear": 4,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_2.scsp1u.bytes",
+      "source_bytes": 114819,
+      "source_sha256": "e09cbd90f4e16cef4b392abbc6a8b72125722762985f6d1054fb7cb7ebdd43f4",
+      "output": "effect/fei_30048_ug_eff_s1_2.json",
+      "output_bytes": 88563,
+      "output_sha256": "199e4e81008f79e899af7451213170dd36bfbf7d4322169925033b5aba30c381",
+      "body_end_valid": true,
+      "bones": 54,
+      "slots": 37,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 18,
+        "region": 31
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 74,
+        "attachment": 74,
+        "scale": 81,
+        "rotate": 67,
+        "translate": 81,
+        "shear": 2,
+        "deform": 4
+      },
+      "curve_counts": {
+        "stepped": 820,
+        "linear": 125,
+        "bezier": 9
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_3.scsp1u.bytes",
+      "source_bytes": 50138,
+      "source_sha256": "f5d49d71e256629fd7f78ada44f31067e890ea5f4b17b388ca704ec9b7b6efb1",
+      "output": "effect/fei_30048_ug_eff_s1_3.json",
+      "output_bytes": 74220,
+      "output_sha256": "da8d413645a6038a68846a6a6f156984377fcaa83b95d6b24d833e30d5c76c0b",
+      "body_end_valid": true,
+      "bones": 12,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 9
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 18,
+        "attachment": 15,
+        "translate": 9,
+        "rotate": 5,
+        "scale": 5,
+        "deform": 18
+      },
+      "curve_counts": {
+        "stepped": 61,
+        "linear": 35,
+        "bezier": 23
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_4.scsp1u.bytes",
+      "source_bytes": 63165,
+      "source_sha256": "446f7de89fe56fb48b108601835674f2276ec870fc09a887ad5ff141b73e359e",
+      "output": "effect/fei_30048_ug_eff_s1_4.json",
+      "output_bytes": 48760,
+      "output_sha256": "562c6ea63850e1a38599b6f3c5e0e61404cc1260e7b0378fcb9b685359e5be4d",
+      "body_end_valid": true,
+      "bones": 32,
+      "slots": 21,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 17,
+        "region": 40
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 37,
+        "color": 31,
+        "rotate": 39,
+        "translate": 41,
+        "scale": 41,
+        "shear": 14
+      },
+      "curve_counts": {
+        "stepped": 387,
+        "linear": 26,
+        "bezier": 25
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_4_2.scsp1u.bytes",
+      "source_bytes": 50890,
+      "source_sha256": "3ad1f612c05d852df43317d541cc28fec594f08abbef47592d551919955b14b0",
+      "output": "effect/fei_30048_ug_eff_s1_4_2.json",
+      "output_bytes": 36899,
+      "output_sha256": "eb83d503e8b5de500bdff2185ac1ae36625cc7ed7f7781b3f8ca918c5d6a85b8",
+      "body_end_valid": true,
+      "bones": 13,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 11,
+        "region": 24
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "attachment": 36,
+        "color": 34,
+        "rotate": 17,
+        "translate": 17,
+        "scale": 17,
+        "shear": 6
+      },
+      "curve_counts": {
+        "stepped": 297,
+        "linear": 76,
+        "bezier": 9
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_5.scsp1u.bytes",
+      "source_bytes": 110205,
+      "source_sha256": "56802050f27084086a0d3a5d2c6dca2214c80be74590d0e89a569d6c3fd78a07",
+      "output": "effect/fei_30048_ug_eff_s1_5.json",
+      "output_bytes": 149590,
+      "output_sha256": "b762289fca0bc1fa670a363fab910a733cb8057d5e7412f16fa1797db67d13b2",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 21,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 21
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 42,
+        "attachment": 42,
+        "translate": 17,
+        "scale": 10,
+        "rotate": 9,
+        "deform": 42
+      },
+      "curve_counts": {
+        "stepped": 133,
+        "linear": 97,
+        "bezier": 47
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_6.scsp1u.bytes",
+      "source_bytes": 142668,
+      "source_sha256": "9acf6a4e74d4919c1c8410ae96321ae62c6690be225a9637814a905cf5a701a1",
+      "output": "effect/fei_30048_ug_eff_s1_6.json",
+      "output_bytes": 219270,
+      "output_sha256": "ae325792f0f031158543b84c559a2cbe8fd16bdc071127351137ee19aca46164",
+      "body_end_valid": true,
+      "bones": 23,
+      "slots": 26,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 23,
+        "region": 3
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 52,
+        "attachment": 45,
+        "translate": 25,
+        "rotate": 16,
+        "scale": 19,
+        "deform": 42
+      },
+      "curve_counts": {
+        "stepped": 156,
+        "linear": 129,
+        "bezier": 47
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s1_screen.scsp1u.bytes",
+      "source_bytes": 71291,
+      "source_sha256": "d6593ffb6e5df1032866fe8322ec153f0a6ea2c0813e0cce17952b12f1023498",
+      "output": "effect/fei_30048_ug_eff_s1_screen.json",
+      "output_bytes": 63438,
+      "output_sha256": "f535ea30fe369dd50e43a21bbde50ab496abf6215588156267d314639a72aa09",
+      "body_end_valid": true,
+      "bones": 58,
+      "slots": 27,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 16,
+        "region": 20
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 54,
+        "rotate": 51,
+        "translate": 84,
+        "scale": 53,
+        "deform": 22
+      },
+      "curve_counts": {
+        "stepped": 272,
+        "linear": 120,
+        "bezier": 53
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_1.scsp1u.bytes",
+      "source_bytes": 199716,
+      "source_sha256": "c0e1488b951f9618c48bf5d3f440ded8660fa751c0d4d6c1cbb65f6ea687be5c",
+      "output": "effect/fei_30048_ug_eff_s2_1.json",
+      "output_bytes": 190023,
+      "output_sha256": "0b3ddd0a96e34b325d21583210e2adb8063585114841ecda90170474f6d5096a",
+      "body_end_valid": true,
+      "bones": 119,
+      "slots": 97,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 76,
+        "region": 75
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 96,
+        "attachment": 97,
+        "translate": 105,
+        "scale": 92,
+        "rotate": 81,
+        "shear": 11,
+        "deform": 42
+      },
+      "curve_counts": {
+        "stepped": 588,
+        "linear": 175,
+        "bezier": 105
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_2.scsp1u.bytes",
+      "source_bytes": 81474,
+      "source_sha256": "0a8851e2548015283b216b17214f62c2da2dd107fddc91911e647fe58412bf29",
+      "output": "effect/fei_30048_ug_eff_s2_2.json",
+      "output_bytes": 80163,
+      "output_sha256": "e3b71e61754055fa576256200d9d174ad568916bace441eb735f85c5e6e3e2a1",
+      "body_end_valid": true,
+      "bones": 46,
+      "slots": 55,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 35,
+        "region": 47
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 54,
+        "rotate": 31,
+        "translate": 38,
+        "scale": 38,
+        "shear": 13,
+        "deform": 36
+      },
+      "curve_counts": {
+        "stepped": 184,
+        "linear": 47,
+        "bezier": 18
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_3.scsp1u.bytes",
+      "source_bytes": 45128,
+      "source_sha256": "4bc25b4f3138ca52cd033267155e7237f9f30dd4aa1916669018986c4546d5ba",
+      "output": "effect/fei_30048_ug_eff_s2_3.json",
+      "output_bytes": 34333,
+      "output_sha256": "ccaedfb10c3477f3bedd6af44b8d908e3e2a2cebb624aca22c4adc29b196a2aa",
+      "body_end_valid": true,
+      "bones": 40,
+      "slots": 40,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 24,
+        "region": 25
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 32,
+        "attachment": 36,
+        "translate": 22,
+        "scale": 22,
+        "rotate": 15,
+        "shear": 3,
+        "deform": 5
+      },
+      "curve_counts": {
+        "stepped": 150,
+        "linear": 63,
+        "bezier": 20
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_4.scsp1u.bytes",
+      "source_bytes": 21081,
+      "source_sha256": "0ef9a5b79ea537ca6cdb7ff51031cd5d7b5fbf13812b6e046976e0567d241031",
+      "output": "effect/fei_30048_ug_eff_s2_4.json",
+      "output_bytes": 15146,
+      "output_sha256": "4b8c21baf88ac7eabf15add321a0dc2190d7137db4150639a7464011b87097a7",
+      "body_end_valid": true,
+      "bones": 31,
+      "slots": 17,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 8,
+        "region": 15
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 17,
+        "attachment": 17,
+        "translate": 23,
+        "scale": 17,
+        "rotate": 10,
+        "shear": 3
+      },
+      "curve_counts": {
+        "linear": 35,
+        "stepped": 65,
+        "bezier": 17
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_5.scsp1u.bytes",
+      "source_bytes": 48275,
+      "source_sha256": "8092910d4a3a9ce6952d96601b83895599f1412c80e082a953e6f625e3936124",
+      "output": "effect/fei_30048_ug_eff_s2_5.json",
+      "output_bytes": 44374,
+      "output_sha256": "a5288cbd8b0f16d53f1487f86b5b8c424abf048136eafcec2aa767cc25f984c1",
+      "body_end_valid": true,
+      "bones": 34,
+      "slots": 31,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 13,
+        "region": 20
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 31,
+        "attachment": 31,
+        "rotate": 24,
+        "translate": 25,
+        "scale": 25,
+        "shear": 8,
+        "deform": 10
+      },
+      "curve_counts": {
+        "stepped": 165,
+        "linear": 66,
+        "bezier": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_impact.scsp1u.bytes",
+      "source_bytes": 1460,
+      "source_sha256": "ca27bc5794da3bc71799281b4048413f9496b0c0f8959b2a76dd5dec73d6d458",
+      "output": "effect/fei_30048_ug_eff_s2_impact.json",
+      "output_bytes": 1106,
+      "output_sha256": "371a8f5ffffcbf620a21d393070b9c9d574bc4290482a6b14397ed1c3ef48797",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_eff_s2_impact2.scsp1u.bytes",
+      "source_bytes": 1199,
+      "source_sha256": "744b0be03f21cfa254e50601eda063ab8e7f0b8852b54a101cf5779d527f7622",
+      "output": "effect/fei_30048_ug_eff_s2_impact2.json",
+      "output_bytes": 978,
+      "output_sha256": "9d17bfd574dd250fa783dcbf8e175a8c41e64e83f83716a7aa17cc2aa64a86d9",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_hookup_s1_eff.scsp1u.bytes",
+      "source_bytes": 29948,
+      "source_sha256": "8916241e775b1a97faf30ccf78593992c08799b8eaee31ec98daa88c94d1ecc3",
+      "output": "effect/fei_30048_ug_hookup_s1_eff.json",
+      "output_bytes": 23248,
+      "output_sha256": "ce9da13e7d07af4398e8669b0ca122ed3172576580384524b52d09a30ed826b7",
+      "body_end_valid": true,
+      "bones": 22,
+      "slots": 19,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 11,
+        "region": 18
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 19,
+        "attachment": 19,
+        "translate": 19,
+        "scale": 18,
+        "rotate": 17,
+        "deform": 4
+      },
+      "curve_counts": {
+        "linear": 78,
+        "stepped": 64
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_hookup_s2_eff.scsp1u.bytes",
+      "source_bytes": 10251,
+      "source_sha256": "6bfed377b923ffff1aa75bbd3ae489423a38f989ead155d62fbb58b21991b3db",
+      "output": "effect/fei_30048_ug_hookup_s2_eff.json",
+      "output_bytes": 7205,
+      "output_sha256": "8f9f53ac1564b5c728bba4eec2826d8f017f101ad409720b016807375bed7951",
+      "body_end_valid": true,
+      "bones": 11,
+      "slots": 8,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5,
+        "region": 8
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 8,
+        "attachment": 8,
+        "translate": 8,
+        "scale": 8,
+        "rotate": 7
+      },
+      "curve_counts": {
+        "stepped": 41,
+        "linear": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ug_ld_eff.scsp1u.bytes",
+      "source_bytes": 31185,
+      "source_sha256": "2392e675e7a9aef725c74703dbbafdc4cdcb9086c5e3db9e29df2cf0b28b97f0",
+      "output": "effect/fei_30048_ug_ld_eff.json",
+      "output_bytes": 27409,
+      "output_sha256": "634d4a7814d95ce4f22cf33df8a9a3a2d6938d1424d17920d690e6cfff85cc85",
+      "body_end_valid": true,
+      "bones": 22,
+      "slots": 13,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 22,
+        "region": 6
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 12,
+        "attachment": 12,
+        "scale": 13,
+        "translate": 15,
+        "rotate": 9,
+        "deform": 5
+      },
+      "curve_counts": {
+        "stepped": 121,
+        "linear": 36,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg1_1.scsp1u.bytes",
+      "source_bytes": 49490,
+      "source_sha256": "0678f8dcb21f2d7de5940e8d41ffed8fa5186c09590cbb3925f39f3fe52587b7",
+      "output": "effect/fei_30048_ux_bg1_1.json",
+      "output_bytes": 55877,
+      "output_sha256": "6bde89d02c2756385e0ecd471f5d06c72498dbd4d7543553d59884bedf5fbb41",
+      "body_end_valid": true,
+      "bones": 72,
+      "slots": 68,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 25,
+        "region": 43
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 45,
+        "attachment": 53,
+        "scale": 50,
+        "translate": 46,
+        "rotate": 30,
+        "shear": 6,
+        "deform": 17
+      },
+      "curve_counts": {
+        "linear": 42,
+        "stepped": 17,
+        "bezier": 36
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg1_2.scsp1u.bytes",
+      "source_bytes": 24595,
+      "source_sha256": "5a8f30a9f837a2dbfee4bde70dc6cdc4d4402fbcfb27434bb636a03864be8e28",
+      "output": "effect/fei_30048_ux_bg1_2.json",
+      "output_bytes": 22667,
+      "output_sha256": "c0e4fddfaea353c53507d735964649074ef0f5e544a86bc6ed650311924462bd",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 47,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 17,
+        "region": 30
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 63,
+        "attachment": 61,
+        "scale": 15,
+        "translate": 16,
+        "rotate": 7,
+        "shear": 3,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 22,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg1_3.scsp1u.bytes",
+      "source_bytes": 22862,
+      "source_sha256": "f1d54e0d75d76c454aebaa917c2257df938a422bcb270108412c9b295c1104d6",
+      "output": "effect/fei_30048_ux_bg1_3.json",
+      "output_bytes": 29077,
+      "output_sha256": "b5d5b3416ffbd414a25b32dbee8656f880f57859589721f6759bf3038a16a227",
+      "body_end_valid": true,
+      "bones": 16,
+      "slots": 18,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 18
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 16,
+        "color": 8,
+        "scale": 10,
+        "translate": 6,
+        "rotate": 1,
+        "deform": 14
+      },
+      "curve_counts": {
+        "linear": 5,
+        "bezier": 15
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg1_cha.scsp1u.bytes",
+      "source_bytes": 239988,
+      "source_sha256": "db2e1418ba9c143b880c6392d6e2b09ed5093c96a23bb13d3536d4558a950923",
+      "output": "effect/fei_30048_ux_bg1_cha.json",
+      "output_bytes": 216545,
+      "output_sha256": "f46e788972f6ef3084ff348af663645004814d5a56a98a613381a10b7f71afca",
+      "body_end_valid": true,
+      "bones": 164,
+      "slots": 57,
+      "ik_constraints": 6,
+      "transform_constraints": 6,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 56,
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 57,
+        "translate": 10,
+        "rotate": 120,
+        "scale": 4
+      },
+      "curve_counts": {
+        "stepped": 1807,
+        "linear": 6,
+        "bezier": 7
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_1.scsp1u.bytes",
+      "source_bytes": 58854,
+      "source_sha256": "df8cd1b6334bd30d981aec0f6fb17a84b80404aa6e506df899473df8201c845b",
+      "output": "effect/fei_30048_ux_bg2_1.json",
+      "output_bytes": 49646,
+      "output_sha256": "910535aad4f245bc5ddfb128b53cfbae365482bab0383ab9ba984c49b3d3b39c",
+      "body_end_valid": true,
+      "bones": 49,
+      "slots": 48,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 17,
+        "region": 33
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 33,
+        "attachment": 48,
+        "translate": 41,
+        "scale": 39,
+        "rotate": 30,
+        "deform": 14
+      },
+      "curve_counts": {
+        "linear": 91,
+        "stepped": 258,
+        "bezier": 52
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_2_1.scsp1u.bytes",
+      "source_bytes": 18753,
+      "source_sha256": "63ab580376cb0e7dfe256579600df93d4e5c7f0eb1107d1126ebf07e5a2dde02",
+      "output": "effect/fei_30048_ux_bg2_2_1.json",
+      "output_bytes": 17306,
+      "output_sha256": "e0f357228d3b57eac232d0f2690ad768aac032424f89aa1b8496c5b07bfd04a2",
+      "body_end_valid": true,
+      "bones": 22,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 17,
+        "region": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 15,
+        "attachment": 15,
+        "translate": 18,
+        "scale": 16,
+        "rotate": 11,
+        "deform": 1
+      },
+      "curve_counts": {
+        "linear": 47,
+        "stepped": 16,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_2_3.scsp1u.bytes",
+      "source_bytes": 160646,
+      "source_sha256": "f90d31e732eee4de59752d75a34d8548b212774c454a33f8e412acd155f2f044",
+      "output": "effect/fei_30048_ux_bg2_2_3.json",
+      "output_bytes": 125516,
+      "output_sha256": "7191d9fff2a95227f6b0d6de38ffb2c86f1d16dab45c9a6e156e3b49fe5ec31a",
+      "body_end_valid": true,
+      "bones": 75,
+      "slots": 82,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 83,
+        "region": 97
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 77,
+        "attachment": 77,
+        "translate": 67,
+        "scale": 63,
+        "rotate": 35,
+        "shear": 1,
+        "deform": 52
+      },
+      "curve_counts": {
+        "stepped": 325,
+        "linear": 320,
+        "bezier": 7
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_2_4.scsp1u.bytes",
+      "source_bytes": 49929,
+      "source_sha256": "c51f4e647d15f5e52c6de6dafe6a02cfd8de0294ed2005d1fb9fc961729ee5a2",
+      "output": "effect/fei_30048_ux_bg2_2_4.json",
+      "output_bytes": 43520,
+      "output_sha256": "7a29b59c3248631194ae6330d47fbf353230d72e7578aac01b3afd2788730157",
+      "body_end_valid": true,
+      "bones": 75,
+      "slots": 13,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 40,
+        "region": 26
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 13,
+        "attachment": 12,
+        "translate": 67,
+        "scale": 63,
+        "rotate": 35,
+        "shear": 1,
+        "deform": 6
+      },
+      "curve_counts": {
+        "linear": 66,
+        "stepped": 132,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_2_5.scsp1u.bytes",
+      "source_bytes": 29110,
+      "source_sha256": "9294a27d21c9b35de3568586a50abf2f54a70f5d0a7280e1d097d6e2fef7c1a5",
+      "output": "effect/fei_30048_ux_bg2_2_5.json",
+      "output_bytes": 26239,
+      "output_sha256": "68f558f335c3a041955e581c3a765e3d1799a0b4ec6202cff9c1f09e0b4b7c05",
+      "body_end_valid": true,
+      "bones": 75,
+      "slots": 5,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 3,
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 5,
+        "attachment": 5,
+        "translate": 67,
+        "scale": 63,
+        "rotate": 35,
+        "shear": 1,
+        "deform": 3
+      },
+      "curve_counts": {
+        "stepped": 139,
+        "linear": 60,
+        "bezier": 7
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_3.scsp1u.bytes",
+      "source_bytes": 103168,
+      "source_sha256": "2c2e4d9295138a3e70d0338e6b38741eaf2031efc089dfb50924d1882a3a03e5",
+      "output": "effect/fei_30048_ux_bg2_3.json",
+      "output_bytes": 80201,
+      "output_sha256": "44b378b9ecd470881f413132965f8872cd8c947df6eabfbfb3c0b3b08c1bc9f3",
+      "body_end_valid": true,
+      "bones": 28,
+      "slots": 55,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 44,
+        "region": 75
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 50,
+        "attachment": 50,
+        "translate": 26,
+        "scale": 25,
+        "rotate": 20,
+        "deform": 39
+      },
+      "curve_counts": {
+        "stepped": 182,
+        "linear": 202,
+        "bezier": 12
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_4.scsp1u.bytes",
+      "source_bytes": 57547,
+      "source_sha256": "bdfcd2874762edf76936474e84e0ac0fdfa111bec95ed6fec68d384beb2a20d6",
+      "output": "effect/fei_30048_ux_bg2_4.json",
+      "output_bytes": 66258,
+      "output_sha256": "0f57b4b6a6aced540decd86c7de0dc00307966a820ac7ed6e4e995f1b71c1a07",
+      "body_end_valid": true,
+      "bones": 68,
+      "slots": 37,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 13,
+        "region": 23
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 36,
+        "attachment": 33,
+        "translate": 60,
+        "scale": 54,
+        "rotate": 27,
+        "deform": 13
+      },
+      "curve_counts": {
+        "stepped": 112,
+        "linear": 103,
+        "bezier": 7
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_5.scsp1u.bytes",
+      "source_bytes": 605733,
+      "source_sha256": "8b87b68727c20d30063b91a105ebc98d010bc9b2859cd2ad8f99e3eed8f24029",
+      "output": "effect/fei_30048_ux_bg2_5.json",
+      "output_bytes": 438856,
+      "output_sha256": "addb51263cdf1c0f112f529a0a67de1bae52fd6ff06703b4a90309de765d87c0",
+      "body_end_valid": true,
+      "bones": 112,
+      "slots": 218,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 152,
+        "region": 430
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 208,
+        "attachment": 208,
+        "translate": 101,
+        "scale": 100,
+        "rotate": 82,
+        "shear": 8,
+        "deform": 142
+      },
+      "curve_counts": {
+        "stepped": 1460,
+        "linear": 1551,
+        "bezier": 30
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_6.scsp1u.bytes",
+      "source_bytes": 17261,
+      "source_sha256": "6cf450084b393229fcde655bf19fa024fa843582c72aebbee6c5ee0ac92bdfd9",
+      "output": "effect/fei_30048_ux_bg2_6.json",
+      "output_bytes": 18085,
+      "output_sha256": "05d0b3e63dbec7c5147eec5577197afc9f974d6d4fc18938a91595c279d09688",
+      "body_end_valid": true,
+      "bones": 49,
+      "slots": 20,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 14,
+        "region": 5
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 13,
+        "attachment": 19,
+        "translate": 44,
+        "scale": 42,
+        "rotate": 8,
+        "shear": 1,
+        "deform": 11
+      },
+      "curve_counts": {
+        "linear": 25,
+        "stepped": 14,
+        "bezier": 13
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_bangsang_b.scsp1u.bytes",
+      "source_bytes": 1247096,
+      "source_sha256": "9de9a91eeb7ceba5078375b7f80ed98c69dc27165dba5fdd814abec7b1890fff",
+      "output": "effect/fei_30048_ux_bg2_bangsang_b.json",
+      "output_bytes": 994255,
+      "output_sha256": "33823eb2825ec93739ddb1065c551adf8a3d9e8bd2171f8a63311647570e5b0b",
+      "body_end_valid": true,
+      "bones": 502,
+      "slots": 129,
+      "ik_constraints": 4,
+      "transform_constraints": 4,
+      "path_constraints": 4,
+      "skins": 1,
+      "attachments": {
+        "mesh": 126,
+        "path": 4
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 129,
+        "attachment": 124,
+        "translate": 80,
+        "rotate": 336,
+        "scale": 4,
+        "shear": 2
+      },
+      "curve_counts": {
+        "linear": 342,
+        "stepped": 11005,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg2_bangsang_f.scsp1u.bytes",
+      "source_bytes": 1027180,
+      "source_sha256": "2f8ef2bdc9136504835272c09c348f89730381cecb38e6a53507730084622b5b",
+      "output": "effect/fei_30048_ux_bg2_bangsang_f.json",
+      "output_bytes": 705339,
+      "output_sha256": "7e2c1f46d40172775b550d5d45e6bcdb41b08922e2efd8d511635fb73eb7b7ce",
+      "body_end_valid": true,
+      "bones": 503,
+      "slots": 23,
+      "ik_constraints": 4,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 22,
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 23,
+        "attachment": 22,
+        "translate": 81,
+        "rotate": 337,
+        "scale": 5,
+        "shear": 2,
+        "drawOrder": 1
+      },
+      "curve_counts": {
+        "linear": 38,
+        "stepped": 11026,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_1.scsp1u.bytes",
+      "source_bytes": 246488,
+      "source_sha256": "3b7dd58ad7a2984ca71d313c822a8f2fd79f72ebb663d001504b065b62c4a182",
+      "output": "effect/fei_30048_ux_bg3_1.json",
+      "output_bytes": 381194,
+      "output_sha256": "e4e5c7d54f3f76db6b79e9c08b66288a608561100475e2e42b40fbb572a71e08",
+      "body_end_valid": true,
+      "bones": 83,
+      "slots": 81,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 40,
+        "region": 43
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 140,
+        "attachment": 153,
+        "scale": 154,
+        "translate": 144,
+        "rotate": 118,
+        "shear": 8,
+        "deform": 66
+      },
+      "curve_counts": {
+        "stepped": 394,
+        "linear": 90,
+        "bezier": 342
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_2.scsp1u.bytes",
+      "source_bytes": 7845,
+      "source_sha256": "410745c56f6b50638b90aa3d494679ebc6108644303e1a348cf376e502a3d57b",
+      "output": "effect/fei_30048_ux_bg3_2.json",
+      "output_bytes": 9336,
+      "output_sha256": "0b8f140b072bfb9fb7fe61d8c2ec1bfbf6e7c1fd66b79661ce195ea2a2cbaa48",
+      "body_end_valid": true,
+      "bones": 11,
+      "slots": 9,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5,
+        "region": 4
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 9,
+        "attachment": 9,
+        "translate": 8,
+        "scale": 8,
+        "rotate": 3,
+        "shear": 1,
+        "deform": 4
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 3,
+        "stepped": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_3_1.scsp1u.bytes",
+      "source_bytes": 20940,
+      "source_sha256": "f430abe2ce238fbe94d8235559a8ca9f8ca10e375e9c49b3c34f6e24ef698713",
+      "output": "effect/fei_30048_ux_bg3_3_1.json",
+      "output_bytes": 17892,
+      "output_sha256": "a791426bccd76553547f819395df9adc92f15dbe624a5aa88cdf7871e381815b",
+      "body_end_valid": true,
+      "bones": 19,
+      "slots": 32,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 26,
+        "region": 26
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 31,
+        "attachment": 31,
+        "scale": 12,
+        "translate": 11,
+        "rotate": 7,
+        "shear": 5
+      },
+      "curve_counts": {
+        "linear": 3,
+        "bezier": 5
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_3_2.scsp1u.bytes",
+      "source_bytes": 31846,
+      "source_sha256": "e0bd9e13565c913a4b137e1f9adf058854d9dcc830ab21414e96b5a0a32f0ca4",
+      "output": "effect/fei_30048_ux_bg3_3_2.json",
+      "output_bytes": 34870,
+      "output_sha256": "270b23fa315c15b100f46826a2e98f9e751177122359c1b273e48bf1fb319583",
+      "body_end_valid": true,
+      "bones": 13,
+      "slots": 6,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 48
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 6,
+        "attachment": 6,
+        "scale": 9,
+        "translate": 8,
+        "rotate": 4,
+        "shear": 4,
+        "deform": 4
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 18
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_4.scsp1u.bytes",
+      "source_bytes": 428747,
+      "source_sha256": "3174df084508da30b01931a5e2cebad10384ef0301c389becd216b988906fb9c",
+      "output": "effect/fei_30048_ux_bg3_4.json",
+      "output_bytes": 326275,
+      "output_sha256": "0222fc6b95f8c88bbee4caaad628ab0ae8a350820dff63d25f4c5eaaa9299d38",
+      "body_end_valid": true,
+      "bones": 102,
+      "slots": 209,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 152,
+        "region": 371
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 193,
+        "attachment": 187,
+        "translate": 84,
+        "scale": 84,
+        "rotate": 65,
+        "shear": 7,
+        "deform": 136
+      },
+      "curve_counts": {
+        "linear": 954,
+        "stepped": 730,
+        "bezier": 14
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_5_1.scsp1u.bytes",
+      "source_bytes": 204069,
+      "source_sha256": "b5d5dddca33428b417f16d955baea1b0418838616beda5ffa93dcf9c897262d9",
+      "output": "effect/fei_30048_ux_bg3_5_1.json",
+      "output_bytes": 219336,
+      "output_sha256": "e29a32ff86f4e49906b046db2c470e1aa55b21f7d2381d448263f1b903a49d0e",
+      "body_end_valid": true,
+      "bones": 90,
+      "slots": 79,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 36,
+        "region": 43
+      },
+      "animations": 2,
+      "timeline_counts": {
+        "color": 156,
+        "attachment": 128,
+        "scale": 166,
+        "translate": 164,
+        "rotate": 160,
+        "shear": 120,
+        "deform": 62
+      },
+      "curve_counts": {
+        "stepped": 428,
+        "linear": 234,
+        "bezier": 440
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_5_2.scsp1u.bytes",
+      "source_bytes": 112828,
+      "source_sha256": "2d0c3f36d9251ced0adb90feaa82287adbee65a4eac89898999ab860011fb531",
+      "output": "effect/fei_30048_ux_bg3_5_2.json",
+      "output_bytes": 125300,
+      "output_sha256": "c380334e54c29ac41cc210a9779f771552fbf311121ba6a44c475b49f47f6139",
+      "body_end_valid": true,
+      "bones": 131,
+      "slots": 27,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "clipping": 1,
+        "mesh": 14,
+        "region": 16
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 19,
+        "attachment": 26,
+        "scale": 107,
+        "translate": 109,
+        "rotate": 100,
+        "shear": 61,
+        "deform": 11
+      },
+      "curve_counts": {
+        "linear": 113,
+        "stepped": 300,
+        "bezier": 199
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_5_3.scsp1u.bytes",
+      "source_bytes": 8487,
+      "source_sha256": "c152235b0b64af3884fb0d58e0047c704ba72af03f8466af077d03d031196c2c",
+      "output": "effect/fei_30048_ux_bg3_5_3.json",
+      "output_bytes": 9246,
+      "output_sha256": "1eaeb3cab9e56cc5efe03c4e621d81cd5b1bca453846e72e59a6deac62356878",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 10,
+        "scale": 2,
+        "translate": 1,
+        "deform": 3
+      },
+      "curve_counts": {
+        "bezier": 4,
+        "linear": 2
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_bangsang_b.scsp1u.bytes",
+      "source_bytes": 910007,
+      "source_sha256": "8b35fba0c69481487b805451b4e6fb72670dd4704ca241fe19cf6b343cb46384",
+      "output": "effect/fei_30048_ux_bg3_bangsang_b.json",
+      "output_bytes": 830314,
+      "output_sha256": "98496f2620077c7b94999b521c1f076452a89459910857cab3196d000bc8e381",
+      "body_end_valid": true,
+      "bones": 392,
+      "slots": 117,
+      "ik_constraints": 4,
+      "transform_constraints": 2,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 117
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 117,
+        "attachment": 117,
+        "rotate": 280,
+        "translate": 44,
+        "shear": 1,
+        "scale": 3
+      },
+      "curve_counts": {
+        "stepped": 7472,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_bangsang_f.scsp1u.bytes",
+      "source_bytes": 681076,
+      "source_sha256": "861c63f66a1f6c14991d5eb1db653a1d63d0a325508f18a3a42277875b3f6024",
+      "output": "effect/fei_30048_ux_bg3_bangsang_f.json",
+      "output_bytes": 454811,
+      "output_sha256": "dac6cc8a37eb397392f31d261528429d82032fc015ed5ad1d5ccba354b7039ae",
+      "body_end_valid": true,
+      "bones": 392,
+      "slots": 6,
+      "ik_constraints": 4,
+      "transform_constraints": 2,
+      "path_constraints": 4,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2,
+        "path": 4
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 6,
+        "attachment": 2,
+        "rotate": 280,
+        "translate": 44,
+        "shear": 1,
+        "scale": 3,
+        "deform": 1
+      },
+      "curve_counts": {
+        "stepped": 7472,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_bg3_cha.scsp1u.bytes",
+      "source_bytes": 376148,
+      "source_sha256": "237bb8555709aa4bb52e82fbb9436ebeb4d0dbcc6c25f717215722a43ede40ad",
+      "output": "effect/fei_30048_ux_bg3_cha.json",
+      "output_bytes": 285462,
+      "output_sha256": "a7d4386ebf63e9406497dad7fae01cdc25b0a6cbf16488eeb7c60e88f3d9494e",
+      "body_end_valid": true,
+      "bones": 156,
+      "slots": 47,
+      "ik_constraints": 6,
+      "transform_constraints": 4,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 47
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 47,
+        "translate": 14,
+        "rotate": 110,
+        "scale": 5
+      },
+      "curve_counts": {
+        "stepped": 3496,
+        "bezier": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_screen_1.scsp1u.bytes",
+      "source_bytes": 69455,
+      "source_sha256": "ad0f7fe9f94b0e67a16b6cf20e504f44a18dec69a9501f9d5de5ef938810a26f",
+      "output": "effect/fei_30048_ux_screen_1.json",
+      "output_bytes": 58427,
+      "output_sha256": "30c9f12ae866da80406bb64926cb469602ea227f608ffb79709db772ed575116",
+      "body_end_valid": true,
+      "bones": 124,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 1,
+        "attachment": 1,
+        "translate": 109,
+        "scale": 112,
+        "rotate": 96,
+        "shear": 15
+      },
+      "curve_counts": {
+        "linear": 180,
+        "stepped": 249,
+        "bezier": 209
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_screen_2.scsp1u.bytes",
+      "source_bytes": 16599,
+      "source_sha256": "faad097d057d7a84d95d586755202b5a1c2b7347a50b281b9fa75b2ee8ba9962",
+      "output": "effect/fei_30048_ux_screen_2.json",
+      "output_bytes": 13257,
+      "output_sha256": "12963957acffdc2ece26389ed731fc090d3b087cf85e8a5f1b85cface4db5193",
+      "body_end_valid": true,
+      "bones": 24,
+      "slots": 21,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 15,
+        "region": 20
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 17,
+        "attachment": 21,
+        "scale": 17,
+        "rotate": 6,
+        "translate": 12
+      },
+      "curve_counts": {
+        "stepped": 33,
+        "linear": 10,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_screen_3.scsp1u.bytes",
+      "source_bytes": 27069,
+      "source_sha256": "57fd2243f3810ede748c5ab24412e68377971156929059743e8a8bcf1127fcd1",
+      "output": "effect/fei_30048_ux_screen_3.json",
+      "output_bytes": 23721,
+      "output_sha256": "b42794957ffecb0fa219397c8fa714b3b4ca9a05d044bd58638954f31653ec8f",
+      "body_end_valid": true,
+      "bones": 36,
+      "slots": 32,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 32
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 32,
+        "attachment": 31,
+        "rotate": 29,
+        "translate": 28,
+        "scale": 32
+      },
+      "curve_counts": {
+        "linear": 46,
+        "stepped": 27,
+        "bezier": 70
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_b_1.scsp1u.bytes",
+      "source_bytes": 13181,
+      "source_sha256": "7530e1b2e22f386765b318ce2af26fa723cda92cfcc327a42c0c4c04f6fc890c",
+      "output": "effect/fei_30048_ux_self_1_b_1.json",
+      "output_bytes": 11070,
+      "output_sha256": "94a7f69ea5ff361e0f57bde87a2a31dc66dd16d2b336ca8bcb4cbc7e06554251",
+      "body_end_valid": true,
+      "bones": 20,
+      "slots": 20,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 2,
+        "region": 19
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 10,
+        "attachment": 20,
+        "translate": 14,
+        "scale": 14,
+        "rotate": 8,
+        "shear": 1
+      },
+      "curve_counts": {
+        "linear": 17,
+        "stepped": 30,
+        "bezier": 6
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_b_2.scsp1u.bytes",
+      "source_bytes": 100671,
+      "source_sha256": "0154916910a66d6ac671b3fc5d45afde30e3469f8c830346967f4f5615ee090d",
+      "output": "effect/fei_30048_ux_self_1_b_2.json",
+      "output_bytes": 122768,
+      "output_sha256": "f4b9e00a5427e8f26162ceaf9691f1e6f8010581cf1fe6f9f304973f99f27c60",
+      "body_end_valid": true,
+      "bones": 27,
+      "slots": 53,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 43,
+        "region": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 50,
+        "color": 52,
+        "scale": 20,
+        "translate": 20,
+        "rotate": 17,
+        "shear": 2,
+        "deform": 21
+      },
+      "curve_counts": {
+        "bezier": 54,
+        "stepped": 72,
+        "linear": 71
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_f_1.scsp1u.bytes",
+      "source_bytes": 178788,
+      "source_sha256": "f7b79497cf84b237487ba61260f531a9547c4a81c97d08c49ab25601d27eec75",
+      "output": "effect/fei_30048_ux_self_1_f_1.json",
+      "output_bytes": 202849,
+      "output_sha256": "2a86447c728dc848029e0507d68671fb280e6bee64cdbf9b009f404867f8db1b",
+      "body_end_valid": true,
+      "bones": 112,
+      "slots": 71,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 32,
+        "region": 38
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 54,
+        "attachment": 70,
+        "translate": 99,
+        "scale": 104,
+        "rotate": 93,
+        "shear": 13,
+        "deform": 31
+      },
+      "curve_counts": {
+        "linear": 246,
+        "stepped": 241,
+        "bezier": 234
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_f_2.scsp1u.bytes",
+      "source_bytes": 145039,
+      "source_sha256": "48906cdd04e8f32e2e2a8da2c2526c8b17b267dc16ad8c24cd8208bc67c010e9",
+      "output": "effect/fei_30048_ux_self_1_f_2.json",
+      "output_bytes": 175596,
+      "output_sha256": "bfb1d319f7982a2d1ea936703e954b7af1bfe1595c8412241432693313e0864a",
+      "body_end_valid": true,
+      "bones": 39,
+      "slots": 48,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 29,
+        "region": 19
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 48,
+        "attachment": 48,
+        "rotate": 34,
+        "translate": 34,
+        "scale": 35,
+        "shear": 2,
+        "deform": 29
+      },
+      "curve_counts": {
+        "bezier": 103,
+        "stepped": 134,
+        "linear": 127
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_f_3.scsp1u.bytes",
+      "source_bytes": 122386,
+      "source_sha256": "20179ec61b03565252de75b65747ff3f8f1c2f220a67cf2fe9c54052fa603bf3",
+      "output": "effect/fei_30048_ux_self_1_f_3.json",
+      "output_bytes": 147628,
+      "output_sha256": "f6533fbea6904ef8519fad46a90eebb57a16a719119d4d226d9d5579dc8c837d",
+      "body_end_valid": true,
+      "bones": 25,
+      "slots": 47,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 34,
+        "region": 13
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 37,
+        "attachment": 47,
+        "rotate": 20,
+        "translate": 20,
+        "scale": 20,
+        "shear": 2,
+        "deform": 24
+      },
+      "curve_counts": {
+        "bezier": 64,
+        "stepped": 98,
+        "linear": 87
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_f_4.scsp1u.bytes",
+      "source_bytes": 54698,
+      "source_sha256": "33b84aef6d2a4f91a1e73747fa75736f6e1bf63aeb048579ec622e584ca59bea",
+      "output": "effect/fei_30048_ux_self_1_f_4.json",
+      "output_bytes": 61258,
+      "output_sha256": "c37ae7b735e3101b707ecd87ee119b678016ff8e052d24d27b4a95f71cf84492",
+      "body_end_valid": true,
+      "bones": 21,
+      "slots": 35,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 34,
+        "region": 1
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 35,
+        "attachment": 35,
+        "translate": 16,
+        "scale": 16,
+        "rotate": 10,
+        "shear": 1,
+        "deform": 9
+      },
+      "curve_counts": {
+        "bezier": 44,
+        "stepped": 46,
+        "linear": 55
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_1_glow.scsp1u.bytes",
+      "source_bytes": 87425,
+      "source_sha256": "b77fe8c143fcfc91f11de4ba008fc51957b159d14a635b88a2ad71df7e1e8aed",
+      "output": "effect/fei_30048_ux_self_1_glow.json",
+      "output_bytes": 70195,
+      "output_sha256": "b98a1af4cf1e49350b565c84509b949dcb764708379605ebbb32c46328b665a8",
+      "body_end_valid": true,
+      "bones": 122,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 54
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 2,
+        "attachment": 2,
+        "scale": 109,
+        "translate": 106,
+        "rotate": 96,
+        "shear": 15
+      },
+      "curve_counts": {
+        "stepped": 250,
+        "linear": 183,
+        "bezier": 208
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_2_b.scsp1u.bytes",
+      "source_bytes": 129621,
+      "source_sha256": "249bfba66b721d64904497832daa8b71de1ab40cad804cf481df243fd48e57e7",
+      "output": "effect/fei_30048_ux_self_2_b.json",
+      "output_bytes": 141268,
+      "output_sha256": "3e9ceda5ffaa3fd2f023eb2872860d651572e95ed9fda55465405770dc5b3da4",
+      "body_end_valid": true,
+      "bones": 112,
+      "slots": 32,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 22,
+        "region": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 32,
+        "attachment": 32,
+        "rotate": 93,
+        "translate": 100,
+        "scale": 102,
+        "shear": 82,
+        "deform": 22
+      },
+      "curve_counts": {
+        "linear": 130,
+        "stepped": 325,
+        "bezier": 257
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/fei_30048_ux_self_2_f.scsp1u.bytes",
+      "source_bytes": 163023,
+      "source_sha256": "69a196ed43aac77b6b32eea9c6e46e6d5aaae6ac610ce4de1d93de36859de8ba",
+      "output": "effect/fei_30048_ux_self_2_f.json",
+      "output_bytes": 156758,
+      "output_sha256": "acf2efa5dd43980e5ef723796fb32de42c5b8f6dc95c04fc39b1d1b95d310261",
+      "body_end_valid": true,
+      "bones": 112,
+      "slots": 88,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 30,
+        "region": 58
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 83,
+        "attachment": 82,
+        "rotate": 93,
+        "translate": 100,
+        "scale": 102,
+        "shear": 82,
+        "deform": 25
+      },
+      "curve_counts": {
+        "stepped": 385,
+        "linear": 214,
+        "bezier": 263
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/mika_1039_skill_x_screen_hk3.scsp1u.bytes",
+      "source_bytes": 2105,
+      "source_sha256": "d06c007f9e2683ae45e18062dc331f152d16dff3433642fafa60fab3fb0c7cfc",
+      "output": "effect/mika_1039_skill_x_screen_hk3.json",
+      "output_bytes": 2055,
+      "output_sha256": "6770dd16234cbd69a86da134878c40cfca062ffc3b3dbee5e48ed557d2a047ce",
+      "body_end_valid": true,
+      "bones": 4,
+      "slots": 1,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 1
+      },
+      "animations": 38,
+      "timeline_counts": {
+        "color": 1,
+        "drawOrder": 22,
+        "scale": 1
+      },
+      "curve_counts": {
+        "linear": 2,
+        "stepped": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/screen_fx_electricity_screen_01_2.scsp1u.bytes",
+      "source_bytes": 60229,
+      "source_sha256": "e7c1208bc6fb37bb770945670b10a2805b6d433bb811db312c8f8e198e890060",
+      "output": "effect/screen_fx_electricity_screen_01_2.json",
+      "output_bytes": 41165,
+      "output_sha256": "f388effc7ee6285b3f6f7f802b3e1458258d72642b1338e3fa6341e6ca3099ad",
+      "body_end_valid": true,
+      "bones": 30,
+      "slots": 57,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 5,
+        "region": 52
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 57,
+        "attachment": 54,
+        "rotate": 21,
+        "translate": 27,
+        "scale": 27,
+        "shear": 21,
+        "deform": 5
+      },
+      "curve_counts": {
+        "linear": 213,
+        "stepped": 174,
+        "bezier": 18
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/screen_fx_electricity_screen_02_1.scsp1u.bytes",
+      "source_bytes": 75745,
+      "source_sha256": "2e84d99728fc3b143f952510776f15aec61cd749cfdb11afb704be4b1d458b18",
+      "output": "effect/screen_fx_electricity_screen_02_1.json",
+      "output_bytes": 52289,
+      "output_sha256": "70273118e2e361269ca2e97c1e7a8eaffd58e3cb349364c0a7f4096cbb6d88cf",
+      "body_end_valid": true,
+      "bones": 46,
+      "slots": 72,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 72
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 72,
+        "attachment": 72,
+        "rotate": 38,
+        "translate": 42,
+        "scale": 42,
+        "shear": 33
+      },
+      "curve_counts": {
+        "linear": 250,
+        "stepped": 241,
+        "bezier": 21
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/screen_fx_electricity_screen_03_1.scsp1u.bytes",
+      "source_bytes": 60874,
+      "source_sha256": "b2ff173292f676a0c80a404bcbce652d03fd301dbbb73bbe97544444cc8ed558",
+      "output": "effect/screen_fx_electricity_screen_03_1.json",
+      "output_bytes": 42353,
+      "output_sha256": "e00aff7ea4d246e864055189b5dcffe4d5a4fa182a805daf1384db7317f017a3",
+      "body_end_valid": true,
+      "bones": 35,
+      "slots": 61,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "region": 61
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 61,
+        "attachment": 61,
+        "rotate": 28,
+        "translate": 30,
+        "scale": 30,
+        "shear": 24
+      },
+      "curve_counts": {
+        "linear": 218,
+        "stepped": 162,
+        "bezier": 17
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/screen_fx_electricity_target_01_b.scsp1u.bytes",
+      "source_bytes": 63412,
+      "source_sha256": "3e4135d8b867b1cee9b0ce6b4ddf5215b4cbc9d5334a170f09e60bee0372ef3d",
+      "output": "effect/screen_fx_electricity_target_01_b.json",
+      "output_bytes": 55066,
+      "output_sha256": "a0d441e8f4db4f4840088df4e9feae054d378e59ed17f2136402f39cfd77a513",
+      "body_end_valid": true,
+      "bones": 35,
+      "slots": 33,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 20,
+        "region": 82
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 31,
+        "attachment": 33,
+        "rotate": 12,
+        "translate": 29,
+        "scale": 30,
+        "shear": 3,
+        "deform": 4
+      },
+      "curve_counts": {
+        "linear": 68,
+        "stepped": 119,
+        "bezier": 16
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/screen_fx_electricity_target_01_f.scsp1u.bytes",
+      "source_bytes": 147731,
+      "source_sha256": "7c8cb4cac3fd13da36b87ca49be697936006861e6593429a341bfa65e4535920",
+      "output": "effect/screen_fx_electricity_target_01_f.json",
+      "output_bytes": 134135,
+      "output_sha256": "fe6fdef01feb0816aadfb83b2541b01bd9974cabb547e8e53fe3b12a067dc9c1",
+      "body_end_valid": true,
+      "bones": 50,
+      "slots": 61,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 50,
+        "region": 193
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 58,
+        "attachment": 61,
+        "rotate": 37,
+        "translate": 45,
+        "scale": 45,
+        "shear": 12,
+        "deform": 30
+      },
+      "curve_counts": {
+        "linear": 83,
+        "stepped": 203,
+        "bezier": 21
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/screen_water_fx_all2.scsp1u.bytes",
+      "source_bytes": 559267,
+      "source_sha256": "142f09a86261f2b87b9d5d02bc9494c7c65c2b15e77451a8556592af6d83ce05",
+      "output": "effect/screen_water_fx_all2.json",
+      "output_bytes": 381997,
+      "output_sha256": "3891df4bad5a0dcda379d97df65afd7cc73ce7c249791357de0ba396ce69fb30",
+      "body_end_valid": true,
+      "bones": 228,
+      "slots": 340,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 18,
+        "region": 1190
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 340,
+        "attachment": 339,
+        "translate": 145,
+        "scale": 158,
+        "rotate": 83
+      },
+      "curve_counts": {
+        "stepped": 358,
+        "bezier": 1175,
+        "linear": 1166
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "model/30048.scsp1u.bytes",
+      "source_bytes": 13780799,
+      "source_sha256": "ce469664929df5470b72e38ab0b127f9bedebca6528f2e50b52c1cdc17de6fc1",
+      "output": "model/30048.json",
+      "output_bytes": 9016742,
+      "output_sha256": "0ccfac39db6c9db9bab36c0f00f768c398be964b73873e3ff8dd199bdeedc338",
+      "body_end_valid": true,
+      "bones": 317,
+      "slots": 98,
+      "ik_constraints": 2,
+      "transform_constraints": 16,
+      "path_constraints": 0,
+      "skins": 1,
+      "attachments": {
+        "mesh": 223
+      },
+      "animations": 48,
+      "timeline_counts": {
+        "attachment": 1753,
+        "color": 354,
+        "translate": 3439,
+        "rotate": 9789,
+        "shear": 435,
+        "scale": 748,
+        "transform": 141,
+        "deform": 60,
+        "drawOrder": 47
+      },
+      "curve_counts": {
+        "stepped": 154098,
+        "linear": 73
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "model/30048_battle_ready.scsp1u.bytes",
+      "source_bytes": 848311,
+      "source_sha256": "dfd57eed21aadb7e41a0275f5baaca11e91ca141f1ee5f9531791af1805a8012",
+      "output": "model/30048_battle_ready.json",
+      "output_bytes": 751845,
+      "output_sha256": "a60d47cf35813e622b420398b1c56c1ffca272eaa10eb01eb656cc09718e4aed",
+      "body_end_valid": true,
+      "bones": 335,
+      "slots": 119,
+      "ik_constraints": 14,
+      "transform_constraints": 49,
+      "path_constraints": 3,
+      "skins": 1,
+      "attachments": {
+        "mesh": 138,
+        "path": 3,
+        "region": 1
+      },
+      "animations": 3,
+      "timeline_counts": {
+        "attachment": 91,
+        "translate": 91,
+        "rotate": 520,
+        "shear": 9,
+        "scale": 7,
+        "transform": 3,
+        "deform": 3,
+        "drawOrder": 2
+      },
+      "curve_counts": {
+        "stepped": 6882,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    }
+  ]
+}

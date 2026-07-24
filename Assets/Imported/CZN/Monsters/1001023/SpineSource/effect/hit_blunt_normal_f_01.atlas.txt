@@ -1,0 +1,62 @@
+
+hit_blunt_normal_f_01.png
+size: 767,1107
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+blunt_imp_2_1
+  rotate: false
+  xy: 384, 736
+  size: 378, 369
+  orig: 400, 393
+  offset: 12, 11
+  index: -1
+blunt_imp_2_2
+  rotate: false
+  xy: 2, 734
+  size: 380, 371
+  orig: 400, 393
+  offset: 11, 11
+  index: -1
+blunt_imp_2_3
+  rotate: false
+  xy: 2, 361
+  size: 380, 371
+  orig: 400, 393
+  offset: 11, 11
+  index: -1
+flash_01
+  rotate: false
+  xy: 384, 223
+  size: 205, 205
+  orig: 243, 243
+  offset: 19, 19
+  index: -1
+hit_imp1_1
+  rotate: false
+  xy: 384, 430
+  size: 312, 304
+  orig: 400, 398
+  offset: 59, 55
+  index: -1
+hit_imp1_2
+  rotate: false
+  xy: 2, 2
+  size: 361, 357
+  orig: 400, 398
+  offset: 23, 21
+  index: -1
+imp_ray1_1
+  rotate: true
+  xy: 365, 130
+  size: 91, 400
+  orig: 91, 400
+  offset: 0, 0
+  index: -1
+imp_ray1_2
+  rotate: true
+  xy: 365, 37
+  size: 91, 400
+  orig: 91, 400
+  offset: 0, 0
+  index: -1

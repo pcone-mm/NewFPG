@@ -1,0 +1,13 @@
+
+heidemarie_30093_eff_casting_ready.png
+size: 448,448
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: false
+  xy: 2, 2
+  size: 438, 442
+  orig: 438, 442
+  offset: 0, 0
+  index: -1

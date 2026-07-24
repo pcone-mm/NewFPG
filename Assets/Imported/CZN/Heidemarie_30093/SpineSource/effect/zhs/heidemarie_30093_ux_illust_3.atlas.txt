@@ -1,0 +1,48 @@
+
+heidemarie_30093_ux_illust_3.png
+size: 2008,776
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flower2
+  rotate: false
+  xy: 804, 313
+  size: 700, 460
+  orig: 700, 460
+  offset: 0, 0
+  index: -1
+mid
+  rotate: false
+  xy: 2, 183
+  size: 800, 590
+  orig: 800, 590
+  offset: 0, 0
+  index: -1
+pillar1
+  rotate: false
+  xy: 1717, 73
+  size: 286, 700
+  orig: 286, 700
+  offset: 0, 0
+  index: -1
+pillar2
+  rotate: false
+  xy: 1506, 33
+  size: 209, 740
+  orig: 209, 740
+  offset: 0, 0
+  index: -1
+pillar3
+  rotate: true
+  xy: 2, 2
+  size: 179, 700
+  orig: 179, 700
+  offset: 0, 0
+  index: -1
+pillar4
+  rotate: true
+  xy: 804, 11
+  size: 300, 700
+  orig: 300, 700
+  offset: 0, 0
+  index: -1

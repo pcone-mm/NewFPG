@@ -10,7 +10,7 @@
 - `Weapons/Ani/` 放武器、相机和闪避动画测试资产；`bajiaoshan_*` 资源目前作为芭蕉扇攻击/待机动画素材管理。
 - `Weapons/BajiaoshanFrames/` 放芭蕉扇风刃序列帧、sprite sheet、预览图和 `bajiaoshan_fanwind_frames_manifest.json`。
 - `Weapons/HUD/` 放 HUD 使用的武器图标和第一人称战斗 HUD 底座源图；`2d_di.png` 与 `2d_dou.png` 当前被 HUD 脚本作为默认路径使用。
-- `Weapons/tongqianjian/` 鏄挶閿ユ鍣ㄧ殑婕傛诞娓叉煋鍜屼竴閿洿鏂扮嚎锛屾鐩綍鐨?`TongQianJianFloatingExampleBuilder.cs`銆佹潗鏂欍€佸姩鐢诲拰 `Materials/` 鏈韩鍧囪蛋杩欓噷锛屽紑濮嬪墠鍏堢湅瀛愮洰褰曟寚鍗楋紝涓嶈鎶婂師濮?PMA 鍜?floating example 鎴愬悗璧勬簮娣锋斁銆?
+- `Weapons/tongqianjian/` 放通钱剑浮空演示的源贴图、材质、shader、动画和一键重建脚本；开始前先看子目录指南，不要把源素材、现有 `Materials/` 与重建后的 floating example 混放。
 - `Scenes/` 下放树林场景、切图材质和 Unity 场景构建会引用的场景美术资源。
 
 ## 工作规则

@@ -1,0 +1,104 @@
+
+killer_fly_skill3_back.png
+size: 312,839
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud_09
+  rotate: true
+  xy: 226, 576
+  size: 136, 76
+  orig: 136, 76
+  offset: 0, 0
+  index: -1
+cloud_big_03
+  rotate: true
+  xy: 2, 181
+  size: 166, 174
+  orig: 166, 174
+  offset: 0, 0
+  index: -1
+cloud_big_05
+  rotate: false
+  xy: 2, 349
+  size: 186, 175
+  orig: 186, 175
+  offset: 0, 0
+  index: -1
+cloud_big_08
+  rotate: false
+  xy: 2, 714
+  size: 244, 123
+  orig: 244, 123
+  offset: 0, 0
+  index: -1
+cloud_crack_03
+  rotate: true
+  xy: 248, 742
+  size: 95, 51
+  orig: 95, 51
+  offset: 0, 0
+  index: -1
+cloud_crack_05
+  rotate: true
+  xy: 2, 2
+  size: 66, 72
+  orig: 66, 73
+  offset: 0, 0
+  index: -1
+cloud_crack_06
+  rotate: false
+  xy: 76, 3
+  size: 70, 65
+  orig: 71, 65
+  offset: 1, 0
+  index: -1
+dust_1_2
+  rotate: false
+  xy: 2, 526
+  size: 222, 186
+  orig: 222, 186
+  offset: 0, 0
+  index: -1
+dust_si_1
+  rotate: false
+  xy: 2, 70
+  size: 154, 109
+  orig: 154, 109
+  offset: 0, 0
+  index: -1
+dust_si_2
+  rotate: false
+  xy: 190, 349
+  size: 118, 136
+  orig: 123, 141
+  offset: 3, 2
+  index: -1
+eff_adslash_1
+  rotate: false
+  xy: 226, 487
+  size: 72, 87
+  orig: 116, 136
+  offset: 2, 1
+  index: -1
+eff_adslash_2
+  rotate: true
+  xy: 158, 27
+  size: 95, 128
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_3
+  rotate: true
+  xy: 178, 124
+  size: 107, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_4
+  rotate: true
+  xy: 178, 233
+  size: 114, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1

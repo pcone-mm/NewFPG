@@ -1,0 +1,701 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Heidemarie_30093_u3_attack
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: u3_attack
+  displayName: "U3 \u653B\u51FB"
+  duration: 4.9
+  actorAnimations:
+  - phaseName: u3_attack_ready
+    animationName: u3_attack_ready
+    startTime: 0
+    duration: 0.46670002
+    loop: 0
+  - phaseName: u3_attack_play
+    animationName: u3_attack_play
+    startTime: 0.5333
+    duration: 0.9333001
+    loop: 0
+  - phaseName: u3_attack_end
+    animationName: u3_attack_end
+    startTime: 4.4333
+    duration: 0.46670002
+    loop: 0
+  spineLayers:
+  - compositeName: heidemarie_30093_eff_u3_attack_ready_target
+    sourceName: heidemarie_30093_eff_u3_attack_sword_1
+    skeletonDataAsset: {fileID: 11400000, guid: 1e29a783e12f6ee438f64aa624f1c94a, type: 2}
+    animationName: ready
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_ready_target
+    sourceName: heidemarie_30093_eff_u3_attack_sword_2
+    skeletonDataAsset: {fileID: 11400000, guid: 21a5bba22769d664196986239b2a5ef1, type: 2}
+    animationName: ready
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: 2
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_ready
+    sourceName: heidemarie_30093_eff_u3_attack_self_f
+    skeletonDataAsset: {fileID: 11400000, guid: 1544f5a1d8f2839468b9ecaa676e451b, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_wind_b
+    skeletonDataAsset: {fileID: 11400000, guid: 0aedf05cb8d95b847a95377fb9f7e97a, type: 2}
+    animationName: u5_attack_play2
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 1.7667
+    scale: 1
+    rotation: 0
+    sortingOrder: -4
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_wind_f
+    skeletonDataAsset: {fileID: 11400000, guid: b31eae0d6d346a241933a7247207b43a, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 1.5
+    scale: 1
+    rotation: 0
+    sortingOrder: 300
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_rock_f
+    skeletonDataAsset: {fileID: 11400000, guid: f32e410d86c3cf04191da8bd4910c69e, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.3
+    scale: 1
+    rotation: 0
+    sortingOrder: 9
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_rock_b
+    skeletonDataAsset: {fileID: 11400000, guid: 8f62a939327600744a1de3a367ab0eb0, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2
+    scale: 1
+    rotation: 0
+    sortingOrder: -1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_ff_rock
+    skeletonDataAsset: {fileID: 11400000, guid: 28ba446c404f8b645899b910a3197a20, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 1.4333
+    scale: 1
+    rotation: 0
+    sortingOrder: 7
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_rock_2
+    skeletonDataAsset: {fileID: 11400000, guid: 7189548dabdaf134389b9c0cdf43733f, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 5
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_sword_2
+    skeletonDataAsset: {fileID: 11400000, guid: 21a5bba22769d664196986239b2a5ef1, type: 2}
+    animationName: play
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.9333
+    scale: 1
+    rotation: 0
+    sortingOrder: 2
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_sword_1
+    skeletonDataAsset: {fileID: 11400000, guid: 1e29a783e12f6ee438f64aa624f1c94a, type: 2}
+    animationName: play
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.9667
+    scale: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_rcok
+    skeletonDataAsset: {fileID: 11400000, guid: 3e3c45791532fa840aa8f678281c0e86, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 1.3667
+    scale: 1
+    rotation: 0
+    sortingOrder: 4
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_b
+    skeletonDataAsset: {fileID: 11400000, guid: 4489eee8acd6d274589d87187f12d94d, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.2
+    scale: 1
+    rotation: 0
+    sortingOrder: -2
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_f
+    skeletonDataAsset: {fileID: 11400000, guid: de6d4efbab8c6144a91f1975ecd74672, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 1.3333
+    scale: 1
+    rotation: 0
+    sortingOrder: 3
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_f2
+    skeletonDataAsset: {fileID: 11400000, guid: 8b4f3d8e0ae485f4786ac758384d2811, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.0333
+    scale: 1
+    rotation: 0
+    sortingOrder: 6
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_ff
+    skeletonDataAsset: {fileID: 11400000, guid: 00bb8771ea6a9e04bbc6935e87d23577, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 8
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_ff2
+    skeletonDataAsset: {fileID: 11400000, guid: 73c1427cbaa0d1546994a7cf18c219c3, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 10
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_u3_attack_target_ff3
+    skeletonDataAsset: {fileID: 11400000, guid: ce4d47a1bd6ebc8428a0d6dd3be2ff63, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 11
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_ready
+    sourceName: heidemarie_30093_eff_u3_attack_self_b
+    skeletonDataAsset: {fileID: 11400000, guid: 2471af5163af06c498472c8b0672c45f, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: -1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_target_flash
+    sourceName: heidemarie_30093_eff_u3_attack_target_ff_flash
+    skeletonDataAsset: {fileID: 11400000, guid: bd6b676ea88d519429c84fecf9b44bc9, type: 2}
+    animationName: animation
+    anchor: 1
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 100001
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_play
+    sourceName: heidemarie_30093_eff_u3_attack_self_b
+    skeletonDataAsset: {fileID: 11400000, guid: 2471af5163af06c498472c8b0672c45f, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 1.0332999
+    duration: 0.6333
+    scale: 1
+    rotation: 0
+    sortingOrder: -1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u3_attack_play
+    sourceName: heidemarie_30093_eff_u3_attack_self_f
+    skeletonDataAsset: {fileID: 11400000, guid: 1544f5a1d8f2839468b9ecaa676e451b, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 1.0332999
+    duration: 0.6
+    scale: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: heidemarie_30093_eff_u3_attack_play
+    sourceName: heidemarie_30093_u3_attack_self_par_1
+    emitterName: slow1
+    originalTexturePath: particle/pati_03.sct
+    anchor: 0
+    offset: {x: 0.5, y: 1.6999999}
+    sourceVariance: {x: 0.39999998, y: 0.19999999}
+    force: {x: 0, y: 0}
+    startTime: 1.1632999
+    duration: 2.1
+    scale: 0.7
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 250
+    emissionRate: 15
+    lifetimeMin: 0.29999998
+    lifetimeMax: 1.1
+    speedMin: 0.39999998
+    speedMax: 0.79999995
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: -90
+    angleVariance: 180
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24705882, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_play
+    sourceName: heidemarie_30093_u3_attack_self_par_1
+    emitterName: fast
+    originalTexturePath: particle/pati_03.sct
+    anchor: 0
+    offset: {x: 0.5, y: 1.6999999}
+    sourceVariance: {x: 0.39999998, y: 0.19999999}
+    force: {x: 0, y: 0}
+    startTime: 1.1632999
+    duration: 2.1
+    scale: 0.7
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 250
+    emissionRate: 5
+    lifetimeMin: 0.29999998
+    lifetimeMax: 1.1
+    speedMin: 0.39999998
+    speedMax: 0.79999995
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: -90
+    angleVariance: 180
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24705882, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_3
+    emitterName: left_2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 1
+    offset: {x: 0, y: 0.19999999}
+    sourceVariance: {x: 3, y: 0.5}
+    force: {x: 0, y: 0}
+    startTime: 1.2333
+    duration: 3.2
+    scale: 1
+    rotation: 0
+    sortingOrder: 10
+    maxParticles: 100
+    emissionRate: 50
+    lifetimeMin: 0.8
+    lifetimeMax: 2.2
+    speedMin: 0.19999993
+    speedMax: 2.1999998
+    sizeMin: 0.01000005
+    sizeMax: 1.99
+    angle: 90
+    angleVariance: 40
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_eff_attack_play1_target_pati3
+    emitterName: digital_crack4_3
+    originalTexturePath: particle/stone_06.sct
+    anchor: 1
+    offset: {x: 0, y: 1}
+    sourceVariance: {x: 1, y: 1}
+    force: {x: 0, y: -18}
+    startTime: 1.4033
+    duration: 1.4000001
+    scale: 1.5
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 500
+    emissionRate: 20
+    lifetimeMin: 0.3
+    lifetimeMax: 0.90000004
+    speedMin: 7
+    speedMax: 9
+    sizeMin: 0.15
+    sizeMax: 0.54999995
+    angle: 90
+    angleVariance: 50
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 0
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_2
+    emitterName: lt_pati2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 1
+    offset: {x: 0, y: 2}
+    sourceVariance: {x: 0.5, y: 0.5}
+    force: {x: 0, y: 0}
+    startTime: 1.4133
+    duration: 0.75000006
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 50
+    emissionRate: 50
+    lifetimeMin: 0.099999994
+    lifetimeMax: 0.70000005
+    speedMin: 10
+    speedMax: 30
+    sizeMin: 0.5
+    sizeMax: 2.5
+    angle: 0
+    angleVariance: 180
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_2
+    emitterName: lt_pati1
+    originalTexturePath: particle/ui_gacha_scene_star2.sct
+    anchor: 1
+    offset: {x: 0, y: 2}
+    sourceVariance: {x: 0.099999994, y: 0.099999994}
+    force: {x: 0, y: 0}
+    startTime: 1.4133
+    duration: 1.55
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 10
+    emissionRate: 10
+    lifetimeMin: 0.5
+    lifetimeMax: 1.5
+    speedMin: 1
+    speedMax: 9
+    sizeMin: 0.35
+    sizeMax: 1.05
+    angle: 0
+    angleVariance: 180
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_1
+    emitterName: left_2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 1
+    offset: {x: 0, y: 2.1999998}
+    sourceVariance: {x: 5, y: 3}
+    force: {x: 0, y: 0}
+    startTime: 1.4833
+    duration: 2.25
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 20
+    emissionRate: 20
+    lifetimeMin: 0.8
+    lifetimeMax: 2.2
+    speedMin: 0.01000002
+    speedMax: 0.99
+    sizeMin: 0.01000005
+    sizeMax: 1.99
+    angle: 90
+    angleVariance: 50
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_1
+    emitterName: left
+    originalTexturePath: particle/pati_01.sct
+    anchor: 1
+    offset: {x: 0, y: 2.1999998}
+    sourceVariance: {x: 3, y: 3}
+    force: {x: 0, y: 0}
+    startTime: 1.4833
+    duration: 1.3499999
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 8
+    emissionRate: 8
+    lifetimeMin: 0.099999964
+    lifetimeMax: 1.3
+    speedMin: 0.00999999
+    speedMax: 1.1899999
+    sizeMin: 0.5
+    sizeMax: 2.5
+    angle: 120
+    angleVariance: 30
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_1
+    emitterName: left_2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 1
+    offset: {x: 0, y: 2.1999998}
+    sourceVariance: {x: 3, y: 3}
+    force: {x: 0, y: 0}
+    startTime: 1.4833
+    duration: 1.55
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 3
+    emissionRate: 3
+    lifetimeMin: 0.100000024
+    lifetimeMax: 1.5
+    speedMin: 0.01000002
+    speedMax: 0.99
+    sizeMin: 0.01000005
+    sizeMax: 1.99
+    angle: 90
+    angleVariance: 50
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u3_attack_target
+    sourceName: heidemarie_30093_u3_attack_target_par_1
+    emitterName: left
+    originalTexturePath: particle/pati_01.sct
+    anchor: 1
+    offset: {x: 0, y: 2.1999998}
+    sourceVariance: {x: 3, y: 3}
+    force: {x: 0, y: 0}
+    startTime: 1.4833
+    duration: 1.3499999
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 2
+    emissionRate: 2
+    lifetimeMin: 0.099999964
+    lifetimeMax: 1.3
+    speedMin: 0.00999999
+    speedMax: 1.1899999
+    sizeMin: 0.5
+    sizeMax: 2.5
+    angle: 120
+    angleVariance: 30
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues:
+  - sourceName: heidemarie_30093_u3_attack_shake
+    target: 0
+    startTime: 0.5333
+    duration: 1.8
+    positionScale: 0.01
+    translateKeys:
+    - time: 0.5333
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 0.5667
+      value: {x: 0, y: -75.31}
+      stepped: 0
+    - time: 0.6
+      value: {x: 0, y: 59.84}
+      stepped: 0
+    - time: 0.6667
+      value: {x: 0, y: -23.25}
+      stepped: 0
+    - time: 0.7333
+      value: {x: 0, y: 17.25}
+      stepped: 0
+    - time: 0.8
+      value: {x: 0, y: -8.25}
+      stepped: 0
+    - time: 0.8667
+      value: {x: 0, y: 8.25}
+      stepped: 0
+    - time: 0.9
+      value: {x: 0, y: 108.08}
+      stepped: 0
+    - time: 0.9333
+      value: {x: 0, y: -50.12}
+      stepped: 0
+    - time: 0.9667
+      value: {x: 0, y: 55.33}
+      stepped: 0
+    - time: 1.0333
+      value: {x: 0, y: -19.2}
+      stepped: 0
+    - time: 1.1
+      value: {x: 0, y: 19.5}
+      stepped: 0
+    - time: 1.1667
+      value: {x: 0, y: -12.75}
+      stepped: 0
+    - time: 1.2333
+      value: {x: 0, y: 10.47}
+      stepped: 0
+    - time: 1.3
+      value: {x: 0, y: -6.48}
+      stepped: 0
+    - time: 1.3667
+      value: {x: 0, y: 4.47}
+      stepped: 0
+    - time: 1.4333
+      value: {x: 0, y: -3.96}
+      stepped: 0
+    - time: 1.5
+      value: {x: 0, y: 3.96}
+      stepped: 0
+    - time: 1.6
+      value: {x: 0, y: -1.98}
+      stepped: 0
+    - time: 1.7
+      value: {x: 0, y: 0.99}
+      stepped: 0
+    - time: 1.8
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  cameraZoomCues: []
+  markers:
+  - kind: HIT
+    label: HIT
+    startTime: 1.0993
+    duration: 0
+    value: 0
+  - kind: DAMAGE
+    label: DAMAGE 30
+    startTime: 1.1333001
+    duration: 0
+    value: 30
+  - kind: DAMAGE
+    label: DAMAGE 70
+    startTime: 1.4333
+    duration: 0
+    value: 70
+  - kind: RADIAL_RGB_BLUR
+    label: RADIAL_RGB_BLUR
+    startTime: 1.4993
+    duration: 0.046700004
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 1.4993
+    duration: 0.0667
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, but shared SCT particle textures use a generated
+    soft fallback. Masks, custom shaders, color-blend and post-process nodes remain
+    diagnostic markers. Negative/sentinel CFX scales use a positive preview fallback,
+    ancillary Spine Bezier keys are sampled with linear interpolation, and only the
+    primary cam/camera/node bone is sampled from multi-bone ancillary skeletons.
+  unresolvedResources:
+  - 'Shared particle texture approximated with soft fallback: particle/pati_01.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/pati_03.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/stone_06.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/ui_gacha_scene_star2.sct'

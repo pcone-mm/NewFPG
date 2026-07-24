@@ -1,0 +1,62 @@
+
+30093_ug_portrait1_4.png
+size: 1908,860
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a_dress1_1
+  rotate: true
+  xy: 2, 9
+  size: 111, 261
+  orig: 111, 261
+  offset: 0, 0
+  index: -1
+a_dress1_2
+  rotate: true
+  xy: 1566, 214
+  size: 208, 340
+  orig: 208, 340
+  offset: 0, 0
+  index: -1
+a_dress1_3
+  rotate: false
+  xy: 1336, 2
+  size: 228, 420
+  orig: 228, 420
+  offset: 0, 0
+  index: -1
+a_dress2_1
+  rotate: true
+  xy: 1336, 424
+  size: 431, 537
+  orig: 431, 537
+  offset: 0, 0
+  index: -1
+a_dress2_2
+  rotate: false
+  xy: 988, 9
+  size: 343, 254
+  orig: 343, 254
+  offset: 0, 0
+  index: -1
+a_dress2_3
+  rotate: false
+  xy: 988, 265
+  size: 346, 590
+  orig: 346, 590
+  offset: 0, 0
+  index: -1
+a_dress2_4
+  rotate: false
+  xy: 1566, 20
+  size: 318, 192
+  orig: 318, 192
+  offset: 0, 0
+  index: -1
+a_underwear
+  rotate: true
+  xy: 2, 122
+  size: 733, 984
+  orig: 733, 984
+  offset: 0, 0
+  index: -1

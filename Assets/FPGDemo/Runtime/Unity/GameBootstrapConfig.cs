@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FPG.Demo.Unity
 {
@@ -14,10 +15,12 @@ namespace FPG.Demo.Unity
     {
         [Header("Room Flow")]
         [SerializeField]
-        private string combatLabSceneName = "FormalRoom";
+        [FormerlySerializedAs("combatLabSceneName")]
+        private string roomSceneName = "FormalRoom";
 
         [SerializeField]
-        private bool loadCombatLabOnStart = true;
+        [FormerlySerializedAs("loadCombatLabOnStart")]
+        private bool loadRoomOnStart = true;
 
         [SerializeField]
         [Tooltip("When enabled, Boot waits for a shot to hit an authored room entrance before loading the room scene.")]
@@ -48,15 +51,9 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private bool developmentDiagnosticsEnabled = true;
 
-        public string RoomSceneName => combatLabSceneName;
+        public string RoomSceneName => roomSceneName;
 
-        [Obsolete("Use RoomSceneName instead.")]
-        public string CombatLabSceneName => RoomSceneName;
-
-        public bool LoadRoomOnStart => loadCombatLabOnStart;
-
-        [Obsolete("Use LoadRoomOnStart instead.")]
-        public bool LoadCombatLabOnStart => LoadRoomOnStart;
+        public bool LoadRoomOnStart => loadRoomOnStart;
 
         public bool RequireEntranceSelection => requireEntranceSelection;
 
@@ -75,7 +72,7 @@ namespace FPG.Demo.Unity
 
         public bool TryValidate(out string error)
         {
-            if (string.IsNullOrWhiteSpace(combatLabSceneName))
+            if (string.IsNullOrWhiteSpace(roomSceneName))
             {
                 error = "Room scene name is empty.";
                 return false;

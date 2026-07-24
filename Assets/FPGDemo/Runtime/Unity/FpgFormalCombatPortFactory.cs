@@ -62,7 +62,7 @@ namespace FPG.Demo.Unity
     {
         private readonly HitboxRegistry staticHitboxRegistry;
         private readonly FpgCombatantAnchorMap anchorMap;
-        private readonly D0PlayerEntityView playerEntity;
+        private readonly FpgPlayerEntityView playerEntity;
         private bool disposed;
 
         internal FpgFormalCombatRuntimeBundle(
@@ -78,7 +78,7 @@ namespace FPG.Demo.Unity
             IFpgPlayerRoomSnapshotPort playerSnapshotPort,
             HitboxRegistry staticHitboxRegistry,
             FpgCombatantAnchorMap anchorMap,
-            D0PlayerEntityView playerEntity)
+            FpgPlayerEntityView playerEntity)
         {
             IdAllocator = idAllocator;
             RunContext = runContext;
@@ -183,7 +183,7 @@ namespace FPG.Demo.Unity
     {
         [Header("Player")]
         [SerializeField] private D0CharacterDefinition playerDefinition;
-        [SerializeField] private D0PlayerEntityView playerEntity;
+        [SerializeField] private FpgPlayerEntityView playerEntity;
         [SerializeField, Min(1)] private int playerBodyGeometryId = 90001;
 
         [NonSerialized] private bool playerBindingConfigured;
@@ -243,7 +243,7 @@ namespace FPG.Demo.Unity
 
         public int AttackPatternCapacity => attackPatternCapacity;
         public D0CharacterDefinition PlayerDefinition => playerDefinition;
-        public D0PlayerEntityView PlayerEntity => playerEntity;
+        public FpgPlayerEntityView PlayerEntity => playerEntity;
         public HitboxRegistry StaticHitboxRegistry => staticHitboxRegistry;
         public D0ThreeCProfile PlayerThreeCProfile => playerThreeCProfile;
         public D0CombatFeelProfile PlayerCombatFeelProfile => playerCombatFeelProfile;
@@ -261,7 +261,7 @@ namespace FPG.Demo.Unity
 
         public bool TryConfigurePlayer(
             D0CharacterDefinition definition,
-            D0PlayerEntityView entity,
+            FpgPlayerEntityView entity,
             D0ThreeCProfile threeCProfile,
             D0CombatFeelProfile combatFeelProfile,
             out string error)

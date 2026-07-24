@@ -1,0 +1,251 @@
+
+fei_30048_u4_attack_play.png
+size: 2008,1032
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fei_u4_play_1_1
+  rotate: false
+  xy: 2, 154
+  size: 362, 176
+  orig: 362, 176
+  offset: 0, 0
+  index: -1
+fei_u4_play_1_2
+  rotate: true
+  xy: 366, 7
+  size: 362, 176
+  orig: 362, 176
+  offset: 0, 0
+  index: -1
+fei_u4_play_1_3
+  rotate: false
+  xy: 544, 19
+  size: 362, 176
+  orig: 362, 176
+  offset: 0, 0
+  index: -1
+fei_u4_play_1_4
+  rotate: false
+  xy: 929, 187
+  size: 362, 176
+  orig: 362, 176
+  offset: 0, 0
+  index: -1
+fei_u4_play_1_5
+  rotate: false
+  xy: 1293, 187
+  size: 362, 176
+  orig: 362, 176
+  offset: 0, 0
+  index: -1
+fei_u4_play_1_6
+  rotate: false
+  xy: 908, 9
+  size: 362, 176
+  orig: 362, 176
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_1
+  rotate: false
+  xy: 326, 539
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_1_b
+  rotate: false
+  xy: 326, 371
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_2
+  rotate: false
+  xy: 728, 701
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_2_b
+  rotate: false
+  xy: 1113, 701
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_3
+  rotate: false
+  xy: 1498, 701
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_3_b
+  rotate: false
+  xy: 711, 533
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_4
+  rotate: false
+  xy: 1096, 533
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_4_b
+  rotate: false
+  xy: 1481, 533
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_5
+  rotate: false
+  xy: 711, 365
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_5_b
+  rotate: false
+  xy: 1096, 365
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_6
+  rotate: false
+  xy: 1481, 365
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+fei_u4_play_2_6_b
+  rotate: false
+  xy: 544, 197
+  size: 383, 166
+  orig: 383, 166
+  offset: 0, 0
+  index: -1
+flame2_1
+  rotate: true
+  xy: 2, 332
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+flame2_2
+  rotate: false
+  xy: 299, 869
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+flame2_3
+  rotate: false
+  xy: 701, 869
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+flame2_4
+  rotate: false
+  xy: 1103, 869
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+flame2_5
+  rotate: false
+  xy: 1505, 869
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+flame2_6
+  rotate: true
+  xy: 164, 332
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+flame2_7
+  rotate: false
+  xy: 326, 707
+  size: 400, 160
+  orig: 400, 160
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 2, 734
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1
+glow_obk
+  rotate: true
+  xy: 1883, 682
+  size: 185, 119
+  orig: 185, 119
+  offset: 0, 0
+  index: -1
+smog_r2
+  rotate: true
+  xy: 1524, 2
+  size: 183, 80
+  orig: 183, 80
+  offset: 0, 0
+  index: -1
+smokeRing04_1
+  rotate: false
+  xy: 2, 29
+  size: 250, 123
+  orig: 250, 123
+  offset: 0, 0
+  index: -1
+smokeRing04_2
+  rotate: true
+  xy: 1866, 430
+  size: 250, 123
+  orig: 250, 123
+  offset: 0, 0
+  index: -1
+smokeRing04_3
+  rotate: false
+  xy: 1272, 62
+  size: 250, 123
+  orig: 250, 123
+  offset: 0, 0
+  index: -1
+smokeRing04_4
+  rotate: false
+  xy: 1657, 240
+  size: 250, 123
+  orig: 250, 123
+  offset: 0, 0
+  index: -1
+smokeRing04_5
+  rotate: false
+  xy: 1657, 115
+  size: 250, 123
+  orig: 250, 123
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 254, 49
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: true
+  xy: 1907, 937
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1

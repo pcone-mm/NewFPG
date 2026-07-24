@@ -1,0 +1,125 @@
+
+nihilum_spector_death_01_3.png
+size: 1768,1520
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+impact12_1
+  rotate: false
+  xy: 374, 47
+  size: 300, 272
+  orig: 300, 272
+  offset: 0, 0
+  index: -1
+impact12_2
+  rotate: true
+  xy: 1215, 391
+  size: 300, 272
+  orig: 300, 272
+  offset: 0, 0
+  index: -1
+impact12_3
+  rotate: true
+  xy: 1489, 391
+  size: 300, 272
+  orig: 300, 272
+  offset: 0, 0
+  index: -1
+path1_0001
+  rotate: true
+  xy: 761, 229
+  size: 525, 225
+  orig: 525, 225
+  offset: 0, 0
+  index: -1
+path1_0002
+  rotate: true
+  xy: 988, 229
+  size: 525, 225
+  orig: 525, 225
+  offset: 0, 0
+  index: -1
+path1_0003
+  rotate: false
+  xy: 676, 2
+  size: 525, 225
+  orig: 525, 225
+  offset: 0, 0
+  index: -1
+path1_0004
+  rotate: false
+  xy: 1203, 2
+  size: 525, 225
+  orig: 525, 225
+  offset: 0, 0
+  index: -1
+path2_0001
+  rotate: false
+  xy: 1372, 1080
+  size: 385, 433
+  orig: 385, 433
+  offset: 0, 0
+  index: -1
+path2_0002
+  rotate: true
+  xy: 374, 756
+  size: 385, 433
+  orig: 385, 433
+  offset: 0, 0
+  index: -1
+path2_0003
+  rotate: true
+  xy: 809, 756
+  size: 385, 433
+  orig: 385, 433
+  offset: 0, 0
+  index: -1
+path2_0004
+  rotate: true
+  xy: 1244, 693
+  size: 385, 433
+  orig: 385, 433
+  offset: 0, 0
+  index: -1
+path2_0005
+  rotate: false
+  xy: 374, 321
+  size: 385, 433
+  orig: 385, 433
+  offset: 0, 0
+  index: -1
+path3_0001
+  rotate: true
+  xy: 2, 1016
+  size: 497, 370
+  orig: 497, 370
+  offset: 0, 0
+  index: -1
+path3_0002
+  rotate: true
+  xy: 2, 517
+  size: 497, 370
+  orig: 497, 370
+  offset: 0, 0
+  index: -1
+path3_0003
+  rotate: true
+  xy: 2, 18
+  size: 497, 370
+  orig: 497, 370
+  offset: 0, 0
+  index: -1
+path3_0004
+  rotate: false
+  xy: 374, 1143
+  size: 497, 370
+  orig: 497, 370
+  offset: 0, 0
+  index: -1
+path3_0005
+  rotate: false
+  xy: 873, 1143
+  size: 497, 370
+  orig: 497, 370
+  offset: 0, 0
+  index: -1

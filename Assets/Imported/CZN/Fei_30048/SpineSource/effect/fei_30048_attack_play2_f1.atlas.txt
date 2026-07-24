@@ -1,0 +1,125 @@
+
+fei_30048_attack_play2_f1.png
+size: 1936,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fire1_1
+  rotate: false
+  xy: 2, 2
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_2
+  rotate: false
+  xy: 282, 2
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_3
+  rotate: false
+  xy: 562, 2
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_4
+  rotate: false
+  xy: 842, 2
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_5
+  rotate: true
+  xy: 845, 209
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_6
+  rotate: true
+  xy: 1050, 209
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_7
+  rotate: false
+  xy: 1122, 4
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_8
+  rotate: true
+  xy: 1255, 209
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire1_9
+  rotate: false
+  xy: 1402, 4
+  size: 278, 203
+  orig: 278, 203
+  offset: 0, 0
+  index: -1
+fire3_1
+  rotate: true
+  xy: 1682, 34
+  size: 139, 122
+  orig: 139, 122
+  offset: 0, 0
+  index: -1
+fire3_2
+  rotate: true
+  xy: 1806, 34
+  size: 139, 122
+  orig: 139, 122
+  offset: 0, 0
+  index: -1
+fire8_1
+  rotate: true
+  xy: 2, 207
+  size: 280, 279
+  orig: 280, 279
+  offset: 0, 0
+  index: -1
+fire8_2
+  rotate: true
+  xy: 283, 207
+  size: 280, 279
+  orig: 280, 279
+  offset: 0, 0
+  index: -1
+fire8_3
+  rotate: true
+  xy: 564, 207
+  size: 280, 279
+  orig: 280, 279
+  offset: 0, 0
+  index: -1
+fire9_1
+  rotate: false
+  xy: 1682, 332
+  size: 247, 155
+  orig: 247, 155
+  offset: 0, 0
+  index: -1
+fire9_2
+  rotate: true
+  xy: 1460, 240
+  size: 247, 155
+  orig: 247, 155
+  offset: 0, 0
+  index: -1
+fire9_3
+  rotate: false
+  xy: 1682, 175
+  size: 247, 155
+  orig: 247, 155
+  offset: 0, 0
+  index: -1

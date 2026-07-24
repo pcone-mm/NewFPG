@@ -1,0 +1,258 @@
+
+fei_30048_ux_bg1_1.png
+size: 1960,1648
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg1_bridge_f
+  rotate: false
+  xy: 2, 1297
+  size: 1520, 348
+  orig: 1520, 348
+  offset: 0, 0
+  index: -1
+bg1_bridge_glow
+  rotate: false
+  xy: 2, 2
+  size: 700, 139
+  orig: 700, 139
+  offset: 0, 0
+  index: -1
+bg1_bridge_glow2
+  rotate: false
+  xy: 1112, 897
+  size: 404, 125
+  orig: 404, 125
+  offset: 0, 0
+  index: -1
+bg1_cloud_1
+  rotate: false
+  xy: 1103, 766
+  size: 499, 129
+  orig: 499, 129
+  offset: 0, 0
+  index: -1
+bg1_cloud_2
+  rotate: false
+  xy: 542, 801
+  size: 559, 180
+  orig: 559, 180
+  offset: 0, 0
+  index: -1
+bg1_fog1
+  rotate: false
+  xy: 519, 534
+  size: 512, 265
+  orig: 512, 265
+  offset: 0, 0
+  index: -1
+bg1_front_1
+  rotate: false
+  xy: 2, 457
+  size: 515, 409
+  orig: 515, 409
+  offset: 0, 0
+  index: -1
+bg1_front_2
+  rotate: false
+  xy: 2, 868
+  size: 538, 427
+  orig: 538, 427
+  offset: 0, 0
+  index: -1
+bg1_front_3
+  rotate: false
+  xy: 542, 983
+  size: 568, 312
+  orig: 568, 312
+  offset: 0, 0
+  index: -1
+bg1_front_3_b
+  rotate: false
+  xy: 2, 143
+  size: 568, 312
+  orig: 568, 312
+  offset: 0, 0
+  index: -1
+bg1_gra1
+  rotate: false
+  xy: 874, 147
+  size: 150, 320
+  orig: 150, 320
+  offset: 0, 0
+  index: -1
+cloud1
+  rotate: true
+  xy: 1280, 226
+  size: 246, 196
+  orig: 246, 196
+  offset: 0, 0
+  index: -1
+die_flare_04
+  rotate: false
+  xy: 519, 843
+  size: 21, 23
+  orig: 21, 23
+  offset: 0, 0
+  index: -1
+die_flare_07
+  rotate: true
+  xy: 1518, 982
+  size: 40, 74
+  orig: 40, 74
+  offset: 0, 0
+  index: -1
+flare06
+  rotate: false
+  xy: 1847, 357
+  size: 98, 98
+  orig: 98, 98
+  offset: 0, 0
+  index: -1
+flare07
+  rotate: false
+  xy: 1725, 355
+  size: 120, 144
+  orig: 120, 144
+  offset: 0, 0
+  index: -1
+flare1
+  rotate: false
+  xy: 1524, 1313
+  size: 350, 332
+  orig: 350, 332
+  offset: 0, 0
+  index: -1
+flare2
+  rotate: false
+  xy: 519, 469
+  size: 480, 63
+  orig: 480, 63
+  offset: 0, 0
+  index: -1
+flare99
+  rotate: false
+  xy: 1594, 1009
+  size: 302, 302
+  orig: 302, 302
+  offset: 0, 0
+  index: -1
+flare_1
+  rotate: false
+  xy: 572, 167
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+flash2
+  rotate: false
+  xy: 1594, 501
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1288, 24
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+gy_dust_3_1
+  rotate: false
+  xy: 1026, 226
+  size: 252, 246
+  orig: 252, 246
+  offset: 0, 0
+  index: -1
+lens_flare_1
+  rotate: false
+  xy: 704, 37
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+lense_flare01
+  rotate: false
+  xy: 1725, 233
+  size: 120, 120
+  orig: 120, 120
+  offset: 0, 0
+  index: -1
+lense_flare02
+  rotate: false
+  xy: 1876, 1578
+  size: 67, 67
+  orig: 67, 67
+  offset: 0, 0
+  index: -1
+lense_flare04
+  rotate: false
+  xy: 1033, 771
+  size: 28, 28
+  orig: 28, 28
+  offset: 0, 0
+  index: -1
+lense_flare1_weak
+  rotate: true
+  xy: 1112, 1024
+  size: 271, 480
+  orig: 271, 480
+  offset: 0, 0
+  index: -1
+lensflare
+  rotate: true
+  xy: 1718, 23
+  size: 208, 155
+  orig: 208, 155
+  offset: 0, 0
+  index: -1
+light_flare_rainbow2
+  rotate: false
+  xy: 1478, 247
+  size: 245, 245
+  orig: 245, 245
+  offset: 0, 0
+  index: -1
+light_flare_rainbow_str
+  rotate: true
+  xy: 1490, 48
+  size: 197, 226
+  orig: 197, 226
+  offset: 0, 0
+  index: -1
+rainbow_flare2
+  rotate: false
+  xy: 1033, 474
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1
+ray1
+  rotate: false
+  xy: 1026, 44
+  size: 260, 180
+  orig: 260, 180
+  offset: 0, 0
+  index: -1
+ray2
+  rotate: true
+  xy: 1604, 759
+  size: 248, 350
+  orig: 248, 350
+  offset: 0, 0
+  index: -1
+water_spread_7
+  rotate: true
+  xy: 1335, 494
+  size: 270, 257
+  orig: 270, 257
+  offset: 0, 0
+  index: -1
+wave_ray1
+  rotate: false
+  xy: 1852, 457
+  size: 91, 300
+  orig: 91, 300
+  offset: 0, 0
+  index: -1

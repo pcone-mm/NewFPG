@@ -9,7 +9,7 @@
 # Define macros (only works in top-level gitattributes files)
 [attr]lfs               filter=lfs diff=lfs merge=lfs -text
 [attr]unity-json        eol=lf linguist-language=json
-[attr]unity-yaml        merge=unityyamlmerge eol=lf linguist-language=yaml
+[attr]unity-yaml        merge=unityyamlmerge eol=lf linguist-language=yaml -whitespace
 
 # Optionally collapse Unity YAML files on GitHub diffs
 # [attr]unity-yaml        merge=unityyamlmerge text linguist-language=yaml linguist-generated
@@ -69,6 +69,7 @@
 # Exclude from GitHub stats and diffs: third-party plugins, packages lock file
 Assets/Plugins/**           linguist-generated
 Packages/packages-lock.json linguist-generated
+External/CZN/SpineRuntime-3.8/** -whitespace
 
 # Unity LFS
 *.cubemap               lfs
@@ -166,6 +167,10 @@ Packages/packages-lock.json linguist-generated
 
 # Spine export file for Unity
 *.skel.bytes            lfs
+*.scsp1u.bytes          lfs
+*.scsp                  lfs
+*.sct                   lfs
+*.spine                 lfs
 
 # Exceptions for .asset files such as lightning pre-baking
 LightingData.asset     binary

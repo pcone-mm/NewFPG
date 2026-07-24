@@ -1,0 +1,76 @@
+
+spawn_insect_active_idle_ready_b.png
+size: 696,124
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+jelly_7
+  rotate: false
+  xy: 536, 40
+  size: 104, 24
+  orig: 112, 24
+  offset: 2, 0
+  index: -1
+jelly_7-2
+  rotate: false
+  xy: 536, 14
+  size: 104, 24
+  orig: 112, 24
+  offset: 2, 0
+  index: -1
+jelly_9
+  rotate: false
+  xy: 536, 95
+  size: 114, 27
+  orig: 136, 27
+  offset: 15, 0
+  index: -1
+jelly_9-2
+  rotate: false
+  xy: 536, 66
+  size: 114, 27
+  orig: 136, 27
+  offset: 15, 0
+  index: -1
+s2_1
+  rotate: false
+  xy: 642, 4
+  size: 49, 60
+  orig: 200, 147
+  offset: 6, 29
+  index: -1
+s2_2
+  rotate: false
+  xy: 140, 13
+  size: 137, 109
+  orig: 200, 147
+  offset: 19, 31
+  index: -1
+s2_4
+  rotate: false
+  xy: 2, 9
+  size: 136, 113
+  orig: 200, 147
+  offset: 53, 22
+  index: -1
+s2_5
+  rotate: false
+  xy: 409, 2
+  size: 125, 120
+  orig: 200, 147
+  offset: 69, 11
+  index: -1
+s2_6
+  rotate: true
+  xy: 279, 14
+  size: 108, 128
+  orig: 200, 147
+  offset: 84, 7
+  index: -1
+s3
+  rotate: false
+  xy: 652, 84
+  size: 40, 38
+  orig: 40, 38
+  offset: 0, 0
+  index: -1

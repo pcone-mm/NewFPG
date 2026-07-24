@@ -1,0 +1,146 @@
+
+fei_30048_ug_eff_s1_screen.sct
+size: 1640,568
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow01
+  rotate: false
+  xy: 816, 266
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+pe_ug_rain04_b
+  rotate: true
+  xy: 816, 234
+  size: 30, 200
+  orig: 30, 200
+  offset: 0, 0
+  index: -1
+pe_ug_rain07_0000
+  rotate: false
+  xy: 560, 203
+  size: 254, 363
+  orig: 254, 363
+  offset: 0, 0
+  index: -1
+pe_ug_rain07_0001
+  rotate: false
+  xy: 284, 175
+  size: 274, 391
+  orig: 274, 391
+  offset: 0, 0
+  index: -1
+pe_ug_rain07_0002
+  rotate: false
+  xy: 2, 155
+  size: 280, 411
+  orig: 280, 411
+  offset: 0, 0
+  index: -1
+pe_ug_rain08_0000
+  rotate: true
+  xy: 317, 11
+  size: 162, 204
+  orig: 162, 204
+  offset: 0, 0
+  index: -1
+pe_ug_rain08_0001
+  rotate: true
+  xy: 649, 9
+  size: 192, 291
+  orig: 192, 291
+  offset: 0, 0
+  index: -1
+pe_ug_rain08_0002
+  rotate: false
+  xy: 1249, 10
+  size: 192, 291
+  orig: 192, 291
+  offset: 0, 0
+  index: -1
+pe_ug_rain09_0000
+  rotate: false
+  xy: 1349, 306
+  size: 191, 260
+  orig: 191, 260
+  offset: 0, 0
+  index: -1
+pe_ug_rain09_0001
+  rotate: false
+  xy: 1118, 303
+  size: 229, 263
+  orig: 229, 263
+  offset: 0, 0
+  index: -1
+pe_ug_rain09_0002
+  rotate: true
+  xy: 942, 3
+  size: 229, 305
+  orig: 229, 305
+  offset: 0, 0
+  index: -1
+pe_ug_rain10_0000
+  rotate: true
+  xy: 523, 30
+  size: 143, 124
+  orig: 143, 124
+  offset: 0, 0
+  index: -1
+pe_ug_rain10_0001
+  rotate: false
+  xy: 1443, 180
+  size: 143, 124
+  orig: 143, 124
+  offset: 0, 0
+  index: -1
+pe_ug_rain11_0000
+  rotate: false
+  xy: 1542, 467
+  size: 96, 99
+  orig: 96, 99
+  offset: 0, 0
+  index: -1
+pe_ug_rain11_0001
+  rotate: false
+  xy: 171, 9
+  size: 144, 144
+  orig: 144, 144
+  offset: 0, 0
+  index: -1
+pe_ug_rain11_0002
+  rotate: true
+  xy: 2, 7
+  size: 146, 167
+  orig: 146, 167
+  offset: 0, 0
+  index: -1
+tri_x_water59
+  rotate: true
+  xy: 1443, 2
+  size: 74, 87
+  orig: 74, 87
+  offset: 0, 0
+  index: -1
+tri_x_water59_b
+  rotate: false
+  xy: 1443, 78
+  size: 100, 100
+  orig: 100, 100
+  offset: 0, 0
+  index: -1
+tri_x_water60
+  rotate: false
+  xy: 1542, 366
+  size: 82, 99
+  orig: 82, 99
+  offset: 0, 0
+  index: -1
+tri_x_water61_0000
+  rotate: true
+  xy: 1532, 5
+  size: 71, 76
+  orig: 71, 76
+  offset: 0, 0
+  index: -1

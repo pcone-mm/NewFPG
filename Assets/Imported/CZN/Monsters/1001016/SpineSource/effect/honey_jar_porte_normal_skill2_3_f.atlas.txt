@@ -1,0 +1,55 @@
+
+honey_jar_porte_normal_skill2_3_f.png
+size: 668,188
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud1
+  rotate: false
+  xy: 383, 97
+  size: 150, 86
+  orig: 150, 86
+  offset: 0, 0
+  index: -1
+cloud2
+  rotate: false
+  xy: 383, 27
+  size: 150, 68
+  orig: 150, 68
+  offset: 0, 0
+  index: -1
+cloud_07
+  rotate: true
+  xy: 607, 8
+  size: 66, 35
+  orig: 66, 35
+  offset: 0, 0
+  index: -1
+crack_rock1
+  rotate: true
+  xy: 2, 13
+  size: 170, 195
+  orig: 195, 206
+  offset: 25, 11
+  index: -1
+crack_rock2
+  rotate: true
+  xy: 535, 7
+  size: 67, 70
+  orig: 67, 70
+  offset: 0, 0
+  index: -1
+crack_rock3
+  rotate: false
+  xy: 535, 76
+  size: 129, 107
+  orig: 129, 107
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: false
+  xy: 199, 2
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1

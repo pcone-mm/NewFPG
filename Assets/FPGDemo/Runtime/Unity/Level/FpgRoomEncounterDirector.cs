@@ -94,7 +94,7 @@ namespace FPG.Demo.Unity
         private PendingEnemyAttackPresentation[] pendingEnemyAttackPresentations =
             Array.Empty<PendingEnemyAttackPresentation>();
         private int pendingEnemyAttackPresentationCount;
-        [NonSerialized] private D0PlayerEntityView configuredPlayerEntity;
+        [NonSerialized] private FpgPlayerEntityView configuredPlayerEntity;
         [NonSerialized] private bool playerBindingConfigured;
         [NonSerialized] private bool playerBindingLocked;
 
@@ -108,7 +108,7 @@ namespace FPG.Demo.Unity
             (configuredFactory ?? formalCombatPortFactoryComponent
                 as IFpgFormalCombatPortFactory)
             as IFpgFormalPlayerRunResourceImportPort;
-        public D0PlayerEntityView ConfiguredPlayerEntity => configuredPlayerEntity;
+        public FpgPlayerEntityView ConfiguredPlayerEntity => configuredPlayerEntity;
         public Transform PlayerAnchor => playerAnchor;
         public bool HasPlayerBinding => playerBindingConfigured
             && configuredPlayerEntity != null
@@ -143,7 +143,7 @@ namespace FPG.Demo.Unity
         public event Action<FpgEncounterFailureReason, string> Failed;
 
         public bool TryConfigurePlayer(
-            D0PlayerEntityView entity,
+            FpgPlayerEntityView entity,
             out string error)
         {
             if (disposed || playerBindingLocked || session != null
@@ -1901,8 +1901,8 @@ namespace FPG.Demo.Unity
                 entrySafetyAnchor.SetPositionAndRotation(pose.position, pose.rotation);
             }
 
-            CombatLabPlayerBounds playerBounds =
-                playerAnchor.GetComponent<CombatLabPlayerBounds>();
+            FpgPlayerBounds playerBounds =
+                playerAnchor.GetComponent<FpgPlayerBounds>();
             playerBounds?.CaptureInitialSafePosition(out _);
             spawnResolver?.RefreshDistances();
             error = string.Empty;

@@ -1,0 +1,146 @@
+
+1006018.png
+size: 404,276
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+body
+  rotate: 180
+  xy: 162, 200
+  size: 118, 75
+  orig: 133, 91
+  offset: 8, 7
+  index: -1
+body01
+  rotate: false
+  xy: 131, 8
+  size: 77, 41
+  orig: 93, 57
+  offset: 8, 8
+  index: -1
+body02
+  rotate: true
+  xy: 345, 19
+  size: 81, 50
+  orig: 98, 66
+  offset: 10, 7
+  index: -1
+body03
+  rotate: 180
+  xy: 196, 171
+  size: 41, 37
+  orig: 57, 52
+  offset: 8, 8
+  index: -1
+body04
+  rotate: false
+  xy: 346, 101
+  size: 50, 37
+  orig: 67, 56
+  offset: 9, 8
+  index: -1
+body05
+  rotate: 270
+  xy: 289, 152
+  size: 111, 108
+  orig: 123, 120
+  offset: 6, 6
+  index: -1
+body06
+  rotate: 180
+  xy: 129, 14
+  size: 165, 230
+  orig: 197, 245
+  offset: 15, 9
+  index: -1
+head01
+  rotate: 180
+  xy: 246, 10
+  size: 102, 169
+  orig: 116, 182
+  offset: 7, 6
+  index: -1
+head02
+  rotate: false
+  xy: 2, 147
+  size: 147, 129
+  orig: 163, 147
+  offset: 8, 8
+  index: -1
+head03
+  rotate: 180
+  xy: 2, 12
+  size: 147, 136
+  orig: 149, 148
+  offset: 1, 4
+  index: -1
+leg01
+  rotate: false
+  xy: 249, 219
+  size: 43, 31
+  orig: 56, 47
+  offset: 7, 8
+  index: -1
+leg02
+  rotate: 270
+  xy: 2, 4
+  size: 32, 53
+  orig: 42, 62
+  offset: 5, 4
+  index: -1
+leg03
+  rotate: false
+  xy: 226, 11
+  size: 29, 74
+  orig: 44, 85
+  offset: 8, 5
+  index: -1
+leg04
+  rotate: false
+  xy: 141, 248
+  size: 20, 27
+  orig: 36, 41
+  offset: 8, 7
+  index: -1
+leg05
+  rotate: false
+  xy: 147, 175
+  size: 17, 49
+  orig: 35, 66
+  offset: 9, 9
+  index: -1
+leg06
+  rotate: false
+  xy: 125, 114
+  size: 25, 70
+  orig: 39, 83
+  offset: 6, 9
+  index: -1
+leg06_01
+  rotate: false
+  xy: 2, 116
+  size: 23, 74
+  orig: 40, 83
+  offset: 9, 5
+  index: -1
+leg07
+  rotate: 180
+  xy: 364, 134
+  size: 38, 32
+  orig: 56, 48
+  offset: 9, 11
+  index: -1
+leg08
+  rotate: true
+  xy: 82, 3
+  size: 30, 47
+  orig: 43, 62
+  offset: 5, 8
+  index: -1
+leg09
+  rotate: 270
+  xy: 329, 248
+  size: 28, 71
+  orig: 44, 85
+  offset: 7, 7
+  index: -1

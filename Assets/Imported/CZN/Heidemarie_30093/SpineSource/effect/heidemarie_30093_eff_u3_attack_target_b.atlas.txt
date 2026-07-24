@@ -1,0 +1,265 @@
+
+heidemarie_30093_eff_u3_attack_target_b.png
+size: 1624,1552
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beam_out_pati2
+  rotate: false
+  xy: 328, 26
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+capri_unique1
+  rotate: false
+  xy: 583, 501
+  size: 333, 333
+  orig: 333, 333
+  offset: 0, 0
+  index: -1
+dust_furi2_1_1
+  rotate: false
+  xy: 1097, 2
+  size: 198, 111
+  orig: 198, 111
+  offset: 0, 0
+  index: -1
+dust_furi2_1_2
+  rotate: true
+  xy: 1266, 127
+  size: 173, 111
+  orig: 173, 111
+  offset: 0, 0
+  index: -1
+dust_furi2_1_4
+  rotate: false
+  xy: 1297, 23
+  size: 140, 102
+  orig: 140, 102
+  offset: 0, 0
+  index: -1
+dust_soft_1
+  rotate: false
+  xy: 1188, 1327
+  size: 423, 219
+  orig: 423, 219
+  offset: 0, 0
+  index: -1
+fire_ptc_2
+  rotate: true
+  xy: 1540, 1120
+  size: 41, 69
+  orig: 41, 69
+  offset: 0, 0
+  index: -1
+fire_ptc_3
+  rotate: true
+  xy: 1540, 1024
+  size: 42, 48
+  orig: 42, 48
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 608, 8
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+ground1_0001
+  rotate: false
+  xy: 586, 1250
+  size: 600, 136
+  orig: 600, 136
+  offset: 0, 0
+  index: -1
+ground1_0002
+  rotate: false
+  xy: 586, 1112
+  size: 600, 136
+  orig: 600, 136
+  offset: 0, 0
+  index: -1
+ground1_0003
+  rotate: false
+  xy: 586, 974
+  size: 600, 136
+  orig: 600, 136
+  offset: 0, 0
+  index: -1
+ground1_0004
+  rotate: false
+  xy: 586, 836
+  size: 600, 136
+  orig: 600, 136
+  offset: 0, 0
+  index: -1
+ground_crack3
+  rotate: true
+  xy: 2, 284
+  size: 1262, 204
+  orig: 1262, 204
+  offset: 0, 0
+  index: -1
+ground_crack3_2
+  rotate: true
+  xy: 208, 284
+  size: 1262, 204
+  orig: 1262, 204
+  offset: 0, 0
+  index: -1
+ground_light
+  rotate: false
+  xy: 586, 1388
+  size: 600, 158
+  orig: 600, 158
+  offset: 0, 0
+  index: -1
+gy_dust_2_1
+  rotate: false
+  xy: 2, 12
+  size: 324, 270
+  orig: 324, 270
+  offset: 0, 0
+  index: -1
+part_1
+  rotate: false
+  xy: 1297, 312
+  size: 197, 153
+  orig: 197, 153
+  offset: 0, 0
+  index: -1
+part_2
+  rotate: true
+  xy: 414, 287
+  size: 203, 192
+  orig: 203, 192
+  offset: 0, 0
+  index: -1
+part_3
+  rotate: false
+  xy: 1496, 302
+  size: 114, 163
+  orig: 114, 163
+  offset: 0, 0
+  index: -1
+pati_a_3
+  rotate: false
+  xy: 1496, 302
+  size: 114, 163
+  orig: 114, 163
+  offset: 0, 0
+  index: -1
+rock_s_2
+  rotate: false
+  xy: 1379, 215
+  size: 107, 95
+  orig: 107, 95
+  offset: 0, 0
+  index: -1
+rock_s_4
+  rotate: true
+  xy: 1540, 1163
+  size: 84, 76
+  orig: 84, 76
+  offset: 0, 0
+  index: -1
+rock_s_5
+  rotate: false
+  xy: 1540, 981
+  size: 47, 41
+  orig: 47, 41
+  offset: 0, 0
+  index: -1
+rock_s_6
+  rotate: false
+  xy: 1540, 1068
+  size: 59, 50
+  orig: 59, 50
+  offset: 0, 0
+  index: -1
+rock_s_7
+  rotate: true
+  xy: 1540, 1249
+  size: 76, 79
+  orig: 76, 79
+  offset: 0, 0
+  index: -1
+shockring1_1
+  rotate: false
+  xy: 1104, 692
+  size: 500, 126
+  orig: 500, 126
+  offset: 0, 0
+  index: -1
+shockring1_2
+  rotate: false
+  xy: 1104, 577
+  size: 500, 113
+  orig: 500, 113
+  offset: 0, 0
+  index: -1
+shockring1_3
+  rotate: false
+  xy: 1104, 467
+  size: 500, 108
+  orig: 500, 108
+  offset: 0, 0
+  index: -1
+smoke22_0
+  rotate: true
+  xy: 414, 1196
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke22_1
+  rotate: false
+  xy: 1188, 1158
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke22_2
+  rotate: true
+  xy: 414, 844
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke22_3
+  rotate: false
+  xy: 1188, 989
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke22_4
+  rotate: false
+  xy: 1188, 820
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke22_5
+  rotate: true
+  xy: 414, 492
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke22_6
+  rotate: true
+  xy: 1097, 115
+  size: 350, 167
+  orig: 350, 167
+  offset: 0, 0
+  index: -1
+smoke_real_01
+  rotate: true
+  xy: 918, 524
+  size: 294, 184
+  orig: 294, 184
+  offset: 0, 0
+  index: -1

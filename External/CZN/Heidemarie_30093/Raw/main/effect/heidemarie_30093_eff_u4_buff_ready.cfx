@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u4_buff_self_f</string>
+        <key>ani</key>
+        <string>ready</string>
+        <key>z</key>
+        <string>100</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u4_buff_sword_f</string>
+        <key>ani</key>
+        <string>ready</string>
+        <key>z</key>
+        <string>50</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u4_buff_self_b</string>
+        <key>ani</key>
+        <string>ready</string>
+        <key>z</key>
+        <string>-50</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_u4_buff_sword_b</string>
+        <key>ani</key>
+        <string>ready</string>
+        <key>z</key>
+        <string>-100</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

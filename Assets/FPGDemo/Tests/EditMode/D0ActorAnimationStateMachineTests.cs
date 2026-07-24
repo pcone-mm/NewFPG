@@ -7,7 +7,7 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class D0ActorAnimationStateMachineTests
     {
-        private static readonly Assembly UnityAssembly = typeof(BattlePresentationCoordinator).Assembly;
+        private static readonly Assembly UnityAssembly = typeof(Actor2DPresenter).Assembly;
         private static readonly Type StateMachineType = UnityAssembly.GetType(
             "FPG.Demo.Unity.D0ActorAnimationStateMachine");
         private static readonly Type CommandType = UnityAssembly.GetType(

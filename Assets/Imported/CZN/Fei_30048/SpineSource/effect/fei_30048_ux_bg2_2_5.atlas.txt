@@ -1,0 +1,34 @@
+
+fei_30048_ux_bg2_2_5.png
+size: 816,312
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura2_1
+  rotate: true
+  xy: 2, 9
+  size: 300, 337
+  orig: 300, 337
+  offset: 0, 0
+  index: -1
+flame_s_1
+  rotate: true
+  xy: 638, 2
+  size: 154, 164
+  orig: 154, 164
+  offset: 0, 0
+  index: -1
+flame_s_2
+  rotate: true
+  xy: 638, 158
+  size: 151, 172
+  orig: 151, 172
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 341, 13
+  size: 295, 296
+  orig: 295, 296
+  offset: 0, 0
+  index: -1

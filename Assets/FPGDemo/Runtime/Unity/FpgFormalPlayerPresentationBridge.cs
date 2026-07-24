@@ -35,7 +35,7 @@ namespace FPG.Demo.Unity
             Array.Empty<FpgVitalsSnapshot>();
 
         private FpgPlayableCharacterSelection selection;
-        private D0PlayerEntityView playerEntity;
+        private FpgPlayerEntityView playerEntity;
         private Actor2DPresenter actorPresenter;
         private CombatTrace observedTrace;
         private FpgFormalCombatRuntimeBundle observedVitalsRuntime;
@@ -57,7 +57,7 @@ namespace FPG.Demo.Unity
         public Transform CameraRig => cameraRig;
         public Camera TargetCamera => targetCamera;
         public FpgPlayableCharacterSelection Selection => selection;
-        public D0PlayerEntityView PlayerEntity => playerEntity;
+        public FpgPlayerEntityView PlayerEntity => playerEntity;
         public FpgFormalPlayerPresentationSnapshot Snapshot => snapshot;
         public bool IsPrepared => prepared;
         public bool IsActive => active;
@@ -95,7 +95,7 @@ namespace FPG.Demo.Unity
 
         public bool TryPrepare(
             FpgPlayableCharacterSelection nextSelection,
-            D0PlayerEntityView nextPlayerEntity,
+            FpgPlayerEntityView nextPlayerEntity,
             out string error)
         {
             if (prepared)
@@ -151,7 +151,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            D0PlayerBarrierPresentationController barrier = nextPlayerEntity.Barrier;
+            FpgPlayerBarrierPresentationController barrier = nextPlayerEntity.Barrier;
             if (barrier == null
                 || !barrier.TrySetThreeCProfile(nextSelection.ThreeCProfile, out error))
             {
@@ -162,8 +162,6 @@ namespace FPG.Demo.Unity
 
                 return false;
             }
-
-            barrier.UnbindSceneServices();
             if (!barrier.TryBindFormalSource(this, out error))
             {
                 return false;
@@ -221,8 +219,6 @@ namespace FPG.Demo.Unity
             {
                 playerEntity.VisualRoot.gameObject.SetActive(true);
             }
-
-            playerEntity.Controller?.CaptureInitialSpawn();
             if (!cameraFeedback.TryApplyFixedSceneRig(playerEntity.transform, out error))
             {
                 return false;

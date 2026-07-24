@@ -1,0 +1,90 @@
+
+fei_30048_u3_buff_play_f.sct
+size: 1272,560
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura1_1
+  rotate: false
+  xy: 2, 265
+  size: 432, 289
+  orig: 432, 289
+  offset: 0, 0
+  index: -1
+aura_n3
+  rotate: false
+  xy: 733, 287
+  size: 295, 267
+  orig: 295, 267
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_1
+  rotate: false
+  xy: 423, 20
+  size: 218, 80
+  orig: 218, 80
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_2
+  rotate: false
+  xy: 423, 102
+  size: 293, 155
+  orig: 293, 155
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_3
+  rotate: true
+  xy: 1030, 245
+  size: 309, 224
+  orig: 309, 224
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_4
+  rotate: true
+  xy: 733, 2
+  size: 283, 222
+  orig: 283, 222
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_5
+  rotate: true
+  xy: 2, 2
+  size: 261, 220
+  orig: 261, 220
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_6
+  rotate: true
+  xy: 224, 17
+  size: 246, 197
+  orig: 246, 197
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_7
+  rotate: false
+  xy: 957, 45
+  size: 202, 198
+  orig: 202, 198
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_8
+  rotate: false
+  xy: 1161, 81
+  size: 106, 162
+  orig: 106, 162
+  offset: 0, 0
+  index: -1
+fei_u3_play_01_9
+  rotate: false
+  xy: 643, 42
+  size: 49, 58
+  orig: 49, 58
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 436, 259
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1

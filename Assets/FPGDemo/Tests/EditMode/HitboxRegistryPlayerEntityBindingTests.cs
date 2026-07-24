@@ -56,7 +56,7 @@ namespace FPG.Demo.Tests.EditMode
                         Team.Player)).IsSuccess,
                 Is.True);
 
-            D0PlayerEntityView playerEntity = CreatePlayerEntity(
+            FpgPlayerEntityView playerEntity = CreatePlayerEntity(
                 "ActivePlayer",
                 out Collider entityBody);
             Assert.That(
@@ -104,8 +104,8 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True,
                 error);
 
-            D0PlayerEntityView first = CreatePlayerEntity("FirstPlayer", out Collider firstBody);
-            D0PlayerEntityView replacement = CreatePlayerEntity(
+            FpgPlayerEntityView first = CreatePlayerEntity("FirstPlayer", out Collider firstBody);
+            FpgPlayerEntityView replacement = CreatePlayerEntity(
                 "ReplacementPlayer",
                 out Collider replacementBody);
             Assert.That(
@@ -151,7 +151,7 @@ namespace FPG.Demo.Tests.EditMode
                     out string error),
                 Is.True,
                 error);
-            D0PlayerEntityView playerEntity = CreatePlayerEntity(
+            FpgPlayerEntityView playerEntity = CreatePlayerEntity(
                 "ActivePlayer",
                 out Collider entityBody);
 
@@ -192,7 +192,7 @@ namespace FPG.Demo.Tests.EditMode
                     out string error),
                 Is.True,
                 error);
-            D0PlayerEntityView playerEntity = CreatePlayerEntity(
+            FpgPlayerEntityView playerEntity = CreatePlayerEntity(
                 "ActivePlayer",
                 out Collider entityBody);
             Assert.That(
@@ -249,12 +249,12 @@ namespace FPG.Demo.Tests.EditMode
             return registry;
         }
 
-        private D0PlayerEntityView CreatePlayerEntity(
+        private FpgPlayerEntityView CreatePlayerEntity(
             string name,
             out Collider bodyCollider)
         {
             GameObject root = CreateObject(name);
-            D0PlayerEntityView entity = root.AddComponent<D0PlayerEntityView>();
+            FpgPlayerEntityView entity = root.AddComponent<FpgPlayerEntityView>();
             GameObject body = CreateObject(name + "Body");
             body.transform.SetParent(root.transform, false);
             bodyCollider = body.AddComponent<BoxCollider>();

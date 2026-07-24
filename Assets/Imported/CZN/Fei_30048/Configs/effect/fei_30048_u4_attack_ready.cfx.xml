@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>fei_30048_u4_attack_ready</string>
+        <key>z</key>
+        <string>10</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>fei_30048_u4_attack_ready_glow</string>
+        <key>z</key>
+        <string>-5000</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

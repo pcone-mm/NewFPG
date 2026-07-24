@@ -1,0 +1,132 @@
+
+nihilum_spector_death_01.png
+size: 1968,1032
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+circle2
+  rotate: false
+  xy: 2, 516
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+circle5
+  rotate: false
+  xy: 2, 2
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+glow01
+  rotate: false
+  xy: 1030, 42
+  size: 63, 63
+  orig: 63, 63
+  offset: 0, 0
+  index: -1
+glow02
+  rotate: false
+  xy: 1030, 107
+  size: 403, 407
+  orig: 403, 407
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1435, 82
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+part_1
+  rotate: false
+  xy: 1637, 3
+  size: 197, 153
+  orig: 197, 153
+  offset: 0, 0
+  index: -1
+part_2
+  rotate: true
+  xy: 1637, 158
+  size: 203, 192
+  orig: 203, 192
+  offset: 0, 0
+  index: -1
+part_3
+  rotate: false
+  xy: 1836, 6
+  size: 114, 163
+  orig: 114, 163
+  offset: 0, 0
+  index: -1
+shockwave2_1
+  rotate: false
+  xy: 516, 516
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+shockwave2_2
+  rotate: false
+  xy: 516, 2
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+shockwave2_3
+  rotate: false
+  xy: 1030, 516
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+smoke10
+  rotate: true
+  xy: 1789, 382
+  size: 211, 171
+  orig: 211, 171
+  offset: 0, 0
+  index: -1
+smoke5
+  rotate: false
+  xy: 1435, 284
+  size: 175, 230
+  orig: 175, 230
+  offset: 0, 0
+  index: -1
+smoke5_2
+  rotate: false
+  xy: 1612, 363
+  size: 175, 230
+  orig: 175, 230
+  offset: 0, 0
+  index: -1
+smoke8
+  rotate: false
+  xy: 1831, 171
+  size: 132, 209
+  orig: 132, 209
+  offset: 0, 0
+  index: -1
+smokeLine11_1
+  rotate: false
+  xy: 1544, 885
+  size: 400, 143
+  orig: 400, 143
+  offset: 0, 0
+  index: -1
+smokeLine11_2
+  rotate: false
+  xy: 1544, 740
+  size: 400, 143
+  orig: 400, 143
+  offset: 0, 0
+  index: -1
+smokeLine11_3
+  rotate: false
+  xy: 1544, 595
+  size: 400, 143
+  orig: 400, 143
+  offset: 0, 0
+  index: -1

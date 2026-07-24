@@ -1,0 +1,76 @@
+
+heidemarie_30093_ug_bg_f2.sct
+size: 1816,480
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bigSmoke2_2
+  rotate: true
+  xy: 734, 74
+  size: 400, 219
+  orig: 400, 219
+  offset: 0, 0
+  index: -1
+bigSmoke2_4
+  rotate: true
+  xy: 955, 74
+  size: 400, 219
+  orig: 400, 219
+  offset: 0, 0
+  index: -1
+gy_dust_2_1
+  rotate: true
+  xy: 1176, 150
+  size: 324, 270
+  orig: 324, 270
+  offset: 0, 0
+  index: -1
+rock12
+  rotate: false
+  xy: 1548, 42
+  size: 227, 121
+  orig: 227, 121
+  offset: 0, 0
+  index: -1
+rock19
+  rotate: true
+  xy: 1448, 165
+  size: 309, 188
+  orig: 309, 188
+  offset: 0, 0
+  index: -1
+rock21
+  rotate: false
+  xy: 1176, 2
+  size: 370, 146
+  orig: 370, 146
+  offset: 0, 0
+  index: -1
+rock7
+  rotate: false
+  xy: 1638, 194
+  size: 170, 99
+  orig: 170, 99
+  offset: 0, 0
+  index: -1
+smoke1_0002
+  rotate: true
+  xy: 2, 12
+  size: 462, 364
+  orig: 462, 364
+  offset: 0, 0
+  index: -1
+smoke1_0004
+  rotate: true
+  xy: 368, 12
+  size: 462, 364
+  orig: 462, 364
+  offset: 0, 0
+  index: -1
+smoke_5
+  rotate: true
+  xy: 1638, 295
+  size: 179, 167
+  orig: 179, 167
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,48 @@
+
+bare_beetle_normal_skill1_shoot.png
+size: 200,308
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+skill1_shoot1
+  rotate: true
+  xy: 2, 154
+  size: 150, 101
+  orig: 150, 101
+  offset: 0, 0
+  index: -1
+skill1_shoot2
+  rotate: true
+  xy: 2, 2
+  size: 150, 94
+  orig: 150, 94
+  offset: 0, 0
+  index: -1
+skill1_w10
+  rotate: false
+  xy: 162, 232
+  size: 30, 72
+  orig: 30, 72
+  offset: 0, 0
+  index: -1
+skill1_w11
+  rotate: false
+  xy: 155, 2
+  size: 40, 153
+  orig: 40, 153
+  offset: 0, 0
+  index: -1
+skill1_w9_1
+  rotate: false
+  xy: 98, 5
+  size: 55, 147
+  orig: 55, 147
+  offset: 0, 0
+  index: -1
+skill1_w9_2
+  rotate: false
+  xy: 105, 157
+  size: 55, 147
+  orig: 55, 147
+  offset: 0, 0
+  index: -1

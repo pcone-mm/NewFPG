@@ -1,0 +1,146 @@
+
+fei_30048_ug_eff_s1_5.png
+size: 1920,1684
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a1_b
+  rotate: false
+  xy: 804, 1161
+  size: 800, 205
+  orig: 800, 205
+  offset: 0, 0
+  index: -1
+c10_b
+  rotate: false
+  xy: 2, 774
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c10_light0000
+  rotate: false
+  xy: 2, 493
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c10_light0001
+  rotate: false
+  xy: 2, 212
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c1_b2
+  rotate: true
+  xy: 1606, 979
+  size: 700, 312
+  orig: 700, 312
+  offset: 0, 0
+  index: -1
+c3_b
+  rotate: false
+  xy: 2, 51
+  size: 700, 159
+  orig: 700, 159
+  offset: 0, 0
+  index: -1
+c6
+  rotate: true
+  xy: 804, 759
+  size: 400, 444
+  orig: 400, 444
+  offset: 0, 0
+  index: -1
+c6_light2_0000
+  rotate: false
+  xy: 704, 313
+  size: 400, 444
+  orig: 400, 444
+  offset: 0, 0
+  index: -1
+c6_light2_0001
+  rotate: false
+  xy: 1106, 313
+  size: 400, 444
+  orig: 400, 444
+  offset: 0, 0
+  index: -1
+c7_b
+  rotate: false
+  xy: 2, 1368
+  size: 800, 311
+  orig: 800, 311
+  offset: 0, 0
+  index: -1
+c7_b_light0000
+  rotate: false
+  xy: 2, 1055
+  size: 800, 311
+  orig: 800, 311
+  offset: 0, 0
+  index: -1
+c7_b_light0001
+  rotate: false
+  xy: 804, 1368
+  size: 800, 311
+  orig: 800, 311
+  offset: 0, 0
+  index: -1
+c8_b
+  rotate: false
+  xy: 1508, 539
+  size: 400, 177
+  orig: 400, 177
+  offset: 0, 0
+  index: -1
+c8_b_light0000
+  rotate: false
+  xy: 1508, 360
+  size: 400, 177
+  orig: 400, 177
+  offset: 0, 0
+  index: -1
+c8_b_light0001
+  rotate: false
+  xy: 1508, 181
+  size: 400, 177
+  orig: 400, 177
+  offset: 0, 0
+  index: -1
+c8_b_light0002
+  rotate: false
+  xy: 1508, 2
+  size: 400, 177
+  orig: 400, 177
+  offset: 0, 0
+  index: -1
+c9_b
+  rotate: true
+  xy: 1250, 759
+  size: 400, 259
+  orig: 400, 259
+  offset: 0, 0
+  index: -1
+c9_b_light0000
+  rotate: false
+  xy: 704, 52
+  size: 400, 259
+  orig: 400, 259
+  offset: 0, 0
+  index: -1
+c9_b_light0001
+  rotate: false
+  xy: 1106, 52
+  size: 400, 259
+  orig: 400, 259
+  offset: 0, 0
+  index: -1
+c9_b_light0002
+  rotate: false
+  xy: 1511, 718
+  size: 400, 259
+  orig: 400, 259
+  offset: 0, 0
+  index: -1

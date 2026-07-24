@@ -1,0 +1,132 @@
+
+fei_30048_ug_eff_s1_2.sct
+size: 1696,1304
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow01
+  rotate: false
+  xy: 240, 18
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+ground
+  rotate: true
+  xy: 2, 2
+  size: 1300, 236
+  orig: 1300, 236
+  offset: 0, 0
+  index: -1
+pe_ug_elec01_0000
+  rotate: true
+  xy: 1073, 26
+  size: 366, 251
+  orig: 366, 251
+  offset: 0, 0
+  index: -1
+pe_ug_elec01_0001
+  rotate: false
+  xy: 1326, 1051
+  size: 366, 251
+  orig: 366, 251
+  offset: 0, 0
+  index: -1
+pe_ug_elec01_0002
+  rotate: false
+  xy: 1326, 798
+  size: 366, 251
+  orig: 366, 251
+  offset: 0, 0
+  index: -1
+pe_ug_elec01_0003
+  rotate: false
+  xy: 1326, 545
+  size: 366, 251
+  orig: 366, 251
+  offset: 0, 0
+  index: -1
+pe_ug_elec01_0004
+  rotate: false
+  xy: 1326, 292
+  size: 366, 251
+  orig: 366, 251
+  offset: 0, 0
+  index: -1
+pe_ug_elec01_0005
+  rotate: false
+  xy: 1326, 39
+  size: 366, 251
+  orig: 366, 251
+  offset: 0, 0
+  index: -1
+pe_ug_elec02_0000
+  rotate: true
+  xy: 240, 812
+  size: 490, 268
+  orig: 490, 268
+  offset: 0, 0
+  index: -1
+pe_ug_elec02_0001
+  rotate: true
+  xy: 240, 320
+  size: 490, 268
+  orig: 490, 268
+  offset: 0, 0
+  index: -1
+pe_ug_elec02_0002
+  rotate: true
+  xy: 510, 812
+  size: 490, 268
+  orig: 490, 268
+  offset: 0, 0
+  index: -1
+pe_ug_elec03_0000
+  rotate: true
+  xy: 510, 357
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+pe_ug_elec03_0001
+  rotate: false
+  xy: 618, 96
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+pe_ug_elec03_0002
+  rotate: true
+  xy: 771, 357
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+pe_ug_elec03_0003
+  rotate: true
+  xy: 780, 849
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+pe_ug_elec03_0004
+  rotate: true
+  xy: 1032, 394
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+pe_ug_elec03_0005
+  rotate: true
+  xy: 1041, 849
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+shadow_light
+  rotate: true
+  xy: 542, 55
+  size: 300, 74
+  orig: 300, 74
+  offset: 0, 0
+  index: -1

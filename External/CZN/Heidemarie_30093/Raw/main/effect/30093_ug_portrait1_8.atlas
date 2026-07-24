@@ -1,0 +1,20 @@
+
+30093_ug_portrait1_8.sct
+size: 1800,1356
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a_hair15
+  rotate: true
+  xy: 2, 75
+  size: 1278, 963
+  orig: 1278, 963
+  offset: 0, 0
+  index: -1
+a_hair16
+  rotate: true
+  xy: 967, 2
+  size: 1351, 829
+  orig: 1351, 829
+  offset: 0, 0
+  index: -1

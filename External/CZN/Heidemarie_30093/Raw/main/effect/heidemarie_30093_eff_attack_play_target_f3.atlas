@@ -1,0 +1,55 @@
+
+heidemarie_30093_eff_attack_play_target_f3.sct
+size: 976,328
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+2s1_v2
+  rotate: true
+  xy: 294, 25
+  size: 298, 205
+  orig: 298, 205
+  offset: 0, 0
+  index: -1
+2s2_v2
+  rotate: true
+  xy: 820, 98
+  size: 225, 148
+  orig: 225, 148
+  offset: 0, 0
+  index: -1
+2s3_1_v2
+  rotate: false
+  xy: 820, 4
+  size: 114, 92
+  orig: 114, 92
+  offset: 0, 0
+  index: -1
+bd10
+  rotate: true
+  xy: 664, 89
+  size: 234, 154
+  orig: 234, 154
+  offset: 0, 0
+  index: -1
+bd12
+  rotate: true
+  xy: 501, 2
+  size: 321, 161
+  orig: 321, 161
+  offset: 0, 0
+  index: -1
+bd14_3
+  rotate: false
+  xy: 664, 8
+  size: 118, 79
+  orig: 118, 79
+  offset: 0, 0
+  index: -1
+sere_shcok02
+  rotate: true
+  xy: 2, 23
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1

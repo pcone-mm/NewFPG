@@ -1,0 +1,125 @@
+
+heidemarie_30093_ux_attack_01_b1_3.png
+size: 1528,1076
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+hade_bg_01_05
+  rotate: false
+  xy: 2, 693
+  size: 823, 379
+  orig: 823, 379
+  offset: 0, 0
+  index: -1
+hade_bg_02_02_1_zhs
+  rotate: false
+  xy: 827, 761
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_02_2_zhs
+  rotate: true
+  xy: 2, 2
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_02_3_zhs
+  rotate: false
+  xy: 1056, 761
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_02_4_zhs
+  rotate: true
+  xy: 315, 2
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_02_5_zhs
+  rotate: false
+  xy: 1285, 761
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_02_zhs
+  rotate: true
+  xy: 2, 231
+  size: 227, 782
+  orig: 227, 782
+  offset: 0, 0
+  index: -1
+hade_bg_02_03
+  rotate: true
+  xy: 2, 460
+  size: 231, 786
+  orig: 231, 786
+  offset: 0, 0
+  index: -1
+hade_bg_02_03_1_zhs
+  rotate: true
+  xy: 628, 2
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_03_2_zhs
+  rotate: true
+  xy: 786, 231
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_03_3_zhs
+  rotate: true
+  xy: 941, 2
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_03_4_zhs
+  rotate: true
+  xy: 827, 532
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_bg_02_03_5_zhs
+  rotate: true
+  xy: 1140, 532
+  size: 227, 311
+  orig: 227, 311
+  offset: 0, 0
+  index: -1
+hade_light_03_01
+  rotate: false
+  xy: 1099, 315
+  size: 241, 215
+  orig: 241, 215
+  offset: 0, 0
+  index: -1
+hade_light_03_02
+  rotate: true
+  xy: 1342, 293
+  size: 237, 184
+  orig: 237, 184
+  offset: 0, 0
+  index: -1
+hade_light_03_03
+  rotate: false
+  xy: 1254, 170
+  size: 237, 121
+  orig: 237, 121
+  offset: 0, 0
+  index: -1
+hade_light_03_04
+  rotate: false
+  xy: 1254, 66
+  size: 241, 102
+  orig: 241, 102
+  offset: 0, 0
+  index: -1

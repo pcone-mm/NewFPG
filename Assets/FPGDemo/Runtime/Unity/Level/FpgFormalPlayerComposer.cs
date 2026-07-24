@@ -20,7 +20,7 @@ namespace FPG.Demo.Unity
 
         private FpgPlayableCharacterSelection activeSelection;
         private D0CharacterDefinition activeDefinition;
-        private D0PlayerEntityView activeEntity;
+        private FpgPlayerEntityView activeEntity;
         private bool presentationActivated;
 
         public Transform ActorsRoot => actorsRoot;
@@ -31,7 +31,7 @@ namespace FPG.Demo.Unity
         public FpgFormalPlayerPresentationBridge PresentationBridge => presentationBridge;
         public FpgPlayableCharacterSelection ActiveSelection => activeSelection;
         public D0CharacterDefinition ActiveDefinition => activeDefinition;
-        public D0PlayerEntityView ActiveEntity => activeEntity;
+        public FpgPlayerEntityView ActiveEntity => activeEntity;
         public bool IsComposed => activeDefinition != null && activeEntity != null;
         public bool IsPresentationActive => presentationActivated;
 
@@ -108,10 +108,9 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (activeEntity.Controller == null || activeEntity.Controller.enabled
-                || activeEntity.Bounds == null || activeEntity.Bounds.enabled)
+            if (activeEntity.Bounds == null || activeEntity.Bounds.enabled)
             {
-                error = "Formal player must keep CombatLab movement and bounds components disabled.";
+                error = "Formal player must keep the authored bounds component disabled.";
                 return false;
             }
 
@@ -161,7 +160,7 @@ namespace FPG.Demo.Unity
             D0CharacterDefinition definition = selection.CharacterDefinition;
 
             GameObject stagingRoot = null;
-            D0PlayerEntityView stagedEntity = null;
+            FpgPlayerEntityView stagedEntity = null;
             bool factoryTouched = false;
             bool driverTouched = false;
             bool directorTouched = false;
@@ -179,9 +178,7 @@ namespace FPG.Demo.Unity
                     definition.EntityPrefab.gameObject.name
                     + " [Runtime:" + definition.CharacterId + "]";
                 stagedEntity.CaptureAuthoredLocalPose();
-                stagedEntity.SetGameplayCollidersEnabled(false);
-                stagedEntity.Controller.enabled = false;
-                stagedEntity.Bounds.enabled = false;
+                stagedEntity.SetGameplayCollidersEnabled(false);stagedEntity.Bounds.enabled = false;
 
                 if (!stagedEntity.TryValidate(out error))
                 {
@@ -349,7 +346,7 @@ namespace FPG.Demo.Unity
 
         public void ClearPlayerComposition()
         {
-            D0PlayerEntityView entity = activeEntity;
+            FpgPlayerEntityView entity = activeEntity;
 
             // Director owns the session/runtime bundle and must release it
             // before the other bindings can forget or destroy the entity.
@@ -381,7 +378,7 @@ namespace FPG.Demo.Unity
         }
 
         private bool FailComposition(
-            D0PlayerEntityView stagedEntity,
+            FpgPlayerEntityView stagedEntity,
             bool factoryTouched,
             bool driverTouched,
             bool directorTouched,

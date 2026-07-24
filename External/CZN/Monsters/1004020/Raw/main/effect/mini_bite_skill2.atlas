@@ -1,0 +1,83 @@
+
+mini_bite_skill2.sct
+size: 892,292
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beam2
+  rotate: false
+  xy: 319, 9
+  size: 402, 23
+  orig: 402, 23
+  offset: 0, 0
+  index: -1
+fire_t1_2
+  rotate: true
+  xy: 577, 178
+  size: 112, 104
+  orig: 137, 121
+  offset: 15, 8
+  index: -1
+fire_t1_3
+  rotate: true
+  xy: 723, 148
+  size: 142, 115
+  orig: 161, 129
+  offset: 10, 7
+  index: -1
+flash
+  rotate: false
+  xy: 319, 34
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+light_star2
+  rotate: false
+  xy: 2, 2
+  size: 315, 288
+  orig: 350, 299
+  offset: 6, 5
+  index: -1
+skill1_w12_2
+  rotate: false
+  xy: 683, 191
+  size: 35, 99
+  orig: 42, 150
+  offset: 4, 2
+  index: -1
+skill1_w9_1
+  rotate: true
+  xy: 577, 42
+  size: 47, 133
+  orig: 55, 147
+  offset: 4, 8
+  index: -1
+skill1_w9_2
+  rotate: false
+  xy: 840, 194
+  size: 47, 96
+  orig: 55, 147
+  offset: 4, 8
+  index: -1
+skill2_shoot1
+  rotate: false
+  xy: 723, 4
+  size: 115, 142
+  orig: 123, 150
+  offset: 3, 4
+  index: -1
+skill2_shoot2
+  rotate: false
+  xy: 577, 91
+  size: 141, 85
+  orig: 150, 91
+  offset: 4, 3
+  index: -1
+skill2_teeth2
+  rotate: true
+  xy: 840, 96
+  size: 96, 45
+  orig: 100, 48
+  offset: 2, 1
+  index: -1

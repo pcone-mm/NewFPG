@@ -1,0 +1,34 @@
+
+bare_beetle_normal_skill1_smoke_s_b.png
+size: 344,192
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud1
+  rotate: true
+  xy: 185, 39
+  size: 150, 86
+  orig: 150, 86
+  offset: 0, 0
+  index: -1
+cloud2
+  rotate: true
+  xy: 273, 39
+  size: 150, 68
+  orig: 150, 68
+  offset: 0, 0
+  index: -1
+cloud_07
+  rotate: false
+  xy: 185, 2
+  size: 66, 35
+  orig: 66, 35
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: true
+  xy: 2, 7
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1

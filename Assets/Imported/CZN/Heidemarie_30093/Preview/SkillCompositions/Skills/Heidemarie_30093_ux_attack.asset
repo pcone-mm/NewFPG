@@ -1,0 +1,1078 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Heidemarie_30093_ux_attack
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: ux_attack
+  displayName: "UX \u7279\u6B8A\u6280"
+  duration: 9.033
+  actorAnimations:
+  - phaseName: ux_attack
+    animationName: ux_attack
+    startTime: 0
+    duration: 0.83330005
+    loop: 0
+  spineLayers:
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_f1
+    skeletonDataAsset: {fileID: 11400000, guid: 82d8761ffdae0c249995ed60e2a9ba14, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 906
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_cutin_03
+    skeletonDataAsset: {fileID: 11400000, guid: 345843983f22ffa49aaf89b41db72c2f, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 904
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_cutin_02
+    skeletonDataAsset: {fileID: 11400000, guid: 69578dd02d2cb12419b971ef52b814ca, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 902
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_cutin_02_1
+    skeletonDataAsset: {fileID: 11400000, guid: 3c31703436762d64ea27aa805317781c, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 3
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 901
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_cutin_01
+    skeletonDataAsset: {fileID: 11400000, guid: ad29b49297ac19f4eab63e4bbb8be6aa, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 900
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b1
+    skeletonDataAsset: {fileID: 11400000, guid: c73eda74060c76248bbc21f845e07bd5, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -991
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b1_2
+    skeletonDataAsset: {fileID: 11400000, guid: 8f8e9501e48512a47b673e69888de147, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -992
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b1_3
+    skeletonDataAsset: {fileID: 11400000, guid: 9bb0f71296a83fc42b0ca5a17222b515, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -993
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b1_4
+    skeletonDataAsset: {fileID: 11400000, guid: 62626ab3495cf0e479b1e9067430b1f1, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -994
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b2
+    skeletonDataAsset: {fileID: 11400000, guid: e5784ad206d72ce40a19ea4f5a36c8d4, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -995
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b2_1
+    skeletonDataAsset: {fileID: 11400000, guid: 26aaf9e389dd04e43821e56e40736525, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -996
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b3
+    skeletonDataAsset: {fileID: 11400000, guid: baa80c81665e90342a7c6de8ce15ce32, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -997
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_1
+    skeletonDataAsset: {fileID: 11400000, guid: 38a859e18b78ffc4e876b5702dc992dc, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -998
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_b4
+    skeletonDataAsset: {fileID: 11400000, guid: 189947496ccd5a740a42274d6cde2b5c, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 3.9
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -999
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_b1_1
+    skeletonDataAsset: {fileID: 11400000, guid: 34796695a48f2b84989ef67c300b46c0, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -1000
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_b1_2
+    skeletonDataAsset: {fileID: 11400000, guid: 3eb7877b5e7abd74083fec48a04ff3f4, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -1001
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_b1_3
+    skeletonDataAsset: {fileID: 11400000, guid: c60658ed701542a4d8fd1b8da3906bfa, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -1002
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_b2_1
+    skeletonDataAsset: {fileID: 11400000, guid: 383f1e1f939d372458dcb2ff2d5011fa, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -1003
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_cutin_04
+    skeletonDataAsset: {fileID: 11400000, guid: a3339799d41683a4e94ba2795191bb69, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 905
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_b2
+    skeletonDataAsset: {fileID: 11400000, guid: f7d84fe8a0dcf3f4f88d5137ed796de3, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -1004
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_02_b3
+    skeletonDataAsset: {fileID: 11400000, guid: e264f68280f715c44b422b58933fc62a, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: -1005
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_01
+    sourceName: heidemarie_30093_ux_attack_01_f
+    skeletonDataAsset: {fileID: 11400000, guid: 5c7f24e4dc7b2e74c8e269d879f18f75, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.83330005
+    duration: 4.0333
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 907
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_2_2
+    skeletonDataAsset: {fileID: 11400000, guid: e08a72f2c0a127843ac1678a23be03fa, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -9993
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_cutin_03_03
+    skeletonDataAsset: {fileID: 11400000, guid: 68d3a58be88e1784e8dad9acfd859ced, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 902
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_cutin_03_02
+    skeletonDataAsset: {fileID: 11400000, guid: a6330acae4f540844936a0026df60c31, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 1.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 901
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_cutin_03_01
+    skeletonDataAsset: {fileID: 11400000, guid: aa3127ca6c45e60469fc8d1ca0eb153a, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 1.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 900
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_4
+    skeletonDataAsset: {fileID: 11400000, guid: c4bee752208d5aa49b502ceab58c25ca, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 899
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_3
+    skeletonDataAsset: {fileID: 11400000, guid: 231f8ad1539687b4e88452f17dcf1315, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0333
+    scale: 1
+    rotation: 0
+    sortingOrder: -9992
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_cutin_03_glow
+    skeletonDataAsset: {fileID: 11400000, guid: efff99f2095cdbe41b21e22cf54335dd, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0333
+    scale: 1
+    rotation: 0
+    sortingOrder: 903
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_2_1
+    skeletonDataAsset: {fileID: 11400000, guid: 28871f0c8b3394d42888cb8a1d704964, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0333
+    scale: 1
+    rotation: 0
+    sortingOrder: -9994
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_1_2
+    skeletonDataAsset: {fileID: 11400000, guid: 2afcd560727a00943b673b54e1ec2365, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 1.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -9996
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_1_1_4
+    skeletonDataAsset: {fileID: 11400000, guid: 0286076d77524404393b0c205da9aa28, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -9997
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_1_1_3
+    skeletonDataAsset: {fileID: 11400000, guid: 4b86d6d246ff9fa47baa67f4d7905301, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -9998
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_1_1_2
+    skeletonDataAsset: {fileID: 11400000, guid: a9e847b29b5846c458e01bda1a8a4256, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -9999
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_1_1_1
+    skeletonDataAsset: {fileID: 11400000, guid: 0f3ccf0b704fe024ba415d4a30e7c2df, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -10000
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_6
+    skeletonDataAsset: {fileID: 11400000, guid: 1c694324fe2416843a305bcc46ad62a2, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 905
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_1_3
+    skeletonDataAsset: {fileID: 11400000, guid: ff34075888ea65a41bfe1341ba0967cd, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: -9995
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_1
+    sourceName: heidemarie_30093_ux_attack_03_5
+    skeletonDataAsset: {fileID: 11400000, guid: 03091e061b1dc4342bfcbb43b280838d, type: 2}
+    animationName: animation
+    anchor: 2
+    offset: {x: 0, y: 0}
+    startTime: 4.8666
+    duration: 2.0667
+    scale: 1
+    rotation: 0
+    sortingOrder: 904
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_2
+    sourceName: heidemarie_30093_ux_attack_04
+    skeletonDataAsset: {fileID: 11400000, guid: 75bfb2ad043f38e4f812d9455a5155cf, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.7
+    scale: 0.5
+    rotation: 0
+    sortingOrder: 1000
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_02_2
+    sourceName: heidemarie_30093_ux_attack_04_1
+    skeletonDataAsset: {fileID: 11400000, guid: 3bef4577c8779904b817cded6bc19e05, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0.099999994, y: 0.14999999}
+    startTime: 6.9333
+    duration: 1.2333
+    scale: 0.485
+    rotation: 0
+    sortingOrder: 1001
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_05
+    skeletonDataAsset: {fileID: 11400000, guid: 5192fe280527fd447b43a940d00bba8c, type: 2}
+    animationName: animation
+    anchor: 3
+    offset: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.6
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 999
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_01_pati
+    emitterName: was_pati35
+    originalTexturePath: particle/cross_01.sct
+    anchor: 3
+    offset: {x: -7, y: 1}
+    sourceVariance: {x: 8, y: 4}
+    force: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.6
+    scale: 0.8
+    rotation: 50
+    sortingOrder: 1000
+    maxParticles: 10
+    emissionRate: 10
+    lifetimeMin: 0.050000012
+    lifetimeMax: 0.55
+    speedMin: 12
+    speedMax: 18
+    sizeMin: 0.8
+    sizeMax: 1.2
+    angle: 90
+    angleVariance: 30
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_01_pati
+    emitterName: was_pati34
+    originalTexturePath: particle/cross_01.sct
+    anchor: 3
+    offset: {x: -7, y: 1}
+    sourceVariance: {x: 8, y: 4}
+    force: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.6
+    scale: 0.8
+    rotation: 50
+    sortingOrder: 1000
+    maxParticles: 80
+    emissionRate: 80
+    lifetimeMin: 0.050000012
+    lifetimeMax: 0.55
+    speedMin: 12
+    speedMax: 18
+    sizeMin: 0.3
+    sizeMax: 0.7
+    angle: 90
+    angleVariance: 30
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_01_pati
+    emitterName: was_pati3
+    originalTexturePath: particle/pati_03.sct
+    anchor: 3
+    offset: {x: -7, y: 1}
+    sourceVariance: {x: 8, y: 4}
+    force: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.6
+    scale: 0.8
+    rotation: 50
+    sortingOrder: 1000
+    maxParticles: 50
+    emissionRate: 50
+    lifetimeMin: 0.050000012
+    lifetimeMax: 0.55
+    speedMin: 12
+    speedMax: 18
+    sizeMin: 0.099999964
+    sizeMax: 1.5
+    angle: 90
+    angleVariance: 30
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_01_pati
+    emitterName: was_pati21
+    originalTexturePath: particle/ticle_01.sct
+    anchor: 3
+    offset: {x: -7, y: -0.5}
+    sourceVariance: {x: 8, y: 2}
+    force: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.75000006
+    scale: 0.8
+    rotation: 50
+    sortingOrder: 1000
+    maxParticles: 10
+    emissionRate: 10
+    lifetimeMin: 0.099999994
+    lifetimeMax: 0.70000005
+    speedMin: 17
+    speedMax: 23
+    sizeMin: 0.9
+    sizeMax: 1.1
+    angle: 90
+    angleVariance: 30
+    rotationVariance: 180
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_01_pati
+    emitterName: was_pati2
+    originalTexturePath: particle/ticle_01.sct
+    anchor: 3
+    offset: {x: -7, y: -0.5}
+    sourceVariance: {x: 8, y: 2}
+    force: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 0.75000006
+    scale: 0.8
+    rotation: 50
+    sortingOrder: 1000
+    maxParticles: 30
+    emissionRate: 30
+    lifetimeMin: 0.099999994
+    lifetimeMax: 0.70000005
+    speedMin: 22
+    speedMax: 28
+    sizeMin: 0.00999999
+    sizeMax: 0.59
+    angle: 90
+    angleVariance: 30
+    rotationVariance: 180
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_ux_attack_03
+    sourceName: heidemarie_30093_ux_attack_01_pati
+    emitterName: up2
+    originalTexturePath: particle/pati_03.sct
+    anchor: 3
+    offset: {x: -7, y: -0.5}
+    sourceVariance: {x: 8, y: 3}
+    force: {x: 0, y: 0}
+    startTime: 6.9333
+    duration: 1.3499999
+    scale: 0.8
+    rotation: 50
+    sortingOrder: 1000
+    maxParticles: 250
+    emissionRate: 50
+    lifetimeMin: 0.099999964
+    lifetimeMax: 1.3
+    speedMin: 7
+    speedMax: 13
+    sizeMin: 0.00999999
+    sizeMax: 2.59
+    angle: 90
+    angleVariance: 0
+    rotationVariance: 0
+    startColor: {r: 0.75686276, g: 0.24705882, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues:
+  - sourceName: SRMD cam_move
+    target: 0
+    startTime: 0
+    duration: 9.033
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 0.83330005
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 1.2333001
+      value: {x: 35, y: -120}
+      stepped: 0
+    - time: 1.2333001
+      value: {x: 35, y: -120}
+      stepped: 0
+    - time: 1.7000002
+      value: {x: 0, y: -120}
+      stepped: 0
+    - time: 1.7000002
+      value: {x: -20, y: -140}
+      stepped: 1
+    - time: 2.1330001
+      value: {x: -20, y: -140}
+      stepped: 0
+    - time: 2.1330001
+      value: {x: 40, y: -160}
+      stepped: 1
+    - time: 3.6330004
+      value: {x: -20, y: -140}
+      stepped: 0
+    - time: 6.9333
+      value: {x: 0, y: 0}
+      stepped: 1
+    rotateKeys: []
+    scaleKeys: []
+  - sourceName: heidemarie_30093_ux_attack_cm1
+    target: 0
+    startTime: 4.8666
+    duration: 3.9
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: 0}
+      stepped: 1
+    - time: 3.5
+      value: {x: 0.04, y: -40}
+      stepped: 0
+    - time: 3.5333
+      value: {x: -0.03, y: 30}
+      stepped: 0
+    - time: 3.5667
+      value: {x: 0.01, y: -10}
+      stepped: 0
+    - time: 3.6
+      value: {x: -0.01, y: 10}
+      stepped: 0
+    - time: 3.6333
+      value: {x: 0.01, y: -9}
+      stepped: 0
+    - time: 3.6667
+      value: {x: -0.01, y: 9}
+      stepped: 0
+    - time: 3.7
+      value: {x: 0.01, y: -8}
+      stepped: 0
+    - time: 3.7333
+      value: {x: -0.01, y: 8}
+      stepped: 0
+    - time: 3.7667
+      value: {x: 0.01, y: -6}
+      stepped: 0
+    - time: 3.8
+      value: {x: -0.01, y: 6}
+      stepped: 0
+    - time: 3.8333
+      value: {x: 0, y: -4}
+      stepped: 0
+    - time: 3.8667
+      value: {x: 0, y: 2}
+      stepped: 0
+    - time: 3.9
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  - sourceName: heidemarie_30093_ux_attack_03_target_node
+    target: 1
+    startTime: 6.9333
+    duration: 1.0333
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 204.14, y: -304.93}
+      stepped: 0
+    - time: 1.0333
+      value: {x: 204.14, y: -259.8}
+      stepped: 0
+    rotateKeys:
+    - time: 0
+      value: -11.98
+      stepped: 0
+    - time: 1.0333
+      value: -22.61
+      stepped: 0
+    scaleKeys:
+    - time: 0
+      value: {x: 0.26, y: 0.26}
+      stepped: 0
+  - sourceName: heidemarie_30093_ux_attack_cm2
+    target: 0
+    startTime: 6.9663
+    duration: 2.0667
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: 0}
+      stepped: 1
+    - time: 1.2333
+      value: {x: 0, y: -30}
+      stepped: 1
+    - time: 1.2667
+      value: {x: 0, y: 20}
+      stepped: 1
+    - time: 1.3
+      value: {x: 0, y: -20}
+      stepped: 1
+    - time: 1.3333
+      value: {x: 0, y: 15}
+      stepped: 1
+    - time: 1.3667
+      value: {x: 0, y: -15}
+      stepped: 1
+    - time: 1.4
+      value: {x: 0, y: 10}
+      stepped: 1
+    - time: 1.4333
+      value: {x: 0, y: -10}
+      stepped: 1
+    - time: 1.4667
+      value: {x: 0, y: 9}
+      stepped: 1
+    - time: 1.5
+      value: {x: 0, y: -9}
+      stepped: 1
+    - time: 1.5333
+      value: {x: 0, y: 8}
+      stepped: 1
+    - time: 1.5667
+      value: {x: 0, y: -8}
+      stepped: 1
+    - time: 1.6
+      value: {x: 0, y: 7}
+      stepped: 1
+    - time: 1.6333
+      value: {x: 0, y: -7}
+      stepped: 1
+    - time: 1.6667
+      value: {x: 0, y: 6}
+      stepped: 1
+    - time: 1.7
+      value: {x: 0, y: -6}
+      stepped: 1
+    - time: 1.7333
+      value: {x: 0, y: 5}
+      stepped: 1
+    - time: 1.7667
+      value: {x: 0, y: -5}
+      stepped: 1
+    - time: 1.8
+      value: {x: 0, y: 4}
+      stepped: 1
+    - time: 1.8333
+      value: {x: 0, y: -4}
+      stepped: 1
+    - time: 1.8667
+      value: {x: 0, y: 3}
+      stepped: 1
+    - time: 1.9
+      value: {x: 0, y: -3}
+      stepped: 1
+    - time: 1.9333
+      value: {x: 0, y: 2}
+      stepped: 1
+    - time: 1.9667
+      value: {x: 0, y: -2}
+      stepped: 1
+    - time: 2
+      value: {x: 0, y: 1}
+      stepped: 1
+    - time: 2.0333
+      value: {x: 0, y: -1}
+      stepped: 1
+    - time: 2.0667
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  - sourceName: heidemarie_30093_ux_attack_cm3
+    target: 0
+    startTime: 8.2833
+    duration: 0.6667
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: -30}
+      stepped: 0
+    - time: 0.0333
+      value: {x: 0, y: 40}
+      stepped: 0
+    - time: 0.0667
+      value: {x: 0, y: -20}
+      stepped: 0
+    - time: 0.1
+      value: {x: 0, y: 20}
+      stepped: 0
+    - time: 0.1333
+      value: {x: 0, y: -16}
+      stepped: 0
+    - time: 0.1667
+      value: {x: 0, y: 16}
+      stepped: 0
+    - time: 0.2
+      value: {x: 0, y: -14}
+      stepped: 0
+    - time: 0.2333
+      value: {x: 0, y: 14}
+      stepped: 0
+    - time: 0.2667
+      value: {x: 0, y: -12}
+      stepped: 0
+    - time: 0.3
+      value: {x: 0, y: 12}
+      stepped: 0
+    - time: 0.3333
+      value: {x: 0, y: -10}
+      stepped: 0
+    - time: 0.3667
+      value: {x: 0, y: 10}
+      stepped: 0
+    - time: 0.4
+      value: {x: 0, y: -8}
+      stepped: 0
+    - time: 0.4333
+      value: {x: 0, y: 8}
+      stepped: 0
+    - time: 0.4667
+      value: {x: 0, y: -6}
+      stepped: 0
+    - time: 0.5
+      value: {x: 0, y: 6}
+      stepped: 0
+    - time: 0.5333
+      value: {x: 0, y: -4}
+      stepped: 0
+    - time: 0.5667
+      value: {x: 0, y: 4}
+      stepped: 0
+    - time: 0.6
+      value: {x: 0, y: -2}
+      stepped: 0
+    - time: 0.6333
+      value: {x: 0, y: 2}
+      stepped: 0
+    - time: 0.6667
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  cameraZoomCues:
+  - startTime: 1.2333001
+    duration: 0.4
+    zoom: 1.36
+  - startTime: 1.7000002
+    duration: 0
+    zoom: 1.2
+  - startTime: 1.7000002
+    duration: 0.46670005
+    zoom: 1.36
+  - startTime: 6.9333
+    duration: 0
+    zoom: 1
+  markers:
+  - kind: BG_BLEND
+    label: BG_BLEND
+    startTime: 1.2333001
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 1.2333001
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 1.7000002
+    duration: 0
+    value: 0
+  - kind: CUTIN
+    label: CUTIN
+    startTime: 4.8666
+    duration: 0
+    value: 0
+  - kind: HIT
+    label: HIT
+    startTime: 5.2660003
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 7.9666
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 7.9666
+    duration: 0
+    value: 0
+  - kind: SETTING
+    label: SETTING
+    startTime: 8.1666
+    duration: 0
+    value: 0
+  - kind: BG_BLEND
+    label: BG_BLEND
+    startTime: 8.2833
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 8.2833
+    duration: 0
+    value: 0
+  - kind: SETTING
+    label: SETTING
+    startTime: 8.2833
+    duration: 0
+    value: 0
+  - kind: COLOR_BLEND
+    label: COLOR_BLEND
+    startTime: 9.0326
+    duration: 0
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, but shared SCT particle textures use a generated
+    soft fallback. Masks, custom shaders, color-blend and post-process nodes remain
+    diagnostic markers. Negative/sentinel CFX scales use a positive preview fallback,
+    ancillary Spine Bezier keys are sampled with linear interpolation, and only the
+    primary cam/camera/node bone is sampled from multi-bone ancillary skeletons.
+  unresolvedResources:
+  - 'Bone/slot attachment approximated at anchor root: heidemarie_30093_ux_attack_02_2
+    slot= id=11'
+  - 'Shared particle texture approximated with soft fallback: particle/cross_01.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/pati_03.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/ticle_01.sct'

@@ -1,0 +1,286 @@
+
+fei_30048_u4_attack_play_target_b.sct
+size: 1952,1368
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura12
+  rotate: true
+  xy: 2, 24
+  size: 252, 243
+  orig: 252, 243
+  offset: 0, 0
+  index: -1
+aura1_1
+  rotate: false
+  xy: 1500, 1076
+  size: 432, 289
+  orig: 432, 289
+  offset: 0, 0
+  index: -1
+aura4_1
+  rotate: false
+  xy: 2, 828
+  size: 179, 204
+  orig: 179, 204
+  offset: 0, 0
+  index: -1
+aura6_1
+  rotate: true
+  xy: 1500, 842
+  size: 232, 350
+  orig: 232, 350
+  offset: 0, 0
+  index: -1
+burst3
+  rotate: false
+  xy: 1107, 299
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+crack
+  rotate: false
+  xy: 2, 1034
+  size: 1496, 331
+  orig: 1496, 331
+  offset: 0, 0
+  index: -1
+crack_glow_1
+  rotate: false
+  xy: 183, 849
+  size: 511, 183
+  orig: 511, 183
+  offset: 0, 0
+  index: -1
+crack_glow_2
+  rotate: false
+  xy: 1417, 176
+  size: 477, 142
+  orig: 477, 142
+  offset: 0, 0
+  index: -1
+fei_fire_floor_b1_1
+  rotate: true
+  xy: 2, 278
+  size: 544, 219
+  orig: 544, 219
+  offset: 0, 0
+  index: -1
+fei_fire_floor_b1_2
+  rotate: true
+  xy: 223, 278
+  size: 544, 219
+  orig: 544, 219
+  offset: 0, 0
+  index: -1
+fei_fire_floor_b1_3
+  rotate: true
+  xy: 444, 278
+  size: 544, 219
+  orig: 544, 219
+  offset: 0, 0
+  index: -1
+fei_fire_floor_b1_4
+  rotate: true
+  xy: 665, 278
+  size: 544, 219
+  orig: 544, 219
+  offset: 0, 0
+  index: -1
+fei_fire_floor_b1_5
+  rotate: true
+  xy: 886, 278
+  size: 544, 219
+  orig: 544, 219
+  offset: 0, 0
+  index: -1
+fei_fire_floor_b1_6
+  rotate: false
+  xy: 1204, 603
+  size: 544, 219
+  orig: 544, 219
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 1120, 2
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1
+mairin_ring_c1
+  rotate: true
+  xy: 1852, 824
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c10
+  rotate: false
+  xy: 1231, 840
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c11
+  rotate: true
+  xy: 1107, 601
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c2
+  rotate: true
+  xy: 247, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c3
+  rotate: true
+  xy: 344, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c4
+  rotate: true
+  xy: 441, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c5
+  rotate: true
+  xy: 538, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c6
+  rotate: true
+  xy: 635, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c7
+  rotate: true
+  xy: 732, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c8
+  rotate: true
+  xy: 829, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_c9
+  rotate: false
+  xy: 1231, 937
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl1
+  rotate: true
+  xy: 926, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl10
+  rotate: false
+  xy: 1417, 79
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl11
+  rotate: false
+  xy: 1669, 79
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl2
+  rotate: true
+  xy: 1023, 26
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl3
+  rotate: true
+  xy: 1750, 590
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl4
+  rotate: true
+  xy: 1847, 572
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl5
+  rotate: true
+  xy: 1409, 320
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl6
+  rotate: true
+  xy: 1506, 320
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl7
+  rotate: true
+  xy: 1603, 320
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl8
+  rotate: true
+  xy: 1700, 320
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+mairin_ring_gl9
+  rotate: true
+  xy: 1797, 320
+  size: 250, 95
+  orig: 250, 95
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: true
+  xy: 696, 850
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1
+smoke_2
+  rotate: true
+  xy: 879, 850
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1
+smoke_5
+  rotate: true
+  xy: 1062, 853
+  size: 179, 167
+  orig: 179, 167
+  offset: 0, 0
+  index: -1

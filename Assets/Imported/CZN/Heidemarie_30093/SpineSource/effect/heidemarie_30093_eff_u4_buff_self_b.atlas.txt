@@ -1,0 +1,286 @@
+
+heidemarie_30093_eff_u4_buff_self_b.png
+size: 2000,1224
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura_a_17_b
+  rotate: false
+  xy: 2, 36
+  size: 450, 95
+  orig: 450, 95
+  offset: 0, 0
+  index: -1
+aura_circle1
+  rotate: false
+  xy: 2, 758
+  size: 461, 461
+  orig: 461, 461
+  offset: 0, 0
+  index: -1
+aura_circle2
+  rotate: false
+  xy: 2, 295
+  size: 461, 461
+  orig: 461, 461
+  offset: 0, 0
+  index: -1
+bg_ras_m_sk3_2_ptc_23
+  rotate: false
+  xy: 802, 422
+  size: 79, 110
+  orig: 79, 110
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 889, 777
+  size: 438, 442
+  orig: 438, 442
+  offset: 0, 0
+  index: -1
+h_glass1_0001
+  rotate: true
+  xy: 454, 16
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0002
+  rotate: true
+  xy: 570, 16
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0003
+  rotate: true
+  xy: 686, 16
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0004
+  rotate: true
+  xy: 961, 24
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0005
+  rotate: true
+  xy: 1077, 24
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0006
+  rotate: false
+  xy: 1898, 308
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass2_0001
+  rotate: true
+  xy: 1194, 135
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0002
+  rotate: false
+  xy: 1898, 424
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0003
+  rotate: true
+  xy: 1194, 37
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0004
+  rotate: true
+  xy: 1331, 42
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0005
+  rotate: true
+  xy: 1468, 39
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0006
+  rotate: true
+  xy: 1605, 39
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0007
+  rotate: true
+  xy: 824, 2
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass3_1
+  rotate: false
+  xy: 1354, 140
+  size: 158, 275
+  orig: 158, 275
+  offset: 0, 0
+  index: -1
+h_glass3_2
+  rotate: true
+  xy: 1514, 137
+  size: 158, 275
+  orig: 158, 275
+  offset: 0, 0
+  index: -1
+h_glass3_3
+  rotate: false
+  xy: 1791, 20
+  size: 158, 275
+  orig: 158, 275
+  offset: 0, 0
+  index: -1
+heid_line01
+  rotate: false
+  xy: 1329, 689
+  size: 540, 134
+  orig: 540, 134
+  offset: 0, 0
+  index: -1
+heid_line02
+  rotate: true
+  xy: 1528, 507
+  size: 180, 317
+  orig: 180, 317
+  offset: 0, 0
+  index: -1
+heid_u_gra02
+  rotate: true
+  xy: 889, 415
+  size: 360, 365
+  orig: 360, 365
+  offset: 0, 0
+  index: -1
+pati2
+  rotate: true
+  xy: 2, 133
+  size: 160, 439
+  orig: 160, 439
+  offset: 0, 0
+  index: -1
+pati3
+  rotate: false
+  xy: 1256, 417
+  size: 270, 270
+  orig: 270, 270
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: false
+  xy: 1871, 679
+  size: 123, 144
+  orig: 123, 144
+  offset: 0, 0
+  index: -1
+pati7
+  rotate: false
+  xy: 1847, 561
+  size: 140, 116
+  orig: 140, 116
+  offset: 0, 0
+  index: -1
+rainbow_flare1
+  rotate: false
+  xy: 465, 197
+  size: 335, 335
+  orig: 335, 335
+  offset: 0, 0
+  index: -1
+rei_aura1_1
+  rotate: false
+  xy: 1528, 402
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_2
+  rotate: false
+  xy: 802, 310
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_3
+  rotate: false
+  xy: 802, 205
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_4
+  rotate: false
+  xy: 454, 92
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_5
+  rotate: false
+  xy: 824, 100
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_6
+  rotate: false
+  xy: 1514, 297
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+ring_rainbow
+  rotate: false
+  xy: 1172, 233
+  size: 180, 180
+  orig: 180, 180
+  offset: 0, 0
+  index: -1
+sword_glow1
+  rotate: true
+  xy: 1329, 1023
+  size: 196, 669
+  orig: 196, 669
+  offset: 0, 0
+  index: -1
+sword_glow2
+  rotate: true
+  xy: 1329, 825
+  size: 196, 669
+  orig: 196, 669
+  offset: 0, 0
+  index: -1
+sword_glow3
+  rotate: false
+  xy: 465, 534
+  size: 210, 685
+  orig: 210, 685
+  offset: 0, 0
+  index: -1
+sword_glow3_2
+  rotate: false
+  xy: 677, 534
+  size: 210, 685
+  orig: 210, 685
+  offset: 0, 0
+  index: -1

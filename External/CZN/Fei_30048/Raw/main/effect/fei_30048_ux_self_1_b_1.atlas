@@ -1,0 +1,97 @@
+
+fei_30048_ux_self_1_b_1.sct
+size: 1072,1000
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+f_02_floor_b_1_0001
+  rotate: true
+  xy: 926, 772
+  size: 226, 140
+  orig: 226, 140
+  offset: 0, 0
+  index: -1
+f_02_floor_b_1_0002
+  rotate: true
+  xy: 926, 544
+  size: 226, 140
+  orig: 226, 140
+  offset: 0, 0
+  index: -1
+f_02_floor_b_1_0003
+  rotate: true
+  xy: 926, 316
+  size: 226, 140
+  orig: 226, 140
+  offset: 0, 0
+  index: -1
+f_02_floor_b_1_0004
+  rotate: false
+  xy: 343, 2
+  size: 226, 140
+  orig: 226, 140
+  offset: 0, 0
+  index: -1
+f_02_floor_b_1_0005
+  rotate: false
+  xy: 571, 2
+  size: 226, 140
+  orig: 226, 140
+  offset: 0, 0
+  index: -1
+f_02_floor_b_2_0001
+  rotate: true
+  xy: 794, 659
+  size: 339, 130
+  orig: 339, 130
+  offset: 0, 0
+  index: -1
+f_02_floor_b_2_0002
+  rotate: true
+  xy: 794, 318
+  size: 339, 130
+  orig: 339, 130
+  offset: 0, 0
+  index: -1
+f_02_floor_b_2_0003
+  rotate: false
+  xy: 2, 144
+  size: 339, 130
+  orig: 339, 130
+  offset: 0, 0
+  index: -1
+f_02_floor_b_2_0004
+  rotate: false
+  xy: 2, 12
+  size: 339, 130
+  orig: 339, 130
+  offset: 0, 0
+  index: -1
+f_02_floor_b_2_0005
+  rotate: false
+  xy: 343, 144
+  size: 339, 130
+  orig: 339, 130
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 799, 114
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+intro_transition_0001
+  rotate: false
+  xy: 2, 638
+  size: 790, 360
+  orig: 790, 360
+  offset: 0, 0
+  index: -1
+intro_transition_0002
+  rotate: false
+  xy: 2, 276
+  size: 790, 360
+  orig: 790, 360
+  offset: 0, 0
+  index: -1

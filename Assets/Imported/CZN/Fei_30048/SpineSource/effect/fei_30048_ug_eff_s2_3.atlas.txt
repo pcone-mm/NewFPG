@@ -1,0 +1,223 @@
+
+fei_30048_ug_eff_s2_3.png
+size: 2032,1704
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow01
+  rotate: false
+  xy: 1660, 550
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+gradient2
+  rotate: false
+  xy: 1172, 289
+  size: 252, 402
+  orig: 252, 402
+  offset: 0, 0
+  index: -1
+impact10_1
+  rotate: true
+  xy: 1172, 693
+  size: 200, 115
+  orig: 200, 115
+  offset: 0, 0
+  index: -1
+impact10_2
+  rotate: true
+  xy: 1581, 88
+  size: 200, 115
+  orig: 200, 115
+  offset: 0, 0
+  index: -1
+impact10_3
+  rotate: false
+  xy: 1828, 281
+  size: 200, 115
+  orig: 200, 115
+  offset: 0, 0
+  index: -1
+impact11_1
+  rotate: true
+  xy: 1628, 398
+  size: 150, 148
+  orig: 150, 148
+  offset: 0, 0
+  index: -1
+impact11_2
+  rotate: true
+  xy: 1778, 398
+  size: 150, 148
+  orig: 150, 148
+  offset: 0, 0
+  index: -1
+impact11_3
+  rotate: true
+  xy: 1698, 129
+  size: 150, 148
+  orig: 150, 148
+  offset: 0, 0
+  index: -1
+impact6_0001
+  rotate: true
+  xy: 1426, 290
+  size: 101, 199
+  orig: 101, 199
+  offset: 0, 0
+  index: -1
+impact6_0002
+  rotate: true
+  xy: 1627, 290
+  size: 101, 199
+  orig: 101, 199
+  offset: 0, 0
+  index: -1
+impact9_1
+  rotate: false
+  xy: 1426, 560
+  size: 200, 165
+  orig: 200, 165
+  offset: 0, 0
+  index: -1
+impact9_2
+  rotate: false
+  xy: 1426, 393
+  size: 200, 165
+  orig: 200, 165
+  offset: 0, 0
+  index: -1
+impact9_3
+  rotate: true
+  xy: 1414, 87
+  size: 200, 165
+  orig: 200, 165
+  offset: 0, 0
+  index: -1
+ni_ux_shock02_0000
+  rotate: false
+  xy: 204, 3
+  size: 250, 275
+  orig: 250, 275
+  offset: 0, 0
+  index: -1
+ni_ux_shock02_0001
+  rotate: false
+  xy: 456, 3
+  size: 250, 275
+  orig: 250, 275
+  offset: 0, 0
+  index: -1
+ni_ux_shock02_0002
+  rotate: false
+  xy: 708, 3
+  size: 250, 275
+  orig: 250, 275
+  offset: 0, 0
+  index: -1
+ni_ux_shock02_0003
+  rotate: false
+  xy: 960, 3
+  size: 250, 275
+  orig: 250, 275
+  offset: 0, 0
+  index: -1
+ni_ux_shock03_0000
+  rotate: false
+  xy: 1677, 1088
+  size: 350, 234
+  orig: 350, 234
+  offset: 0, 0
+  index: -1
+ni_ux_shock03_0001
+  rotate: false
+  xy: 1308, 963
+  size: 350, 234
+  orig: 350, 234
+  offset: 0, 0
+  index: -1
+ni_ux_shock03_0002
+  rotate: false
+  xy: 1660, 852
+  size: 350, 234
+  orig: 350, 234
+  offset: 0, 0
+  index: -1
+ni_ux_shock03_0003
+  rotate: false
+  xy: 1308, 727
+  size: 350, 234
+  orig: 350, 234
+  offset: 0, 0
+  index: -1
+pe_ug_elec16_0000_1
+  rotate: false
+  xy: 1677, 1324
+  size: 350, 375
+  orig: 350, 375
+  offset: 0, 0
+  index: -1
+pe_ug_elec16_0000_c
+  rotate: true
+  xy: 604, 1099
+  size: 600, 583
+  orig: 600, 583
+  offset: 0, 0
+  index: -1
+pe_ug_elec16_0001_c
+  rotate: true
+  xy: 1189, 1199
+  size: 500, 486
+  orig: 500, 486
+  offset: 0, 0
+  index: -1
+pe_ug_elec16_0002_c
+  rotate: true
+  xy: 2, 280
+  size: 600, 583
+  orig: 600, 583
+  offset: 0, 0
+  index: -1
+pe_ug_elec16_0003
+  rotate: true
+  xy: 587, 280
+  size: 600, 583
+  orig: 600, 583
+  offset: 0, 0
+  index: -1
+pe_ug_elec16_0004
+  rotate: false
+  xy: 604, 894
+  size: 300, 203
+  orig: 300, 203
+  offset: 0, 0
+  index: -1
+pei_ug_sword05
+  rotate: false
+  xy: 906, 895
+  size: 400, 202
+  orig: 400, 202
+  offset: 0, 0
+  index: -1
+sword02
+  rotate: false
+  xy: 2, 882
+  size: 600, 817
+  orig: 600, 817
+  offset: 0, 0
+  index: -1
+sword02_light1
+  rotate: false
+  xy: 2, 2
+  size: 200, 276
+  orig: 200, 276
+  offset: 0, 0
+  index: -1
+sword02_light2
+  rotate: false
+  xy: 1212, 2
+  size: 200, 285
+  orig: 200, 285
+  offset: 0, 0
+  index: -1

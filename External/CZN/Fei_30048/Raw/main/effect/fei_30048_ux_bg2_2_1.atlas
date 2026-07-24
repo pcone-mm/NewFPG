@@ -1,0 +1,97 @@
+
+fei_30048_ux_bg2_2_1.sct
+size: 1976,1648
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fist3_fire2_2_base01
+  rotate: true
+  xy: 2, 40
+  size: 828, 359
+  orig: 828, 359
+  offset: 0, 0
+  index: -1
+fist3_fire2_2_base02
+  rotate: true
+  xy: 363, 40
+  size: 828, 359
+  orig: 828, 359
+  offset: 0, 0
+  index: -1
+fist3_fire2_2_base03
+  rotate: false
+  xy: 818, 896
+  size: 828, 359
+  orig: 828, 359
+  offset: 0, 0
+  index: -1
+fist3_fire2_2_sub01
+  rotate: true
+  xy: 724, 178
+  size: 690, 299
+  orig: 690, 299
+  offset: 0, 0
+  index: -1
+fist3_fire2_2_sub02
+  rotate: true
+  xy: 1025, 204
+  size: 690, 299
+  orig: 690, 299
+  offset: 0, 0
+  index: -1
+fist3_fire2_2_sub03
+  rotate: true
+  xy: 1326, 204
+  size: 690, 299
+  orig: 690, 299
+  offset: 0, 0
+  index: -1
+fist3_fire3_2_01
+  rotate: false
+  xy: 2, 1257
+  size: 814, 385
+  orig: 814, 385
+  offset: 0, 0
+  index: -1
+fist3_fire3_2_02
+  rotate: false
+  xy: 2, 870
+  size: 814, 385
+  orig: 814, 385
+  offset: 0, 0
+  index: -1
+fist3_fire3_2_03
+  rotate: false
+  xy: 818, 1257
+  size: 814, 385
+  orig: 814, 385
+  offset: 0, 0
+  index: -1
+fist3_fire4_01
+  rotate: false
+  xy: 1648, 776
+  size: 324, 568
+  orig: 324, 568
+  offset: 0, 0
+  index: -1
+fist3_fire4_02
+  rotate: false
+  xy: 1627, 206
+  size: 324, 568
+  orig: 324, 568
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 1634, 1346
+  size: 295, 296
+  orig: 295, 296
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1025, 2
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1

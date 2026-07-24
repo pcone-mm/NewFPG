@@ -1,0 +1,160 @@
+
+fei_30048_u5_buff_play_cha_glow.png
+size: 1400,800
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 2, 501
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1
+u5_26_chair_glow
+  rotate: true
+  xy: 2, 2
+  size: 19, 62
+  orig: 19, 62
+  offset: 0, 0
+  index: -1
+u5_26_hair_glow_left
+  rotate: true
+  xy: 299, 505
+  size: 52, 98
+  orig: 52, 98
+  offset: 0, 0
+  index: -1
+u5_26_hair_glow_right
+  rotate: true
+  xy: 442, 43
+  size: 36, 92
+  orig: 36, 92
+  offset: 0, 0
+  index: -1
+u5_26_top_glow
+  rotate: true
+  xy: 1322, 419
+  size: 138, 70
+  orig: 138, 70
+  offset: 0, 0
+  index: -1
+u5_play_06
+  rotate: false
+  xy: 2, 262
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_08
+  rotate: false
+  xy: 299, 559
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_10
+  rotate: false
+  xy: 2, 23
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_12
+  rotate: false
+  xy: 519, 559
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_14
+  rotate: false
+  xy: 739, 559
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_16
+  rotate: false
+  xy: 959, 559
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_18
+  rotate: false
+  xy: 1179, 559
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_20
+  rotate: false
+  xy: 222, 262
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_22
+  rotate: false
+  xy: 222, 23
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_24
+  rotate: false
+  xy: 442, 320
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_26
+  rotate: false
+  xy: 442, 81
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_28
+  rotate: false
+  xy: 662, 320
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_30
+  rotate: false
+  xy: 662, 81
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_32
+  rotate: false
+  xy: 882, 320
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_34
+  rotate: false
+  xy: 882, 81
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_36
+  rotate: false
+  xy: 1102, 320
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1
+u5_play_38
+  rotate: false
+  xy: 1102, 81
+  size: 218, 237
+  orig: 218, 237
+  offset: 0, 0
+  index: -1

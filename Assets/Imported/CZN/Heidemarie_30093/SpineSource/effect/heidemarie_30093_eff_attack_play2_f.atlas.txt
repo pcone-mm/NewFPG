@@ -1,0 +1,13 @@
+
+heidemarie_30093_eff_attack_play2_f.png
+size: 496,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: false
+  xy: 2, 2
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1

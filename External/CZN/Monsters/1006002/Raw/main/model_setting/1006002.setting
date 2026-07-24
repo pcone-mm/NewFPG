@@ -1,0 +1,27 @@
+{
+  "name": "1006002",
+  "scale": 1.0,
+  "offset_y_ratio": 8,
+  "render_width": 960,
+  "render_height": 640,
+  "scale_grade": "SMALL",
+  "extra_size": false,
+  "animations": [
+    "normal_death",
+    "normal_enter",
+    "normal_groggy",
+    "normal_hit",
+    "normal_idle",
+    "normal_skill1",
+    "normal_surprise",
+    "normal_to_stance1",
+    "stance1_death",
+    "stance1_groggy",
+    "stance1_hit",
+    "stance1_idle",
+    "stance1_skill1",
+    "stance1_skill2",
+    "stance1_surprise",
+    "stance1_to_normal"
+  ]
+}

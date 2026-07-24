@@ -1,0 +1,76 @@
+
+mini_bite_skill1.sct
+size: 588,272
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fire_t1_2
+  rotate: false
+  xy: 407, 65
+  size: 112, 104
+  orig: 137, 121
+  offset: 15, 8
+  index: -1
+fire_t1_3
+  rotate: false
+  xy: 260, 152
+  size: 142, 115
+  orig: 161, 129
+  offset: 10, 7
+  index: -1
+flash
+  rotate: false
+  xy: 2, 11
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+skill1_shoot1
+  rotate: false
+  xy: 404, 171
+  size: 143, 96
+  orig: 150, 101
+  offset: 4, 2
+  index: -1
+skill1_shoot2
+  rotate: false
+  xy: 260, 61
+  size: 145, 89
+  orig: 150, 94
+  offset: 2, 3
+  index: -1
+skill1_w10
+  rotate: true
+  xy: 505, 2
+  size: 25, 65
+  orig: 30, 72
+  offset: 2, 3
+  index: -1
+skill1_w12_1
+  rotate: false
+  xy: 549, 124
+  size: 35, 143
+  orig: 42, 150
+  offset: 4, 4
+  index: -1
+skill1_w7_1
+  rotate: false
+  xy: 521, 29
+  size: 62, 93
+  orig: 62, 93
+  offset: 0, 0
+  index: -1
+skill1_w9_1
+  rotate: true
+  xy: 260, 12
+  size: 47, 133
+  orig: 55, 147
+  offset: 4, 8
+  index: -1
+skill1_w9_2
+  rotate: true
+  xy: 407, 16
+  size: 47, 96
+  orig: 55, 147
+  offset: 4, 8
+  index: -1

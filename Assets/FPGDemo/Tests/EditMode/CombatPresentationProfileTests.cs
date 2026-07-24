@@ -10,13 +10,13 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class CombatPresentationProfileTests
     {
         private const string InstalledProfilePath =
-            "Assets/FPGDemo/Config/D0Slice/CombatPresentationProfile.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
         private const string FeiPresentationPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_Presentation.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Presentation.asset";
         private const string FeiWeaponPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_Weapon.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Weapon.asset";
         private const string BurstbugPresentationPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Burstbug/D0_Burstbug_Presentation.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Behavior.asset";
 
         [Test]
         public void StaticDefaultsLockOnlyGlobalCombatPresentationLanguage()
@@ -53,15 +53,15 @@ namespace FPG.Demo.Tests.EditMode
             AssertGlobalContract(profile);
         }
 
-        [Test]
-        public void ActorStateAndWeaponSkillContentLiveInTheirConcreteDefinitions()
+[Test]
+        public void ActorStateAndWeaponSkillContentLiveInTheirFormalDefinitions()
         {
             D0ActorPresentationDefinition fei =
                 LoadRequired<D0ActorPresentationDefinition>(FeiPresentationPath);
             D0WeaponDefinition weapon =
                 LoadRequired<D0WeaponDefinition>(FeiWeaponPath);
-            D0ActorPresentationDefinition burstbug =
-                LoadRequired<D0ActorPresentationDefinition>(BurstbugPresentationPath);
+            FpgEnemyBehaviorDefinition burstbug =
+                LoadRequired<FpgEnemyBehaviorDefinition>(BurstbugPresentationPath);
 
             Assert.That(fei.TryGetPlayer(out PlayerActorPresentationDefinition player), Is.True);
             Assert.That(player.IdleAnimation, Is.EqualTo("b_idle"));
@@ -81,12 +81,10 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(D0ActorSocketRegistry.SecondaryMuzzleId));
             Assert.That(weapon.ReloadPresentation.PlayAnimation, Is.EqualTo("reload_play"));
 
-            Assert.That(
-                burstbug.TryGetEnemy(out EnemyActorPresentationDefinition enemy),
-                Is.True);
-            Assert.That(enemy.IdleAnimation, Is.EqualTo("normal_idle"));
-            Assert.That(enemy.HitAnimation, Is.EqualTo("normal_hit"));
-            Assert.That(enemy.DeathAnimation, Is.EqualTo("normal_death"));
+            Assert.That(burstbug.TryValidate(out string behaviorError), Is.True, behaviorError);
+            Assert.That(burstbug.EntryAnimation, Is.EqualTo("normal_enter"));
+            Assert.That(burstbug.IdleAnimation, Is.EqualTo("normal_idle"));
+            Assert.That(burstbug.DeathAnimation, Is.EqualTo("normal_death"));
         }
 
         [Test]

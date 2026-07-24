@@ -12,9 +12,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
     public static class FpgFormalRoomLoopInstaller
     {
         private const string BootScenePath = "Assets/FPGDemo/Scenes/Boot.unity";
-        private const string CombatLabScenePath = "Assets/FPGDemo/Scenes/CombatLab.unity";
         private const string FormalRoomScenePath = "Assets/FPGDemo/Scenes/FormalRoom.unity";
-        private const string RoomPath = "Assets/FPGDemo/Config/Level/Rooms/Room_combatlab-forest.asset";
+        private const string RoomPath = "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
         private const string ConfigPath = "Assets/FPGDemo/Config/GameBootstrapConfig.asset";
         private const string RoomCatalogPath =
             "Assets/FPGDemo/Config/Level/FPG_RoomCatalog.asset";
@@ -23,13 +22,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string PlayableCharacterCatalogPath =
             "Assets/FPGDemo/Config/FormalEncounter/FPG_PlayableCharacterCatalog.asset";
         private const string FeiCharacterPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Character.asset";
         private const string FeiThreeCPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_3C.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_ThreeC.asset";
         private const string FeiSelectionPreviewPath =
-            "Assets/FPGDemo/Presentation/D0Slice/Spine/D0_Fei_30048_StraightAlpha.prefab";
+            "Assets/FPGDemo/Presentation/Characters/Fei/Spine/D0_Fei_30048_StraightAlpha.prefab";
         private const string CombatPresentationProfilePath =
-            "Assets/FPGDemo/Config/D0Slice/CombatPresentationProfile.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
         private const string ProfilePath = "Assets/FPGDemo/Config/FormalEncounter/Level1/FPG_L1_01_Profile.asset";
         private const string OverridePath = "Assets/FPGDemo/Config/FormalEncounter/Level1/FPG_L1_01_01_Intro.asset";
         private const string EnemyCatalogPath = "Assets/FPGDemo/Config/FormalEncounter/FPG_NormalRoom_EnemyCatalog.asset";
@@ -39,7 +38,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string HealthBarPrefabPath = PresentationRoot + "/PF_FPG_OverheadHealthBar.prefab";
         private const string DamagePopupPrefabPath =
             PresentationRoot + "/PF_FPG_DamagePopup.prefab";
-        private const string HitTipArtRoot = "Assets/Art/HUD/Hit_tip";
+        private const string HitTipArtRoot = "Assets/FPGDemo/Presentation/HUD/HitTip";
         private const string HitTipNormalDigits = HitTipArtRoot + "/zi_normal";
         private const string HitTipCriticalDigits = HitTipArtRoot + "/zi_critcal";
         private const string HitTipElementalDigits = HitTipArtRoot + "/zi_elemental";
@@ -73,7 +72,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 EnsureFolder(PresentationRoot);
                 EnsureFolder(MaterialRoot);
-                FpgFormalEncounterDefaultsInstaller.Install();
                 EnsureFormalPresentationProfileSerialized();
 
                 FpgRoomDefinition room = LoadRequired<FpgRoomDefinition>(RoomPath);
@@ -1934,8 +1932,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
             GameBootstrapConfig config =
                 LoadRequired<GameBootstrapConfig>(ConfigPath);
             SerializedObject data = new SerializedObject(config);
-            SetString(data, "combatLabSceneName", "FormalRoom");
-            SetBool(data, "loadCombatLabOnStart", true);
+            SetString(data, "roomSceneName", "FormalRoom");
+            SetBool(data, "loadRoomOnStart", true);
             SetBool(data, "requireEntranceSelection", true);
             SetBool(data, "requireCharacterSelection", true);
             SetObject(data, "exitRoomRefreshRule", exitRoomRefreshRule);
@@ -2206,11 +2204,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private static void RemoveAuthoredPlayers(Scene scene)
         {
-            List<D0PlayerEntityView> players =
-                FindSceneComponents<D0PlayerEntityView>(scene);
+            List<FpgPlayerEntityView> players =
+                FindSceneComponents<FpgPlayerEntityView>(scene);
             for (int index = players.Count - 1; index >= 0; index--)
             {
-                D0PlayerEntityView player = players[index];
+                FpgPlayerEntityView player = players[index];
                 if (player != null)
                 {
                     UnityEngine.Object.DestroyImmediate(player.gameObject);
@@ -2251,40 +2249,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private static void EnsureBuildSettings()
         {
             LoadRequired<SceneAsset>(BootScenePath);
-            LoadRequired<SceneAsset>(CombatLabScenePath);
             LoadRequired<SceneAsset>(FormalRoomScenePath);
 
-            List<EditorBuildSettingsScene> remaining =
-                new List<EditorBuildSettingsScene>();
-            EditorBuildSettingsScene[] current = EditorBuildSettings.scenes;
-            for (int index = 0; index < current.Length; index++)
+            EditorBuildSettings.scenes = new[]
             {
-                string path = current[index].path;
-                if (string.Equals(path, BootScenePath, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(
-                        path,
-                        CombatLabScenePath,
-                        StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(
-                        path,
-                        FormalRoomScenePath,
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                remaining.Add(current[index]);
-            }
-
-            List<EditorBuildSettingsScene> scenes =
-                new List<EditorBuildSettingsScene>(remaining.Count + 3)
-                {
-                    new EditorBuildSettingsScene(BootScenePath, true),
-                    new EditorBuildSettingsScene(CombatLabScenePath, true),
-                    new EditorBuildSettingsScene(FormalRoomScenePath, true)
-                };
-            scenes.AddRange(remaining);
-            EditorBuildSettings.scenes = scenes.ToArray();
+                new EditorBuildSettingsScene(BootScenePath, true),
+                new EditorBuildSettingsScene(FormalRoomScenePath, true)
+            };
         }
 
         private static void ValidateInstallation(
@@ -2409,7 +2380,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             encounterOverride =
                 LoadRequired<FpgEncounterOverrideDefinition>(OverridePath);
 
-            if (FindSceneComponents<D0PlayerEntityView>(formalScene).Count != 0)
+            if (FindSceneComponents<FpgPlayerEntityView>(formalScene).Count != 0)
             {
                 throw new InvalidOperationException(
                     "FormalRoom must not contain an authored player entity.");
@@ -2423,13 +2394,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 throw new InvalidOperationException(
                     "FormalRoom requires exactly one formal composer, scene host "
                     + "and combat feedback bridge.");
-            }
-
-            if (FindSceneComponents<BattleSessionHost>(formalScene).Count != 0
-                || FindSceneComponents<BattleSceneContext>(formalScene).Count != 0)
-            {
-                throw new InvalidOperationException(
-                    "FormalRoom must not contain legacy BattleSessionHost or BattleSceneContext.");
             }
 
             FpgFormalEncounterHost formalHost =
@@ -2574,7 +2538,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             if (bootstrap.PlayableCharacterCatalog != playableCharacterCatalog
-                || FindSceneComponents<D0PlayerEntityView>(bootScene).Count != 0
+                || FindSceneComponents<FpgPlayerEntityView>(bootScene).Count != 0
                 || FindSceneComponents<FpgBootCharacterChoice>(bootScene).Count != 1
                 || FindSceneComponents<FpgBootRoomEntrance>(bootScene).Count != 1)
             {
@@ -2615,25 +2579,20 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             EditorBuildSettingsScene[] buildScenes = EditorBuildSettings.scenes;
-            if (buildScenes.Length < 3
+            if (buildScenes.Length != 2
                 || !buildScenes[0].enabled
                 || !buildScenes[1].enabled
-                || !buildScenes[2].enabled
                 || !string.Equals(
                     buildScenes[0].path,
                     BootScenePath,
                     StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(
                     buildScenes[1].path,
-                    CombatLabScenePath,
-                    StringComparison.OrdinalIgnoreCase)
-                || !string.Equals(
-                    buildScenes[2].path,
                     FormalRoomScenePath,
                     StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException(
-                    "Build Settings must keep Boot, CombatLab editor harness and FormalRoom at stable indices 0, 1 and 2.");
+                    "Build Settings must contain only Boot and FormalRoom at stable indices 0 and 1.");
             }
         }
 
@@ -3050,16 +3009,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FormalRoomScenePath,
                     OpenSceneMode.Single);
                 if (FindRoot(formalScene, InstallationMarkerName) == null
-                    || FindSceneComponents<D0PlayerEntityView>(formalScene).Count != 0
+                    || FindSceneComponents<FpgPlayerEntityView>(formalScene).Count != 0
                     || FindSceneComponents<FpgFormalPlayerComposer>(formalScene).Count != 1
                     || FindSceneComponents<FpgFormalEncounterHost>(formalScene).Count != 1
                     || FindSceneComponents<FpgFormalPlayerPresentationBridge>(formalScene).Count != 1
                     || FindSceneComponents<FpgFormalCombatFeedbackBridge>(
                         formalScene).Count != 1
                     || FindSceneComponents<FpgFormalPlayerHudPresenter>(formalScene).Count != 1
-                    || FindSceneComponents<CombatAimReticle>(formalScene).Count != 1
-                    || FindSceneComponents<BattleSessionHost>(formalScene).Count != 0
-                    || FindSceneComponents<BattleSceneContext>(formalScene).Count != 0)
+                    || FindSceneComponents<CombatAimReticle>(formalScene).Count != 1)
                 {
                     return false;
                 }
@@ -3114,7 +3071,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     BootScenePath,
                     OpenSceneMode.Single);
                 if (FindRoot(bootScene, InstallationMarkerName) == null
-                    || FindSceneComponents<D0PlayerEntityView>(bootScene).Count != 0
+                    || FindSceneComponents<FpgPlayerEntityView>(bootScene).Count != 0
                     || FindSceneComponents<FpgBootCharacterChoice>(bootScene).Count != 1
                     || FindSceneComponents<FpgBootRoomEntrance>(bootScene).Count != 1)
                 {

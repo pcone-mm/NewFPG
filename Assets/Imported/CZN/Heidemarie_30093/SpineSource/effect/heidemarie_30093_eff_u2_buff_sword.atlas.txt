@@ -1,0 +1,167 @@
+
+heidemarie_30093_eff_u2_buff_sword.png
+size: 1968,1968
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+sword_clear
+  rotate: false
+  xy: 2, 1256
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_glow1
+  rotate: false
+  xy: 2, 548
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_glow2
+  rotate: true
+  xy: 2, 339
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0001
+  rotate: true
+  xy: 2, 130
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0002
+  rotate: false
+  xy: 211, 1256
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0003
+  rotate: false
+  xy: 211, 548
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0004
+  rotate: false
+  xy: 420, 1256
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0005
+  rotate: false
+  xy: 420, 548
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0006
+  rotate: true
+  xy: 629, 1755
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0007
+  rotate: false
+  xy: 1337, 1256
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0008
+  rotate: true
+  xy: 629, 1546
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0009
+  rotate: true
+  xy: 629, 1337
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light1_0010
+  rotate: true
+  xy: 629, 1128
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0001
+  rotate: true
+  xy: 629, 919
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0002
+  rotate: true
+  xy: 629, 710
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0003
+  rotate: false
+  xy: 1337, 548
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0004
+  rotate: false
+  xy: 710, 2
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0005
+  rotate: false
+  xy: 919, 2
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0006
+  rotate: false
+  xy: 1128, 2
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0007
+  rotate: false
+  xy: 1546, 1256
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0008
+  rotate: false
+  xy: 1755, 1256
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0009
+  rotate: false
+  xy: 1546, 548
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1
+sword_light2_0010
+  rotate: false
+  xy: 1755, 548
+  size: 207, 706
+  orig: 207, 706
+  offset: 0, 0
+  index: -1

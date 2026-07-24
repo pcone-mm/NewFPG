@@ -1,0 +1,104 @@
+
+heidemarie_30093_eff_attack_play1_f.png
+size: 1936,824
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura3_1
+  rotate: false
+  xy: 2, 9
+  size: 394, 82
+  orig: 394, 82
+  offset: 0, 0
+  index: -1
+aura3_2
+  rotate: false
+  xy: 398, 9
+  size: 394, 82
+  orig: 394, 82
+  offset: 0, 0
+  index: -1
+aura4_1
+  rotate: false
+  xy: 794, 2
+  size: 366, 107
+  orig: 366, 107
+  offset: 0, 0
+  index: -1
+aura4_2
+  rotate: false
+  xy: 1162, 2
+  size: 366, 107
+  orig: 366, 107
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 2, 328
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+pati1
+  rotate: true
+  xy: 491, 372
+  size: 212, 648
+  orig: 212, 648
+  offset: 0, 0
+  index: -1
+pati2
+  rotate: true
+  xy: 1141, 406
+  size: 178, 488
+  orig: 178, 488
+  offset: 0, 0
+  index: -1
+sword_glow3
+  rotate: true
+  xy: 2, 93
+  size: 233, 761
+  orig: 233, 761
+  offset: 0, 0
+  index: -1
+sword_glow3_2
+  rotate: true
+  xy: 491, 586
+  size: 233, 761
+  orig: 233, 761
+  offset: 0, 0
+  index: -1
+wind3_0001
+  rotate: false
+  xy: 765, 111
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+wind3_0002
+  rotate: false
+  xy: 1220, 145
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+wind3_0003
+  rotate: true
+  xy: 1675, 3
+  size: 453, 259
+  orig: 453, 259
+  offset: 0, 0
+  index: -1
+wind4_0001
+  rotate: false
+  xy: 1254, 603
+  size: 361, 216
+  orig: 361, 216
+  offset: 0, 0
+  index: -1
+wind4_0002
+  rotate: true
+  xy: 1631, 458
+  size: 361, 216
+  orig: 361, 216
+  offset: 0, 0
+  index: -1

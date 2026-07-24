@@ -1,0 +1,48 @@
+
+heidemarie_30093_ug_sword_intro_hq3.sct
+size: 1836,1304
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: false
+  xy: 1347, 811
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+seq1_0010
+  rotate: false
+  xy: 2, 2
+  size: 267, 1300
+  orig: 267, 1300
+  offset: 0, 0
+  index: -1
+seq1_0011
+  rotate: false
+  xy: 271, 2
+  size: 267, 1300
+  orig: 267, 1300
+  offset: 0, 0
+  index: -1
+seq1_0012
+  rotate: false
+  xy: 540, 2
+  size: 267, 1300
+  orig: 267, 1300
+  offset: 0, 0
+  index: -1
+seq1_0013
+  rotate: false
+  xy: 809, 2
+  size: 267, 1300
+  orig: 267, 1300
+  offset: 0, 0
+  index: -1
+seq1_0014
+  rotate: false
+  xy: 1078, 2
+  size: 267, 1300
+  orig: 267, 1300
+  offset: 0, 0
+  index: -1

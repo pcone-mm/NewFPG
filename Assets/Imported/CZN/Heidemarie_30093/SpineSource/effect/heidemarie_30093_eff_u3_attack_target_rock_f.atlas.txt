@@ -1,0 +1,279 @@
+
+heidemarie_30093_eff_u3_attack_target_rock_f.png
+size: 1496,1064
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bdd26_3
+  rotate: false
+  xy: 470, 523
+  size: 200, 237
+  orig: 200, 237
+  offset: 0, 0
+  index: -1
+gSmoke_a_2_0001
+  rotate: false
+  xy: 560, 232
+  size: 218, 289
+  orig: 218, 289
+  offset: 0, 0
+  index: -1
+gSmoke_a_2_0002
+  rotate: false
+  xy: 780, 239
+  size: 218, 289
+  orig: 218, 289
+  offset: 0, 0
+  index: -1
+gSmoke_a_2_0003
+  rotate: false
+  xy: 706, 773
+  size: 218, 289
+  orig: 218, 289
+  offset: 0, 0
+  index: -1
+gSmoke_a_2_0004
+  rotate: true
+  xy: 874, 553
+  size: 218, 289
+  orig: 218, 289
+  offset: 0, 0
+  index: -1
+gSmoke_a_2_0005
+  rotate: false
+  xy: 926, 773
+  size: 218, 289
+  orig: 218, 289
+  offset: 0, 0
+  index: -1
+gSmoke_a_2_0006
+  rotate: false
+  xy: 1146, 773
+  size: 218, 289
+  orig: 218, 289
+  offset: 0, 0
+  index: -1
+r02
+  rotate: true
+  xy: 1308, 140
+  size: 200, 182
+  orig: 200, 182
+  offset: 0, 0
+  index: -1
+r03
+  rotate: false
+  xy: 2, 10
+  size: 300, 124
+  orig: 300, 124
+  offset: 0, 0
+  index: -1
+r04
+  rotate: true
+  xy: 555, 762
+  size: 300, 149
+  orig: 300, 149
+  offset: 0, 0
+  index: -1
+r06
+  rotate: true
+  xy: 1357, 530
+  size: 200, 107
+  orig: 200, 107
+  offset: 0, 0
+  index: -1
+r07
+  rotate: false
+  xy: 890, 21
+  size: 200, 133
+  orig: 200, 133
+  offset: 0, 0
+  index: -1
+r13
+  rotate: true
+  xy: 1366, 898
+  size: 164, 121
+  orig: 164, 121
+  offset: 0, 0
+  index: -1
+r14
+  rotate: false
+  xy: 1366, 811
+  size: 118, 85
+  orig: 118, 85
+  offset: 0, 0
+  index: -1
+r15
+  rotate: false
+  xy: 1106, 218
+  size: 200, 273
+  orig: 200, 273
+  offset: 0, 0
+  index: -1
+r26
+  rotate: true
+  xy: 789, 10
+  size: 142, 99
+  orig: 142, 99
+  offset: 0, 0
+  index: -1
+r_01_3
+  rotate: false
+  xy: 672, 530
+  size: 200, 230
+  orig: 200, 230
+  offset: 0, 0
+  index: -1
+s1_r_11
+  rotate: false
+  xy: 258, 154
+  size: 300, 359
+  orig: 300, 359
+  offset: 0, 0
+  index: -1
+s1_r_12
+  rotate: true
+  xy: 263, 762
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1
+sere_smoke02_0000
+  rotate: false
+  xy: 560, 154
+  size: 142, 76
+  orig: 142, 76
+  offset: 0, 0
+  index: -1
+sere_smoke02_0001
+  rotate: false
+  xy: 704, 154
+  size: 142, 76
+  orig: 142, 76
+  offset: 0, 0
+  index: -1
+sere_smoke20_0001
+  rotate: true
+  xy: 1010, 156
+  size: 184, 93
+  orig: 184, 93
+  offset: 0, 0
+  index: -1
+smog_r1
+  rotate: false
+  xy: 848, 156
+  size: 160, 81
+  orig: 160, 81
+  offset: 0, 0
+  index: -1
+smoke
+  rotate: true
+  xy: 2, 136
+  size: 377, 254
+  orig: 377, 254
+  offset: 0, 0
+  index: -1
+smoke2
+  rotate: true
+  xy: 2, 515
+  size: 547, 259
+  orig: 547, 259
+  offset: 0, 0
+  index: -1
+smokeBurst2_1
+  rotate: false
+  xy: 1165, 493
+  size: 186, 104
+  orig: 186, 104
+  offset: 0, 0
+  index: -1
+smokeBurst2_2
+  rotate: true
+  xy: 1353, 342
+  size: 186, 104
+  orig: 186, 104
+  offset: 0, 0
+  index: -1
+smokeBurst2_3
+  rotate: true
+  xy: 1000, 365
+  size: 186, 104
+  orig: 186, 104
+  offset: 0, 0
+  index: -1
+smokeRing05_1
+  rotate: true
+  xy: 304, 2
+  size: 150, 95
+  orig: 150, 95
+  offset: 0, 0
+  index: -1
+smokeRing05_2
+  rotate: true
+  xy: 401, 2
+  size: 150, 95
+  orig: 150, 95
+  offset: 0, 0
+  index: -1
+smokeRing05_3
+  rotate: true
+  xy: 498, 2
+  size: 150, 95
+  orig: 150, 95
+  offset: 0, 0
+  index: -1
+smokeRing05_4
+  rotate: true
+  xy: 595, 2
+  size: 150, 95
+  orig: 150, 95
+  offset: 0, 0
+  index: -1
+smokeRing05_5
+  rotate: true
+  xy: 692, 2
+  size: 150, 95
+  orig: 150, 95
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: false
+  xy: 1105, 35
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1
+smoke_p2
+  rotate: true
+  xy: 1165, 599
+  size: 172, 190
+  orig: 172, 190
+  offset: 0, 0
+  index: -1
+smoke_real_02
+  rotate: true
+  xy: 263, 519
+  size: 241, 205
+  orig: 241, 205
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 1289, 35
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: true
+  xy: 1394, 46
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1
+water_spray_04
+  rotate: false
+  xy: 1366, 732
+  size: 116, 77
+  orig: 116, 77
+  offset: 0, 0
+  index: -1

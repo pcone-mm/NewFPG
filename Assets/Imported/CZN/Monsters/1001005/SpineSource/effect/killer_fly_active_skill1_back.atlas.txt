@@ -1,0 +1,62 @@
+
+killer_fly_active_skill1_back.png
+size: 976,195
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud_09
+  rotate: false
+  xy: 816, 117
+  size: 136, 76
+  orig: 136, 76
+  offset: 0, 0
+  index: -1
+cloud_big_05
+  rotate: true
+  xy: 409, 7
+  size: 186, 175
+  orig: 186, 175
+  offset: 0, 0
+  index: -1
+cloud_crack_05
+  rotate: false
+  xy: 908, 42
+  size: 66, 73
+  orig: 66, 73
+  offset: 0, 0
+  index: -1
+dust_1_2
+  rotate: false
+  xy: 2, 7
+  size: 222, 186
+  orig: 222, 186
+  offset: 0, 0
+  index: -1
+sand_12
+  rotate: true
+  xy: 755, 2
+  size: 191, 59
+  orig: 191, 59
+  offset: 0, 0
+  index: -1
+smoke_1
+  rotate: true
+  xy: 226, 11
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1
+smoke_5
+  rotate: true
+  xy: 586, 14
+  size: 179, 167
+  orig: 179, 167
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: false
+  xy: 816, 22
+  size: 90, 93
+  orig: 92, 95
+  offset: 1, 2
+  index: -1

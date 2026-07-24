@@ -1,0 +1,20 @@
+
+bare_beetle_normal_skill1_obake.png
+size: 568,132
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+00
+  rotate: true
+  xy: 2, 30
+  size: 98, 381
+  orig: 116, 421
+  offset: 9, 24
+  index: -1
+01
+  rotate: false
+  xy: 385, 2
+  size: 179, 126
+  orig: 199, 153
+  offset: 10, 14
+  index: -1

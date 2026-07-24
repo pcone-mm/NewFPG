@@ -1,0 +1,13 @@
+
+heidemarie_30093_portrait_eff_mask.sct
+size: 404,1956
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+mask1
+  rotate: false
+  xy: 2, 2
+  size: 400, 1951
+  orig: 400, 1951
+  offset: 0, 0
+  index: -1

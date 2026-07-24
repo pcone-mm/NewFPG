@@ -1,0 +1,90 @@
+
+heidemarie_30093_ug1_3.sct
+size: 2000,1832
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+sword4_0001
+  rotate: true
+  xy: 898, 2
+  size: 336, 431
+  orig: 336, 431
+  offset: 0, 0
+  index: -1
+sword4_0002
+  rotate: false
+  xy: 426, 769
+  size: 336, 1055
+  orig: 336, 1055
+  offset: 0, 0
+  index: -1
+sword4_0003
+  rotate: false
+  xy: 764, 769
+  size: 336, 1055
+  orig: 336, 1055
+  offset: 0, 0
+  index: -1
+sword4_0004
+  rotate: true
+  xy: 898, 340
+  size: 234, 955
+  orig: 234, 955
+  offset: 0, 0
+  index: -1
+sword5_0001
+  rotate: true
+  xy: 1331, 5
+  size: 333, 404
+  orig: 333, 404
+  offset: 0, 0
+  index: -1
+sword5_0002
+  rotate: true
+  xy: 2, 581
+  size: 1243, 178
+  orig: 1243, 178
+  offset: 0, 0
+  index: -1
+sword5_0003
+  rotate: true
+  xy: 182, 605
+  size: 1219, 126
+  orig: 1219, 126
+  offset: 0, 0
+  index: -1
+sword5_0004
+  rotate: true
+  xy: 310, 727
+  size: 1097, 114
+  orig: 1097, 114
+  offset: 0, 0
+  index: -1
+sword7_0001
+  rotate: false
+  xy: 2, 51
+  size: 479, 528
+  orig: 479, 528
+  offset: 0, 0
+  index: -1
+sword7_0002
+  rotate: false
+  xy: 483, 31
+  size: 413, 736
+  orig: 413, 736
+  offset: 0, 0
+  index: -1
+sword7_0003
+  rotate: true
+  xy: 1102, 1201
+  size: 623, 892
+  orig: 623, 892
+  offset: 0, 0
+  index: -1
+sword7_0004
+  rotate: true
+  xy: 1102, 576
+  size: 623, 892
+  orig: 623, 892
+  offset: 0, 0
+  index: -1

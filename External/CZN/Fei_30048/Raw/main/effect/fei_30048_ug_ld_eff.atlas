@@ -1,0 +1,167 @@
+
+fei_30048_ug_ld_eff.sct
+size: 1928,1688
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow01
+  rotate: false
+  xy: 1529, 148
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+gra01
+  rotate: true
+  xy: 1176, 28
+  size: 200, 305
+  orig: 200, 305
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0000
+  rotate: false
+  xy: 2, 671
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0001
+  rotate: false
+  xy: 504, 1232
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0002
+  rotate: false
+  xy: 2, 222
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0003
+  rotate: false
+  xy: 906, 1232
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0004
+  rotate: false
+  xy: 1308, 1232
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0005
+  rotate: true
+  xy: 504, 830
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0006
+  rotate: true
+  xy: 953, 830
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0007
+  rotate: false
+  xy: 2, 1120
+  size: 500, 559
+  orig: 500, 559
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light01_0008
+  rotate: false
+  xy: 404, 381
+  size: 400, 447
+  orig: 400, 447
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0000
+  rotate: false
+  xy: 806, 427
+  size: 403, 401
+  orig: 403, 401
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0001
+  rotate: false
+  xy: 1402, 829
+  size: 403, 401
+  orig: 403, 401
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0002
+  rotate: false
+  xy: 1211, 454
+  size: 377, 373
+  orig: 377, 373
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0003
+  rotate: false
+  xy: 1590, 450
+  size: 305, 377
+  orig: 305, 377
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0004
+  rotate: true
+  xy: 806, 171
+  size: 254, 368
+  orig: 254, 368
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0005
+  rotate: false
+  xy: 1710, 1311
+  size: 214, 368
+  orig: 214, 368
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0006
+  rotate: true
+  xy: 2, 2
+  size: 218, 366
+  orig: 218, 366
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0007
+  rotate: true
+  xy: 785, 17
+  size: 152, 274
+  orig: 152, 274
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light02_0008
+  rotate: true
+  xy: 1211, 230
+  size: 222, 316
+  orig: 222, 316
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light03_0000
+  rotate: false
+  xy: 404, 24
+  size: 379, 355
+  orig: 379, 355
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light04_0000
+  rotate: true
+  xy: 1483, 38
+  size: 108, 280
+  orig: 108, 280
+  offset: 0, 0
+  index: -1
+pe_ug_ld_light05_0000
+  rotate: false
+  xy: 404, 989
+  size: 84, 129
+  orig: 84, 129
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,286 @@
+
+power_taker_buff_debuff_f.sct
+size: 1436,408
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+etw_dbff_spit11
+  rotate: true
+  xy: 1238, 98
+  size: 64, 44
+  orig: 64, 44
+  offset: 0, 0
+  index: -1
+etw_dbff_spit12
+  rotate: true
+  xy: 1238, 32
+  size: 64, 44
+  orig: 64, 44
+  offset: 0, 0
+  index: -1
+etw_dbff_spit13
+  rotate: true
+  xy: 1284, 98
+  size: 64, 44
+  orig: 64, 44
+  offset: 0, 0
+  index: -1
+etw_dbff_spit14
+  rotate: true
+  xy: 1284, 32
+  size: 64, 44
+  orig: 64, 44
+  offset: 0, 0
+  index: -1
+etw_dbff_spit21
+  rotate: false
+  xy: 402, 4
+  size: 72, 38
+  orig: 72, 38
+  offset: 0, 0
+  index: -1
+etw_dbff_spit22
+  rotate: false
+  xy: 476, 4
+  size: 72, 38
+  orig: 72, 38
+  offset: 0, 0
+  index: -1
+etw_dbff_spit23
+  rotate: false
+  xy: 550, 4
+  size: 72, 38
+  orig: 72, 38
+  offset: 0, 0
+  index: -1
+etw_dbff_spit24
+  rotate: false
+  xy: 624, 4
+  size: 72, 38
+  orig: 72, 38
+  offset: 0, 0
+  index: -1
+etw_dbff_spit25
+  rotate: false
+  xy: 698, 4
+  size: 72, 38
+  orig: 72, 38
+  offset: 0, 0
+  index: -1
+etw_dbff_spit31
+  rotate: false
+  xy: 402, 44
+  size: 114, 60
+  orig: 114, 60
+  offset: 0, 0
+  index: -1
+etw_dbff_spit32
+  rotate: false
+  xy: 518, 44
+  size: 114, 60
+  orig: 114, 60
+  offset: 0, 0
+  index: -1
+etw_dbff_spit33
+  rotate: false
+  xy: 634, 44
+  size: 114, 60
+  orig: 114, 60
+  offset: 0, 0
+  index: -1
+etw_dbff_spit34
+  rotate: false
+  xy: 750, 44
+  size: 114, 60
+  orig: 114, 60
+  offset: 0, 0
+  index: -1
+etw_dbff_spit35
+  rotate: false
+  xy: 866, 44
+  size: 114, 60
+  orig: 114, 60
+  offset: 0, 0
+  index: -1
+etw_dbff_spit36
+  rotate: false
+  xy: 982, 46
+  size: 114, 60
+  orig: 114, 60
+  offset: 0, 0
+  index: -1
+etw_dbff_spit41
+  rotate: false
+  xy: 1098, 76
+  size: 68, 72
+  orig: 68, 72
+  offset: 0, 0
+  index: -1
+etw_dbff_spit42
+  rotate: false
+  xy: 1098, 2
+  size: 68, 72
+  orig: 68, 72
+  offset: 0, 0
+  index: -1
+etw_dbff_spit43
+  rotate: false
+  xy: 1168, 76
+  size: 68, 72
+  orig: 68, 72
+  offset: 0, 0
+  index: -1
+etw_dbff_spit44
+  rotate: false
+  xy: 1168, 2
+  size: 68, 72
+  orig: 68, 72
+  offset: 0, 0
+  index: -1
+etw_dbff_spit51
+  rotate: true
+  xy: 976, 2
+  size: 40, 28
+  orig: 40, 28
+  offset: 0, 0
+  index: -1
+etw_dbff_spit52
+  rotate: true
+  xy: 911, 108
+  size: 40, 28
+  orig: 40, 28
+  offset: 0, 0
+  index: -1
+etw_dbff_spit53
+  rotate: true
+  xy: 941, 108
+  size: 40, 28
+  orig: 40, 28
+  offset: 0, 0
+  index: -1
+etw_dbff_spit54
+  rotate: true
+  xy: 971, 108
+  size: 40, 28
+  orig: 40, 28
+  offset: 0, 0
+  index: -1
+etw_dbff_spit61
+  rotate: true
+  xy: 816, 4
+  size: 38, 30
+  orig: 38, 30
+  offset: 0, 0
+  index: -1
+etw_dbff_spit62
+  rotate: true
+  xy: 848, 4
+  size: 38, 30
+  orig: 38, 30
+  offset: 0, 0
+  index: -1
+etw_dbff_spit63
+  rotate: true
+  xy: 880, 4
+  size: 38, 30
+  orig: 38, 30
+  offset: 0, 0
+  index: -1
+etw_dbff_spit64
+  rotate: true
+  xy: 912, 4
+  size: 38, 30
+  orig: 38, 30
+  offset: 0, 0
+  index: -1
+etw_dbff_spit65
+  rotate: true
+  xy: 944, 4
+  size: 38, 30
+  orig: 38, 30
+  offset: 0, 0
+  index: -1
+etw_dbff_spit71
+  rotate: false
+  xy: 1330, 112
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+etw_dbff_spit72
+  rotate: false
+  xy: 1382, 112
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+etw_dbff_spit73
+  rotate: false
+  xy: 1330, 60
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+etw_dbff_spit74
+  rotate: false
+  xy: 1330, 8
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+etw_dbff_spit75
+  rotate: false
+  xy: 1382, 60
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+etw_dbff_spit76
+  rotate: false
+  xy: 1382, 8
+  size: 50, 50
+  orig: 50, 50
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 911, 150
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+heal_1_1
+  rotate: true
+  xy: 1169, 164
+  size: 242, 261
+  orig: 242, 261
+  offset: 0, 0
+  index: -1
+hit_imp1_4
+  rotate: true
+  xy: 2, 6
+  size: 400, 398
+  orig: 400, 398
+  offset: 0, 0
+  index: -1
+power_taker_blur_01
+  rotate: true
+  xy: 402, 106
+  size: 300, 280
+  orig: 300, 280
+  offset: 0, 0
+  index: -1
+roundBurst1
+  rotate: true
+  xy: 684, 106
+  size: 300, 225
+  orig: 300, 225
+  offset: 0, 0
+  index: -1
+waterball
+  rotate: false
+  xy: 772, 2
+  size: 42, 40
+  orig: 42, 40
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,216 @@
+
+fei_30048_ug_eff_s1_4_2.png
+size: 1944,1340
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fire_a_06_1
+  rotate: true
+  xy: 1764, 64
+  size: 262, 173
+  orig: 262, 173
+  offset: 0, 0
+  index: -1
+fire_a_06_2
+  rotate: true
+  xy: 1271, 1074
+  size: 262, 173
+  orig: 262, 173
+  offset: 0, 0
+  index: -1
+fire_a_06_3
+  rotate: true
+  xy: 1271, 810
+  size: 262, 173
+  orig: 262, 173
+  offset: 0, 0
+  index: -1
+fire_a_06_4
+  rotate: true
+  xy: 1271, 546
+  size: 262, 173
+  orig: 262, 173
+  offset: 0, 0
+  index: -1
+flame3_1
+  rotate: false
+  xy: 1772, 1136
+  size: 170, 200
+  orig: 170, 200
+  offset: 0, 0
+  index: -1
+flame3_2
+  rotate: false
+  xy: 1772, 934
+  size: 170, 200
+  orig: 170, 200
+  offset: 0, 0
+  index: -1
+flame3_3
+  rotate: false
+  xy: 1772, 732
+  size: 170, 200
+  orig: 170, 200
+  offset: 0, 0
+  index: -1
+flame3_4
+  rotate: false
+  xy: 1772, 530
+  size: 170, 200
+  orig: 170, 200
+  offset: 0, 0
+  index: -1
+flame3_5
+  rotate: false
+  xy: 1772, 328
+  size: 170, 200
+  orig: 170, 200
+  offset: 0, 0
+  index: -1
+pei_ug_fire05_0000
+  rotate: false
+  xy: 625, 204
+  size: 200, 330
+  orig: 200, 330
+  offset: 0, 0
+  index: -1
+pei_ug_fire05_0001
+  rotate: true
+  xy: 798, 2
+  size: 200, 330
+  orig: 200, 330
+  offset: 0, 0
+  index: -1
+pei_ug_fire05_0002
+  rotate: false
+  xy: 827, 204
+  size: 200, 330
+  orig: 200, 330
+  offset: 0, 0
+  index: -1
+pei_ug_fire05_0003
+  rotate: false
+  xy: 1029, 204
+  size: 200, 330
+  orig: 200, 330
+  offset: 0, 0
+  index: -1
+pei_ug_fire05_0004
+  rotate: true
+  xy: 1130, 2
+  size: 200, 330
+  orig: 200, 330
+  offset: 0, 0
+  index: -1
+pei_ug_fire05_0005
+  rotate: false
+  xy: 1231, 204
+  size: 200, 330
+  orig: 200, 330
+  offset: 0, 0
+  index: -1
+pei_ug_fire07_0000
+  rotate: true
+  xy: 1462, 1189
+  size: 147, 308
+  orig: 147, 308
+  offset: 0, 0
+  index: -1
+pei_ug_fire07_0001
+  rotate: true
+  xy: 1462, 1040
+  size: 147, 308
+  orig: 147, 308
+  offset: 0, 0
+  index: -1
+pei_ug_fire07_0002
+  rotate: true
+  xy: 1462, 891
+  size: 147, 308
+  orig: 147, 308
+  offset: 0, 0
+  index: -1
+pei_ug_fire07_0003
+  rotate: true
+  xy: 1462, 742
+  size: 147, 308
+  orig: 147, 308
+  offset: 0, 0
+  index: -1
+pei_ug_fire07_0004
+  rotate: true
+  xy: 1462, 593
+  size: 147, 308
+  orig: 147, 308
+  offset: 0, 0
+  index: -1
+pei_ug_fire07_0005
+  rotate: true
+  xy: 1462, 444
+  size: 147, 308
+  orig: 147, 308
+  offset: 0, 0
+  index: -1
+pei_ug_fire08_0000
+  rotate: true
+  xy: 2, 25
+  size: 90, 197
+  orig: 90, 197
+  offset: 0, 0
+  index: -1
+pei_ug_fire08_0001
+  rotate: true
+  xy: 201, 25
+  size: 90, 197
+  orig: 90, 197
+  offset: 0, 0
+  index: -1
+pei_ug_fire08_0002
+  rotate: true
+  xy: 400, 25
+  size: 90, 197
+  orig: 90, 197
+  offset: 0, 0
+  index: -1
+pei_ug_fire08_0003
+  rotate: true
+  xy: 599, 25
+  size: 90, 197
+  orig: 90, 197
+  offset: 0, 0
+  index: -1
+sword01
+  rotate: true
+  xy: 604, 536
+  size: 800, 665
+  orig: 800, 665
+  offset: 0, 0
+  index: -1
+sword01_light1
+  rotate: true
+  xy: 2, 117
+  size: 400, 333
+  orig: 400, 333
+  offset: 0, 0
+  index: -1
+sword01_light2
+  rotate: false
+  xy: 1462, 198
+  size: 300, 244
+  orig: 300, 244
+  offset: 0, 0
+  index: -1
+sword01_light3
+  rotate: true
+  xy: 337, 117
+  size: 400, 286
+  orig: 400, 286
+  offset: 0, 0
+  index: -1
+sword02
+  rotate: false
+  xy: 2, 519
+  size: 600, 817
+  orig: 600, 817
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,83 @@
+
+30093_ug_portrait1_5.png
+size: 1328,1540
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a_acc_b
+  rotate: false
+  xy: 952, 2
+  size: 116, 133
+  orig: 116, 133
+  offset: 0, 0
+  index: -1
+a_arm_l2
+  rotate: false
+  xy: 999, 1059
+  size: 327, 476
+  orig: 327, 476
+  offset: 0, 0
+  index: -1
+a_bag
+  rotate: true
+  xy: 999, 137
+  size: 292, 297
+  orig: 292, 297
+  offset: 0, 0
+  index: -1
+a_breast1
+  rotate: false
+  xy: 999, 431
+  size: 322, 287
+  orig: 322, 287
+  offset: 0, 0
+  index: -1
+a_breast2
+  rotate: true
+  xy: 709, 5
+  size: 290, 241
+  orig: 290, 241
+  offset: 0, 0
+  index: -1
+a_breast3
+  rotate: false
+  xy: 1070, 14
+  size: 111, 121
+  orig: 111, 121
+  offset: 0, 0
+  index: -1
+a_dress2_base
+  rotate: false
+  xy: 2, 547
+  size: 995, 988
+  orig: 995, 988
+  offset: 0, 0
+  index: -1
+a_hair11
+  rotate: true
+  xy: 1183, 81
+  size: 54, 109
+  orig: 54, 109
+  offset: 0, 0
+  index: -1
+a_hair12
+  rotate: false
+  xy: 999, 720
+  size: 278, 337
+  orig: 278, 337
+  offset: 0, 0
+  index: -1
+a_hair13
+  rotate: true
+  xy: 709, 297
+  size: 248, 288
+  orig: 248, 288
+  offset: 0, 0
+  index: -1
+a_upper body
+  rotate: true
+  xy: 2, 2
+  size: 543, 705
+  orig: 543, 705
+  offset: 0, 0
+  index: -1

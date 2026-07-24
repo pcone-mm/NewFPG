@@ -1,0 +1,20 @@
+{
+  "command_sets": {
+    "buff_debuff_1_1": {
+      "name": "buff_debuff_1_1",
+      "play": "normal_buff_debuff_1",
+      "play_delay": 0.0,
+      "play_ready_flag": false,
+      "random_play": false
+    },
+    "m_attack_01_1": {
+      "name": "m_attack_01_1",
+      "play": "normal_m_attack_01",
+      "play_delay": 0.0,
+      "play_ready_flag": false,
+      "random_play": false
+    }
+  },
+  "loop_groups": {},
+  "version": 0
+}

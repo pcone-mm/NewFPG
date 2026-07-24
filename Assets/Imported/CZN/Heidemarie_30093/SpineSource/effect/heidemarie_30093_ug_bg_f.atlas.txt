@@ -1,0 +1,174 @@
+
+heidemarie_30093_ug_bg_f.png
+size: 2016,1456
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg_rock_1
+  rotate: false
+  xy: 335, 20
+  size: 258, 168
+  orig: 258, 168
+  offset: 0, 0
+  index: -1
+bg_rock_1g
+  rotate: false
+  xy: 924, 201
+  size: 295, 199
+  orig: 295, 199
+  offset: 0, 0
+  index: -1
+bg_rock_2
+  rotate: false
+  xy: 1663, 270
+  size: 132, 141
+  orig: 132, 141
+  offset: 0, 0
+  index: -1
+bg_rock_2g
+  rotate: true
+  xy: 1796, 20
+  size: 155, 166
+  orig: 155, 166
+  offset: 0, 0
+  index: -1
+bg_rock_3
+  rotate: false
+  xy: 1414, 20
+  size: 106, 122
+  orig: 106, 122
+  offset: 0, 0
+  index: -1
+bg_rock_3g
+  rotate: false
+  xy: 1663, 127
+  size: 131, 141
+  orig: 131, 141
+  offset: 0, 0
+  index: -1
+bg_rock_4
+  rotate: true
+  xy: 1797, 177
+  size: 225, 169
+  orig: 225, 169
+  offset: 0, 0
+  index: -1
+bg_rock_4g
+  rotate: true
+  xy: 1798, 650
+  size: 251, 193
+  orig: 251, 193
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1221, 144
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+r1
+  rotate: false
+  xy: 1728, 903
+  size: 214, 110
+  orig: 214, 110
+  offset: 0, 0
+  index: -1
+r1_g
+  rotate: false
+  xy: 1198, 32
+  size: 214, 110
+  orig: 214, 110
+  offset: 0, 0
+  index: -1
+r2
+  rotate: false
+  xy: 2, 44
+  size: 331, 144
+  orig: 331, 144
+  offset: 0, 0
+  index: -1
+r2_g
+  rotate: false
+  xy: 595, 36
+  size: 331, 144
+  orig: 331, 144
+  offset: 0, 0
+  index: -1
+r3
+  rotate: true
+  xy: 1516, 848
+  size: 600, 210
+  orig: 600, 210
+  offset: 0, 0
+  index: -1
+r3_g
+  rotate: false
+  xy: 2, 190
+  size: 600, 210
+  orig: 600, 210
+  offset: 0, 0
+  index: -1
+r4
+  rotate: true
+  xy: 1728, 1015
+  size: 433, 280
+  orig: 433, 280
+  offset: 0, 0
+  index: -1
+r4_g
+  rotate: true
+  xy: 1516, 413
+  size: 433, 280
+  orig: 433, 280
+  offset: 0, 0
+  index: -1
+r5
+  rotate: false
+  xy: 2, 926
+  size: 1512, 522
+  orig: 1512, 522
+  offset: 0, 0
+  index: -1
+r5_g
+  rotate: false
+  xy: 2, 402
+  size: 1512, 522
+  orig: 1512, 522
+  offset: 0, 0
+  index: -1
+r6
+  rotate: true
+  xy: 1798, 404
+  size: 244, 182
+  orig: 244, 182
+  offset: 0, 0
+  index: -1
+r6_g
+  rotate: true
+  xy: 1479, 156
+  size: 244, 182
+  orig: 244, 182
+  offset: 0, 0
+  index: -1
+rock_b_1_2_1
+  rotate: true
+  xy: 1522, 2
+  size: 152, 139
+  orig: 152, 139
+  offset: 0, 0
+  index: -1
+rock_b_2_1_2
+  rotate: true
+  xy: 928, 32
+  size: 167, 268
+  orig: 167, 268
+  offset: 0, 0
+  index: -1
+rock_b_2_1_2g
+  rotate: true
+  xy: 604, 182
+  size: 218, 318
+  orig: 218, 318
+  offset: 0, 0
+  index: -1

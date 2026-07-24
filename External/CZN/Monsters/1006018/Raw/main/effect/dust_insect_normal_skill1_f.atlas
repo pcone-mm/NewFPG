@@ -1,0 +1,97 @@
+
+dust_insect_normal_skill1_f.sct
+size: 1332,272
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud1
+  rotate: false
+  xy: 260, 2
+  size: 150, 86
+  orig: 150, 86
+  offset: 0, 0
+  index: -1
+cloud2
+  rotate: false
+  xy: 855, 70
+  size: 150, 68
+  orig: 150, 68
+  offset: 0, 0
+  index: -1
+cloud_07
+  rotate: false
+  xy: 1007, 103
+  size: 66, 35
+  orig: 66, 35
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 2, 11
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+obake1
+  rotate: true
+  xy: 562, 10
+  size: 117, 291
+  orig: 126, 300
+  offset: 4, 3
+  index: -1
+obake2
+  rotate: true
+  xy: 854, 140
+  size: 127, 290
+  orig: 139, 300
+  offset: 5, 5
+  index: -1
+obake3
+  rotate: true
+  xy: 562, 129
+  size: 138, 290
+  orig: 148, 300
+  offset: 5, 5
+  index: -1
+obake4
+  rotate: true
+  xy: 260, 90
+  size: 177, 300
+  orig: 177, 300
+  offset: 0, 0
+  index: -1
+obake_g1
+  rotate: true
+  xy: 855, 6
+  size: 62, 143
+  orig: 68, 150
+  offset: 3, 3
+  index: -1
+obake_g2
+  rotate: true
+  xy: 1007, 14
+  size: 70, 143
+  orig: 77, 150
+  offset: 4, 3
+  index: -1
+obake_g3
+  rotate: true
+  xy: 1152, 13
+  size: 71, 143
+  orig: 77, 150
+  offset: 3, 3
+  index: -1
+obake_g4
+  rotate: true
+  xy: 412, 4
+  size: 84, 141
+  orig: 91, 150
+  offset: 4, 4
+  index: -1
+smoke_1
+  rotate: false
+  xy: 1146, 86
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1

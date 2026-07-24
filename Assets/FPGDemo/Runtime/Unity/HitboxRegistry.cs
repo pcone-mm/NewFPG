@@ -260,7 +260,7 @@ namespace FPG.Demo.Unity
         private bool staticBindingsRegistered;
         private RuntimeId staticPlayerRuntimeId;
         private RuntimeId staticEnemyRuntimeId;
-        private D0PlayerEntityView boundPlayerEntity;
+        private FpgPlayerEntityView boundPlayerEntity;
         private Collider boundPlayerEntityCollider;
 
         public int Count => byColliderInstanceId.Count;
@@ -269,7 +269,7 @@ namespace FPG.Demo.Unity
             && (StaticBindingCount == 0 || staticBindingsRegistered);
         public bool StaticBindingsRegistered => staticBindingsRegistered;
         public int StaticBindingCount => staticBindings == null ? 0 : staticBindings.Length;
-        public D0PlayerEntityView BoundPlayerEntity => boundPlayerEntity;
+        public FpgPlayerEntityView BoundPlayerEntity => boundPlayerEntity;
 
         public bool TryValidateStaticBindings(
             UnityAttackQuerySettings settings,
@@ -534,7 +534,7 @@ namespace FPG.Demo.Unity
         /// </summary>
         public bool TryBindPlayerEntity(
             RuntimeId playerRuntimeId,
-            D0PlayerEntityView playerEntity,
+            FpgPlayerEntityView playerEntity,
             GeometryId bodyGeometryId,
             out string error)
         {
@@ -608,7 +608,7 @@ namespace FPG.Demo.Unity
         /// Unregisters the currently bound player entity. An entity which does
         /// not own the active binding is already unbound from this registry.
         /// </summary>
-        public bool TryUnbindPlayerEntity(D0PlayerEntityView playerEntity)
+        public bool TryUnbindPlayerEntity(FpgPlayerEntityView playerEntity)
         {
             if (playerEntity == null || playerEntity != boundPlayerEntity)
             {

@@ -1,0 +1,125 @@
+
+nihilum_spector_death_01_2.png
+size: 1272,1040
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura12
+  rotate: false
+  xy: 1068, 109
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+burst1_0001
+  rotate: false
+  xy: 2, 727
+  size: 540, 311
+  orig: 540, 311
+  offset: 0, 0
+  index: -1
+burst1_0002
+  rotate: false
+  xy: 2, 414
+  size: 540, 311
+  orig: 540, 311
+  offset: 0, 0
+  index: -1
+burst1_0003
+  rotate: false
+  xy: 544, 727
+  size: 540, 311
+  orig: 540, 311
+  offset: 0, 0
+  index: -1
+circle1
+  rotate: false
+  xy: 552, 179
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+circle3
+  rotate: false
+  xy: 810, 179
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+glow01
+  rotate: false
+  xy: 1068, 44
+  size: 63, 63
+  orig: 63, 63
+  offset: 0, 0
+  index: -1
+glow02
+  rotate: false
+  xy: 2, 5
+  size: 403, 407
+  orig: 403, 407
+  offset: 0, 0
+  index: -1
+smoke10
+  rotate: true
+  xy: 1094, 311
+  size: 211, 171
+  orig: 211, 171
+  offset: 0, 0
+  index: -1
+smoke5
+  rotate: true
+  xy: 836, 2
+  size: 175, 230
+  orig: 175, 230
+  offset: 0, 0
+  index: -1
+smoke5_2
+  rotate: false
+  xy: 1094, 524
+  size: 175, 230
+  orig: 175, 230
+  offset: 0, 0
+  index: -1
+smokeLine10_1
+  rotate: true
+  xy: 1086, 756
+  size: 282, 146
+  orig: 282, 146
+  offset: 0, 0
+  index: -1
+smokeLine10_2
+  rotate: true
+  xy: 946, 443
+  size: 282, 146
+  orig: 282, 146
+  offset: 0, 0
+  index: -1
+smokeLine10_3
+  rotate: false
+  xy: 552, 31
+  size: 282, 146
+  orig: 282, 146
+  offset: 0, 0
+  index: -1
+smokeLine11_1
+  rotate: false
+  xy: 544, 582
+  size: 400, 143
+  orig: 400, 143
+  offset: 0, 0
+  index: -1
+smokeLine11_2
+  rotate: false
+  xy: 544, 437
+  size: 400, 143
+  orig: 400, 143
+  offset: 0, 0
+  index: -1
+smokeLine11_3
+  rotate: true
+  xy: 407, 12
+  size: 400, 143
+  orig: 400, 143
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,139 @@
+
+fei_30048_ux_bg3_5_2.png
+size: 1448,1056
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beam_core_1
+  rotate: true
+  xy: 942, 465
+  size: 200, 300
+  orig: 200, 300
+  offset: 0, 0
+  index: -1
+beam_core_2
+  rotate: false
+  xy: 1240, 750
+  size: 200, 300
+  orig: 200, 300
+  offset: 0, 0
+  index: -1
+beam_core_3
+  rotate: false
+  xy: 997, 163
+  size: 200, 300
+  orig: 200, 300
+  offset: 0, 0
+  index: -1
+bg3_back_1
+  rotate: false
+  xy: 942, 667
+  size: 231, 383
+  orig: 231, 383
+  offset: 0, 0
+  index: -1
+bg3_back_2
+  rotate: true
+  xy: 591, 123
+  size: 283, 404
+  orig: 283, 404
+  offset: 0, 0
+  index: -1
+bg3_cloud_1
+  rotate: true
+  xy: 617, 408
+  size: 642, 323
+  orig: 642, 323
+  offset: 0, 0
+  index: -1
+bg3_cloud_2
+  rotate: true
+  xy: 2, 63
+  size: 623, 239
+  orig: 623, 239
+  offset: 0, 0
+  index: -1
+bg3_cloud_3
+  rotate: false
+  xy: 1163, 22
+  size: 269, 139
+  orig: 269, 139
+  offset: 0, 0
+  index: -1
+bg3_middle_1
+  rotate: true
+  xy: 2, 688
+  size: 362, 613
+  orig: 362, 613
+  offset: 0, 0
+  index: -1
+bg3_middle_2
+  rotate: false
+  xy: 243, 151
+  size: 346, 535
+  orig: 346, 535
+  offset: 0, 0
+  index: -1
+bg3_water_1
+  rotate: false
+  xy: 1175, 687
+  size: 63, 363
+  orig: 63, 363
+  offset: 0, 0
+  index: -1
+flame_s_1
+  rotate: true
+  xy: 997, 7
+  size: 154, 164
+  orig: 154, 164
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1244, 548
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+smoke_real_01
+  rotate: true
+  xy: 1199, 169
+  size: 294, 182
+  orig: 294, 182
+  offset: 0, 0
+  index: -1
+speed3
+  rotate: true
+  xy: 243, 2
+  size: 147, 268
+  orig: 147, 268
+  offset: 0, 0
+  index: -1
+water_pillar_04
+  rotate: false
+  xy: 513, 79
+  size: 67, 70
+  orig: 67, 70
+  offset: 0, 0
+  index: -1
+water_pillar_05
+  rotate: false
+  xy: 2, 4
+  size: 70, 57
+  orig: 70, 57
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: true
+  xy: 582, 29
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1
+wave_ray1
+  rotate: true
+  xy: 679, 30
+  size: 91, 300
+  orig: 91, 300
+  offset: 0, 0
+  index: -1

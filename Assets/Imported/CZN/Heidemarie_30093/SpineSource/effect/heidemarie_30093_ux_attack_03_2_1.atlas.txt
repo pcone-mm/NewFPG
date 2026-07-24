@@ -1,0 +1,195 @@
+
+heidemarie_30093_ux_attack_03_2_1.png
+size: 992,1056
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 2, 67
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+hade_crack_01_1
+  rotate: false
+  xy: 914, 421
+  size: 36, 343
+  orig: 36, 343
+  offset: 0, 0
+  index: -1
+hade_crack_02
+  rotate: false
+  xy: 857, 382
+  size: 19, 98
+  orig: 19, 98
+  offset: 0, 0
+  index: -1
+hade_crack_02_1
+  rotate: true
+  xy: 260, 81
+  size: 64, 353
+  orig: 64, 353
+  offset: 0, 0
+  index: -1
+hade_crack_03_1
+  rotate: true
+  xy: 260, 47
+  size: 32, 442
+  orig: 32, 442
+  offset: 0, 0
+  index: -1
+hade_crack_04_1
+  rotate: false
+  xy: 952, 544
+  size: 27, 226
+  orig: 27, 226
+  offset: 0, 0
+  index: -1
+hade_crack_05_1
+  rotate: false
+  xy: 926, 772
+  size: 57, 280
+  orig: 57, 280
+  offset: 0, 0
+  index: -1
+hade_crack_06
+  rotate: false
+  xy: 952, 462
+  size: 26, 80
+  orig: 26, 80
+  offset: 0, 0
+  index: -1
+hade_crack_10
+  rotate: false
+  xy: 930, 49
+  size: 58, 144
+  orig: 58, 144
+  offset: 0, 0
+  index: -1
+hade_crack_12_1
+  rotate: true
+  xy: 237, 2
+  size: 43, 348
+  orig: 43, 348
+  offset: 0, 0
+  index: -1
+hade_crack_13
+  rotate: true
+  xy: 243, 455
+  size: 269, 465
+  orig: 269, 465
+  offset: 0, 0
+  index: -1
+hade_crack_14
+  rotate: true
+  xy: 2, 24
+  size: 41, 233
+  orig: 41, 233
+  offset: 0, 0
+  index: -1
+hade_crack_15
+  rotate: false
+  xy: 2, 325
+  size: 239, 727
+  orig: 239, 727
+  offset: 0, 0
+  index: -1
+hade_crack_16
+  rotate: true
+  xy: 260, 232
+  size: 146, 390
+  orig: 146, 390
+  offset: 0, 0
+  index: -1
+hade_crack_17
+  rotate: false
+  xy: 243, 726
+  size: 620, 326
+  orig: 620, 326
+  offset: 0, 0
+  index: -1
+hade_crack_18
+  rotate: false
+  xy: 949, 202
+  size: 23, 217
+  orig: 23, 217
+  offset: 0, 0
+  index: -1
+hade_crack_19
+  rotate: true
+  xy: 243, 380
+  size: 73, 612
+  orig: 73, 612
+  offset: 0, 0
+  index: -1
+hade_crack_20
+  rotate: true
+  xy: 260, 147
+  size: 83, 376
+  orig: 83, 376
+  offset: 0, 0
+  index: -1
+hade_crack_21
+  rotate: true
+  xy: 865, 766
+  size: 286, 59
+  orig: 286, 59
+  offset: 0, 0
+  index: -1
+hade_crack_22
+  rotate: true
+  xy: 587, 22
+  size: 23, 65
+  orig: 23, 65
+  offset: 0, 0
+  index: -1
+hade_lightning_42_01
+  rotate: true
+  xy: 652, 309
+  size: 69, 224
+  orig: 69, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_42_02
+  rotate: true
+  xy: 652, 238
+  size: 69, 224
+  orig: 69, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_42_03
+  rotate: true
+  xy: 652, 167
+  size: 69, 224
+  orig: 69, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_42_04
+  rotate: true
+  xy: 638, 96
+  size: 69, 224
+  orig: 69, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_42_05
+  rotate: false
+  xy: 878, 195
+  size: 69, 224
+  orig: 69, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_42_06
+  rotate: true
+  xy: 704, 25
+  size: 69, 224
+  orig: 69, 224
+  offset: 0, 0
+  index: -1
+heal_3
+  rotate: true
+  xy: 710, 482
+  size: 242, 202
+  orig: 242, 202
+  offset: 0, 0
+  index: -1

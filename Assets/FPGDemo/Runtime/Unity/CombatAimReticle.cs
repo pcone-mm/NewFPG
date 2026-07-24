@@ -4,18 +4,14 @@ using UnityEngine.UI;
 namespace FPG.Demo.Unity
 {
     /// <summary>
-    /// Owns the D0 virtual free cursor. The operating-system cursor remains
+    /// Owns the formal virtual free cursor. The operating-system cursor remains
     /// locked while the project-wide Look action moves this reticle inside the
     /// authored safe area.
-    /// BattleSessionHost consumes only the normalized viewport coordinate.
     /// </summary>
     [DefaultExecutionOrder(-500)]
     [DisallowMultipleComponent]
     public sealed class CombatAimReticle : MonoBehaviour, ICombatAimViewportSource
     {
-        [SerializeField]
-        private BattleSessionHost sessionHost;
-
         [SerializeField, Min(0.01f)]
         private float pointerSensitivity = 1f;
 
@@ -45,8 +41,6 @@ namespace FPG.Demo.Unity
         private float pulseTimeRemaining;
         private readonly ProjectWideBattleInputAdapter inputAdapter =
             new ProjectWideBattleInputAdapter();
-
-        public BattleSessionHost SessionHost => sessionHost;
 
         public Vector2 Viewport => viewport;
 
@@ -89,18 +83,14 @@ namespace FPG.Demo.Unity
 
         private void Update()
         {
-            AdvanceFeedback(
-                Time.unscaledDeltaTime,
-                inputFrozen
-                    || (sessionHost != null && !sessionHost.IsSessionRunning));
+            AdvanceFeedback(Time.unscaledDeltaTime, inputFrozen);
 
             if (lockSystemCursor && Application.isFocused && !systemCursorLocked)
             {
                 SetSystemCursorLocked(true);
             }
 
-            if (inputFrozen
-                || (sessionHost != null && !sessionHost.IsSessionRunning))
+            if (inputFrozen)
             {
                 return;
             }

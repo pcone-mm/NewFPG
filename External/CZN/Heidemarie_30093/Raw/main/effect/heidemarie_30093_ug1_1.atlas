@@ -1,0 +1,83 @@
+
+heidemarie_30093_ug1_1.sct
+size: 1992,1608
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beam1
+  rotate: false
+  xy: 2, 2
+  size: 150, 7
+  orig: 150, 7
+  offset: 0, 0
+  index: -1
+beam2
+  rotate: true
+  xy: 1980, 1450
+  size: 150, 7
+  orig: 150, 7
+  offset: 0, 0
+  index: -1
+beam3
+  rotate: false
+  xy: 1440, 773
+  size: 150, 7
+  orig: 150, 7
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1440, 944
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+hit_imp1_4
+  rotate: false
+  xy: 1440, 1202
+  size: 400, 398
+  orig: 400, 398
+  offset: 0, 0
+  index: -1
+slash_hit1
+  rotate: true
+  xy: 1842, 260
+  size: 1340, 136
+  orig: 1340, 136
+  offset: 0, 0
+  index: -1
+sword8_0001
+  rotate: false
+  xy: 1440, 782
+  size: 347, 160
+  orig: 347, 160
+  offset: 0, 0
+  index: -1
+sword8_0002
+  rotate: false
+  xy: 2, 730
+  size: 717, 870
+  orig: 717, 870
+  offset: 0, 0
+  index: -1
+sword8_0003
+  rotate: false
+  xy: 721, 730
+  size: 717, 870
+  orig: 717, 870
+  offset: 0, 0
+  index: -1
+sword8_0004
+  rotate: true
+  xy: 2, 11
+  size: 717, 870
+  orig: 717, 870
+  offset: 0, 0
+  index: -1
+sword8_0005
+  rotate: true
+  xy: 874, 11
+  size: 717, 870
+  orig: 717, 870
+  offset: 0, 0
+  index: -1

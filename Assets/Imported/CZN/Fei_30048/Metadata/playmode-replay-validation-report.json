@@ -1,0 +1,99 @@
+{
+  "character": "绯",
+  "character_id": "30048",
+  "unity_version": "6000.3.15f1",
+  "scene": "Assets/Imported/CZN/Fei_30048/Preview/Fei_30048_SkillPreview.unity",
+  "playback_mode": "single_play_then_stopped_cleanup",
+  "completion_behavior": "clear runtime Spine and particle layers, hide standby, then loop b_idle",
+  "console": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "u4_attack": {
+    "duration": 2.9164,
+    "sample_time": 1.016,
+    "expected_runtime_objects": 18,
+    "runtime_objects": 18,
+    "active_spine": 5,
+    "active_particles": 4,
+    "attachment_signature": "BC31D60E672116E3:321",
+    "r_replays": {
+      "passed": 3,
+      "attempted": 3,
+      "all_signatures_stable": true
+    },
+    "natural_completions": {
+      "passed": 3,
+      "attempted": 3,
+      "state": {
+        "completion_signal": "PlayableDirector.stopped",
+        "director_state_after_stop": "Paused",
+        "completed": true,
+        "actor_animation": "b_idle",
+        "actor_loop": true,
+        "runtime_objects": 0,
+        "active_spine": 0,
+        "active_particles": 0,
+        "standby_visible": false
+      }
+    }
+  },
+  "ug_attack": {
+    "duration": 5.333,
+    "sample_time": 2.4,
+    "expected_runtime_objects": 28,
+    "runtime_objects": 28,
+    "active_spine": 9,
+    "active_particles": 0,
+    "attachment_signature": "42B0303EECF93DCC:130",
+    "r_replays": {
+      "passed": 3,
+      "attempted": 3,
+      "all_signatures_stable": true
+    },
+    "natural_completions": {
+      "passed": 3,
+      "attempted": 3,
+      "state": {
+        "completion_signal": "PlayableDirector.stopped",
+        "director_state_after_stop": "Paused",
+        "completed": true,
+        "actor_animation": "b_idle",
+        "actor_loop": true,
+        "runtime_objects": 0,
+        "active_spine": 0,
+        "active_particles": 0,
+        "standby_visible": false
+      }
+    },
+    "standby_visible_at_0_499": true,
+    "standby_visible_at_0_501": false,
+    "actor_animation_at_1_5": "ug_attack_1",
+    "camera_orthographic_size_samples": {
+      "1.130": 5.2,
+      "1.930": 2.501,
+      "1.963": 2.501,
+      "2.097": 1.65,
+      "2.263": 3.662
+    }
+  },
+  "pause_resume": {
+    "paused": {
+      "director_state": "Paused",
+      "skill": "u4_attack",
+      "actor_animation": "u4_attack_play",
+      "completed": false
+    },
+    "resumed": {
+      "director_state": "Playing",
+      "skill": "u4_attack"
+    },
+    "pause_clears_runtime_layers": false
+  },
+  "screenshots": [
+    "Assets/Screenshots/CZN/Fei_30048/Fei_30048_ModelPreview.png",
+    "Assets/Screenshots/CZN/Fei_30048/Fei_30048_U4_1p016s.png",
+    "Assets/Screenshots/CZN/Fei_30048/Fei_30048_UG_2p4s.png",
+    "Assets/Screenshots/CZN/Fei_30048/Fei_30048_Completion_b_idle.png"
+  ]
+}

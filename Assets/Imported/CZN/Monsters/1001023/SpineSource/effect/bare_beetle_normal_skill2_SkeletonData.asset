@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1b3b4b945939a54ea0b23d3396115fb, type: 3}
+  m_Name: bare_beetle_normal_skill2_SkeletonData
+  m_EditorClassIdentifier: spine-unity::Spine.Unity.SkeletonDataAsset
+  atlasAssets:
+  - {fileID: 11400000, guid: efd568871d497a4409af186bd9a0ca4f, type: 2}
+  scale: 0.01
+  skeletonJSON: {fileID: 4900000, guid: cb7261b043bcef34cbef0dde425005d8, type: 3}
+  isUpgradingBlendModeMaterials: 0
+  blendModeMaterials:
+    requiresBlendModeMaterials: 1
+    applyAdditiveMaterial: 1
+    additiveMaterials:
+    - pageName: bare_beetle_normal_skill2.png
+      material: {fileID: 2100000, guid: 5e5559def6f7f4c4381a89e98b7442d2, type: 2}
+    multiplyMaterials:
+    - pageName: bare_beetle_normal_skill2.png
+      material: {fileID: 2100000, guid: ee5537a79aab70c4b965505f80e96729, type: 2}
+    screenMaterials: []
+  skeletonDataModifiers: []
+  fromAnimation: []
+  toAnimation: []
+  duration: []
+  defaultMix: 0.2
+  controller: {fileID: 0}

@@ -1,0 +1,279 @@
+
+heidemarie_30093_eff_attack_play1_target.png
+size: 2024,1864
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura1
+  rotate: false
+  xy: 738, 1662
+  size: 638, 196
+  orig: 638, 196
+  offset: 0, 0
+  index: -1
+aura1_2
+  rotate: false
+  xy: 738, 1464
+  size: 638, 196
+  orig: 638, 196
+  offset: 0, 0
+  index: -1
+aura2_1
+  rotate: false
+  xy: 916, 235
+  size: 229, 165
+  orig: 229, 165
+  offset: 0, 0
+  index: -1
+aura2_2
+  rotate: false
+  xy: 916, 68
+  size: 229, 165
+  orig: 229, 165
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 249, 1367
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+grad1
+  rotate: true
+  xy: 751, 1305
+  size: 157, 618
+  orig: 157, 618
+  offset: 0, 0
+  index: -1
+heid_impact1_0001
+  rotate: false
+  xy: 1378, 1656
+  size: 631, 202
+  orig: 631, 202
+  offset: 0, 0
+  index: -1
+heid_impact1_0002
+  rotate: false
+  xy: 1378, 1452
+  size: 631, 202
+  orig: 631, 202
+  offset: 0, 0
+  index: -1
+heid_impact1_0003
+  rotate: false
+  xy: 751, 1101
+  size: 631, 202
+  orig: 631, 202
+  offset: 0, 0
+  index: -1
+heid_impact1_0004
+  rotate: false
+  xy: 1384, 1113
+  size: 631, 202
+  orig: 631, 202
+  offset: 0, 0
+  index: -1
+heid_impact1_0005
+  rotate: true
+  xy: 351, 486
+  size: 631, 202
+  orig: 631, 202
+  offset: 0, 0
+  index: -1
+impact_a_10_1
+  rotate: false
+  xy: 690, 778
+  size: 569, 186
+  orig: 569, 186
+  offset: 0, 0
+  index: -1
+impact_a_10_2
+  rotate: false
+  xy: 690, 590
+  size: 569, 186
+  orig: 569, 186
+  offset: 0, 0
+  index: -1
+impact_a_10_3
+  rotate: false
+  xy: 690, 402
+  size: 569, 186
+  orig: 569, 186
+  offset: 0, 0
+  index: -1
+impact_a_10_4
+  rotate: true
+  xy: 1261, 395
+  size: 569, 186
+  orig: 569, 186
+  offset: 0, 0
+  index: -1
+impact_a_15_1
+  rotate: false
+  xy: 1371, 1317
+  size: 646, 133
+  orig: 646, 133
+  offset: 0, 0
+  index: -1
+impact_a_15_2
+  rotate: true
+  xy: 216, 438
+  size: 646, 133
+  orig: 646, 133
+  offset: 0, 0
+  index: -1
+impact_a_15_3
+  rotate: true
+  xy: 555, 471
+  size: 646, 133
+  orig: 646, 133
+  offset: 0, 0
+  index: -1
+impact_a_15_4
+  rotate: false
+  xy: 690, 966
+  size: 646, 133
+  orig: 646, 133
+  offset: 0, 0
+  index: -1
+impact_a_2_1
+  rotate: true
+  xy: 1703, 162
+  size: 139, 157
+  orig: 139, 157
+  offset: 0, 0
+  index: -1
+impact_a_2_2
+  rotate: false
+  xy: 1862, 144
+  size: 139, 157
+  orig: 139, 157
+  offset: 0, 0
+  index: -1
+impact_a_2_3
+  rotate: true
+  xy: 1637, 21
+  size: 139, 157
+  orig: 139, 157
+  offset: 0, 0
+  index: -1
+pati1
+  rotate: false
+  xy: 2, 436
+  size: 212, 648
+  orig: 212, 648
+  offset: 0, 0
+  index: -1
+pati2
+  rotate: true
+  xy: 1147, 34
+  size: 178, 488
+  orig: 178, 488
+  offset: 0, 0
+  index: -1
+ring_a_7_2
+  rotate: false
+  xy: 2, 1086
+  size: 245, 772
+  orig: 245, 772
+  offset: 0, 0
+  index: -1
+ringb1_1
+  rotate: true
+  xy: 1951, 827
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_2
+  rotate: false
+  xy: 2, 68
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_3
+  rotate: true
+  xy: 1951, 541
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_4
+  rotate: false
+  xy: 2, 2
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_5
+  rotate: true
+  xy: 294, 152
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_6
+  rotate: false
+  xy: 1703, 303
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+sere_shcok02
+  rotate: true
+  xy: 2, 134
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1
+wind1_0001
+  rotate: false
+  xy: 249, 1119
+  size: 500, 246
+  orig: 500, 246
+  offset: 0, 0
+  index: -1
+wind1_0002
+  rotate: false
+  xy: 1449, 865
+  size: 500, 246
+  orig: 500, 246
+  offset: 0, 0
+  index: -1
+wind1_0003
+  rotate: false
+  xy: 1449, 617
+  size: 500, 246
+  orig: 500, 246
+  offset: 0, 0
+  index: -1
+wind1_0004
+  rotate: false
+  xy: 1449, 369
+  size: 500, 246
+  orig: 500, 246
+  offset: 0, 0
+  index: -1
+wind2_0001
+  rotate: false
+  xy: 360, 247
+  size: 554, 153
+  orig: 554, 153
+  offset: 0, 0
+  index: -1
+wind2_0002
+  rotate: false
+  xy: 360, 92
+  size: 554, 153
+  orig: 554, 153
+  offset: 0, 0
+  index: -1
+wind2_0003
+  rotate: false
+  xy: 1147, 214
+  size: 554, 153
+  orig: 554, 153
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_u5_attack_play1_target_pati1</string>
+        <key>x</key>
+        <string>-50</string>
+        <key>y</key>
+        <string>120</string>
+        <key>rotate</key>
+        <string>240</string>
+        <key>delay</key>
+        <string>450</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_attack_play_target_b</string>
+        <key>ani</key>
+        <string>u5_attack_play1</string>
+        <key>x</key>
+        <string>-620</string>
+        <key>y</key>
+        <string>-50</string>
+        <key>z</key>
+        <string>-10</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_sword_target</string>
+        <key>ani</key>
+        <string>u5_attack_play1_target</string>
+        <key>x</key>
+        <string>-620</string>
+        <key>y</key>
+        <string>-50</string>
+        <key>z</key>
+        <string>3</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_attack_play_target_f3</string>
+        <key>ani</key>
+        <string>u5_attack_play1</string>
+        <key>x</key>
+        <string>-620</string>
+        <key>y</key>
+        <string>-50</string>
+        <key>z</key>
+        <string>5</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_attack_play_target_f1</string>
+        <key>ani</key>
+        <string>u5_attack_play1</string>
+        <key>x</key>
+        <string>-620</string>
+        <key>y</key>
+        <string>-50</string>
+        <key>z</key>
+        <string>7</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_attack_play_target_f2</string>
+        <key>ani</key>
+        <string>u5_attack_play1</string>
+        <key>x</key>
+        <string>-620</string>
+        <key>y</key>
+        <string>-50</string>
+        <key>z</key>
+        <string>6</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_eff_attack_play1_target_pati3</string>
+        <key>ani</key>
+        <string />
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string>50</string>
+        <key>z</key>
+        <string>2</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string>.8</string>
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>particle</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+    </array>
+  </dict>
+</plist>

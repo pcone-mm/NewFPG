@@ -1,0 +1,24 @@
+{
+  "name": "1004020",
+  "scale": 1.0,
+  "offset_y_ratio": 8,
+  "render_width": 960,
+  "render_height": 640,
+  "scale_grade": "SMALL",
+  "extra_size": false,
+  "animations": [
+    "action0_idle",
+    "action1_idle",
+    "action1_to_normal",
+    "none",
+    "normal_death",
+    "normal_enter",
+    "normal_groggy",
+    "normal_hit",
+    "normal_idle",
+    "normal_model_transform",
+    "normal_skill1",
+    "normal_skill2",
+    "normal_surprise"
+  ]
+}

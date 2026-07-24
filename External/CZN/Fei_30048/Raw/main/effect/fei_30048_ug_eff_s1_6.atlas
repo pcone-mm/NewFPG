@@ -1,0 +1,153 @@
+
+fei_30048_ug_eff_s1_6.sct
+size: 1956,1916
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a2_b
+  rotate: true
+  xy: 1299, 331
+  size: 600, 400
+  orig: 600, 400
+  offset: 0, 0
+  index: -1
+a3_b
+  rotate: true
+  xy: 394, 212
+  size: 700, 403
+  orig: 700, 403
+  offset: 0, 0
+  index: -1
+a4_b
+  rotate: true
+  xy: 2, 914
+  size: 1000, 417
+  orig: 1000, 417
+  offset: 0, 0
+  index: -1
+a4_light
+  rotate: false
+  xy: 996, 6
+  size: 500, 209
+  orig: 500, 209
+  offset: 0, 0
+  index: -1
+c10_b
+  rotate: true
+  xy: 421, 1214
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c10_light0000
+  rotate: true
+  xy: 702, 1214
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c10_light0001
+  rotate: true
+  xy: 799, 217
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c10_light0002
+  rotate: false
+  xy: 923, 933
+  size: 700, 279
+  orig: 700, 279
+  offset: 0, 0
+  index: -1
+c12_b
+  rotate: true
+  xy: 1701, 1070
+  size: 400, 251
+  orig: 400, 251
+  offset: 0, 0
+  index: -1
+c12_b_light0000
+  rotate: true
+  xy: 1701, 668
+  size: 400, 251
+  orig: 400, 251
+  offset: 0, 0
+  index: -1
+c12_b_light0001
+  rotate: true
+  xy: 1701, 266
+  size: 400, 251
+  orig: 400, 251
+  offset: 0, 0
+  index: -1
+c12_b_light0002
+  rotate: false
+  xy: 1498, 13
+  size: 400, 251
+  orig: 400, 251
+  offset: 0, 0
+  index: -1
+c5_b
+  rotate: true
+  xy: 983, 1214
+  size: 700, 217
+  orig: 700, 217
+  offset: 0, 0
+  index: -1
+c5_light0000
+  rotate: true
+  xy: 1202, 1214
+  size: 700, 217
+  orig: 700, 217
+  offset: 0, 0
+  index: -1
+c5_light0001
+  rotate: true
+  xy: 1421, 1214
+  size: 700, 217
+  orig: 700, 217
+  offset: 0, 0
+  index: -1
+c5_light0002
+  rotate: true
+  xy: 1080, 231
+  size: 700, 217
+  orig: 700, 217
+  offset: 0, 0
+  index: -1
+c6_2
+  rotate: false
+  xy: 421, 919
+  size: 500, 293
+  orig: 500, 293
+  offset: 0, 0
+  index: -1
+c8_2
+  rotate: false
+  xy: 1640, 1472
+  size: 300, 140
+  orig: 300, 140
+  offset: 0, 0
+  index: -1
+glow01
+  rotate: false
+  xy: 1640, 1614
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+sky2
+  rotate: true
+  xy: 2, 112
+  size: 800, 390
+  orig: 800, 390
+  offset: 0, 0
+  index: -1
+sky_light
+  rotate: false
+  xy: 394, 2
+  size: 600, 208
+  orig: 600, 208
+  offset: 0, 0
+  index: -1

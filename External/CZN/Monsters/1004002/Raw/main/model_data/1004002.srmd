@@ -1,0 +1,629 @@
+{
+  "name": "1004002",
+  "skin_name": "default",
+  "model_type": "monster",
+  "scale": 1.3,
+  "offset_y_ratio": 8,
+  "render_width": 960,
+  "render_height": 640,
+  "scale_grade": "SMALL",
+  "standby_x": 0,
+  "standby_y": 0,
+  "death_effect_name": "nihilum_spector_death_01",
+  "death_effect_bone": "target",
+  "use_unique_death": false,
+  "extra_size": false,
+  "command": {
+    "normal_buff_debuff_1": {
+      "name": "normal_buff_debuff_1",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "1ad47d53-6c87-4221-b1e2-648ecfa19318",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_buff_debuff_1",
+          "duration": 1466.7,
+          "loop": false,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "df08a29a-3fd9-4235-bba8-2e40c1d4c9db",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "1ad47d53-6c87-4221-b1e2-648ecfa19318",
+          "bounds": "414, 792, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "shake": [
+        {
+          "file_name": "cm_shake_vb_up",
+          "cam_ignore_hitstop": true,
+          "cam_ignore_slow": false,
+          "wait_until_end": false,
+          "id": null,
+          "guid": "9a0bd0a5-5e47-4f1c-8f73-617f9df3083f",
+          "sequence": 0,
+          "delay": 500.0,
+          "from_guid": "1ad47d53-6c87-4221-b1e2-648ecfa19318",
+          "bounds": "876, 457, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "SHAKE"
+        },
+        {
+          "file_name": "cm_shake_vb_up",
+          "cam_ignore_hitstop": true,
+          "cam_ignore_slow": false,
+          "wait_until_end": false,
+          "id": null,
+          "guid": "207b4cce-cb57-4bf8-9b2b-3040220a5534",
+          "sequence": 0,
+          "delay": 700.0,
+          "from_guid": "1ad47d53-6c87-4221-b1e2-648ecfa19318",
+          "bounds": "523, 457, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "SHAKE"
+        }
+      ],
+      "hit": [
+        {
+          "name": "action",
+          "motion_delay": 0.0,
+          "play_action": true,
+          "effect": [],
+          "wait_until_end": false,
+          "id": null,
+          "guid": "23453624-9369-4b17-935d-e61346a54acc",
+          "sequence": 0,
+          "delay": 700.0,
+          "from_guid": "1ad47d53-6c87-4221-b1e2-648ecfa19318",
+          "bounds": "700, 1000, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "HIT"
+        }
+      ],
+      "death": [],
+      "effect": [
+        {
+          "id": "",
+          "file_name": "power_taker_buff_debuff",
+          "group_name": null,
+          "duration": -1.0,
+          "type": "SELF",
+          "slot": "",
+          "bone_type": "ATTACH",
+          "offset": [
+            0,
+            0
+          ],
+          "opacity": 255,
+          "offset_xy": "0,0",
+          "scale": 1.0,
+          "rotation": 0.0,
+          "loop": false,
+          "loop_count": 0,
+          "zorder": 0,
+          "global_z": 0,
+          "inherit_scale": true,
+          "guid": "23d3d7ec-487a-46ea-b1a4-3aecacd157bc",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "1ad47d53-6c87-4221-b1e2-648ecfa19318",
+          "bounds": "985, 792, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "EFFECT"
+        }
+      ]
+    },
+    "normal_death": {
+      "name": "normal_death",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "441e601c-0306-432e-ae68-cc8aa7473f63",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_death",
+          "duration": 1533.3,
+          "loop": false,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "10c20a73-d0f4-4ecc-a740-b72465d3c470",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "441e601c-0306-432e-ae68-cc8aa7473f63",
+          "bounds": "700, 1000, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "death": []
+    },
+    "normal_enter": {
+      "name": "normal_enter",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "9e631f94-c109-4dc0-9623-de85dc74b742",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_enter",
+          "duration": 1333.3,
+          "loop": false,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "7ca3a90f-312a-43d9-a8c9-e9dbd61391e9",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "9e631f94-c109-4dc0-9623-de85dc74b742",
+          "bounds": "700, 1000, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "death": []
+    },
+    "normal_groggy": {
+      "name": "normal_groggy",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "ffd49948-df71-40c1-ad25-f38d5951a482",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_groggy",
+          "duration": 3200.0,
+          "loop": true,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "d0858b99-6dd3-4b8d-8345-944131299d71",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "ffd49948-df71-40c1-ad25-f38d5951a482",
+          "bounds": "700, 1000, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "death": []
+    },
+    "normal_hit": {
+      "name": "normal_hit",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "e5dd257f-1631-4d55-a80b-4e2b93d6995f",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_hit",
+          "duration": 566.69995,
+          "loop": false,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "8259017a-15aa-4298-b6ac-27e532b334cf",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "e5dd257f-1631-4d55-a80b-4e2b93d6995f",
+          "bounds": "700, 1000, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "death": []
+    },
+    "normal_idle": {
+      "name": "normal_idle",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "3cbb1e57-92ce-45a0-bd9a-7fe38cc56453",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_idle",
+          "duration": 2400.0,
+          "loop": true,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "4d6ec973-51ca-4441-b387-330e68f1bb9e",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "3cbb1e57-92ce-45a0-bd9a-7fe38cc56453",
+          "bounds": "700, 1000, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "death": []
+    },
+    "normal_m_attack_01": {
+      "name": "normal_m_attack_01",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "a1f7de05-22ef-4cb6-a93a-8ba555f7d377",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_m_attack_01",
+          "duration": 1133.2999,
+          "loop": false,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "7c838728-17ef-46d7-8d0c-aae9dfef9709",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "a1f7de05-22ef-4cb6-a93a-8ba555f7d377",
+          "bounds": "414, 792, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "shake": [
+        {
+          "file_name": "cm_shake_vb_up",
+          "cam_ignore_hitstop": true,
+          "cam_ignore_slow": false,
+          "wait_until_end": false,
+          "id": null,
+          "guid": "3d242f25-1bb0-44cf-a17b-d679f3a0286b",
+          "sequence": 0,
+          "delay": 500.0,
+          "from_guid": "a1f7de05-22ef-4cb6-a93a-8ba555f7d377",
+          "bounds": "876, 457, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "SHAKE"
+        }
+      ],
+      "stop": [
+        {
+          "type": "STOP_SUBJECTS",
+          "strong_type": "STRONG",
+          "duration": 120.0,
+          "wait_until_end": false,
+          "id": null,
+          "guid": "b70f48d2-ae55-4404-aa1e-dbf006366255",
+          "sequence": 0,
+          "delay": 590.0,
+          "from_guid": "a1f7de05-22ef-4cb6-a93a-8ba555f7d377",
+          "bounds": "523, 457, 100, 70",
+          "elapsed": 0.0,
+          "etty": "STOP"
+        }
+      ],
+      "hit": [
+        {
+          "name": "action",
+          "motion_delay": 0.0,
+          "play_action": true,
+          "effect": [],
+          "wait_until_end": false,
+          "id": null,
+          "guid": "199fc326-55fe-473d-b8bd-415cfda7fc58",
+          "sequence": 0,
+          "delay": 500.0,
+          "from_guid": "a1f7de05-22ef-4cb6-a93a-8ba555f7d377",
+          "bounds": "700, 1000, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "HIT"
+        }
+      ],
+      "death": [],
+      "effect": [
+        {
+          "id": "",
+          "file_name": "hit_slash_normal_01",
+          "group_name": null,
+          "duration": -1.0,
+          "type": "TARGET",
+          "slot": "",
+          "bone": "target",
+          "bone_type": "POSITION",
+          "offset": [
+            0,
+            0
+          ],
+          "opacity": 255,
+          "offset_xy": "0,0",
+          "scale": 0.7,
+          "rotation": -110.0,
+          "loop": false,
+          "loop_count": 0,
+          "zorder": 0,
+          "global_z": 0,
+          "guid": "2f1b7a06-9bd4-4cde-a6fd-d013ecd09112",
+          "sequence": 2,
+          "delay": 0.0,
+          "from_guid": "199fc326-55fe-473d-b8bd-415cfda7fc58",
+          "bounds": "414, 1092, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "EFFECT"
+        },
+        {
+          "id": "",
+          "file_name": "hit_slash_normal_01",
+          "group_name": null,
+          "duration": -1.0,
+          "type": "TARGET",
+          "slot": "",
+          "bone": "target",
+          "bone_type": "POSITION",
+          "offset": [
+            0,
+            0
+          ],
+          "opacity": 255,
+          "offset_xy": "0,0",
+          "scale": 0.7,
+          "rotation": 20.0,
+          "loop": false,
+          "loop_count": 0,
+          "zorder": 0,
+          "global_z": 0,
+          "guid": "65320622-d132-4445-bb2f-b81fe95e8e36",
+          "sequence": 2,
+          "delay": 0.0,
+          "from_guid": "199fc326-55fe-473d-b8bd-415cfda7fc58",
+          "bounds": "523, 1242, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "EFFECT"
+        },
+        {
+          "id": "",
+          "file_name": "power_taker_attack",
+          "group_name": null,
+          "duration": -1.0,
+          "type": "SELF",
+          "slot": "",
+          "bone_type": "ATTACH",
+          "offset": [
+            0,
+            0
+          ],
+          "opacity": 255,
+          "offset_xy": "0,0",
+          "scale": 1.0,
+          "rotation": 0.0,
+          "loop": false,
+          "loop_count": 0,
+          "zorder": 0,
+          "global_z": 0,
+          "inherit_scale": true,
+          "guid": "abebd928-e1a7-4849-9188-5b928414fbfb",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "a1f7de05-22ef-4cb6-a93a-8ba555f7d377",
+          "bounds": "985, 792, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "EFFECT"
+        }
+      ]
+    },
+    "normal_surprise": {
+      "name": "normal_surprise",
+      "deprecated": false,
+      "duration": 0.0,
+      "template": "monster_default",
+      "bg_off": false,
+      "skip_idle": false,
+      "flag_skip_left_effect": false,
+      "flag_return_idle": false,
+      "spark_delay": 67.0,
+      "spark_offset": "0,0",
+      "manual_setting": false,
+      "entry": [
+        {
+          "wait_until_end": false,
+          "state": "Start",
+          "id": null,
+          "guid": "e4abe9e0-0b1f-4b74-855d-939c7e03e0d5",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": null,
+          "bounds": "700, 700, 100, 70",
+          "duration": 0.0,
+          "elapsed": 0.0,
+          "etty": "ENTRY"
+        }
+      ],
+      "ani": [
+        {
+          "animation_name": "normal_surprise",
+          "duration": 466.69998,
+          "loop": false,
+          "loop_count": 0,
+          "motion_skip_slow": 0.0,
+          "motion_skip_fast": 0.0,
+          "id": null,
+          "guid": "fb7b4665-b3ca-410c-a60f-ba1d4047a14c",
+          "sequence": 0,
+          "delay": 0.0,
+          "from_guid": "e4abe9e0-0b1f-4b74-855d-939c7e03e0d5",
+          "bounds": "700, 1000, 100, 70",
+          "wait_until_end": true,
+          "elapsed": 0.0,
+          "etty": "ANI"
+        }
+      ],
+      "death": []
+    }
+  },
+  "parts": null,
+  "preload": []
+}

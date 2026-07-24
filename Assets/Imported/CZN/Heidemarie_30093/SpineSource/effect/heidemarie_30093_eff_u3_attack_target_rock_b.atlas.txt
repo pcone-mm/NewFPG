@@ -1,0 +1,76 @@
+
+heidemarie_30093_eff_u3_attack_target_rock_b.png
+size: 608,576
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+r02
+  rotate: true
+  xy: 204, 370
+  size: 200, 182
+  orig: 200, 182
+  offset: 0, 0
+  index: -1
+r04
+  rotate: false
+  xy: 2, 146
+  size: 300, 149
+  orig: 300, 149
+  offset: 0, 0
+  index: -1
+r05
+  rotate: false
+  xy: 2, 2
+  size: 300, 142
+  orig: 300, 142
+  offset: 0, 0
+  index: -1
+r08
+  rotate: true
+  xy: 304, 168
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+r13
+  rotate: true
+  xy: 464, 204
+  size: 164, 121
+  orig: 164, 121
+  offset: 0, 0
+  index: -1
+r15
+  rotate: false
+  xy: 2, 297
+  size: 200, 273
+  orig: 200, 273
+  offset: 0, 0
+  index: -1
+r17
+  rotate: true
+  xy: 388, 370
+  size: 200, 111
+  orig: 200, 111
+  offset: 0, 0
+  index: -1
+r25
+  rotate: false
+  xy: 304, 16
+  size: 200, 150
+  orig: 200, 150
+  offset: 0, 0
+  index: -1
+r26
+  rotate: true
+  xy: 506, 60
+  size: 142, 99
+  orig: 142, 99
+  offset: 0, 0
+  index: -1
+r28
+  rotate: true
+  xy: 501, 395
+  size: 175, 84
+  orig: 175, 84
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1b3b4b945939a54ea0b23d3396115fb, type: 3}
+  m_Name: invader_death_01_f3_SkeletonData
+  m_EditorClassIdentifier: spine-unity::Spine.Unity.SkeletonDataAsset
+  atlasAssets:
+  - {fileID: 11400000, guid: d07ce637b14e2d347b7f30f0beaea87c, type: 2}
+  scale: 0.01
+  skeletonJSON: {fileID: 4900000, guid: 91fa4c3f2d9333b44ae1e8b42c3cf319, type: 3}
+  isUpgradingBlendModeMaterials: 0
+  blendModeMaterials:
+    requiresBlendModeMaterials: 1
+    applyAdditiveMaterial: 1
+    additiveMaterials:
+    - pageName: invader_death_01_f3.png
+      material: {fileID: 2100000, guid: b5dd660c8b5fadf448dd4d7768d21bce, type: 2}
+    multiplyMaterials: []
+    screenMaterials: []
+  skeletonDataModifiers: []
+  fromAnimation: []
+  toAnimation: []
+  duration: []
+  defaultMix: 0.2
+  controller: {fileID: 0}

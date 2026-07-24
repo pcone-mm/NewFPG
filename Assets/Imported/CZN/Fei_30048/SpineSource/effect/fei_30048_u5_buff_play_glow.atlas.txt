@@ -1,0 +1,13 @@
+
+fei_30048_u5_buff_play_glow.png
+size: 304,304
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 2, 2
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1

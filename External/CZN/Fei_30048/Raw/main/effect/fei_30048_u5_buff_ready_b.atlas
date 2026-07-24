@@ -1,0 +1,97 @@
+
+fei_30048_u5_buff_ready_b.sct
+size: 1744,440
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura10
+  rotate: false
+  xy: 2, 34
+  size: 393, 400
+  orig: 393, 400
+  offset: 0, 0
+  index: -1
+aura11
+  rotate: false
+  xy: 688, 212
+  size: 214, 222
+  orig: 214, 222
+  offset: 0, 0
+  index: -1
+aura8
+  rotate: true
+  xy: 397, 2
+  size: 432, 289
+  orig: 432, 289
+  offset: 0, 0
+  index: -1
+buff_fire1_b_3
+  rotate: true
+  xy: 688, 29
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_4
+  rotate: true
+  xy: 904, 253
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_5
+  rotate: false
+  xy: 933, 8
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_6
+  rotate: false
+  xy: 1116, 8
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_7
+  rotate: true
+  xy: 1149, 253
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_8
+  rotate: false
+  xy: 1299, 8
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_9
+  rotate: true
+  xy: 1394, 253
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+sand_19
+  rotate: true
+  xy: 1482, 60
+  size: 86, 97
+  orig: 86, 97
+  offset: 0, 0
+  index: -1
+shadow_light
+  rotate: true
+  xy: 1639, 34
+  size: 400, 99
+  orig: 400, 99
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 1482, 148
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1

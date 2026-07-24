@@ -1,0 +1,139 @@
+
+heidemarie_30093_ux_attack_01_b1.sct
+size: 1924,680
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 1139, 11
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+hade_glass_01_01
+  rotate: false
+  xy: 1047, 269
+  size: 247, 279
+  orig: 247, 279
+  offset: 0, 0
+  index: -1
+hade_glass_01_02
+  rotate: false
+  xy: 1296, 269
+  size: 247, 279
+  orig: 247, 279
+  offset: 0, 0
+  index: -1
+hade_glass_01_03
+  rotate: true
+  xy: 1397, 20
+  size: 247, 279
+  orig: 247, 279
+  offset: 0, 0
+  index: -1
+hade_glass_01_04
+  rotate: false
+  xy: 1545, 269
+  size: 247, 279
+  orig: 247, 279
+  offset: 0, 0
+  index: -1
+heal_3
+  rotate: false
+  xy: 1678, 65
+  size: 242, 202
+  orig: 242, 202
+  offset: 0, 0
+  index: -1
+light6
+  rotate: false
+  xy: 862, 550
+  size: 1000, 128
+  orig: 1000, 128
+  offset: 0, 0
+  index: -1
+light_long
+  rotate: true
+  xy: 678, 6
+  size: 170, 405
+  orig: 170, 405
+  offset: 0, 0
+  index: -1
+light_pillar_3
+  rotate: true
+  xy: 364, 5
+  size: 171, 312
+  orig: 171, 312
+  offset: 0, 0
+  index: -1
+rainbow_hologram_02
+  rotate: true
+  xy: 2, 38
+  size: 640, 360
+  orig: 640, 360
+  offset: 0, 0
+  index: -1
+secred_glass_01_11
+  rotate: true
+  xy: 1780, 2
+  size: 61, 73
+  orig: 61, 73
+  offset: 0, 0
+  index: -1
+secred_glass_01_15
+  rotate: true
+  xy: 1022, 191
+  size: 73, 115
+  orig: 73, 115
+  offset: 0, 0
+  index: -1
+secred_glass_01_17
+  rotate: false
+  xy: 949, 185
+  size: 71, 79
+  orig: 71, 79
+  offset: 0, 0
+  index: -1
+secred_glass_01_2
+  rotate: false
+  xy: 862, 179
+  size: 85, 85
+  orig: 85, 85
+  offset: 0, 0
+  index: -1
+secred_glass_01_21
+  rotate: false
+  xy: 1794, 489
+  size: 124, 59
+  orig: 124, 59
+  offset: 0, 0
+  index: -1
+secred_glass_01_24
+  rotate: true
+  xy: 1678, 2
+  size: 61, 100
+  orig: 61, 100
+  offset: 0, 0
+  index: -1
+secred_glass_01_3
+  rotate: false
+  xy: 1864, 616
+  size: 54, 62
+  orig: 54, 62
+  offset: 0, 0
+  index: -1
+spl_water5
+  rotate: true
+  xy: 862, 266
+  size: 282, 183
+  orig: 282, 183
+  offset: 0, 0
+  index: -1
+spot_01
+  rotate: false
+  xy: 364, 178
+  size: 496, 500
+  orig: 496, 500
+  offset: 0, 0
+  index: -1

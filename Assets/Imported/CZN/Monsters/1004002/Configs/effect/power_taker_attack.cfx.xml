@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>power_taker_attack_pati_01</string>
+        <key>x</key>
+        <string>-50</string>
+        <key>y</key>
+        <string>-10</string>
+        <key>z</key>
+        <string>5</string>
+        <key>scale</key>
+        <string>0.8</string>
+        <key>delay</key>
+        <string>500</string>
+        <key>format</key>
+        <string>particle</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>power_taker_attack</string>
+        <key>z</key>
+        <string>3</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

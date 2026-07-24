@@ -1,0 +1,125 @@
+
+fei_30048_ux_bg2_6.png
+size: 1984,1968
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg2_cloud_03
+  rotate: false
+  xy: 2, 771
+  size: 741, 1190
+  orig: 741, 1190
+  offset: 0, 0
+  index: -1
+bg2_cloud_03_b
+  rotate: false
+  xy: 1051, 2
+  size: 371, 596
+  orig: 371, 596
+  offset: 0, 0
+  index: -1
+bg2_cloud_04
+  rotate: false
+  xy: 1051, 1358
+  size: 676, 603
+  orig: 676, 603
+  offset: 0, 0
+  index: -1
+bg2_cloud_05
+  rotate: false
+  xy: 2, 2
+  size: 516, 767
+  orig: 516, 767
+  offset: 0, 0
+  index: -1
+bg2_cloud_06
+  rotate: false
+  xy: 1678, 951
+  size: 287, 334
+  orig: 287, 334
+  offset: 0, 0
+  index: -1
+bg2_cloud_06_b
+  rotate: false
+  xy: 1051, 605
+  size: 144, 168
+  orig: 144, 168
+  offset: 0, 0
+  index: -1
+bg2_cloud_07
+  rotate: true
+  xy: 1729, 1287
+  size: 270, 246
+  orig: 270, 246
+  offset: 0, 0
+  index: -1
+bg2_cloud_08
+  rotate: true
+  xy: 520, 62
+  size: 707, 529
+  orig: 707, 529
+  offset: 0, 0
+  index: -1
+bg2_cloud_09
+  rotate: false
+  xy: 1276, 600
+  size: 393, 354
+  orig: 393, 354
+  offset: 0, 0
+  index: -1
+bg2_cloud_10
+  rotate: false
+  xy: 745, 775
+  size: 529, 581
+  orig: 529, 581
+  offset: 0, 0
+  index: -1
+bg2_sky
+  rotate: true
+  xy: 745, 1372
+  size: 204, 238
+  orig: 204, 238
+  offset: 0, 0
+  index: -1
+cloud1
+  rotate: false
+  xy: 1671, 753
+  size: 246, 196
+  orig: 246, 196
+  offset: 0, 0
+  index: -1
+light2
+  rotate: true
+  xy: 1424, 96
+  size: 502, 534
+  orig: 502, 534
+  offset: 0, 0
+  index: -1
+light_ray1
+  rotate: true
+  xy: 1729, 1559
+  size: 402, 252
+  orig: 402, 252
+  offset: 0, 0
+  index: -1
+rainbow_flare2
+  rotate: false
+  xy: 745, 1671
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1
+ray4
+  rotate: false
+  xy: 1276, 956
+  size: 400, 400
+  orig: 400, 400
+  offset: 0, 0
+  index: -1
+wave_ray1
+  rotate: true
+  xy: 745, 1578
+  size: 91, 300
+  orig: 91, 300
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,27 @@
+
+fei_30048_ug_eff_s2_impact.sct
+size: 1728,1448
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+impact01
+  rotate: true
+  xy: 1584, 1144
+  size: 300, 137
+  orig: 300, 137
+  offset: 0, 0
+  index: -1
+impact02
+  rotate: false
+  xy: 2, 724
+  size: 1580, 720
+  orig: 1580, 720
+  offset: 0, 0
+  index: -1
+impact03
+  rotate: false
+  xy: 2, 2
+  size: 1580, 720
+  orig: 1580, 720
+  offset: 0, 0
+  index: -1

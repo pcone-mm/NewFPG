@@ -1,0 +1,153 @@
+
+honey_jar_porte_active_skill1.png
+size: 284,1040
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud1
+  rotate: true
+  xy: 187, 337
+  size: 150, 86
+  orig: 150, 86
+  offset: 0, 0
+  index: -1
+cloud2
+  rotate: true
+  xy: 187, 185
+  size: 150, 68
+  orig: 150, 68
+  offset: 0, 0
+  index: -1
+cloud_07
+  rotate: false
+  xy: 185, 2
+  size: 66, 35
+  orig: 66, 35
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 2, 781
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+obake1_1
+  rotate: false
+  xy: 2, 190
+  size: 64, 294
+  orig: 71, 300
+  offset: 3, 3
+  index: -1
+obake1_2
+  rotate: false
+  xy: 68, 191
+  size: 38, 293
+  orig: 46, 300
+  offset: 4, 3
+  index: -1
+obake1_3
+  rotate: false
+  xy: 153, 198
+  size: 32, 289
+  orig: 40, 300
+  offset: 4, 4
+  index: -1
+obake1_4
+  rotate: false
+  xy: 2, 486
+  size: 79, 293
+  orig: 89, 300
+  offset: 5, 3
+  index: -1
+obake1_g1
+  rotate: false
+  xy: 230, 41
+  size: 38, 142
+  orig: 46, 150
+  offset: 4, 4
+  index: -1
+obake1_g2
+  rotate: false
+  xy: 260, 915
+  size: 22, 122
+  orig: 46, 150
+  offset: 5, 16
+  index: -1
+obake1_g3
+  rotate: false
+  xy: 256, 670
+  size: 18, 109
+  orig: 46, 150
+  offset: 5, 20
+  index: -1
+obake1_g4
+  rotate: false
+  xy: 256, 520
+  size: 14, 43
+  orig: 46, 150
+  offset: 7, 21
+  index: -1
+obake2_1
+  rotate: false
+  xy: 83, 489
+  size: 68, 290
+  orig: 76, 300
+  offset: 4, 5
+  index: -1
+obake2_2
+  rotate: false
+  xy: 108, 197
+  size: 43, 290
+  orig: 50, 300
+  offset: 4, 4
+  index: -1
+obake2_3
+  rotate: false
+  xy: 153, 489
+  size: 50, 290
+  orig: 59, 300
+  offset: 5, 5
+  index: -1
+obake2_4
+  rotate: false
+  xy: 205, 493
+  size: 49, 286
+  orig: 56, 300
+  offset: 3, 3
+  index: -1
+obake2_g1
+  rotate: false
+  xy: 185, 39
+  size: 43, 144
+  orig: 51, 150
+  offset: 4, 3
+  index: -1
+obake2_g2
+  rotate: false
+  xy: 257, 205
+  size: 25, 130
+  orig: 51, 150
+  offset: 21, 9
+  index: -1
+obake2_g3
+  rotate: false
+  xy: 260, 800
+  size: 22, 113
+  orig: 51, 150
+  offset: 24, 9
+  index: -1
+obake2_g4
+  rotate: false
+  xy: 256, 565
+  size: 17, 103
+  orig: 51, 150
+  offset: 26, 10
+  index: -1
+smoke_1
+  rotate: true
+  xy: 2, 6
+  size: 182, 181
+  orig: 182, 181
+  offset: 0, 0
+  index: -1

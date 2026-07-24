@@ -9,26 +9,8 @@ EditorBuildSettings:
     path: Assets/FPGDemo/Scenes/Boot.unity
     guid: 5c7240055bf248e46ab6b4860e470313
   - enabled: 1
-    path: Assets/FPGDemo/Scenes/CombatLab.unity
-    guid: e5b04811f4934e9408f5fc2ae76c8c3a
-  - enabled: 1
     path: Assets/FPGDemo/Scenes/FormalRoom.unity
     guid: 83060ba3cbc3bb245ad3967738ee772a
-  - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/Scenes/PrototypeCaveBattleScene.unity
-    guid: 55988dc7f3c9f4045889a5af713904b1
-  - enabled: 1
-    path: Assets/Scenes/Dongfu_Home.unity
-    guid: 6843e92967e953c42b0703e808acc9d9
-  - enabled: 1
-    path: Assets/Scenes/lianqi.unity
-    guid: ab4d29e43d4e67349ae1a4f48b8d5f2e
-  - enabled: 1
-    path: Assets/Scenes/Shulin_L0.unity
-    guid: f04170a847ec8554e90d75c7e60f8807
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

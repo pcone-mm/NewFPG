@@ -1,0 +1,300 @@
+
+fei_30048_ux_bg3_3_1.png
+size: 1880,432
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bangsang_bg3_eye_01
+  rotate: false
+  xy: 2, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_02
+  rotate: false
+  xy: 119, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_03
+  rotate: false
+  xy: 236, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_04
+  rotate: false
+  xy: 353, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_05
+  rotate: false
+  xy: 470, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_06
+  rotate: false
+  xy: 587, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_07
+  rotate: false
+  xy: 704, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_08
+  rotate: false
+  xy: 821, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_09
+  rotate: false
+  xy: 938, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_10
+  rotate: false
+  xy: 1055, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_11
+  rotate: false
+  xy: 1172, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_12
+  rotate: false
+  xy: 1289, 2
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_13
+  rotate: false
+  xy: 1406, 27
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_14
+  rotate: false
+  xy: 1523, 27
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_15
+  rotate: true
+  xy: 1644, 173
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_16
+  rotate: true
+  xy: 1691, 308
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_17
+  rotate: false
+  xy: 1762, 354
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_18
+  rotate: false
+  xy: 1762, 283
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_19
+  rotate: true
+  xy: 1715, 166
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_20
+  rotate: false
+  xy: 1753, 95
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_21
+  rotate: true
+  xy: 1786, 166
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bangsang_bg3_eye_22
+  rotate: false
+  xy: 1753, 24
+  size: 115, 69
+  orig: 115, 69
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_0001
+  rotate: true
+  xy: 345, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_0002
+  rotate: false
+  xy: 345, 73
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_0003
+  rotate: true
+  xy: 505, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_0004
+  rotate: false
+  xy: 537, 73
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_0005
+  rotate: true
+  xy: 665, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_0006
+  rotate: false
+  xy: 729, 73
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_blur_0001
+  rotate: true
+  xy: 1305, 98
+  size: 133, 111
+  orig: 133, 111
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_blur_0002
+  rotate: true
+  xy: 1418, 98
+  size: 133, 111
+  orig: 133, 111
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_blur_0003
+  rotate: true
+  xy: 1465, 290
+  size: 133, 111
+  orig: 133, 111
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_blur_0004
+  rotate: true
+  xy: 1531, 155
+  size: 133, 111
+  orig: 133, 111
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_blur_0005
+  rotate: true
+  xy: 1578, 290
+  size: 133, 111
+  orig: 133, 111
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_base_blur_0006
+  rotate: true
+  xy: 1640, 20
+  size: 133, 111
+  orig: 133, 111
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_hl_0001
+  rotate: true
+  xy: 825, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_hl_0002
+  rotate: false
+  xy: 921, 73
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_hl_0003
+  rotate: true
+  xy: 985, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_hl_0004
+  rotate: false
+  xy: 1113, 73
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_hl_0005
+  rotate: true
+  xy: 1145, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+bg3_bs_fire1_hl_0006
+  rotate: true
+  xy: 1305, 233
+  size: 190, 158
+  orig: 190, 158
+  offset: 0, 0
+  index: -1
+ray2
+  rotate: false
+  xy: 2, 73
+  size: 248, 350
+  orig: 248, 350
+  offset: 0, 0
+  index: -1
+wave_ray1
+  rotate: false
+  xy: 252, 123
+  size: 91, 300
+  orig: 91, 300
+  offset: 0, 0
+  index: -1

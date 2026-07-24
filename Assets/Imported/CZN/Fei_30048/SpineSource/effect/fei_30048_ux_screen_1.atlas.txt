@@ -1,0 +1,27 @@
+
+fei_30048_ux_screen_1.png
+size: 800,1088
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+intro_transition_0001
+  rotate: false
+  xy: 2, 726
+  size: 790, 360
+  orig: 790, 360
+  offset: 0, 0
+  index: -1
+intro_transition_0002
+  rotate: false
+  xy: 2, 364
+  size: 790, 360
+  orig: 790, 360
+  offset: 0, 0
+  index: -1
+intro_transition_0003
+  rotate: false
+  xy: 2, 2
+  size: 790, 360
+  orig: 790, 360
+  offset: 0, 0
+  index: -1

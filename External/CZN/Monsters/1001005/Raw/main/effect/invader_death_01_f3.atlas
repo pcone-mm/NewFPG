@@ -1,0 +1,69 @@
+
+invader_death_01_f3.sct
+size: 1336,216
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+liquid2_0001
+  rotate: true
+  xy: 2, 2
+  size: 205, 152
+  orig: 205, 152
+  offset: 0, 0
+  index: -1
+liquid2_0002
+  rotate: true
+  xy: 156, 2
+  size: 205, 152
+  orig: 205, 152
+  offset: 0, 0
+  index: -1
+liquid2_0003
+  rotate: true
+  xy: 310, 2
+  size: 205, 152
+  orig: 205, 152
+  offset: 0, 0
+  index: -1
+liquid2_hl_0001
+  rotate: true
+  xy: 464, 2
+  size: 205, 152
+  orig: 205, 152
+  offset: 0, 0
+  index: -1
+liquid2_hl_0002
+  rotate: true
+  xy: 618, 2
+  size: 205, 152
+  orig: 205, 152
+  offset: 0, 0
+  index: -1
+liquid2_hl_0003
+  rotate: true
+  xy: 772, 2
+  size: 205, 152
+  orig: 205, 152
+  offset: 0, 0
+  index: -1
+liquid4_0001
+  rotate: false
+  xy: 926, 27
+  size: 133, 180
+  orig: 133, 180
+  offset: 0, 0
+  index: -1
+liquid4_0002
+  rotate: false
+  xy: 1061, 27
+  size: 133, 180
+  orig: 133, 180
+  offset: 0, 0
+  index: -1
+liquid4_0003
+  rotate: false
+  xy: 1196, 27
+  size: 133, 180
+  orig: 133, 180
+  offset: 0, 0
+  index: -1

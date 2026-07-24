@@ -1,0 +1,97 @@
+
+heidemarie_30093_eff_u3_attack_target_rcok.sct
+size: 720,560
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+2s1_v2
+  rotate: true
+  xy: 204, 304
+  size: 250, 172
+  orig: 250, 172
+  offset: 0, 0
+  index: -1
+bd15_1
+  rotate: true
+  xy: 650, 221
+  size: 131, 62
+  orig: 131, 62
+  offset: 0, 0
+  index: -1
+ground_burst4
+  rotate: true
+  xy: 535, 6
+  size: 114, 71
+  orig: 114, 71
+  offset: 0, 0
+  index: -1
+r02
+  rotate: true
+  xy: 378, 354
+  size: 200, 182
+  orig: 200, 182
+  offset: 0, 0
+  index: -1
+r03
+  rotate: false
+  xy: 2, 4
+  size: 300, 124
+  orig: 300, 124
+  offset: 0, 0
+  index: -1
+r04
+  rotate: false
+  xy: 2, 130
+  size: 300, 149
+  orig: 300, 149
+  offset: 0, 0
+  index: -1
+r05
+  rotate: true
+  xy: 304, 2
+  size: 300, 142
+  orig: 300, 142
+  offset: 0, 0
+  index: -1
+r06
+  rotate: false
+  xy: 448, 245
+  size: 200, 107
+  orig: 200, 107
+  offset: 0, 0
+  index: -1
+r07
+  rotate: true
+  xy: 562, 354
+  size: 200, 133
+  orig: 200, 133
+  offset: 0, 0
+  index: -1
+r13
+  rotate: false
+  xy: 448, 122
+  size: 164, 121
+  orig: 164, 121
+  offset: 0, 0
+  index: -1
+r14
+  rotate: true
+  xy: 448, 2
+  size: 118, 85
+  orig: 118, 85
+  offset: 0, 0
+  index: -1
+r15
+  rotate: false
+  xy: 2, 281
+  size: 200, 273
+  orig: 200, 273
+  offset: 0, 0
+  index: -1
+r26
+  rotate: true
+  xy: 614, 77
+  size: 142, 99
+  orig: 142, 99
+  offset: 0, 0
+  index: -1

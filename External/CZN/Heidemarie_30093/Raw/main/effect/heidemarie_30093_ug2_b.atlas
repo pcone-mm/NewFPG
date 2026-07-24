@@ -1,0 +1,160 @@
+
+heidemarie_30093_ug2_b.sct
+size: 1880,1912
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beam1
+  rotate: true
+  xy: 1867, 1757
+  size: 150, 7
+  orig: 150, 7
+  offset: 0, 0
+  index: -1
+beam2
+  rotate: true
+  xy: 1867, 1605
+  size: 150, 7
+  orig: 150, 7
+  offset: 0, 0
+  index: -1
+beam3
+  rotate: true
+  xy: 1867, 1453
+  size: 150, 7
+  orig: 150, 7
+  offset: 0, 0
+  index: -1
+circle04
+  rotate: false
+  xy: 435, 287
+  size: 509, 498
+  orig: 509, 498
+  offset: 0, 0
+  index: -1
+circle3
+  rotate: false
+  xy: 435, 787
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+circle6
+  rotate: false
+  xy: 1416, 130
+  size: 250, 250
+  orig: 250, 250
+  offset: 0, 0
+  index: -1
+flare_rainbow3_1
+  rotate: true
+  xy: 1404, 1400
+  size: 507, 461
+  orig: 507, 461
+  offset: 0, 0
+  index: -1
+flare_rainbow3_2
+  rotate: true
+  xy: 949, 792
+  size: 507, 461
+  orig: 507, 461
+  offset: 0, 0
+  index: -1
+flare_rainbow4_1
+  rotate: true
+  xy: 1412, 891
+  size: 507, 461
+  orig: 507, 461
+  offset: 0, 0
+  index: -1
+flare_rainbow4_2
+  rotate: true
+  xy: 1412, 382
+  size: 507, 461
+  orig: 507, 461
+  offset: 0, 0
+  index: -1
+flash_rainbow1
+  rotate: false
+  xy: 900, 23
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1158, 23
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+light1
+  rotate: false
+  xy: 975, 454
+  size: 354, 336
+  orig: 354, 336
+  offset: 0, 0
+  index: -1
+light_long
+  rotate: true
+  xy: 406, 48
+  size: 170, 405
+  orig: 170, 405
+  offset: 0, 0
+  index: -1
+light_pillar_2
+  rotate: true
+  xy: 975, 281
+  size: 171, 312
+  orig: 171, 312
+  offset: 0, 0
+  index: -1
+light_ray1
+  rotate: true
+  xy: 2, 2
+  size: 252, 402
+  orig: 252, 402
+  offset: 0, 0
+  index: -1
+shock_ring
+  rotate: false
+  xy: 2, 1439
+  size: 1400, 468
+  orig: 1400, 468
+  offset: 0, 0
+  index: -1
+shock_tri
+  rotate: false
+  xy: 2, 256
+  size: 431, 1043
+  orig: 431, 1043
+  offset: 0, 0
+  index: -1
+slash_hit2
+  rotate: false
+  xy: 2, 1301
+  size: 1340, 136
+  orig: 1340, 136
+  offset: 0, 0
+  index: -1
+speed_09
+  rotate: true
+  xy: 435, 220
+  size: 65, 463
+  orig: 65, 463
+  offset: 0, 0
+  index: -1
+speed_10
+  rotate: false
+  xy: 946, 322
+  size: 27, 463
+  orig: 27, 463
+  offset: 0, 0
+  index: -1
+speedline_1
+  rotate: false
+  xy: 1331, 452
+  size: 48, 338
+  orig: 48, 338
+  offset: 0, 0
+  index: -1

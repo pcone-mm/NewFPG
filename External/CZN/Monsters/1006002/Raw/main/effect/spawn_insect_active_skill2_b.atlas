@@ -1,0 +1,41 @@
+
+spawn_insect_active_skill2_b.sct
+size: 276,60
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+jelly_7
+  rotate: false
+  xy: 2, 2
+  size: 104, 24
+  orig: 112, 24
+  offset: 2, 0
+  index: -1
+jelly_7-2
+  rotate: false
+  xy: 108, 2
+  size: 104, 24
+  orig: 112, 24
+  offset: 2, 0
+  index: -1
+jelly_9
+  rotate: false
+  xy: 2, 28
+  size: 114, 27
+  orig: 136, 27
+  offset: 15, 0
+  index: -1
+jelly_9-2
+  rotate: false
+  xy: 118, 28
+  size: 114, 27
+  orig: 136, 27
+  offset: 15, 0
+  index: -1
+s3
+  rotate: false
+  xy: 234, 17
+  size: 40, 38
+  orig: 40, 38
+  offset: 0, 0
+  index: -1

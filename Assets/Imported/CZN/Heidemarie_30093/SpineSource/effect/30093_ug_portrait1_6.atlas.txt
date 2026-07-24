@@ -1,0 +1,13 @@
+
+30093_ug_portrait1_6.png
+size: 1484,1108
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+a_hair14
+  rotate: false
+  xy: 2, 2
+  size: 1477, 1104
+  orig: 1477, 1104
+  offset: 0, 0
+  index: -1

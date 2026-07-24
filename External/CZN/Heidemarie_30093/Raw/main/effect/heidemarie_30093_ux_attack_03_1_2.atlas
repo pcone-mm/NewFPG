@@ -1,0 +1,83 @@
+
+heidemarie_30093_ux_attack_03_1_2.sct
+size: 2000,932
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+hade_bg_07_03
+  rotate: false
+  xy: 690, 242
+  size: 942, 398
+  orig: 942, 398
+  offset: 0, 0
+  index: -1
+hade_bg_07_04
+  rotate: false
+  xy: 690, 642
+  size: 1099, 286
+  orig: 1099, 286
+  offset: 0, 0
+  index: -1
+hade_bg_07_05
+  rotate: false
+  xy: 360, 29
+  size: 303, 144
+  orig: 303, 144
+  offset: 0, 0
+  index: -1
+hade_bg_07_06
+  rotate: false
+  xy: 2, 175
+  size: 686, 753
+  orig: 686, 753
+  offset: 0, 0
+  index: -1
+hade_bg_07_07
+  rotate: true
+  xy: 1724, 2
+  size: 281, 133
+  orig: 281, 133
+  offset: 0, 0
+  index: -1
+hade_bg_07_08
+  rotate: false
+  xy: 690, 37
+  size: 543, 203
+  orig: 543, 203
+  offset: 0, 0
+  index: -1
+hade_bg_07_09
+  rotate: true
+  xy: 1859, 89
+  size: 305, 121
+  orig: 305, 121
+  offset: 0, 0
+  index: -1
+hade_bg_07_10
+  rotate: false
+  xy: 2, 15
+  size: 356, 158
+  orig: 356, 158
+  offset: 0, 0
+  index: -1
+hade_bg_07_11
+  rotate: true
+  xy: 1634, 285
+  size: 355, 141
+  orig: 355, 141
+  offset: 0, 0
+  index: -1
+hade_bg_07_12
+  rotate: false
+  xy: 1235, 15
+  size: 487, 225
+  orig: 487, 225
+  offset: 0, 0
+  index: -1
+hade_bg_07_13
+  rotate: true
+  xy: 1791, 396
+  size: 532, 204
+  orig: 532, 204
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,218 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Fei_30048_u1_buff
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: u1_buff
+  displayName: "U1 \u589E\u76CA"
+  duration: 2.4157
+  actorAnimations:
+  - phaseName: u1_buff_ready
+    animationName: u1_buff_ready
+    startTime: 0
+    duration: 0.46670002
+    loop: 0
+  - phaseName: u1_buff_play
+    animationName: u1_buff_play
+    startTime: 0.46670002
+    duration: 1.3333001
+    loop: 0
+  spineLayers:
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_f2
+    skeletonDataAsset: {fileID: 11400000, guid: c706adb57c770e0458c2118e353ce007, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 1.4
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 15
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_f1
+    skeletonDataAsset: {fileID: 11400000, guid: ff6fecac30606d247991e300c3b1d96e, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 0.8667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: 10
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_b1
+    skeletonDataAsset: {fileID: 11400000, guid: 015b002f8b336f4478d1969962367edc, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 1.4
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -10
+    loop: 0
+    attachmentBone: 
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_b2
+    skeletonDataAsset: {fileID: 11400000, guid: ec20d6d781503bf4abe4668b28ee4319, type: 2}
+    animationName: animation
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.46670002
+    duration: 1.0667
+    scale: 1
+    alpha: 1
+    rotation: 0
+    sortingOrder: -15
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_pat1
+    emitterName: fire_fast
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 0
+    offset: {x: -0.31, y: 0.14999999}
+    sourceVariance: {x: 2.5, y: 0.5}
+    force: {x: 0, y: 4}
+    startTime: 0.5167
+    duration: 0.95000005
+    scale: 1
+    rotation: 0
+    sortingOrder: 12
+    maxParticles: 250
+    emissionRate: 40
+    lifetimeMin: 0.15
+    lifetimeMax: 0.45000002
+    speedMin: 1.5
+    speedMax: 4.5
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: 90
+    angleVariance: 20
+    rotationVariance: 180
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_pat1
+    emitterName: pat_fast
+    originalTexturePath: particle/blur_ticle_03.sct
+    texture: {fileID: 2800000, guid: b44e6bb9a3a6b254ea1082406016e8a8, type: 3}
+    anchor: 0
+    offset: {x: -0.31, y: 0.14999999}
+    sourceVariance: {x: 2.5, y: 0.29999998}
+    force: {x: 0.099999994, y: 1.5}
+    startTime: 0.5167
+    duration: 0.55
+    scale: 1
+    rotation: 0
+    sortingOrder: 12
+    maxParticles: 250
+    emissionRate: 30
+    lifetimeMin: 0.10000001
+    lifetimeMax: 0.5
+    speedMin: 2
+    speedMax: 14
+    sizeMin: 0.049999982
+    sizeMax: 0.54999995
+    angle: 90
+    angleVariance: 20
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_pat1
+    emitterName: fire_fast
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 0
+    offset: {x: -0.31, y: 0.14999999}
+    sourceVariance: {x: 2.5, y: 0.5}
+    force: {x: 0, y: 4}
+    startTime: 0.5167
+    duration: 0.55
+    scale: 1
+    rotation: 0
+    sortingOrder: 12
+    maxParticles: 250
+    emissionRate: 50
+    lifetimeMin: 0.10000001
+    lifetimeMax: 0.5
+    speedMin: 1
+    speedMax: 9
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: 90
+    angleVariance: 20
+    rotationVariance: 180
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: fei_30048_u1_buff_play
+    sourceName: fei_30048_u1_buff_play_pat2
+    emitterName: fire_ticcle_f
+    originalTexturePath: particle/pati_03.sct
+    texture: {fileID: 2800000, guid: 9ec539df42cd60f468d21c34ae68b955, type: 3}
+    anchor: 0
+    offset: {x: -0.31, y: 0.5}
+    sourceVariance: {x: 2, y: 1}
+    force: {x: 0, y: 1}
+    startTime: 0.56570005
+    duration: 1.8499999
+    scale: 1
+    rotation: 0
+    sortingOrder: 11
+    maxParticles: 250
+    emissionRate: 20
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.8
+    speedMin: 0.5
+    speedMax: 2.5
+    sizeMin: 0.5
+    sizeMax: 3.5
+    angle: 90
+    angleVariance: 60
+    rotationVariance: 90
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues: []
+  cameraZoomCues: []
+  markers:
+  - kind: HIT
+    label: HIT
+    startTime: 0.59970003
+    duration: 0
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, and exact audited particle textures are bound
+    when present; unresolved textures use a soft fallback. Particle additive flags
+    use the project's additive particle shader fallback. BattleReady standby visibility
+    and its BRMD node transform are composed for UG. FRONT effects are placed on
+    the screen foreground. Masks, custom shaders, color-blend and post-process nodes
+    remain diagnostic markers. Negative/sentinel CFX scales use a positive preview
+    fallback, ancillary Spine Bezier keys are sampled with linear interpolation,
+    and only the primary cam/camera/node bone is sampled from multi-bone ancillary
+    skeletons. UX CUTIN remains diagnostic because the source node has neither id
+    nor file_name.
+  unresolvedResources: []

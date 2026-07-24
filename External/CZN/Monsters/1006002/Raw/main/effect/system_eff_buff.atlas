@@ -1,0 +1,76 @@
+
+system_eff_buff.sct
+size: 1964,492
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+akcalion_smoke8
+  rotate: true
+  xy: 1698, 247
+  size: 242, 262
+  orig: 242, 262
+  offset: 0, 0
+  index: -1
+aura4_re
+  rotate: false
+  xy: 841, 126
+  size: 353, 363
+  orig: 353, 363
+  offset: 0, 0
+  index: -1
+aura5
+  rotate: false
+  xy: 1698, 2
+  size: 252, 243
+  orig: 252, 243
+  offset: 0, 0
+  index: -1
+aura_8_re
+  rotate: false
+  xy: 1476, 75
+  size: 220, 414
+  orig: 220, 414
+  offset: 0, 0
+  index: -1
+glow
+  rotate: true
+  xy: 441, 87
+  size: 402, 398
+  orig: 402, 398
+  offset: 0, 0
+  index: -1
+sharpAura8
+  rotate: true
+  xy: 2, 14
+  size: 475, 437
+  orig: 475, 437
+  offset: 0, 0
+  index: -1
+sharpAura9
+  rotate: true
+  xy: 1196, 54
+  size: 435, 278
+  orig: 435, 278
+  offset: 0, 0
+  index: -1
+stroke_fill
+  rotate: true
+  xy: 441, 13
+  size: 25, 89
+  orig: 25, 89
+  offset: 0, 0
+  index: -1
+stroke_fill_add
+  rotate: true
+  xy: 532, 21
+  size: 17, 81
+  orig: 17, 81
+  offset: 0, 0
+  index: -1
+stroke_fill_blur
+  rotate: true
+  xy: 441, 40
+  size: 45, 117
+  orig: 45, 117
+  offset: 0, 0
+  index: -1

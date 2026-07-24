@@ -1,0 +1,34 @@
+
+hit_blunt_normal_b_01.sct
+size: 1348,340
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+blunt_imp_1_1
+  rotate: true
+  xy: 763, 4
+  size: 334, 376
+  orig: 358, 400
+  offset: 12, 12
+  index: -1
+blunt_imp_1_2
+  rotate: true
+  xy: 2, 2
+  size: 336, 379
+  orig: 358, 400
+  offset: 11, 10
+  index: -1
+blunt_imp_1_3
+  rotate: true
+  xy: 383, 2
+  size: 336, 378
+  orig: 358, 400
+  offset: 11, 11
+  index: -1
+flash_01
+  rotate: false
+  xy: 1141, 133
+  size: 205, 205
+  orig: 243, 243
+  offset: 19, 19
+  index: -1

@@ -1,0 +1,20 @@
+
+heidemarie_30093_ux_attack_03_1_1_2.sct
+size: 1896,856
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+hade_bg_07_15
+  rotate: false
+  xy: 2, 428
+  size: 1890, 424
+  orig: 1890, 424
+  offset: 0, 0
+  index: -1
+hade_bg_07_15_1
+  rotate: false
+  xy: 2, 2
+  size: 1890, 424
+  orig: 1890, 424
+  offset: 0, 0
+  index: -1

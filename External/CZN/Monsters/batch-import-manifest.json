@@ -1,0 +1,249 @@
+{
+  "dry_run": false,
+  "external_root": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters",
+  "monster_count": 8,
+  "monsters": [
+    {
+      "branch_counts": {
+        "main": 60
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 4,
+        "scsp_inner_bytes": 17,
+        "spine_atlas_text": 15,
+        "texture_png": 16,
+        "xml_config": 8
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1001005",
+      "label": "Monster_1001005",
+      "model_branch": "main",
+      "model_root": "model",
+      "monster_id": "1001005",
+      "original_bytes": 4303218,
+      "record_count": 60,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1001005\\full_records.json",
+      "source_branches": [
+        "main"
+      ],
+      "stored_bytes": 3914531,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1001005",
+      "unity_output_count": 60
+    },
+    {
+      "branch_counts": {
+        "main": 59
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 3,
+        "scsp_inner_bytes": 17,
+        "spine_atlas_text": 16,
+        "texture_png": 17,
+        "xml_config": 6
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1001023",
+      "label": "Monster_1001023",
+      "model_branch": "main",
+      "model_root": "model",
+      "monster_id": "1001023",
+      "original_bytes": 2108249,
+      "record_count": 59,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1001023\\full_records.json",
+      "source_branches": [
+        "main"
+      ],
+      "stored_bytes": 1903888,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1001023",
+      "unity_output_count": 59
+    },
+    {
+      "branch_counts": {
+        "main": 42
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 4,
+        "scsp_inner_bytes": 11,
+        "spine_atlas_text": 10,
+        "texture_png": 11,
+        "xml_config": 6
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1001016",
+      "label": "Monster_1001016",
+      "model_branch": "main",
+      "model_root": "model",
+      "monster_id": "1001016",
+      "original_bytes": 1425457,
+      "record_count": 42,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1001016\\full_records.json",
+      "source_branches": [
+        "main"
+      ],
+      "stored_bytes": 1257997,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1001016",
+      "unity_output_count": 42
+    },
+    {
+      "branch_counts": {
+        "main": 35
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 3,
+        "scsp_inner_bytes": 10,
+        "spine_atlas_text": 8,
+        "texture_png": 9,
+        "xml_config": 5
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1001003",
+      "label": "Monster_1001003",
+      "model_branch": "main",
+      "model_root": "model",
+      "monster_id": "1001003",
+      "original_bytes": 1607994,
+      "record_count": 35,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1001003\\full_records.json",
+      "source_branches": [
+        "main"
+      ],
+      "stored_bytes": 1444338,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1001003",
+      "unity_output_count": 35
+    },
+    {
+      "branch_counts": {
+        "main": 41
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 3,
+        "scsp_inner_bytes": 10,
+        "spine_atlas_text": 9,
+        "texture_png": 11,
+        "xml_config": 8
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1004002",
+      "label": "Monster_1004002",
+      "model_branch": "main",
+      "model_root": "model",
+      "monster_id": "1004002",
+      "original_bytes": 2279850,
+      "record_count": 41,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1004002\\full_records.json",
+      "source_branches": [
+        "main"
+      ],
+      "stored_bytes": 1975604,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1004002",
+      "unity_output_count": 41
+    },
+    {
+      "branch_counts": {
+        "main": 30,
+        "shadow": 3
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 3,
+        "scsp_inner_bytes": 8,
+        "spine_atlas_text": 7,
+        "texture_png": 9,
+        "xml_config": 6
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1004020",
+      "label": "Monster_1004020",
+      "model_branch": "shadow",
+      "model_root": "model",
+      "monster_id": "1004020",
+      "original_bytes": 1535335,
+      "record_count": 33,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1004020\\full_records.json",
+      "source_branches": [
+        "main",
+        "shadow"
+      ],
+      "stored_bytes": 1357768,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1004020",
+      "unity_output_count": 33
+    },
+    {
+      "branch_counts": {
+        "main": 46
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 4,
+        "scsp_inner_bytes": 12,
+        "spine_atlas_text": 11,
+        "texture_png": 12,
+        "xml_config": 7
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1006002",
+      "label": "Monster_1006002",
+      "model_branch": "main",
+      "model_root": "model",
+      "monster_id": "1006002",
+      "original_bytes": 1585263,
+      "record_count": 46,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1006002\\full_records.json",
+      "source_branches": [
+        "main"
+      ],
+      "stored_bytes": 1424110,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1006002",
+      "unity_output_count": 46
+    },
+    {
+      "branch_counts": {
+        "main": 22,
+        "shadow": 6
+      },
+      "config_branches": [
+        "main"
+      ],
+      "counts": {
+        "json_config": 3,
+        "scsp_inner_bytes": 7,
+        "spine_atlas_text": 6,
+        "texture_png": 7,
+        "xml_config": 5
+      },
+      "external_output": "D:\\Unity\\NewFPG\\External\\CZN\\Monsters\\1006018",
+      "label": "Monster_1006018",
+      "model_branch": "shadow",
+      "model_root": "model",
+      "monster_id": "1006018",
+      "original_bytes": 1228305,
+      "record_count": 28,
+      "records": "D:\\Unity\\NewFPG\\output\\CZNMonsterImportAudit\\1006018\\full_records.json",
+      "source_branches": [
+        "main",
+        "shadow"
+      ],
+      "stored_bytes": 1097285,
+      "unity_output": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1006018",
+      "unity_output_count": 28
+    }
+  ],
+  "pipeline_version": "1.1.0",
+  "record_count": 344,
+  "schema": "czn-monster-batch-extraction-v1",
+  "source_gameres_root": "F:\\WeGameApps\\rail_apps\\czn(2002460)\\bin\\appdata\\prod\\gameres",
+  "status": "complete",
+  "unity_root": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters"
+}

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2fa0424c2964e31b24eb031bb5e5b31, type: 3}
+  m_Name: RoomTag_Forest
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomTagDefinition
+  tagId: forest
+  displayName: Forest
+  designerNotes: Marks forest combat rooms.

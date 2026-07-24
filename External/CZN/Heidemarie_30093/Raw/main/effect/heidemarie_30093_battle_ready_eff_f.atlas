@@ -1,0 +1,146 @@
+
+heidemarie_30093_battle_ready_eff_f.sct
+size: 1888,1944
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+base
+  rotate: true
+  xy: 2, 2
+  size: 320, 1560
+  orig: 320, 1560
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: true
+  xy: 1044, 580
+  size: 390, 393
+  orig: 390, 393
+  offset: 0, 0
+  index: -1
+line1_0001
+  rotate: true
+  xy: 2, 756
+  size: 214, 1040
+  orig: 214, 1040
+  offset: 0, 0
+  index: -1
+line1_0002
+  rotate: true
+  xy: 2, 540
+  size: 214, 1040
+  orig: 214, 1040
+  offset: 0, 0
+  index: -1
+line1_0003
+  rotate: true
+  xy: 2, 324
+  size: 214, 1040
+  orig: 214, 1040
+  offset: 0, 0
+  index: -1
+line1_0004
+  rotate: false
+  xy: 1564, 121
+  size: 214, 1040
+  orig: 214, 1040
+  offset: 0, 0
+  index: -1
+seq1_0001
+  rotate: true
+  xy: 2, 1782
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0002
+  rotate: true
+  xy: 783, 1782
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0003
+  rotate: true
+  xy: 2, 1620
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0004
+  rotate: true
+  xy: 783, 1620
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0005
+  rotate: true
+  xy: 2, 1458
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0006
+  rotate: true
+  xy: 783, 1458
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0007
+  rotate: true
+  xy: 2, 1296
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0008
+  rotate: true
+  xy: 783, 1296
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0009
+  rotate: false
+  xy: 1564, 1163
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0010
+  rotate: false
+  xy: 1726, 1163
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0011
+  rotate: true
+  xy: 2, 1134
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0012
+  rotate: true
+  xy: 783, 1134
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0013
+  rotate: true
+  xy: 2, 972
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1
+seq1_0014
+  rotate: true
+  xy: 783, 972
+  size: 160, 779
+  orig: 160, 779
+  offset: 0, 0
+  index: -1

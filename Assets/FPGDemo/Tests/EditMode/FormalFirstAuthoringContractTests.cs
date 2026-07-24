@@ -82,7 +82,7 @@ namespace FPG.Demo.Tests.EditMode
                 scene =>
                 {
                     Assert.That(
-                        FindComponents<D0PlayerEntityView>(scene),
+                        FindComponents<FpgPlayerEntityView>(scene),
                         Is.Empty,
                         "Boot must not contain a gameplay player Entity.");
                     Assert.That(
@@ -102,17 +102,9 @@ namespace FPG.Demo.Tests.EditMode
                 scene =>
                 {
                     Assert.That(
-                        FindComponents<D0PlayerEntityView>(scene),
+                        FindComponents<FpgPlayerEntityView>(scene),
                         Is.Empty,
                         "FormalRoom player Entity must be composed at runtime.");
-                    Assert.That(
-                        FindComponents<BattleSessionHost>(scene),
-                        Is.Empty,
-                        "Legacy BattleSessionHost must not enter FormalRoom.");
-                    Assert.That(
-                        FindComponents<BattleSceneContext>(scene),
-                        Is.Empty,
-                        "Legacy BattleSceneContext must not enter FormalRoom.");
 
                     List<FpgFormalPlayerComposer> composers =
                         FindComponents<FpgFormalPlayerComposer>(scene);

@@ -1,0 +1,111 @@
+
+fei_30048_ux_bg2_4.png
+size: 1944,1848
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bangsangface_shadow1
+  rotate: false
+  xy: 1474, 432
+  size: 233, 353
+  orig: 233, 353
+  offset: 0, 0
+  index: -1
+bangsangface_shadow2
+  rotate: false
+  xy: 1765, 1299
+  size: 172, 243
+  orig: 172, 243
+  offset: 0, 0
+  index: -1
+bg1_cloud_fast1
+  rotate: true
+  xy: 1474, 787
+  size: 404, 201
+  orig: 404, 201
+  offset: 0, 0
+  index: -1
+bg1_cloud_fast3
+  rotate: true
+  xy: 1474, 1193
+  size: 653, 289
+  orig: 653, 289
+  offset: 0, 0
+  index: -1
+bg2_bangsang_glow1
+  rotate: false
+  xy: 1873, 1213
+  size: 41, 84
+  orig: 41, 84
+  offset: 0, 0
+  index: -1
+bg2_bangsang_glow2
+  rotate: false
+  xy: 1709, 685
+  size: 163, 203
+  orig: 163, 203
+  offset: 0, 0
+  index: -1
+bg2_bangsang_glow6
+  rotate: false
+  xy: 1765, 1193
+  size: 106, 104
+  orig: 106, 104
+  offset: 0, 0
+  index: -1
+bg2_cloud_01
+  rotate: false
+  xy: 2, 2
+  size: 1470, 1844
+  orig: 1470, 1844
+  offset: 0, 0
+  index: -1
+bg2_cloud_01_b
+  rotate: false
+  xy: 1766, 166
+  size: 126, 136
+  orig: 126, 136
+  offset: 0, 0
+  index: -1
+fog_01
+  rotate: true
+  xy: 1766, 304
+  size: 177, 121
+  orig: 177, 121
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1709, 483
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+glow_bend
+  rotate: false
+  xy: 1765, 1544
+  size: 172, 302
+  orig: 172, 302
+  offset: 0, 0
+  index: -1
+gy_cloud_1_1
+  rotate: true
+  xy: 1677, 890
+  size: 301, 197
+  orig: 301, 197
+  offset: 0, 0
+  index: -1
+rainbow_flare2
+  rotate: true
+  xy: 1474, 130
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1
+wave_ray1
+  rotate: true
+  xy: 1474, 37
+  size: 91, 300
+  orig: 91, 300
+  offset: 0, 0
+  index: -1

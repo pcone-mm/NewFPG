@@ -1,0 +1,76 @@
+
+heidemarie_30093_sword_eff_g.sct
+size: 1960,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: true
+  xy: 2, 3
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+gr_glass_dust221
+  rotate: false
+  xy: 495, 11
+  size: 281, 265
+  orig: 281, 265
+  offset: 0, 0
+  index: -1
+gr_glass_dust231
+  rotate: false
+  xy: 778, 11
+  size: 281, 265
+  orig: 281, 265
+  offset: 0, 0
+  index: -1
+gr_glass_dust311
+  rotate: false
+  xy: 1325, 220
+  size: 269, 270
+  orig: 269, 270
+  offset: 0, 0
+  index: -1
+gr_glass_dust321
+  rotate: false
+  xy: 1596, 220
+  size: 269, 270
+  orig: 269, 270
+  offset: 0, 0
+  index: -1
+pati1
+  rotate: true
+  xy: 495, 278
+  size: 212, 648
+  orig: 212, 648
+  offset: 0, 0
+  index: -1
+pati2
+  rotate: false
+  xy: 1145, 2
+  size: 178, 488
+  orig: 178, 488
+  offset: 0, 0
+  index: -1
+pati5
+  rotate: true
+  xy: 1325, 80
+  size: 138, 360
+  orig: 138, 360
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: false
+  xy: 1687, 58
+  size: 137, 160
+  orig: 137, 160
+  offset: 0, 0
+  index: -1
+pati7
+  rotate: true
+  xy: 1826, 62
+  size: 156, 129
+  orig: 156, 129
+  offset: 0, 0
+  index: -1

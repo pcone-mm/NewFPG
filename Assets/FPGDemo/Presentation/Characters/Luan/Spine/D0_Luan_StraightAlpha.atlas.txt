@@ -1,0 +1,83 @@
+
+D0_Luan_StraightAlpha.png
+size: 1901,663
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+1
+  rotate: false
+  xy: 2, 232
+  size: 787, 429
+  orig: 787, 429
+  offset: 0, 0
+  index: -1
+2
+  rotate: false
+  xy: 928, 3
+  size: 276, 271
+  orig: 276, 271
+  offset: 0, 0
+  index: -1
+2.5
+  rotate: false
+  xy: 1206, 152
+  size: 359, 122
+  orig: 359, 122
+  offset: 0, 0
+  index: -1
+3
+  rotate: false
+  xy: 791, 276
+  size: 590, 385
+  orig: 590, 385
+  offset: 0, 0
+  index: -1
+4.1
+  rotate: true
+  xy: 1737, 459
+  size: 84, 129
+  orig: 84, 129
+  offset: 0, 0
+  index: -1
+4.2
+  rotate: true
+  xy: 1374, 2
+  size: 148, 122
+  orig: 148, 122
+  offset: 0, 0
+  index: -1
+4.3
+  rotate: true
+  xy: 1737, 545
+  size: 116, 146
+  orig: 116, 146
+  offset: 0, 0
+  index: -1
+4.4
+  rotate: false
+  xy: 1206, 14
+  size: 166, 136
+  orig: 166, 136
+  offset: 0, 0
+  index: -1
+5.1
+  rotate: true
+  xy: 1567, 23
+  size: 283, 332
+  orig: 284, 333
+  offset: 0, 1
+  index: -1
+5.2
+  rotate: false
+  xy: 1383, 308
+  size: 352, 353
+  orig: 352, 353
+  offset: 0, 0
+  index: -1
+6
+  rotate: false
+  xy: 2, 5
+  size: 924, 225
+  orig: 924, 225
+  offset: 0, 0
+  index: -1

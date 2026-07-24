@@ -1,0 +1,41 @@
+
+heidemarie_30093_eff_u3_attack_target_wind_f.png
+size: 1856,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cross1
+  rotate: false
+  xy: 2, 41
+  size: 1206, 232
+  orig: 1206, 232
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: true
+  xy: 1359, 2
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+smoke1
+  rotate: false
+  xy: 2, 280
+  size: 428, 209
+  orig: 428, 209
+  offset: 0, 0
+  index: -1
+smoke3
+  rotate: false
+  xy: 432, 278
+  size: 537, 211
+  orig: 537, 211
+  offset: 0, 0
+  index: -1
+smoke4
+  rotate: false
+  xy: 971, 275
+  size: 386, 214
+  orig: 386, 214
+  offset: 0, 0
+  index: -1

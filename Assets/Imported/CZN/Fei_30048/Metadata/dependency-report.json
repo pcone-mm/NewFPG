@@ -1,0 +1,4743 @@
+{
+  "cfx": [
+    {
+      "path": "effect/fei_30048_attack_play1.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_attack_play1_f1",
+          "targets": [
+            "effect/fei_30048_attack_play1_f1.atlas",
+            "effect/fei_30048_attack_play1_f1.scsp",
+            "effect/fei_30048_attack_play1_f1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_attack_play1_f2",
+          "targets": [
+            "effect/fei_30048_attack_play1_f2.atlas",
+            "effect/fei_30048_attack_play1_f2.scsp",
+            "effect/fei_30048_attack_play1_f2.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 2,
+          "source": "fei_30048_attack_play1_pat1",
+          "targets": [
+            "effect/fei_30048_attack_play1_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_attack_play1_glow",
+          "targets": [
+            "effect/fei_30048_attack_play1_glow.atlas",
+            "effect/fei_30048_attack_play1_glow.scsp",
+            "effect/fei_30048_attack_play1_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_attack_play_target.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_attack_play_target",
+          "targets": [
+            "effect/fei_30048_attack_play_target.atlas",
+            "effect/fei_30048_attack_play_target.scsp",
+            "effect/fei_30048_attack_play_target.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_attack_play_target_pat1",
+          "targets": [
+            "effect/fei_30048_attack_play_target_pat1.particle"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_attack_play_target_glow.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_attack_play_target_glow",
+          "targets": [
+            "effect/fei_30048_attack_play_target_glow.atlas",
+            "effect/fei_30048_attack_play_target_glow.scsp",
+            "effect/fei_30048_attack_play_target_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_attack_play2.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_attack_play2_f2",
+          "targets": [
+            "effect/fei_30048_attack_play2_f2.atlas",
+            "effect/fei_30048_attack_play2_f2.scsp",
+            "effect/fei_30048_attack_play2_f2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_attack_play2_f1",
+          "targets": [
+            "effect/fei_30048_attack_play2_f1.atlas",
+            "effect/fei_30048_attack_play2_f1.scsp",
+            "effect/fei_30048_attack_play2_f1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_attack_play2_b1",
+          "targets": [
+            "effect/fei_30048_attack_play2_b1.atlas",
+            "effect/fei_30048_attack_play2_b1.scsp",
+            "effect/fei_30048_attack_play2_b1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_attack_play2_b2",
+          "targets": [
+            "effect/fei_30048_attack_play2_b2.atlas",
+            "effect/fei_30048_attack_play2_b2.scsp",
+            "effect/fei_30048_attack_play2_b2.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 4,
+          "source": "fei_30048_attack_play1_pat2",
+          "targets": [
+            "effect/fei_30048_attack_play1_pat2.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_attack_play2_glow",
+          "targets": [
+            "effect/fei_30048_attack_play2_glow.atlas",
+            "effect/fei_30048_attack_play2_glow.scsp",
+            "effect/fei_30048_attack_play2_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_buff_play.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_buff_play",
+          "targets": [
+            "effect/fei_30048_buff_play.atlas",
+            "effect/fei_30048_buff_play.scsp",
+            "effect/fei_30048_buff_play.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_buff_play_glow",
+          "targets": [
+            "effect/fei_30048_buff_play_glow.atlas",
+            "effect/fei_30048_buff_play_glow.scsp",
+            "effect/fei_30048_buff_play_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u1_buff_play.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u1_buff_play_f2",
+          "targets": [
+            "effect/fei_30048_u1_buff_play_f2.atlas",
+            "effect/fei_30048_u1_buff_play_f2.scsp",
+            "effect/fei_30048_u1_buff_play_f2.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_u1_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u1_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 2,
+          "source": "fei_30048_u1_buff_play_pat2",
+          "targets": [
+            "effect/fei_30048_u1_buff_play_pat2.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_u1_buff_play_f1",
+          "targets": [
+            "effect/fei_30048_u1_buff_play_f1.atlas",
+            "effect/fei_30048_u1_buff_play_f1.scsp",
+            "effect/fei_30048_u1_buff_play_f1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_u1_buff_play_b1",
+          "targets": [
+            "effect/fei_30048_u1_buff_play_b1.atlas",
+            "effect/fei_30048_u1_buff_play_b1.scsp",
+            "effect/fei_30048_u1_buff_play_b1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_u1_buff_play_b2",
+          "targets": [
+            "effect/fei_30048_u1_buff_play_b2.atlas",
+            "effect/fei_30048_u1_buff_play_b2.scsp",
+            "effect/fei_30048_u1_buff_play_b2.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u2_buff_play.cfx",
+      "primitives": [
+        {
+          "format": "particle",
+          "primitive_index": 0,
+          "source": "fei_30048_u2_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_u2_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_u2_buff_play_f2",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_f2.atlas",
+            "effect/fei_30048_u2_buff_play_f2.scsp",
+            "effect/fei_30048_u2_buff_play_f2.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 3,
+          "source": "fei_30048_u2_buff_play_pat3",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_pat3.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_u2_buff_play_f1",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_f1.atlas",
+            "effect/fei_30048_u2_buff_play_f1.scsp",
+            "effect/fei_30048_u2_buff_play_f1.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 5,
+          "source": "fei_30048_u2_buff_play_pat2",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_pat2.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 6,
+          "source": "fei_30048_u2_buff_play_b1",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_b1.atlas",
+            "effect/fei_30048_u2_buff_play_b1.scsp",
+            "effect/fei_30048_u2_buff_play_b1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_u2_buff_play_b2",
+          "targets": [
+            "effect/fei_30048_u2_buff_play_b2.atlas",
+            "effect/fei_30048_u2_buff_play_b2.scsp",
+            "effect/fei_30048_u2_buff_play_b2.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u3_buff_play.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u3_buff_play_f",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_f.atlas",
+            "effect/fei_30048_u3_buff_play_f.scsp",
+            "effect/fei_30048_u3_buff_play_f.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_u3_buff_play_b1",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_b1.atlas",
+            "effect/fei_30048_u3_buff_play_b1.scsp",
+            "effect/fei_30048_u3_buff_play_b1.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 2,
+          "source": "fei_30048_u3_buff_play_pat2",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_pat2.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 3,
+          "source": "fei_30048_u3_buff_play_pat3",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_pat3.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 4,
+          "source": "fei_30048_u3_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_u3_buff_play_b2",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_b2.atlas",
+            "effect/fei_30048_u3_buff_play_b2.scsp",
+            "effect/fei_30048_u3_buff_play_b2.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 6,
+          "source": "fei_30048_u3_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_u3_buff_play_b3",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_b3.atlas",
+            "effect/fei_30048_u3_buff_play_b3.scsp",
+            "effect/fei_30048_u3_buff_play_b3.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 8,
+          "source": "fei_30048_u3_buff_play_b4",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_b4.atlas",
+            "effect/fei_30048_u3_buff_play_b4.scsp",
+            "effect/fei_30048_u3_buff_play_b4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 9,
+          "source": "fei_30048_u3_buff_play_b5",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_b5.atlas",
+            "effect/fei_30048_u3_buff_play_b5.scsp",
+            "effect/fei_30048_u3_buff_play_b5.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 10,
+          "source": "fei_30048_u3_buff_play_glow",
+          "targets": [
+            "effect/fei_30048_u3_buff_play_glow.atlas",
+            "effect/fei_30048_u3_buff_play_glow.scsp",
+            "effect/fei_30048_u3_buff_play_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u3_buff_ready.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u3_buff_ready",
+          "targets": [
+            "effect/fei_30048_u3_buff_ready.atlas",
+            "effect/fei_30048_u3_buff_ready.scsp",
+            "effect/fei_30048_u3_buff_ready.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_u3_buff_ready_glow",
+          "targets": [
+            "effect/fei_30048_u3_buff_ready_glow.atlas",
+            "effect/fei_30048_u3_buff_ready_glow.scsp",
+            "effect/fei_30048_u3_buff_ready_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_play.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_play",
+          "targets": [
+            "effect/fei_30048_u4_attack_play.atlas",
+            "effect/fei_30048_u4_attack_play.scsp",
+            "effect/fei_30048_u4_attack_play.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_attack_play1_pat1",
+          "targets": [
+            "effect/fei_30048_attack_play1_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_u4_attack_play_glow",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_glow.atlas",
+            "effect/fei_30048_u4_attack_play_glow.scsp",
+            "effect/fei_30048_u4_attack_play_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_play_target.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_play_target_f2",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_f2.atlas",
+            "effect/fei_30048_u4_attack_play_target_f2.scsp",
+            "effect/fei_30048_u4_attack_play_target_f2.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_pat1.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 2,
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_u4_attack_play_target_f1",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_f1.atlas",
+            "effect/fei_30048_u4_attack_play_target_f1.scsp",
+            "effect/fei_30048_u4_attack_play_target_f1.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_play_target_b.cfx",
+      "primitives": [
+        {
+          "format": "particle",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_play_target_pat2",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_pat2.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_u4_attack_play_target_b",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_b.atlas",
+            "effect/fei_30048_u4_attack_play_target_b.scsp",
+            "effect/fei_30048_u4_attack_play_target_b.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_play_target_ring.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_play_target_f3",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_f3.atlas",
+            "effect/fei_30048_u4_attack_play_target_f3.scsp",
+            "effect/fei_30048_u4_attack_play_target_f3.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_ready.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_ready",
+          "targets": [
+            "effect/fei_30048_u4_attack_ready.atlas",
+            "effect/fei_30048_u4_attack_ready.scsp",
+            "effect/fei_30048_u4_attack_ready.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_u4_attack_ready_glow",
+          "targets": [
+            "effect/fei_30048_u4_attack_ready_glow.atlas",
+            "effect/fei_30048_u4_attack_ready_glow.scsp",
+            "effect/fei_30048_u4_attack_ready_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_ready_target.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_ready_target",
+          "targets": [
+            "effect/fei_30048_u4_attack_ready_target.atlas",
+            "effect/fei_30048_u4_attack_ready_target.scsp",
+            "effect/fei_30048_u4_attack_ready_target.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_ready_target_glow.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u4_attack_ready_target_glow",
+          "targets": [
+            "effect/fei_30048_u4_attack_ready_target_glow.atlas",
+            "effect/fei_30048_u4_attack_ready_target_glow.scsp",
+            "effect/fei_30048_u4_attack_ready_target_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u5_buff_play.cfx",
+      "primitives": [
+        {
+          "format": "particle",
+          "primitive_index": 0,
+          "source": "fei_30048_u5_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_u5_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_u5_buff_play_fire_f",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_fire_f.atlas",
+            "effect/fei_30048_u5_buff_play_fire_f.scsp",
+            "effect/fei_30048_u5_buff_play_fire_f.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_u5_buff_play_cha_glow",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_cha_glow.atlas",
+            "effect/fei_30048_u5_buff_play_cha_glow.scsp",
+            "effect/fei_30048_u5_buff_play_cha_glow.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_u5_buff_play_servant",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_servant.atlas",
+            "effect/fei_30048_u5_buff_play_servant.scsp",
+            "effect/fei_30048_u5_buff_play_servant.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 5,
+          "source": "fei_30048_u5_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 6,
+          "source": "fei_30048_u5_buff_play_pat1",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_u5_buff_play_fire_b",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_fire_b.atlas",
+            "effect/fei_30048_u5_buff_play_fire_b.scsp",
+            "effect/fei_30048_u5_buff_play_fire_b.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 8,
+          "source": "fei_30048_u4_attack_play_target_pat2",
+          "targets": [
+            "effect/fei_30048_u4_attack_play_target_pat2.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 9,
+          "source": "fei_30048_u5_buff_play_sun",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_sun.atlas",
+            "effect/fei_30048_u5_buff_play_sun.scsp",
+            "effect/fei_30048_u5_buff_play_sun.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 10,
+          "source": "fei_30048_u5_buff_play_glow",
+          "targets": [
+            "effect/fei_30048_u5_buff_play_glow.atlas",
+            "effect/fei_30048_u5_buff_play_glow.scsp",
+            "effect/fei_30048_u5_buff_play_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u5_buff_ready.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_u5_buff_ready_f",
+          "targets": [
+            "effect/fei_30048_u5_buff_ready_f.atlas",
+            "effect/fei_30048_u5_buff_ready_f.scsp",
+            "effect/fei_30048_u5_buff_ready_f.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_u5_buff_ready_b",
+          "targets": [
+            "effect/fei_30048_u5_buff_ready_b.atlas",
+            "effect/fei_30048_u5_buff_ready_b.scsp",
+            "effect/fei_30048_u5_buff_ready_b.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ug_eff_s2_impact2",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_impact2.atlas",
+            "effect/fei_30048_ug_eff_s2_impact2.scsp",
+            "effect/fei_30048_ug_eff_s2_impact2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_ug_eff_s2_impact",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_impact.atlas",
+            "effect/fei_30048_ug_eff_s2_impact.scsp",
+            "effect/fei_30048_ug_eff_s2_impact.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_ug_ld_eff",
+          "targets": [
+            "effect/fei_30048_ug_ld_eff.atlas",
+            "effect/fei_30048_ug_ld_eff.scsp",
+            "effect/fei_30048_ug_ld_eff.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_ug_cutin_2",
+          "targets": [
+            "effect/fei_30048_ug_cutin_2.atlas",
+            "effect/fei_30048_ug_cutin_2.scsp",
+            "effect/fei_30048_ug_cutin_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_ug_eff_s2_1",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_1.atlas",
+            "effect/fei_30048_ug_eff_s2_1.scsp",
+            "effect/fei_30048_ug_eff_s2_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_ug_eff_s2_2",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_2.atlas",
+            "effect/fei_30048_ug_eff_s2_2.scsp",
+            "effect/fei_30048_ug_eff_s2_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 6,
+          "source": "fei_30048_ug_eff_s2_3",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_3.atlas",
+            "effect/fei_30048_ug_eff_s2_3.scsp",
+            "effect/fei_30048_ug_eff_s2_3.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_ug_eff_s2_4",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_4.atlas",
+            "effect/fei_30048_ug_eff_s2_4.scsp",
+            "effect/fei_30048_ug_eff_s2_4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 8,
+          "source": "fei_30048_ug_eff_s2_5",
+          "targets": [
+            "effect/fei_30048_ug_eff_s2_5.atlas",
+            "effect/fei_30048_ug_eff_s2_5.scsp",
+            "effect/fei_30048_ug_eff_s2_5.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ug_eff_s1_6",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_6.atlas",
+            "effect/fei_30048_ug_eff_s1_6.scsp",
+            "effect/fei_30048_ug_eff_s1_6.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_ug_eff_s1_5",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_5.atlas",
+            "effect/fei_30048_ug_eff_s1_5.scsp",
+            "effect/fei_30048_ug_eff_s1_5.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_ug_eff_s1_4_2",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_4_2.atlas",
+            "effect/fei_30048_ug_eff_s1_4_2.scsp",
+            "effect/fei_30048_ug_eff_s1_4_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_ug_eff_s1_4",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_4.atlas",
+            "effect/fei_30048_ug_eff_s1_4.scsp",
+            "effect/fei_30048_ug_eff_s1_4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_ug_eff_s1_3",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_3.atlas",
+            "effect/fei_30048_ug_eff_s1_3.scsp",
+            "effect/fei_30048_ug_eff_s1_3.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_ug_eff_s1_2",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_2.atlas",
+            "effect/fei_30048_ug_eff_s1_2.scsp",
+            "effect/fei_30048_ug_eff_s1_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 6,
+          "source": "fei_30048_ug_eff_s1_1_2",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_1_2.atlas",
+            "effect/fei_30048_ug_eff_s1_1_2.scsp",
+            "effect/fei_30048_ug_eff_s1_1_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_ug_eff_s1_1",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_1.atlas",
+            "effect/fei_30048_ug_eff_s1_1.scsp",
+            "effect/fei_30048_ug_eff_s1_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 8,
+          "source": "fei_30048_ug_cutin_1",
+          "targets": [
+            "effect/fei_30048_ug_cutin_1.atlas",
+            "effect/fei_30048_ug_cutin_1.scsp",
+            "effect/fei_30048_ug_cutin_1.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ug_attack_hookup_s1_eff.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ug_hookup_s1_eff",
+          "targets": [
+            "effect/fei_30048_ug_hookup_s1_eff.atlas",
+            "effect/fei_30048_ug_hookup_s1_eff.scsp",
+            "effect/fei_30048_ug_hookup_s1_eff.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ug_attack_hookup_s2_eff.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ug_hookup_s2_eff",
+          "targets": [
+            "effect/fei_30048_ug_hookup_s2_eff.atlas",
+            "effect/fei_30048_ug_hookup_s2_eff.scsp",
+            "effect/fei_30048_ug_hookup_s2_eff.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/screen_fx_water_wo_02.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "screen_water_fx_all2",
+          "targets": [
+            "effect/screen_water_fx_all2.atlas",
+            "effect/screen_water_fx_all2.scsp",
+            "effect/screen_water_fx_all2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "mika_1039_skill_x_screen_hk3",
+          "targets": [
+            "effect/mika_1039_skill_x_screen_hk3.atlas",
+            "effect/mika_1039_skill_x_screen_hk3.scsp",
+            "effect/mika_1039_skill_x_screen_hk3.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ug_attack_eff_s1_screen.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ug_eff_s1_screen",
+          "targets": [
+            "effect/fei_30048_ug_eff_s1_screen.atlas",
+            "effect/fei_30048_ug_eff_s1_screen.scsp",
+            "effect/fei_30048_ug_eff_s1_screen.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/screen_fx_electricity_target_01.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "screen_fx_electricity_target_01_f",
+          "targets": [
+            "effect/screen_fx_electricity_target_01_f.atlas",
+            "effect/screen_fx_electricity_target_01_f.scsp",
+            "effect/screen_fx_electricity_target_01_f.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "screen_fx_electricity_target_01_b",
+          "targets": [
+            "effect/screen_fx_electricity_target_01_b.atlas",
+            "effect/screen_fx_electricity_target_01_b.scsp",
+            "effect/screen_fx_electricity_target_01_b.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/screen_fx_electricity_screen_03.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "screen_fx_electricity_screen_01_2",
+          "targets": [
+            "effect/screen_fx_electricity_screen_01_2.atlas",
+            "effect/screen_fx_electricity_screen_01_2.scsp",
+            "effect/screen_fx_electricity_screen_01_2.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/screen_fx_electricity_screen_ground_02.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "screen_fx_electricity_screen_02_1",
+          "targets": [
+            "effect/screen_fx_electricity_screen_02_1.atlas",
+            "effect/screen_fx_electricity_screen_02_1.scsp",
+            "effect/screen_fx_electricity_screen_02_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "screen_fx_electricity_screen_03_1",
+          "targets": [
+            "effect/screen_fx_electricity_screen_03_1.atlas",
+            "effect/screen_fx_electricity_screen_03_1.scsp",
+            "effect/screen_fx_electricity_screen_03_1.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_bg3.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_screen_3",
+          "targets": [
+            "effect/fei_30048_ux_screen_3.atlas",
+            "effect/fei_30048_ux_screen_3.scsp",
+            "effect/fei_30048_ux_screen_3.sct"
+          ]
+        },
+        {
+          "format": "particle",
+          "primitive_index": 1,
+          "source": "fei_30048_ux_bg3_pat1",
+          "targets": [
+            "effect/fei_30048_ux_bg3_pat1.particle"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_ux_bg3_1",
+          "targets": [
+            "effect/fei_30048_ux_bg3_1.atlas",
+            "effect/fei_30048_ux_bg3_1.scsp",
+            "effect/fei_30048_ux_bg3_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_ux_bg3_cha",
+          "targets": [
+            "effect/fei_30048_ux_bg3_cha.atlas",
+            "effect/fei_30048_ux_bg3_cha.scsp",
+            "effect/fei_30048_ux_bg3_cha.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_ux_bg3_2",
+          "targets": [
+            "effect/fei_30048_ux_bg3_2.atlas",
+            "effect/fei_30048_ux_bg3_2.scsp",
+            "effect/fei_30048_ux_bg3_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_ux_bg3_3_1",
+          "targets": [
+            "effect/fei_30048_ux_bg3_3_1.atlas",
+            "effect/fei_30048_ux_bg3_3_1.scsp",
+            "effect/fei_30048_ux_bg3_3_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 6,
+          "source": "fei_30048_ux_bg3_bangsang_f",
+          "targets": [
+            "effect/fei_30048_ux_bg3_bangsang_f.atlas",
+            "effect/fei_30048_ux_bg3_bangsang_f.scsp",
+            "effect/fei_30048_ux_bg3_bangsang_f.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_ux_bg3_3_2",
+          "targets": [
+            "effect/fei_30048_ux_bg3_3_2.atlas",
+            "effect/fei_30048_ux_bg3_3_2.scsp",
+            "effect/fei_30048_ux_bg3_3_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 8,
+          "source": "fei_30048_ux_bg3_bangsang_b",
+          "targets": [
+            "effect/fei_30048_ux_bg3_bangsang_b.atlas",
+            "effect/fei_30048_ux_bg3_bangsang_b.scsp",
+            "effect/fei_30048_ux_bg3_bangsang_b.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 9,
+          "source": "fei_30048_ux_bg3_4",
+          "targets": [
+            "effect/fei_30048_ux_bg3_4.atlas",
+            "effect/fei_30048_ux_bg3_4.scsp",
+            "effect/fei_30048_ux_bg3_4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 10,
+          "source": "fei_30048_ux_bg3_5_1",
+          "targets": [
+            "effect/fei_30048_ux_bg3_5_1.atlas",
+            "effect/fei_30048_ux_bg3_5_1.scsp",
+            "effect/fei_30048_ux_bg3_5_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 11,
+          "source": "fei_30048_ux_bg3_5_2",
+          "targets": [
+            "effect/fei_30048_ux_bg3_5_2.atlas",
+            "effect/fei_30048_ux_bg3_5_2.scsp",
+            "effect/fei_30048_ux_bg3_5_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 12,
+          "source": "fei_30048_ux_bg3_5_3",
+          "targets": [
+            "effect/fei_30048_ux_bg3_5_3.atlas",
+            "effect/fei_30048_ux_bg3_5_3.scsp",
+            "effect/fei_30048_ux_bg3_5_3.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_bg2.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_screen_2",
+          "targets": [
+            "effect/fei_30048_ux_screen_2.atlas",
+            "effect/fei_30048_ux_screen_2.scsp",
+            "effect/fei_30048_ux_screen_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_ux_bg2_1",
+          "targets": [
+            "effect/fei_30048_ux_bg2_1.atlas",
+            "effect/fei_30048_ux_bg2_1.scsp",
+            "effect/fei_30048_ux_bg2_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_ux_bg2_2_1",
+          "targets": [
+            "effect/fei_30048_ux_bg2_2_1.atlas",
+            "effect/fei_30048_ux_bg2_2_1.scsp",
+            "effect/fei_30048_ux_bg2_2_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_ux_bg2_2_3",
+          "targets": [
+            "effect/fei_30048_ux_bg2_2_3.atlas",
+            "effect/fei_30048_ux_bg2_2_3.scsp",
+            "effect/fei_30048_ux_bg2_2_3.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_ux_bg2_2_4",
+          "targets": [
+            "effect/fei_30048_ux_bg2_2_4.atlas",
+            "effect/fei_30048_ux_bg2_2_4.scsp",
+            "effect/fei_30048_ux_bg2_2_4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 5,
+          "source": "fei_30048_ux_bg2_2_5",
+          "targets": [
+            "effect/fei_30048_ux_bg2_2_5.atlas",
+            "effect/fei_30048_ux_bg2_2_5.scsp",
+            "effect/fei_30048_ux_bg2_2_5.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 6,
+          "source": "fei_30048_ux_bg2_bangsang_f",
+          "targets": [
+            "effect/fei_30048_ux_bg2_bangsang_f.atlas",
+            "effect/fei_30048_ux_bg2_bangsang_f.scsp",
+            "effect/fei_30048_ux_bg2_bangsang_f.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 7,
+          "source": "fei_30048_ux_bg2_3",
+          "targets": [
+            "effect/fei_30048_ux_bg2_3.atlas",
+            "effect/fei_30048_ux_bg2_3.scsp",
+            "effect/fei_30048_ux_bg2_3.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 8,
+          "source": "fei_30048_ux_bg2_4",
+          "targets": [
+            "effect/fei_30048_ux_bg2_4.atlas",
+            "effect/fei_30048_ux_bg2_4.scsp",
+            "effect/fei_30048_ux_bg2_4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 9,
+          "source": "fei_30048_ux_bg2_bangsang_b",
+          "targets": [
+            "effect/fei_30048_ux_bg2_bangsang_b.atlas",
+            "effect/fei_30048_ux_bg2_bangsang_b.scsp",
+            "effect/fei_30048_ux_bg2_bangsang_b.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 10,
+          "source": "fei_30048_ux_bg2_5",
+          "targets": [
+            "effect/fei_30048_ux_bg2_5.atlas",
+            "effect/fei_30048_ux_bg2_5.scsp",
+            "effect/fei_30048_ux_bg2_5.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 11,
+          "source": "fei_30048_ux_bg2_6",
+          "targets": [
+            "effect/fei_30048_ux_bg2_6.atlas",
+            "effect/fei_30048_ux_bg2_6.scsp",
+            "effect/fei_30048_ux_bg2_6.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_self_2_f.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_self_2_f",
+          "targets": [
+            "effect/fei_30048_ux_self_2_f.atlas",
+            "effect/fei_30048_ux_self_2_f.scsp",
+            "effect/fei_30048_ux_self_2_f.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_self_2_b.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_self_2_b",
+          "targets": [
+            "effect/fei_30048_ux_self_2_b.atlas",
+            "effect/fei_30048_ux_self_2_b.scsp",
+            "effect/fei_30048_ux_self_2_b.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_bg1.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_bg1_1",
+          "targets": [
+            "effect/fei_30048_ux_bg1_1.atlas",
+            "effect/fei_30048_ux_bg1_1.scsp",
+            "effect/fei_30048_ux_bg1_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_ux_bg1_2",
+          "targets": [
+            "effect/fei_30048_ux_bg1_2.atlas",
+            "effect/fei_30048_ux_bg1_2.scsp",
+            "effect/fei_30048_ux_bg1_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_ux_bg1_cha",
+          "targets": [
+            "effect/fei_30048_ux_bg1_cha.atlas",
+            "effect/fei_30048_ux_bg1_cha.scsp",
+            "effect/fei_30048_ux_bg1_cha.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_ux_bg1_3",
+          "targets": [
+            "effect/fei_30048_ux_bg1_3.atlas",
+            "effect/fei_30048_ux_bg1_3.scsp",
+            "effect/fei_30048_ux_bg1_3.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_self_1_f.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_self_1_f_1",
+          "targets": [
+            "effect/fei_30048_ux_self_1_f_1.atlas",
+            "effect/fei_30048_ux_self_1_f_1.scsp",
+            "effect/fei_30048_ux_self_1_f_1.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_ux_self_1_f_2",
+          "targets": [
+            "effect/fei_30048_ux_self_1_f_2.atlas",
+            "effect/fei_30048_ux_self_1_f_2.scsp",
+            "effect/fei_30048_ux_self_1_f_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 2,
+          "source": "fei_30048_ux_self_1_f_3",
+          "targets": [
+            "effect/fei_30048_ux_self_1_f_3.atlas",
+            "effect/fei_30048_ux_self_1_f_3.scsp",
+            "effect/fei_30048_ux_self_1_f_3.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 3,
+          "source": "fei_30048_ux_self_1_f_4",
+          "targets": [
+            "effect/fei_30048_ux_self_1_f_4.atlas",
+            "effect/fei_30048_ux_self_1_f_4.scsp",
+            "effect/fei_30048_ux_self_1_f_4.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 4,
+          "source": "fei_30048_ux_self_1_glow",
+          "targets": [
+            "effect/fei_30048_ux_self_1_glow.atlas",
+            "effect/fei_30048_ux_self_1_glow.scsp",
+            "effect/fei_30048_ux_self_1_glow.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_self_1_b.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_self_1_b_2",
+          "targets": [
+            "effect/fei_30048_ux_self_1_b_2.atlas",
+            "effect/fei_30048_ux_self_1_b_2.scsp",
+            "effect/fei_30048_ux_self_1_b_2.sct"
+          ]
+        },
+        {
+          "format": "spine",
+          "primitive_index": 1,
+          "source": "fei_30048_ux_self_1_b_1",
+          "targets": [
+            "effect/fei_30048_ux_self_1_b_1.atlas",
+            "effect/fei_30048_ux_self_1_b_1.scsp",
+            "effect/fei_30048_ux_self_1_b_1.sct"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_screen_1.cfx",
+      "primitives": [
+        {
+          "format": "spine",
+          "primitive_index": 0,
+          "source": "fei_30048_ux_screen_1",
+          "targets": [
+            "effect/fei_30048_ux_screen_1.atlas",
+            "effect/fei_30048_ux_screen_1.scsp",
+            "effect/fei_30048_ux_screen_1.sct"
+          ]
+        }
+      ]
+    }
+  ],
+  "character": {
+    "display_name": "?",
+    "id": "30048",
+    "romanized_prefix": "fei_30048"
+  },
+  "core_config_sources": [
+    {
+      "bytes": 156025,
+      "path": "model_data/30048.srmd",
+      "sha256": "d18e5d42218dbcec4dfba2c881756e7a9bd3fff1532835d0d177fe48760eaa95"
+    },
+    {
+      "bytes": 8426,
+      "path": "model_data/30048_battle_ready.brmd",
+      "sha256": "6528aae337b18354dc025f5c145a3b3d9e902b867061ae140e3ceb0f006e9c06"
+    }
+  ],
+  "counts": {
+    "categories": {
+      "camera_node": 7,
+      "effect_cfx": 35,
+      "model": 6,
+      "model_config": 4,
+      "particle_config": 16,
+      "particle_texture": 4,
+      "spine_effect": 339
+    },
+    "cfx_configs": 35,
+    "cfx_primitives": 137,
+    "complete_records": 411,
+    "extensions": {
+      ".atlas": 115,
+      ".brmd": 1,
+      ".cfx": 35,
+      ".particle": 16,
+      ".scsp": 122,
+      ".sct": 119,
+      ".srcs": 1,
+      ".srmd": 1,
+      ".srue": 1
+    },
+    "file_name_occurrences": 47,
+    "file_name_unique": 42,
+    "original_bytes": 36064946,
+    "particle_configs": 16,
+    "particle_source_stems": 16,
+    "particle_texture_occurrences": 37,
+    "particle_texture_unique": 4,
+    "spine_source_stems": 113,
+    "stored_bytes": 33042254
+  },
+  "dependency_edges": [
+    {
+      "etty": "SHAKE",
+      "location": "$.command.attack_play1.shake[0]",
+      "reference": "cm_shake_vb_rt",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "camera/cm_shake_vb_rt.scsp"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.attack_play1.effect[0]",
+      "reference": "fei_30048_attack_play1",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_attack_play1.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.attack_play1.effect[1]",
+      "reference": "fei_30048_attack_play_target",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_attack_play_target.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.attack_play1.effect[2]",
+      "reference": "fei_30048_attack_play_target_glow",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_attack_play_target_glow.cfx"
+      ]
+    },
+    {
+      "etty": "SHAKE",
+      "location": "$.command.attack_play2.shake[0]",
+      "reference": "cm_shake_vb_lt",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "camera/cm_shake_vb_lt.scsp"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.attack_play2.effect[0]",
+      "reference": "fei_30048_attack_play2",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_attack_play2.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.attack_play2.effect[1]",
+      "reference": "fei_30048_attack_play_target",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_attack_play_target.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.attack_play2.effect[2]",
+      "reference": "fei_30048_attack_play_target_glow",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_attack_play_target_glow.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.buff_play.effect[0]",
+      "reference": "fei_30048_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.cure_play.effect[0]",
+      "reference": "fei_30048_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.debuff_play.effect[0]",
+      "reference": "fei_30048_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.defense_play.effect[0]",
+      "reference": "fei_30048_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u1_buff_play.effect[0]",
+      "reference": "fei_30048_u1_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u1_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u2_buff_play.effect[0]",
+      "reference": "fei_30048_u2_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u2_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u3_buff_play.effect[0]",
+      "reference": "fei_30048_u3_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u3_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u3_buff_ready.effect[0]",
+      "reference": "fei_30048_u3_buff_ready",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u3_buff_ready.cfx"
+      ]
+    },
+    {
+      "etty": "SHAKE",
+      "location": "$.command.u4_attack_play.shake[0]",
+      "reference": "cm_shake_wk_up",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "camera/cm_shake_wk_up.scsp"
+      ]
+    },
+    {
+      "etty": "SHAKE",
+      "location": "$.command.u4_attack_play.shake[1]",
+      "reference": "cm_shake_vb_up",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "camera/cm_shake_vb_up.scsp"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_play.effect[0]",
+      "reference": "fei_30048_u4_attack_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_play.effect[1]",
+      "reference": "fei_30048_u4_attack_play_target",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_play.effect[2]",
+      "reference": "fei_30048_u4_attack_play_target_b",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_b.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_play.effect[3]",
+      "reference": "fei_30048_u4_attack_play_target_ring",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_ring.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_ready.effect[0]",
+      "reference": "fei_30048_u4_attack_ready",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_ready.effect[1]",
+      "reference": "fei_30048_u4_attack_ready_target",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready_target.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u4_attack_ready.effect[2]",
+      "reference": "fei_30048_u4_attack_ready_target_glow",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready_target_glow.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u5_buff_play.effect[0]",
+      "reference": "fei_30048_u5_buff_play",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u5_buff_play.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.u5_buff_ready.effect[0]",
+      "reference": "fei_30048_u5_buff_ready",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_u5_buff_ready.cfx"
+      ]
+    },
+    {
+      "etty": "CAM_SPINE",
+      "location": "$.command.ug_attack.cam_spine[0]",
+      "reference": "fei_30048_ug_attack_cam",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "camera_path/fei_30048_ug_attack_cam.scsp"
+      ]
+    },
+    {
+      "etty": "NODE_ANI",
+      "location": "$.command.ug_attack.node_ani[0]",
+      "reference": "fei_30048_ug_attack_mon_node",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "node/fei_30048_ug_attack_mon_node.scsp"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[0]",
+      "reference": "fei_30048_ug_attack_eff_s2",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ug_attack_eff_s2.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[1]",
+      "reference": "fei_30048_ug_attack_eff_s1",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ug_attack_eff_s1.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[2]",
+      "reference": "fei_30048_ug_attack_hookup_s1_eff",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ug_attack_hookup_s1_eff.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[3]",
+      "reference": "fei_30048_ug_attack_hookup_s2_eff",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ug_attack_hookup_s2_eff.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[4]",
+      "reference": "screen_fx_water_wo_02",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/screen_fx_water_wo_02.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[5]",
+      "reference": "fei_30048_ug_attack_eff_s1_screen",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ug_attack_eff_s1_screen.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[6]",
+      "reference": "screen_fx_electricity_target_01",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/screen_fx_electricity_target_01.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[7]",
+      "reference": "screen_fx_electricity_screen_03",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/screen_fx_electricity_screen_03.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ug_attack.effect[8]",
+      "reference": "screen_fx_electricity_screen_ground_02",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/screen_fx_electricity_screen_ground_02.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[0]",
+      "reference": "fei_30048_ux_bg3",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_bg3.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[1]",
+      "reference": "fei_30048_ux_bg2",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_bg2.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[2]",
+      "reference": "fei_30048_ux_self_2_f",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_self_2_f.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[3]",
+      "reference": "fei_30048_ux_self_2_b",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_self_2_b.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[4]",
+      "reference": "fei_30048_ux_bg1",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_bg1.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[5]",
+      "reference": "fei_30048_ux_self_1_f",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_self_1_f.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[6]",
+      "reference": "fei_30048_ux_self_1_b",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_self_1_b.cfx"
+      ]
+    },
+    {
+      "etty": "EFFECT",
+      "location": "$.command.ux_buff.effect[7]",
+      "reference": "fei_30048_ux_screen_1",
+      "relation": "file_name",
+      "source": "model_data/30048.srmd",
+      "targets": [
+        "effect/fei_30048_ux_screen_1.cfx"
+      ]
+    },
+    {
+      "etty": "NODE_ANI",
+      "location": "$.command.ug_attack.node_ani[0]",
+      "reference": "fei_30048_ug_node_standby",
+      "relation": "file_name",
+      "source": "model_data/30048_battle_ready.brmd",
+      "targets": [
+        "node/fei_30048_ug_node_standby.scsp"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_attack_play1_f1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play1.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play1_f1.atlas",
+        "effect/fei_30048_attack_play1_f1.scsp",
+        "effect/fei_30048_attack_play1_f1.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_attack_play1_f2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play1.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play1_f2.atlas",
+        "effect/fei_30048_attack_play1_f2.scsp",
+        "effect/fei_30048_attack_play1_f2.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_attack_play1_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_attack_play1.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play1_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_attack_play1_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play1.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play1_glow.atlas",
+        "effect/fei_30048_attack_play1_glow.scsp",
+        "effect/fei_30048_attack_play1_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_attack_play_target",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play_target.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play_target.atlas",
+        "effect/fei_30048_attack_play_target.scsp",
+        "effect/fei_30048_attack_play_target.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_attack_play_target_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_attack_play_target.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play_target_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_attack_play_target_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play_target_glow.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play_target_glow.atlas",
+        "effect/fei_30048_attack_play_target_glow.scsp",
+        "effect/fei_30048_attack_play_target_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_attack_play2_f2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play2.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play2_f2.atlas",
+        "effect/fei_30048_attack_play2_f2.scsp",
+        "effect/fei_30048_attack_play2_f2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_attack_play2_f1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play2.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play2_f1.atlas",
+        "effect/fei_30048_attack_play2_f1.scsp",
+        "effect/fei_30048_attack_play2_f1.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_attack_play2_b1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play2.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play2_b1.atlas",
+        "effect/fei_30048_attack_play2_b1.scsp",
+        "effect/fei_30048_attack_play2_b1.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_attack_play2_b2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play2.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play2_b2.atlas",
+        "effect/fei_30048_attack_play2_b2.scsp",
+        "effect/fei_30048_attack_play2_b2.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_attack_play1_pat2",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_attack_play2.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play1_pat2.particle"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_attack_play2_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_attack_play2.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play2_glow.atlas",
+        "effect/fei_30048_attack_play2_glow.scsp",
+        "effect/fei_30048_attack_play2_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_buff_play",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_buff_play.atlas",
+        "effect/fei_30048_buff_play.scsp",
+        "effect/fei_30048_buff_play.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_buff_play_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_buff_play_glow.atlas",
+        "effect/fei_30048_buff_play_glow.scsp",
+        "effect/fei_30048_buff_play_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u1_buff_play_f2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u1_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u1_buff_play_f2.atlas",
+        "effect/fei_30048_u1_buff_play_f2.scsp",
+        "effect/fei_30048_u1_buff_play_f2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u1_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u1_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u1_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_u1_buff_play_pat2",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u1_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u1_buff_play_pat2.particle"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_u1_buff_play_f1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u1_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u1_buff_play_f1.atlas",
+        "effect/fei_30048_u1_buff_play_f1.scsp",
+        "effect/fei_30048_u1_buff_play_f1.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_u1_buff_play_b1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u1_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u1_buff_play_b1.atlas",
+        "effect/fei_30048_u1_buff_play_b1.scsp",
+        "effect/fei_30048_u1_buff_play_b1.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_u1_buff_play_b2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u1_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u1_buff_play_b2.atlas",
+        "effect/fei_30048_u1_buff_play_b2.scsp",
+        "effect/fei_30048_u1_buff_play_b2.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u2_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u2_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_u2_buff_play_f2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_f2.atlas",
+        "effect/fei_30048_u2_buff_play_f2.scsp",
+        "effect/fei_30048_u2_buff_play_f2.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_u2_buff_play_pat3",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_pat3.particle"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_u2_buff_play_f1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_f1.atlas",
+        "effect/fei_30048_u2_buff_play_f1.scsp",
+        "effect/fei_30048_u2_buff_play_f1.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_u2_buff_play_pat2",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_pat2.particle"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_u2_buff_play_b1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_b1.atlas",
+        "effect/fei_30048_u2_buff_play_b1.scsp",
+        "effect/fei_30048_u2_buff_play_b1.sct"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_u2_buff_play_b2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u2_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u2_buff_play_b2.atlas",
+        "effect/fei_30048_u2_buff_play_b2.scsp",
+        "effect/fei_30048_u2_buff_play_b2.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u3_buff_play_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_f.atlas",
+        "effect/fei_30048_u3_buff_play_f.scsp",
+        "effect/fei_30048_u3_buff_play_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u3_buff_play_b1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_b1.atlas",
+        "effect/fei_30048_u3_buff_play_b1.scsp",
+        "effect/fei_30048_u3_buff_play_b1.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_u3_buff_play_pat2",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_pat2.particle"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_u3_buff_play_pat3",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_pat3.particle"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_u3_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_u3_buff_play_b2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_b2.atlas",
+        "effect/fei_30048_u3_buff_play_b2.scsp",
+        "effect/fei_30048_u3_buff_play_b2.sct"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_u3_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_u3_buff_play_b3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_b3.atlas",
+        "effect/fei_30048_u3_buff_play_b3.scsp",
+        "effect/fei_30048_u3_buff_play_b3.sct"
+      ]
+    },
+    {
+      "primitive_index": 8,
+      "reference": "fei_30048_u3_buff_play_b4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_b4.atlas",
+        "effect/fei_30048_u3_buff_play_b4.scsp",
+        "effect/fei_30048_u3_buff_play_b4.sct"
+      ]
+    },
+    {
+      "primitive_index": 9,
+      "reference": "fei_30048_u3_buff_play_b5",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_b5.atlas",
+        "effect/fei_30048_u3_buff_play_b5.scsp",
+        "effect/fei_30048_u3_buff_play_b5.sct"
+      ]
+    },
+    {
+      "primitive_index": 10,
+      "reference": "fei_30048_u3_buff_play_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_play_glow.atlas",
+        "effect/fei_30048_u3_buff_play_glow.scsp",
+        "effect/fei_30048_u3_buff_play_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u3_buff_ready",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_ready.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_ready.atlas",
+        "effect/fei_30048_u3_buff_ready.scsp",
+        "effect/fei_30048_u3_buff_ready.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u3_buff_ready_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u3_buff_ready.cfx",
+      "targets": [
+        "effect/fei_30048_u3_buff_ready_glow.atlas",
+        "effect/fei_30048_u3_buff_ready_glow.scsp",
+        "effect/fei_30048_u3_buff_ready_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_play",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_play.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play.atlas",
+        "effect/fei_30048_u4_attack_play.scsp",
+        "effect/fei_30048_u4_attack_play.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_attack_play1_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u4_attack_play.cfx",
+      "targets": [
+        "effect/fei_30048_attack_play1_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_u4_attack_play_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_play.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_glow.atlas",
+        "effect/fei_30048_u4_attack_play_glow.scsp",
+        "effect/fei_30048_u4_attack_play_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_play_target_f2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_play_target.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_f2.atlas",
+        "effect/fei_30048_u4_attack_play_target_f2.scsp",
+        "effect/fei_30048_u4_attack_play_target_f2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u4_attack_play_target_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u4_attack_play_target.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_u4_attack_play_target_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u4_attack_play_target.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_u4_attack_play_target_f1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_play_target.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_f1.atlas",
+        "effect/fei_30048_u4_attack_play_target_f1.scsp",
+        "effect/fei_30048_u4_attack_play_target_f1.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_play_target_pat2",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u4_attack_play_target_b.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_pat2.particle"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u4_attack_play_target_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_play_target_b.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_b.atlas",
+        "effect/fei_30048_u4_attack_play_target_b.scsp",
+        "effect/fei_30048_u4_attack_play_target_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_play_target_f3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_play_target_ring.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_f3.atlas",
+        "effect/fei_30048_u4_attack_play_target_f3.scsp",
+        "effect/fei_30048_u4_attack_play_target_f3.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_ready",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_ready.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready.atlas",
+        "effect/fei_30048_u4_attack_ready.scsp",
+        "effect/fei_30048_u4_attack_ready.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u4_attack_ready_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_ready.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready_glow.atlas",
+        "effect/fei_30048_u4_attack_ready_glow.scsp",
+        "effect/fei_30048_u4_attack_ready_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_ready_target",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_ready_target.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready_target.atlas",
+        "effect/fei_30048_u4_attack_ready_target.scsp",
+        "effect/fei_30048_u4_attack_ready_target.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u4_attack_ready_target_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u4_attack_ready_target_glow.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_ready_target_glow.atlas",
+        "effect/fei_30048_u4_attack_ready_target_glow.scsp",
+        "effect/fei_30048_u4_attack_ready_target_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u5_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u5_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_u5_buff_play_fire_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_fire_f.atlas",
+        "effect/fei_30048_u5_buff_play_fire_f.scsp",
+        "effect/fei_30048_u5_buff_play_fire_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_u5_buff_play_cha_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_cha_glow.atlas",
+        "effect/fei_30048_u5_buff_play_cha_glow.scsp",
+        "effect/fei_30048_u5_buff_play_cha_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_u5_buff_play_servant",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_servant.atlas",
+        "effect/fei_30048_u5_buff_play_servant.scsp",
+        "effect/fei_30048_u5_buff_play_servant.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_u5_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_u5_buff_play_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_u5_buff_play_fire_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_fire_b.atlas",
+        "effect/fei_30048_u5_buff_play_fire_b.scsp",
+        "effect/fei_30048_u5_buff_play_fire_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 8,
+      "reference": "fei_30048_u4_attack_play_target_pat2",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u4_attack_play_target_pat2.particle"
+      ]
+    },
+    {
+      "primitive_index": 9,
+      "reference": "fei_30048_u5_buff_play_sun",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_sun.atlas",
+        "effect/fei_30048_u5_buff_play_sun.scsp",
+        "effect/fei_30048_u5_buff_play_sun.sct"
+      ]
+    },
+    {
+      "primitive_index": 10,
+      "reference": "fei_30048_u5_buff_play_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_play.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_play_glow.atlas",
+        "effect/fei_30048_u5_buff_play_glow.scsp",
+        "effect/fei_30048_u5_buff_play_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_u5_buff_ready_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_ready.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_ready_f.atlas",
+        "effect/fei_30048_u5_buff_ready_f.scsp",
+        "effect/fei_30048_u5_buff_ready_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_u5_buff_ready_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_u5_buff_ready.cfx",
+      "targets": [
+        "effect/fei_30048_u5_buff_ready_b.atlas",
+        "effect/fei_30048_u5_buff_ready_b.scsp",
+        "effect/fei_30048_u5_buff_ready_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ug_eff_s2_impact2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_impact2.atlas",
+        "effect/fei_30048_ug_eff_s2_impact2.scsp",
+        "effect/fei_30048_ug_eff_s2_impact2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ug_eff_s2_impact",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_impact.atlas",
+        "effect/fei_30048_ug_eff_s2_impact.scsp",
+        "effect/fei_30048_ug_eff_s2_impact.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_ug_ld_eff",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_ld_eff.atlas",
+        "effect/fei_30048_ug_ld_eff.scsp",
+        "effect/fei_30048_ug_ld_eff.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_ug_cutin_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_cutin_2.atlas",
+        "effect/fei_30048_ug_cutin_2.scsp",
+        "effect/fei_30048_ug_cutin_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_ug_eff_s2_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_1.atlas",
+        "effect/fei_30048_ug_eff_s2_1.scsp",
+        "effect/fei_30048_ug_eff_s2_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_ug_eff_s2_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_2.atlas",
+        "effect/fei_30048_ug_eff_s2_2.scsp",
+        "effect/fei_30048_ug_eff_s2_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_ug_eff_s2_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_3.atlas",
+        "effect/fei_30048_ug_eff_s2_3.scsp",
+        "effect/fei_30048_ug_eff_s2_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_ug_eff_s2_4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_4.atlas",
+        "effect/fei_30048_ug_eff_s2_4.scsp",
+        "effect/fei_30048_ug_eff_s2_4.sct"
+      ]
+    },
+    {
+      "primitive_index": 8,
+      "reference": "fei_30048_ug_eff_s2_5",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s2.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s2_5.atlas",
+        "effect/fei_30048_ug_eff_s2_5.scsp",
+        "effect/fei_30048_ug_eff_s2_5.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ug_eff_s1_6",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_6.atlas",
+        "effect/fei_30048_ug_eff_s1_6.scsp",
+        "effect/fei_30048_ug_eff_s1_6.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ug_eff_s1_5",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_5.atlas",
+        "effect/fei_30048_ug_eff_s1_5.scsp",
+        "effect/fei_30048_ug_eff_s1_5.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_ug_eff_s1_4_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_4_2.atlas",
+        "effect/fei_30048_ug_eff_s1_4_2.scsp",
+        "effect/fei_30048_ug_eff_s1_4_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_ug_eff_s1_4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_4.atlas",
+        "effect/fei_30048_ug_eff_s1_4.scsp",
+        "effect/fei_30048_ug_eff_s1_4.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_ug_eff_s1_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_3.atlas",
+        "effect/fei_30048_ug_eff_s1_3.scsp",
+        "effect/fei_30048_ug_eff_s1_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_ug_eff_s1_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_2.atlas",
+        "effect/fei_30048_ug_eff_s1_2.scsp",
+        "effect/fei_30048_ug_eff_s1_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_ug_eff_s1_1_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_1_2.atlas",
+        "effect/fei_30048_ug_eff_s1_1_2.scsp",
+        "effect/fei_30048_ug_eff_s1_1_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_ug_eff_s1_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_1.atlas",
+        "effect/fei_30048_ug_eff_s1_1.scsp",
+        "effect/fei_30048_ug_eff_s1_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 8,
+      "reference": "fei_30048_ug_cutin_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1.cfx",
+      "targets": [
+        "effect/fei_30048_ug_cutin_1.atlas",
+        "effect/fei_30048_ug_cutin_1.scsp",
+        "effect/fei_30048_ug_cutin_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ug_hookup_s1_eff",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_hookup_s1_eff.cfx",
+      "targets": [
+        "effect/fei_30048_ug_hookup_s1_eff.atlas",
+        "effect/fei_30048_ug_hookup_s1_eff.scsp",
+        "effect/fei_30048_ug_hookup_s1_eff.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ug_hookup_s2_eff",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_hookup_s2_eff.cfx",
+      "targets": [
+        "effect/fei_30048_ug_hookup_s2_eff.atlas",
+        "effect/fei_30048_ug_hookup_s2_eff.scsp",
+        "effect/fei_30048_ug_hookup_s2_eff.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "screen_water_fx_all2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_water_wo_02.cfx",
+      "targets": [
+        "effect/screen_water_fx_all2.atlas",
+        "effect/screen_water_fx_all2.scsp",
+        "effect/screen_water_fx_all2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "mika_1039_skill_x_screen_hk3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_water_wo_02.cfx",
+      "targets": [
+        "effect/mika_1039_skill_x_screen_hk3.atlas",
+        "effect/mika_1039_skill_x_screen_hk3.scsp",
+        "effect/mika_1039_skill_x_screen_hk3.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ug_eff_s1_screen",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ug_attack_eff_s1_screen.cfx",
+      "targets": [
+        "effect/fei_30048_ug_eff_s1_screen.atlas",
+        "effect/fei_30048_ug_eff_s1_screen.scsp",
+        "effect/fei_30048_ug_eff_s1_screen.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "screen_fx_electricity_target_01_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_electricity_target_01.cfx",
+      "targets": [
+        "effect/screen_fx_electricity_target_01_f.atlas",
+        "effect/screen_fx_electricity_target_01_f.scsp",
+        "effect/screen_fx_electricity_target_01_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "screen_fx_electricity_target_01_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_electricity_target_01.cfx",
+      "targets": [
+        "effect/screen_fx_electricity_target_01_b.atlas",
+        "effect/screen_fx_electricity_target_01_b.scsp",
+        "effect/screen_fx_electricity_target_01_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "screen_fx_electricity_screen_01_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_electricity_screen_03.cfx",
+      "targets": [
+        "effect/screen_fx_electricity_screen_01_2.atlas",
+        "effect/screen_fx_electricity_screen_01_2.scsp",
+        "effect/screen_fx_electricity_screen_01_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "screen_fx_electricity_screen_02_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_electricity_screen_ground_02.cfx",
+      "targets": [
+        "effect/screen_fx_electricity_screen_02_1.atlas",
+        "effect/screen_fx_electricity_screen_02_1.scsp",
+        "effect/screen_fx_electricity_screen_02_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "screen_fx_electricity_screen_03_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/screen_fx_electricity_screen_ground_02.cfx",
+      "targets": [
+        "effect/screen_fx_electricity_screen_03_1.atlas",
+        "effect/screen_fx_electricity_screen_03_1.scsp",
+        "effect/screen_fx_electricity_screen_03_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_screen_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_screen_3.atlas",
+        "effect/fei_30048_ux_screen_3.scsp",
+        "effect/fei_30048_ux_screen_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ux_bg3_pat1",
+      "relation": "cfx_primitive:particle",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_pat1.particle"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_ux_bg3_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_1.atlas",
+        "effect/fei_30048_ux_bg3_1.scsp",
+        "effect/fei_30048_ux_bg3_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_ux_bg3_cha",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_cha.atlas",
+        "effect/fei_30048_ux_bg3_cha.scsp",
+        "effect/fei_30048_ux_bg3_cha.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_ux_bg3_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_2.atlas",
+        "effect/fei_30048_ux_bg3_2.scsp",
+        "effect/fei_30048_ux_bg3_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_ux_bg3_3_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_3_1.atlas",
+        "effect/fei_30048_ux_bg3_3_1.scsp",
+        "effect/fei_30048_ux_bg3_3_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_ux_bg3_bangsang_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_bangsang_f.atlas",
+        "effect/fei_30048_ux_bg3_bangsang_f.scsp",
+        "effect/fei_30048_ux_bg3_bangsang_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_ux_bg3_3_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_3_2.atlas",
+        "effect/fei_30048_ux_bg3_3_2.scsp",
+        "effect/fei_30048_ux_bg3_3_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 8,
+      "reference": "fei_30048_ux_bg3_bangsang_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_bangsang_b.atlas",
+        "effect/fei_30048_ux_bg3_bangsang_b.scsp",
+        "effect/fei_30048_ux_bg3_bangsang_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 9,
+      "reference": "fei_30048_ux_bg3_4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_4.atlas",
+        "effect/fei_30048_ux_bg3_4.scsp",
+        "effect/fei_30048_ux_bg3_4.sct"
+      ]
+    },
+    {
+      "primitive_index": 10,
+      "reference": "fei_30048_ux_bg3_5_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_5_1.atlas",
+        "effect/fei_30048_ux_bg3_5_1.scsp",
+        "effect/fei_30048_ux_bg3_5_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 11,
+      "reference": "fei_30048_ux_bg3_5_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_5_2.atlas",
+        "effect/fei_30048_ux_bg3_5_2.scsp",
+        "effect/fei_30048_ux_bg3_5_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 12,
+      "reference": "fei_30048_ux_bg3_5_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg3.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg3_5_3.atlas",
+        "effect/fei_30048_ux_bg3_5_3.scsp",
+        "effect/fei_30048_ux_bg3_5_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_screen_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_screen_2.atlas",
+        "effect/fei_30048_ux_screen_2.scsp",
+        "effect/fei_30048_ux_screen_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ux_bg2_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_1.atlas",
+        "effect/fei_30048_ux_bg2_1.scsp",
+        "effect/fei_30048_ux_bg2_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_ux_bg2_2_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_2_1.atlas",
+        "effect/fei_30048_ux_bg2_2_1.scsp",
+        "effect/fei_30048_ux_bg2_2_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_ux_bg2_2_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_2_3.atlas",
+        "effect/fei_30048_ux_bg2_2_3.scsp",
+        "effect/fei_30048_ux_bg2_2_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_ux_bg2_2_4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_2_4.atlas",
+        "effect/fei_30048_ux_bg2_2_4.scsp",
+        "effect/fei_30048_ux_bg2_2_4.sct"
+      ]
+    },
+    {
+      "primitive_index": 5,
+      "reference": "fei_30048_ux_bg2_2_5",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_2_5.atlas",
+        "effect/fei_30048_ux_bg2_2_5.scsp",
+        "effect/fei_30048_ux_bg2_2_5.sct"
+      ]
+    },
+    {
+      "primitive_index": 6,
+      "reference": "fei_30048_ux_bg2_bangsang_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_bangsang_f.atlas",
+        "effect/fei_30048_ux_bg2_bangsang_f.scsp",
+        "effect/fei_30048_ux_bg2_bangsang_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 7,
+      "reference": "fei_30048_ux_bg2_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_3.atlas",
+        "effect/fei_30048_ux_bg2_3.scsp",
+        "effect/fei_30048_ux_bg2_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 8,
+      "reference": "fei_30048_ux_bg2_4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_4.atlas",
+        "effect/fei_30048_ux_bg2_4.scsp",
+        "effect/fei_30048_ux_bg2_4.sct"
+      ]
+    },
+    {
+      "primitive_index": 9,
+      "reference": "fei_30048_ux_bg2_bangsang_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_bangsang_b.atlas",
+        "effect/fei_30048_ux_bg2_bangsang_b.scsp",
+        "effect/fei_30048_ux_bg2_bangsang_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 10,
+      "reference": "fei_30048_ux_bg2_5",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_5.atlas",
+        "effect/fei_30048_ux_bg2_5.scsp",
+        "effect/fei_30048_ux_bg2_5.sct"
+      ]
+    },
+    {
+      "primitive_index": 11,
+      "reference": "fei_30048_ux_bg2_6",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg2.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg2_6.atlas",
+        "effect/fei_30048_ux_bg2_6.scsp",
+        "effect/fei_30048_ux_bg2_6.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_self_2_f",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_2_f.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_2_f.atlas",
+        "effect/fei_30048_ux_self_2_f.scsp",
+        "effect/fei_30048_ux_self_2_f.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_self_2_b",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_2_b.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_2_b.atlas",
+        "effect/fei_30048_ux_self_2_b.scsp",
+        "effect/fei_30048_ux_self_2_b.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_bg1_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg1.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg1_1.atlas",
+        "effect/fei_30048_ux_bg1_1.scsp",
+        "effect/fei_30048_ux_bg1_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ux_bg1_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg1.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg1_2.atlas",
+        "effect/fei_30048_ux_bg1_2.scsp",
+        "effect/fei_30048_ux_bg1_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_ux_bg1_cha",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg1.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg1_cha.atlas",
+        "effect/fei_30048_ux_bg1_cha.scsp",
+        "effect/fei_30048_ux_bg1_cha.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_ux_bg1_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_bg1.cfx",
+      "targets": [
+        "effect/fei_30048_ux_bg1_3.atlas",
+        "effect/fei_30048_ux_bg1_3.scsp",
+        "effect/fei_30048_ux_bg1_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_self_1_f_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_f.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_f_1.atlas",
+        "effect/fei_30048_ux_self_1_f_1.scsp",
+        "effect/fei_30048_ux_self_1_f_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ux_self_1_f_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_f.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_f_2.atlas",
+        "effect/fei_30048_ux_self_1_f_2.scsp",
+        "effect/fei_30048_ux_self_1_f_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 2,
+      "reference": "fei_30048_ux_self_1_f_3",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_f.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_f_3.atlas",
+        "effect/fei_30048_ux_self_1_f_3.scsp",
+        "effect/fei_30048_ux_self_1_f_3.sct"
+      ]
+    },
+    {
+      "primitive_index": 3,
+      "reference": "fei_30048_ux_self_1_f_4",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_f.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_f_4.atlas",
+        "effect/fei_30048_ux_self_1_f_4.scsp",
+        "effect/fei_30048_ux_self_1_f_4.sct"
+      ]
+    },
+    {
+      "primitive_index": 4,
+      "reference": "fei_30048_ux_self_1_glow",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_f.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_glow.atlas",
+        "effect/fei_30048_ux_self_1_glow.scsp",
+        "effect/fei_30048_ux_self_1_glow.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_self_1_b_2",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_b.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_b_2.atlas",
+        "effect/fei_30048_ux_self_1_b_2.scsp",
+        "effect/fei_30048_ux_self_1_b_2.sct"
+      ]
+    },
+    {
+      "primitive_index": 1,
+      "reference": "fei_30048_ux_self_1_b_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_self_1_b.cfx",
+      "targets": [
+        "effect/fei_30048_ux_self_1_b_1.atlas",
+        "effect/fei_30048_ux_self_1_b_1.scsp",
+        "effect/fei_30048_ux_self_1_b_1.sct"
+      ]
+    },
+    {
+      "primitive_index": 0,
+      "reference": "fei_30048_ux_screen_1",
+      "relation": "cfx_primitive:spine",
+      "source": "effect/fei_30048_ux_screen_1.cfx",
+      "targets": [
+        "effect/fei_30048_ux_screen_1.atlas",
+        "effect/fei_30048_ux_screen_1.scsp",
+        "effect/fei_30048_ux_screen_1.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03_h_long2.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_attack_play1_pat1.particle",
+      "targets": [
+        "particle/pati_03_h_long2.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_attack_play_target_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_attack_play_target_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03_h_long2.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_attack_play1_pat2.particle",
+      "targets": [
+        "particle/pati_03_h_long2.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_buff_play_pat1.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u1_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u1_buff_play_pat1.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u1_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u1_buff_play_pat2.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat1.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 3,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat3.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat3.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat3.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03_h_long2.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat2.particle",
+      "targets": [
+        "particle/pati_03_h_long2.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03_h_long2.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u2_buff_play_pat2.particle",
+      "targets": [
+        "particle/pati_03_h_long2.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat2.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat2.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat2.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat3.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat3.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat3.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u3_buff_play_pat1.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u4_attack_play_target_pat1.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u4_attack_play_target_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u4_attack_play_target_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u4_attack_play_target_pat2.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u5_buff_play_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/blur_ticle_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_u5_buff_play_pat1.particle",
+      "targets": [
+        "particle/blur_ticle_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 0,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_ux_bg3_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 1,
+      "reference": "particle/pati_03.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_ux_bg3_pat1.particle",
+      "targets": [
+        "particle/pati_03.sct"
+      ]
+    },
+    {
+      "emitter_index": 2,
+      "reference": "particle/dust_02.sct",
+      "relation": "particle_textureFileName",
+      "source": "effect/fei_30048_ux_bg3_pat1.particle",
+      "targets": [
+        "particle/dust_02.sct"
+      ]
+    }
+  ],
+  "file_name_references": [
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "SHAKE",
+      "file_name": "cm_shake_vb_rt",
+      "location": "$.command.attack_play1.shake[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_attack_play1",
+      "location": "$.command.attack_play1.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_attack_play_target",
+      "location": "$.command.attack_play1.effect[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_attack_play_target_glow",
+      "location": "$.command.attack_play1.effect[2]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "SHAKE",
+      "file_name": "cm_shake_vb_lt",
+      "location": "$.command.attack_play2.shake[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_attack_play2",
+      "location": "$.command.attack_play2.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_attack_play_target",
+      "location": "$.command.attack_play2.effect[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_attack_play_target_glow",
+      "location": "$.command.attack_play2.effect[2]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_buff_play",
+      "location": "$.command.buff_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_buff_play",
+      "location": "$.command.cure_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_buff_play",
+      "location": "$.command.debuff_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_buff_play",
+      "location": "$.command.defense_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u1_buff_play",
+      "location": "$.command.u1_buff_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u2_buff_play",
+      "location": "$.command.u2_buff_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u3_buff_play",
+      "location": "$.command.u3_buff_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u3_buff_ready",
+      "location": "$.command.u3_buff_ready.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "SHAKE",
+      "file_name": "cm_shake_wk_up",
+      "location": "$.command.u4_attack_play.shake[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "SHAKE",
+      "file_name": "cm_shake_vb_up",
+      "location": "$.command.u4_attack_play.shake[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_play",
+      "location": "$.command.u4_attack_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_play_target",
+      "location": "$.command.u4_attack_play.effect[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_play_target_b",
+      "location": "$.command.u4_attack_play.effect[2]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_play_target_ring",
+      "location": "$.command.u4_attack_play.effect[3]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_ready",
+      "location": "$.command.u4_attack_ready.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_ready_target",
+      "location": "$.command.u4_attack_ready.effect[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u4_attack_ready_target_glow",
+      "location": "$.command.u4_attack_ready.effect[2]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u5_buff_play",
+      "location": "$.command.u5_buff_play.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_u5_buff_ready",
+      "location": "$.command.u5_buff_ready.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "CAM_SPINE",
+      "file_name": "fei_30048_ug_attack_cam",
+      "location": "$.command.ug_attack.cam_spine[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "NODE_ANI",
+      "file_name": "fei_30048_ug_attack_mon_node",
+      "location": "$.command.ug_attack.node_ani[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ug_attack_eff_s2",
+      "location": "$.command.ug_attack.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ug_attack_eff_s1",
+      "location": "$.command.ug_attack.effect[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ug_attack_hookup_s1_eff",
+      "location": "$.command.ug_attack.effect[2]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ug_attack_hookup_s2_eff",
+      "location": "$.command.ug_attack.effect[3]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "screen_fx_water_wo_02",
+      "location": "$.command.ug_attack.effect[4]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ug_attack_eff_s1_screen",
+      "location": "$.command.ug_attack.effect[5]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "screen_fx_electricity_target_01",
+      "location": "$.command.ug_attack.effect[6]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "screen_fx_electricity_screen_03",
+      "location": "$.command.ug_attack.effect[7]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "screen_fx_electricity_screen_ground_02",
+      "location": "$.command.ug_attack.effect[8]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_bg3",
+      "location": "$.command.ux_buff.effect[0]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_bg2",
+      "location": "$.command.ux_buff.effect[1]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_self_2_f",
+      "location": "$.command.ux_buff.effect[2]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_self_2_b",
+      "location": "$.command.ux_buff.effect[3]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_bg1",
+      "location": "$.command.ux_buff.effect[4]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_self_1_f",
+      "location": "$.command.ux_buff.effect[5]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_self_1_b",
+      "location": "$.command.ux_buff.effect[6]"
+    },
+    {
+      "config": "model_data/30048.srmd",
+      "etty": "EFFECT",
+      "file_name": "fei_30048_ux_screen_1",
+      "location": "$.command.ux_buff.effect[7]"
+    },
+    {
+      "config": "model_data/30048_battle_ready.brmd",
+      "etty": "NODE_ANI",
+      "file_name": "fei_30048_ug_node_standby",
+      "location": "$.command.ug_attack.node_ani[0]"
+    }
+  ],
+  "method": {
+    "roots": [
+      "exact model/30048 and model/30048_battle_ready triplets",
+      "model_data/30048.srcs, .srmd, .srue, and 30048_battle_ready.brmd"
+    ],
+    "rules": [
+      "Only SRMD/BRMD file_name fields create graph edges.",
+      "EFFECT resolves to effect/<file_name>.cfx.",
+      "SHAKE resolves to camera/<file_name>.scsp.",
+      "CAM_SPINE resolves to camera_path/<file_name>.scsp when present.",
+      "NODE_ANI resolves to node/<file_name>.scsp.",
+      "CFX primitive format=spine requires an exact .atlas/.scsp/.sct triplet.",
+      "CFX primitive format=particle requires an exact .particle config.",
+      "Particle textures come only from exact textureFileName values.",
+      "Loose name similarity does not enter the confirmed closure."
+    ]
+  },
+  "observations": [
+    "model_setting/30048.setting is absent from both main and shadow manifests; it is not a missing graph edge because no selected config references it.",
+    "The candidate set contains battle-looking same-prefix assets not reached by an exact config/CFX/particle edge; they are listed but not included."
+  ],
+  "outputs": {
+    "complete_records_csv": "C:\\Users\\11418\\AppData\\Local\\Temp\\codex-czn-30048-audit\\complete_records.csv",
+    "complete_records_json": "C:\\Users\\11418\\AppData\\Local\\Temp\\codex-czn-30048-audit\\complete_records.json",
+    "dependency_report_json": "C:\\Users\\11418\\AppData\\Local\\Temp\\codex-czn-30048-audit\\dependency-report.json"
+  },
+  "particle": [
+    {
+      "path": "effect/fei_30048_attack_play1_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03_h_long2.sct"
+          ],
+          "textureFileName": "particle/pati_03_h_long2.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_attack_play_target_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "aitelia1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "aitelia1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_attack_play1_pat2.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03_h_long2.sct"
+          ],
+          "textureFileName": "particle/pati_03_h_long2.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_buff_play_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "pat",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "aitelia1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "aitelia1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u1_buff_play_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u1_buff_play_pat2.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_ticcle_f",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u2_buff_play_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fei_obk1_fire",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 3,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u2_buff_play_pat3.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_slow",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u2_buff_play_pat2.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03_h_long2.sct"
+          ],
+          "textureFileName": "particle/pati_03_h_long2.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "fei_obk1",
+          "targets": [
+            "particle/pati_03_h_long2.sct"
+          ],
+          "textureFileName": "particle/pati_03_h_long2.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u3_buff_play_pat2.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_slow",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u3_buff_play_pat3.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_slow",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u3_buff_play_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_play_target_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_mid",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "pat_slow",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u4_attack_play_target_pat2.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_ticcle_f",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_u5_buff_play_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "fire_fast",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "pat_fast",
+          "targets": [
+            "particle/blur_ticle_03.sct"
+          ],
+          "textureFileName": "particle/blur_ticle_03.sct"
+        }
+      ]
+    },
+    {
+      "path": "effect/fei_30048_ux_bg3_pat1.particle",
+      "textures": [
+        {
+          "emitter_index": 0,
+          "emitter_name": "bottom",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 1,
+          "emitter_name": "mid",
+          "targets": [
+            "particle/pati_03.sct"
+          ],
+          "textureFileName": "particle/pati_03.sct"
+        },
+        {
+          "emitter_index": 2,
+          "emitter_name": "bottom",
+          "targets": [
+            "particle/dust_02.sct"
+          ],
+          "textureFileName": "particle/dust_02.sct"
+        }
+      ]
+    }
+  ],
+  "particle_source_stems": [
+    "fei_30048_attack_play1_pat1",
+    "fei_30048_attack_play1_pat2",
+    "fei_30048_attack_play_target_pat1",
+    "fei_30048_buff_play_pat1",
+    "fei_30048_u1_buff_play_pat1",
+    "fei_30048_u1_buff_play_pat2",
+    "fei_30048_u2_buff_play_pat1",
+    "fei_30048_u2_buff_play_pat2",
+    "fei_30048_u2_buff_play_pat3",
+    "fei_30048_u3_buff_play_pat1",
+    "fei_30048_u3_buff_play_pat2",
+    "fei_30048_u3_buff_play_pat3",
+    "fei_30048_u4_attack_play_target_pat1",
+    "fei_30048_u4_attack_play_target_pat2",
+    "fei_30048_u5_buff_play_pat1",
+    "fei_30048_ux_bg3_pat1"
+  ],
+  "particle_texture_paths": [
+    "particle/blur_ticle_03.sct",
+    "particle/dust_02.sct",
+    "particle/pati_03.sct",
+    "particle/pati_03_h_long2.sct"
+  ],
+  "schema": "czn-character-dependency-audit-v1",
+  "shadow": {
+    "conclusion": "No selected dependency has an exact shadow record, and no logically related battle path was found in shadow.",
+    "logical_related_battle_paths": [],
+    "needs_shadow_override": false,
+    "selected_exact_path_overrides": []
+  },
+  "source": {
+    "candidate_record_count": 568,
+    "candidate_records": "C:\\Users\\11418\\AppData\\Local\\Temp\\codex-czn-30048-audit\\candidate-records.json",
+    "candidate_records_sha256": "273c23290845c650bb5d7621c1fd31de91b2b4c3ad50e2f4fc7f1865d097cafa",
+    "gameres_root": "F:\\WeGameApps\\rail_apps\\czn(2002460)\\bin\\appdata\\prod\\gameres",
+    "main_manifest": "F:\\WeGameApps\\rail_apps\\czn(2002460)\\bin\\appdata\\prod\\gameres\\manifest.ssra",
+    "main_manifest_sha256": "7e032f3570cdd9c5d28c3ba2f1bb330de8098d7d9595b72116ab4962e9aee079",
+    "shadow_manifest": "F:\\WeGameApps\\rail_apps\\czn(2002460)\\bin\\appdata\\prod\\gameres\\shadow\\manifest.ssra",
+    "shadow_manifest_sha256": "f6eaa50e046a45c1cfe3f3a7bfcf1ee8d20343f0e189c64c0b687740c10cb445"
+  },
+  "spine_source_stems": [
+    "fei_30048_attack_play1_f1",
+    "fei_30048_attack_play1_f2",
+    "fei_30048_attack_play1_glow",
+    "fei_30048_attack_play2_b1",
+    "fei_30048_attack_play2_b2",
+    "fei_30048_attack_play2_f1",
+    "fei_30048_attack_play2_f2",
+    "fei_30048_attack_play2_glow",
+    "fei_30048_attack_play_target",
+    "fei_30048_attack_play_target_glow",
+    "fei_30048_buff_play",
+    "fei_30048_buff_play_glow",
+    "fei_30048_u1_buff_play_b1",
+    "fei_30048_u1_buff_play_b2",
+    "fei_30048_u1_buff_play_f1",
+    "fei_30048_u1_buff_play_f2",
+    "fei_30048_u2_buff_play_b1",
+    "fei_30048_u2_buff_play_b2",
+    "fei_30048_u2_buff_play_f1",
+    "fei_30048_u2_buff_play_f2",
+    "fei_30048_u3_buff_play_b1",
+    "fei_30048_u3_buff_play_b2",
+    "fei_30048_u3_buff_play_b3",
+    "fei_30048_u3_buff_play_b4",
+    "fei_30048_u3_buff_play_b5",
+    "fei_30048_u3_buff_play_f",
+    "fei_30048_u3_buff_play_glow",
+    "fei_30048_u3_buff_ready",
+    "fei_30048_u3_buff_ready_glow",
+    "fei_30048_u4_attack_play",
+    "fei_30048_u4_attack_play_glow",
+    "fei_30048_u4_attack_play_target_b",
+    "fei_30048_u4_attack_play_target_f1",
+    "fei_30048_u4_attack_play_target_f2",
+    "fei_30048_u4_attack_play_target_f3",
+    "fei_30048_u4_attack_ready",
+    "fei_30048_u4_attack_ready_glow",
+    "fei_30048_u4_attack_ready_target",
+    "fei_30048_u4_attack_ready_target_glow",
+    "fei_30048_u5_buff_play_cha_glow",
+    "fei_30048_u5_buff_play_fire_b",
+    "fei_30048_u5_buff_play_fire_f",
+    "fei_30048_u5_buff_play_glow",
+    "fei_30048_u5_buff_play_servant",
+    "fei_30048_u5_buff_play_sun",
+    "fei_30048_u5_buff_ready_b",
+    "fei_30048_u5_buff_ready_f",
+    "fei_30048_ug_cutin_1",
+    "fei_30048_ug_cutin_2",
+    "fei_30048_ug_eff_s1_1",
+    "fei_30048_ug_eff_s1_1_2",
+    "fei_30048_ug_eff_s1_2",
+    "fei_30048_ug_eff_s1_3",
+    "fei_30048_ug_eff_s1_4",
+    "fei_30048_ug_eff_s1_4_2",
+    "fei_30048_ug_eff_s1_5",
+    "fei_30048_ug_eff_s1_6",
+    "fei_30048_ug_eff_s1_screen",
+    "fei_30048_ug_eff_s2_1",
+    "fei_30048_ug_eff_s2_2",
+    "fei_30048_ug_eff_s2_3",
+    "fei_30048_ug_eff_s2_4",
+    "fei_30048_ug_eff_s2_5",
+    "fei_30048_ug_eff_s2_impact",
+    "fei_30048_ug_eff_s2_impact2",
+    "fei_30048_ug_hookup_s1_eff",
+    "fei_30048_ug_hookup_s2_eff",
+    "fei_30048_ug_ld_eff",
+    "fei_30048_ux_bg1_1",
+    "fei_30048_ux_bg1_2",
+    "fei_30048_ux_bg1_3",
+    "fei_30048_ux_bg1_cha",
+    "fei_30048_ux_bg2_1",
+    "fei_30048_ux_bg2_2_1",
+    "fei_30048_ux_bg2_2_3",
+    "fei_30048_ux_bg2_2_4",
+    "fei_30048_ux_bg2_2_5",
+    "fei_30048_ux_bg2_3",
+    "fei_30048_ux_bg2_4",
+    "fei_30048_ux_bg2_5",
+    "fei_30048_ux_bg2_6",
+    "fei_30048_ux_bg2_bangsang_b",
+    "fei_30048_ux_bg2_bangsang_f",
+    "fei_30048_ux_bg3_1",
+    "fei_30048_ux_bg3_2",
+    "fei_30048_ux_bg3_3_1",
+    "fei_30048_ux_bg3_3_2",
+    "fei_30048_ux_bg3_4",
+    "fei_30048_ux_bg3_5_1",
+    "fei_30048_ux_bg3_5_2",
+    "fei_30048_ux_bg3_5_3",
+    "fei_30048_ux_bg3_bangsang_b",
+    "fei_30048_ux_bg3_bangsang_f",
+    "fei_30048_ux_bg3_cha",
+    "fei_30048_ux_screen_1",
+    "fei_30048_ux_screen_2",
+    "fei_30048_ux_screen_3",
+    "fei_30048_ux_self_1_b_1",
+    "fei_30048_ux_self_1_b_2",
+    "fei_30048_ux_self_1_f_1",
+    "fei_30048_ux_self_1_f_2",
+    "fei_30048_ux_self_1_f_3",
+    "fei_30048_ux_self_1_f_4",
+    "fei_30048_ux_self_1_glow",
+    "fei_30048_ux_self_2_b",
+    "fei_30048_ux_self_2_f",
+    "mika_1039_skill_x_screen_hk3",
+    "screen_fx_electricity_screen_01_2",
+    "screen_fx_electricity_screen_02_1",
+    "screen_fx_electricity_screen_03_1",
+    "screen_fx_electricity_target_01_b",
+    "screen_fx_electricity_target_01_f",
+    "screen_water_fx_all2"
+  ],
+  "unreferenced_name_candidates": [
+    "cutin/collapse_fhd/collapse_30048.webp",
+    "cutin/fhd/30048.webp",
+    "effect/30048_bangsang_eff.cfx",
+    "effect/30048_bangsang_eff_body.atlas",
+    "effect/30048_bangsang_eff_body.scsp",
+    "effect/30048_bangsang_eff_body.sct",
+    "effect/30048_bangsang_eff_fire.atlas",
+    "effect/30048_bangsang_eff_fire.scsp",
+    "effect/30048_bangsang_eff_fire.sct",
+    "effect/30048_bangsang_eff_pati1.particle",
+    "effect/fei_30048_u4_attack_ready_target_b.atlas",
+    "effect/fei_30048_u4_attack_ready_target_b.scsp",
+    "effect/fei_30048_u4_attack_ready_target_b.sct",
+    "effect/fei_30048_u5_buff_ready.atlas",
+    "effect/fei_30048_u5_buff_ready.scsp",
+    "effect/fei_30048_u5_buff_ready.sct",
+    "effect/fei_30048_ux_bg2_2_2.atlas",
+    "effect/fei_30048_ux_bg2_2_2.scsp",
+    "effect/fei_30048_ux_bg2_2_2.sct",
+    "effect/fei_30048_ux_bg3_3_3.atlas",
+    "effect/fei_30048_ux_bg3_3_3.scsp",
+    "effect/fei_30048_ux_bg3_3_3.sct",
+    "effect/fei_30048_ux_illust.cfx",
+    "effect/fei_30048_ux_illust_1.atlas",
+    "effect/fei_30048_ux_illust_1.scsp",
+    "effect/fei_30048_ux_illust_1.sct",
+    "effect/fei_30048_ux_illust_2.atlas",
+    "effect/fei_30048_ux_illust_2.scsp",
+    "effect/fei_30048_ux_illust_2.sct",
+    "effect/fei_30048_ux_illust_3.atlas",
+    "effect/fei_30048_ux_illust_3.scsp",
+    "effect/fei_30048_ux_illust_3.sct",
+    "effect/fei_30048_ux_illust_4.atlas",
+    "effect/fei_30048_ux_illust_4.scsp",
+    "effect/fei_30048_ux_illust_4.sct",
+    "effect/fei_30048_ux_illust_pati1.particle",
+    "effect/fei_30048_ux_illust_pati2.particle",
+    "effect/fei_30048_ux_screen_2.cfx",
+    "effect/fei_30048_ux_screen_3.cfx",
+    "model/liveevent_30048.atlas",
+    "model/liveevent_30048.scsp",
+    "model/liveevent_30048.sct",
+    "model/liveevent_30048_bg_b_01.atlas",
+    "model/liveevent_30048_bg_b_01.scsp",
+    "model/liveevent_30048_bg_b_01.sct",
+    "model/liveevent_30048_bg_b_02.atlas",
+    "model/liveevent_30048_bg_b_02.scsp",
+    "model/liveevent_30048_bg_b_02.sct",
+    "model/liveevent_30048_bg_f_01.atlas",
+    "model/liveevent_30048_bg_f_01.scsp",
+    "model/liveevent_30048_bg_f_01.sct",
+    "model/liveevent_30048_fade.atlas",
+    "model/liveevent_30048_fade.scsp",
+    "model/liveevent_30048_fade.sct"
+  ],
+  "unresolved": [
+    {
+      "kind": "implicit_cutin_binding",
+      "name_candidates_not_included": [
+        "cutin/collapse_fhd/collapse_30048.webp",
+        "cutin/fhd/30048.webp",
+        "effect/fei_30048_ux_illust.cfx"
+      ],
+      "reason": "CUTIN node has neither file_name nor id; selection cannot be proven from the config.",
+      "source": "model_data/30048.srmd:$.command.ux_buff.cutin[0]"
+    }
+  ],
+  "validation": {
+    "all_chunks_mapped": true,
+    "all_records_unencrypted": true,
+    "compression_counts": {
+      "0": 7,
+      "1": 404
+    },
+    "encryption_counts": {
+      "0/0": 411
+    },
+    "errors": [],
+    "selected_records": 411,
+    "validated_original_bytes": 36064946,
+    "validated_records": 411
+  }
+}

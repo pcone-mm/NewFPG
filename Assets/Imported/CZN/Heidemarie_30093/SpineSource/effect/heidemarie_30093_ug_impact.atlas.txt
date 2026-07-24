@@ -1,0 +1,27 @@
+
+heidemarie_30093_ug_impact.png
+size: 1736,1272
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+impact1
+  rotate: true
+  xy: 2, 2
+  size: 1264, 576
+  orig: 1264, 576
+  offset: 0, 0
+  index: -1
+impact2
+  rotate: true
+  xy: 580, 2
+  size: 1264, 576
+  orig: 1264, 576
+  offset: 0, 0
+  index: -1
+impact3
+  rotate: true
+  xy: 1158, 2
+  size: 1264, 576
+  orig: 1264, 576
+  offset: 0, 0
+  index: -1

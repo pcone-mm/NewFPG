@@ -1,0 +1,48 @@
+
+fei_30048_u4_attack_play_target_f3.sct
+size: 936,528
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow
+  rotate: false
+  xy: 636, 227
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1
+luke_allatt_ring2
+  rotate: false
+  xy: 636, 137
+  size: 211, 88
+  orig: 211, 88
+  offset: 0, 0
+  index: -1
+luke_allatt_ring3
+  rotate: false
+  xy: 636, 50
+  size: 211, 85
+  orig: 211, 85
+  offset: 0, 0
+  index: -1
+luke_allatt_ring4
+  rotate: true
+  xy: 849, 17
+  size: 208, 79
+  orig: 208, 79
+  offset: 0, 0
+  index: -1
+shockwave3_0001
+  rotate: true
+  xy: 2, 263
+  size: 259, 632
+  orig: 259, 632
+  offset: 0, 0
+  index: -1
+shockwave3_0003
+  rotate: true
+  xy: 2, 2
+  size: 259, 632
+  orig: 259, 632
+  offset: 0, 0
+  index: -1

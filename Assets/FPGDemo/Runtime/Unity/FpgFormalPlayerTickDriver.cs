@@ -57,7 +57,7 @@ namespace FPG.Demo.Unity
 
         private UnityBattleInputSource inputSource;
         private D0CharacterDefinition playerDefinition;
-        private D0PlayerEntityView playerEntity;
+        private FpgPlayerEntityView playerEntity;
         private D0ThreeCProfile threeCProfile;
         private TickIndex lastProcessedTick = TickIndex.Invalid;
         private long nextCommandSequence;
@@ -74,7 +74,7 @@ namespace FPG.Demo.Unity
             aimViewportSource as ICombatAimViewportSource;
         public FpgFormalPlayerCameraFeedback CameraFeedback => cameraFeedback;
         public D0CharacterDefinition PlayerDefinition => playerDefinition;
-        public D0PlayerEntityView PlayerEntity => playerEntity;
+        public FpgPlayerEntityView PlayerEntity => playerEntity;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
         public bool IsPlayerConfigured => playerConfigured;
         public bool HasCaptureFault => playerConfigured
@@ -181,7 +181,7 @@ namespace FPG.Demo.Unity
         /// </summary>
         public bool TryConfigurePlayer(
             D0CharacterDefinition definition,
-            D0PlayerEntityView entity,
+            FpgPlayerEntityView entity,
             D0ThreeCProfile profile,
             UnityAttackQuerySettings querySettings,
             out string error)

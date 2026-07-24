@@ -27,17 +27,17 @@ namespace FPG.Demo.Tests.EditMode
         private const string BehaviorScriptPath =
             "Assets/FPGDemo/Runtime/Unity/Config/FpgEnemyBehaviorDefinition.cs";
         private const string PresentationProfilePath =
-            "Assets/FPGDemo/Config/D0Slice/CombatPresentationProfile.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
         private const string HitTipArtRoot =
-            "Assets/Art/HUD/Hit_tip";
+            "Assets/FPGDemo/Presentation/HUD/HitTip";
         private const string HitTipNormalBackgroundPath =
             HitTipArtRoot + "/di_nomal&critical.png";
         private const string HitTipElementalBackgroundPath =
             HitTipArtRoot + "/di_elemental.png";
         private const string ThreeCProfilePath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_3C.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_ThreeC.asset";
         private const string CombatFeelProfilePath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_CombatFeel.asset";
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_CombatFeel.asset";
 
         [Test]
         public void FormalBarChangesAnchorAndActualRectWidth()

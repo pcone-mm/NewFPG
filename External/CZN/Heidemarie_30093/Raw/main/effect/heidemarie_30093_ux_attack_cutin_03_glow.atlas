@@ -1,0 +1,230 @@
+
+heidemarie_30093_ux_attack_cutin_03_glow.sct
+size: 2012,2020
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 1802, 154
+  size: 205, 205
+  orig: 205, 205
+  offset: 0, 0
+  index: -1
+hade_glow_01_01
+  rotate: false
+  xy: 2, 1732
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_02
+  rotate: false
+  xy: 514, 1732
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_03
+  rotate: false
+  xy: 1026, 1732
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_04
+  rotate: true
+  xy: 2, 935
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_05
+  rotate: true
+  xy: 2, 423
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_06
+  rotate: true
+  xy: 289, 935
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_07
+  rotate: true
+  xy: 289, 423
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_08
+  rotate: false
+  xy: 741, 1445
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_09
+  rotate: false
+  xy: 1478, 1160
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_10
+  rotate: false
+  xy: 677, 1158
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_11
+  rotate: true
+  xy: 1189, 867
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_12
+  rotate: false
+  xy: 677, 871
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_13
+  rotate: false
+  xy: 677, 584
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_14
+  rotate: false
+  xy: 1476, 873
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_15
+  rotate: false
+  xy: 1476, 586
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_01_16
+  rotate: true
+  xy: 1189, 355
+  size: 510, 285
+  orig: 510, 285
+  offset: 0, 0
+  index: -1
+hade_glow_02_01
+  rotate: false
+  xy: 1538, 1733
+  size: 442, 284
+  orig: 442, 284
+  offset: 0, 0
+  index: -1
+hade_glow_02_02
+  rotate: false
+  xy: 1538, 1447
+  size: 442, 284
+  orig: 442, 284
+  offset: 0, 0
+  index: -1
+hade_glow_02_03
+  rotate: false
+  xy: 2, 1489
+  size: 384, 241
+  orig: 384, 241
+  offset: 0, 0
+  index: -1
+hade_glow_03_01
+  rotate: true
+  xy: 2, 70
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_02
+  rotate: true
+  xy: 227, 70
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_03
+  rotate: false
+  xy: 388, 1507
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_04
+  rotate: true
+  xy: 452, 70
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_05
+  rotate: true
+  xy: 1253, 1379
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_06
+  rotate: true
+  xy: 677, 2
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_07
+  rotate: true
+  xy: 902, 2
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_08
+  rotate: true
+  xy: 1127, 2
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_09
+  rotate: true
+  xy: 1352, 2
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_10
+  rotate: false
+  xy: 677, 359
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_11
+  rotate: false
+  xy: 1476, 361
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1
+hade_glow_03_12
+  rotate: true
+  xy: 1577, 8
+  size: 351, 223
+  orig: 351, 223
+  offset: 0, 0
+  index: -1

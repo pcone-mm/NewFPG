@@ -1,0 +1,209 @@
+
+heidemarie_30093_ux_attack_04.png
+size: 2020,1732
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 1762, 1473
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+hade_lightning_28_01
+  rotate: true
+  xy: 1410, 364
+  size: 466, 224
+  orig: 466, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_28_02
+  rotate: false
+  xy: 2, 131
+  size: 378, 224
+  orig: 378, 224
+  offset: 0, 0
+  index: -1
+hade_lightning_28_03
+  rotate: false
+  xy: 1396, 832
+  size: 588, 211
+  orig: 588, 211
+  offset: 0, 0
+  index: -1
+hade_lightning_28_04
+  rotate: false
+  xy: 1852, 62
+  size: 160, 300
+  orig: 160, 300
+  offset: 0, 0
+  index: -1
+hade_lightning_28_05
+  rotate: true
+  xy: 870, 862
+  size: 144, 61
+  orig: 144, 61
+  offset: 0, 0
+  index: -1
+hade_lightning_29_00
+  rotate: true
+  xy: 1396, 1045
+  size: 247, 615
+  orig: 247, 615
+  offset: 0, 0
+  index: -1
+hade_lightning_29_01
+  rotate: true
+  xy: 428, 639
+  size: 644, 440
+  orig: 644, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_29_03
+  rotate: true
+  xy: 428, 125
+  size: 512, 440
+  orig: 512, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_29_04
+  rotate: false
+  xy: 870, 341
+  size: 538, 440
+  orig: 538, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_29_05
+  rotate: false
+  xy: 1396, 1294
+  size: 364, 435
+  orig: 364, 435
+  offset: 0, 0
+  index: -1
+hade_lightning_30_00
+  rotate: false
+  xy: 1762, 1296
+  size: 208, 175
+  orig: 208, 175
+  offset: 0, 0
+  index: -1
+hade_lightning_30_01
+  rotate: false
+  xy: 1510, 4
+  size: 222, 193
+  orig: 222, 193
+  offset: 0, 0
+  index: -1
+hade_lightning_30_02
+  rotate: true
+  xy: 1801, 608
+  size: 222, 208
+  orig: 222, 208
+  offset: 0, 0
+  index: -1
+hade_lightning_31_01
+  rotate: true
+  xy: 1410, 199
+  size: 163, 440
+  orig: 163, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_31_02
+  rotate: true
+  xy: 870, 176
+  size: 163, 440
+  orig: 163, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_31_03
+  rotate: false
+  xy: 1636, 390
+  size: 163, 440
+  orig: 163, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_31_04
+  rotate: true
+  xy: 870, 11
+  size: 163, 440
+  orig: 163, 440
+  offset: 0, 0
+  index: -1
+hade_lightning_32_01
+  rotate: false
+  xy: 312, 27
+  size: 80, 102
+  orig: 80, 102
+  offset: 0, 0
+  index: -1
+hade_lightning_32_02
+  rotate: true
+  xy: 212, 45
+  size: 84, 98
+  orig: 84, 98
+  offset: 0, 0
+  index: -1
+hade_lightning_32_03
+  rotate: true
+  xy: 110, 42
+  size: 87, 100
+  orig: 87, 100
+  offset: 0, 0
+  index: -1
+hade_lightning_32_04
+  rotate: true
+  xy: 2, 33
+  size: 96, 106
+  orig: 96, 106
+  offset: 0, 0
+  index: -1
+hade_lightning_38_01
+  rotate: false
+  xy: 2, 1285
+  size: 946, 444
+  orig: 946, 444
+  offset: 0, 0
+  index: -1
+hade_lightning_38_02
+  rotate: true
+  xy: 950, 783
+  size: 946, 444
+  orig: 946, 444
+  offset: 0, 0
+  index: -1
+hade_lightning_38_03
+  rotate: true
+  xy: 2, 357
+  size: 926, 424
+  orig: 926, 424
+  offset: 0, 0
+  index: -1
+heal_3
+  rotate: true
+  xy: 1801, 364
+  size: 242, 202
+  orig: 242, 202
+  offset: 0, 0
+  index: -1
+light_line
+  rotate: false
+  xy: 870, 1008
+  size: 70, 70
+  orig: 70, 70
+  offset: 0, 0
+  index: -1
+slaughter_bff_cross11
+  rotate: true
+  xy: 1312, 2
+  size: 195, 196
+  orig: 195, 196
+  offset: 0, 0
+  index: -1
+soo_fire_s2_1
+  rotate: true
+  xy: 870, 1080
+  size: 203, 47
+  orig: 203, 47
+  offset: 0, 0
+  index: -1

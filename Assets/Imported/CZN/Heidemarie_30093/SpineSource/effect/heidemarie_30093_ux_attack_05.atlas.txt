@@ -1,0 +1,265 @@
+
+heidemarie_30093_ux_attack_05.png
+size: 1996,1856
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg_ras_m_sk3_1_ptc_13
+  rotate: false
+  xy: 2, 10
+  size: 89, 49
+  orig: 89, 49
+  offset: 0, 0
+  index: -1
+bg_ras_m_sk3_1_ptc_2
+  rotate: false
+  xy: 126, 78
+  size: 47, 40
+  orig: 47, 40
+  offset: 0, 0
+  index: -1
+bg_ras_m_sk3_2_ptc_3
+  rotate: false
+  xy: 1814, 1461
+  size: 63, 63
+  orig: 63, 63
+  offset: 0, 0
+  index: -1
+dust_ld_f_1_2
+  rotate: false
+  xy: 1814, 1526
+  size: 180, 225
+  orig: 180, 225
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 748, 18
+  size: 243, 243
+  orig: 243, 243
+  offset: 0, 0
+  index: -1
+glass1_b_0001
+  rotate: false
+  xy: 388, 1301
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_b_0002
+  rotate: false
+  xy: 755, 1301
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_b_0003
+  rotate: false
+  xy: 388, 955
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_b_0004
+  rotate: false
+  xy: 755, 955
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_b_0005
+  rotate: false
+  xy: 366, 609
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_b_0006
+  rotate: false
+  xy: 733, 609
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_b_0007
+  rotate: false
+  xy: 366, 263
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0001
+  rotate: false
+  xy: 733, 263
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0002
+  rotate: true
+  xy: 1122, 1280
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0003
+  rotate: false
+  xy: 1122, 934
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0004
+  rotate: false
+  xy: 1100, 588
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0005
+  rotate: false
+  xy: 1100, 242
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0006
+  rotate: true
+  xy: 1468, 1309
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass1_r_0007
+  rotate: true
+  xy: 1489, 942
+  size: 365, 344
+  orig: 365, 344
+  offset: 0, 0
+  index: -1
+glass2_b_0001
+  rotate: false
+  xy: 126, 120
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_b_0002
+  rotate: false
+  xy: 993, 2
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_b_0003
+  rotate: false
+  xy: 1233, 2
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_b_0004
+  rotate: false
+  xy: 1467, 405
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_r_0001
+  rotate: false
+  xy: 1755, 702
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_r_0002
+  rotate: false
+  xy: 1473, 165
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_r_0003
+  rotate: false
+  xy: 1755, 462
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass2_r_0004
+  rotate: false
+  xy: 1713, 222
+  size: 238, 238
+  orig: 238, 238
+  offset: 0, 0
+  index: -1
+glass_01
+  rotate: true
+  xy: 1467, 645
+  size: 287, 286
+  orig: 287, 286
+  offset: 0, 0
+  index: -1
+glass_02
+  rotate: false
+  xy: 1238, 1676
+  size: 494, 178
+  orig: 494, 178
+  offset: 0, 0
+  index: -1
+hade_glass_02
+  rotate: false
+  xy: 126, 360
+  size: 238, 651
+  orig: 238, 651
+  offset: 0, 0
+  index: -1
+hade_glass_03
+  rotate: false
+  xy: 2, 1013
+  size: 384, 841
+  orig: 384, 841
+  offset: 0, 0
+  index: -1
+lens_flare_1
+  rotate: false
+  xy: 1473, 41
+  size: 122, 122
+  orig: 122, 122
+  offset: 0, 0
+  index: -1
+light3
+  rotate: false
+  xy: 388, 1647
+  size: 848, 207
+  orig: 848, 207
+  offset: 0, 0
+  index: -1
+light6
+  rotate: true
+  xy: 2, 61
+  size: 950, 122
+  orig: 950, 122
+  offset: 0, 0
+  index: -1
+light_line
+  rotate: false
+  xy: 1734, 1684
+  size: 67, 67
+  orig: 67, 67
+  offset: 0, 0
+  index: -1
+rock_secm_1
+  rotate: false
+  xy: 1734, 1753
+  size: 238, 101
+  orig: 238, 101
+  offset: 0, 0
+  index: -1
+rock_secm_2
+  rotate: false
+  xy: 366, 123
+  size: 380, 138
+  orig: 380, 138
+  offset: 0, 0
+  index: -1

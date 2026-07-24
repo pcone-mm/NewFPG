@@ -1,0 +1,97 @@
+
+fei_30048_ux_bg3_5_1.png
+size: 1784,432
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura10
+  rotate: false
+  xy: 2, 29
+  size: 393, 400
+  orig: 393, 400
+  offset: 0, 0
+  index: -1
+aura11
+  rotate: false
+  xy: 1566, 207
+  size: 214, 222
+  orig: 214, 222
+  offset: 0, 0
+  index: -1
+aura12
+  rotate: true
+  xy: 1115, 177
+  size: 252, 243
+  orig: 252, 243
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1360, 2
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+sand_12
+  rotate: false
+  xy: 491, 38
+  size: 191, 59
+  orig: 191, 59
+  offset: 0, 0
+  index: -1
+sand_dust_1
+  rotate: true
+  xy: 397, 99
+  size: 330, 199
+  orig: 330, 199
+  offset: 0, 0
+  index: -1
+sand_dust_2
+  rotate: false
+  xy: 1360, 204
+  size: 204, 225
+  orig: 204, 225
+  offset: 0, 0
+  index: -1
+sand_dust_3
+  rotate: false
+  xy: 598, 114
+  size: 258, 315
+  orig: 258, 315
+  offset: 0, 0
+  index: -1
+sand_dust_4
+  rotate: false
+  xy: 1115, 10
+  size: 191, 165
+  orig: 191, 165
+  offset: 0, 0
+  index: -1
+sand_part_1
+  rotate: true
+  xy: 858, 143
+  size: 286, 255
+  orig: 286, 255
+  offset: 0, 0
+  index: -1
+sand_part_4
+  rotate: true
+  xy: 1562, 14
+  size: 188, 213
+  orig: 188, 213
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 684, 9
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: false
+  xy: 397, 2
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,55 @@
+
+fei_30048_ux_bg3_2.sct
+size: 1944,672
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg1_cloud_7
+  rotate: false
+  xy: 1584, 452
+  size: 354, 214
+  orig: 354, 214
+  offset: 0, 0
+  index: -1
+bg2_cloud_07
+  rotate: false
+  xy: 1584, 204
+  size: 270, 246
+  orig: 270, 246
+  offset: 0, 0
+  index: -1
+bg3_bridge
+  rotate: false
+  xy: 2, 162
+  size: 1580, 504
+  orig: 1580, 504
+  offset: 0, 0
+  index: -1
+bg3_bridge_shadow
+  rotate: false
+  xy: 2, 21
+  size: 1279, 139
+  orig: 1279, 139
+  offset: 0, 0
+  index: -1
+bg3_cloud_3
+  rotate: false
+  xy: 1283, 21
+  size: 269, 139
+  orig: 269, 139
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1584, 2
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+shadow2
+  rotate: false
+  xy: 1786, 34
+  size: 131, 168
+  orig: 131, 168
+  offset: 0, 0
+  index: -1

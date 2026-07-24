@@ -1,0 +1,20 @@
+
+fei_30048_ux_bg3_bangsang_f.sct
+size: 336,432
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+b2_f_l_clothes
+  rotate: 180
+  xy: 162, 5
+  size: 168, 426
+  orig: 175, 438
+  offset: 3, 5
+  index: -1
+b2_f_r_clothes
+  rotate: false
+  xy: 2, 3
+  size: 212, 428
+  orig: 221, 436
+  offset: 2, 5
+  index: -1

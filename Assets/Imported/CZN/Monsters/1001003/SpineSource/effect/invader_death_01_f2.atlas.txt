@@ -1,0 +1,272 @@
+
+invader_death_01_f2.png
+size: 1512,1552
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura6
+  rotate: true
+  xy: 2, 274
+  size: 330, 237
+  orig: 330, 237
+  offset: 0, 0
+  index: -1
+aura7
+  rotate: false
+  xy: 2, 3
+  size: 300, 269
+  orig: 300, 269
+  offset: 0, 0
+  index: -1
+blood1_1
+  rotate: false
+  xy: 504, 1209
+  size: 400, 334
+  orig: 400, 334
+  offset: 0, 0
+  index: -1
+blood1_2
+  rotate: false
+  xy: 2, 942
+  size: 400, 334
+  orig: 400, 334
+  offset: 0, 0
+  index: -1
+blood1_3
+  rotate: false
+  xy: 906, 1209
+  size: 400, 334
+  orig: 400, 334
+  offset: 0, 0
+  index: -1
+blood1_4
+  rotate: false
+  xy: 503, 873
+  size: 400, 334
+  orig: 400, 334
+  offset: 0, 0
+  index: -1
+blood1_5
+  rotate: false
+  xy: 905, 873
+  size: 400, 334
+  orig: 400, 334
+  offset: 0, 0
+  index: -1
+blood1_6
+  rotate: false
+  xy: 2, 606
+  size: 400, 334
+  orig: 400, 334
+  offset: 0, 0
+  index: -1
+blood2_1
+  rotate: true
+  xy: 1308, 1123
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood2_2
+  rotate: true
+  xy: 1307, 821
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood2_3
+  rotate: true
+  xy: 845, 17
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood2_4
+  rotate: true
+  xy: 1029, 319
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood2_5
+  rotate: false
+  xy: 1199, 621
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood2_6
+  rotate: true
+  xy: 1045, 17
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood2_7
+  rotate: true
+  xy: 1229, 319
+  size: 300, 198
+  orig: 300, 198
+  offset: 0, 0
+  index: -1
+blood3_1
+  rotate: true
+  xy: 534, 621
+  size: 250, 131
+  orig: 250, 131
+  offset: 0, 0
+  index: -1
+blood3_2
+  rotate: true
+  xy: 667, 621
+  size: 250, 131
+  orig: 250, 131
+  offset: 0, 0
+  index: -1
+blood3_3
+  rotate: true
+  xy: 800, 621
+  size: 250, 131
+  orig: 250, 131
+  offset: 0, 0
+  index: -1
+blood3_4
+  rotate: true
+  xy: 933, 621
+  size: 250, 131
+  orig: 250, 131
+  offset: 0, 0
+  index: -1
+blood3_5
+  rotate: true
+  xy: 1066, 621
+  size: 250, 131
+  orig: 250, 131
+  offset: 0, 0
+  index: -1
+blood3_6
+  rotate: false
+  xy: 1245, 186
+  size: 250, 131
+  orig: 250, 131
+  offset: 0, 0
+  index: -1
+bloodCore
+  rotate: true
+  xy: 604, 17
+  size: 300, 239
+  orig: 300, 239
+  offset: 0, 0
+  index: -1
+bloodDrop1
+  rotate: true
+  xy: 435, 825
+  size: 41, 52
+  orig: 41, 52
+  offset: 0, 0
+  index: -1
+bloodDrop2
+  rotate: false
+  xy: 404, 821
+  size: 29, 45
+  orig: 29, 45
+  offset: 0, 0
+  index: -1
+bloodDrop3
+  rotate: false
+  xy: 1199, 838
+  size: 33, 33
+  orig: 33, 33
+  offset: 0, 0
+  index: -1
+bloodDrop4
+  rotate: false
+  xy: 497, 823
+  size: 35, 48
+  orig: 35, 48
+  offset: 0, 0
+  index: -1
+burst1
+  rotate: false
+  xy: 241, 304
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+burst2
+  rotate: false
+  xy: 2, 1278
+  size: 500, 265
+  orig: 500, 265
+  offset: 0, 0
+  index: -1
+fastBlood1
+  rotate: true
+  xy: 404, 868
+  size: 291, 91
+  orig: 291, 91
+  offset: 0, 0
+  index: -1
+fastBlood2
+  rotate: true
+  xy: 1308, 1425
+  size: 118, 199
+  orig: 118, 199
+  offset: 0, 0
+  index: -1
+fastBlood3
+  rotate: false
+  xy: 1245, 7
+  size: 54, 177
+  orig: 54, 177
+  offset: 0, 0
+  index: -1
+fastBlood4
+  rotate: false
+  xy: 404, 1161
+  size: 97, 115
+  orig: 97, 115
+  offset: 0, 0
+  index: -1
+fastBlood5
+  rotate: false
+  xy: 404, 612
+  size: 112, 207
+  orig: 112, 207
+  offset: 0, 0
+  index: -1
+fastBlood6
+  rotate: true
+  xy: 1429, 405
+  size: 123, 51
+  orig: 123, 51
+  offset: 0, 0
+  index: -1
+fastBlood7
+  rotate: true
+  xy: 1429, 530
+  size: 89, 76
+  orig: 89, 76
+  offset: 0, 0
+  index: -1
+smoke1
+  rotate: true
+  xy: 304, 2
+  size: 300, 298
+  orig: 300, 298
+  offset: 0, 0
+  index: -1
+smoke2
+  rotate: true
+  xy: 789, 319
+  size: 300, 238
+  orig: 300, 238
+  offset: 0, 0
+  index: -1
+smoke3
+  rotate: true
+  xy: 543, 319
+  size: 300, 244
+  orig: 300, 244
+  offset: 0, 0
+  index: -1

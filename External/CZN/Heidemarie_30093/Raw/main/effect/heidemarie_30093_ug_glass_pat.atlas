@@ -1,0 +1,188 @@
+
+heidemarie_30093_ug_glass_pat.sct
+size: 1992,760
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura01
+  rotate: true
+  xy: 1802, 18
+  size: 200, 174
+  orig: 200, 174
+  offset: 0, 0
+  index: -1
+aura04
+  rotate: false
+  xy: 2, 15
+  size: 250, 250
+  orig: 250, 250
+  offset: 0, 0
+  index: -1
+aura05
+  rotate: false
+  xy: 916, 77
+  size: 273, 274
+  orig: 273, 274
+  offset: 0, 0
+  index: -1
+aura05_2
+  rotate: false
+  xy: 620, 44
+  size: 294, 307
+  orig: 294, 307
+  offset: 0, 0
+  index: -1
+aura2_1
+  rotate: true
+  xy: 254, 36
+  size: 229, 165
+  orig: 229, 165
+  offset: 0, 0
+  index: -1
+aura2_2
+  rotate: true
+  xy: 421, 36
+  size: 229, 165
+  orig: 229, 165
+  offset: 0, 0
+  index: -1
+flash1
+  rotate: false
+  xy: 491, 353
+  size: 1024, 405
+  orig: 1024, 405
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 2, 267
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+h_glass1_0002
+  rotate: true
+  xy: 491, 269
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0003
+  rotate: false
+  xy: 1349, 4
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0004
+  rotate: false
+  xy: 1433, 4
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0005
+  rotate: false
+  xy: 1517, 4
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass1_0006
+  rotate: true
+  xy: 1849, 220
+  size: 82, 127
+  orig: 82, 127
+  offset: 0, 0
+  index: -1
+h_glass2_0001
+  rotate: false
+  xy: 1879, 608
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0002
+  rotate: true
+  xy: 1718, 511
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0003
+  rotate: false
+  xy: 1870, 456
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0004
+  rotate: true
+  xy: 1718, 402
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0005
+  rotate: false
+  xy: 1601, 254
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+h_glass2_0006
+  rotate: false
+  xy: 1870, 304
+  size: 107, 150
+  orig: 107, 150
+  offset: 0, 0
+  index: -1
+heid_pati01_0000
+  rotate: true
+  xy: 1517, 406
+  size: 200, 199
+  orig: 200, 199
+  offset: 0, 0
+  index: -1
+heid_pati01_0001
+  rotate: true
+  xy: 1601, 18
+  size: 200, 199
+  orig: 200, 199
+  offset: 0, 0
+  index: -1
+heid_pati02_0001
+  rotate: false
+  xy: 1191, 133
+  size: 200, 218
+  orig: 200, 218
+  offset: 0, 0
+  index: -1
+heid_pati02_0002
+  rotate: false
+  xy: 1393, 133
+  size: 200, 218
+  orig: 200, 218
+  offset: 0, 0
+  index: -1
+pati5
+  rotate: true
+  xy: 1517, 620
+  size: 138, 360
+  orig: 138, 360
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: false
+  xy: 1710, 240
+  size: 137, 160
+  orig: 137, 160
+  offset: 0, 0
+  index: -1
+pati7
+  rotate: false
+  xy: 1191, 2
+  size: 156, 129
+  orig: 156, 129
+  offset: 0, 0
+  index: -1

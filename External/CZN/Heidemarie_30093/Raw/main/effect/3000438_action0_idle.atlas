@@ -1,0 +1,13 @@
+
+3000438_action0_idle.sct
+size: 1144,640
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+pose
+  rotate: false
+  xy: 2, 2
+  size: 1134, 634
+  orig: 1134, 634
+  offset: 0, 0
+  index: -1

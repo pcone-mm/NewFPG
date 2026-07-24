@@ -1,0 +1,207 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Heidemarie_30093_u2_buff
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: u2_buff
+  displayName: "U2 \u589E\u76CA"
+  duration: 2.8832998
+  actorAnimations:
+  - phaseName: u2_buff_ready
+    animationName: u2_buff_ready
+    startTime: 0
+    duration: 0.46670002
+    loop: 0
+  - phaseName: u2_buff_play
+    animationName: u2_buff_play
+    startTime: 0.5333
+    duration: 1.4000001
+    loop: 0
+  spineLayers:
+  - compositeName: heidemarie_30093_eff_u2_buff_ready
+    sourceName: heidemarie_30093_eff_u2_buff_f
+    skeletonDataAsset: {fileID: 11400000, guid: 22ff726d290e1ed44945a3b946015e53, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u2_buff_ready
+    sourceName: heidemarie_30093_eff_u2_buff_b
+    skeletonDataAsset: {fileID: 11400000, guid: 30f809e1c0d94534bb560159d3955a22, type: 2}
+    animationName: ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: -1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u2_buff_ready
+    sourceName: heidemarie_30093_eff_u2_buff_sword
+    skeletonDataAsset: {fileID: 11400000, guid: ea0b957984aa90b4aa8e7a3e6801dfae, type: 2}
+    animationName: u2_buff_ready
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u2_buff_play
+    sourceName: heidemarie_30093_eff_u2_buff_f
+    skeletonDataAsset: {fileID: 11400000, guid: 22ff726d290e1ed44945a3b946015e53, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.9667
+    scale: 1
+    rotation: 0
+    sortingOrder: 1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u2_buff_play
+    sourceName: heidemarie_30093_eff_u2_buff_b
+    skeletonDataAsset: {fileID: 11400000, guid: 30f809e1c0d94534bb560159d3955a22, type: 2}
+    animationName: play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.8667
+    scale: 1
+    rotation: 0
+    sortingOrder: -1
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_eff_u2_buff_play
+    sourceName: heidemarie_30093_eff_u2_buff_sword
+    skeletonDataAsset: {fileID: 11400000, guid: ea0b957984aa90b4aa8e7a3e6801dfae, type: 2}
+    animationName: u2_buff_play
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0.5333
+    duration: 0.9
+    scale: 1
+    rotation: 0
+    sortingOrder: 0
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: heidemarie_30093_eff_u2_buff_play
+    sourceName: heidemarie_30093_u2_buff_par_1
+    emitterName: digital_crack3
+    originalTexturePath: particle/zodiac_star3.sct
+    anchor: 0
+    offset: {x: 0.5, y: 2.5}
+    sourceVariance: {x: 0.29999998, y: 1.1}
+    force: {x: 0, y: 0}
+    startTime: 0.73330003
+    duration: 1.65
+    scale: 1.2
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 60
+    emissionRate: 5
+    lifetimeMin: 0.39999998
+    lifetimeMax: 1.6
+    speedMin: 0.15
+    speedMax: 0.85
+    sizeMin: 0.099999994
+    sizeMax: 0.6
+    angle: 90
+    angleVariance: 10
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u2_buff_play
+    sourceName: heidemarie_30093_u2_buff_par_1
+    emitterName: digital_crack3
+    originalTexturePath: particle/chain_01.sct
+    anchor: 0
+    offset: {x: 0.5, y: 2.5}
+    sourceVariance: {x: 0.29999998, y: 1.1}
+    force: {x: 0, y: 0}
+    startTime: 0.73330003
+    duration: 1.45
+    scale: 1.2
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 60
+    emissionRate: 10
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.4000001
+    speedMin: 0.15
+    speedMax: 0.85
+    sizeMin: 0.049999982
+    sizeMax: 0.54999995
+    angle: 90
+    angleVariance: 10
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_eff_u2_buff_play
+    sourceName: heidemarie_30093_u2_buff_par_1
+    emitterName: digital_crack3
+    originalTexturePath: particle/pati_03.sct
+    anchor: 0
+    offset: {x: 0.5, y: 2.5}
+    sourceVariance: {x: 0.25, y: 0.79999995}
+    force: {x: 0, y: 0}
+    startTime: 0.8333
+    duration: 2.05
+    scale: 1.2
+    rotation: 0
+    sortingOrder: 0
+    maxParticles: 60
+    emissionRate: 25
+    lifetimeMin: 0.40000004
+    lifetimeMax: 2
+    speedMin: 0.109999985
+    speedMax: 0.48999998
+    sizeMin: 0.8999999
+    sizeMax: 2.3
+    angle: 90
+    angleVariance: 10
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues: []
+  cameraZoomCues: []
+  markers:
+  - kind: HIT
+    label: HIT
+    startTime: 0.7333
+    duration: 0
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, but shared SCT particle textures use a generated
+    soft fallback. Masks, custom shaders, color-blend and post-process nodes remain
+    diagnostic markers. Negative/sentinel CFX scales use a positive preview fallback,
+    ancillary Spine Bezier keys are sampled with linear interpolation, and only the
+    primary cam/camera/node bone is sampled from multi-bone ancillary skeletons.
+  unresolvedResources:
+  - 'Shared particle texture approximated with soft fallback: particle/chain_01.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/pati_03.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/zodiac_star3.sct'

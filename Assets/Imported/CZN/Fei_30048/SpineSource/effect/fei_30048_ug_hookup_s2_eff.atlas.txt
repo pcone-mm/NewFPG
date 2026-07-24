@@ -1,0 +1,69 @@
+
+fei_30048_ug_hookup_s2_eff.png
+size: 1528,1496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow01
+  rotate: false
+  xy: 1219, 304
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+impact01
+  rotate: true
+  xy: 1219, 2
+  size: 300, 137
+  orig: 300, 137
+  offset: 0, 0
+  index: -1
+pe_ug_screen02_0000
+  rotate: true
+  xy: 1004, 25
+  size: 579, 213
+  orig: 579, 213
+  offset: 0, 0
+  index: -1
+pe_ug_screen02_0001
+  rotate: false
+  xy: 473, 606
+  size: 969, 416
+  orig: 969, 416
+  offset: 0, 0
+  index: -1
+pe_ug_screen02_0002
+  rotate: true
+  xy: 2, 493
+  size: 1000, 469
+  orig: 1000, 469
+  offset: 0, 0
+  index: -1
+pe_ug_screen02_0003
+  rotate: false
+  xy: 2, 22
+  size: 1000, 469
+  orig: 1000, 469
+  offset: 0, 0
+  index: -1
+pe_ug_screen02_0004
+  rotate: false
+  xy: 473, 1024
+  size: 1000, 469
+  orig: 1000, 469
+  offset: 0, 0
+  index: -1
+screenSmoke2
+  rotate: false
+  xy: 1444, 773
+  size: 70, 249
+  orig: 70, 249
+  offset: 0, 0
+  index: -1
+screenSmoke5
+  rotate: false
+  xy: 1358, 60
+  size: 82, 242
+  orig: 82, 242
+  offset: 0, 0
+  index: -1

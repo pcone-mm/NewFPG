@@ -1,0 +1,2388 @@
+{
+  "character": "绯",
+  "character_id": "30048",
+  "source": "30048.srmd + 30048_battle_ready.brmd",
+  "skills": [
+    {
+      "id": "attack_play1",
+      "display_name": "普通攻击一",
+      "duration": 1.25,
+      "actor": [
+        {
+          "phase": "attack_play1",
+          "animation": "attack_play1",
+          "start": 0.0,
+          "duration": 0.666700065,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_attack_play1",
+          "source": "fei_30048_attack_play1_f1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 1.0333,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_attack_play1",
+          "source": "fei_30048_attack_play1_f2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 1.0,
+          "alpha": 1.0,
+          "sorting_order": 12
+        },
+        {
+          "composite": "fei_30048_attack_play1",
+          "source": "fei_30048_attack_play1_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.9,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        },
+        {
+          "composite": "fei_30048_attack_play_target",
+          "source": "fei_30048_attack_play_target",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.7,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_attack_play_target_glow",
+          "source": "fei_30048_attack_play_target_glow",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.5333,
+          "alpha": 0.3137255,
+          "sorting_order": 0
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_attack_play1",
+          "source": "fei_30048_attack_play1_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03_h_long2.png",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 1.25,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_attack_play_target",
+          "source": "fei_30048_attack_play_target_pat1",
+          "emitter": "aitelia1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.400000036,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_attack_play_target",
+          "source": "fei_30048_attack_play_target_pat1",
+          "emitter": "aitelia1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.5,
+          "additive": true
+        }
+      ],
+      "transforms": [
+        {
+          "source": "cm_shake_vb_rt",
+          "target": "Camera",
+          "start": 0.066,
+          "duration": 0.3667
+        }
+      ],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.066,
+          "duration": 0.120000005
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.066,
+          "duration": 0.0800000057
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.066,
+          "duration": 0.18
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "id": "attack_play2",
+      "display_name": "普通攻击二",
+      "duration": 1.25,
+      "actor": [
+        {
+          "phase": "attack_play2",
+          "animation": "attack_play2",
+          "start": 0.0,
+          "duration": 0.666700065,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_attack_play2",
+          "source": "fei_30048_attack_play2_f2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.8333,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_attack_play2",
+          "source": "fei_30048_attack_play2_f1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.8333,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_attack_play2",
+          "source": "fei_30048_attack_play2_b1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.4333,
+          "alpha": 1.0,
+          "sorting_order": -10
+        },
+        {
+          "composite": "fei_30048_attack_play2",
+          "source": "fei_30048_attack_play2_b2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.5,
+          "alpha": 1.0,
+          "sorting_order": -12
+        },
+        {
+          "composite": "fei_30048_attack_play2",
+          "source": "fei_30048_attack_play2_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.8333,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        },
+        {
+          "composite": "fei_30048_attack_play_target",
+          "source": "fei_30048_attack_play_target",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.7,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_attack_play_target_glow",
+          "source": "fei_30048_attack_play_target_glow",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.5333,
+          "alpha": 0.3137255,
+          "sorting_order": 0
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_attack_play2",
+          "source": "fei_30048_attack_play1_pat2",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03_h_long2.png",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 1.25,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_attack_play_target",
+          "source": "fei_30048_attack_play_target_pat1",
+          "emitter": "aitelia1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.400000036,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_attack_play_target",
+          "source": "fei_30048_attack_play_target_pat1",
+          "emitter": "aitelia1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.5,
+          "additive": true
+        }
+      ],
+      "transforms": [
+        {
+          "source": "cm_shake_vb_lt",
+          "target": "Camera",
+          "start": 0.066,
+          "duration": 0.3667
+        }
+      ],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.066,
+          "duration": 0.0800000057
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.066,
+          "duration": 0.120000005
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.066,
+          "duration": 0.18
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "id": "u1_buff",
+      "display_name": "U1 增益",
+      "duration": 2.4157,
+      "actor": [
+        {
+          "phase": "u1_buff_ready",
+          "animation": "u1_buff_ready",
+          "start": 0.0,
+          "duration": 0.466700017,
+          "loop": false
+        },
+        {
+          "phase": "u1_buff_play",
+          "animation": "u1_buff_play",
+          "start": 0.466700017,
+          "duration": 1.33330011,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_f2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.4,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_f1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 0.8667,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_b1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.4,
+          "alpha": 1.0,
+          "sorting_order": -10
+        },
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_b2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.0667,
+          "alpha": 1.0,
+          "sorting_order": -15
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.5167,
+          "duration": 0.950000048,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.5167,
+          "duration": 0.55,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.5167,
+          "duration": 0.55,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u1_buff_play",
+          "source": "fei_30048_u1_buff_play_pat2",
+          "emitter": "fire_ticcle_f",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 1.8499999,
+          "additive": true
+        }
+      ],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.599700034,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "id": "u2_buff",
+      "display_name": "U2 增益",
+      "duration": 2.86670017,
+      "actor": [
+        {
+          "phase": "u2_buff_ready",
+          "animation": "u2_buff_ready",
+          "start": 0.0,
+          "duration": 0.466700017,
+          "loop": false
+        },
+        {
+          "phase": "u2_buff_play",
+          "animation": "u2_buff_play",
+          "start": 0.466700017,
+          "duration": 1.33330011,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_f2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_f1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.2667,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_b1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": -10
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_b2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": -15
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1_fire",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 1.95,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 2.05,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 1.25,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 1.8499999,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat3",
+          "emitter": "fire_slow",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 2.05,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat3",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 0.55,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat3",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.565700054,
+          "duration": 0.55,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat2",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03_h_long2.png",
+          "anchor": "Self",
+          "start": 0.616700053,
+          "duration": 2.25,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat2",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03_h_long2.png",
+          "anchor": "Self",
+          "start": 0.616700053,
+          "duration": 1.8499999,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1_fire",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.7327,
+          "duration": 1.95,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.7327,
+          "duration": 2.05,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.7327,
+          "duration": 1.25,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u2_buff_play",
+          "source": "fei_30048_u2_buff_play_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.7327,
+          "duration": 1.8499999,
+          "additive": true
+        }
+      ],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.466700017,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "id": "u3_buff",
+      "display_name": "U3 增益",
+      "duration": 2.4167,
+      "actor": [
+        {
+          "phase": "u3_buff_ready",
+          "animation": "u3_buff_ready",
+          "start": 0.0,
+          "duration": 0.466700017,
+          "loop": false
+        },
+        {
+          "phase": "u3_buff_play",
+          "animation": "u3_buff_play",
+          "start": 0.5667,
+          "duration": 1.33330011,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_u3_buff_ready",
+          "source": "fei_30048_u3_buff_ready",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.5667,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u3_buff_ready",
+          "source": "fei_30048_u3_buff_ready_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.5333,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_f",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_b1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -10
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_b2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -15
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_b3",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -20
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_b4",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -25
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_b5",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -30
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.5667,
+          "duration": 1.2,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.5997,
+          "duration": 0.950000048,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.5997,
+          "duration": 1.0,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.5997,
+          "duration": 0.950000048,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.5997,
+          "duration": 1.0,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat2",
+          "emitter": "fire_slow",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 1.15,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat2",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 0.75,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat2",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 0.75,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat3",
+          "emitter": "fire_slow",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 1.15,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat3",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 0.75,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u3_buff_play",
+          "source": "fei_30048_u3_buff_play_pat3",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 0.75,
+          "additive": true
+        }
+      ],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.5667,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "id": "u4_attack",
+      "display_name": "U4 攻击",
+      "duration": 2.9164,
+      "actor": [
+        {
+          "phase": "u4_attack_ready",
+          "animation": "u4_attack_ready",
+          "start": 0.0,
+          "duration": 0.466700017,
+          "loop": false
+        },
+        {
+          "phase": "u4_attack_play",
+          "animation": "u4_attack_play",
+          "start": 0.466700017,
+          "duration": 0.866700053,
+          "loop": false
+        },
+        {
+          "phase": "u4_attack_end",
+          "animation": "u4_attack_end",
+          "start": 2.44969988,
+          "duration": 0.466700017,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_u4_attack_ready",
+          "source": "fei_30048_u4_attack_ready",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.4667,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u4_attack_ready",
+          "source": "fei_30048_u4_attack_ready_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.4667,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        },
+        {
+          "composite": "fei_30048_u4_attack_ready_target",
+          "source": "fei_30048_u4_attack_ready_target",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.4667,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u4_attack_ready_target_glow",
+          "source": "fei_30048_u4_attack_ready_target_glow",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.0,
+          "duration": 0.4667,
+          "alpha": 1.0,
+          "sorting_order": 0
+        },
+        {
+          "composite": "fei_30048_u4_attack_play",
+          "source": "fei_30048_u4_attack_play",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 0.6,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_u4_attack_play",
+          "source": "fei_30048_u4_attack_play_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 0.4333,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_f2",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.466700017,
+          "duration": 1.0667,
+          "alpha": 1.0,
+          "sorting_order": 15
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_f1",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.466700017,
+          "duration": 0.8333,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target_b",
+          "source": "fei_30048_u4_attack_play_target_b",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.466700017,
+          "duration": 1.2333,
+          "alpha": 1.0,
+          "sorting_order": -1000
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target_ring",
+          "source": "fei_30048_u4_attack_play_target_f3",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 0.466700017,
+          "duration": 0.6,
+          "alpha": 1.0,
+          "sorting_order": 20
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_u4_attack_play",
+          "source": "fei_30048_attack_play1_pat1",
+          "emitter": "fei_obk1",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03_h_long2.png",
+          "anchor": "Self",
+          "start": 0.466700017,
+          "duration": 1.25,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "emitter": "fire_mid",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Target",
+          "start": 0.566700041,
+          "duration": 0.400000036,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "emitter": "pat_slow",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.566700041,
+          "duration": 0.75000006,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.566700041,
+          "duration": 0.400000036,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "emitter": "fire_mid",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Target",
+          "start": 0.566700041,
+          "duration": 0.400000036,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "emitter": "pat_slow",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.566700041,
+          "duration": 0.75000006,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target",
+          "source": "fei_30048_u4_attack_play_target_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.566700041,
+          "duration": 0.400000036,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u4_attack_play_target_b",
+          "source": "fei_30048_u4_attack_play_target_pat2",
+          "emitter": "fire_ticcle_f",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Target",
+          "start": 0.599700034,
+          "duration": 1.8499999,
+          "additive": true
+        }
+      ],
+      "transforms": [
+        {
+          "source": "cm_shake_wk_up",
+          "target": "Camera",
+          "start": 0.566700041,
+          "duration": 0.5
+        },
+        {
+          "source": "cm_shake_vb_up",
+          "target": "Camera",
+          "start": 0.6667,
+          "duration": 0.3667
+        }
+      ],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.466700017,
+          "duration": 0.0
+        },
+        {
+          "kind": "CONTROL_ANI",
+          "label": "CONTROL_ANI",
+          "start": 0.6327,
+          "duration": 0.05
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.6327,
+          "duration": 0.0400000028
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.6327,
+          "duration": 0.0600000024
+        },
+        {
+          "kind": "STOP",
+          "label": "STOP",
+          "start": 0.6327,
+          "duration": 0.0800000057
+        },
+        {
+          "kind": "CONTROL_ANI",
+          "label": "CONTROL_ANI",
+          "start": 1.0157001,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": [
+        "Bone/slot attachment approximated at anchor root: fei_30048_u4_attack_ready slot= id=]"
+      ]
+    },
+    {
+      "id": "u5_buff",
+      "display_name": "U5 增益",
+      "duration": 3.1166997,
+      "actor": [
+        {
+          "phase": "u5_buff_ready",
+          "animation": "u5_buff_ready",
+          "start": 0.0,
+          "duration": 0.466700017,
+          "loop": false
+        },
+        {
+          "phase": "u5_buff_play",
+          "animation": "u5_buff_play",
+          "start": 0.6667,
+          "duration": 1.33330011,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_u5_buff_ready",
+          "source": "fei_30048_u5_buff_ready_f",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.6667,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u5_buff_ready",
+          "source": "fei_30048_u5_buff_ready_b",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.0,
+          "duration": 0.6667,
+          "alpha": 1.0,
+          "sorting_order": -10
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_fire_f",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.6667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": 20
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_cha_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.6667,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": 10
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_servant",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.6667,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": -10
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_fire_b",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.6667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -20
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_sun",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.6667,
+          "duration": 1.3333,
+          "alpha": 1.0,
+          "sorting_order": -25
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 0.6667,
+          "duration": 1.3667,
+          "alpha": 1.0,
+          "sorting_order": -5000
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.932700038,
+          "duration": 1.05000007,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.932700038,
+          "duration": 1.1,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.932700038,
+          "duration": 1.05000007,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.932700038,
+          "duration": 1.1,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.9667,
+          "duration": 1.05000007,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.9667,
+          "duration": 1.1,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "fire_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 0.9667,
+          "duration": 1.05000007,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u5_buff_play_pat1",
+          "emitter": "pat_fast",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/blur_ticle_03.png",
+          "anchor": "Self",
+          "start": 0.9667,
+          "duration": 1.1,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_u5_buff_play",
+          "source": "fei_30048_u4_attack_play_target_pat2",
+          "emitter": "fire_ticcle_f",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Self",
+          "start": 1.2667,
+          "duration": 1.8499999,
+          "additive": true
+        }
+      ],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.6667,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": []
+    },
+    {
+      "id": "ug_attack",
+      "display_name": "UG 终结技",
+      "duration": 5.333,
+      "actor": [
+        {
+          "phase": "ug_attack",
+          "animation": "ug_attack_1",
+          "start": 0.0,
+          "duration": 0.9333001,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_ug_attack_hookup_s1_eff",
+          "source": "fei_30048_ug_hookup_s1_eff",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 0.3,
+          "duration": 0.7667,
+          "alpha": 1.0,
+          "sorting_order": 100
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_3",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4200
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1_screen",
+          "source": "fei_30048_ug_eff_s1_screen",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": 0
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_cutin_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.1333,
+          "alpha": 1.0,
+          "sorting_order": -3900
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4100
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_1_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4125
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4150
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_4",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4250
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_4_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4275
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_6",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4350
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s1",
+          "source": "fei_30048_ug_eff_s1_5",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 0.566000044,
+          "duration": 1.8333,
+          "alpha": 1.0,
+          "sorting_order": -4300
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_impact2",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.2333,
+          "alpha": 1.0,
+          "sorting_order": 400
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_4",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.9333,
+          "alpha": 1.0,
+          "sorting_order": 100
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_3",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.9333,
+          "alpha": 1.0,
+          "sorting_order": 150
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_2",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.9333,
+          "alpha": 1.0,
+          "sorting_order": 200
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_1",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.9333,
+          "alpha": 1.0,
+          "sorting_order": 250
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_cutin_2",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.8,
+          "alpha": 1.0,
+          "sorting_order": 300
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_ld_eff",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.8,
+          "alpha": 1.0,
+          "sorting_order": 325
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_impact",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.2333,
+          "alpha": 1.0,
+          "sorting_order": 350
+        },
+        {
+          "composite": "fei_30048_ug_attack_eff_s2",
+          "source": "fei_30048_ug_eff_s2_5",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 2.4,
+          "duration": 0.9333,
+          "alpha": 1.0,
+          "sorting_order": 50
+        },
+        {
+          "composite": "fei_30048_ug_attack_hookup_s2_eff",
+          "source": "fei_30048_ug_hookup_s2_eff",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 3.00000024,
+          "duration": 0.5333,
+          "alpha": 1.0,
+          "sorting_order": 100
+        },
+        {
+          "composite": "screen_fx_water_wo_02",
+          "source": "mika_1039_skill_x_screen_hk3",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 3.13300014,
+          "duration": 0.6667,
+          "alpha": 1.0,
+          "sorting_order": 2
+        },
+        {
+          "composite": "screen_fx_water_wo_02",
+          "source": "screen_water_fx_all2",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 3.33300018,
+          "duration": 2.0,
+          "alpha": 1.0,
+          "sorting_order": 1
+        },
+        {
+          "composite": "screen_fx_electricity_screen_ground_02",
+          "source": "screen_fx_electricity_screen_02_1",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 3.60000014,
+          "duration": 0.6,
+          "alpha": 1.0,
+          "sorting_order": 8000
+        },
+        {
+          "composite": "screen_fx_electricity_target_01",
+          "source": "screen_fx_electricity_target_01_f",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 3.60000014,
+          "duration": 0.7333,
+          "alpha": 1.0,
+          "sorting_order": 500
+        },
+        {
+          "composite": "screen_fx_electricity_target_01",
+          "source": "screen_fx_electricity_target_01_b",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 3.60000014,
+          "duration": 0.7333,
+          "alpha": 1.0,
+          "sorting_order": -2000
+        },
+        {
+          "composite": "screen_fx_electricity_screen_03",
+          "source": "screen_fx_electricity_screen_01_2",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 3.60000014,
+          "duration": 0.7667,
+          "alpha": 1.0,
+          "sorting_order": 1
+        },
+        {
+          "composite": "screen_fx_electricity_screen_ground_02",
+          "source": "screen_fx_electricity_screen_03_1",
+          "animation": "animation",
+          "anchor": "Target",
+          "start": 3.60000014,
+          "duration": 0.5667,
+          "alpha": 1.0,
+          "sorting_order": 3000
+        }
+      ],
+      "particles": [],
+      "transforms": [
+        {
+          "source": "fei_30048_ug_node_standby",
+          "target": "Standby",
+          "start": 0.0,
+          "duration": 0.5
+        },
+        {
+          "source": "fei_30048_ug_attack_cam",
+          "target": "Camera",
+          "start": 0.530000031,
+          "duration": 1.8333
+        },
+        {
+          "source": "fei_30048_ug_attack_mon_node",
+          "target": "Target",
+          "start": 2.3993,
+          "duration": 2.0
+        }
+      ],
+      "camera_zoom": [],
+      "markers": [
+        {
+          "kind": "BG_BLEND",
+          "label": "BG_BLEND",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "STANDBY_ACTION",
+          "label": "STANDBY_ACTION",
+          "start": 0.0,
+          "duration": 0.5
+        },
+        {
+          "kind": "SETTING",
+          "label": "SETTING",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "STANDBY_ON",
+          "label": "STANDBY_ON",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 0.2,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 0.333,
+          "duration": 0.0
+        },
+        {
+          "kind": "STANDBY_OFF",
+          "label": "STANDBY_OFF",
+          "start": 0.5,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 1.16600013,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 1.91900015,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 2.29900026,
+          "duration": 0.0
+        },
+        {
+          "kind": "MOVE",
+          "label": "MOVE",
+          "start": 2.60000014,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 2.63200021,
+          "duration": 0.0
+        },
+        {
+          "kind": "BG_BLEND",
+          "label": "BG_BLEND",
+          "start": 2.66600013,
+          "duration": 0.0
+        },
+        {
+          "kind": "HIT_EX",
+          "label": "HIT_EX",
+          "start": 2.766,
+          "duration": 0.0
+        },
+        {
+          "kind": "IDLE",
+          "label": "IDLE",
+          "start": 2.9333,
+          "duration": 0.0
+        },
+        {
+          "kind": "MOVE",
+          "label": "MOVE",
+          "start": 3.26600027,
+          "duration": 0.0
+        },
+        {
+          "kind": "CONTROL_ANI",
+          "label": "CONTROL_ANI",
+          "start": 3.50000024,
+          "duration": 0.0
+        },
+        {
+          "kind": "SETTING",
+          "label": "SETTING",
+          "start": 3.50000024,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": [
+        "FRONT CFX anchor mapped to the screen foreground: fei_30048_ug_attack_hookup_s1_eff",
+        "FRONT CFX anchor mapped to the screen foreground: fei_30048_ug_attack_hookup_s2_eff"
+      ]
+    },
+    {
+      "id": "ux_buff",
+      "display_name": "UX 特殊增益",
+      "duration": 16.466301,
+      "actor": [
+        {
+          "phase": "ux_buff",
+          "animation": "idle_to_b_idle",
+          "start": 0.0,
+          "duration": 0.6,
+          "loop": false
+        },
+        {
+          "phase": "ux_buff",
+          "animation": "ux_buff_1",
+          "start": 0.6,
+          "duration": 1.6667,
+          "loop": false
+        }
+      ],
+      "spine": [
+        {
+          "composite": "fei_30048_ux_screen_1",
+          "source": "fei_30048_ux_screen_1",
+          "animation": "animation",
+          "anchor": "Screen",
+          "start": 0.6,
+          "duration": 1.7333,
+          "alpha": 1.0,
+          "sorting_order": 5955
+        },
+        {
+          "composite": "fei_30048_ux_self_1_f",
+          "source": "fei_30048_ux_self_1_f_1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 4.9,
+          "alpha": 1.0,
+          "sorting_order": 560
+        },
+        {
+          "composite": "fei_30048_ux_self_1_f",
+          "source": "fei_30048_ux_self_1_f_2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 2.1333,
+          "alpha": 1.0,
+          "sorting_order": 559
+        },
+        {
+          "composite": "fei_30048_ux_self_1_f",
+          "source": "fei_30048_ux_self_1_f_3",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 1.7667,
+          "alpha": 1.0,
+          "sorting_order": 558
+        },
+        {
+          "composite": "fei_30048_ux_self_1_b",
+          "source": "fei_30048_ux_self_1_b_1",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 1.7333,
+          "alpha": 1.0,
+          "sorting_order": -252
+        },
+        {
+          "composite": "fei_30048_ux_self_1_f",
+          "source": "fei_30048_ux_self_1_glow",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 1.7,
+          "alpha": 1.0,
+          "sorting_order": 556
+        },
+        {
+          "composite": "fei_30048_ux_self_1_b",
+          "source": "fei_30048_ux_self_1_b_2",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 1.7667,
+          "alpha": 1.0,
+          "sorting_order": -250
+        },
+        {
+          "composite": "fei_30048_ux_self_1_f",
+          "source": "fei_30048_ux_self_1_f_4",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 2.2667,
+          "duration": 1.5333,
+          "alpha": 1.0,
+          "sorting_order": 557
+        },
+        {
+          "composite": "fei_30048_ux_bg1",
+          "source": "fei_30048_ux_bg1_3",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 0.6333,
+          "alpha": 1.0,
+          "sorting_order": 1
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_3",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 3.1667,
+          "alpha": 1.0,
+          "sorting_order": 5662
+        },
+        {
+          "composite": "fei_30048_ux_bg1",
+          "source": "fei_30048_ux_bg1_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 0.8333,
+          "alpha": 1.0,
+          "sorting_order": 3
+        },
+        {
+          "composite": "fei_30048_ux_bg1",
+          "source": "fei_30048_ux_bg1_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 0.8333,
+          "alpha": 1.0,
+          "sorting_order": 4
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_6",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 2.7667,
+          "alpha": 1.0,
+          "sorting_order": 5656
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_5",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 3.1333,
+          "alpha": 1.0,
+          "sorting_order": 5658
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_bangsang_b",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 2.8333,
+          "alpha": 1.0,
+          "sorting_order": 5660
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_4",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 3.4,
+          "alpha": 1.0,
+          "sorting_order": 5661
+        },
+        {
+          "composite": "fei_30048_ux_bg1",
+          "source": "fei_30048_ux_bg1_cha",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 0.9667,
+          "alpha": 1.0,
+          "sorting_order": 2
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_bangsang_f",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 2.8333,
+          "alpha": 1.0,
+          "sorting_order": 5664
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_2_4",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 2.6667,
+          "alpha": 1.0,
+          "sorting_order": 5668
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 4.2667,
+          "alpha": 1.0,
+          "sorting_order": 5470
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_cha",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 4.7,
+          "alpha": 1.0,
+          "sorting_order": 5464
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 6.4667,
+          "alpha": 1.0,
+          "sorting_order": 5463
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_3_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 4.5333,
+          "alpha": 1.0,
+          "sorting_order": 5461
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_bangsang_f",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 5.5333,
+          "alpha": 1.0,
+          "sorting_order": 5462
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_3_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 4.3,
+          "alpha": 1.0,
+          "sorting_order": 5461
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_bangsang_b",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 5.5333,
+          "alpha": 1.0,
+          "sorting_order": 5460
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_4",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 5.3333,
+          "alpha": 1.0,
+          "sorting_order": 5459
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_5_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 5.4667,
+          "alpha": 1.0,
+          "sorting_order": 5458
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_5_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 5.4667,
+          "alpha": 1.0,
+          "sorting_order": 5457
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_5_3",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 4.9,
+          "alpha": 1.0,
+          "sorting_order": 5456
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_screen_2",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 3.2333,
+          "alpha": 1.0,
+          "sorting_order": 5682
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 2.7667,
+          "alpha": 1.0,
+          "sorting_order": 5679
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_2_1",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 2.7667,
+          "alpha": 1.0,
+          "sorting_order": 5677
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_2_3",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 3.1667,
+          "alpha": 1.0,
+          "sorting_order": 5670
+        },
+        {
+          "composite": "fei_30048_ux_bg2",
+          "source": "fei_30048_ux_bg2_2_5",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 2.33300018,
+          "duration": 3.1667,
+          "alpha": 1.0,
+          "sorting_order": 5666
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_screen_3",
+          "animation": "animation",
+          "anchor": "Center",
+          "start": 6.366,
+          "duration": 2.3667,
+          "alpha": 1.0,
+          "sorting_order": 6010
+        },
+        {
+          "composite": "fei_30048_ux_self_2_b",
+          "source": "fei_30048_ux_self_2_b",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 12.9997005,
+          "duration": 1.7333,
+          "alpha": 1.0,
+          "sorting_order": -5
+        },
+        {
+          "composite": "fei_30048_ux_self_2_f",
+          "source": "fei_30048_ux_self_2_f",
+          "animation": "animation",
+          "anchor": "Self",
+          "start": 14.7330008,
+          "duration": 1.7333,
+          "alpha": 1.0,
+          "sorting_order": 1
+        }
+      ],
+      "particles": [
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_pat1",
+          "emitter": "bottom",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Center",
+          "start": 5.13300037,
+          "duration": 2.95,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_pat1",
+          "emitter": "mid",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/pati_03.png",
+          "anchor": "Center",
+          "start": 5.13300037,
+          "duration": 2.95,
+          "additive": true
+        },
+        {
+          "composite": "fei_30048_ux_bg3",
+          "source": "fei_30048_ux_bg3_pat1",
+          "emitter": "bottom",
+          "texture": "Assets/Imported/CZN/Fei_30048/SpineSource/particle/dust_02.png",
+          "anchor": "Center",
+          "start": 5.13300037,
+          "duration": 2.95,
+          "additive": true
+        }
+      ],
+      "transforms": [
+        {
+          "source": "SRMD cam_move",
+          "target": "Camera",
+          "start": 0.0,
+          "duration": 16.466301
+        }
+      ],
+      "camera_zoom": [
+        {
+          "start": 0.0,
+          "duration": 0.900000036,
+          "zoom": 2.0
+        },
+        {
+          "start": 2.33300018,
+          "duration": 0.0,
+          "zoom": 1.0
+        },
+        {
+          "start": 2.36600018,
+          "duration": 0.1333,
+          "zoom": 1.7771
+        }
+      ],
+      "markers": [
+        {
+          "kind": "BG_BLEND",
+          "label": "BG_BLEND",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 0.0,
+          "duration": 0.0
+        },
+        {
+          "kind": "SETTING",
+          "label": "SETTING",
+          "start": 0.0,
+          "duration": 0.0550000034
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 2.33300018,
+          "duration": 0.0
+        },
+        {
+          "kind": "CUTIN",
+          "label": "CUTIN",
+          "start": 2.33300018,
+          "duration": 0.0
+        },
+        {
+          "kind": "BG_BLEND",
+          "label": "BG_BLEND",
+          "start": 13.0657005,
+          "duration": 0.0
+        },
+        {
+          "kind": "COLOR_BLEND",
+          "label": "COLOR_BLEND",
+          "start": 13.0657005,
+          "duration": 0.0
+        },
+        {
+          "kind": "HIT",
+          "label": "HIT",
+          "start": 13.0657005,
+          "duration": 0.0
+        },
+        {
+          "kind": "IDLE",
+          "label": "IDLE",
+          "start": 13.0657005,
+          "duration": 0.0
+        },
+        {
+          "kind": "SETTING",
+          "label": "SETTING",
+          "start": 13.0657005,
+          "duration": 0.0
+        }
+      ],
+      "unresolved": [
+        "CUTIN node has neither id nor file_name; retained as a diagnostic marker."
+      ]
+    },
+    {
+      "id": "fatal",
+      "display_name": "Fatal 连段",
+      "duration": 6.0,
+      "actor": [
+        {
+          "phase": "fatal_intro",
+          "animation": "fatal_intro",
+          "start": 0.0,
+          "duration": 0.3333,
+          "loop": false
+        },
+        {
+          "phase": "fatal1",
+          "animation": "fatal1",
+          "start": 0.3333,
+          "duration": 1.6667,
+          "loop": false
+        },
+        {
+          "phase": "fatal2",
+          "animation": "fatal2",
+          "start": 2.0,
+          "duration": 0.3333,
+          "loop": false
+        },
+        {
+          "phase": "fatal3",
+          "animation": "fatal3",
+          "start": 2.3333,
+          "duration": 3.66670012,
+          "loop": false
+        }
+      ],
+      "spine": [],
+      "particles": [],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [],
+      "unresolved": []
+    },
+    {
+      "id": "enter",
+      "display_name": "战斗入场",
+      "duration": 1.1333,
+      "actor": [
+        {
+          "phase": "enter_ready",
+          "animation": "enter_ready",
+          "start": 0.0,
+          "duration": 0.3333,
+          "loop": false
+        },
+        {
+          "phase": "enter_play",
+          "animation": "enter_play",
+          "start": 0.3333,
+          "duration": 0.4,
+          "loop": false
+        },
+        {
+          "phase": "enter_end",
+          "animation": "enter_end",
+          "start": 0.7333,
+          "duration": 0.4,
+          "loop": false
+        }
+      ],
+      "spine": [],
+      "particles": [],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [],
+      "unresolved": []
+    },
+    {
+      "id": "victory",
+      "display_name": "胜利动作",
+      "duration": 2.66670012,
+      "actor": [
+        {
+          "phase": "victory_ready",
+          "animation": "victory_ready",
+          "start": 0.0,
+          "duration": 0.666700065,
+          "loop": false
+        },
+        {
+          "phase": "victory",
+          "animation": "victory",
+          "start": 0.666700065,
+          "duration": 2.0,
+          "loop": true
+        }
+      ],
+      "spine": [],
+      "particles": [],
+      "transforms": [],
+      "camera_zoom": [],
+      "markers": [],
+      "unresolved": []
+    }
+  ]
+}

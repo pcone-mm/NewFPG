@@ -1,0 +1,599 @@
+{
+  "converter": "CZN SCSP1U to Spine 3.8 JSON",
+  "converter_version": 2,
+  "started_utc": "2026-07-12T08:25:47.689258+00:00",
+  "finished_utc": "2026-07-12T08:25:47.855027+00:00",
+  "elapsed_seconds": 0.166,
+  "input": "D:\\Unity\\NewFPG\\Assets\\Imported\\CZN\\Monsters\\1001023\\SpineSource",
+  "requested_files": 16,
+  "successful": 16,
+  "failed": 0,
+  "all_body_ends_valid": true,
+  "totals": {
+    "animations": 23,
+    "event_data": 2,
+    "attachments": {
+      "mesh": 333,
+      "region": 384
+    },
+    "timelines": {
+      "attachment": 489,
+      "color": 479,
+      "deform": 219,
+      "drawOrder": 2,
+      "rotate": 380,
+      "scale": 385,
+      "shear": 9,
+      "translate": 509
+    },
+    "curves": {
+      "bezier": 697,
+      "linear": 651,
+      "stepped": 6295
+    }
+  },
+  "known_limits": [
+    "EventData defaults are emitted; EventTimeline type 7 remains unsupported because no audited file exercises its private layout.",
+    "Attachment types bounding box, linked mesh, and point are valid Spine types but absent from the audited corpus.",
+    "CLI round-trips may normalize weighted mesh/deform data; generated JSON is canonical."
+  ],
+  "failures": [],
+  "files": [
+    {
+      "source": "effect/bare_beetle_normal_skill1_obake.scsp1u.bytes",
+      "source_bytes": 1224,
+      "source_sha256": "592847e14dfe8cd7adf4c05b91a5bfdca4610a973895bc2d847ce9cf93412d66",
+      "output": "effect/bare_beetle_normal_skill1_obake.json",
+      "output_bytes": 918,
+      "output_sha256": "ccaac2b6d954bdaaea4339896030dca92c2430dc49c54129583ea3234c80103b",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 2,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 2
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "attachment": 2,
+        "translate": 1,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 4
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/bare_beetle_normal_skill1_shoot.scsp1u.bytes",
+      "source_bytes": 144170,
+      "source_sha256": "9a283391a6f4ac4973faf5987896d433d974476b47611cb2691fa01b4cdf6cc3",
+      "output": "effect/bare_beetle_normal_skill1_shoot.json",
+      "output_bytes": 136545,
+      "output_sha256": "e7853a33553b631f610e3d1400fff9f93c7342c127d1cfbac67a7610458745a6",
+      "body_end_valid": true,
+      "bones": 54,
+      "slots": 73,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 73
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 73,
+        "attachment": 73,
+        "translate": 49,
+        "scale": 50,
+        "rotate": 42,
+        "deform": 61
+      },
+      "curve_counts": {
+        "stepped": 317,
+        "linear": 88,
+        "bezier": 81
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/bare_beetle_normal_skill1_smoke_b.scsp1u.bytes",
+      "source_bytes": 59577,
+      "source_sha256": "68fdfa3506b4d8b2728b771520b2f2420c050ee89a21f17c031e4493d2ebd318",
+      "output": "effect/bare_beetle_normal_skill1_smoke_b.json",
+      "output_bytes": 61476,
+      "output_sha256": "52238dae2bafb2db0606de68825bba4764ce91254bf0df913d5c1ae9018e403a",
+      "body_end_valid": true,
+      "bones": 24,
+      "slots": 19,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 19
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 19,
+        "attachment": 19,
+        "translate": 22,
+        "scale": 22,
+        "rotate": 13,
+        "deform": 13
+      },
+      "curve_counts": {
+        "stepped": 104,
+        "linear": 22,
+        "bezier": 57
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/bare_beetle_normal_skill1_smoke_b_b.scsp1u.bytes",
+      "source_bytes": 32209,
+      "source_sha256": "33ed48532fbc07acb7544f1451fa00aa00fe94e03ce1864d9817280869a937f5",
+      "output": "effect/bare_beetle_normal_skill1_smoke_b_b.json",
+      "output_bytes": 32991,
+      "output_sha256": "05599d8b7dfdcac07f290c4d658b744b13c6a517488678ca05ec58b0908e7d9f",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 11,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 11
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 11,
+        "attachment": 11,
+        "rotate": 7,
+        "translate": 12,
+        "scale": 12,
+        "deform": 5
+      },
+      "curve_counts": {
+        "stepped": 57,
+        "linear": 16,
+        "bezier": 25
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/bare_beetle_normal_skill1_smoke_s_b.scsp1u.bytes",
+      "source_bytes": 92415,
+      "source_sha256": "878a697aee2d09bf774a15f63d284ebd2d2becc979eb107916dcd0ffed48bafb",
+      "output": "effect/bare_beetle_normal_skill1_smoke_s_b.json",
+      "output_bytes": 96536,
+      "output_sha256": "3309e03d56fef47fdeed4f34f90fb0e50696cc41e4496a5dd5be6e1860722a22",
+      "body_end_valid": true,
+      "bones": 39,
+      "slots": 33,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 33
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 33,
+        "attachment": 33,
+        "translate": 37,
+        "scale": 37,
+        "rotate": 15,
+        "deform": 12
+      },
+      "curve_counts": {
+        "stepped": 164,
+        "linear": 39,
+        "bezier": 72
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/bare_beetle_normal_skill1_smoke_s_f.scsp1u.bytes",
+      "source_bytes": 137298,
+      "source_sha256": "1a74cf225e19886ea75a489153476d8d25b83dee0578f8eae93b1c8d6bfecf9b",
+      "output": "effect/bare_beetle_normal_skill1_smoke_s_f.json",
+      "output_bytes": 143752,
+      "output_sha256": "f489806f33871478527e261cb8c636ae1ea290a2013111648365658329d51aa1",
+      "body_end_valid": true,
+      "bones": 51,
+      "slots": 45,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 45
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 45,
+        "attachment": 45,
+        "translate": 49,
+        "scale": 49,
+        "rotate": 27,
+        "deform": 24
+      },
+      "curve_counts": {
+        "stepped": 227,
+        "linear": 45,
+        "bezier": 131
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/bare_beetle_normal_skill2.scsp1u.bytes",
+      "source_bytes": 256965,
+      "source_sha256": "a1adb6d8203975dd48bdc5c05ecb37bdbd57a5cce4008437b64391dc36807f05",
+      "output": "effect/bare_beetle_normal_skill2.json",
+      "output_bytes": 324396,
+      "output_sha256": "274432f8c1fb0abc7e9f3244e6b74d59559d5bfdc04245197add7d1d0f8a79df",
+      "body_end_valid": true,
+      "bones": 29,
+      "slots": 28,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 28
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 28,
+        "attachment": 28,
+        "scale": 21,
+        "rotate": 11,
+        "translate": 5,
+        "deform": 13
+      },
+      "curve_counts": {
+        "stepped": 220,
+        "linear": 33,
+        "bezier": 12
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_02_b.scsp1u.bytes",
+      "source_bytes": 67736,
+      "source_sha256": "d4c3a60cdc2caa899389e202b9ba8605e75838585f782f16a37546723f0cdd9b",
+      "output": "effect/hit_blunt_normal_02_b.json",
+      "output_bytes": 47300,
+      "output_sha256": "945473182165c40f7b1992a6c59bda518c8f865e63b47ddd5d7c0c702e2cbebe",
+      "body_end_valid": true,
+      "bones": 48,
+      "slots": 39,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 223
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 39,
+        "attachment": 39,
+        "rotate": 42,
+        "translate": 36,
+        "scale": 43,
+        "shear": 4
+      },
+      "curve_counts": {
+        "bezier": 88,
+        "linear": 22,
+        "stepped": 14
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_02_f.scsp1u.bytes",
+      "source_bytes": 12893,
+      "source_sha256": "c253776c8937467eae1db26f89f1ec4098ab1cec966199ada5a5b641a76d93ee",
+      "output": "effect/hit_blunt_normal_02_f.json",
+      "output_bytes": 9558,
+      "output_sha256": "0f64f7c52b8654acdac6af0ef00db413cc1a5ef2251745533af2e6e2f47385a8",
+      "body_end_valid": true,
+      "bones": 17,
+      "slots": 13,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 35
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 13,
+        "attachment": 13,
+        "rotate": 7,
+        "translate": 6,
+        "scale": 13,
+        "shear": 3
+      },
+      "curve_counts": {
+        "bezier": 23,
+        "linear": 6,
+        "stepped": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_b_01.scsp1u.bytes",
+      "source_bytes": 6469,
+      "source_sha256": "8d1e6ffa7d0464f2a110eab5523647bb928d3abe40606c40b43dc686959c88ee",
+      "output": "effect/hit_blunt_normal_b_01.json",
+      "output_bytes": 4594,
+      "output_sha256": "9893293ac4413424ccf5ca19a6f47c7690ac17d29fc4eaf1a4cafedb95ee346f",
+      "body_end_valid": true,
+      "bones": 5,
+      "slots": 10,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 10
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 10,
+        "scale": 3,
+        "rotate": 1,
+        "translate": 1
+      },
+      "curve_counts": {
+        "stepped": 25,
+        "linear": 4,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/hit_blunt_normal_f_01.scsp1u.bytes",
+      "source_bytes": 33603,
+      "source_sha256": "85860f1f0122d991154a9bf36aaa452d8a0b45e35804bbb50d5561615f218a64",
+      "output": "effect/hit_blunt_normal_f_01.json",
+      "output_bytes": 34496,
+      "output_sha256": "695f409b585d7df363705daf2041b6d07033054a75462f8d184349a2904e8868",
+      "body_end_valid": true,
+      "bones": 15,
+      "slots": 33,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 21,
+        "region": 12
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 33,
+        "translate": 12,
+        "scale": 13,
+        "rotate": 9,
+        "deform": 21
+      },
+      "curve_counts": {
+        "stepped": 63,
+        "linear": 39,
+        "bezier": 24
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f1.scsp1u.bytes",
+      "source_bytes": 115828,
+      "source_sha256": "0965bc6c4fe353f4c48137157cb8016d436fe4eb1ba35fe2a174c483d752c45f",
+      "output": "effect/invader_death_01_f1.json",
+      "output_bytes": 126543,
+      "output_sha256": "473ed05727353fa49c90a012fbde2073af9b38235a640189326523c707ff7e50",
+      "body_end_valid": true,
+      "bones": 27,
+      "slots": 68,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 35,
+        "region": 33
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 68,
+        "attachment": 33,
+        "rotate": 18,
+        "scale": 24,
+        "translate": 13,
+        "deform": 35
+      },
+      "curve_counts": {
+        "linear": 144,
+        "stepped": 111,
+        "bezier": 57
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f2.scsp1u.bytes",
+      "source_bytes": 111663,
+      "source_sha256": "0cecd75b56ef06196b9a6b71ed5d23ab9d6c0928b4025e7cc91d4925e4c98183",
+      "output": "effect/invader_death_01_f2.json",
+      "output_bytes": 101497,
+      "output_sha256": "ad17ed53b52f8cb7dc1c239db8495de6648b158d2bff14afa64e41427f93daaa",
+      "body_end_valid": true,
+      "bones": 52,
+      "slots": 86,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 29,
+        "region": 57
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 86,
+        "attachment": 85,
+        "translate": 50,
+        "scale": 50,
+        "rotate": 46,
+        "shear": 1,
+        "deform": 29
+      },
+      "curve_counts": {
+        "linear": 160,
+        "stepped": 251,
+        "bezier": 105
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f3.scsp1u.bytes",
+      "source_bytes": 28351,
+      "source_sha256": "ace4e829b21234bcabbd0ebe1da16e6a524610cc2946b281511387cf80580c62",
+      "output": "effect/invader_death_01_f3.json",
+      "output_bytes": 31173,
+      "output_sha256": "d4ed6e25b8fffc10e164d5f870ef00f583a6b8c418f64fb6f02f590b1d8aa8a4",
+      "body_end_valid": true,
+      "bones": 9,
+      "slots": 15,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "mesh": 6,
+        "region": 9
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 15,
+        "attachment": 2,
+        "translate": 6,
+        "scale": 7,
+        "rotate": 4,
+        "deform": 6
+      },
+      "curve_counts": {
+        "stepped": 23,
+        "linear": 29,
+        "bezier": 15
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "effect/invader_death_01_f4.scsp1u.bytes",
+      "source_bytes": 1989,
+      "source_sha256": "683484efc6ae9d7883913acf59c3c0e3e39895e52329d89e02d0101dba800483",
+      "output": "effect/invader_death_01_f4.json",
+      "output_bytes": 1372,
+      "output_sha256": "27ede70960bf8fc105c35b2a9fe214749e6f1d8af5288a2e344a58c4f4a9a674",
+      "body_end_valid": true,
+      "bones": 3,
+      "slots": 3,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 0,
+      "event_data_names": [],
+      "attachments": {
+        "region": 3
+      },
+      "animations": 1,
+      "timeline_counts": {
+        "color": 3,
+        "scale": 1
+      },
+      "curve_counts": {
+        "stepped": 3,
+        "linear": 4,
+        "bezier": 1
+      },
+      "duplicate_attachment_replacements": []
+    },
+    {
+      "source": "model/1001023.scsp1u.bytes",
+      "source_bytes": 489697,
+      "source_sha256": "18dbb56eacfb46274574bf1797d3f8ab5030676323f880ad33d0be0cb32567a7",
+      "output": "model/1001023.json",
+      "output_bytes": 364068,
+      "output_sha256": "2e52dc143984fa9d352759bbe732a832ddbac4d6a50b26fd87f011996f029b9f",
+      "body_end_valid": true,
+      "bones": 66,
+      "slots": 28,
+      "ik_constraints": 0,
+      "transform_constraints": 0,
+      "path_constraints": 0,
+      "skins": 1,
+      "event_data": 2,
+      "event_data_names": [
+        "hit",
+        "spell"
+      ],
+      "attachments": {
+        "mesh": 33
+      },
+      "animations": 8,
+      "timeline_counts": {
+        "color": 3,
+        "attachment": 106,
+        "rotate": 138,
+        "translate": 210,
+        "scale": 39,
+        "drawOrder": 2,
+        "shear": 1
+      },
+      "curve_counts": {
+        "stepped": 4711,
+        "bezier": 3
+      },
+      "duplicate_attachment_replacements": []
+    }
+  ]
+}

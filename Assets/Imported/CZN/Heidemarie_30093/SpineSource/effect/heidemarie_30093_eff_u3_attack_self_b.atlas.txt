@@ -1,0 +1,41 @@
+
+heidemarie_30093_eff_u3_attack_self_b.png
+size: 624,656
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg_ras_m_sk3_1_ptc_14
+  rotate: true
+  xy: 495, 430
+  size: 128, 66
+  orig: 128, 66
+  offset: 0, 0
+  index: -1
+bg_ras_m_sk3_2_ptc_23
+  rotate: true
+  xy: 495, 560
+  size: 88, 122
+  orig: 88, 122
+  offset: 0, 0
+  index: -1
+bg_ras_m_sk3_2_ptc_6
+  rotate: true
+  xy: 563, 422
+  size: 136, 56
+  orig: 136, 56
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: true
+  xy: 2, 161
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+grad1
+  rotate: true
+  xy: 2, 2
+  size: 157, 618
+  orig: 157, 618
+  offset: 0, 0
+  index: -1

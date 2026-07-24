@@ -1,0 +1,69 @@
+
+nihilum_spector_death_01_4.png
+size: 1776,776
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+burst2_0001
+  rotate: true
+  xy: 2, 53
+  size: 719, 315
+  orig: 719, 315
+  offset: 0, 0
+  index: -1
+burst2_0002
+  rotate: true
+  xy: 319, 53
+  size: 719, 315
+  orig: 719, 315
+  offset: 0, 0
+  index: -1
+burst2_0003
+  rotate: true
+  xy: 636, 53
+  size: 719, 315
+  orig: 719, 315
+  offset: 0, 0
+  index: -1
+burst3_0001
+  rotate: false
+  xy: 1467, 538
+  size: 300, 234
+  orig: 300, 234
+  offset: 0, 0
+  index: -1
+burst3_0002
+  rotate: false
+  xy: 1467, 302
+  size: 300, 234
+  orig: 300, 234
+  offset: 0, 0
+  index: -1
+burst3_0003
+  rotate: false
+  xy: 1467, 66
+  size: 300, 234
+  orig: 300, 234
+  offset: 0, 0
+  index: -1
+circle3
+  rotate: false
+  xy: 953, 2
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+circle5
+  rotate: false
+  xy: 953, 260
+  size: 512, 512
+  orig: 512, 512
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1211, 58
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1

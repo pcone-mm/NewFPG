@@ -1,0 +1,286 @@
+
+heidemarie_30093_eff_u4_buff_self_f.sct
+size: 2024,1304
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura_a_17_b
+  rotate: true
+  xy: 617, 162
+  size: 450, 95
+  orig: 450, 95
+  offset: 0, 0
+  index: -1
+aura_a_17_b2
+  rotate: true
+  xy: 408, 160
+  size: 450, 106
+  orig: 450, 106
+  offset: 0, 0
+  index: -1
+aura_a_19
+  rotate: false
+  xy: 138, 101
+  size: 268, 509
+  orig: 268, 509
+  offset: 0, 0
+  index: -1
+bg_ras_m_sk3_2_ptc_23
+  rotate: false
+  xy: 1574, 19
+  size: 79, 110
+  orig: 79, 110
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 714, 170
+  size: 438, 442
+  orig: 438, 442
+  offset: 0, 0
+  index: -1
+h_glass1_0001
+  rotate: false
+  xy: 1944, 985
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0002
+  rotate: false
+  xy: 1944, 869
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0003
+  rotate: false
+  xy: 1944, 753
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0004
+  rotate: false
+  xy: 1944, 637
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0005
+  rotate: false
+  xy: 1944, 521
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass1_0006
+  rotate: false
+  xy: 1944, 405
+  size: 74, 114
+  orig: 74, 114
+  offset: 0, 0
+  index: -1
+h_glass2_0001
+  rotate: true
+  xy: 138, 3
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0002
+  rotate: true
+  xy: 275, 3
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0003
+  rotate: false
+  xy: 1410, 644
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0004
+  rotate: false
+  xy: 1911, 268
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0005
+  rotate: false
+  xy: 1911, 131
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0006
+  rotate: true
+  xy: 1655, 33
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass2_0007
+  rotate: true
+  xy: 1792, 33
+  size: 96, 135
+  orig: 96, 135
+  offset: 0, 0
+  index: -1
+h_glass3_1
+  rotate: true
+  xy: 537, 2
+  size: 158, 275
+  orig: 158, 275
+  offset: 0, 0
+  index: -1
+h_glass3_2
+  rotate: true
+  xy: 1292, 941
+  size: 158, 275
+  orig: 158, 275
+  offset: 0, 0
+  index: -1
+h_glass3_3
+  rotate: true
+  xy: 1292, 781
+  size: 158, 275
+  orig: 158, 275
+  offset: 0, 0
+  index: -1
+heid_line01
+  rotate: true
+  xy: 2, 70
+  size: 540, 134
+  orig: 540, 134
+  offset: 0, 0
+  index: -1
+heid_line02
+  rotate: true
+  xy: 1255, 52
+  size: 180, 317
+  orig: 180, 317
+  offset: 0, 0
+  index: -1
+heid_line04
+  rotate: true
+  xy: 516, 162
+  size: 450, 99
+  orig: 450, 99
+  offset: 0, 0
+  index: -1
+heid_u_gra01
+  rotate: false
+  xy: 1154, 234
+  size: 360, 392
+  orig: 360, 392
+  offset: 0, 0
+  index: -1
+lense_flare1
+  rotate: true
+  xy: 426, 614
+  size: 683, 666
+  orig: 683, 666
+  offset: 0, 0
+  index: -1
+pati2
+  rotate: true
+  xy: 814, 8
+  size: 160, 439
+  orig: 160, 439
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: false
+  xy: 412, 14
+  size: 123, 144
+  orig: 123, 144
+  offset: 0, 0
+  index: -1
+pati7
+  rotate: true
+  xy: 1292, 639
+  size: 140, 116
+  orig: 140, 116
+  offset: 0, 0
+  index: -1
+rainbow_flare1
+  rotate: false
+  xy: 1574, 134
+  size: 335, 335
+  orig: 335, 335
+  offset: 0, 0
+  index: -1
+rei_aura1_1
+  rotate: false
+  xy: 1574, 996
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_2
+  rotate: false
+  xy: 1574, 891
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_3
+  rotate: false
+  xy: 1574, 786
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_4
+  rotate: false
+  xy: 1574, 681
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_5
+  rotate: false
+  xy: 1574, 576
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+rei_aura1_6
+  rotate: false
+  xy: 1574, 471
+  size: 368, 103
+  orig: 368, 103
+  offset: 0, 0
+  index: -1
+sword_glow1
+  rotate: false
+  xy: 1094, 628
+  size: 196, 669
+  orig: 196, 669
+  offset: 0, 0
+  index: -1
+sword_glow2
+  rotate: true
+  xy: 1292, 1101
+  size: 196, 669
+  orig: 196, 669
+  offset: 0, 0
+  index: -1
+sword_glow3
+  rotate: false
+  xy: 2, 612
+  size: 210, 685
+  orig: 210, 685
+  offset: 0, 0
+  index: -1
+sword_glow3_2
+  rotate: false
+  xy: 214, 612
+  size: 210, 685
+  orig: 210, 685
+  offset: 0, 0
+  index: -1

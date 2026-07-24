@@ -1,0 +1,209 @@
+
+fei_30048_ux_self_2_f.png
+size: 1504,1064
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+adelheid_smoke_01
+  rotate: false
+  xy: 397, 850
+  size: 500, 212
+  orig: 500, 212
+  offset: 0, 0
+  index: -1
+aura02
+  rotate: false
+  xy: 1305, 312
+  size: 171, 158
+  orig: 171, 158
+  offset: 0, 0
+  index: -1
+aura10
+  rotate: false
+  xy: 2, 662
+  size: 393, 400
+  orig: 393, 400
+  offset: 0, 0
+  index: -1
+aura12
+  rotate: false
+  xy: 334, 10
+  size: 252, 243
+  orig: 252, 243
+  offset: 0, 0
+  index: -1
+aura8
+  rotate: true
+  xy: 2, 228
+  size: 432, 289
+  orig: 432, 289
+  offset: 0, 0
+  index: -1
+buff_fire1_b_3
+  rotate: false
+  xy: 1312, 819
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_4
+  rotate: true
+  xy: 852, 652
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_5
+  rotate: false
+  xy: 1312, 574
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_6
+  rotate: false
+  xy: 867, 407
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_7
+  rotate: true
+  xy: 1050, 462
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_8
+  rotate: true
+  xy: 1060, 279
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+buff_fire1_b_9
+  rotate: false
+  xy: 1099, 34
+  size: 181, 243
+  orig: 181, 243
+  offset: 0, 0
+  index: -1
+cafox_fire_01_01
+  rotate: false
+  xy: 815, 2
+  size: 80, 223
+  orig: 80, 223
+  offset: 0, 0
+  index: -1
+cafox_fire_01_02
+  rotate: false
+  xy: 750, 632
+  size: 100, 216
+  orig: 100, 216
+  offset: 0, 0
+  index: -1
+cafox_fire_01_03
+  rotate: true
+  xy: 1295, 472
+  size: 100, 205
+  orig: 100, 205
+  offset: 0, 0
+  index: -1
+cafox_fire_01_04
+  rotate: false
+  xy: 1282, 75
+  size: 100, 202
+  orig: 100, 202
+  offset: 0, 0
+  index: -1
+cafox_fire_01_05
+  rotate: false
+  xy: 293, 524
+  size: 80, 136
+  orig: 80, 136
+  offset: 0, 0
+  index: -1
+dust_soft_2
+  rotate: false
+  xy: 899, 835
+  size: 411, 227
+  orig: 411, 227
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 897, 38
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+sand_dust_1
+  rotate: false
+  xy: 2, 27
+  size: 330, 199
+  orig: 330, 199
+  offset: 0, 0
+  index: -1
+sand_dust_2
+  rotate: true
+  xy: 588, 21
+  size: 204, 225
+  orig: 204, 225
+  offset: 0, 0
+  index: -1
+sand_dust_3
+  rotate: true
+  xy: 293, 255
+  size: 258, 315
+  orig: 258, 315
+  offset: 0, 0
+  index: -1
+sand_dust_4
+  rotate: false
+  xy: 867, 240
+  size: 191, 165
+  orig: 191, 165
+  offset: 0, 0
+  index: -1
+sand_part_1
+  rotate: true
+  xy: 610, 227
+  size: 286, 255
+  orig: 286, 255
+  offset: 0, 0
+  index: -1
+sand_part_4
+  rotate: true
+  xy: 1097, 645
+  size: 188, 213
+  orig: 188, 213
+  offset: 0, 0
+  index: -1
+smoke2
+  rotate: true
+  xy: 397, 515
+  size: 333, 351
+  orig: 333, 351
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 750, 527
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: false
+  xy: 1384, 97
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1
+water_spray_04
+  rotate: true
+  xy: 1384, 194
+  size: 116, 77
+  orig: 116, 77
+  offset: 0, 0
+  index: -1

@@ -1,0 +1,118 @@
+
+honey_jar_porte_normal_skill1.sct
+size: 404,1032
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+burst_sphear
+  rotate: false
+  xy: 2, 368
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+burst_sphear2
+  rotate: false
+  xy: 2, 570
+  size: 201, 200
+  orig: 205, 200
+  offset: 2, 0
+  index: -1
+circle_light_1
+  rotate: false
+  xy: 269, 52
+  size: 110, 102
+  orig: 153, 150
+  offset: 35, 7
+  index: -1
+circle_light_2
+  rotate: false
+  xy: 136, 103
+  size: 131, 125
+  orig: 153, 150
+  offset: 14, 6
+  index: -1
+circle_light_3
+  rotate: false
+  xy: 2, 114
+  size: 132, 130
+  orig: 153, 150
+  offset: 9, 12
+  index: -1
+circle_light_4
+  rotate: false
+  xy: 2, 2
+  size: 116, 110
+  orig: 153, 150
+  offset: 9, 33
+  index: -1
+circle_light_5
+  rotate: true
+  xy: 306, 261
+  size: 103, 90
+  orig: 153, 150
+  offset: 10, 53
+  index: -1
+circle_light_6
+  rotate: true
+  xy: 306, 156
+  size: 103, 87
+  orig: 153, 150
+  offset: 10, 56
+  index: -1
+flash
+  rotate: false
+  xy: 2, 772
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+ol_1
+  rotate: false
+  xy: 205, 554
+  size: 187, 186
+  orig: 207, 200
+  offset: 10, 7
+  index: -1
+ol_2
+  rotate: false
+  xy: 204, 366
+  size: 187, 186
+  orig: 207, 200
+  offset: 10, 7
+  index: -1
+ol_3
+  rotate: false
+  xy: 2, 246
+  size: 165, 120
+  orig: 207, 200
+  offset: 32, 7
+  index: -1
+ol_4
+  rotate: true
+  xy: 120, 22
+  size: 79, 71
+  orig: 207, 200
+  offset: 109, 11
+  index: -1
+ring_wave1
+  rotate: false
+  xy: 260, 886
+  size: 142, 142
+  orig: 150, 150
+  offset: 4, 4
+  index: -1
+ring_wave2
+  rotate: false
+  xy: 260, 742
+  size: 142, 142
+  orig: 150, 150
+  offset: 4, 4
+  index: -1
+ring_wave3
+  rotate: false
+  xy: 169, 230
+  size: 135, 134
+  orig: 150, 150
+  offset: 8, 8
+  index: -1

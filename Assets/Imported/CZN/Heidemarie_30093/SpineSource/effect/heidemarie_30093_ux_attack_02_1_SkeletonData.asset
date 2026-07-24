@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1b3b4b945939a54ea0b23d3396115fb, type: 3}
+  m_Name: heidemarie_30093_ux_attack_02_1_SkeletonData
+  m_EditorClassIdentifier: spine-unity::Spine.Unity.SkeletonDataAsset
+  atlasAssets:
+  - {fileID: 11400000, guid: 63e6750a5df10654389b02090bb396b7, type: 2}
+  scale: 0.01
+  skeletonJSON: {fileID: 4900000, guid: 12f5415da305367418874c737dd280b2, type: 3}
+  isUpgradingBlendModeMaterials: 0
+  blendModeMaterials:
+    requiresBlendModeMaterials: 1
+    applyAdditiveMaterial: 1
+    additiveMaterials:
+    - pageName: heidemarie_30093_ux_attack_02_1.png
+      material: {fileID: 2100000, guid: ffbcaf9cfa90f4444ade93078558f8ff, type: 2}
+    multiplyMaterials:
+    - pageName: heidemarie_30093_ux_attack_02_1.png
+      material: {fileID: 2100000, guid: 4b65175420ff50946a41d25328667e8c, type: 2}
+    screenMaterials: []
+  skeletonDataModifiers: []
+  fromAnimation: []
+  toAnimation: []
+  duration: []
+  defaultMix: 0.2
+  controller: {fileID: 0}

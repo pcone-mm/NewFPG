@@ -1,0 +1,62 @@
+
+heidemarie_30093_eff_attack_play1_b.sct
+size: 784,496
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: true
+  xy: 2, 2
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+ringf1_1
+  rotate: false
+  xy: 495, 139
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringf1_2
+  rotate: false
+  xy: 495, 73
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringf1_3
+  rotate: false
+  xy: 495, 7
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringf1_4
+  rotate: true
+  xy: 561, 205
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringf1_5
+  rotate: true
+  xy: 627, 205
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringf1_6
+  rotate: true
+  xy: 693, 205
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringf1_7
+  rotate: true
+  xy: 495, 205
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1

@@ -5,14 +5,10 @@ using FPG.Demo.Player;
 using FPG.Demo.Run;
 using FPG.Demo.Unity;
 using NUnit.Framework;
-using UnityEditor;
-
 namespace FPG.Demo.Tests.EditMode
 {
     public sealed class BattleSessionThreatScheduleTests
     {
-        private const string BurstbugScenarioAssetPath =
-            "Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsBurstbug.asset";
 
         [Test]
         public void DueEntriesAreSortedStartedInTheCurrentTickAndRemainOutsideExternalThreatCommands()
@@ -349,175 +345,13 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(replayed.CanonicalDigest, Is.EqualTo(recorded.CanonicalDigest));
         }
 
-        [Test]
-        public void D0FirstHeavyWarningDefeatsAnExposedIdlePlayerWithoutProjectileBudget()
-        {
-            ScenarioDefinition definition = LoadBurstbugScenarioDefinition();
 
-            D0NoHitProjectileWorldPort world = new D0NoHitProjectileWorldPort();
-            using (BattleSession session = CreateSession(definition, world))
-            {
-                Start(session);
-                for (int tick = 0; tick <= 675; tick++)
-                {
-                    try
-                    {
-                        Assert.That(CombatLabHarness.PumpOneTick(
-                            session,
-                            currentTick => PlayerInputFrame.Empty(currentTick, aimHeld: true)),
-                            Is.EqualTo(1));
-                    }
-                    catch (System.InvalidOperationException exception)
-                    {
-                        Assert.Fail($"D0 idle run rejected at tick {tick}: {exception.Message}");
-                    }
-                }
 
-                Assert.That(session.State, Is.EqualTo(BattleSessionState.Completed));
-                Assert.That(session.CompletionReason, Is.EqualTo(BattleCompletionReason.Defeat));
-                Assert.That(session.CurrentTick.Value, Is.EqualTo(675));
-                Assert.That(session.ThreatScheduleCursor, Is.EqualTo(3));
-                Assert.That(world.RegisterCount, Is.EqualTo(4));
-                Assert.That(session.GetFinalSnapshot().ReservedProjectileUnits, Is.Zero);
-                Assert.That(session.GetFinalSnapshot().ActiveProjectileUnits, Is.Zero);
-                Assert.That(session.GetFinalSnapshot().PlayerLife, Is.Zero);
-            }
-        }
 
-        [Test]
-        public void D0FastScheduleRegistersExactlyOneNonInterceptableTwentyEightDamageProjectile()
-        {
-            ScenarioDefinition authored = LoadBurstbugScenarioDefinition();
-            ThreatScheduleEntry entry = authored.GetThreatScheduleEntry(0);
-            ScriptedProjectileWorldPort world = CombatLabHarness.CreateProjectileWorldPort(
-                ScriptedProjectileSweepMode.None);
 
-            using (BattleSession session = CreateSession(
-                CreateScenarioWithOnlyEntry(authored, entry),
-                world))
-            {
-                Start(session);
-                long releaseTick = GetReleaseTick(entry);
 
-                PumpAimingThroughTick(session, releaseTick);
 
-                Assert.That(session.ThreatScheduleCursor, Is.EqualTo(1));
-                Assert.That(session.ProjectileSlotCount, Is.EqualTo(1));
-                Assert.That(world.RegisterCount, Is.EqualTo(1));
-                Assert.That(world.GetRegisterCall(0).Tick.Value, Is.EqualTo(releaseTick));
-                Assert.That(world.GetRegisterCall(0).DefinitionId, Is.EqualTo(301));
-                Assert.That(world.GetRegisterCall(0).PresentationKey, Is.EqualTo(1));
-                Assert.That(world.GetRegisterCall(0).Interceptable, Is.False);
 
-                ProjectileSnapshot projectile = session.GetProjectileSnapshot(0);
-                Assert.That(projectile.DefinitionId, Is.EqualTo(301));
-                Assert.That(projectile.PresentationKey, Is.EqualTo(1));
-                Assert.That(projectile.HitPoints, Is.Zero);
-                Assert.That(projectile.State, Is.EqualTo(ProjectileState.Travelling));
-                Assert.That(entry.Payload.ProjectileDefinition.DamageSpec.BaseDamage, Is.EqualTo(28));
-                Assert.That(entry.Payload.ProjectileDefinition.Interceptable, Is.False);
-            }
-        }
-
-        [Test]
-        public void D0SlowTripleScheduleRegistersThreeInterceptableProjectiles()
-        {
-            ScenarioDefinition authored = LoadBurstbugScenarioDefinition();
-            ThreatScheduleEntry entry = authored.GetThreatScheduleEntry(1);
-            ScriptedProjectileWorldPort world = CombatLabHarness.CreateProjectileWorldPort(
-                ScriptedProjectileSweepMode.None);
-
-            using (BattleSession session = CreateSession(
-                CreateScenarioWithOnlyEntry(authored, entry),
-                world))
-            {
-                Start(session);
-                long releaseTick = GetReleaseTick(entry);
-
-                PumpAimingThroughTick(session, releaseTick);
-
-                Assert.That(session.ThreatScheduleCursor, Is.EqualTo(1));
-                Assert.That(session.ProjectileSlotCount, Is.EqualTo(3));
-                Assert.That(world.RegisterCount, Is.EqualTo(3));
-                Assert.That(entry.Payload.ProjectileDefinition.DamageSpec.BaseDamage, Is.EqualTo(12));
-                Assert.That(entry.Payload.ProjectileDefinition.MaxHitPoints, Is.EqualTo(4));
-                Assert.That(entry.Payload.ProjectileDefinition.Interceptable, Is.True);
-                for (int index = 0; index < 3; index++)
-                {
-                    ProjectileSpawnRequest request = world.GetRegisterCall(index);
-                    ProjectileSnapshot projectile = session.GetProjectileSnapshot(index);
-                    Assert.That(request.Tick.Value, Is.EqualTo(releaseTick));
-                    Assert.That(request.DefinitionId, Is.EqualTo(302));
-                    Assert.That(request.PresentationKey, Is.EqualTo(2));
-                    Assert.That(request.Interceptable, Is.True);
-                    Assert.That(projectile.DefinitionId, Is.EqualTo(302));
-                    Assert.That(projectile.PresentationKey, Is.EqualTo(2));
-                    Assert.That(projectile.HitPoints, Is.EqualTo(4));
-                    Assert.That(projectile.State, Is.EqualTo(ProjectileState.Travelling));
-                }
-
-                // The authored schedule owns this test. Focused projectile-world
-                // tests cover player interception timing independently of an
-                // encounter's finite travel window.
-                Assert.That(session.State, Is.EqualTo(BattleSessionState.Running));
-            }
-        }
-
-        [Test]
-        public void D0HeavyWarningIsCanceledWhenWeakpointBreakStartsGroggyBeforeOriginalRelease()
-        {
-            ScenarioDefinition authored = LoadBurstbugScenarioDefinition();
-            ThreatScheduleEntry entry = authored.GetThreatScheduleEntry(2);
-            ScriptedProjectileWorldPort world = CombatLabHarness.CreateProjectileWorldPort(
-                ScriptedProjectileSweepMode.None);
-            AllPrimaryPelletsWeakpointPort attackPort = new AllPrimaryPelletsWeakpointPort();
-
-            using (BattleSession session = CreateSession(
-                CreateScenarioWithOnlyEntry(authored, entry),
-                attackPort,
-                world))
-            {
-                Start(session);
-                int initialPlayerLife = session.GetFinalSnapshot().PlayerLife;
-                long originalReleaseTick = GetReleaseTick(entry);
-
-                PumpAimingThroughTick(session, entry.DueTick.Value);
-
-                Assert.That(session.ThreatCount, Is.EqualTo(1));
-                Assert.That(session.GetThreatSnapshot(0).State, Is.EqualTo(ThreatState.Telegraph));
-                Assert.That(session.GetThreatSnapshot(0).HasReleased, Is.False);
-                Assert.That(session.PendingImpactCount, Is.Zero);
-
-                attackPort.TargetId = session.EnemyRuntimeId;
-                while (attackPort.ResolveCount < 2
-                    && session.CurrentTick.Value < originalReleaseTick)
-                {
-                    PumpAimingPrimary(session);
-                }
-
-                ThreatSnapshot canceled = session.GetThreatSnapshot(0);
-                Assert.That(attackPort.ResolveCount, Is.EqualTo(2));
-                Assert.That(session.CurrentTick.Value, Is.LessThan(originalReleaseTick));
-                Assert.That(canceled.State, Is.EqualTo(ThreatState.Canceled));
-                Assert.That(canceled.HasReleased, Is.False);
-                Assert.That(session.GetFinalSnapshot().EnemyBreak, Is.Zero);
-                Assert.That(session.PendingImpactCount, Is.Zero);
-                Assert.That(HasGroggyStarted(session.Trace, session.EnemyRuntimeId), Is.True);
-
-                PumpAimingThroughTick(session, originalReleaseTick + 1L);
-
-                Assert.That(session.State, Is.EqualTo(BattleSessionState.Running));
-                Assert.That(session.CompletionReason, Is.EqualTo(BattleCompletionReason.None));
-                Assert.That(session.GetThreatSnapshot(0).State, Is.EqualTo(ThreatState.Canceled));
-                Assert.That(session.GetThreatSnapshot(0).HasReleased, Is.False);
-                Assert.That(session.PendingImpactCount, Is.Zero);
-                Assert.That(session.GetFinalSnapshot().PlayerLife, Is.EqualTo(initialPlayerLife));
-                Assert.That(HasPlayerDamageAtOrAfter(
-                    session.Trace,
-                    session.PlayerRuntimeId,
-                    originalReleaseTick), Is.False);
-            }
-        }
 
         private static BattleSession CreateSession(
             ScenarioDefinition definition,
@@ -588,50 +422,9 @@ namespace FPG.Demo.Tests.EditMode
                 threatSchedule: schedule);
         }
 
-        private static ScenarioDefinition LoadBurstbugScenarioDefinition()
-        {
-            D0CombatScenarioDefinition authoredScenario =
-                AssetDatabase.LoadAssetAtPath<D0CombatScenarioDefinition>(
-                    BurstbugScenarioAssetPath);
-            Assert.That(authoredScenario, Is.Not.Null);
 
-            D0CombatScenarioTechnicalSettings technicalSettings =
-                new D0CombatScenarioTechnicalSettings(
-                    32,
-                    32,
-                    8,
-                    4096,
-                    1024);
-            Assert.That(authoredScenario.TryCreateDefinition(
-                technicalSettings,
-                out ScenarioDefinition definition,
-                out string error), Is.True, error);
-            return definition;
-        }
 
-        private static ScenarioDefinition CreateScenarioWithOnlyEntry(
-            ScenarioDefinition authored,
-            ThreatScheduleEntry entry)
-        {
-            return new ScenarioDefinition(
-                authored.ScenarioSeed,
-                authored.PlayerWeapon,
-                authored.PlayerLife,
-                authored.PlayerBarrier,
-                authored.EnemyLife,
-                authored.EnemyBreak,
-                authored.PerfectRetractWindow,
-                authored.PerfectRetractMultiplierBasisPoints,
-                authored.BarrierLockDuration,
-                authored.BarrierRestoreBasisPoints,
-                authored.EnemyGroggyDuration,
-                authored.ProjectileBudgetCapacity,
-                authored.ProjectileCapacity,
-                authored.ThreatCapacity,
-                authored.ImpactHistoryCapacity,
-                authored.ShotTargetHistoryCapacity,
-                new[] { entry });
-        }
+
 
         private static long GetReleaseTick(ThreatScheduleEntry entry)
         {

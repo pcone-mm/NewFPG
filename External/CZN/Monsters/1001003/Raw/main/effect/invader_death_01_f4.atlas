@@ -1,0 +1,27 @@
+
+invader_death_01_f4.sct
+size: 1152,328
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+burst5_0001
+  rotate: false
+  xy: 2, 2
+  size: 381, 320
+  orig: 381, 320
+  offset: 0, 0
+  index: -1
+burst5_0002
+  rotate: false
+  xy: 385, 2
+  size: 381, 320
+  orig: 381, 320
+  offset: 0, 0
+  index: -1
+burst5_0003
+  rotate: false
+  xy: 768, 2
+  size: 381, 320
+  orig: 381, 320
+  offset: 0, 0
+  index: -1

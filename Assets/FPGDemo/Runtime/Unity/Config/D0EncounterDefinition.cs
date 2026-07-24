@@ -115,11 +115,6 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private D0EncounterAttackScheduleEntry[] attackSchedule = Array.Empty<D0EncounterAttackScheduleEntry>();
 
-        [D0PlannerTechnicalField("旧 Threat 时序仅作为迁移兼容读取，不可作为新 D0 遭遇的策划入口。请使用上方的「可复用攻击编排」。")]
-        [D0PlannerField("敌人攻击时间表", "按触发 Tick 编排敌人攻击；同 Tick 时用时序编号确定顺序。当前 D0 至少需要一条，所有时间单位均为 Tick。")]
-        [SerializeField]
-        private ThreatScheduleEntryAuthoring[] threatSchedule = Array.Empty<ThreatScheduleEntryAuthoring>();
-
         public string EncounterId => encounterId;
         public string DisplayName => displayName;
         public D0EncounterContract EncounterContract => encounterContract;
@@ -131,9 +126,7 @@ namespace FPG.Demo.Unity
             ? null
             : InitialSpawnSlot.Enemy;
         public int AttackScheduleCount => attackSchedule == null ? 0 : attackSchedule.Length;
-        public int ThreatScheduleCount => UsesReusableAttackDefinitions
-            ? attackSchedule.Length
-            : threatSchedule == null ? 0 : threatSchedule.Length;
+        public int ThreatScheduleCount => AttackScheduleCount;
         public bool UsesReusableAttackDefinitions => attackSchedule != null && attackSchedule.Length > 0;
 
         public D0EncounterSpawnSlot GetSpawnSlot(int index)
@@ -237,38 +230,21 @@ namespace FPG.Demo.Unity
             return attack != null;
         }
 
-        public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out string error)
+public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out string error)
         {
             schedule = Array.Empty<ThreatScheduleEntry>();
-            if (UsesReusableAttackDefinitions)
-            {
-                ThreatScheduleEntry[] createdReusableSchedule = new ThreatScheduleEntry[attackSchedule.Length];
-                for (int index = 0; index < attackSchedule.Length; index++)
-                {
-                    if (!attackSchedule[index].TryCreate(out createdReusableSchedule[index], out string entryError))
-                    {
-                        error = $"Encounter reusable attack schedule entry {index} is invalid: {entryError}";
-                        return false;
-                    }
-                }
-
-                schedule = createdReusableSchedule;
-                error = string.Empty;
-                return true;
-            }
-
-            if (threatSchedule == null || threatSchedule.Length == 0)
+            if (!UsesReusableAttackDefinitions)
             {
                 error = "Encounter definition requires at least one reusable attack schedule entry.";
                 return false;
             }
 
-            ThreatScheduleEntry[] created = new ThreatScheduleEntry[threatSchedule.Length];
-            for (int index = 0; index < threatSchedule.Length; index++)
+            ThreatScheduleEntry[] created = new ThreatScheduleEntry[attackSchedule.Length];
+            for (int index = 0; index < attackSchedule.Length; index++)
             {
-                if (!threatSchedule[index].TryCreate(out created[index], out string entryError))
+                if (!attackSchedule[index].TryCreate(out created[index], out string entryError))
                 {
-                    error = $"Encounter threat schedule entry {index} is invalid: {entryError}";
+                    error = $"Encounter reusable attack schedule entry {index} is invalid: {entryError}";
                     return false;
                 }
             }
@@ -447,12 +423,6 @@ namespace FPG.Demo.Unity
             if (!UsesReusableAttackDefinitions)
             {
                 error = "D0 standard battle requires reusable enemy attack definitions.";
-                return false;
-            }
-
-            if (threatSchedule != null && threatSchedule.Length > 0)
-            {
-                error = "D0 standard battle must not retain a parallel legacy threat schedule.";
                 return false;
             }
 
@@ -648,12 +618,6 @@ namespace FPG.Demo.Unity
             if (!UsesReusableAttackDefinitions)
             {
                 error = $"The {contractDisplayName} encounter requires reusable enemy attack definitions.";
-                return false;
-            }
-
-            if (threatSchedule != null && threatSchedule.Length > 0)
-            {
-                error = $"The {contractDisplayName} encounter must not retain a parallel legacy threat schedule.";
                 return false;
             }
 

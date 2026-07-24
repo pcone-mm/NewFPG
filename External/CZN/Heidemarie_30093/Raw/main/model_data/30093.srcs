@@ -1,0 +1,77 @@
+{
+  "version": 0,
+  "loop_groups": {
+    "u5_attack": {
+      "name": "u5_attack",
+      "members": [
+        "u5_attack_play1",
+        "u5_attack_play2"
+      ]
+    }
+  },
+  "command_sets": {
+    "u1_attack": {
+      "name": "u1_attack",
+      "ready": "attack_ready",
+      "loop": "normal_attack",
+      "play_ready_flag": true,
+      "play_ready": "u1_attack_ready",
+      "play": "u1_attack_play",
+      "play_delay": 0.0,
+      "end": "u1_attack_end",
+      "random_play": false
+    },
+    "u2_buff": {
+      "name": "u2_buff",
+      "play_ready_flag": true,
+      "play_ready": "u2_buff_ready",
+      "play": "u2_buff_play",
+      "play_delay": 0.0,
+      "random_play": false
+    },
+    "u3_attack": {
+      "name": "u3_attack",
+      "ready": "attack_ready",
+      "loop": "normal_attack",
+      "play_ready_flag": true,
+      "play_ready": "u3_attack_ready",
+      "play": "u3_attack_play",
+      "play_delay": 0.0,
+      "end": "u3_attack_end",
+      "random_play": false
+    },
+    "u4_buff": {
+      "name": "u4_buff",
+      "ready": "u4_buff_ready",
+      "loop": "normal_attack",
+      "play_ready_flag": false,
+      "play_ready": "",
+      "play": "u4_buff_play",
+      "play_delay": 0.0,
+      "random_play": false
+    },
+    "ug_attack": {
+      "name": "ug_attack",
+      "play_ready_flag": false,
+      "play": "ug_attack",
+      "play_delay": 0.0,
+      "random_play": false
+    },
+    "ux_attack": {
+      "name": "ux_attack",
+      "play_ready_flag": false,
+      "play": "ux_attack",
+      "play_delay": 0.0,
+      "random_play": false
+    },
+    "u5_attack": {
+      "name": "u5_attack",
+      "ready": "attack_ready",
+      "loop": "u5_attack",
+      "play_ready_flag": false,
+      "play_delay": 0.0,
+      "end": "attack_end",
+      "random_play": false
+    }
+  }
+}

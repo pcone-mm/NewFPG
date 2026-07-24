@@ -1,0 +1,1 @@
+{"skeleton":{"hash":"i8f0G/DNW7rrsQRjV1DxuuGD2fI","spine":"3.8.79","images":"./images/","audio":""},"bones":[{"name":"root"},{"name":"cam","parent":"root"},{"name":"node","parent":"cam"}],"slots":[],"skins":[],"animations":{"animation":{"bones":{"node":{"translate":[{"time":0.1667,"x":0,"y":0,"curve":0.289,"c2":0.9,"c3":0.718,"c4":0.970001},{"time":0.5,"x":172,"y":0}]}}}}}

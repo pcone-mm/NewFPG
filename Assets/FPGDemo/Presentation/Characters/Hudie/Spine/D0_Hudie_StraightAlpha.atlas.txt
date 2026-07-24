@@ -1,0 +1,97 @@
+
+D0_Hudie_StraightAlpha.png
+size: 1285,521
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+body
+  rotate: true
+  xy: 1118, 278
+  size: 241, 165
+  orig: 241, 165
+  offset: 0, 0
+  index: -1
+eye1
+  rotate: false
+  xy: 976, 115
+  size: 68, 53
+  orig: 73, 58
+  offset: 2, 2
+  index: -1
+eye2
+  rotate: true
+  xy: 988, 75
+  size: 38, 41
+  orig: 41, 43
+  offset: 1, 1
+  index: -1
+l1
+  rotate: false
+  xy: 322, 234
+  size: 242, 285
+  orig: 242, 286
+  offset: 0, 1
+  index: -1
+l2
+  rotate: true
+  xy: 816, 356
+  size: 163, 278
+  orig: 163, 278
+  offset: 0, 0
+  index: -1
+l3
+  rotate: true
+  xy: 816, 259
+  size: 95, 300
+  orig: 95, 300
+  offset: 0, 0
+  index: -1
+line
+  rotate: false
+  xy: 1046, 19
+  size: 218, 149
+  orig: 218, 149
+  offset: 0, 0
+  index: -1
+r1
+  rotate: true
+  xy: 637, 114
+  size: 141, 337
+  orig: 141, 337
+  offset: 0, 0
+  index: -1
+r2
+  rotate: true
+  xy: 322, 17
+  size: 215, 313
+  orig: 216, 314
+  offset: 0, 1
+  index: -1
+r3
+  rotate: true
+  xy: 637, 2
+  size: 110, 349
+  orig: 110, 349
+  offset: 0, 0
+  index: -1
+w4
+  rotate: false
+  xy: 976, 170
+  size: 211, 87
+  orig: 211, 87
+  offset: 0, 0
+  index: -1
+图层 10
+  rotate: false
+  xy: 566, 257
+  size: 248, 262
+  orig: 251, 263
+  offset: 0, 1
+  index: -1
+图层 8
+  rotate: true
+  xy: 2, 2
+  size: 517, 318
+  orig: 518, 318
+  offset: 1, 0
+  index: -1

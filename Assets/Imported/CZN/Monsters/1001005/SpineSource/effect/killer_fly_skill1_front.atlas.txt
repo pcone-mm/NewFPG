@@ -1,0 +1,139 @@
+
+killer_fly_skill1_front.png
+size: 1932,457
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud_big_05
+  rotate: false
+  xy: 1733, 36
+  size: 186, 175
+  orig: 186, 175
+  offset: 0, 0
+  index: -1
+cloud_big_08
+  rotate: false
+  xy: 385, 15
+  size: 244, 123
+  orig: 244, 123
+  offset: 0, 0
+  index: -1
+cloud_crack_05
+  rotate: false
+  xy: 798, 186
+  size: 66, 73
+  orig: 66, 73
+  offset: 0, 0
+  index: -1
+dust_1_1
+  rotate: false
+  xy: 270, 5
+  size: 113, 113
+  orig: 113, 113
+  offset: 0, 0
+  index: -1
+dust_1_2
+  rotate: false
+  xy: 1361, 269
+  size: 222, 186
+  orig: 222, 186
+  offset: 0, 0
+  index: -1
+dust_soft_1
+  rotate: false
+  xy: 594, 261
+  size: 398, 194
+  orig: 423, 219
+  offset: 14, 12
+  index: -1
+dust_soft_2
+  rotate: false
+  xy: 1351, 54
+  size: 380, 191
+  orig: 411, 227
+  offset: 19, 28
+  index: -1
+dusts_midlle_1
+  rotate: false
+  xy: 1019, 20
+  size: 330, 225
+  orig: 331, 225
+  offset: 0, 0
+  index: -1
+dusts_midlle_2
+  rotate: false
+  xy: 994, 247
+  size: 365, 208
+  orig: 365, 208
+  offset: 0, 0
+  index: -1
+dusts_midlle_3
+  rotate: true
+  xy: 2, 120
+  size: 335, 330
+  orig: 335, 331
+  offset: 0, 0
+  index: -1
+eff_adslash_1
+  rotate: false
+  xy: 724, 172
+  size: 72, 87
+  orig: 116, 136
+  offset: 2, 1
+  index: -1
+eff_adslash_2
+  rotate: true
+  xy: 594, 164
+  size: 95, 128
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_3
+  rotate: true
+  xy: 136, 11
+  size: 107, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_4
+  rotate: true
+  xy: 2, 4
+  size: 114, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+sand_02
+  rotate: true
+  xy: 819, 2
+  size: 182, 198
+  orig: 182, 198
+  offset: 0, 0
+  index: -1
+sand_05
+  rotate: true
+  xy: 1733, 213
+  size: 242, 197
+  orig: 242, 197
+  offset: 0, 0
+  index: -1
+sand_07
+  rotate: true
+  xy: 631, 4
+  size: 158, 186
+  orig: 158, 186
+  offset: 0, 0
+  index: -1
+sand_10
+  rotate: true
+  xy: 1585, 257
+  size: 198, 136
+  orig: 198, 136
+  offset: 0, 0
+  index: -1
+sand_dust_3
+  rotate: false
+  xy: 334, 140
+  size: 258, 315
+  orig: 258, 315
+  offset: 0, 0
+  index: -1

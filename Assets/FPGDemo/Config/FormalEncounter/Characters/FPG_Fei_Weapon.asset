@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d90947a3e5d0e74aba049a3aa2e8f52, type: 3}
+  m_Name: FPG_Fei_Weapon
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0WeaponDefinition
+  definitionId: 1
+  weaponId: fei-primary-secondary
+  displayName: Fei
+  designerNotes: Formal Fei primary and secondary weapon definition.
+  magazineCapacity: 8
+  primaryAmmoCost: 1
+  primaryIntervalTicks: 12
+  primaryQueryMode: 1
+  primaryAdditionalPenetrationCount: 0
+  primaryDamage: 4
+  primaryBreakDamage: 4
+  primaryWeakpointDamageMultiplierBasisPoints: 12000
+  primaryWeakpointBreakMultiplierBasisPoints: 25000
+  secondaryAmmoCost: 2
+  secondaryTriggerMode: 1
+  secondaryQueryMode: 2
+  secondaryMinimumChargeTicks: 0
+  secondaryRecoveryTicks: 30
+  secondaryDamage: 28
+  secondaryBreakDamage: 20
+  secondaryWeakpointDamageMultiplierBasisPoints: 12000
+  secondaryWeakpointBreakMultiplierBasisPoints: 25000
+  secondaryMaxImpactCount: 4
+  secondaryProjectileMaxImpactCount: 4
+  reloadDurationTicks: 84
+  primaryPresentation:
+    socketId: weapon.primary.muzzle
+    muzzleVfxKey: player.weapon.primary.muzzle
+    tracerVfxKey: player.weapon.primary.tracer
+    animationName: attack_play1
+    alternateAnimationName: attack_play2
+    effectColor: {r: 0.42, g: 0.9, b: 1, a: 0.96}
+    muzzleDuration: 0.07
+    muzzleLength: 0.34
+    muzzleWidth: 0.12
+    muzzleLightIntensity: 1.25
+    tracerDuration: 0.13
+    tracerWidth: 0.052
+    tracerEndpointLightIntensity: 0.8
+    muzzlePrewarmCapacity: 2
+    tracerPrewarmCapacity: 8
+  secondaryPresentation:
+    shot:
+      socketId: weapon.secondary.muzzle
+      muzzleVfxKey: player.weapon.secondary.muzzle
+      tracerVfxKey: player.weapon.secondary.tracer
+      animationName: defense_play
+      alternateAnimationName: 
+      effectColor: {r: 1, g: 0.98, b: 0.72, a: 1}
+      muzzleDuration: 0.13
+      muzzleLength: 0.62
+      muzzleWidth: 0.18
+      muzzleLightIntensity: 2.1
+      tracerDuration: 0.36
+      tracerWidth: 0.12
+      tracerEndpointLightIntensity: 1.55
+      muzzlePrewarmCapacity: 1
+      tracerPrewarmCapacity: 4
+    chargeVfxKey: player.weapon.secondary.charge
+    targetBurstVfxKey: player.weapon.secondary.target-burst
+    targetDepthAnchor: 0
+    fallbackCameraDistance: 8
+    chargePulseDuration: 0.18
+    targetBurstRadiusScale: 0.32
+    targetBurstMinRadius: 0.42
+    targetBurstMaxRadius: 1.4
+    chargeAnimation: u4_attack_ready
+    releaseAnimation: defense_play
+    endAnimation: u4_attack_end
+    hitMarkerTime: 0.033
+    stopMarkerTime: 1
+    chargePrewarmCapacity: 1
+    targetBurstPrewarmCapacity: 4
+  reloadPresentation:
+    playAnimation: u1_buff_play
+    readyAnimation: u1_buff_ready
+  aimIndicator:
+    restingColor: {r: 0.48, g: 0.82, b: 0.92, a: 0.56}
+    aimingColor: {r: 0.76, g: 0.96, b: 1, a: 0.96}
+    shotColor: {r: 1, g: 1, b: 1, a: 1}
+    hitColor: {r: 1, g: 0.13, b: 0.1, a: 1}
+    baseRadius: 15
+    ringThickness: 2
+    aimingGlowAlpha: 0.22
+    shotRadius: 23
+    shotDuration: 0.16
+    hitMarkerRadius: 27
+    hitMarkerThickness: 2.6
+    hitMarkerArcDegrees: 24
+    hitExpansion: 4
+    hitDuration: 0.2

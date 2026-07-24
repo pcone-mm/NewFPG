@@ -1,0 +1,118 @@
+
+fei_30048_ux_screen_3.png
+size: 1968,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+die_flare_04
+  rotate: false
+  xy: 1431, 14
+  size: 21, 23
+  orig: 21, 23
+  offset: 0, 0
+  index: -1
+flare06
+  rotate: false
+  xy: 1861, 306
+  size: 98, 98
+  orig: 98, 98
+  offset: 0, 0
+  index: -1
+flare3
+  rotate: false
+  xy: 1001, 209
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+flare_1
+  rotate: false
+  xy: 1303, 209
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+flare_rainbow2
+  rotate: true
+  xy: 1605, 254
+  size: 255, 254
+  orig: 255, 254
+  offset: 0, 0
+  index: -1
+flare_rainbow3_2
+  rotate: true
+  xy: 538, 2
+  size: 507, 461
+  orig: 507, 461
+  offset: 0, 0
+  index: -1
+flare_rainbow_dot2
+  rotate: false
+  xy: 1811, 58
+  size: 152, 152
+  orig: 152, 152
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1229, 7
+  size: 200, 200
+  orig: 200, 200
+  offset: 0, 0
+  index: -1
+light2
+  rotate: true
+  xy: 2, 7
+  size: 502, 534
+  orig: 502, 534
+  offset: 0, 0
+  index: -1
+light_flare_rainbow_str
+  rotate: true
+  xy: 1001, 10
+  size: 197, 226
+  orig: 197, 226
+  offset: 0, 0
+  index: -1
+part_5
+  rotate: false
+  xy: 1431, 39
+  size: 212, 168
+  orig: 212, 168
+  offset: 0, 0
+  index: -1
+pati5
+  rotate: false
+  xy: 1645, 94
+  size: 164, 158
+  orig: 164, 158
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: true
+  xy: 1645, 6
+  size: 86, 97
+  orig: 86, 97
+  offset: 0, 0
+  index: -1
+rectangle
+  rotate: false
+  xy: 1744, 38
+  size: 54, 54
+  orig: 54, 54
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: false
+  xy: 1861, 406
+  size: 103, 103
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_03
+  rotate: true
+  xy: 1861, 212
+  size: 92, 95
+  orig: 92, 95
+  offset: 0, 0
+  index: -1

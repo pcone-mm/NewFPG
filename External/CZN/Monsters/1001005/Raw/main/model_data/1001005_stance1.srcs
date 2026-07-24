@@ -1,0 +1,19 @@
+{
+  "version": 0,
+  "loop_groups": {},
+  "command_sets": {
+    "none": {
+      "name": "none",
+      "play_ready_flag": false,
+      "play_delay": 0.0,
+      "random_play": false
+    },
+    "buff_1_1": {
+      "name": "buff_1_1",
+      "play_ready_flag": false,
+      "play": "stance1_skill1",
+      "play_delay": 0.0,
+      "random_play": false
+    }
+  }
+}

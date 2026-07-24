@@ -1,0 +1,104 @@
+
+30093_ug_battle_ready_eff.sct
+size: 1528,1088
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flare01
+  rotate: false
+  xy: 310, 12
+  size: 302, 196
+  orig: 302, 196
+  offset: 0, 0
+  index: -1
+flare5
+  rotate: false
+  xy: 2, 383
+  size: 700, 700
+  orig: 700, 700
+  offset: 0, 0
+  index: -1
+flare_line1
+  rotate: false
+  xy: 704, 393
+  size: 222, 690
+  orig: 222, 690
+  offset: 0, 0
+  index: -1
+glass2
+  rotate: false
+  xy: 2, 141
+  size: 306, 240
+  orig: 306, 240
+  offset: 0, 0
+  index: -1
+glass3
+  rotate: true
+  xy: 1330, 775
+  size: 308, 189
+  orig: 308, 189
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: false
+  xy: 1259, 158
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+gr_glass_dust221
+  rotate: false
+  xy: 976, 145
+  size: 281, 265
+  orig: 281, 265
+  offset: 0, 0
+  index: -1
+gr_glass_dust231
+  rotate: false
+  xy: 1200, 416
+  size: 281, 265
+  orig: 281, 265
+  offset: 0, 0
+  index: -1
+gr_glass_dust311
+  rotate: true
+  xy: 704, 122
+  size: 269, 270
+  orig: 269, 270
+  offset: 0, 0
+  index: -1
+gr_glass_dust321
+  rotate: true
+  xy: 928, 412
+  size: 269, 270
+  orig: 269, 270
+  offset: 0, 0
+  index: -1
+light_pillar_2
+  rotate: true
+  xy: 310, 210
+  size: 171, 312
+  orig: 171, 312
+  offset: 0, 0
+  index: -1
+line3
+  rotate: false
+  xy: 928, 683
+  size: 400, 400
+  orig: 400, 400
+  offset: 0, 0
+  index: -1
+pati6
+  rotate: true
+  xy: 2, 2
+  size: 137, 160
+  orig: 137, 160
+  offset: 0, 0
+  index: -1
+pati7
+  rotate: false
+  xy: 1259, 27
+  size: 156, 129
+  orig: 156, 129
+  offset: 0, 0
+  index: -1

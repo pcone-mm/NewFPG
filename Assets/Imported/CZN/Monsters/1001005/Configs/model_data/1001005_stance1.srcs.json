@@ -1,0 +1,19 @@
+{
+  "command_sets": {
+    "buff_1_1": {
+      "name": "buff_1_1",
+      "play": "stance1_skill1",
+      "play_delay": 0.0,
+      "play_ready_flag": false,
+      "random_play": false
+    },
+    "none": {
+      "name": "none",
+      "play_delay": 0.0,
+      "play_ready_flag": false,
+      "random_play": false
+    }
+  },
+  "loop_groups": {},
+  "version": 0
+}

@@ -1,0 +1,195 @@
+
+fei_30048_u1_buff_play_f2.png
+size: 1848,792
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura4_1
+  rotate: false
+  xy: 370, 19
+  size: 179, 204
+  orig: 179, 204
+  offset: 0, 0
+  index: -1
+aura5_1
+  rotate: false
+  xy: 2, 225
+  size: 641, 564
+  orig: 641, 564
+  offset: 0, 0
+  index: -1
+fei_blue_f1_1
+  rotate: false
+  xy: 1532, 2
+  size: 49, 47
+  orig: 49, 47
+  offset: 0, 0
+  index: -1
+fei_blue_f2_1
+  rotate: false
+  xy: 1746, 95
+  size: 70, 76
+  orig: 70, 76
+  offset: 0, 0
+  index: -1
+fei_green_f1_1
+  rotate: false
+  xy: 813, 4
+  size: 149, 108
+  orig: 149, 108
+  offset: 0, 0
+  index: -1
+fei_green_f1_2
+  rotate: false
+  xy: 1632, 62
+  size: 102, 86
+  orig: 102, 86
+  offset: 0, 0
+  index: -1
+fei_green_f1_3
+  rotate: true
+  xy: 964, 7
+  size: 105, 123
+  orig: 105, 123
+  offset: 0, 0
+  index: -1
+fei_green_f2_1
+  rotate: false
+  xy: 1532, 51
+  size: 98, 97
+  orig: 98, 97
+  offset: 0, 0
+  index: -1
+fei_green_f2_2
+  rotate: false
+  xy: 1425, 26
+  size: 105, 109
+  orig: 105, 109
+  offset: 0, 0
+  index: -1
+fei_mint_f3_1
+  rotate: false
+  xy: 1133, 24
+  size: 111, 53
+  orig: 111, 53
+  offset: 0, 0
+  index: -1
+fei_mint_f3_2
+  rotate: false
+  xy: 551, 13
+  size: 71, 41
+  orig: 71, 41
+  offset: 0, 0
+  index: -1
+fei_mint_f4_1
+  rotate: true
+  xy: 1687, 457
+  size: 36, 56
+  orig: 36, 56
+  offset: 0, 0
+  index: -1
+fei_red_f1_1
+  rotate: false
+  xy: 1133, 79
+  size: 146, 56
+  orig: 146, 56
+  offset: 0, 0
+  index: -1
+fei_red_f1_2
+  rotate: true
+  xy: 1746, 309
+  size: 184, 95
+  orig: 184, 95
+  offset: 0, 0
+  index: -1
+fei_red_f1_3
+  rotate: false
+  xy: 2, 8
+  size: 366, 215
+  orig: 366, 215
+  offset: 0, 0
+  index: -1
+fei_red_f1_4
+  rotate: false
+  xy: 645, 114
+  size: 486, 336
+  orig: 486, 336
+  offset: 0, 0
+  index: -1
+fei_red_f1_5
+  rotate: false
+  xy: 1172, 447
+  size: 513, 342
+  orig: 513, 342
+  offset: 0, 0
+  index: -1
+fei_red_f1_6
+  rotate: false
+  xy: 645, 452
+  size: 525, 337
+  orig: 525, 337
+  offset: 0, 0
+  index: -1
+fei_red_f1_7
+  rotate: false
+  xy: 1133, 137
+  size: 314, 308
+  orig: 314, 308
+  offset: 0, 0
+  index: -1
+fei_red_f1_8
+  rotate: true
+  xy: 1687, 495
+  size: 294, 150
+  orig: 294, 150
+  offset: 0, 0
+  index: -1
+fei_red_f2_1
+  rotate: false
+  xy: 1746, 173
+  size: 70, 134
+  orig: 70, 134
+  offset: 0, 0
+  index: -1
+fei_red_f2_2
+  rotate: true
+  xy: 1632, 6
+  size: 54, 98
+  orig: 54, 98
+  offset: 0, 0
+  index: -1
+fei_red_f3_1
+  rotate: false
+  xy: 1281, 18
+  size: 142, 117
+  orig: 142, 117
+  offset: 0, 0
+  index: -1
+fei_red_f3_2
+  rotate: true
+  xy: 627, 4
+  size: 108, 184
+  orig: 108, 184
+  offset: 0, 0
+  index: -1
+fei_red_f3_3
+  rotate: false
+  xy: 551, 56
+  size: 74, 167
+  orig: 74, 167
+  offset: 0, 0
+  index: -1
+fei_red_f3_4
+  rotate: false
+  xy: 1089, 10
+  size: 42, 102
+  orig: 42, 102
+  offset: 0, 0
+  index: -1
+glow
+  rotate: false
+  xy: 1449, 150
+  size: 295, 295
+  orig: 295, 295
+  offset: 0, 0
+  index: -1

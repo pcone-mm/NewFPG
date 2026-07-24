@@ -1,0 +1,62 @@
+
+dust_insect_normal_skill3.png
+size: 608,1076
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura1
+  rotate: false
+  xy: 2, 582
+  size: 289, 491
+  orig: 289, 491
+  offset: 0, 0
+  index: -1
+aura2
+  rotate: false
+  xy: 2, 2
+  size: 207, 317
+  orig: 207, 317
+  offset: 0, 0
+  index: -1
+aura3
+  rotate: false
+  xy: 293, 773
+  size: 300, 300
+  orig: 300, 300
+  offset: 0, 0
+  index: -1
+aura4
+  rotate: false
+  xy: 211, 46
+  size: 214, 222
+  orig: 214, 222
+  offset: 0, 0
+  index: -1
+aura5
+  rotate: false
+  xy: 287, 270
+  size: 252, 243
+  orig: 252, 243
+  offset: 0, 0
+  index: -1
+flameAura1
+  rotate: false
+  xy: 427, 66
+  size: 177, 202
+  orig: 177, 202
+  offset: 0, 0
+  index: -1
+flameAura7
+  rotate: false
+  xy: 2, 321
+  size: 283, 259
+  orig: 283, 259
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 293, 515
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1

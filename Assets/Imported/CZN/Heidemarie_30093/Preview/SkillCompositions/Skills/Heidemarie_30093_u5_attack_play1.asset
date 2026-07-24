@@ -1,0 +1,273 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3ec6f1083c40f147a31afa2a73adcea, type: 3}
+  m_Name: Heidemarie_30093_u5_attack_play1
+  m_EditorClassIdentifier: Assembly-CSharp::NewFPG.CZN.CznSpineSkillSequence
+  skillId: u5_attack_play1
+  displayName: "U5 \u8FDE\u51FB\u4E00"
+  duration: 2.22
+  actorAnimations:
+  - phaseName: u5_attack_play1
+    animationName: attack_play1
+    startTime: 0
+    duration: 0.66670007
+    loop: 0
+  spineLayers:
+  - compositeName: heidemarie_30093_u5_attack_play1
+    sourceName: heidemarie_30093_eff_attack_play1_f
+    skeletonDataAsset: {fileID: 11400000, guid: 900d0445e039b4344a302dc874fd8531, type: 2}
+    animationName: u5
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.5333
+    scale: 1
+    rotation: 0
+    sortingOrder: 5
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_u5_attack_play1
+    sourceName: heidemarie_30093_eff_attack_play1_b
+    skeletonDataAsset: {fileID: 11400000, guid: 4a199a43dece5274eb5b1456ac1cda45, type: 2}
+    animationName: u5
+    anchor: 0
+    offset: {x: 0, y: 0}
+    startTime: 0
+    duration: 0.4333
+    scale: 1
+    rotation: 0
+    sortingOrder: -5
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_eff_attack_play_target_b
+    skeletonDataAsset: {fileID: 11400000, guid: 1bf739dfd4ef3024185bcf5e093c6f16, type: 2}
+    animationName: u5_attack_play1
+    anchor: 1
+    offset: {x: -6.2, y: -0.5}
+    startTime: 0
+    duration: 1
+    scale: 1
+    rotation: 0
+    sortingOrder: -10
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_eff_sword_target
+    skeletonDataAsset: {fileID: 11400000, guid: 84bfe72bf2f770148a5a7cda16a95d2e, type: 2}
+    animationName: u5_attack_play1_target
+    anchor: 1
+    offset: {x: -6.2, y: -0.5}
+    startTime: 0
+    duration: 0.9333
+    scale: 1
+    rotation: 0
+    sortingOrder: 3
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_eff_attack_play_target_f3
+    skeletonDataAsset: {fileID: 11400000, guid: 45b27966776f3a546979850f54d9a9fc, type: 2}
+    animationName: u5_attack_play1
+    anchor: 1
+    offset: {x: -6.2, y: -0.5}
+    startTime: 0
+    duration: 1
+    scale: 1
+    rotation: 0
+    sortingOrder: 5
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_eff_attack_play_target_f1
+    skeletonDataAsset: {fileID: 11400000, guid: 7c19671787859134997ce7eceb807d30, type: 2}
+    animationName: u5_attack_play1
+    anchor: 1
+    offset: {x: -6.2, y: -0.5}
+    startTime: 0
+    duration: 0.9333
+    scale: 1
+    rotation: 0
+    sortingOrder: 7
+    loop: 0
+    attachmentBone: 
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_eff_attack_play_target_f2
+    skeletonDataAsset: {fileID: 11400000, guid: 4eef414a119fe164fa078f511dcf43ea, type: 2}
+    animationName: u5_attack_play1
+    anchor: 1
+    offset: {x: -6.2, y: -0.5}
+    startTime: 0
+    duration: 0.8667
+    scale: 1
+    rotation: 0
+    sortingOrder: 6
+    loop: 0
+    attachmentBone: 
+  particleLayers:
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_eff_attack_play1_target_pati3
+    emitterName: digital_crack4_3
+    originalTexturePath: particle/stone_06.sct
+    anchor: 1
+    offset: {x: 0, y: 0.5}
+    sourceVariance: {x: 1, y: 1}
+    force: {x: 0, y: -18}
+    startTime: 0.07
+    duration: 1.4000001
+    scale: 0.8
+    rotation: 0
+    sortingOrder: 2
+    maxParticles: 500
+    emissionRate: 20
+    lifetimeMin: 0.3
+    lifetimeMax: 0.90000004
+    speedMin: 7
+    speedMax: 9
+    sizeMin: 0.15
+    sizeMax: 0.54999995
+    angle: 90
+    angleVariance: 50
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 0
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_u5_attack_play1_target_pati1
+    emitterName: digital_crack4_3
+    originalTexturePath: particle/tri_pati_01.sct
+    anchor: 1
+    offset: {x: -0.4, y: 1.3}
+    sourceVariance: {x: 1.4499999, y: 0.19999999}
+    force: {x: 0, y: 0}
+    startTime: 0.52000004
+    duration: 1.7
+    scale: 1
+    rotation: 240
+    sortingOrder: 0
+    maxParticles: 500
+    emissionRate: 10
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.2
+    speedMin: 0.5
+    speedMax: 1.5
+    sizeMin: 0.20000002
+    sizeMax: 0.79999995
+    angle: 0
+    angleVariance: 15
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  - compositeName: heidemarie_30093_u5_attack_play1_target
+    sourceName: heidemarie_30093_u5_attack_play1_target_pati1
+    emitterName: digital_crack4_3
+    originalTexturePath: particle/pati_03.sct
+    anchor: 1
+    offset: {x: -0.4, y: 1.3}
+    sourceVariance: {x: 1.4499999, y: 0.35}
+    force: {x: 0, y: 0}
+    startTime: 0.52000004
+    duration: 1.7
+    scale: 1
+    rotation: 240
+    sortingOrder: 0
+    maxParticles: 500
+    emissionRate: 30
+    lifetimeMin: 0.19999999
+    lifetimeMax: 1.2
+    speedMin: 0.5
+    speedMax: 1.5
+    sizeMin: 0.19999999
+    sizeMax: 1.3999999
+    angle: 0
+    angleVariance: 15
+    rotationVariance: 360
+    startColor: {r: 0.75686276, g: 0.24313726, b: 0.11764706, a: 1}
+    endColor: {r: 0, g: 0, b: 0, a: 1}
+    additive: 1
+  transformCues:
+  - sourceName: heidemarie_30093_eff_attack_play2_shake
+    target: 0
+    startTime: 0.066
+    duration: 0.8
+    positionScale: 0.01
+    translateKeys:
+    - time: 0
+      value: {x: 0, y: 0}
+      stepped: 0
+    - time: 0.0667
+      value: {x: -31.08, y: -20.11}
+      stepped: 0
+    - time: 0.1
+      value: {x: 20.11, y: 16.45}
+      stepped: 0
+    - time: 0.1667
+      value: {x: -13.71, y: -10.05}
+      stepped: 0
+    - time: 0.2333
+      value: {x: 9.14, y: 7.31}
+      stepped: 0
+    - time: 0.3
+      value: {x: -7.31, y: -4.57}
+      stepped: 0
+    - time: 0.4
+      value: {x: 4.57, y: 3.66}
+      stepped: 0
+    - time: 0.5333
+      value: {x: -4.09, y: -3.22}
+      stepped: 0
+    - time: 0.6667
+      value: {x: 2.37, y: 2.03}
+      stepped: 0
+    - time: 0.8
+      value: {x: 0, y: 0}
+      stepped: 0
+    rotateKeys: []
+    scaleKeys: []
+  cameraZoomCues: []
+  markers:
+  - kind: SPEED_BLUR
+    label: SPEED_BLUR
+    startTime: 0.066
+    duration: 0.05
+    value: 0
+  - kind: HIT
+    label: HIT
+    startTime: 0.080000006
+    duration: 0
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 0.120000005
+    duration: 0.1
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 0.120000005
+    duration: 0.060000002
+    value: 0
+  - kind: STOP
+    label: STOP
+    startTime: 0.120000005
+    duration: 0.15
+    value: 0
+  recoveryNotes: SRMD graph timing and CFX Spine layering are data-derived. Particle
+    emitter parameters are translated, but shared SCT particle textures use a generated
+    soft fallback. Masks, custom shaders, color-blend and post-process nodes remain
+    diagnostic markers. Negative/sentinel CFX scales use a positive preview fallback,
+    ancillary Spine Bezier keys are sampled with linear interpolation, and only the
+    primary cam/camera/node bone is sampled from multi-bone ancillary skeletons.
+  unresolvedResources:
+  - 'Shared particle texture approximated with soft fallback: particle/pati_03.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/stone_06.sct'
+  - 'Shared particle texture approximated with soft fallback: particle/tri_pati_01.sct'

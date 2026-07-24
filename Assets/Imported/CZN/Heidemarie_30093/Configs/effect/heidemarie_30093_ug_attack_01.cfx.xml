@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>info</key>
+    <dict />
+    <key>primitive</key>
+    <array>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro2_f</string>
+        <key>z</key>
+        <string>18</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_g2</string>
+        <key>z</key>
+        <string>17</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_g1</string>
+        <key>z</key>
+        <string>16</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_hq3</string>
+        <key>ani</key>
+        <string />
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string />
+        <key>z</key>
+        <string>15</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string />
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>spine</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_hq2</string>
+        <key>ani</key>
+        <string />
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string />
+        <key>z</key>
+        <string>14</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string />
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>spine</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_hq1</string>
+        <key>ani</key>
+        <string />
+        <key>x</key>
+        <string />
+        <key>y</key>
+        <string />
+        <key>z</key>
+        <string>13</string>
+        <key>opacity</key>
+        <string />
+        <key>scale</key>
+        <string />
+        <key>rotate</key>
+        <string />
+        <key>color</key>
+        <string />
+        <key>delay</key>
+        <string />
+        <key>repeat</key>
+        <string />
+        <key>format</key>
+        <string>spine</string>
+        <key>attach</key>
+        <string />
+        <key>lifeTime</key>
+        <string />
+        <key>shader</key>
+        <string />
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_f2</string>
+        <key>z</key>
+        <string>12</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_f</string>
+        <key>z</key>
+        <string>11</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_1</string>
+        <key>z</key>
+        <string>10</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_2</string>
+        <key>z</key>
+        <string>9</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_3</string>
+        <key>z</key>
+        <string>8</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_4</string>
+        <key>z</key>
+        <string>7</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_5</string>
+        <key>z</key>
+        <string>6</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_6</string>
+        <key>z</key>
+        <string>5</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_7</string>
+        <key>z</key>
+        <string>4</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_8</string>
+        <key>z</key>
+        <string>3</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>30093_ug_portrait1_9</string>
+        <key>z</key>
+        <string>2</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_b</string>
+        <key>z</key>
+        <string>1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro_b2</string>
+        <key>z</key>
+        <string>0</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+      <dict>
+        <key>source</key>
+        <string>heidemarie_30093_ug_sword_intro2_b</string>
+        <key>z</key>
+        <string>1</string>
+        <key>format</key>
+        <string>spine</string>
+      </dict>
+    </array>
+  </dict>
+</plist>

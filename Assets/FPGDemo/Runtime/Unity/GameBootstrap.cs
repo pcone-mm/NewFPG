@@ -70,12 +70,6 @@ namespace FPG.Demo.Unity
         public FpgRoomEncounterDirector ActiveEncounterDirector { get; private set; }
         public FpgRunFlowController RunFlowController => runFlowController;
 
-        [Obsolete("Legacy CombatLab context is unavailable in the formal room flow.")]
-        public BattleSceneContext ActiveContext { get; private set; }
-
-        [Obsolete("Legacy CombatLab session host is unavailable in the formal room flow.")]
-        public BattleSessionHost ActiveHost { get; private set; }
-
         public IReadOnlyList<FpgBootCharacterChoice> CharacterChoices =>
             characterChoices ?? Array.Empty<FpgBootCharacterChoice>();
 

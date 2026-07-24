@@ -37,7 +37,7 @@ namespace FPG.Demo.Unity
 
         [D0PlannerField("玩家 Entity Prefab", "玩家完整实体预制体。它是 GameplayRoot、VisualRoot、命中体、弱点、Socket 和本地表现组件的唯一人工编辑入口；场景和角色表现资产不得另存一份玩家实体结构。")]
         [SerializeField]
-        private D0PlayerEntityView entityPrefab;
+        private FpgPlayerEntityView entityPrefab;
 
         [D0PlannerField("角色表现", "该角色的模型、动画名和表现时序。这里只引用表现资产，不修改战斗判定。")]
         [SerializeField]
@@ -48,7 +48,7 @@ namespace FPG.Demo.Unity
         public int Life => life;
         public int Barrier => barrier;
         public D0WeaponDefinition Weapon => weapon;
-        public D0PlayerEntityView EntityPrefab => entityPrefab;
+        public FpgPlayerEntityView EntityPrefab => entityPrefab;
         public D0ActorPresentationDefinition ActorPresentation => actorPresentation;
 
         public bool TryValidate(out string error)

@@ -1,0 +1,111 @@
+
+heidemarie_30093_ug_sword_intro_b.sct
+size: 1948,1824
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+glow1
+  rotate: false
+  xy: 1304, 28
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+seq1_0001
+  rotate: false
+  xy: 2, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0002
+  rotate: false
+  xy: 175, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0003
+  rotate: false
+  xy: 1732, 781
+  size: 214, 1040
+  orig: 214, 1040
+  offset: 0, 0
+  index: -1
+seq1_0004
+  rotate: false
+  xy: 348, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0005
+  rotate: false
+  xy: 521, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0006
+  rotate: false
+  xy: 694, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0007
+  rotate: false
+  xy: 867, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0008
+  rotate: false
+  xy: 1040, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0009
+  rotate: false
+  xy: 1213, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0010
+  rotate: true
+  xy: 2, 348
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0011
+  rotate: false
+  xy: 1386, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0012
+  rotate: true
+  xy: 2, 175
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0013
+  rotate: false
+  xy: 1559, 521
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1
+seq1_0014
+  rotate: true
+  xy: 2, 2
+  size: 171, 1300
+  orig: 171, 1300
+  offset: 0, 0
+  index: -1

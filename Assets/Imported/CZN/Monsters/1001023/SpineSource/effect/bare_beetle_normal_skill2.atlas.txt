@@ -1,0 +1,104 @@
+
+bare_beetle_normal_skill2.png
+size: 1472,348
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+beam2
+  rotate: false
+  xy: 260, 322
+  size: 402, 23
+  orig: 402, 23
+  offset: 0, 0
+  index: -1
+f1
+  rotate: false
+  xy: 260, 162
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f10
+  rotate: false
+  xy: 866, 27
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f11
+  rotate: false
+  xy: 1068, 27
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f12
+  rotate: false
+  xy: 1270, 27
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f1_d2
+  rotate: false
+  xy: 462, 162
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f2
+  rotate: false
+  xy: 664, 187
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f3
+  rotate: false
+  xy: 866, 187
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f5
+  rotate: false
+  xy: 1068, 187
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f6
+  rotate: false
+  xy: 1270, 187
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f7
+  rotate: false
+  xy: 260, 2
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f8
+  rotate: false
+  xy: 462, 2
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+f9
+  rotate: false
+  xy: 664, 27
+  size: 200, 158
+  orig: 200, 158
+  offset: 0, 0
+  index: -1
+flash
+  rotate: false
+  xy: 2, 89
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1

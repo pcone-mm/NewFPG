@@ -1,0 +1,384 @@
+
+fei_30048_ux_self_1_glow.png
+size: 1400,1600
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fei_30048_ux1_glow1_00
+  rotate: true
+  xy: 2, 1418
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_02
+  rotate: true
+  xy: 235, 1418
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_04
+  rotate: true
+  xy: 468, 1418
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_06
+  rotate: true
+  xy: 701, 1418
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_08
+  rotate: true
+  xy: 934, 1418
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_10
+  rotate: true
+  xy: 1167, 1418
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_11
+  rotate: true
+  xy: 2, 1241
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_12
+  rotate: true
+  xy: 235, 1241
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_14
+  rotate: true
+  xy: 468, 1241
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_16
+  rotate: true
+  xy: 701, 1241
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_18
+  rotate: true
+  xy: 934, 1241
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_20
+  rotate: true
+  xy: 1167, 1241
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_22
+  rotate: true
+  xy: 2, 1064
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_24
+  rotate: true
+  xy: 235, 1064
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_26
+  rotate: true
+  xy: 468, 1064
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_28
+  rotate: true
+  xy: 701, 1064
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_30
+  rotate: true
+  xy: 934, 1064
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_32
+  rotate: true
+  xy: 1167, 1064
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_34
+  rotate: true
+  xy: 2, 887
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_36
+  rotate: true
+  xy: 235, 887
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_38
+  rotate: true
+  xy: 468, 887
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_40
+  rotate: true
+  xy: 701, 887
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_42
+  rotate: true
+  xy: 934, 887
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_44
+  rotate: true
+  xy: 1167, 887
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_46
+  rotate: true
+  xy: 2, 710
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_48
+  rotate: true
+  xy: 235, 710
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow1_50
+  rotate: true
+  xy: 468, 710
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_00
+  rotate: true
+  xy: 701, 710
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_02
+  rotate: true
+  xy: 934, 710
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_04
+  rotate: true
+  xy: 1167, 710
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_06
+  rotate: true
+  xy: 2, 533
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_08
+  rotate: true
+  xy: 235, 533
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_10
+  rotate: true
+  xy: 468, 533
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_11
+  rotate: true
+  xy: 701, 533
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_12
+  rotate: true
+  xy: 934, 533
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_14
+  rotate: true
+  xy: 1167, 533
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_16
+  rotate: true
+  xy: 2, 356
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_18
+  rotate: true
+  xy: 235, 356
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_20
+  rotate: true
+  xy: 468, 356
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_22
+  rotate: true
+  xy: 701, 356
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_24
+  rotate: true
+  xy: 934, 356
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_26
+  rotate: true
+  xy: 1167, 356
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_28
+  rotate: true
+  xy: 2, 179
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_30
+  rotate: true
+  xy: 235, 179
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_32
+  rotate: true
+  xy: 468, 179
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_34
+  rotate: true
+  xy: 701, 179
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_36
+  rotate: true
+  xy: 934, 179
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_38
+  rotate: true
+  xy: 1167, 179
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_40
+  rotate: true
+  xy: 2, 2
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_42
+  rotate: true
+  xy: 235, 2
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_44
+  rotate: true
+  xy: 468, 2
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_46
+  rotate: true
+  xy: 701, 2
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_48
+  rotate: true
+  xy: 934, 2
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1
+fei_30048_ux1_glow2_50
+  rotate: true
+  xy: 1167, 2
+  size: 175, 231
+  orig: 175, 231
+  offset: 0, 0
+  index: -1

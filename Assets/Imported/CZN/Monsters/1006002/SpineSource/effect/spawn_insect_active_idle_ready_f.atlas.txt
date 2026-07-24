@@ -1,0 +1,195 @@
+
+spawn_insect_active_idle_ready_f.png
+size: 728,276
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+j1_1
+  rotate: false
+  xy: 544, 4
+  size: 75, 40
+  orig: 75, 40
+  offset: 0, 0
+  index: -1
+j1_2
+  rotate: true
+  xy: 491, 210
+  size: 64, 65
+  orig: 64, 65
+  offset: 0, 0
+  index: -1
+j1_3
+  rotate: false
+  xy: 560, 243
+  size: 59, 31
+  orig: 59, 31
+  offset: 0, 0
+  index: -1
+j1_4
+  rotate: false
+  xy: 560, 114
+  size: 58, 45
+  orig: 58, 45
+  offset: 0, 0
+  index: -1
+j1_5
+  rotate: true
+  xy: 459, 2
+  size: 38, 25
+  orig: 38, 25
+  offset: 0, 0
+  index: -1
+j2
+  rotate: true
+  xy: 124, 5
+  size: 123, 111
+  orig: 130, 119
+  offset: 4, 4
+  index: -1
+j2_1
+  rotate: true
+  xy: 558, 161
+  size: 80, 97
+  orig: 90, 116
+  offset: 5, 15
+  index: -1
+j2_2
+  rotate: false
+  xy: 657, 162
+  size: 61, 86
+  orig: 90, 116
+  offset: 21, 5
+  index: -1
+j2_3
+  rotate: true
+  xy: 560, 56
+  size: 56, 57
+  orig: 90, 116
+  offset: 26, 5
+  index: -1
+j3_1
+  rotate: false
+  xy: 417, 42
+  size: 60, 112
+  orig: 68, 121
+  offset: 4, 5
+  index: -1
+j3_2
+  rotate: false
+  xy: 486, 2
+  size: 56, 42
+  orig: 68, 121
+  offset: 8, 58
+  index: -1
+j3_3
+  rotate: false
+  xy: 347, 15
+  size: 68, 121
+  orig: 68, 121
+  offset: 0, 0
+  index: -1
+jelly_7
+  rotate: false
+  xy: 621, 250
+  size: 104, 24
+  orig: 112, 24
+  offset: 2, 0
+  index: -1
+jelly_7-2
+  rotate: false
+  xy: 621, 135
+  size: 104, 24
+  orig: 112, 24
+  offset: 2, 0
+  index: -1
+jelly_8
+  rotate: false
+  xy: 621, 30
+  size: 96, 23
+  orig: 120, 23
+  offset: 12, 0
+  index: -1
+jelly_8-2
+  rotate: false
+  xy: 621, 7
+  size: 96, 21
+  orig: 120, 23
+  offset: 12, 2
+  index: -1
+s1_1
+  rotate: false
+  xy: 239, 137
+  size: 58, 137
+  orig: 85, 150
+  offset: 10, 2
+  index: -1
+s1_2
+  rotate: false
+  xy: 414, 156
+  size: 75, 118
+  orig: 85, 150
+  offset: 5, 27
+  index: -1
+s1_3
+  rotate: false
+  xy: 479, 46
+  size: 79, 108
+  orig: 85, 150
+  offset: 3, 39
+  index: -1
+s1_4
+  rotate: true
+  xy: 620, 55
+  size: 78, 97
+  orig: 85, 150
+  offset: 5, 51
+  index: -1
+s2_1
+  rotate: true
+  xy: 491, 159
+  size: 49, 60
+  orig: 200, 147
+  offset: 6, 29
+  index: -1
+s2_2
+  rotate: true
+  xy: 128, 137
+  size: 137, 109
+  orig: 200, 147
+  offset: 19, 31
+  index: -1
+s2_3
+  rotate: true
+  xy: 2, 130
+  size: 144, 124
+  orig: 200, 147
+  offset: 44, 15
+  index: -1
+s2_4
+  rotate: true
+  xy: 299, 138
+  size: 136, 113
+  orig: 200, 147
+  offset: 53, 22
+  index: -1
+s2_5
+  rotate: true
+  xy: 2, 3
+  size: 125, 120
+  orig: 200, 147
+  offset: 69, 11
+  index: -1
+s2_6
+  rotate: false
+  xy: 237, 7
+  size: 108, 128
+  orig: 200, 147
+  offset: 84, 7
+  index: -1
+s3
+  rotate: false
+  xy: 417, 2
+  size: 40, 38
+  orig: 40, 38
+  offset: 0, 0
+  index: -1

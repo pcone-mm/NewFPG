@@ -1,0 +1,21 @@
+{
+  "name": "1006018",
+  "scale": 1.0,
+  "offset_y_ratio": 8,
+  "render_width": 800,
+  "render_height": 640,
+  "scale_grade": "SMALL",
+  "extra_size": false,
+  "animations": [
+    "normal_death",
+    "normal_enter",
+    "normal_groggy",
+    "normal_hit",
+    "normal_idle",
+    "normal_skill1",
+    "normal_skill2",
+    "normal_skill3",
+    "normal_summon",
+    "normal_surprise"
+  ]
+}

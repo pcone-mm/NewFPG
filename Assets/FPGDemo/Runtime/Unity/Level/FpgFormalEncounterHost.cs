@@ -78,7 +78,7 @@ namespace FPG.Demo.Unity
                 : playerComposer.ActiveSelection;
         public D0CharacterDefinition ActivePlayerDefinition =>
             playerComposer == null ? null : playerComposer.ActiveDefinition;
-        public D0PlayerEntityView ActivePlayerEntity =>
+        public FpgPlayerEntityView ActivePlayerEntity =>
             playerComposer == null ? null : playerComposer.ActiveEntity;
         public bool IsPlayerComposed => playerComposer != null
             && playerComposer.IsComposed;

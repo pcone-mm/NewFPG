@@ -1,0 +1,34 @@
+
+heidemarie_30093_ux_attack_03_4.png
+size: 308,576
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 2, 2
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+global_glow
+  rotate: false
+  xy: 175, 444
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+light_line
+  rotate: false
+  xy: 175, 372
+  size: 70, 70
+  orig: 70, 70
+  offset: 0, 0
+  index: -1
+light_pillar_3
+  rotate: false
+  xy: 2, 260
+  size: 171, 312
+  orig: 171, 312
+  offset: 0, 0
+  index: -1

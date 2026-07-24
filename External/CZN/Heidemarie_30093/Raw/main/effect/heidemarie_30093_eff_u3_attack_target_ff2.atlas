@@ -1,0 +1,167 @@
+
+heidemarie_30093_eff_u3_attack_target_ff2.sct
+size: 1864,1280
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+aura13
+  rotate: false
+  xy: 789, 80
+  size: 300, 243
+  orig: 300, 243
+  offset: 0, 0
+  index: -1
+aura16
+  rotate: false
+  xy: 1091, 30
+  size: 300, 285
+  orig: 300, 285
+  offset: 0, 0
+  index: -1
+bd12_2
+  rotate: false
+  xy: 604, 870
+  size: 54, 33
+  orig: 54, 33
+  offset: 0, 0
+  index: -1
+bdd21_2
+  rotate: false
+  xy: 564, 119
+  size: 85, 71
+  orig: 85, 71
+  offset: 0, 0
+  index: -1
+glass_test0
+  rotate: false
+  xy: 249, 75
+  size: 313, 174
+  orig: 313, 174
+  offset: 0, 0
+  index: -1
+glass_test01
+  rotate: true
+  xy: 249, 251
+  size: 589, 324
+  orig: 589, 324
+  offset: 0, 0
+  index: -1
+glass_test02
+  rotate: false
+  xy: 604, 905
+  size: 600, 369
+  orig: 600, 369
+  offset: 0, 0
+  index: -1
+glow1
+  rotate: true
+  xy: 1206, 787
+  size: 487, 491
+  orig: 487, 491
+  offset: 0, 0
+  index: -1
+grad1
+  rotate: false
+  xy: 1699, 656
+  size: 157, 618
+  orig: 157, 618
+  offset: 0, 0
+  index: -1
+hei_break_0000
+  rotate: false
+  xy: 789, 615
+  size: 400, 288
+  orig: 400, 288
+  offset: 0, 0
+  index: -1
+hei_break_0001
+  rotate: false
+  xy: 789, 325
+  size: 400, 288
+  orig: 400, 288
+  offset: 0, 0
+  index: -1
+hei_break_0002
+  rotate: false
+  xy: 1191, 497
+  size: 400, 288
+  orig: 400, 288
+  offset: 0, 0
+  index: -1
+hei_break_0004
+  rotate: false
+  xy: 2, 842
+  size: 600, 432
+  orig: 600, 432
+  offset: 0, 0
+  index: -1
+pati1
+  rotate: false
+  xy: 575, 192
+  size: 212, 648
+  orig: 212, 648
+  offset: 0, 0
+  index: -1
+pati2
+  rotate: true
+  xy: 1191, 317
+  size: 178, 488
+  orig: 178, 488
+  offset: 0, 0
+  index: -1
+ring_a_7_2
+  rotate: false
+  xy: 2, 68
+  size: 245, 772
+  orig: 245, 772
+  offset: 0, 0
+  index: -1
+ringb1_1
+  rotate: true
+  xy: 1593, 501
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_2
+  rotate: false
+  xy: 2, 2
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_3
+  rotate: false
+  xy: 288, 9
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_4
+  rotate: true
+  xy: 1681, 370
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_5
+  rotate: true
+  xy: 1747, 370
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+ringb1_6
+  rotate: true
+  xy: 1695, 84
+  size: 284, 64
+  orig: 284, 64
+  offset: 0, 0
+  index: -1
+sere_shcok02
+  rotate: false
+  xy: 1393, 25
+  size: 300, 290
+  orig: 300, 290
+  offset: 0, 0
+  index: -1

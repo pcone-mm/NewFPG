@@ -1,0 +1,41 @@
+
+heidemarie_30093_ux_attack_04_1.sct
+size: 1564,952
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 1304, 694
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+hade_impact_01
+  rotate: true
+  xy: 2, 2
+  size: 948, 432
+  orig: 948, 432
+  offset: 0, 0
+  index: -1
+hade_impact_02
+  rotate: true
+  xy: 436, 2
+  size: 948, 432
+  orig: 948, 432
+  offset: 0, 0
+  index: -1
+hade_impact_03
+  rotate: true
+  xy: 870, 2
+  size: 948, 432
+  orig: 948, 432
+  offset: 0, 0
+  index: -1
+heal_3
+  rotate: false
+  xy: 1304, 490
+  size: 242, 202
+  orig: 242, 202
+  offset: 0, 0
+  index: -1

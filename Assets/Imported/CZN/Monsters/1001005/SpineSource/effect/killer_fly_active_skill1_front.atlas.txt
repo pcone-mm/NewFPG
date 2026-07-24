@@ -1,0 +1,104 @@
+
+killer_fly_active_skill1_front.png
+size: 753,565
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+cloud_09
+  rotate: true
+  xy: 2, 2
+  size: 136, 76
+  orig: 136, 76
+  offset: 0, 0
+  index: -1
+cloud_crack_05
+  rotate: false
+  xy: 645, 25
+  size: 66, 73
+  orig: 66, 73
+  offset: 0, 0
+  index: -1
+dust_1_2
+  rotate: true
+  xy: 564, 341
+  size: 222, 186
+  orig: 222, 186
+  offset: 0, 0
+  index: -1
+dust_soft_1
+  rotate: true
+  xy: 2, 140
+  size: 423, 219
+  orig: 423, 219
+  offset: 0, 0
+  index: -1
+dust_soft_2
+  rotate: true
+  xy: 371, 183
+  size: 380, 191
+  orig: 411, 227
+  offset: 19, 28
+  index: -1
+dust_soft_3
+  rotate: true
+  xy: 223, 140
+  size: 423, 146
+  orig: 444, 166
+  offset: 10, 10
+  index: -1
+eff_adslash_1
+  rotate: false
+  xy: 571, 11
+  size: 72, 87
+  orig: 116, 136
+  offset: 2, 1
+  index: -1
+eff_adslash_2
+  rotate: false
+  xy: 305, 10
+  size: 95, 128
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_3
+  rotate: false
+  xy: 196, 6
+  size: 107, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+eff_adslash_4
+  rotate: false
+  xy: 80, 6
+  size: 114, 132
+  orig: 116, 136
+  offset: 1, 2
+  index: -1
+smoke_5
+  rotate: true
+  xy: 402, 2
+  size: 179, 167
+  orig: 179, 167
+  offset: 0, 0
+  index: -1
+smoke_s1
+  rotate: false
+  xy: 564, 217
+  size: 99, 122
+  orig: 99, 122
+  offset: 0, 0
+  index: -1
+water_spray_02
+  rotate: true
+  xy: 649, 112
+  size: 103, 102
+  orig: 103, 103
+  offset: 0, 0
+  index: -1
+water_spray_04
+  rotate: true
+  xy: 571, 100
+  size: 115, 76
+  orig: 116, 77
+  offset: 0, 0
+  index: -1

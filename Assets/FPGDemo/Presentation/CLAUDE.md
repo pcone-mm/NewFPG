@@ -1,23 +1,11 @@
-# FPGDemo Presentation 指南
+# Presentation 指南
 
-本目录是 FPGDemo 的表现资源边界。它可以保存 Entity Prefab 的视觉结构、Socket、弱点/命中体和池化表现组件，但不承载遭遇状态机、伤害决策或场景服务所有权。
+本目录是 FPGDemo 正式表现资产边界，不承载遭遇决策或长期 gameplay 状态。
 
-## 目录边界
-
-- `D0Slice/Spine/` 是 D0 的派生 Spine/特效资源，`D0Slice/Audio/` 是 D0 音频与 Cue 资源；`FpgDemoD0SliceInstaller` 和对应配置/测试维护它们。
-- `Actors/Fei/`、`Luan/Prefabs/`、`Hudie/Prefabs/` 保存可人工维护的完整 Entity Prefab；嵌套的 `D0Slice/Spine`、`Luan/Spine`、`Hudie/Spine` Generated Render Prefab 只提供渲染依赖。
-- `LuanHudie/` 放召唤/出现等独立表现 prefab；`FormalEncounter/` 放正式遭遇绑定层 prefab；`Level/Environment/` 放房间环境表现。
-- Entity Prefab 是姿态、Socket、碰撞体和弱点结构的人工入口。不要把 Generated Render Prefab 直接拖进场景或配置，也不要在场景里复制一份角色视觉树。
-
-## 工作规则
-
-- 通过 `FpgDemoD0SliceInstaller`、`FpgFormalEncounterDefaultsInstaller` 或 `FpgFormalRoomLoopInstaller` 的既有入口创建/刷新资源；重复执行应保持人工 Entity Prefab 的 Transform、Collider、Socket、组件引用和 GUID 不变。
-- 原始 PMA/Spine 输入来自本地导入或美术源目录，运行时使用本目录的派生资源；不要让源资源承担 gameplay、hitbox 或 Socket 配置。
-- `D0Slice/Spine/` 的来源与可分发许可仍待负责人确认。在确认或替换为原创/获授权资产前，不得把该目录作为提交基线、公开演示物或 G6 Release 放行依据。
-- 改表现结构时保持 `D0CharacterDefinition`/`D0EnemyDefinition` 到唯一 Entity Prefab 的引用链；不要用临时场景对象绕过 Entity Prefab 合同。
-
-## 验证
-
-- 改 Entity Prefab 或生成引用时看 `D0EntitySceneAssetContractTests.cs`、`D0GeneratedActorPrefabReferenceContractTests.cs` 和 `D0SliceInstallerEntityOwnershipTests.cs`。
-- 改 Fei Socket/锚点时看 `BattlePresentationAnchorTests.cs`；改 Burstbug D0 Spine FX 时看 `D0BurstbugCznFxAssetContractTests.cs`。
-- 只改本指南时运行 `git diff --check`；资源来源和发布资格以 `Docs/Workflow/D0_Asset_Provenance_Audit.zh-CN.md` 为准。
+- `FormalEncounter/` 保存人工维护的正式 `PF_FPG_*Entity`、HUD、出口和反馈 prefab。
+- `Characters/*/Spine` 保存正式 prefab 使用的 SkeletonData、Atlas、材质、贴图及必要渲染 prefab。
+- `HUD/HitTip` 与 `Level/Environment` 保存正式 HUD 和房间环境表现。
+- `SourceArt/CZN` 保存源素材；项目负责人已确认 CZN/Spine 素材可进入公开仓库，但本指南不额外判断第三方法律授权。
+- Entity prefab 只拥有视觉层级、anchor、socket、hit part 和 binder；战斗状态属于正式 session/director。
+- 不得直接绑定根 `Assets/Art`、旧 D0Slice 或临时场景副本。
+- 修改后检查 Unity 编译/Console、`FpgEntityPrefabContractTests.cs`、`FormalFirstAuthoringContractTests.cs` 和相关正式 HUD 合同。

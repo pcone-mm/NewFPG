@@ -1,0 +1,111 @@
+
+fei_30048_ux_bg1_3.png
+size: 1992,1568
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+bg1_back_1
+  rotate: true
+  xy: 1806, 879
+  size: 686, 164
+  orig: 686, 164
+  offset: 0, 0
+  index: -1
+bg1_back_2
+  rotate: false
+  xy: 1334, 570
+  size: 433, 395
+  orig: 433, 395
+  offset: 0, 0
+  index: -1
+bg1_back_3
+  rotate: false
+  xy: 1334, 967
+  size: 470, 598
+  orig: 470, 598
+  offset: 0, 0
+  index: -1
+bg1_back_4
+  rotate: false
+  xy: 2, 394
+  size: 790, 513
+  orig: 790, 513
+  offset: 0, 0
+  index: -1
+bg1_bridge_b
+  rotate: false
+  xy: 1168, 6
+  size: 419, 117
+  orig: 419, 117
+  offset: 0, 0
+  index: -1
+bg1_cloud_3
+  rotate: false
+  xy: 1168, 125
+  size: 451, 226
+  orig: 451, 226
+  offset: 0, 0
+  index: -1
+bg1_cloud_4
+  rotate: false
+  xy: 794, 353
+  size: 701, 192
+  orig: 701, 192
+  offset: 0, 0
+  index: -1
+bg1_cloud_5
+  rotate: true
+  xy: 1621, 58
+  size: 312, 144
+  orig: 312, 144
+  offset: 0, 0
+  index: -1
+bg1_cloud_6
+  rotate: true
+  xy: 1767, 226
+  size: 295, 220
+  orig: 295, 220
+  offset: 0, 0
+  index: -1
+bg1_cloud_7
+  rotate: true
+  xy: 1769, 523
+  size: 354, 214
+  orig: 354, 214
+  offset: 0, 0
+  index: -1
+bg1_middle_1
+  rotate: true
+  xy: 794, 547
+  size: 360, 527
+  orig: 360, 527
+  offset: 0, 0
+  index: -1
+bg1_middle_2
+  rotate: true
+  xy: 2, 2
+  size: 390, 667
+  orig: 390, 667
+  offset: 0, 0
+  index: -1
+bg1_sky_1
+  rotate: false
+  xy: 2, 909
+  size: 1330, 656
+  orig: 1330, 656
+  offset: 0, 0
+  index: -1
+bg1_sky_1_2
+  rotate: false
+  xy: 671, 49
+  size: 495, 302
+  orig: 495, 302
+  offset: 0, 0
+  index: -1
+cloud1
+  rotate: false
+  xy: 1497, 372
+  size: 246, 196
+  orig: 246, 196
+  offset: 0, 0
+  index: -1

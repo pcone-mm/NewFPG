@@ -1,0 +1,412 @@
+
+heidemarie_30093_ux_attack_02_b1_3.sct
+size: 2004,1188
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+flash
+  rotate: false
+  xy: 1062, 2
+  size: 256, 256
+  orig: 256, 256
+  offset: 0, 0
+  index: -1
+global_glow
+  rotate: false
+  xy: 1327, 744
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+hade_bg_03_03
+  rotate: true
+  xy: 1348, 445
+  size: 297, 108
+  orig: 297, 108
+  offset: 0, 0
+  index: -1
+hade_bg_03_04
+  rotate: false
+  xy: 1835, 560
+  size: 165, 88
+  orig: 165, 88
+  offset: 0, 0
+  index: -1
+hade_fire_01_01
+  rotate: false
+  xy: 1484, 64
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_fire_01_02
+  rotate: true
+  xy: 1696, 935
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_fire_01_03
+  rotate: true
+  xy: 1696, 780
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_fire_01_04
+  rotate: true
+  xy: 1639, 625
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_fire_01_05
+  rotate: true
+  xy: 1639, 470
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_fire_01_06
+  rotate: false
+  xy: 1632, 274
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_fire_01_07
+  rotate: false
+  xy: 1835, 364
+  size: 153, 194
+  orig: 153, 194
+  offset: 0, 0
+  index: -1
+hade_lightning_10_01
+  rotate: false
+  xy: 2, 707
+  size: 152, 479
+  orig: 152, 479
+  offset: 0, 0
+  index: -1
+hade_lightning_10_02
+  rotate: false
+  xy: 2, 226
+  size: 152, 479
+  orig: 152, 479
+  offset: 0, 0
+  index: -1
+hade_lightning_10_03
+  rotate: false
+  xy: 156, 707
+  size: 152, 479
+  orig: 152, 479
+  offset: 0, 0
+  index: -1
+hade_lightning_10_04
+  rotate: false
+  xy: 156, 226
+  size: 152, 479
+  orig: 152, 479
+  offset: 0, 0
+  index: -1
+hade_lightning_10_05
+  rotate: false
+  xy: 310, 707
+  size: 152, 479
+  orig: 152, 479
+  offset: 0, 0
+  index: -1
+hade_lightning_11_01
+  rotate: false
+  xy: 310, 241
+  size: 169, 464
+  orig: 169, 464
+  offset: 0, 0
+  index: -1
+hade_lightning_11_02
+  rotate: false
+  xy: 464, 722
+  size: 169, 464
+  orig: 169, 464
+  offset: 0, 0
+  index: -1
+hade_lightning_11_03
+  rotate: false
+  xy: 481, 256
+  size: 169, 464
+  orig: 169, 464
+  offset: 0, 0
+  index: -1
+hade_lightning_11_04
+  rotate: false
+  xy: 635, 722
+  size: 169, 464
+  orig: 169, 464
+  offset: 0, 0
+  index: -1
+hade_lightning_11_05
+  rotate: false
+  xy: 652, 256
+  size: 169, 464
+  orig: 169, 464
+  offset: 0, 0
+  index: -1
+hade_lightning_11_06
+  rotate: false
+  xy: 806, 722
+  size: 169, 464
+  orig: 169, 464
+  offset: 0, 0
+  index: -1
+hade_lightning_12_01
+  rotate: false
+  xy: 823, 258
+  size: 173, 462
+  orig: 173, 462
+  offset: 0, 0
+  index: -1
+hade_lightning_12_02
+  rotate: false
+  xy: 977, 724
+  size: 173, 462
+  orig: 173, 462
+  offset: 0, 0
+  index: -1
+hade_lightning_12_03
+  rotate: false
+  xy: 998, 260
+  size: 173, 462
+  orig: 173, 462
+  offset: 0, 0
+  index: -1
+hade_lightning_12_04
+  rotate: false
+  xy: 1152, 724
+  size: 173, 462
+  orig: 173, 462
+  offset: 0, 0
+  index: -1
+hade_lightning_12_05
+  rotate: false
+  xy: 1173, 260
+  size: 173, 462
+  orig: 173, 462
+  offset: 0, 0
+  index: -1
+hade_lightning_13_01
+  rotate: false
+  xy: 1639, 31
+  size: 83, 169
+  orig: 83, 169
+  offset: 0, 0
+  index: -1
+hade_lightning_13_02
+  rotate: false
+  xy: 1724, 31
+  size: 83, 169
+  orig: 83, 169
+  offset: 0, 0
+  index: -1
+hade_lightning_13_03
+  rotate: true
+  xy: 1809, 117
+  size: 83, 169
+  orig: 83, 169
+  offset: 0, 0
+  index: -1
+hade_lightning_13_04
+  rotate: true
+  xy: 1809, 32
+  size: 83, 169
+  orig: 83, 169
+  offset: 0, 0
+  index: -1
+hade_lightning_14_01
+  rotate: false
+  xy: 557, 2
+  size: 92, 252
+  orig: 92, 252
+  offset: 0, 0
+  index: -1
+hade_lightning_14_02
+  rotate: false
+  xy: 651, 2
+  size: 92, 252
+  orig: 92, 252
+  offset: 0, 0
+  index: -1
+hade_lightning_14_03
+  rotate: false
+  xy: 745, 2
+  size: 92, 252
+  orig: 92, 252
+  offset: 0, 0
+  index: -1
+hade_lightning_14_04
+  rotate: false
+  xy: 839, 4
+  size: 92, 252
+  orig: 92, 252
+  offset: 0, 0
+  index: -1
+hade_lightning_18_01
+  rotate: true
+  xy: 1457, 772
+  size: 100, 167
+  orig: 100, 167
+  offset: 0, 0
+  index: -1
+hade_lightning_18_02
+  rotate: false
+  xy: 1892, 921
+  size: 100, 167
+  orig: 100, 167
+  offset: 0, 0
+  index: -1
+hade_lightning_18_03
+  rotate: false
+  xy: 1892, 752
+  size: 100, 167
+  orig: 100, 167
+  offset: 0, 0
+  index: -1
+hade_lightning_18_04
+  rotate: true
+  xy: 1835, 650
+  size: 100, 167
+  orig: 100, 167
+  offset: 0, 0
+  index: -1
+hade_lightning_19_01
+  rotate: true
+  xy: 1458, 688
+  size: 82, 171
+  orig: 82, 171
+  offset: 0, 0
+  index: -1
+hade_lightning_19_02
+  rotate: true
+  xy: 1458, 604
+  size: 82, 171
+  orig: 82, 171
+  offset: 0, 0
+  index: -1
+hade_lightning_19_03
+  rotate: true
+  xy: 1458, 520
+  size: 82, 171
+  orig: 82, 171
+  offset: 0, 0
+  index: -1
+hade_lightning_19_04
+  rotate: true
+  xy: 1787, 202
+  size: 82, 171
+  orig: 82, 171
+  offset: 0, 0
+  index: -1
+hade_lightning_22_01
+  rotate: false
+  xy: 246, 23
+  size: 80, 201
+  orig: 80, 201
+  offset: 0, 0
+  index: -1
+hade_lightning_22_02
+  rotate: false
+  xy: 393, 38
+  size: 80, 201
+  orig: 80, 201
+  offset: 0, 0
+  index: -1
+hade_lightning_22_03
+  rotate: false
+  xy: 475, 38
+  size: 80, 201
+  orig: 80, 201
+  offset: 0, 0
+  index: -1
+hade_lightning_22_04
+  rotate: false
+  xy: 1320, 57
+  size: 80, 201
+  orig: 80, 201
+  offset: 0, 0
+  index: -1
+hade_lightning_22_05
+  rotate: false
+  xy: 1402, 57
+  size: 80, 201
+  orig: 80, 201
+  offset: 0, 0
+  index: -1
+hade_lightning_23_01
+  rotate: true
+  xy: 1484, 2
+  size: 60, 77
+  orig: 60, 77
+  offset: 0, 0
+  index: -1
+hade_lightning_23_02
+  rotate: true
+  xy: 1787, 286
+  size: 76, 190
+  orig: 76, 190
+  offset: 0, 0
+  index: -1
+hade_lightning_23_03
+  rotate: false
+  xy: 1500, 915
+  size: 96, 271
+  orig: 96, 271
+  offset: 0, 0
+  index: -1
+hade_lightning_23_04
+  rotate: false
+  xy: 1598, 915
+  size: 96, 271
+  orig: 96, 271
+  offset: 0, 0
+  index: -1
+hade_lightning_23_05
+  rotate: true
+  xy: 1696, 1090
+  size: 96, 271
+  orig: 96, 271
+  offset: 0, 0
+  index: -1
+hade_lightning_23_06
+  rotate: false
+  xy: 328, 5
+  size: 63, 234
+  orig: 63, 234
+  offset: 0, 0
+  index: -1
+heal_3
+  rotate: false
+  xy: 2, 22
+  size: 242, 202
+  orig: 242, 202
+  offset: 0, 0
+  index: -1
+light_pillar_3
+  rotate: false
+  xy: 1327, 874
+  size: 171, 312
+  orig: 171, 312
+  offset: 0, 0
+  index: -1
+self_shw
+  rotate: true
+  xy: 933, 6
+  size: 250, 127
+  orig: 250, 127
+  offset: 0, 0
+  index: -1
+spl_water5
+  rotate: false
+  xy: 1348, 260
+  size: 282, 183
+  orig: 282, 183
+  offset: 0, 0
+  index: -1

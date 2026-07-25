@@ -3,7 +3,8 @@
     "rootNamespace": "FPG.Demo.Enemy",
     "references": [
         "FPG.Core",
-        "FPG.Combat"
+        "FPG.Combat",
+        "FPG.Skills"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

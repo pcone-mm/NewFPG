@@ -22,7 +22,11 @@ namespace FPG.Demo.Run
         public int SpawnSequence { get; private set; }
         public int RecursionDepth { get; private set; }
         public int WaveIndex { get; private set; }
-        public string SpawnPointId { get; private set; }
+        public FpgSpawnPlacement Placement { get; private set; }
+        public string SpawnPointId => Placement.IsValid
+            && Placement.RequiresRoomReservation
+            ? Placement.RoomPointId
+            : string.Empty;
         public FpgEnemyRole Role { get; private set; }
         public FpgSpawnEntryState State { get; private set; }
         public TickIndex WarningUntilTick { get; private set; }
@@ -43,7 +47,7 @@ namespace FPG.Demo.Run
         internal void Reserve(
             FpgSpawnEntry entry,
             RuntimeId runtimeId,
-            string spawnPointId,
+            FpgSpawnPlacement placement,
             TickIndex warningUntilTick)
         {
             RuntimeId = runtimeId;
@@ -52,7 +56,7 @@ namespace FPG.Demo.Run
             SpawnSequence = entry.SpawnSequence;
             RecursionDepth = entry.RecursionDepth;
             WaveIndex = entry.WaveIndex;
-            SpawnPointId = spawnPointId ?? string.Empty;
+            Placement = placement;
             Role = entry.Role;
             State = FpgSpawnEntryState.Warning;
             WarningUntilTick = warningUntilTick;
@@ -124,7 +128,7 @@ namespace FPG.Demo.Run
             SpawnSequence = -1;
             RecursionDepth = 0;
             WaveIndex = -1;
-            SpawnPointId = string.Empty;
+            Placement = default(FpgSpawnPlacement);
             Role = FpgEnemyRole.Any;
             State = FpgSpawnEntryState.Planned;
             WarningUntilTick = TickIndex.Invalid;
@@ -207,14 +211,14 @@ namespace FPG.Demo.Run
         public DomainResult TryReserve(
             FpgSpawnEntry entry,
             RuntimeId runtimeId,
-            string spawnPointId,
+            FpgSpawnPlacement placement,
             TickIndex warningUntilTick,
             int life,
             int breakValue,
             out FpgEnemySlot slot)
         {
             slot = null;
-            if (!runtimeId.IsValid || string.IsNullOrWhiteSpace(spawnPointId)
+            if (!runtimeId.IsValid || !placement.IsValid
                 || !warningUntilTick.IsValid)
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
@@ -238,7 +242,7 @@ namespace FPG.Demo.Run
                     continue;
                 }
 
-                candidate.Reserve(entry, runtimeId, spawnPointId, warningUntilTick);
+                candidate.Reserve(entry, runtimeId, placement, warningUntilTick);
                 candidate.SetStats(life, breakValue);
                 ReservedCount++;
                 LivingCount++;
@@ -395,8 +399,6 @@ namespace FPG.Demo.Run
         }
     }
 }
-
-
 
 
 

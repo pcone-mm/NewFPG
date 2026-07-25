@@ -122,6 +122,11 @@ namespace FPG.Demo.Unity
                                 $"Enemy '{request.Definition.EnemyDefinitionId}' prefab requires an IFpgFormalEnemyEntityBinder.");
                         }
 
+                        if (binder.SocketRegistry == null)
+                        {
+                            throw new InvalidOperationException(
+                                $"Enemy '{request.Definition.EnemyDefinitionId}' prefab requires a D0ActorSocketRegistry.");
+                        }
                         nextSlot++;
                     }
                 }

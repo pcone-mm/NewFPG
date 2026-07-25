@@ -32,7 +32,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string ProfilePath = "Assets/FPGDemo/Config/FormalEncounter/Level1/FPG_L1_01_Profile.asset";
         private const string OverridePath = "Assets/FPGDemo/Config/FormalEncounter/Level1/FPG_L1_01_01_Intro.asset";
         private const string EnemyCatalogPath = "Assets/FPGDemo/Config/FormalEncounter/FPG_NormalRoom_EnemyCatalog.asset";
-        private const string AttackCatalogPath = "Assets/FPGDemo/Config/FormalEncounter/FPG_NormalRoom_AttackRuntimeCatalog.asset";
         private const string PresentationRoot = "Assets/FPGDemo/Presentation/FormalEncounter";
         private const string ExitPrefabPath = PresentationRoot + "/PF_FPG_RoomExit.prefab";
         private const string HealthBarPrefabPath = PresentationRoot + "/PF_FPG_OverheadHealthBar.prefab";
@@ -1107,8 +1106,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 LoadRequired<FpgEncounterOverrideDefinition>(OverridePath);
             FpgEnemyDefinitionCatalog enemyCatalog =
                 LoadRequired<FpgEnemyDefinitionCatalog>(EnemyCatalogPath);
-            FpgFormalAttackRuntimeCatalog attackCatalog =
-                LoadRequired<FpgFormalAttackRuntimeCatalog>(AttackCatalogPath);
 
             ConfigureEnemyPool(enemyPool, enemyPoolRoot);
             ConfigureAnchorMap(anchorMap);
@@ -1135,8 +1132,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 exitRoot,
                 entrySafetyAnchor,
                 factory,
-                playerDriver,
-                attackCatalog);
+                playerDriver);
             ConfigureCameraFeedback(cameraFeedback, cameraRoot, camera);
             ConfigurePresentationBridge(
                 presentationBridge,
@@ -1183,7 +1179,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 profile,
                 encounterOverride,
                 enemyCatalog,
-                attackCatalog,
                 director);
 
             cameraRoot.gameObject.SetActive(false);
@@ -1665,8 +1660,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Transform exitRoot,
             Transform entrySafetyAnchor,
             FpgFormalCombatPortFactory factory,
-            FpgFormalPlayerTickDriver driver,
-            FpgFormalAttackRuntimeCatalog attackCatalog)
+            FpgFormalPlayerTickDriver driver)
         {
             SerializedObject data = new SerializedObject(director);
             SetObject(data, "roomInstance", roomInstance);
@@ -1683,7 +1677,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObject(data, "entrySafetyAnchor", entrySafetyAnchor);
             SetObject(data, "formalCombatPortFactoryComponent", factory);
             SetObject(data, "formalPlayerTickDriverComponent", driver);
-            SetObject(data, "formalAttackRuntimeCatalog", attackCatalog);
             SetInt(data, "presentationLeaseTicks", 12);
             data.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -1901,7 +1894,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgEncounterProfile profile,
             FpgEncounterOverrideDefinition encounterOverride,
             FpgEnemyDefinitionCatalog enemyCatalog,
-            FpgFormalAttackRuntimeCatalog attackCatalog,
             FpgRoomEncounterDirector director)
         {
             SerializedObject data = new SerializedObject(host);
@@ -1909,7 +1901,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObject(data, "encounterProfile", profile);
             SetObject(data, "encounterOverride", encounterOverride);
             SetObject(data, "enemyCatalog", enemyCatalog);
-            SetObject(data, "attackRuntimeCatalog", attackCatalog);
             SetObject(data, "director", director);
             SetString(data, "playerEntryMarkerId", "player-main");
             Required(data, "runSeed").longValue = 1L;
@@ -2272,8 +2263,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 LoadRequired<FpgEncounterOverrideDefinition>(OverridePath);
             FpgEnemyDefinitionCatalog enemyCatalog =
                 LoadRequired<FpgEnemyDefinitionCatalog>(EnemyCatalogPath);
-            FpgFormalAttackRuntimeCatalog attackCatalog =
-                LoadRequired<FpgFormalAttackRuntimeCatalog>(AttackCatalogPath);
             CombatPresentationProfile presentationProfile =
                 LoadRequired<CombatPresentationProfile>(
                     CombatPresentationProfilePath);
@@ -2341,11 +2330,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (!enemyCatalog.TryValidate(out string enemyError))
             {
                 throw new InvalidOperationException(enemyError);
-            }
-
-            if (!attackCatalog.TryValidate(out string attackError))
-            {
-                throw new InvalidOperationException(attackError);
             }
 
             FpgEncounterRunContext context =

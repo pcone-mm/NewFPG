@@ -5,7 +5,8 @@
         "FPG.Core",
         "FPG.Combat",
         "FPG.Player",
-        "FPG.Enemy"
+        "FPG.Enemy",
+        "FPG.Skills"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

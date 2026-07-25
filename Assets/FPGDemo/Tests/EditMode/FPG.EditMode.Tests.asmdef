@@ -8,6 +8,8 @@
         "FPG.Enemy",
         "FPG.Run",
         "FPG.Unity",
+        "FPG.Skills",
+        "FPG.SkillAuthoring.Editor",
         "spine-unity",
         "Unity.InputSystem"
     ],

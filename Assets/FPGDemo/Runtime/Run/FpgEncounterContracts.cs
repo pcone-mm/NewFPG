@@ -315,7 +315,8 @@ namespace FPG.Demo.Run
             int maxSummonDepth = 0,
             string entityViewKey = null,
             string behaviorKey = null,
-            string attackPatternKey = null)
+            string attackPatternKey = null,
+            bool hasSummonAction = false)
         {
             if (string.IsNullOrWhiteSpace(enemyDefinitionId))
             {
@@ -345,6 +346,7 @@ namespace FPG.Demo.Run
             CapWeight = capWeight;
             MaxSummons = maxSummons;
             MaxSummonDepth = maxSummonDepth;
+            HasSummonAction = hasSummonAction || maxSummons > 0;
             EntityViewKey = entityViewKey ?? string.Empty;
             BehaviorKey = behaviorKey ?? string.Empty;
             AttackPatternKey = attackPatternKey ?? string.Empty;
@@ -358,6 +360,7 @@ namespace FPG.Demo.Run
         public int CapWeight { get; }
         public int MaxSummons { get; }
         public int MaxSummonDepth { get; }
+        public bool HasSummonAction { get; }
         public string EntityViewKey { get; }
         public string BehaviorKey { get; }
         public string AttackPatternKey { get; }
@@ -371,6 +374,7 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)SpawnCost));
             hash = StableHash.Append(hash, unchecked((ulong)CapWeight));
             hash = StableHash.Append(hash, unchecked((ulong)MaxSummons));
+            hash = StableHash.Append(hash, HasSummonAction ? 1UL : 0UL);
             return StableHash.Append(hash, unchecked((ulong)MaxSummonDepth));
         }
 
@@ -810,4 +814,3 @@ namespace FPG.Demo.Run
         public FpgEncounterFailureReason FailureReason { get; }
     }
 }
-

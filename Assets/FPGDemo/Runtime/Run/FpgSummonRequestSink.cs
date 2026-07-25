@@ -59,7 +59,8 @@ namespace FPG.Demo.Run
 
     /// <summary>
     /// Adapter that makes FpgEncounterRuntime and its authoritative summon
-    /// ledger the only counter and the only writer to the shared Spawn Queue.
+    /// ledger the only request history and the only writer to the shared Spawn
+    /// Queue. Gameplay quota checks apply only to additional-entity summons.
     /// </summary>
     public sealed class FpgEncounterRuntimeSummonSink : IFpgSummonRequestSink
     {
@@ -78,9 +79,15 @@ namespace FPG.Demo.Run
                 return FpgSummonQueueAck.Rejected(RejectReason.InvalidState);
             }
 
-            if (request.MaxSummonsPerOwner <= 0
-                || ledger.CountOwner(request.OwnerRuntimeId) >= request.MaxSummonsPerOwner
-                || ledger.Count >= ledger.MaxTotalSummons)
+            bool enforceGameplayQuotas = request.OccupancyMode
+                == FpgSummonOccupancyMode.AdditionalEntity;
+            if (enforceGameplayQuotas
+                && (request.MaxSummonsPerOwner <= 0
+                    || ledger.CountGameplayQuotaOwner(
+                        request.OwnerRuntimeId,
+                        request.SummonActionId)
+                        >= request.MaxSummonsPerOwner
+                    || ledger.GameplayQuotaCount >= ledger.MaxTotalSummons))
             {
                 return FpgSummonQueueAck.LimitReached;
             }
@@ -91,8 +98,9 @@ namespace FPG.Demo.Run
                 return FpgSummonQueueAck.Queued;
             }
 
-            if (queued.RejectReason == RejectReason.BudgetExceeded
-                || queued.RejectReason == RejectReason.InvalidTarget)
+            if (enforceGameplayQuotas
+                && (queued.RejectReason == RejectReason.BudgetExceeded
+                    || queued.RejectReason == RejectReason.InvalidTarget))
             {
                 return FpgSummonQueueAck.Retry(queued.RejectReason);
             }

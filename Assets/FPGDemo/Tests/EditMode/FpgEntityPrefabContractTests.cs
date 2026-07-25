@@ -30,7 +30,7 @@ namespace FPG.Demo.Tests.EditMode
             createdObjects.Clear();
         }
 
-[Test]
+        [Test]
         public void FormalEntityPrefabsSatisfyTheirContracts()
         {
             FpgPlayerEntityView player = LoadEntity<FpgPlayerEntityView>(
@@ -120,7 +120,7 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(registry.Bindings[0].BoneName, Is.EqualTo("weapon_tip"));
         }
 
-[Test]
+        [Test]
         public void FormalEnemyEntityValidatesHitPartContract()
         {
             FpgEnemyEntityView enemy = CreateValidEnemy();
@@ -161,11 +161,14 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(error, Does.Contain("SkeletonAnimation"));
         }
 
-private FpgEnemyEntityView CreateValidEnemy()
+        private FpgEnemyEntityView CreateValidEnemy()
         {
             GameObject root = CreateObject("EnemyEntity");
             FpgEnemyEntityView enemy = root.AddComponent<FpgEnemyEntityView>();
             Transform gameplay = CreateChild(root.transform, "GameplayRoot");
+            Transform socketsRoot = CreateChild(root.transform, "Sockets");
+            D0ActorSocketRegistry sockets =
+                socketsRoot.gameObject.AddComponent<D0ActorSocketRegistry>();
             Transform projectile = CreateChild(gameplay, "ProjectileSpawn");
             Transform weakpoint = CreateChild(gameplay, "Weakpoint");
             Transform overhead = CreateChild(root.transform, "OverheadHealthBar");
@@ -178,6 +181,7 @@ private FpgEnemyEntityView CreateValidEnemy()
             SetField(enemy, "projectileAnchor", projectile);
             SetField(enemy, "weakpointAnchor", weakpoint);
             SetField(enemy, "overheadHealthBarAnchor", overhead);
+            SetField(enemy, "socketRegistry", sockets);
             SetField(enemy, "hitParts", new Collider[] { body, weakpointCollider });
             SetField(enemy, "hitPartKinds", new[] { HitPart.Body, HitPart.Weakpoint });
             return enemy;

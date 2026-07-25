@@ -649,7 +649,6 @@ MonoBehaviour:
   encounterProfile: {fileID: 11400000, guid: 29aa5950fa0131b438daf11d0ae3946f, type: 2}
   encounterOverride: {fileID: 11400000, guid: 1b32348124bca83418b15fad4ad16e3a, type: 2}
   enemyCatalog: {fileID: 11400000, guid: f3c83bac29bb6d94a97b5decdf0b5175, type: 2}
-  attackRuntimeCatalog: {fileID: 11400000, guid: 0e8f5fa5feb9d1d479a97e79e693c56b, type: 2}
   director: {fileID: 1408289652}
   playerEntryMarkerId: player-main
   runSeed: 1
@@ -1353,7 +1352,6 @@ MonoBehaviour:
   entrySafetyAnchor: {fileID: 951930937}
   formalCombatPortFactoryComponent: {fileID: 1408289654}
   formalPlayerTickDriverComponent: {fileID: 1408289653}
-  formalAttackRuntimeCatalog: {fileID: 11400000, guid: 0e8f5fa5feb9d1d479a97e79e693c56b, type: 2}
   presentationLeaseTicks: 12
 --- !u!114 &1408289653
 MonoBehaviour:

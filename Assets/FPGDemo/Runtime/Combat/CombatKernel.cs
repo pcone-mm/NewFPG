@@ -16,18 +16,32 @@ namespace FPG.Demo.Combat
         public QueuedImpact(
             ImpactIntent intent,
             ImpactPhasePriority priority,
-            RuntimeId stableOrderId)
+            RuntimeId stableOrderId,
+            long skillExecutionId = 0L,
+            int gameplayEventId = 0)
         {
+            if (skillExecutionId < 0L
+                || gameplayEventId < 0
+                || (skillExecutionId > 0L) != (gameplayEventId > 0))
+            {
+                throw new ArgumentException(
+                    "Queued impact skill correlation requires both IDs.");
+            }
+
             Intent = intent;
             Priority = priority;
             StableOrderId = stableOrderId;
+            SkillExecutionId = skillExecutionId;
+            GameplayEventId = gameplayEventId;
         }
 
         public ImpactIntent Intent { get; }
         public ImpactPhasePriority Priority { get; }
         public RuntimeId StableOrderId { get; }
+        public long SkillExecutionId { get; }
+        public int GameplayEventId { get; }
+        public bool HasSkillCorrelation => SkillExecutionId > 0L;
     }
-
     public sealed class ImpactQueue
     {
         private readonly QueuedImpact[] entries;
@@ -50,9 +64,14 @@ namespace FPG.Demo.Combat
         public DomainResult TryEnqueue(
             ImpactIntent intent,
             ImpactPhasePriority priority,
-            RuntimeId stableOrderId)
+            RuntimeId stableOrderId,
+            long skillExecutionId = 0L,
+            int gameplayEventId = 0)
         {
-            if (!stableOrderId.IsValid)
+            if (!stableOrderId.IsValid
+                || skillExecutionId < 0L
+                || gameplayEventId < 0
+                || (skillExecutionId > 0L) != (gameplayEventId > 0))
             {
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
@@ -62,7 +81,12 @@ namespace FPG.Demo.Combat
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
             }
 
-            entries[count++] = new QueuedImpact(intent, priority, stableOrderId);
+            entries[count++] = new QueuedImpact(
+                intent,
+                priority,
+                stableOrderId,
+                skillExecutionId,
+                gameplayEventId);
             return DomainResult.Success;
         }
 

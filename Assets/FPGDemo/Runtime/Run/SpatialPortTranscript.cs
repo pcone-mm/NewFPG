@@ -528,7 +528,7 @@ namespace FPG.Demo.Run
 
         private static ulong ComputeProjectileSpawnRequestHash(in ProjectileSpawnRequest request)
         {
-            ulong hash = StableHash.Mix(0x4650475F50535251UL);
+            ulong hash = StableHash.Mix(0x4650475F5053504EUL);
             hash = StableHash.Append(hash, unchecked((ulong)request.Tick.Value));
             hash = StableHash.Append(hash, unchecked((ulong)request.ArrivalTick.Value));
             hash = StableHash.Append(hash, unchecked((ulong)request.ProjectileId.Value));
@@ -536,13 +536,24 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)request.AttackId.Value));
             hash = StableHash.Append(hash, unchecked((ulong)request.OwnerId.Value));
             hash = StableHash.Append(hash, unchecked((ulong)request.TargetId.Value));
-            hash = StableHash.Append(hash, (ulong)request.Team);
+            hash = StableHash.Append(hash, unchecked((ulong)(int)request.Team));
             hash = StableHash.Append(hash, unchecked((ulong)request.DefinitionId));
             hash = StableHash.Append(hash, unchecked((ulong)request.SweepRadiusKey));
             hash = StableHash.Append(hash, unchecked((ulong)request.PresentationKey));
-            return StableHash.Append(hash, request.Interceptable ? 1UL : 0UL);
-        }
+            hash = StableHash.Append(hash, request.Interceptable ? 1UL : 0UL);
+            if (request.HasExplicitPath)
+            {
+                hash = StableHash.Append(hash, 1UL);
+                hash = StableHash.Append(hash, unchecked((ulong)request.ExplicitStart.X));
+                hash = StableHash.Append(hash, unchecked((ulong)request.ExplicitStart.Y));
+                hash = StableHash.Append(hash, unchecked((ulong)request.ExplicitStart.Z));
+                hash = StableHash.Append(hash, unchecked((ulong)request.ExplicitEnd.X));
+                hash = StableHash.Append(hash, unchecked((ulong)request.ExplicitEnd.Y));
+                hash = StableHash.Append(hash, unchecked((ulong)request.ExplicitEnd.Z));
+            }
 
+            return hash;
+        }
         private static ulong ComputeProjectileSweepRequestHash(in ProjectileSweepRequest request)
         {
             ulong hash = StableHash.Mix(0x4650475F50535751UL);

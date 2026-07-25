@@ -27,9 +27,6 @@ namespace FPG.Demo.Unity
         private FpgEnemyDefinitionCatalog enemyCatalog;
 
         [SerializeField]
-        private FpgFormalAttackRuntimeCatalog attackRuntimeCatalog;
-
-        [SerializeField]
         private FpgRoomEncounterDirector director;
 
         [SerializeField]
@@ -62,7 +59,6 @@ namespace FPG.Demo.Unity
         public FpgEncounterProfile EncounterProfile => encounterProfile;
         public FpgEncounterOverrideDefinition EncounterOverride => encounterOverride;
         public FpgEnemyDefinitionCatalog EnemyCatalog => enemyCatalog;
-        public FpgFormalAttackRuntimeCatalog AttackRuntimeCatalog => attackRuntimeCatalog;
         public FpgRoomEncounterDirector Director => director;
         public string PlayerEntryMarkerId => playerEntryMarkerId;
         public FpgEncounterPlan Plan { get; private set; }
@@ -72,7 +68,7 @@ namespace FPG.Demo.Unity
 
         public event Action<FpgRoomClearedEvent> RoomCleared;
 
-private void Awake()
+        private void Awake()
         {
             if (director != null)
             {
@@ -81,7 +77,7 @@ private void Awake()
             }
         }
 
-public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
+        public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
         {
             if (prepared || director != null && director.UsesFormalSession)
             {
@@ -171,19 +167,14 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
 
                 if (effectiveRoom == null || effectiveProfile == null
                     || !effectiveRunContext.IsValid || enemyCatalog == null
-                    || attackRuntimeCatalog == null || director == null)
+                    || director == null)
                 {
                     return Fail(
-                        "Formal encounter host requires effective room, profile, run context, enemy catalog, attack runtime catalog and director references.",
+                        "Formal encounter host requires effective room, profile, run context, enemy catalog and director references.",
                         out error);
                 }
 
                 if (!enemyCatalog.TryValidate(out error))
-                {
-                    return Fail(error, out error);
-                }
-
-                if (!attackRuntimeCatalog.TryValidate(out error))
                 {
                     return Fail(error, out error);
                 }
@@ -247,7 +238,6 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
                         request,
                         Plan,
                         enemyCatalog,
-                        attackRuntimeCatalog,
                         out error);
                 }
                 finally
@@ -377,7 +367,7 @@ public bool TrySetRoomDefinition(FpgRoomDefinition room, out string error)
             RoomCleared?.Invoke(cleared);
         }
 
-private void OnDestroy()
+        private void OnDestroy()
         {
             if (director != null)
             {
@@ -392,7 +382,7 @@ private void OnDestroy()
         }
     
 
-private void HandleDirectorLifecycle(
+        private void HandleDirectorLifecycle(
             FpgEncounterLifecycleEvent lifecycleEvent)
         {
             if (lifecycleEvent.Type == FpgEncounterLifecycleEventType.Restarted)

@@ -78,6 +78,18 @@ namespace FPG.Demo.Unity
 
         public bool TryValidateConfiguration(out string error)
         {
+            const float expectedFixedDeltaTime =
+                1f / FPG.Demo.Skills.FpgSkillRuntimeConstants.TickRate;
+            if (FPG.Demo.Core.GameplayClock.DefaultTickRate
+                    != FPG.Demo.Skills.FpgSkillRuntimeConstants.TickRate
+                || Mathf.Abs(Time.fixedDeltaTime - expectedFixedDeltaTime)
+                    > 0.000001f)
+            {
+                error =
+                    "Formal runtime requires GameplayClock, skill timelines, "
+                    + "and Project Fixed Timestep to use 60Hz.";
+                return false;
+            }
             if (config == null)
             {
                 error = "GameBootstrapConfig is not assigned.";

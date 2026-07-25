@@ -27,6 +27,95 @@ namespace FPG.Demo.Player
         ImmediateRepeatWhileHeld
     }
 
+    public enum WeaponSkillActionKind
+    {
+        None = 0,
+        Primary,
+        Secondary,
+        Reload
+    }
+
+    public readonly struct WeaponSkillReleaseSpec
+    {
+        public WeaponSkillReleaseSpec(
+            WeaponReleaseKind releaseKind,
+            DamageSpec damage,
+            QueryPolicy queryPolicy,
+            AttackQueryMode queryMode,
+            int payloadCount,
+            int maxImpactCount,
+            int ammoCost,
+            int additionalPenetrationCount,
+            int areaCombatantLimit,
+            int areaProjectileLimit,
+            AttackTargetKinds allowedTargetKinds)
+        {
+            ReleaseKind = releaseKind;
+            Damage = damage;
+            QueryPolicy = queryPolicy;
+            QueryMode = queryMode;
+            PayloadCount = payloadCount;
+            MaxImpactCount = maxImpactCount;
+            AmmoCost = ammoCost;
+            AdditionalPenetrationCount = additionalPenetrationCount;
+            AreaCombatantLimit = areaCombatantLimit;
+            AreaProjectileLimit = areaProjectileLimit;
+            AllowedTargetKinds = allowedTargetKinds;
+        }
+
+        public WeaponReleaseKind ReleaseKind { get; }
+        public DamageSpec Damage { get; }
+        public QueryPolicy QueryPolicy { get; }
+        public AttackQueryMode QueryMode { get; }
+        public int PayloadCount { get; }
+        public int MaxImpactCount { get; }
+        public int AmmoCost { get; }
+        public int AdditionalPenetrationCount { get; }
+        public int AreaCombatantLimit { get; }
+        public int AreaProjectileLimit { get; }
+        public AttackTargetKinds AllowedTargetKinds { get; }
+
+        public bool IsValid
+        {
+            get
+            {
+                if (ReleaseKind != WeaponReleaseKind.Primary
+                    && ReleaseKind != WeaponReleaseKind.Secondary)
+                {
+                    return false;
+                }
+
+                if (AmmoCost <= 0 || PayloadCount <= 0 || MaxImpactCount <= 0
+                    || AllowedTargetKinds == AttackTargetKinds.None
+                    || (AllowedTargetKinds & ~WeaponDefinition.PlayerAttackTargetKinds)
+                        != AttackTargetKinds.None)
+                {
+                    return false;
+                }
+
+                if (QueryPolicy == QueryPolicy.PelletRays)
+                {
+                    return QueryMode == AttackQueryMode.FirstSurfacePenetration
+                        && PayloadCount <= WeaponDefinition.PrimaryPelletCount
+                        && AdditionalPenetrationCount >= 0
+                        && AreaCombatantLimit == 0
+                        && AreaProjectileLimit == 0;
+                }
+
+                if (QueryPolicy == QueryPolicy.DirectThenArea)
+                {
+                    return QueryMode == AttackQueryMode.AreaAtFirstSurface
+                        && PayloadCount == 1
+                        && AdditionalPenetrationCount == 0
+                        && AreaCombatantLimit > 0
+                        && AreaProjectileLimit >= 0;
+                }
+
+                return false;
+            }
+        }
+    }
+
     public readonly struct WeaponDefinition
     {
         public const int PrimaryPelletCount = 8;
@@ -51,7 +140,9 @@ namespace FPG.Demo.Player
             AttackQueryMode secondaryQueryMode = AttackQueryMode.AreaAtFirstSurface,
             int secondaryAreaProjectileLimit = DefaultSecondaryAreaProjectileLimit,
             AttackTargetKinds primaryAllowedTargetKinds = PlayerAttackTargetKinds,
-            AttackTargetKinds secondaryAllowedTargetKinds = PlayerAttackTargetKinds)
+            AttackTargetKinds secondaryAllowedTargetKinds = PlayerAttackTargetKinds,
+            int primaryPayloadCount = PrimaryPelletCount,
+            int maximumAttackImpactCount = 0)
             : this(
                 definitionId,
                 magazineCapacity,
@@ -70,7 +161,9 @@ namespace FPG.Demo.Player
                 secondaryQueryMode,
                 secondaryAreaProjectileLimit,
                 primaryAllowedTargetKinds,
-                secondaryAllowedTargetKinds)
+                secondaryAllowedTargetKinds,
+                primaryPayloadCount,
+                maximumAttackImpactCount)
         {
         }
 
@@ -92,7 +185,9 @@ namespace FPG.Demo.Player
             AttackQueryMode secondaryQueryMode = AttackQueryMode.AreaAtFirstSurface,
             int secondaryAreaProjectileLimit = DefaultSecondaryAreaProjectileLimit,
             AttackTargetKinds primaryAllowedTargetKinds = PlayerAttackTargetKinds,
-            AttackTargetKinds secondaryAllowedTargetKinds = PlayerAttackTargetKinds)
+            AttackTargetKinds secondaryAllowedTargetKinds = PlayerAttackTargetKinds,
+            int primaryPayloadCount = PrimaryPelletCount,
+            int maximumAttackImpactCount = 0)
         {
             if (definitionId <= 0)
             {
@@ -149,9 +244,15 @@ namespace FPG.Demo.Player
                 throw new ArgumentOutOfRangeException(nameof(primaryQueryMode));
             }
 
+            if (primaryPayloadCount <= 0
+                || primaryPayloadCount > PrimaryPelletCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(primaryPayloadCount));
+            }
+
             if (primaryAdditionalPenetrationCount < 0
                 || primaryAdditionalPenetrationCount
-                    > (int.MaxValue / PrimaryPelletCount) - 1)
+                    > (int.MaxValue / primaryPayloadCount) - 1)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(primaryAdditionalPenetrationCount));
@@ -186,6 +287,12 @@ namespace FPG.Demo.Player
                     nameof(secondaryAllowedTargetKinds));
             }
 
+            if (maximumAttackImpactCount < 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(maximumAttackImpactCount));
+            }
+
             DefinitionId = definitionId;
             MagazineCapacity = magazineCapacity;
             PrimaryAmmoCost = primaryAmmoCost;
@@ -201,7 +308,8 @@ namespace FPG.Demo.Player
             PrimaryQueryMode = primaryQueryMode;
             PrimaryAdditionalPenetrationCount =
                 primaryAdditionalPenetrationCount;
-            PrimaryMaxImpactCount = PrimaryPelletCount
+            PrimaryPayloadCount = primaryPayloadCount;
+            PrimaryMaxImpactCount = primaryPayloadCount
                 * (primaryAdditionalPenetrationCount + 1);
             SecondaryQueryMode = secondaryQueryMode;
             SecondaryAreaCombatantLimit = secondaryMaxImpactCount;
@@ -211,8 +319,8 @@ namespace FPG.Demo.Player
             PrimaryAllowedTargetKinds = primaryAllowedTargetKinds;
             SecondaryAllowedTargetKinds = secondaryAllowedTargetKinds;
             MaximumAttackImpactCount = Math.Max(
-                PrimaryMaxImpactCount,
-                SecondaryQueryMaxImpactCount);
+                Math.Max(PrimaryMaxImpactCount, SecondaryQueryMaxImpactCount),
+                maximumAttackImpactCount);
         }
 
         public int DefinitionId { get; }
@@ -229,6 +337,7 @@ namespace FPG.Demo.Player
         public SecondaryTriggerMode SecondaryTriggerMode { get; }
         public AttackQueryMode PrimaryQueryMode { get; }
         public int PrimaryAdditionalPenetrationCount { get; }
+        public int PrimaryPayloadCount { get; }
         public int PrimaryMaxImpactCount { get; }
         public AttackQueryMode SecondaryQueryMode { get; }
         public int SecondaryAreaCombatantLimit { get; }
@@ -307,6 +416,7 @@ namespace FPG.Demo.Player
         public PelletSample[] Pellets => pellets;
         public int PelletCount { get; private set; }
         public bool IsCommitted { get; private set; }
+        public bool IsSkillRelease { get; private set; }
 
         internal AttackShotReservation PreparedReservation { get; private set; }
 
@@ -317,6 +427,7 @@ namespace FPG.Demo.Player
             Attack = default(AttackSnapshot);
             PelletCount = 0;
             IsCommitted = false;
+            IsSkillRelease = false;
             PreparedReservation = default(AttackShotReservation);
         }
 
@@ -330,6 +441,7 @@ namespace FPG.Demo.Player
             Attack = attack;
             PelletCount = pelletCount;
             PreparedReservation = reservation;
+            IsSkillRelease = false;
         }
 
         internal void SetSecondary(
@@ -341,6 +453,21 @@ namespace FPG.Demo.Player
             Attack = attack;
             PelletCount = 0;
             PreparedReservation = reservation;
+            IsSkillRelease = false;
+        }
+
+        internal void SetSkillRelease(
+            WeaponReleaseKind kind,
+            AttackSnapshot attack,
+            int pelletCount,
+            AttackShotReservation reservation)
+        {
+            HasRelease = true;
+            Kind = kind;
+            Attack = attack;
+            PelletCount = pelletCount;
+            PreparedReservation = reservation;
+            IsSkillRelease = true;
         }
 
         internal void MarkCommitted()
@@ -478,6 +605,348 @@ namespace FPG.Demo.Player
             LastRejectReason = snapshot.LastRejectReason;
             RejectedCommandCount = snapshot.RejectedCommandCount;
             return DomainResult.Success;
+        }
+
+        public DomainResult AdvanceSkillFrame(TickIndex tick)
+        {
+            LastRejectReason = RejectReason.None;
+            if (State == WeaponState.Disabled)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (!tick.IsValid
+                || (lastProcessedTick.IsValid
+                    && tick.Value != lastProcessedTick.Value + 1L))
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            Advance(tick);
+            lastProcessedTick = tick;
+            return DomainResult.Success;
+        }
+
+        public bool TryAcceptSkillInputCommand(in InputEdgeCommand command)
+        {
+            if (!command.Sequence.IsValid)
+            {
+                RegisterReject(RejectReason.InvalidState);
+                return false;
+            }
+
+            if (command.Sequence.Value <= lastInputSequence)
+            {
+                RegisterReject(RejectReason.DuplicateSequence);
+                return false;
+            }
+
+            lastInputSequence = command.Sequence.Value;
+            return true;
+        }
+
+        public DomainResult TryBeginSkillAction(
+            WeaponSkillActionKind actionKind,
+            TickIndex currentTick,
+            TickIndex lockedUntilTick,
+            int requiredAmmo,
+            ExposureRuntime exposure)
+        {
+            if (exposure == null)
+            {
+                throw new ArgumentNullException(nameof(exposure));
+            }
+
+            if (!Enum.IsDefined(typeof(WeaponSkillActionKind), actionKind)
+                || actionKind == WeaponSkillActionKind.None
+                || !currentTick.IsValid
+                || !lockedUntilTick.IsValid
+                || lockedUntilTick <= currentTick
+                || requiredAmmo < 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            if (State != WeaponState.Ready)
+            {
+                RejectReason reason = actionKind == WeaponSkillActionKind.Reload
+                    ? RejectReason.ActionLocked
+                    : RejectReason.Cooldown;
+                RegisterReject(reason);
+                return DomainResult.Rejected(reason);
+            }
+
+            if (actionKind == WeaponSkillActionKind.Reload)
+            {
+                if (requiredAmmo != 0 || Magazine.Ammo >= Magazine.Capacity)
+                {
+                    RegisterReject(RejectReason.InvalidState);
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
+                if (exposure.State != PlayerExposureState.Withdrawn)
+                {
+                    DomainResult withdraw =
+                        exposure.ApplyReloadPosture(currentTick, out _);
+                    if (!withdraw.IsSuccess)
+                    {
+                        RegisterReject(withdraw.RejectReason);
+                        return withdraw;
+                    }
+                }
+
+                State = WeaponState.Reloading;
+            }
+            else
+            {
+                if (!exposure.IsExposed)
+                {
+                    RegisterReject(RejectReason.NotExposed);
+                    return DomainResult.Rejected(RejectReason.NotExposed);
+                }
+
+                if (requiredAmmo <= 0 || Magazine.Ammo < requiredAmmo)
+                {
+                    RegisterReject(RejectReason.NotEnoughAmmo);
+                    return DomainResult.Rejected(RejectReason.NotEnoughAmmo);
+                }
+
+                State = actionKind == WeaponSkillActionKind.Primary
+                    ? WeaponState.PrimaryRecovery
+                    : WeaponState.AltRecovery;
+            }
+
+            secondaryChargeStartedTick = TickIndex.Invalid;
+            stateUntilTick = lockedUntilTick;
+            return DomainResult.Success;
+        }
+
+        public DomainResult TryBeginSkillSecondaryCharge(
+            TickIndex currentTick,
+            ExposureRuntime exposure)
+        {
+            if (exposure == null)
+            {
+                throw new ArgumentNullException(nameof(exposure));
+            }
+
+            if (!exposure.IsExposed)
+            {
+                RegisterReject(RejectReason.NotExposed);
+                return DomainResult.Rejected(RejectReason.NotExposed);
+            }
+
+            if (State != WeaponState.Ready)
+            {
+                RegisterReject(RejectReason.ActionLocked);
+                return DomainResult.Rejected(RejectReason.ActionLocked);
+            }
+
+            State = WeaponState.AltCharging;
+            secondaryChargeStartedTick = currentTick;
+            stateUntilTick = TickIndex.Invalid;
+            return DomainResult.Success;
+        }
+
+        public DomainResult TryFinishSkillSecondaryCharge(
+            TickIndex currentTick,
+            out bool charged)
+        {
+            charged = false;
+            if (State != WeaponState.AltCharging)
+            {
+                RegisterReject(RejectReason.ActionLocked);
+                return DomainResult.Rejected(RejectReason.ActionLocked);
+            }
+
+            if (!HasReachedSecondaryMinimumCharge(currentTick))
+            {
+                CancelSecondaryCharge();
+                return DomainResult.Success;
+            }
+
+            State = WeaponState.Ready;
+            stateUntilTick = TickIndex.Invalid;
+            secondaryChargeStartedTick = TickIndex.Invalid;
+            charged = true;
+            return DomainResult.Success;
+        }
+
+        public void CancelSkillSecondaryCharge()
+        {
+            CancelSecondaryCharge();
+        }
+
+        public DomainResult PrepareSkillRelease(
+            TickIndex tick,
+            RuntimeId ownerId,
+            SessionIdAllocator idAllocator,
+            ulong scenarioSeed,
+            in WeaponSkillReleaseSpec releaseSpec,
+            WeaponReleaseBuffer output)
+        {
+            if (idAllocator == null)
+            {
+                throw new ArgumentNullException(nameof(idAllocator));
+            }
+
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            output.Reset();
+            if (!releaseSpec.IsValid || !ownerId.IsValid || !tick.IsValid
+                || tick != lastProcessedTick || State == WeaponState.Disabled)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            bool validState = releaseSpec.ReleaseKind == WeaponReleaseKind.Primary
+                ? State == WeaponState.PrimaryRecovery
+                : State == WeaponState.AltRecovery
+                    || State == WeaponState.AltCharging;
+            if (!validState)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (!Magazine.CanConsume(releaseSpec.AmmoCost))
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            int pelletCount = releaseSpec.QueryPolicy == QueryPolicy.PelletRays
+                ? releaseSpec.PayloadCount
+                : 0;
+            if (pelletCount > output.Pellets.Length)
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            AttackShotReservation reservation = idAllocator.ReserveAttackAndShot();
+            AttackSnapshot attack = new AttackSnapshot(
+                reservation.AttackId,
+                reservation.ShotId,
+                definition.DefinitionId,
+                ownerId,
+                Team.Player,
+                tick,
+                releaseSpec.Damage,
+                releaseSpec.QueryPolicy,
+                releaseSpec.PayloadCount,
+                releaseSpec.MaxImpactCount,
+                releaseSpec.AmmoCost,
+                DeterministicRandomV1.Version,
+                releaseSpec.QueryMode,
+                releaseSpec.AdditionalPenetrationCount,
+                releaseSpec.AreaCombatantLimit,
+                releaseSpec.AreaProjectileLimit,
+                releaseSpec.AllowedTargetKinds);
+
+            if (pelletCount > 0)
+            {
+                PelletPatternGenerator.Fill(
+                    scenarioSeed,
+                    reservation.ShotId,
+                    output.Pellets,
+                    pelletCount);
+            }
+
+            output.SetSkillRelease(
+                releaseSpec.ReleaseKind,
+                attack,
+                pelletCount,
+                reservation);
+            return DomainResult.Success;
+        }
+
+        public DomainResult CommitPreparedSkillRelease(
+            WeaponReleaseBuffer output,
+            SessionIdAllocator idAllocator)
+        {
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            if (idAllocator == null)
+            {
+                throw new ArgumentNullException(nameof(idAllocator));
+            }
+
+            if (!output.HasRelease || !output.IsSkillRelease
+                || output.IsCommitted
+                || output.Attack.DefinitionId != definition.DefinitionId
+                || output.Attack.ReleaseTick != lastProcessedTick
+                || output.PreparedReservation.AttackId != output.Attack.AttackId
+                || output.PreparedReservation.ShotId != output.Attack.ShotId
+                || output.Attack.AmmoCost <= 0
+                || !Magazine.CanConsume(output.Attack.AmmoCost))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (!idAllocator.Commit(output.PreparedReservation))
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            Magazine.ConsumeValidated(output.Attack.AmmoCost);
+            output.MarkCommitted();
+            return DomainResult.Success;
+        }
+
+        public DomainResult CommitSkillReloadEvent(TickIndex tick)
+        {
+            if (State != WeaponState.Reloading || tick != lastProcessedTick)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            Magazine.Refill();
+            return DomainResult.Success;
+        }
+
+        public void CancelSkillAction()
+        {
+            if (State == WeaponState.PrimaryRecovery
+                || State == WeaponState.AltRecovery
+                || State == WeaponState.Reloading
+                || State == WeaponState.AltCharging)
+            {
+                State = WeaponState.Ready;
+                stateUntilTick = TickIndex.Invalid;
+                secondaryChargeStartedTick = TickIndex.Invalid;
+            }
+        }
+
+        public void InterruptSkillAction(
+            WeaponSkillActionKind actionKind,
+            TickIndex interruptTick,
+            TickIndex recastLockedUntilTick)
+        {
+            if (State == WeaponState.Disabled)
+            {
+                return;
+            }
+
+            secondaryChargeStartedTick = TickIndex.Invalid;
+            if (interruptTick.IsValid
+                && recastLockedUntilTick.IsValid
+                && recastLockedUntilTick > interruptTick
+                && (actionKind == WeaponSkillActionKind.Primary
+                    || actionKind == WeaponSkillActionKind.Secondary))
+            {
+                State = actionKind == WeaponSkillActionKind.Primary
+                    ? WeaponState.PrimaryRecovery
+                    : WeaponState.AltRecovery;
+                stateUntilTick = recastLockedUntilTick;
+                return;
+            }
+
+            State = WeaponState.Ready;
+            stateUntilTick = TickIndex.Invalid;
         }
 
         public DomainResult ProcessFrame(
@@ -656,7 +1125,7 @@ namespace FPG.Demo.Player
             if (output.Kind == WeaponReleaseKind.Primary)
             {
                 if (State != WeaponState.Ready
-                    || output.PelletCount != WeaponDefinition.PrimaryPelletCount)
+                    || output.PelletCount != definition.PrimaryPayloadCount)
                 {
                     return DomainResult.Rejected(RejectReason.InvalidState);
                 }
@@ -951,7 +1420,7 @@ namespace FPG.Demo.Player
                 return;
             }
 
-            if (output.Pellets.Length < WeaponDefinition.PrimaryPelletCount)
+            if (output.Pellets.Length < definition.PrimaryPayloadCount)
             {
                 RegisterReject(RejectReason.BufferCapacity);
                 return;
@@ -967,7 +1436,7 @@ namespace FPG.Demo.Player
                 currentTick,
                 definition.PrimaryDamage,
                 QueryPolicy.PelletRays,
-                WeaponDefinition.PrimaryPelletCount,
+                definition.PrimaryPayloadCount,
                 definition.PrimaryMaxImpactCount,
                 definition.PrimaryAmmoCost,
                 DeterministicRandomV1.Version,
@@ -981,11 +1450,11 @@ namespace FPG.Demo.Player
                 scenarioSeed,
                 reservation.ShotId,
                 output.Pellets,
-                WeaponDefinition.PrimaryPelletCount);
+                definition.PrimaryPayloadCount);
 
             output.SetPrimary(
                 attack,
-                WeaponDefinition.PrimaryPelletCount,
+                definition.PrimaryPayloadCount,
                 reservation);
         }
 

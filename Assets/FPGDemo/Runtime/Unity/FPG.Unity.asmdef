@@ -7,6 +7,7 @@
         "FPG.Player",
         "FPG.Enemy",
         "FPG.Run",
+        "FPG.Skills",
         "spine-unity",
         "Unity.InputSystem",
         "Unity.ugui"

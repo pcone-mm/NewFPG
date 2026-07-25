@@ -11,6 +11,130 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class WP2BoundaryTests
     {
         [Test]
+        public void ReplacementSummonsDoNotConsumeAdditionalSummonGameplayQuota()
+        {
+            RuntimeId replacementOwner = new RuntimeId(1L);
+            RuntimeId additionalOwner = new RuntimeId(2L);
+            FpgSummonLedger ledger = new FpgSummonLedger(
+                capacity: 3,
+                maxTotalSummons: 1,
+                maxRecursionDepth: 1);
+
+            DomainResult replacement = ledger.TryReserve(new FpgSummonRequest(
+                replacementOwner,
+                "replacement-child",
+                recursionDepth: 1,
+                requestSequence: 1L,
+                summonActionId: "replacement-action",
+                maxSummonsPerOwner: 0,
+                occupancyMode: FpgSummonOccupancyMode.ReplaceOwner,
+                placementMode: FpgSummonPlacementMode.OwnerPosition));
+            DomainResult additional = ledger.TryReserve(new FpgSummonRequest(
+                additionalOwner,
+                "additional-child",
+                recursionDepth: 1,
+                requestSequence: 2L,
+                summonActionId: "additional-action",
+                maxSummonsPerOwner: 1));
+            DomainResult overQuota = ledger.TryReserve(new FpgSummonRequest(
+                new RuntimeId(3L),
+                "second-additional-child",
+                recursionDepth: 1,
+                requestSequence: 3L,
+                summonActionId: "additional-action",
+                maxSummonsPerOwner: 1));
+
+            Assert.That(replacement.IsSuccess, Is.True);
+            Assert.That(additional.IsSuccess, Is.True);
+            Assert.That(overQuota.RejectReason, Is.EqualTo(RejectReason.BufferCapacity));
+            Assert.That(ledger.Count, Is.EqualTo(2));
+            Assert.That(ledger.GameplayQuotaCount, Is.EqualTo(1));
+            Assert.That(ledger.CountOwner(replacementOwner), Is.EqualTo(1));
+            Assert.That(
+                ledger.CountGameplayQuotaOwner(
+                    replacementOwner,
+                    "replacement-action"),
+                Is.Zero);
+            Assert.That(
+                ledger.CountGameplayQuotaOwner(
+                    additionalOwner,
+                    "additional-action"),
+                Is.EqualTo(1));
+        }
+
+        [Test]
+        public void PerOwnerGameplayQuotaIsScopedToTheSummonAction()
+        {
+            RuntimeId owner = new RuntimeId(1L);
+            FpgSummonLedger ledger = new FpgSummonLedger(
+                capacity: 3,
+                maxTotalSummons: 3,
+                maxRecursionDepth: 1);
+
+            DomainResult firstAction = ledger.TryReserve(new FpgSummonRequest(
+                owner,
+                "first-child",
+                recursionDepth: 1,
+                requestSequence: 1L,
+                summonActionId: "first-action",
+                maxSummonsPerOwner: 1));
+            DomainResult secondAction = ledger.TryReserve(new FpgSummonRequest(
+                owner,
+                "second-child",
+                recursionDepth: 1,
+                requestSequence: 2L,
+                summonActionId: "second-action",
+                maxSummonsPerOwner: 1));
+            DomainResult firstActionAgain = ledger.TryReserve(new FpgSummonRequest(
+                owner,
+                "first-child",
+                recursionDepth: 1,
+                requestSequence: 3L,
+                summonActionId: "first-action",
+                maxSummonsPerOwner: 1));
+
+            Assert.That(firstAction.IsSuccess, Is.True);
+            Assert.That(secondAction.IsSuccess, Is.True);
+            Assert.That(
+                firstActionAgain.RejectReason,
+                Is.EqualTo(RejectReason.BufferCapacity));
+            Assert.That(ledger.GameplayQuotaCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void AcceptedReplacementMakesTheOwnerTerminalForFurtherSummons()
+        {
+            RuntimeId owner = new RuntimeId(1L);
+            FpgSummonLedger ledger = new FpgSummonLedger(
+                capacity: 2,
+                maxTotalSummons: 1,
+                maxRecursionDepth: 1);
+
+            DomainResult replacement = ledger.TryReserve(new FpgSummonRequest(
+                owner,
+                "replacement-child",
+                recursionDepth: 1,
+                requestSequence: 1L,
+                summonActionId: "replacement-action",
+                maxSummonsPerOwner: 0,
+                occupancyMode: FpgSummonOccupancyMode.ReplaceOwner,
+                placementMode: FpgSummonPlacementMode.OwnerPosition));
+            DomainResult laterSummon = ledger.TryReserve(new FpgSummonRequest(
+                owner,
+                "later-child",
+                recursionDepth: 1,
+                requestSequence: 2L,
+                summonActionId: "later-action",
+                maxSummonsPerOwner: 1));
+
+            Assert.That(replacement.IsSuccess, Is.True);
+            Assert.That(
+                laterSummon.RejectReason,
+                Is.EqualTo(RejectReason.OwnerInterrupted));
+            Assert.That(ledger.Count, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ImpactLedgerRejectsAtItsFixedCapacityWithoutDroppingExistingIds()
         {
             ImpactLedger ledger = new ImpactLedger(257);

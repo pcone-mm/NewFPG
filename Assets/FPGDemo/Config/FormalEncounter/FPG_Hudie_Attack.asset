@@ -12,22 +12,78 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
   m_Name: FPG_Hudie_Attack
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
-  attackId: hudie-projectile
+  skillId: hudie-projectile
   displayName: Hudie Bullet
+  designerNotes: Migrated to the unified 60Hz skill timeline. Legacy attack tick
+    was telegraph + windup.
+  sequences:
+  - kind: 1
+    durationTicks: 60
+    alternateAnimations: []
+    mainAnimation: attack
+    loop: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 60
+    sourceAnimationDurationTicks: 0
+    phases:
+    - phaseId: startup
+      kind: 1
+      startTick: 0
+      endTick: 30
+    - phaseId: active
+      kind: 2
+      startTick: 30
+      endTick: 30
+    - phaseId: recovery
+      kind: 3
+      startTick: 30
+      endTick: 60
+    logicEvents:
+    - eventId: event.hudie-projectile.attack.0
+      tick: 30
+      payloadSlotId: payload.hudie-projectile
+      authoredOrdinal: 0
+      socketId: 
+      targetSource: 2
+      targetOffset: {x: 0, y: 0, z: 0}
+    presentationCues: []
+    warnings:
+    - eventId: warning.hudie-projectile
+      warningId: enemy-source-fast
+      startTick: 0
+      endTick: 30
+      authoredOrdinal: 0
+      socketId: 
   priority: 0
-  kind: 0
   firstReadyOffsetTicks: 60
-  cooldownTicks: 60
-  telegraphTicks: 0
-  windupTicks: 30
-  recoveryTicks: 30
-  damage: 28
-  breakDamage: 0
-  projectileCount: 1
-  projectileDefinitionId: 401
-  projectileFlightTicks: 36
-  projectileLifetimeTicks: 51
-  interceptable: 0
-  summon: {fileID: 0}
-  animationSlot: attack
-  warningSlot: enemy-source-fast
+  sequenceCooldownTicks: 60
+  payloadSlots:
+  - slotId: payload.hudie-projectile
+    displayName: Hudie Projectile
+    kind: 1
+    threatDefinitionId: 401
+    baseDamage: 28
+    breakDamage: 0
+    weakpointDamageMultiplierBasisPoints: 10000
+    weakpointBreakMultiplierBasisPoints: 10000
+    projectileDefinitionId: 401
+    projectileCount: 1
+    projectileFlightTicks: 36
+    projectileLifetimeTicks: 51
+    projectileMaxHitPoints: 0
+    projectileInterceptable: 0
+    projectileBudgetUnits: 1
+    projectilePresentationKey: 1
+    projectileSweepRadiusKey: 250
+    timedImpactTargetPolicy: 0
+    timedImpactDelayTicks: 0
+    timedImpactPresentationKey: 1
+    summonCandidates: []
+    summonCandidateWeights: 
+    summonOccupancyMode: 0
+    summonPlacementMode: 0
+    summonOwnerOutcome: 0
+    maxSummonsPerOwner: 0
+    maxTotalSummonsPerEncounter: 0
+    maxSummonRecursionDepth: 0

@@ -1,0 +1,19 @@
+{
+    "name": "FPG.SkillAuthoring.Editor",
+    "rootNamespace": "FPG.Demo.Editor.SkillAuthoring",
+    "references": [
+        "FPG.Core",
+        "FPG.Skills"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

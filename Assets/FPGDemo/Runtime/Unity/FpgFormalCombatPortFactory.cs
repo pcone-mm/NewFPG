@@ -3,6 +3,8 @@ using System;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Player;
+
+using FPG.Demo.Skills;
 using FPG.Demo.Run;
 using UnityEngine;
 
@@ -39,7 +41,6 @@ namespace FPG.Demo.Unity
             FpgEncounterRunContext runContext,
             FpgCombatantAnchorMap anchorMap,
             FpgFormalHitboxRegistry formalHitboxRegistry,
-            FpgFormalAttackRuntimeCatalog attackRuntimeCatalog,
             out FpgFormalCombatRuntimeBundle bundle,
             out string error);
     }
@@ -68,6 +69,7 @@ namespace FPG.Demo.Unity
         internal FpgFormalCombatRuntimeBundle(
             SessionIdAllocator idAllocator,
             FpgEncounterRunContext runContext,
+            FpgSkillExecutionIdAllocator skillExecutionIds,
             CombatKernel combatKernel,
             PlayerRuntime player,
             FpgMultiEnemyCombatPort combatPort,
@@ -82,6 +84,8 @@ namespace FPG.Demo.Unity
         {
             IdAllocator = idAllocator;
             RunContext = runContext;
+            SkillExecutionIds = skillExecutionIds
+                ?? throw new ArgumentNullException(nameof(skillExecutionIds));
             CombatKernel = combatKernel;
             Player = player;
             CombatPort = combatPort;
@@ -96,6 +100,8 @@ namespace FPG.Demo.Unity
         }
 
         public SessionIdAllocator IdAllocator { get; }
+
+        public FpgSkillExecutionIdAllocator SkillExecutionIds { get; }
         public FpgEncounterRunContext RunContext { get; }
         public CombatKernel CombatKernel { get; }
         public PlayerRuntime Player { get; }
@@ -131,12 +137,14 @@ namespace FPG.Demo.Unity
             FpgFormalUnityTickSynchronizer synchronizer =
                 Synchronizer as FpgFormalUnityTickSynchronizer;
             synchronizer?.Reset();
+            SkillExecutionIds.Reset();
             if (!anchorMap.TryRegister(
                     Player.RuntimeId,
                     playerEntity.GameplayAnchor,
                     playerEntity.AimAnchor,
                     playerEntity.GameplayAnchor,
                     playerEntity.gameObject,
+                    playerEntity.SocketRegistry,
                     out _))
             {
                 synchronizer?.ReportExternalFailure(RejectReason.BufferCapacity);
@@ -441,7 +449,9 @@ namespace FPG.Demo.Unity
                 || projectileCapacity < profile.ProjectileCapacity
                 || threatAdvanceCapacity < profile.ThreatCapacity
                 || summonCapacity < Math.Max(1, requirements.SummonUpperBound)
-                || maxTotalSummons < requirements.SummonUpperBound
+                || maxTotalSummons < requirements.GameplayQuotaSummonUpperBound
+                || maxSummonRecursionDepth
+                    < requirements.RequiredSummonRecursionDepth
                 || attackScheduleCapacity < profile.ThreatCapacity
                 || perEnemyThreatCapacity <= 0
                 || projectileBudgetCapacity < profile.ProjectileCapacity
@@ -554,7 +564,6 @@ namespace FPG.Demo.Unity
             FpgEncounterRunContext runContext,
             FpgCombatantAnchorMap anchorMap,
             FpgFormalHitboxRegistry formalHitboxRegistry,
-            FpgFormalAttackRuntimeCatalog attackRuntimeCatalog,
             out FpgFormalCombatRuntimeBundle bundle,
             out string error)
         {
@@ -571,17 +580,15 @@ namespace FPG.Demo.Unity
 
             if (idAllocator == null || encounterRuntime == null || !runContext.IsValid
                 || anchorMap == null || formalHitboxRegistry == null
-                || attackRuntimeCatalog == null || !playerBindingConfigured
-                || playerDefinition == null
+                || !playerBindingConfigured || playerDefinition == null
                 || playerEntity == null || staticHitboxRegistry == null)
             {
-                error = "Formal combat factory is missing explicit runtime, player, catalog, anchor or hitbox references.";
+                error = "Formal combat factory is missing explicit runtime, player, anchor or hitbox references.";
                 return false;
             }
 
             if (!playerDefinition.TryValidate(out error)
                 || !playerEntity.TryValidate(out error)
-                || !attackRuntimeCatalog.TryValidate(out error)
                 || !playerDefinition.Weapon.TryCreate(out WeaponDefinition weaponDefinition, out error))
             {
                 return false;
@@ -626,6 +633,7 @@ namespace FPG.Demo.Unity
                     playerEntity.AimAnchor,
                     playerEntity.GameplayAnchor,
                     playerEntity.gameObject,
+                    playerEntity.SocketRegistry,
                     out error))
             {
                 staticHitboxRegistry.ClearDynamicAndStaticBindings();
@@ -695,12 +703,15 @@ namespace FPG.Demo.Unity
                     new TickDuration(groggyDurationTicks),
                     projectileWorldPort,
                     summonSink);
+                FpgSkillExecutionIdAllocator skillExecutionIds =
+                    new FpgSkillExecutionIdAllocator();
                 FpgFormalEnemyAttackScheduler scheduler = new FpgFormalEnemyAttackScheduler(
                     combatPort,
                     runContext,
-                    attackRuntimeCatalog,
+                    new FpgCombatantEnemyAttackSpatialSampler(anchorMap),
                     enemyCapacity,
-                    attackPatternCapacity);
+                    attackPatternCapacity,
+                    skillExecutionIds);
                 FpgFormalUnityTickSynchronizer synchronizer =
                     new FpgFormalUnityTickSynchronizer(
                         scheduler,
@@ -713,6 +724,7 @@ namespace FPG.Demo.Unity
                 bundle = new FpgFormalCombatRuntimeBundle(
                     idAllocator,
                     runContext,
+                    skillExecutionIds,
                     combatKernel,
                     player,
                     combatPort,

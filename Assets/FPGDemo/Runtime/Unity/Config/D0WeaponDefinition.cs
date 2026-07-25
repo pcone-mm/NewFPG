@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Player;
+using FPG.Demo.Skills;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -38,117 +40,21 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(1)]
         private int magazineCapacity = 8;
 
-        [D0PlannerSection("主射：独立攻击")]
-        [D0PlannerField("主射弹药消耗", "每次主射释放从共享弹匣扣除的弹药数。必须大于 0 且不超过弹匣容量。")]
-        [SerializeField, Min(1)]
-        private int primaryAmmoCost = 1;
-
-        [D0PlannerField("主射射速（发/秒）", "按住左键时每秒最多释放的主射次数。Inspector 会按 60Hz 战斗时钟自动换算并取整，提交后显示的实际射速可能轻微变化。")]
-        [SerializeField, Min(1)]
-        private int primaryIntervalTicks = 39;
-
-        [D0PlannerField(
-            "主射查询模式",
-            "主射使用首表面穿透查询；该字段必须保持为 FirstSurfacePenetration，以便每颗弹丸独立计算首个表面与后续穿透。")]
+        [D0PlannerSection("正式技能时间轴")]
+        [D0PlannerField("主射技能", "主射正式技能资产。运行时只从该资产编译攻击事件、弹药消耗、动作时长与冷却。")]
         [SerializeField]
-        private AttackQueryMode primaryQueryMode =
-            AttackQueryMode.FirstSurfacePenetration;
+        private FpgPlayerSkillDefinition primarySkill;
 
-        [D0PlannerField(
-            "主射额外穿透数",
-            "每颗主射弹丸越过首个有效表面后还能继续结算的表面数量。0 表示只结算首表面，1 表示首表面后还可再命中一个表面。")]
-        [SerializeField, Min(0)]
-        private int primaryAdditionalPenetrationCount;
-
-        [D0PlannerField("主射单颗弹丸生命伤害", "主射固定发射 8 颗弹丸；每颗命中普通部位时造成该基础生命伤害。弱点命中会再应用下方的弱点生命伤害倍率。")]
-        [SerializeField, Min(0)]
-        private int primaryDamage = 4;
-
-        [D0PlannerField("主射单颗弹丸削韧伤害", "主射固定发射 8 颗弹丸；每颗命中时对敌人韧性条造成该基础削减值。弱点命中会再应用下方的弱点削韧倍率。")]
-        [SerializeField, Min(0)]
-        private int primaryBreakDamage = 4;
-
-        [D0PlannerField("主射弱点生命倍率（万分比）", "主射命中弱点时的生命伤害倍率。10000 表示 1 倍，12000 表示 1.2 倍。")]
-        [SerializeField, Min(0)]
-        private int primaryWeakpointDamageMultiplierBasisPoints = 12000;
-
-        [D0PlannerField("主射弱点削韧倍率（万分比）", "主射命中弱点时的削韧伤害倍率。10000 表示 1 倍，25000 表示 2.5 倍。")]
-        [SerializeField, Min(0)]
-        private int primaryWeakpointBreakMultiplierBasisPoints = 25000;
-
-        [D0PlannerSection("副射：首表面范围攻击")]
-        [D0PlannerField("副射弹药消耗", "每次副射成功提交时从共享弹匣原子扣除的弹药数。必须大于 0 且不超过弹匣容量；查询或提交失败、取消蓄力、弹药不足时不扣弹，也不会自动换弹。")]
-        [SerializeField, Min(1)]
-        private int secondaryAmmoCost = 2;
-
-        [D0PlannerField(
-            "副射触发模式",
-            "ChargeRelease 在达到最低蓄力后松开提交；ImmediateRepeatWhileHeld 在按下时立即尝试，成功提交后按副射恢复时长重复，松开只停止后续攻击。")]
+        [D0PlannerField("副射技能", "副射正式技能资产。蓄力释放优先执行 Release 序列，否则执行 Execute 序列。")]
         [SerializeField]
-        private SecondaryTriggerMode secondaryTriggerMode =
-            SecondaryTriggerMode.ChargeRelease;
+        private FpgPlayerSkillDefinition secondarySkill;
 
-        [D0PlannerField(
-            "副射查询模式",
-            "副射以射线遇到的首个表面为范围中心；该字段必须保持为 AreaAtFirstSurface，范围内的敌人与弹体分别按独立上限结算。")]
+        [D0PlannerField("换弹技能", "换弹正式技能资产。Execute 序列必须包含 ReloadCommit 逻辑事件。")]
         [SerializeField]
-        private AttackQueryMode secondaryQueryMode =
-            AttackQueryMode.AreaAtFirstSurface;
+        private FpgPlayerSkillDefinition reloadSkill;
 
-        [D0PlannerField("副射最低蓄力（Tick）", "仅 ChargeRelease 模式读取。单位为 Tick；达到该时长后松开才会提交副射。ImmediateRepeatWhileHeld 模式不把该字段作为射速或触发门槛。")]
-        [SerializeField, Min(0)]
-        private int secondaryMinimumChargeTicks = 0;
+        [D0PlannerSection("瞄准配置")]
 
-        [D0PlannerField("副射射速（发/秒）", "只有成功提交副射才启动恢复。Inspector 会按 60Hz 战斗时钟换算该 Tick 值；ImmediateRepeatWhileHeld 在恢复结束且仍按住时再次尝试，不另设第二份连发间隔。")]
-        [SerializeField, Min(1)]
-        private int secondaryRecoveryTicks = 30;
-
-        [D0PlannerField("副射生命伤害", "首表面只决定爆心，不产生直击伤害；范围内每个敌人按重叠命中部位结算该基础生命伤害，同一 RuntimeId 弱点优先。")]
-        [SerializeField, Min(0)]
-        private int secondaryDamage = 28;
-
-        [D0PlannerField("副射削韧伤害", "范围内每个敌人按战斗域规则结算的基础削韧值。爆心到范围目标不做遮挡检查，弱点命中会再应用下方倍率。")]
-        [SerializeField, Min(0)]
-        private int secondaryBreakDamage = 20;
-
-        [D0PlannerField("副射弱点生命倍率（万分比）", "副射命中弱点时的生命伤害倍率。10000 表示 1 倍，20000 表示 2 倍。")]
-        [SerializeField, Min(0)]
-        private int secondaryWeakpointDamageMultiplierBasisPoints = 12000;
-
-        [D0PlannerField("副射弱点削韧倍率（万分比）", "副射命中弱点时的削韧伤害倍率。10000 表示 1 倍，25000 表示 2.5 倍。")]
-        [SerializeField, Min(0)]
-        private int secondaryWeakpointBreakMultiplierBasisPoints = 25000;
-
-        [D0PlannerField("副射敌人命中上限", "一次副射最多结算的敌人数量。弹体使用独立上限，不会占用这里配置的敌人名额。")]
-        [SerializeField, Min(1)]
-        private int secondaryMaxImpactCount = 4;
-
-        [D0PlannerField("副射弹体命中上限", "一次副射最多结算的敌方弹体数量。该容量独立于敌人命中上限，设为 0 可关闭副射的弹体结算。")]
-        [SerializeField, Min(0)]
-        private int secondaryProjectileMaxImpactCount =
-            WeaponDefinition.DefaultSecondaryAreaProjectileLimit;
-
-        [D0PlannerSection("换弹")]
-        [D0PlannerField("换弹时长（Tick）", "从开始换弹到共享弹匣恢复的时长。单位为 Tick；当前 D0 默认时钟为 60 Tick/秒。")]
-        [SerializeField, Min(1)]
-        private int reloadDurationTicks = 84;
-
-
-        [D0PlannerSection("技能表现与 Socket")]
-        [D0PlannerField("主射表现", "主射技能独有的动画、枪口和弹道 VFX key；不参与射线、命中或伤害结算。")]
-        [SerializeField]
-        private D0WeaponShotPresentationDefinition primaryPresentation =
-            D0WeaponShotPresentationDefinition.CreatePrimaryDefaults();
-
-        [D0PlannerField("副射表现", "副射释放、蓄力、目标爆发和对应 Socket 的表现数据；战斗规则仍由本资产的数值字段决定。")]
-        [SerializeField]
-        private D0WeaponSecondaryPresentationDefinition secondaryPresentation =
-            D0WeaponSecondaryPresentationDefinition.CreateDefaults();
-
-        [D0PlannerField("换弹表现", "换弹 Spine 动画名称；只影响表现，不改变换弹 Tick。")]
-        [SerializeField]
-        private D0WeaponReloadPresentationDefinition reloadPresentation =
-            new D0WeaponReloadPresentationDefinition();
 
         [D0PlannerField("瞄准指示器", "该武器的常态、射击与命中 UI 表现，不参与输入、射线或伤害。")]
         [SerializeField]
@@ -159,28 +65,69 @@ namespace FPG.Demo.Unity
         public string WeaponId => weaponId;
         public string DisplayName => displayName;
         public int MagazineCapacity => magazineCapacity;
-        public int PrimaryIntervalTicks => primaryIntervalTicks;
-        public AttackQueryMode PrimaryQueryMode => primaryQueryMode;
-        public int PrimaryAdditionalPenetrationCount =>
-            primaryAdditionalPenetrationCount;
-        public SecondaryTriggerMode SecondaryTriggerMode => secondaryTriggerMode;
-        public AttackQueryMode SecondaryQueryMode => secondaryQueryMode;
-        public int SecondaryMinimumChargeTicks => secondaryMinimumChargeTicks;
-        public int SecondaryAmmoCost => secondaryAmmoCost;
-        public int SecondaryEnemyMaxImpactCount => secondaryMaxImpactCount;
-        public int SecondaryProjectileMaxImpactCount =>
-            secondaryProjectileMaxImpactCount;
-        public int ReloadDurationTicks => reloadDurationTicks;
 
+        public int PrimaryIntervalTicks =>
+            primarySkill == null ? 0 : primarySkill.SequenceCooldownTicks;
+
+        public AttackQueryMode PrimaryQueryMode =>
+            FindPayload(primarySkill, FpgPlayerSkillPayloadKind.PelletRay)
+                ?.QueryMode
+            ?? AttackQueryMode.FirstSurfacePenetration;
+
+        public int PrimaryAdditionalPenetrationCount =>
+            FindPayload(primarySkill, FpgPlayerSkillPayloadKind.PelletRay)
+                ?.AdditionalPenetrationCount
+            ?? 0;
+
+        public SecondaryTriggerMode SecondaryTriggerMode =>
+            secondarySkill == null
+                ? SecondaryTriggerMode.ChargeRelease
+                : secondarySkill.SecondaryTriggerMode;
+
+        public AttackQueryMode SecondaryQueryMode =>
+            FindPayload(
+                    secondarySkill,
+                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface)
+                ?.QueryMode
+            ?? AttackQueryMode.AreaAtFirstSurface;
+
+        public int SecondaryMinimumChargeTicks =>
+            secondarySkill == null ? 0 : secondarySkill.MinimumChargeTicks;
+
+        public int SecondaryAmmoCost => GetSequenceAmmoCost(
+            secondarySkill,
+            ResolveSecondarySequenceKind());
+
+        public int SecondaryEnemyMaxImpactCount =>
+            FindPayload(
+                    secondarySkill,
+                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface)
+                ?.AreaCombatantLimit
+            ?? 0;
+
+        public int SecondaryProjectileMaxImpactCount =>
+            FindPayload(
+                    secondarySkill,
+                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface)
+                ?.AreaProjectileLimit
+            ?? 0;
+
+        public int ReloadDurationTicks => GetSequenceDuration(
+            reloadSkill,
+            FpgSkillSequenceKind.Execute);
+
+        public FpgPlayerSkillDefinition PrimarySkill => primarySkill;
+        public FpgPlayerSkillDefinition SecondarySkill => secondarySkill;
+        public FpgPlayerSkillDefinition ReloadSkill => reloadSkill;
 
         public D0WeaponShotPresentationDefinition PrimaryPresentation =>
-            primaryPresentation;
+            primarySkill == null ? null : primarySkill.ShotPresentation;
 
         public D0WeaponSecondaryPresentationDefinition SecondaryPresentation =>
-            secondaryPresentation;
+            secondarySkill == null ? null : secondarySkill.SecondaryPresentation;
 
         public D0WeaponReloadPresentationDefinition ReloadPresentation =>
-            reloadPresentation;
+            reloadSkill == null ? null : reloadSkill.ReloadPresentation;
 
         public PlayerAimIndicatorPresentationDefinition AimIndicator =>
             aimIndicator;
@@ -188,63 +135,39 @@ namespace FPG.Demo.Unity
         public bool TryValidatePresentation(out string error)
         {
             error = string.Empty;
-            if (primaryPresentation == null
-                || !primaryPresentation.TryValidate(out error))
+            D0WeaponShotPresentationDefinition primary = PrimaryPresentation;
+            if (primary == null || !primary.TryValidate(out error))
             {
-                if (string.IsNullOrEmpty(error))
-                {
-                    error = "Weapon primary presentation is missing.";
-                }
-                else
-                {
-                    error = "Weapon primary presentation is invalid: " + error;
-                }
-
+                error = string.IsNullOrEmpty(error)
+                    ? "Primary skill presentation is missing."
+                    : "Primary skill presentation is invalid: " + error;
                 return false;
             }
 
-            if (secondaryPresentation == null
-                || !secondaryPresentation.TryValidate(out error))
+            D0WeaponSecondaryPresentationDefinition secondary =
+                SecondaryPresentation;
+            if (secondary == null || !secondary.TryValidate(out error))
             {
-                if (string.IsNullOrEmpty(error))
-                {
-                    error = "Weapon secondary presentation is missing.";
-                }
-                else
-                {
-                    error = "Weapon secondary presentation is invalid: " + error;
-                }
-
+                error = string.IsNullOrEmpty(error)
+                    ? "Secondary skill presentation is missing."
+                    : "Secondary skill presentation is invalid: " + error;
                 return false;
             }
 
-            if (reloadPresentation == null
-                || !reloadPresentation.TryValidate(out error))
+            D0WeaponReloadPresentationDefinition reload = ReloadPresentation;
+            if (reload == null || !reload.TryValidate(out error))
             {
-                if (string.IsNullOrEmpty(error))
-                {
-                    error = "Weapon reload presentation is missing.";
-                }
-                else
-                {
-                    error = "Weapon reload presentation is invalid: " + error;
-                }
-
+                error = string.IsNullOrEmpty(error)
+                    ? "Reload skill presentation is missing."
+                    : "Reload skill presentation is invalid: " + error;
                 return false;
             }
 
             if (aimIndicator == null || !aimIndicator.TryValidate(out error))
             {
-                if (string.IsNullOrEmpty(error))
-                {
-                    error = "Weapon aim-indicator presentation is missing.";
-                }
-                else
-                {
-                    error =
-                        "Weapon aim-indicator presentation is invalid: " + error;
-                }
-
+                error = string.IsNullOrEmpty(error)
+                    ? "Weapon aim-indicator presentation is missing."
+                    : "Weapon aim-indicator presentation is invalid: " + error;
                 return false;
             }
 
@@ -266,35 +189,48 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!TryCompileSkills(
+                    out FpgCompiledPlayerSkillDefinition compiledPrimary,
+                    out FpgCompiledPlayerSkillDefinition compiledSecondary,
+                    out FpgCompiledPlayerSkillDefinition compiledReload,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryBuildWeaponProjection(
+                    compiledPrimary,
+                    compiledSecondary,
+                    compiledReload,
+                    out WeaponProjection projection,
+                    out error))
+            {
+                return false;
+            }
+
             try
             {
                 definition = new WeaponDefinition(
                     definitionId,
                     magazineCapacity,
-                    primaryAmmoCost,
-                    new TickDuration(primaryIntervalTicks),
-                    new DamageSpec(
-                        primaryDamage,
-                        primaryBreakDamage,
-                        primaryWeakpointDamageMultiplierBasisPoints,
-                        primaryWeakpointBreakMultiplierBasisPoints),
-                    secondaryAmmoCost,
-                    new TickDuration(secondaryMinimumChargeTicks),
-                    new TickDuration(secondaryRecoveryTicks),
-                    new DamageSpec(
-                        secondaryDamage,
-                        secondaryBreakDamage,
-                        secondaryWeakpointDamageMultiplierBasisPoints,
-                        secondaryWeakpointBreakMultiplierBasisPoints),
-                    new TickDuration(reloadDurationTicks),
-                    secondaryMaxImpactCount,
-                    secondaryTriggerMode,
-                    primaryQueryMode,
-                    primaryAdditionalPenetrationCount,
-                    secondaryQueryMode,
-                    secondaryProjectileMaxImpactCount,
-                    WeaponDefinition.PlayerAttackTargetKinds,
-                    WeaponDefinition.PlayerAttackTargetKinds);
+                    projection.PrimaryAmmoCost,
+                    new TickDuration(projection.PrimaryLockTicks),
+                    projection.PrimaryPayload.Damage,
+                    projection.SecondaryAmmoCost,
+                    new TickDuration(SecondaryMinimumChargeTicks),
+                    new TickDuration(projection.SecondaryLockTicks),
+                    projection.SecondaryPayload.Damage,
+                    new TickDuration(projection.ReloadLockTicks),
+                    projection.SecondaryPayload.AreaCombatantLimit,
+                    SecondaryTriggerMode,
+                    projection.PrimaryPayload.QueryMode,
+                    projection.PrimaryPayload.AdditionalPenetrationCount,
+                    projection.SecondaryPayload.QueryMode,
+                    projection.SecondaryPayload.AreaProjectileLimit,
+                    projection.PrimaryPayload.AllowedTargetKinds,
+                    projection.SecondaryPayload.AllowedTargetKinds,
+                    projection.PrimaryPayload.PayloadCount,
+                    projection.MaximumImpactCount);
                 error = string.Empty;
                 return true;
             }
@@ -304,5 +240,335 @@ namespace FPG.Demo.Unity
                 return false;
             }
         }
-    }
+
+        public bool TryCompileSkills(
+            out FpgCompiledPlayerSkillDefinition compiledPrimary,
+            out FpgCompiledPlayerSkillDefinition compiledSecondary,
+            out FpgCompiledPlayerSkillDefinition compiledReload,
+            out string error)
+        {
+            compiledPrimary = null;
+            compiledSecondary = null;
+            compiledReload = null;
+
+            if (primarySkill == null || secondarySkill == null || reloadSkill == null)
+            {
+                error = "Weapon definition requires primary, secondary and reload skill assets.";
+                return false;
+            }
+
+            if (!primarySkill.TryCompile(out compiledPrimary, out error))
+            {
+                error = "Primary skill is invalid: " + error;
+                return false;
+            }
+
+            if (!secondarySkill.TryCompile(out compiledSecondary, out error))
+            {
+                error = "Secondary skill is invalid: " + error;
+                return false;
+            }
+
+            if (!reloadSkill.TryCompile(out compiledReload, out error))
+            {
+                error = "Reload skill is invalid: " + error;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private bool TryBuildWeaponProjection(
+            FpgCompiledPlayerSkillDefinition compiledPrimary,
+            FpgCompiledPlayerSkillDefinition compiledSecondary,
+            FpgCompiledPlayerSkillDefinition compiledReload,
+            out WeaponProjection projection,
+            out string error)
+        {
+            projection = default(WeaponProjection);
+            if (!compiledPrimary.Timeline.TryGetSequence(
+                    FpgSkillSequenceKind.Execute,
+                    out FpgCompiledSkillSequence primarySequence)
+                || !compiledPrimary.TryGetSequenceSummary(
+                    FpgSkillSequenceKind.Execute,
+                    out FpgCompiledPlayerSkillSequenceSummary primarySummary))
+            {
+                error = "Primary skill requires an Execute sequence.";
+                return false;
+            }
+
+            FpgSkillSequenceKind secondarySequenceKind =
+                SecondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+                    && compiledSecondary.Timeline.TryGetSequence(
+                        FpgSkillSequenceKind.Release,
+                        out _)
+                        ? FpgSkillSequenceKind.Release
+                        : FpgSkillSequenceKind.Execute;
+            if (!compiledSecondary.Timeline.TryGetSequence(
+                    secondarySequenceKind,
+                    out FpgCompiledSkillSequence secondarySequence)
+                || !compiledSecondary.TryGetSequenceSummary(
+                    secondarySequenceKind,
+                    out FpgCompiledPlayerSkillSequenceSummary secondarySummary))
+            {
+                error = "Secondary skill has no executable release sequence.";
+                return false;
+            }
+
+            if (!compiledReload.Timeline.TryGetSequence(
+                    FpgSkillSequenceKind.Execute,
+                    out FpgCompiledSkillSequence reloadSequence)
+                || !compiledReload.TryGetSequenceSummary(
+                    FpgSkillSequenceKind.Execute,
+                    out FpgCompiledPlayerSkillSequenceSummary reloadSummary))
+            {
+                error = "Reload skill requires an Execute sequence.";
+                return false;
+            }
+
+            if (!TryValidateAttackSequence(
+                    compiledPrimary,
+                    primarySequence,
+                    primarySummary,
+                    FpgPlayerSkillPayloadKind.PelletRay,
+                    "Primary",
+                    out FpgCompiledPlayerSkillPayloadSlot primaryPayload,
+                    out error)
+                || !TryValidateAttackSequence(
+                    compiledSecondary,
+                    secondarySequence,
+                    secondarySummary,
+                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface,
+                    "Secondary",
+                    out FpgCompiledPlayerSkillPayloadSlot secondaryPayload,
+                    out error))
+            {
+                return false;
+            }
+
+            if (reloadSummary.AttackEventCount != 0
+                || reloadSummary.ReloadCommitEventCount <= 0
+                || reloadSummary.TotalAmmoCost != 0)
+            {
+                error = "Reload Execute sequence must contain reload commits and no attack payloads.";
+                return false;
+            }
+
+            if (primarySummary.TotalAmmoCost > magazineCapacity
+                || secondarySummary.TotalAmmoCost > magazineCapacity)
+            {
+                error = "A complete attack sequence consumes more ammo than the shared magazine can hold.";
+                return false;
+            }
+
+            if (compiledPrimary.MaximumPelletCount > WeaponDefinition.PrimaryPelletCount
+                || compiledSecondary.MaximumPelletCount > WeaponDefinition.PrimaryPelletCount
+                || compiledReload.MaximumPelletCount > WeaponDefinition.PrimaryPelletCount)
+            {
+                error = "Formal player pellet payloads exceed the fixed eight-pellet query capacity.";
+                return false;
+            }
+
+            try
+            {
+                int primaryLockTicks = ComputeProjectedLockTicks(
+                    primarySequence,
+                    primarySummary,
+                    compiledPrimary.SequenceCooldownTicks);
+                int secondaryLockTicks = ComputeProjectedLockTicks(
+                    secondarySequence,
+                    secondarySummary,
+                    compiledSecondary.SequenceCooldownTicks);
+                int reloadLockTicks = checked(reloadSequence.DurationTicks + 1);
+                int maximumImpactCount = Math.Max(
+                    compiledPrimary.MaximumImpactCount,
+                    Math.Max(
+                        compiledSecondary.MaximumImpactCount,
+                        compiledReload.MaximumImpactCount));
+
+                projection = new WeaponProjection(
+                    primaryPayload,
+                    secondaryPayload,
+                    primarySummary.TotalAmmoCost,
+                    secondarySummary.TotalAmmoCost,
+                    primaryLockTicks,
+                    secondaryLockTicks,
+                    reloadLockTicks,
+                    maximumImpactCount);
+                error = string.Empty;
+                return true;
+            }
+            catch (OverflowException exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+        }
+
+        private static bool TryValidateAttackSequence(
+            FpgCompiledPlayerSkillDefinition definition,
+            FpgCompiledSkillSequence sequence,
+            FpgCompiledPlayerSkillSequenceSummary summary,
+            FpgPlayerSkillPayloadKind requiredKind,
+            string label,
+            out FpgCompiledPlayerSkillPayloadSlot representativePayload,
+            out string error)
+        {
+            representativePayload = default(FpgCompiledPlayerSkillPayloadSlot);
+            if (summary.AttackEventCount <= 0
+                || summary.ReloadCommitEventCount != 0
+                || summary.TotalAmmoCost <= 0)
+            {
+                error = label + " sequence requires attack payloads and cannot contain reload commits.";
+                return false;
+            }
+
+            bool found = false;
+            for (int eventIndex = 0; eventIndex < sequence.EventCount; eventIndex++)
+            {
+                FpgCompiledSkillEvent skillEvent = sequence.GetEvent(eventIndex);
+                if (skillEvent.Kind != FpgSkillEventKind.GameplayPayload)
+                {
+                    continue;
+                }
+
+                if (!definition.TryGetPayloadSlot(
+                        skillEvent.PayloadSlotId,
+                        out FpgCompiledPlayerSkillPayloadSlot payload)
+                    || payload.Kind != requiredKind)
+                {
+                    error = label + " sequence contains an incompatible gameplay payload.";
+                    return false;
+                }
+
+                if (!found)
+                {
+                    representativePayload = payload;
+                    found = true;
+                }
+            }
+
+            error = found
+                ? string.Empty
+                : label + " sequence has no gameplay payload.";
+            return found;
+        }
+
+        private static int ComputeProjectedLockTicks(
+            FpgCompiledSkillSequence sequence,
+            FpgCompiledPlayerSkillSequenceSummary summary,
+            int cooldownTicks)
+        {
+            int sequenceUnlock = checked(sequence.DurationTicks + 1);
+            int cooldownUnlock = summary.LastAttackTick < 0
+                ? 0
+                : checked(summary.LastAttackTick + cooldownTicks);
+            return Math.Max(1, Math.Max(sequenceUnlock, cooldownUnlock));
+        }
+
+        private readonly struct WeaponProjection
+        {
+            public WeaponProjection(
+                FpgCompiledPlayerSkillPayloadSlot primaryPayload,
+                FpgCompiledPlayerSkillPayloadSlot secondaryPayload,
+                int primaryAmmoCost,
+                int secondaryAmmoCost,
+                int primaryLockTicks,
+                int secondaryLockTicks,
+                int reloadLockTicks,
+                int maximumImpactCount)
+            {
+                PrimaryPayload = primaryPayload;
+                SecondaryPayload = secondaryPayload;
+                PrimaryAmmoCost = primaryAmmoCost;
+                SecondaryAmmoCost = secondaryAmmoCost;
+                PrimaryLockTicks = primaryLockTicks;
+                SecondaryLockTicks = secondaryLockTicks;
+                ReloadLockTicks = reloadLockTicks;
+                MaximumImpactCount = maximumImpactCount;
+            }
+
+            public FpgCompiledPlayerSkillPayloadSlot PrimaryPayload { get; }
+            public FpgCompiledPlayerSkillPayloadSlot SecondaryPayload { get; }
+            public int PrimaryAmmoCost { get; }
+            public int SecondaryAmmoCost { get; }
+            public int PrimaryLockTicks { get; }
+            public int SecondaryLockTicks { get; }
+            public int ReloadLockTicks { get; }
+            public int MaximumImpactCount { get; }
+        }
+
+
+        private FpgSkillSequenceKind ResolveSecondarySequenceKind()
+        {
+            return SecondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+                ? FpgSkillSequenceKind.Release
+                : FpgSkillSequenceKind.Execute;
+        }
+
+        private static FpgPlayerSkillPayloadSlot FindPayload(
+            FpgPlayerSkillDefinition definition,
+            FpgPlayerSkillPayloadKind kind)
+        {
+            if (definition == null)
+            {
+                return null;
+            }
+
+            IReadOnlyList<FpgPlayerSkillPayloadSlot> slots =
+                definition.PayloadSlots;
+            for (int index = 0; index < slots.Count; index++)
+            {
+                FpgPlayerSkillPayloadSlot slot = slots[index];
+                if (slot != null && slot.Kind == kind)
+                {
+                    return slot;
+                }
+            }
+
+            return null;
+        }
+
+        private static int GetSequenceAmmoCost(
+            FpgPlayerSkillDefinition definition,
+            FpgSkillSequenceKind kind)
+        {
+            if (definition != null
+                && definition.TryCompile(
+                    out FpgCompiledPlayerSkillDefinition compiled,
+                    out _)
+                && compiled.TryGetSequenceSummary(
+                    kind,
+                    out FpgCompiledPlayerSkillSequenceSummary summary))
+            {
+                return summary.TotalAmmoCost;
+            }
+
+            return 0;
+        }
+
+        private static int GetSequenceDuration(
+            FpgPlayerSkillDefinition definition,
+            FpgSkillSequenceKind kind)
+        {
+            if (definition == null)
+            {
+                return 0;
+            }
+
+            IReadOnlyList<FpgSkillSequenceDefinition> sequences =
+                definition.Sequences;
+            for (int index = 0; index < sequences.Count; index++)
+            {
+                FpgSkillSequenceDefinition sequence = sequences[index];
+                if (sequence != null && sequence.Kind == kind)
+                {
+                    return sequence.DurationTicks;
+                }
+            }
+
+            return 0;
+        }
+}
 }

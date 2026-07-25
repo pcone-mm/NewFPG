@@ -2,6 +2,7 @@ using System;
 using FPG.Demo.Combat;
 using FPG.Demo.Run;
 using FPG.Demo.Player;
+using FPG.Demo.Skills;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -17,6 +18,8 @@ namespace FPG.Demo.Unity
         IFpgFormalPlayerPresentationSource
     {
         private const int ActionQueueCapacity = 32;
+        private const int SkillPresentationQueueCapacity = 64;
+        private const string AnimationCuePrefix = "animation.";
         [Header("Formal runtime")]
         [SerializeField] private FpgRoomEncounterDirector encounterDirector;
         [SerializeField] private FpgFormalPlayerTickDriver playerTickDriver;
@@ -24,6 +27,7 @@ namespace FPG.Demo.Unity
         [Header("Player presentation")]
         [SerializeField] private FpgFormalPlayerHudPresenter playerHud;
         [SerializeField] private FpgFormalPlayerCameraFeedback cameraFeedback;
+        [SerializeField] private D0CombatVfxWorld skillVfxWorld;
 
         [Header("Scene-owned camera")]
         [SerializeField] private Transform cameraRig;
@@ -31,6 +35,12 @@ namespace FPG.Demo.Unity
 
         private readonly FpgFormalPlayerActionEvent[] actionQueue =
             new FpgFormalPlayerActionEvent[ActionQueueCapacity];
+        private readonly FpgFormalPlayerSkillSequenceEvent[] skillSequenceQueue =
+            new FpgFormalPlayerSkillSequenceEvent[
+                SkillPresentationQueueCapacity];
+        private readonly FpgFormalPlayerSkillCueEvent[] skillCueQueue =
+            new FpgFormalPlayerSkillCueEvent[
+                SkillPresentationQueueCapacity];
         private FpgVitalsSnapshot[] vitalsBuffer =
             Array.Empty<FpgVitalsSnapshot>();
 
@@ -45,7 +55,14 @@ namespace FPG.Demo.Unity
         private long vitalsCursor;
         private int actionHead;
         private int actionCount;
+        private int skillSequenceHead;
+        private int skillSequenceCount;
+        private int skillCueHead;
+        private int skillCueCount;
         private bool actionGap;
+        private bool skillSequenceGap;
+        private bool hasActiveSkillSequence;
+        private FpgFormalPlayerSkillSequenceEvent activeSkillSequence;
         private bool prepared;
         private bool active;
         private bool subscribed;
@@ -63,6 +80,11 @@ namespace FPG.Demo.Unity
         public bool IsActive => active;
         public int VitalsGapCount { get; private set; }
         public int VitalsReadCapacity => vitalsBuffer.Length;
+        public int SkillSequenceGapCount { get; private set; }
+        public int SkillCueGapCount { get; private set; }
+        public int SkillPresentationFaultCount { get; private set; }
+
+        public event Action<FpgFormalPlayerSkillCueEvent> SkillCuePresented;
 
         private void LateUpdate()
         {
@@ -81,6 +103,7 @@ namespace FPG.Demo.Unity
 
             FpgFormalPlayerPresentationSnapshot previous = snapshot;
             snapshot = nextSnapshot;
+            ConsumeSkillSequenceEvents();
             bool primaryPresented = ConsumeCommittedActions();
             PresentationFrameFlags traceFlags = ConsumeCombatTrace();
             ApplySnapshotTransitions(
@@ -89,6 +112,8 @@ namespace FPG.Demo.Unity
                 primaryPresented,
                 traceFlags);
             actorPresenter?.SetPaused(snapshot.IsPaused);
+            EvaluateActiveSkillAnimation();
+            ConsumeSkillCues();
             cameraFeedback?.SetPaused(snapshot.IsPaused);
             playerHud?.Refresh(snapshot);
         }
@@ -290,6 +315,10 @@ namespace FPG.Demo.Unity
             actorPresenter = null;
             observedTrace = null;
             snapshot = FpgFormalPlayerPresentationSnapshot.Unavailable;
+            VitalsGapCount = 0;
+            SkillSequenceGapCount = 0;
+            SkillCueGapCount = 0;
+            SkillPresentationFaultCount = 0;
             prepared = false;
             active = false;
             ResetEventCursors();
@@ -303,6 +332,9 @@ namespace FPG.Demo.Unity
             }
 
             playerTickDriver.ActionCommitted += HandleActionCommitted;
+            playerTickDriver.SkillSequenceAdvanced +=
+                HandleSkillSequenceAdvanced;
+            playerTickDriver.SkillCueCommitted += HandleSkillCueCommitted;
             encounterDirector.LifecycleEvent += HandleEncounterLifecycle;
             subscribed = true;
         }
@@ -317,6 +349,9 @@ namespace FPG.Demo.Unity
             if (playerTickDriver != null)
             {
                 playerTickDriver.ActionCommitted -= HandleActionCommitted;
+                playerTickDriver.SkillSequenceAdvanced -=
+                    HandleSkillSequenceAdvanced;
+                playerTickDriver.SkillCueCommitted -= HandleSkillCueCommitted;
             }
 
             if (encounterDirector != null)
@@ -346,6 +381,225 @@ namespace FPG.Demo.Unity
             actionCount++;
         }
 
+        private void HandleSkillSequenceAdvanced(
+            FpgFormalPlayerSkillSequenceEvent sequenceEvent)
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            if (skillSequenceCount == skillSequenceQueue.Length)
+            {
+                skillSequenceQueue[skillSequenceHead] =
+                    default(FpgFormalPlayerSkillSequenceEvent);
+                skillSequenceHead =
+                    (skillSequenceHead + 1) % skillSequenceQueue.Length;
+                skillSequenceCount--;
+                skillSequenceGap = true;
+                SkillSequenceGapCount++;
+            }
+
+            int writeIndex = (skillSequenceHead + skillSequenceCount)
+                % skillSequenceQueue.Length;
+            skillSequenceQueue[writeIndex] = sequenceEvent;
+            skillSequenceCount++;
+        }
+
+        private void HandleSkillCueCommitted(
+            FpgFormalPlayerSkillCueEvent cueEvent)
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            if (skillCueCount == skillCueQueue.Length)
+            {
+                skillCueQueue[skillCueHead] =
+                    default(FpgFormalPlayerSkillCueEvent);
+                skillCueHead = (skillCueHead + 1) % skillCueQueue.Length;
+                skillCueCount--;
+                SkillCueGapCount++;
+            }
+
+            int writeIndex = (skillCueHead + skillCueCount)
+                % skillCueQueue.Length;
+            skillCueQueue[writeIndex] = cueEvent;
+            skillCueCount++;
+        }
+
+        private void ConsumeSkillSequenceEvents()
+        {
+            if (skillSequenceGap)
+            {
+                if (hasActiveSkillSequence)
+                {
+                    actorPresenter.CancelSkillAnimation(
+                        activeSkillSequence.ExecutionId);
+                }
+
+                hasActiveSkillSequence = false;
+                activeSkillSequence =
+                    default(FpgFormalPlayerSkillSequenceEvent);
+                skillSequenceGap = false;
+            }
+
+            while (skillSequenceCount > 0)
+            {
+                FpgFormalPlayerSkillSequenceEvent sequenceEvent =
+                    skillSequenceQueue[skillSequenceHead];
+                skillSequenceQueue[skillSequenceHead] =
+                    default(FpgFormalPlayerSkillSequenceEvent);
+                skillSequenceHead =
+                    (skillSequenceHead + 1) % skillSequenceQueue.Length;
+                skillSequenceCount--;
+
+                if (sequenceEvent.State == FpgSkillExecutionState.Canceled)
+                {
+                    actorPresenter.CancelSkillAnimation(
+                        sequenceEvent.ExecutionId);
+                    if (hasActiveSkillSequence
+                        && activeSkillSequence.ExecutionId
+                            == sequenceEvent.ExecutionId)
+                    {
+                        hasActiveSkillSequence = false;
+                        activeSkillSequence =
+                            default(FpgFormalPlayerSkillSequenceEvent);
+                    }
+
+                    continue;
+                }
+
+                if (hasActiveSkillSequence
+                    && activeSkillSequence.ExecutionId
+                        != sequenceEvent.ExecutionId)
+                {
+                    actorPresenter.CancelSkillAnimation(
+                        activeSkillSequence.ExecutionId);
+                }
+
+                activeSkillSequence = sequenceEvent;
+                hasActiveSkillSequence = true;
+            }
+        }
+
+        private void EvaluateActiveSkillAnimation()
+        {
+            if (!hasActiveSkillSequence || actorPresenter == null
+                || snapshot.IsPaused)
+            {
+                return;
+            }
+
+            FpgFormalPlayerSkillSequenceEvent sequenceEvent =
+                activeSkillSequence;
+            long relativeValue = sequenceEvent.RelativeTick;
+            if (snapshot.Tick.IsValid && sequenceEvent.StartTick.IsValid)
+            {
+                relativeValue = snapshot.Tick.Value
+                    - sequenceEvent.StartTick.Value;
+            }
+
+            int relativeTick = (int)Math.Max(
+                0L,
+                Math.Min(
+                    sequenceEvent.CompiledSequence.DurationTicks,
+                    relativeValue));
+            double interpolation = sequenceEvent.IsTerminal
+                ? 0d
+                : FpgFormalPlayerSkillAnimationClock.ResolveInterpolation(
+                    Time.timeAsDouble,
+                    Time.fixedTimeAsDouble,
+                    Time.fixedDeltaTime);
+            if (!actorPresenter.TryEvaluateSkillAnimation(
+                    sequenceEvent.ExecutionId,
+                    sequenceEvent.AnimationName,
+                    sequenceEvent.CompiledSequence,
+                    relativeTick,
+                    interpolation,
+                    out _))
+            {
+                SkillPresentationFaultCount++;
+                actorPresenter.CancelSkillAnimation(
+                    sequenceEvent.ExecutionId);
+                hasActiveSkillSequence = false;
+                activeSkillSequence =
+                    default(FpgFormalPlayerSkillSequenceEvent);
+                return;
+            }
+
+            if (sequenceEvent.State == FpgSkillExecutionState.Completed)
+            {
+                actorPresenter.CompleteSkillAnimation(
+                    sequenceEvent.ExecutionId);
+                hasActiveSkillSequence = false;
+                activeSkillSequence =
+                    default(FpgFormalPlayerSkillSequenceEvent);
+            }
+        }
+
+        private void ConsumeSkillCues()
+        {
+            if (snapshot.IsPaused)
+            {
+                return;
+            }
+
+            while (skillCueCount > 0)
+            {
+                FpgFormalPlayerSkillCueEvent cueEvent =
+                    skillCueQueue[skillCueHead];
+                skillCueQueue[skillCueHead] =
+                    default(FpgFormalPlayerSkillCueEvent);
+                skillCueHead = (skillCueHead + 1) % skillCueQueue.Length;
+                skillCueCount--;
+                PresentSkillCue(cueEvent);
+            }
+        }
+
+        private void PresentSkillCue(
+            in FpgFormalPlayerSkillCueEvent cueEvent)
+        {
+            if (cueEvent.CueName.StartsWith(
+                    AnimationCuePrefix,
+                    StringComparison.Ordinal))
+            {
+                string animationName = cueEvent.CueName.Substring(
+                    AnimationCuePrefix.Length);
+                if (!actorPresenter.TryPlaySkillCueAnimation(
+                        animationName,
+                        true,
+                        out _))
+                {
+                    SkillPresentationFaultCount++;
+                }
+            }
+            else if (skillVfxWorld != null)
+            {
+                if (!FpgPlayerSkillPresentationResolver.TryResolveCueSource(
+                        playerEntity,
+                        cueEvent.SocketName,
+                        out Transform source)
+                    || !skillVfxWorld.TryPresent(
+                        cueEvent.CueName,
+                        source,
+                        out _))
+                {
+                    SkillPresentationFaultCount++;
+                }
+            }
+
+            try
+            {
+                SkillCuePresented?.Invoke(cueEvent);
+            }
+            catch (Exception)
+            {
+                SkillPresentationFaultCount++;
+            }
+        }
+
         private bool ConsumeCommittedActions()
         {
             bool primaryPresented = false;
@@ -359,23 +613,23 @@ namespace FPG.Demo.Unity
                 switch (action.Type)
                 {
                     case FpgFormalPlayerActionType.PrimaryReleaseCommitted:
-                        actorPresenter.PlayPrimaryAttack();
+                        actorPresenter.NotifyPrimarySkillCommitted();
                         primaryPresented = true;
                         break;
                     case FpgFormalPlayerActionType.SecondaryChargeStarted:
-                        actorPresenter.BeginSecondaryCharge();
+                        actorPresenter.NotifySecondaryChargeStarted();
                         break;
                     case FpgFormalPlayerActionType.SecondaryChargeCanceled:
-                        actorPresenter.CancelSecondaryCharge();
+                        actorPresenter.NotifySecondaryChargeCanceled();
                         break;
                     case FpgFormalPlayerActionType.SecondaryReleaseCommitted:
-                        actorPresenter.PlaySecondaryRelease();
+                        actorPresenter.NotifySecondaryReleaseCommitted();
                         break;
                     case FpgFormalPlayerActionType.ReloadStarted:
-                        actorPresenter.BeginReload();
+                        actorPresenter.NotifyReloadStarted();
                         break;
                     case FpgFormalPlayerActionType.ReloadCompleted:
-                        actorPresenter.CompleteReload();
+                        actorPresenter.NotifyReloadCompleted();
                         break;
                 }
 
@@ -491,7 +745,7 @@ namespace FPG.Demo.Unity
                     && previous.WeaponState != WeaponState.PrimaryRecovery
                     && current.WeaponState == WeaponState.PrimaryRecovery)
                 {
-                    actorPresenter.PlayPrimaryAttack();
+                    actorPresenter.NotifyPrimarySkillCommitted();
                 }
             }
 
@@ -513,7 +767,7 @@ namespace FPG.Demo.Unity
             {
                 if (!actorPresenter.IsReloading)
                 {
-                    actorPresenter.BeginReload();
+                    actorPresenter.NotifyReloadStarted();
                 }
                 return;
             }
@@ -522,19 +776,21 @@ namespace FPG.Demo.Unity
             {
                 if (!actorPresenter.IsChargingSecondary)
                 {
-                    actorPresenter.BeginSecondaryCharge();
+                    actorPresenter.NotifySecondaryChargeStarted();
                 }
                 return;
             }
 
             if (actorPresenter.IsReloading)
             {
-                actorPresenter.CompleteReload();
+                actorPresenter.NotifyReloadCompleted();
+                actorPresenter.ReturnToIdle();
             }
 
             if (actorPresenter.IsChargingSecondary)
             {
-                actorPresenter.CancelSecondaryCharge();
+                actorPresenter.NotifySecondaryChargeCanceled();
+                actorPresenter.ReturnToIdle();
             }
         }
 
@@ -672,6 +928,24 @@ namespace FPG.Demo.Unity
             actionHead = 0;
             actionCount = 0;
             actionGap = false;
+            if (hasActiveSkillSequence && actorPresenter != null)
+            {
+                actorPresenter.CancelSkillAnimation(
+                    activeSkillSequence.ExecutionId);
+            }
+            Array.Clear(
+                skillSequenceQueue,
+                0,
+                skillSequenceQueue.Length);
+            Array.Clear(skillCueQueue, 0, skillCueQueue.Length);
+            skillSequenceHead = 0;
+            skillSequenceCount = 0;
+            skillCueHead = 0;
+            skillCueCount = 0;
+            skillSequenceGap = false;
+            hasActiveSkillSequence = false;
+            activeSkillSequence =
+                default(FpgFormalPlayerSkillSequenceEvent);
             nextCombatEventOrdinal = 0L;
             observedVitalsRuntime = null;
             vitalsCursor = 0L;
@@ -720,7 +994,6 @@ namespace FPG.Demo.Unity
             public bool Defeat;
             public bool HasGap;
         }
-    
 
         private void HandleEncounterLifecycle(
             FpgEncounterLifecycleEvent lifecycle)

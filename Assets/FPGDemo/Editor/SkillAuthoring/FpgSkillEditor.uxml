@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="FpgSkillEditor.uss" />
+    <ui:VisualElement name="skill-editor-root" class="skill-editor">
+        <uie:Toolbar class="top-toolbar">
+            <ui:Label text="FPG 技能编辑器" class="window-title" />
+            <uie:ToolbarButton name="refresh-assets-button" text="刷新" tooltip="重新扫描动作资产" />
+            <uie:ToolbarButton name="use-selection-button" text="使用选中资产" tooltip="使用 Project 窗口当前选中的动作资产" />
+            <ui:VisualElement class="toolbar-spacer" />
+            <uie:ToolbarButton name="undo-button" text="撤销" tooltip="撤销上一次编辑" />
+            <uie:ToolbarButton name="redo-button" text="重做" tooltip="重做上一次编辑" />
+            <ui:Label name="asset-state-label" text="未选择动作" class="asset-state" />
+        </uie:Toolbar>
+
+        <ui:VisualElement class="workspace">
+            <ui:VisualElement class="left-pane">
+                <ui:Label text="动作资产" class="section-title" />
+                <uie:ToolbarSearchField name="asset-search-field" />
+                <ui:DropdownField name="type-filter" label="类型" />
+                <ui:ListView name="action-asset-list" class="action-list" selection-type="Single" virtualization-method="DynamicHeight" />
+                <ui:DropdownField name="sequence-dropdown" label="序列" class="sequence-field" />
+
+                <ui:VisualElement class="pane-divider" />
+                <ui:VisualElement class="section-header">
+                    <ui:Label text="载荷槽" class="section-title" />
+                    <ui:Label name="payload-count-label" text="0" class="count-label" />
+                </ui:VisualElement>
+                <ui:ListView name="payload-list" class="payload-list" selection-type="Single" virtualization-method="DynamicHeight" />
+                <ui:VisualElement class="compact-actions">
+                    <ui:Button name="add-payload-button" text="添加" tooltip="添加载荷槽" />
+                    <ui:Button name="duplicate-payload-button" text="复制" tooltip="复制选中的载荷槽" />
+                    <ui:Button name="replace-payload-button" text="替换引用" tooltip="把当前载荷槽的全部事件引用替换到其他槽" />
+                    <ui:Button name="delete-payload-button" text="删除" tooltip="删除选中的载荷槽" class="danger-button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:ScrollView name="center-scroll" mode="Vertical" class="center-pane center-scroll">
+                <ui:VisualElement class="center-content">
+                    <ui:VisualElement class="preview-header">
+                        <ui:Label text="预览" class="section-title" />
+                        <uie:ObjectField name="preview-prefab-field" label="预览 Prefab" type="UnityEngine.GameObject, UnityEngine.CoreModule" allow-scene-objects="false" class="preview-prefab-field" />
+                        <ui:DropdownField name="target-count-dropdown" label="目标" class="target-count-field" />
+                        <ui:Toggle name="show-geometry-toggle" label="显示几何" value="true" />
+                        <ui:Label name="animation-length-label" text="源长：未测量" class="animation-length-status" />
+                        <ui:Button name="capture-animation-length-button" text="记录源长" tooltip="把当前 Spine 动画实测长度记录为 60Hz Tick 基准；不会移动逻辑事件" />
+                        <ui:VisualElement class="toolbar-spacer" />
+                        <ui:Label name="preview-tick-label" text="Tick 0 / 0.000 秒" class="tick-readout" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="preview-host" class="preview-host" />
+
+                    <ui:VisualElement class="transport-bar">
+                        <ui:Button name="play-button" text="播放" tooltip="从当前 Tick 播放" />
+                        <ui:Button name="pause-button" text="暂停" tooltip="暂停预览" />
+                        <ui:Button name="step-back-button" text="◀ Tick" tooltip="后退一个 Tick" />
+                        <ui:Button name="step-forward-button" text="Tick ▶" tooltip="前进一个 Tick" />
+                        <ui:Toggle name="loop-toggle" label="循环" value="true" />
+                        <ui:DropdownField name="speed-dropdown" label="速度" class="speed-field" />
+                        <ui:VisualElement class="toolbar-spacer" />
+                        <ui:Label text="缩放" class="muted-label" />
+                        <ui:Slider name="zoom-slider" low-value="4" high-value="28" value="10" class="zoom-slider" />
+                    </ui:VisualElement>
+
+                    <ui:VisualElement class="timeline-actions">
+                        <ui:Label text="整数 Tick 时间轴（60Hz）" class="section-title" />
+                        <ui:VisualElement class="toolbar-spacer" />
+                        <ui:Button name="add-event-button" text="添加事件" />
+                        <ui:Button name="duplicate-event-button" text="克隆" tooltip="克隆主选事件并后移一个 Tick" />
+                        <ui:Button name="copy-events-button" text="复制" tooltip="复制当前多选事件" />
+                        <ui:Button name="paste-events-button" text="粘贴" tooltip="从当前 Tick 粘贴并生成新的内部引用" />
+                        <ui:Button name="delete-event-button" text="删除事件" class="danger-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="timeline-host" class="timeline-host" />
+                </ui:VisualElement>
+            </ui:ScrollView>
+
+            <ui:VisualElement class="right-pane">
+                <ui:Label name="inspector-title" text="Inspector" class="section-title" />
+                <ui:ScrollView name="inspector-scroll" class="inspector-scroll">
+                    <ui:VisualElement name="inspector-content" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement class="bottom-pane">
+            <ui:VisualElement class="bottom-column">
+                <ui:VisualElement class="section-header">
+                    <ui:Label text="验证" class="section-title" />
+                    <ui:Label name="validation-summary-label" text="0 个问题" class="count-label" />
+                </ui:VisualElement>
+                <ui:ListView name="validation-list" class="bottom-list" selection-type="Single" virtualization-method="DynamicHeight" />
+            </ui:VisualElement>
+            <ui:VisualElement class="bottom-column log-column">
+                <ui:VisualElement class="section-header">
+                    <ui:Label text="事件日志" class="section-title" />
+                    <ui:VisualElement class="toolbar-spacer" />
+                    <ui:Button name="clear-log-button" text="清空" class="clear-log-button" />
+                </ui:VisualElement>
+                <ui:ListView name="event-log-list" class="bottom-list" selection-type="Single" virtualization-method="DynamicHeight" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Label name="status-label" text="请选择动作资产" class="status-bar" />
+    </ui:VisualElement>
+</ui:UXML>

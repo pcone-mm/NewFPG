@@ -53,6 +53,25 @@ namespace FPG.Demo.Unity
             GameObject actor,
             out string error)
         {
+            return TryRegister(
+                runtimeId,
+                gameplayAnchor,
+                projectileAnchor,
+                weakpointAnchor,
+                actor,
+                null,
+                out error);
+        }
+
+        public bool TryRegister(
+            RuntimeId runtimeId,
+            Transform gameplayAnchor,
+            Transform projectileAnchor,
+            Transform weakpointAnchor,
+            GameObject actor,
+            D0ActorSocketRegistry socketRegistry,
+            out string error)
+        {
             if (!initialized && !TryInitialize(out error))
             {
                 return false;
@@ -82,6 +101,7 @@ namespace FPG.Demo.Unity
                 projectileAnchor,
                 weakpointAnchor,
                 actor,
+                socketRegistry,
                 gameplayAnchor,
                 0);
             records[runtimeId] = record;
@@ -139,6 +159,7 @@ namespace FPG.Demo.Unity
             record.ProjectileAnchor = null;
             record.WeakpointAnchor = null;
             record.Actor = null;
+            record.SocketRegistry = null;
             record.LeaseTicksRemaining = leaseTicks;
             records[runtimeId] = record;
             if (leaseTicks == 0)
@@ -225,6 +246,7 @@ namespace FPG.Demo.Unity
                 Transform projectileAnchor,
                 Transform weakpointAnchor,
                 GameObject actor,
+                D0ActorSocketRegistry socketRegistry,
                 Transform source,
                 int leaseTicksRemaining)
             {
@@ -233,6 +255,7 @@ namespace FPG.Demo.Unity
                 ProjectileAnchor = projectileAnchor;
                 WeakpointAnchor = weakpointAnchor;
                 Actor = actor;
+                SocketRegistry = socketRegistry;
                 LastPose = source == null
                     ? default(Pose)
                     : new Pose(source.position, source.rotation);
@@ -244,6 +267,7 @@ namespace FPG.Demo.Unity
             public Transform ProjectileAnchor;
             public Transform WeakpointAnchor;
             public GameObject Actor;
+            public D0ActorSocketRegistry SocketRegistry;
             public Pose LastPose;
             public int LeaseTicksRemaining;
 
@@ -255,6 +279,7 @@ namespace FPG.Demo.Unity
                     ProjectileAnchor,
                     WeakpointAnchor,
                     Actor,
+                    SocketRegistry,
                     LastPose,
                     LeaseTicksRemaining);
             }
@@ -269,6 +294,7 @@ namespace FPG.Demo.Unity
             Transform projectileAnchor,
             Transform weakpointAnchor,
             GameObject actor,
+            D0ActorSocketRegistry socketRegistry,
             Pose lastPose,
             int leaseTicksRemaining)
         {
@@ -277,6 +303,7 @@ namespace FPG.Demo.Unity
             ProjectileAnchor = projectileAnchor;
             WeakpointAnchor = weakpointAnchor;
             Actor = actor;
+            SocketRegistry = socketRegistry;
             LastPose = lastPose;
             LeaseTicksRemaining = leaseTicksRemaining;
         }
@@ -286,6 +313,7 @@ namespace FPG.Demo.Unity
         public Transform ProjectileAnchor { get; }
         public Transform WeakpointAnchor { get; }
         public GameObject Actor { get; }
+        public D0ActorSocketRegistry SocketRegistry { get; }
         public Pose LastPose { get; }
         public int LeaseTicksRemaining { get; }
         public bool IsPresentationLeaseActive => LeaseTicksRemaining > 0;

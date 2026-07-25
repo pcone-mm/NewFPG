@@ -120,6 +120,7 @@ namespace FPG.Demo.Unity
         Transform GameplayAnchor { get; }
         Transform ProjectileAnchor { get; }
         Transform WeakpointAnchor { get; }
+        D0ActorSocketRegistry SocketRegistry { get; }
         Transform OverheadHealthBarAnchor { get; }
         int HitPartCount { get; }
 
@@ -144,20 +145,34 @@ namespace FPG.Demo.Unity
     /// </summary>
     public interface IFpgFormalEnemyPresentationView
     {
-        bool TryPlayAttack(FpgEnemyAttackDefinition attack);
-        bool TryInterruptAttack();
+        bool TrySetSkillSequenceFrame(
+            in FpgFormalEnemySkillSequenceFrame frame);
+
+        bool TryPresentSkillCue(
+            in FpgFormalEnemySkillCuePresentationEvent cueEvent);
+
+        bool TrySetSkillWarning(
+            in FpgFormalEnemySkillWarningPresentationEvent warningEvent);
+
+        void ClearSkillWarnings();
     }
 
-    public interface IFpgFormalEnemyPresentationPort
+    public interface IFpgFormalEnemySkillPresentationConsumer
     {
-        bool TryPlayAttack(
-            RuntimeId runtimeId,
-            int spawnSequence,
-            string attackPatternId);
+        bool TryPresentEnemySkillCue(
+            in FpgFormalEnemySkillCuePresentationEvent cueEvent);
 
-        bool TryInterruptAttack(
-            RuntimeId runtimeId,
-            int spawnSequence);
+        bool TrySetEnemySkillWarning(
+            in FpgFormalEnemySkillWarningPresentationEvent warningEvent);
+
+        void ClearEnemySkillWarnings();
+    }
+
+    public interface IFpgFormalEnemyPresentationPort :
+        IFpgFormalEnemySkillPresentationConsumer
+    {
+        bool TryApplySkillSequenceFrame(
+            in FpgFormalEnemySkillSequenceFrame frame);
     }
 
     public static class FpgFormalGeometryId

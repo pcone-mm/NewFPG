@@ -3,6 +3,7 @@ using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Enemy;
 using FPG.Demo.Player;
+using FPG.Demo.Skills;
 
 namespace FPG.Demo.Run
 {
@@ -120,6 +121,21 @@ namespace FPG.Demo.Run
             long commandSequence,
             ImpactIntent intent,
             ImpactPhasePriority priority = ImpactPhasePriority.PlayerCombatantHit)
+            : this(
+                commandSequence,
+                intent,
+                SkillExecutionId.Invalid,
+                0,
+                priority)
+        {
+        }
+
+        public FpgPlayerHitCommand(
+            long commandSequence,
+            ImpactIntent intent,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId,
+            ImpactPhasePriority priority = ImpactPhasePriority.PlayerCombatantHit)
         {
             if (commandSequence < 0
                 || !intent.ImpactId.IsValid
@@ -133,13 +149,26 @@ namespace FPG.Demo.Run
                 throw new ArgumentException("Formal player hit command is invalid.", nameof(intent));
             }
 
+            if (gameplayEventId < 0
+                || skillExecutionId.IsValid != (gameplayEventId > 0))
+            {
+                throw new ArgumentException(
+                    "Formal player hit correlation requires both a valid skill execution and positive gameplay event ID.",
+                    nameof(gameplayEventId));
+            }
+
             CommandSequence = commandSequence;
             Intent = intent;
+            SkillExecutionId = skillExecutionId;
+            GameplayEventId = gameplayEventId;
             Priority = priority;
         }
 
         public long CommandSequence { get; }
         public ImpactIntent Intent { get; }
+        public SkillExecutionId SkillExecutionId { get; }
+        public int GameplayEventId { get; }
+        public bool HasSkillCorrelation => SkillExecutionId.IsValid;
         public ImpactPhasePriority Priority { get; }
     }
 
@@ -208,13 +237,14 @@ namespace FPG.Demo.Run
             int releaseDelayTicks = 0,
             FpgSummonOwnerOutcome ownerOutcome = FpgSummonOwnerOutcome.RemainAlive)
         {
-            if (!request.OwnerRuntimeId.IsValid
-                || string.IsNullOrWhiteSpace(request.EnemyDefinitionId)
-                || request.RecursionDepth < 0
-                || request.RequestSequence < 0
-                || maxSummonsPerOwner <= 0
+            if (!request.IsValid
+                || maxSummonsPerOwner < 0
+                || (request.OccupancyMode == FpgSummonOccupancyMode.AdditionalEntity
+                    && maxSummonsPerOwner <= 0)
                 || releaseDelayTicks < 0
-                || !Enum.IsDefined(typeof(FpgSummonOwnerOutcome), ownerOutcome))
+                || !Enum.IsDefined(typeof(FpgSummonOwnerOutcome), ownerOutcome)
+                || (request.OccupancyMode == FpgSummonOccupancyMode.ReplaceOwner)
+                    != (ownerOutcome == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon))
             {
                 throw new ArgumentException("Formal summon payload is invalid.", nameof(request));
             }
@@ -226,7 +256,10 @@ namespace FPG.Demo.Run
                     request.EnemyDefinitionId,
                     request.RecursionDepth,
                     request.RequestSequence,
-                    maxSummonsPerOwner);
+                    request.SummonActionId,
+                    maxSummonsPerOwner,
+                    request.OccupancyMode,
+                    request.PlacementMode);
             MaxSummonsPerOwner = maxSummonsPerOwner;
             ReleaseDelayTicks = releaseDelayTicks;
             OwnerOutcome = ownerOutcome;
@@ -236,14 +269,15 @@ namespace FPG.Demo.Run
         public int MaxSummonsPerOwner { get; }
         public int ReleaseDelayTicks { get; }
         public FpgSummonOwnerOutcome OwnerOutcome { get; }
-        public bool IsValid => Request.OwnerRuntimeId.IsValid
-            && !string.IsNullOrWhiteSpace(Request.EnemyDefinitionId)
-            && Request.RecursionDepth >= 0
-            && Request.RequestSequence >= 0
+        public bool IsValid => Request.IsValid
             && Request.MaxSummonsPerOwner == MaxSummonsPerOwner
-            && MaxSummonsPerOwner > 0
+            && MaxSummonsPerOwner >= 0
+            && (Request.OccupancyMode != FpgSummonOccupancyMode.AdditionalEntity
+                || MaxSummonsPerOwner > 0)
             && ReleaseDelayTicks >= 0
-            && Enum.IsDefined(typeof(FpgSummonOwnerOutcome), OwnerOutcome);
+            && Enum.IsDefined(typeof(FpgSummonOwnerOutcome), OwnerOutcome)
+            && (Request.OccupancyMode == FpgSummonOccupancyMode.ReplaceOwner)
+                == (OwnerOutcome == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon);
     }
 
     /// <summary>
@@ -298,32 +332,157 @@ namespace FPG.Demo.Run
         }
     }
 
+    /// <summary>
+    /// Spatial metadata and the event-tick snapshot used by one formal enemy
+    /// threat. Authored metadata stays available for trace/replay while the
+    /// resolved points are the path contract consumed by combat.
+    /// </summary>
+    public readonly struct FpgEnemyAttackSpatialContext
+    {
+        public FpgEnemyAttackSpatialContext(
+            TickIndex sampleTick,
+            FpgSkillTargetSource targetSource,
+            int socketId,
+            FpgSkillOffset offset,
+            RuntimeId targetRuntimeId,
+            SpatialVectorKey origin,
+            SpatialVectorKey target)
+        {
+            if (!sampleTick.IsValid
+                || !Enum.IsDefined(typeof(FpgSkillTargetSource), targetSource)
+                || targetSource == FpgSkillTargetSource.None
+                || socketId < 0
+                || !targetRuntimeId.IsValid)
+            {
+                throw new ArgumentException(
+                    "Formal enemy attack spatial context is invalid.",
+                    nameof(sampleTick));
+            }
+
+            SampleTick = sampleTick;
+            TargetSource = targetSource;
+            SocketId = socketId;
+            Offset = offset;
+            TargetRuntimeId = targetRuntimeId;
+            Origin = origin;
+            Target = target;
+        }
+
+        public TickIndex SampleTick { get; }
+        public FpgSkillTargetSource TargetSource { get; }
+        public int SocketId { get; }
+        public FpgSkillOffset Offset { get; }
+        public RuntimeId TargetRuntimeId { get; }
+        public SpatialVectorKey Origin { get; }
+        public SpatialVectorKey Target { get; }
+        public bool IsValid => SampleTick.IsValid
+            && Enum.IsDefined(typeof(FpgSkillTargetSource), TargetSource)
+            && TargetSource != FpgSkillTargetSource.None
+            && SocketId >= 0
+            && TargetRuntimeId.IsValid;
+    }
+
+    /// <summary>
+    /// Opaque fixed-capacity reservation owned by one formal enemy skill
+    /// execution. The combat port consumes one slice for every submitted
+    /// gameplay event and releases any untouched remainder on interruption.
+    /// </summary>
+    public readonly struct FpgEnemySkillCapacityReservation :
+        IEquatable<FpgEnemySkillCapacityReservation>
+    {
+        public static readonly FpgEnemySkillCapacityReservation Invalid =
+            new FpgEnemySkillCapacityReservation(0L);
+
+        internal FpgEnemySkillCapacityReservation(long value)
+        {
+            Value = value;
+        }
+
+        public long Value { get; }
+        public bool IsValid => Value > 0L;
+
+        public bool Equals(FpgEnemySkillCapacityReservation other)
+        {
+            return Value == other.Value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is FpgEnemySkillCapacityReservation other
+                && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return unchecked((int)(Value ^ (Value >> 32)));
+        }
+
+        public static bool operator ==(
+            FpgEnemySkillCapacityReservation left,
+            FpgEnemySkillCapacityReservation right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(
+            FpgEnemySkillCapacityReservation left,
+            FpgEnemySkillCapacityReservation right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     public readonly struct FpgEnemyAttackCommand
     {
+
         public FpgEnemyAttackCommand(
             FpgAttackScheduleRequest schedule,
             int spawnSequence,
-            FpgEnemyAttackPayload payload)
+            FpgEnemyAttackPayload payload,
+            FpgEnemySkillCapacityReservation capacityReservation,
+            ReservationToken projectileBudgetReservation,
+            FpgEnemyAttackSpatialContext spatialContext =
+                default(FpgEnemyAttackSpatialContext))
         {
             if (!schedule.OwnerRuntimeId.IsValid
                 || !schedule.ReadyTick.IsValid
                 || schedule.ScheduleSequence < 0
                 || spawnSequence < 0
                 || !payload.IsValid
+                || !spatialContext.IsValid
                 || (payload.Kind == FpgEnemyAttackPayloadKind.Summon
                     && payload.Summon.Request.OwnerRuntimeId != schedule.OwnerRuntimeId))
             {
                 throw new ArgumentException("Formal enemy attack command is invalid.", nameof(schedule));
             }
 
+            if (projectileBudgetReservation.IsValid
+                && (payload.Kind != FpgEnemyAttackPayloadKind.Threat
+                    || !payload.Threat.Payload.IsSweptProjectile
+                    || !capacityReservation.IsValid))
+            {
+                throw new ArgumentException(
+                    "Pre-reserved projectile budget requires a formal projectile event.",
+                    nameof(projectileBudgetReservation));
+            }
+
             Schedule = schedule;
             SpawnSequence = spawnSequence;
             Payload = payload;
+            CapacityReservation = capacityReservation;
+            ProjectileBudgetReservation = projectileBudgetReservation;
+            SpatialContext = spatialContext;
         }
 
         public FpgAttackScheduleRequest Schedule { get; }
         public int SpawnSequence { get; }
         public FpgEnemyAttackPayload Payload { get; }
+        public FpgEnemySkillCapacityReservation CapacityReservation { get; }
+        public ReservationToken ProjectileBudgetReservation { get; }
+        public FpgEnemyAttackSpatialContext SpatialContext { get; }
+        public SkillExecutionId SkillExecutionId => Schedule.SkillExecutionId;
+        public int GameplayEventId => Schedule.GameplayEventId;
+        public bool HasSkillCorrelation => Schedule.HasSkillCorrelation;
     }
 
     public readonly struct FpgEnemyCombatantRegistration

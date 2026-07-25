@@ -20,19 +20,109 @@ namespace FPG.Demo.Run
         void Release(string pointId, RuntimeId runtimeId);
     }
 
+    public enum FpgSpawnPlacementKind
+    {
+        EncounterSpawnPoint = 0,
+        OwnerPosition = 1
+    }
+
+    /// <summary>
+    /// Pure placement intent carried from encounter admission to the Unity
+    /// entity port. Dynamic world poses are resolved and frozen at Prepare.
+    /// </summary>
+    public readonly struct FpgSpawnPlacement : IEquatable<FpgSpawnPlacement>
+    {
+        private FpgSpawnPlacement(
+            FpgSpawnPlacementKind kind,
+            string roomPointId,
+            RuntimeId sourceRuntimeId)
+        {
+            Kind = kind;
+            RoomPointId = roomPointId ?? string.Empty;
+            SourceRuntimeId = sourceRuntimeId;
+        }
+
+        public FpgSpawnPlacementKind Kind { get; }
+        public string RoomPointId { get; }
+        public RuntimeId SourceRuntimeId { get; }
+        public bool RequiresRoomReservation =>
+            Kind == FpgSpawnPlacementKind.EncounterSpawnPoint;
+        public bool IsValid => Enum.IsDefined(typeof(FpgSpawnPlacementKind), Kind)
+            && (Kind == FpgSpawnPlacementKind.EncounterSpawnPoint
+                ? !string.IsNullOrWhiteSpace(RoomPointId)
+                    && !SourceRuntimeId.IsValid
+                : SourceRuntimeId.IsValid
+                    && string.IsNullOrEmpty(RoomPointId));
+
+        public static FpgSpawnPlacement ForEncounterPoint(string roomPointId)
+        {
+            return new FpgSpawnPlacement(
+                FpgSpawnPlacementKind.EncounterSpawnPoint,
+                roomPointId,
+                RuntimeId.Invalid);
+        }
+
+        public static FpgSpawnPlacement AtOwner(RuntimeId ownerRuntimeId)
+        {
+            return new FpgSpawnPlacement(
+                FpgSpawnPlacementKind.OwnerPosition,
+                string.Empty,
+                ownerRuntimeId);
+        }
+
+        public bool Equals(FpgSpawnPlacement other)
+        {
+            return Kind == other.Kind
+                && SourceRuntimeId == other.SourceRuntimeId
+                && string.Equals(RoomPointId, other.RoomPointId, StringComparison.Ordinal);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is FpgSpawnPlacement other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = (int)Kind;
+                hash = (hash * 397) ^ SourceRuntimeId.GetHashCode();
+                hash = (hash * 397) ^ StringComparer.Ordinal.GetHashCode(RoomPointId ?? string.Empty);
+                return hash;
+            }
+        }
+
+        public static bool operator ==(FpgSpawnPlacement left, FpgSpawnPlacement right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(FpgSpawnPlacement left, FpgSpawnPlacement right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     public interface IFpgEncounterEntityPort
     {
         /// <summary>
         /// Binds an already-prewarmed entity to a planned entry. This method
         /// must never Instantiate, Destroy, resize, or perform hidden lookup.
         /// </summary>
-        DomainResult Prepare(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId);
+        DomainResult Prepare(
+            FpgSpawnEntry entry,
+            RuntimeId runtimeId,
+            FpgSpawnPlacement placement);
 
         /// <summary>
         /// Activates gameplay bindings (hitbox, threat owner, health bar) after
         /// the warning window has elapsed.
         /// </summary>
-        DomainResult Activate(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId);
+        DomainResult Activate(
+            FpgSpawnEntry entry,
+            RuntimeId runtimeId,
+            FpgSpawnPlacement placement);
 
         DomainResult Despawn(RuntimeId runtimeId, bool preservePresentationLease);
 
@@ -47,16 +137,22 @@ namespace FPG.Demo.Run
         {
         }
 
-        public DomainResult Prepare(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId)
+        public DomainResult Prepare(
+            FpgSpawnEntry entry,
+            RuntimeId runtimeId,
+            FpgSpawnPlacement placement)
         {
-            return runtimeId.IsValid && !string.IsNullOrEmpty(pointId)
+            return runtimeId.IsValid && placement.IsValid
                 ? DomainResult.Success
                 : DomainResult.Rejected(RejectReason.InvalidDefinition);
         }
 
-        public DomainResult Activate(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId)
+        public DomainResult Activate(
+            FpgSpawnEntry entry,
+            RuntimeId runtimeId,
+            FpgSpawnPlacement placement)
         {
-            return runtimeId.IsValid && !string.IsNullOrEmpty(pointId)
+            return runtimeId.IsValid && placement.IsValid
                 ? DomainResult.Success
                 : DomainResult.Rejected(RejectReason.InvalidDefinition);
         }
@@ -413,10 +509,16 @@ namespace FPG.Demo.Run
                 overBudget: false,
                 recursionDepth: request.RecursionDepth);
 
+            FpgSpawnPlacement placement = request.PlacementMode
+                == FpgSummonPlacementMode.OwnerPosition
+                    ? FpgSpawnPlacement.AtOwner(request.OwnerRuntimeId)
+                    : default(FpgSpawnPlacement);
             DomainResult prepared = TryPrepareAndQueueEntry(
                 entry,
                 tick,
-                attempt: 0,
+                0,
+                request.OccupancyMode,
+                placement,
                 out FpgSpawnPreparationStage ignoredStage);
             if (!prepared.IsSuccess)
             {
@@ -444,7 +546,7 @@ namespace FPG.Demo.Run
             DomainResult despawn = entityPort.Despawn(
                 runtimeId,
                 preservePresentationLease: true);
-            spawnPointResolver.Release(slot.SpawnPointId, runtimeId);
+            ReleasePlacement(slot.Placement, runtimeId);
             if (!despawn.IsSuccess)
             {
                 return despawn;
@@ -628,9 +730,33 @@ namespace FPG.Demo.Run
             int attempt,
             out FpgSpawnPreparationStage failureStage)
         {
+            return TryPrepareAndQueueEntry(
+                entry,
+                tick,
+                attempt,
+                FpgSummonOccupancyMode.AdditionalEntity,
+                default(FpgSpawnPlacement),
+                out failureStage);
+        }
+
+        private DomainResult TryPrepareAndQueueEntry(
+            FpgSpawnEntry entry,
+            TickIndex tick,
+            int attempt,
+            FpgSummonOccupancyMode occupancyMode,
+            FpgSpawnPlacement requestedPlacement,
+            out FpgSpawnPreparationStage failureStage)
+        {
             failureStage = FpgSpawnPreparationStage.None;
-            if (roster.ReservedCapWeight + entry.CapWeight > profile.MaxConcurrentCapWeight
-                || roster.LivingCount >= profile.MaxConcurrentEntities)
+            if (!Enum.IsDefined(typeof(FpgSummonOccupancyMode), occupancyMode))
+            {
+                failureStage = FpgSpawnPreparationStage.Definition;
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            if (occupancyMode == FpgSummonOccupancyMode.AdditionalEntity
+                && (roster.ReservedCapWeight + entry.CapWeight > profile.MaxConcurrentCapWeight
+                    || roster.LivingCount >= profile.MaxConcurrentEntities))
             {
                 failureStage = FpgSpawnPreparationStage.ConcurrentCap;
                 return DomainResult.Rejected(RejectReason.BudgetExceeded);
@@ -645,16 +771,22 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
-            DomainResult pointResult = spawnPointResolver.TryReserve(
-                entry,
-                plan.RunContext,
-                attempt,
-                out string pointId,
-                out int ignoredRelaxation);
-            if (!pointResult.IsSuccess)
+            FpgSpawnPlacement placement = requestedPlacement;
+            if (!placement.IsValid)
             {
-                failureStage = FpgSpawnPreparationStage.SpawnPoint;
-                return pointResult;
+                DomainResult pointResult = spawnPointResolver.TryReserve(
+                    entry,
+                    plan.RunContext,
+                    attempt,
+                    out string pointId,
+                    out int ignoredRelaxation);
+                if (!pointResult.IsSuccess)
+                {
+                    failureStage = FpgSpawnPreparationStage.SpawnPoint;
+                    return pointResult;
+                }
+
+                placement = FpgSpawnPlacement.ForEncounterPoint(pointId);
             }
 
             RuntimeId runtimeId = idAllocator.NextRuntimeId();
@@ -662,24 +794,24 @@ namespace FPG.Demo.Run
             DomainResult reserve = roster.TryReserve(
                 entry,
                 runtimeId,
-                pointId,
+                placement,
                 warningUntil,
                 definition.Life,
                 definition.Break,
                 out FpgEnemySlot ignoredSlot);
             if (!reserve.IsSuccess)
             {
-                spawnPointResolver.Release(pointId, runtimeId);
+                ReleasePlacement(placement, runtimeId);
                 failureStage = FpgSpawnPreparationStage.Roster;
                 return reserve;
             }
 
-            DomainResult prepared = entityPort.Prepare(entry, runtimeId, pointId);
+            DomainResult prepared = entityPort.Prepare(entry, runtimeId, placement);
             if (!prepared.IsSuccess)
             {
                 roster.TryMarkDead(runtimeId);
                 roster.TryRelease(runtimeId);
-                spawnPointResolver.Release(pointId, runtimeId);
+                ReleasePlacement(placement, runtimeId);
                 failureStage = FpgSpawnPreparationStage.Entity;
                 return prepared;
             }
@@ -694,7 +826,7 @@ namespace FPG.Demo.Run
                 entityPort.Despawn(runtimeId, false);
                 roster.TryMarkDead(runtimeId);
                 roster.TryRelease(runtimeId);
-                spawnPointResolver.Release(pointId, runtimeId);
+                ReleasePlacement(placement, runtimeId);
                 failureStage = FpgSpawnPreparationStage.Queue;
                 return enqueue;
             }
@@ -722,12 +854,12 @@ namespace FPG.Demo.Run
                 return Fail(FpgEncounterFailureReason.EntityCapacity, activation.RejectReason);
             }
 
-            DomainResult entityActivation = entityPort.Activate(queued.Entry, slot.RuntimeId, slot.SpawnPointId);
+            DomainResult entityActivation = entityPort.Activate(
+                queued.Entry,
+                slot.RuntimeId,
+                slot.Placement);
             if (!entityActivation.IsSuccess)
             {
-                roster.TryMarkDead(slot.RuntimeId);
-                entityPort.Despawn(slot.RuntimeId, true);
-                spawnPointResolver.Release(slot.SpawnPointId, slot.RuntimeId);
                 return Fail(FpgEncounterFailureReason.EntityCapacity, entityActivation.RejectReason);
             }
 
@@ -810,13 +942,23 @@ namespace FPG.Demo.Run
                 }
 
                 entityPort.Despawn(slot.RuntimeId, preservePresentationLease: true);
-                spawnPointResolver.Release(slot.SpawnPointId, slot.RuntimeId);
+                ReleasePlacement(slot.Placement, slot.RuntimeId);
             }
 
             spawnQueue.Clear();
             roster.Clear();
             summonLedger?.Clear();
             entityPort.ClearAll();
+        }
+
+        private void ReleasePlacement(
+            FpgSpawnPlacement placement,
+            RuntimeId runtimeId)
+        {
+            if (placement.IsValid && placement.RequiresRoomReservation)
+            {
+                spawnPointResolver.Release(placement.RoomPointId, runtimeId);
+            }
         }
 
         private static TickIndex ShiftTick(TickIndex tick, long delta)
@@ -897,10 +1039,6 @@ namespace FPG.Demo.Run
         }
     }
 }
-
-
-
-
 
 
 

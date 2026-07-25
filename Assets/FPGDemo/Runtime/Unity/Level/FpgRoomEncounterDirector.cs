@@ -15,32 +15,9 @@ namespace FPG.Demo.Unity
     /// </summary>
     [DefaultExecutionOrder(-9000)]
     [DisallowMultipleComponent]
-    public sealed class FpgRoomEncounterDirector : MonoBehaviour
+    public sealed class FpgRoomEncounterDirector : MonoBehaviour,
+        IFpgFormalEnemySkillPresentationConsumer
     {
-        private readonly struct PendingEnemyAttackPresentation
-        {
-            public PendingEnemyAttackPresentation(
-                RuntimeId ownerRuntimeId,
-                int spawnSequence,
-                string attackPatternId,
-                TickIndex dueTick)
-            {
-                OwnerRuntimeId = ownerRuntimeId;
-                SpawnSequence = spawnSequence;
-                AttackPatternId = attackPatternId;
-                DueTick = dueTick;
-            }
-
-            public RuntimeId OwnerRuntimeId { get; }
-            public int SpawnSequence { get; }
-            public string AttackPatternId { get; }
-            public TickIndex DueTick { get; }
-            public bool IsUsed => OwnerRuntimeId.IsValid
-                && SpawnSequence >= 0
-                && !string.IsNullOrWhiteSpace(AttackPatternId)
-                && DueTick.IsValid;
-        }
-
         [Header("Room Runtime")]
         [SerializeField] private FpgRoomInstance roomInstance;
         [SerializeField] private FpgEnemyEntityPool enemyEntityPool;
@@ -63,7 +40,6 @@ namespace FPG.Demo.Unity
         [Header("Session Ports")]
         [SerializeField] private MonoBehaviour formalCombatPortFactoryComponent;
         [SerializeField] private MonoBehaviour formalPlayerTickDriverComponent;
-        [SerializeField] private FpgFormalAttackRuntimeCatalog formalAttackRuntimeCatalog;
         [SerializeField, Min(0)] private int presentationLeaseTicks = 12;
 
         private SessionIdAllocator idAllocator;
@@ -91,9 +67,6 @@ namespace FPG.Demo.Unity
         private FpgVitalsSnapshot[] enemyVitalsBuffer =
             Array.Empty<FpgVitalsSnapshot>();
         private long enemyVitalsCursor;
-        private PendingEnemyAttackPresentation[] pendingEnemyAttackPresentations =
-            Array.Empty<PendingEnemyAttackPresentation>();
-        private int pendingEnemyAttackPresentationCount;
         [NonSerialized] private FpgPlayerEntityView configuredPlayerEntity;
         [NonSerialized] private bool playerBindingConfigured;
         [NonSerialized] private bool playerBindingLocked;
@@ -137,6 +110,8 @@ namespace FPG.Demo.Unity
         public bool HasAvailableExits => exitAttackRegistry.Count > 0;
 
         public event Action<FpgEncounterLifecycleEvent> LifecycleEvent;
+        public event Action<FpgFormalEnemySkillTimelineEvent>
+            EnemySkillTimelineEvent;
         public event Action<FpgRoomClearedEvent> RoomCleared;
         public event Action<string> ExitSelected;
         public event Action<FpgExitSelectionEvent> ExitOfferSelected;
@@ -251,7 +226,6 @@ namespace FPG.Demo.Unity
             FpgRoomRunRequest nextRequest,
             FpgEncounterPlan nextPlan,
             FpgEnemyDefinitionCatalog nextEnemyCatalog,
-            FpgFormalAttackRuntimeCatalog nextAttackRuntimeCatalog,
             out string error)
         {
             if (disposed)
@@ -272,13 +246,11 @@ namespace FPG.Demo.Unity
                 ?? formalCombatPortFactoryComponent as IFpgFormalCombatPortFactory;
             IFpgFormalPlayerTickDriver playerDriver = configuredPlayerDriver
                 ?? formalPlayerTickDriverComponent as IFpgFormalPlayerTickDriver;
-            FpgFormalAttackRuntimeCatalog attackCatalog = nextAttackRuntimeCatalog
-                == null ? formalAttackRuntimeCatalog : nextAttackRuntimeCatalog;
-            if (factory == null || playerDriver == null || attackCatalog == null)
+            if (factory == null || playerDriver == null)
             {
                 return FailPreparation(
                     FpgEncounterFailureReason.InvalidRequest,
-                    "Formal Session requires explicit combat factory, player driver and attack runtime catalog.",
+                    "Formal Session requires an explicit combat factory and player driver.",
                     out error);
             }
 
@@ -315,7 +287,6 @@ namespace FPG.Demo.Unity
             encounterPlan = nextPlan;
             enemyCatalog = nextEnemyCatalog;
             roomDefinition = roomSource.Room;
-            formalAttackRuntimeCatalog = attackCatalog;
             idAllocator.Reset();
             Phase = FpgEncounterPhase.Preparing;
             currentTick = TickIndex.Invalid;
@@ -348,7 +319,7 @@ namespace FPG.Demo.Unity
             }
 
             FpgEncounterCapacityRequirements requirements = preflight.Requirements;
-            if (enemyEntityPool.Capacity < requirements.EntitySlots
+            if (enemyEntityPool.Capacity < requirements.EntityPoolSlots
                 || combatantAnchorMap.Capacity < requirements.EntitySlots + 1
                 || profile.HitboxCapacity < requiredConcurrentHitboxes
                 || formalHitboxRegistry.Capacity < requiredConcurrentHitboxes)
@@ -398,14 +369,9 @@ namespace FPG.Demo.Unity
             enemyVitalsBuffer = new FpgVitalsSnapshot[
                 combatCapacity.VitalsEventCapacity];
             enemyVitalsCursor = 0L;
-            pendingEnemyAttackPresentations =
-                new PendingEnemyAttackPresentation[
-                    Math.Max(1, combatCapacity.ThreatAdvanceCapacity)];
-            pendingEnemyAttackPresentationCount = 0;
-
             FpgSummonLedger summonLedger = new FpgSummonLedger(
                 combatCapacity.SummonCapacity,
-                requirements.SummonUpperBound,
+                requirements.GameplayQuotaSummonUpperBound,
                 combatCapacity.MaxSummonRecursionDepth);
             FpgEncounterRuntime runtime = new FpgEncounterRuntime(
                 nextPlan,
@@ -423,12 +389,30 @@ namespace FPG.Demo.Unity
                     nextRequest.RunContext,
                     combatantAnchorMap,
                     formalHitboxRegistry,
-                    attackCatalog,
                     out combatRuntime,
                     out error))
             {
                 runtime.Dispose();
                 return FailPreparation(FpgEncounterFailureReason.External, error, out error);
+            }
+
+            for (int warmupIndex = 0;
+                warmupIndex < warmup.Count;
+                warmupIndex++)
+            {
+                DomainResult preparedEnemy =
+                    combatRuntime.AttackScheduler
+                        .TryPrepareEnemyDefinition(
+                            warmup[warmupIndex].Definition);
+                if (!preparedEnemy.IsSuccess)
+                {
+                    runtime.Dispose();
+                    return FailPreparation(
+                        FpgEncounterFailureReason.InvalidRequest,
+                        "Formal enemy skill preparation failed: "
+                            + preparedEnemy.RejectReason,
+                        out error);
+                }
             }
 
             if (!TryValidateGeometryIds(
@@ -459,10 +443,8 @@ namespace FPG.Demo.Unity
                 HandleLifecycle,
                 combatRuntime.PlayerSnapshotPort);
             combatRuntime.CombatPort.EnemyDied += HandleEnemyDied;
-            combatRuntime.CombatPort.EnemyAttackStarted +=
-                HandleEnemyAttackStarted;
-            combatRuntime.CombatPort.HealthChanged +=
-                HandleCombatHealthChanged;
+            combatRuntime.AttackScheduler.TimelineEvent +=
+                HandleEnemySkillTimelineEvent;
             playerBindingLocked = true;
             prepared = true;
             combatStarted = false;
@@ -589,9 +571,8 @@ namespace FPG.Demo.Unity
                     out error);
             }
 
+            ConsumeEnemySkillSequenceFrames();
             ConsumeEnemyVitalsPresentation();
-            ProcessPendingEnemyAttackPresentations(tick);
-
             return true;
         }
 
@@ -711,7 +692,6 @@ namespace FPG.Demo.Unity
             TrySetOverheadHealthBarsPaused(false);
             enemyVitalsCursor = 0L;
             Array.Clear(enemyVitalsBuffer, 0, enemyVitalsBuffer.Length);
-            ClearPendingEnemyAttackPresentations();
             currentTick = TickIndex.Invalid;
             Phase = FpgEncounterPhase.Preparing;
             DomainResult started = session.Start(new TickIndex(0L));
@@ -761,7 +741,6 @@ namespace FPG.Demo.Unity
             }
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.RoomCleared)
             {
-                ClearPendingEnemyAttackPresentations();
                 LockExits(true);
                 RaiseRoomCleared(lifecycle.Tick);
             }
@@ -803,37 +782,60 @@ namespace FPG.Demo.Unity
             }
         }
 
-        private void HandleEnemyAttackStarted(
-            FpgEnemyAttackStartedEvent started)
+        private void ConsumeEnemySkillSequenceFrames()
+        {
+            if (combatRuntime == null || entityPort == null)
+            {
+                return;
+            }
+
+            FpgFormalEnemyAttackScheduler scheduler =
+                combatRuntime.AttackScheduler;
+            for (int index = 0;
+                index < scheduler.SequenceFrameCount;
+                index++)
+            {
+                FpgFormalEnemySkillSequenceFrame frame =
+                    scheduler.GetSequenceFrame(index);
+                try
+                {
+                    if (!entityPort.TryApplySkillSequenceFrame(frame))
+                    {
+                        PresentationFaultCount++;
+                    }
+                }
+                catch (Exception)
+                {
+                    PresentationFaultCount++;
+                }
+            }
+        }
+
+        public bool TryPresentEnemySkillCue(
+            in FpgFormalEnemySkillCuePresentationEvent cueEvent)
+        {
+            return entityPort != null
+                && entityPort.TryPresentEnemySkillCue(cueEvent);
+        }
+
+        public bool TrySetEnemySkillWarning(
+            in FpgFormalEnemySkillWarningPresentationEvent warningEvent)
+        {
+            return entityPort != null
+                && entityPort.TrySetEnemySkillWarning(warningEvent);
+        }
+
+        public void ClearEnemySkillWarnings()
+        {
+            entityPort?.ClearEnemySkillWarnings();
+        }
+
+        private void HandleEnemySkillTimelineEvent(
+            FpgFormalEnemySkillTimelineEvent skillEvent)
         {
             try
             {
-                if (started.PayloadKind == FpgEnemyAttackPayloadKind.Summon)
-                {
-                    PlayEnemyAttackPresentation(started);
-                    return;
-                }
-
-                if (!TryFindAttackDefinition(
-                        started,
-                        out FpgEnemyAttackDefinition attack))
-                {
-                    PresentationFaultCount++;
-                    return;
-                }
-
-                if (attack.TelegraphTicks <= 0)
-                {
-                    PlayEnemyAttackPresentation(started);
-                    return;
-                }
-
-                if (!TryQueueEnemyAttackPresentation(
-                        started,
-                        attack.TelegraphTicks))
-                {
-                    PresentationFaultCount++;
-                }
+                EnemySkillTimelineEvent?.Invoke(skillEvent);
             }
             catch (Exception)
             {
@@ -843,7 +845,6 @@ namespace FPG.Demo.Unity
 
         private void HandleEnemyDied(FpgEnemyDiedEvent died)
         {
-            CancelPendingEnemyAttackPresentations(died.RuntimeId);
             if (combatRuntime == null || session == null)
             {
                 return;
@@ -860,219 +861,6 @@ namespace FPG.Demo.Unity
             {
                 ReportCallbackFailure(marked.RejectReason);
             }
-        }
-
-        private void HandleCombatHealthChanged(
-            FpgCombatHealthChangedEvent changed)
-        {
-            if (changed.Kind != FPG.Demo.Combat.CombatantKind.Enemy
-                || (!changed.BreakTriggered && !changed.Groggy && !changed.Dead))
-            {
-                return;
-            }
-
-            CancelPendingEnemyAttackPresentations(changed.RuntimeId);
-            if (!changed.BreakTriggered || changed.Dead)
-            {
-                return;
-            }
-
-            FpgEnemySlot slot = default(FpgEnemySlot);
-            bool canInterrupt = session != null
-                && session.Roster.TryGet(
-                    changed.RuntimeId,
-                    out slot)
-                && slot.IsActive;
-            if (!canInterrupt
-                || entityPort == null
-                || !entityPort.TryInterruptAttack(
-                    changed.RuntimeId,
-                    slot.SpawnSequence))
-            {
-                PresentationFaultCount++;
-            }
-        }
-
-        private bool TryFindAttackDefinition(
-            FpgEnemyAttackStartedEvent started,
-            out FpgEnemyAttackDefinition attack)
-        {
-            attack = null;
-            if (session == null
-                || !session.Roster.TryGet(
-                    started.OwnerRuntimeId,
-                    out FpgEnemySlot slot)
-                || slot.SpawnSequence != started.SpawnSequence)
-            {
-                return false;
-            }
-
-            FpgEnemyDefinition definition = FindDefinition(
-                slot.EnemyDefinitionId);
-            if (definition == null)
-            {
-                return false;
-            }
-
-            for (int index = 0;
-                 index < definition.AttackPatternCount;
-                 index++)
-            {
-                FpgEnemyAttackDefinition candidate =
-                    definition.GetAttackPattern(index);
-                if (candidate != null
-                    && string.Equals(
-                        candidate.AttackId,
-                        started.AttackPatternId,
-                        StringComparison.Ordinal))
-                {
-                    attack = candidate;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool TryQueueEnemyAttackPresentation(
-            FpgEnemyAttackStartedEvent started,
-            int delayTicks)
-        {
-            if (delayTicks <= 0
-                || !started.Tick.IsValid
-                || started.Tick.Value > long.MaxValue - delayTicks)
-            {
-                return false;
-            }
-
-            for (int index = 0;
-                 index < pendingEnemyAttackPresentations.Length;
-                 index++)
-            {
-                if (pendingEnemyAttackPresentations[index].IsUsed)
-                {
-                    continue;
-                }
-
-                pendingEnemyAttackPresentations[index] =
-                    new PendingEnemyAttackPresentation(
-                        started.OwnerRuntimeId,
-                        started.SpawnSequence,
-                        started.AttackPatternId,
-                        new TickIndex(started.Tick.Value + delayTicks));
-                pendingEnemyAttackPresentationCount++;
-                return true;
-            }
-
-            return false;
-        }
-
-        private void ProcessPendingEnemyAttackPresentations(TickIndex tick)
-        {
-            if (!tick.IsValid
-                || pendingEnemyAttackPresentationCount <= 0
-                || session == null
-                || combatRuntime == null)
-            {
-                return;
-            }
-
-            for (int index = 0;
-                 index < pendingEnemyAttackPresentations.Length;
-                 index++)
-            {
-                PendingEnemyAttackPresentation pending =
-                    pendingEnemyAttackPresentations[index];
-                if (!pending.IsUsed || pending.DueTick > tick)
-                {
-                    continue;
-                }
-
-                bool ownerIsCurrent = session.Roster.TryGet(
-                        pending.OwnerRuntimeId,
-                        out FpgEnemySlot slot)
-                    && slot.SpawnSequence == pending.SpawnSequence
-                    && slot.IsActive;
-                bool canPlay = ownerIsCurrent
-                    && combatRuntime.CombatPort.CanAttack(
-                        pending.OwnerRuntimeId);
-                if (canPlay
-                    && (entityPort == null
-                        || !entityPort.TryPlayAttack(
-                            pending.OwnerRuntimeId,
-                            pending.SpawnSequence,
-                            pending.AttackPatternId)))
-                {
-                    PresentationFaultCount++;
-                }
-
-                RemovePendingEnemyAttackPresentation(index);
-            }
-        }
-
-        private void PlayEnemyAttackPresentation(
-            FpgEnemyAttackStartedEvent started)
-        {
-            if (entityPort == null
-                || !entityPort.TryPlayAttack(
-                    started.OwnerRuntimeId,
-                    started.SpawnSequence,
-                    started.AttackPatternId))
-            {
-                PresentationFaultCount++;
-            }
-        }
-
-        private void CancelPendingEnemyAttackPresentations(
-            RuntimeId runtimeId)
-        {
-            if (!runtimeId.IsValid
-                || pendingEnemyAttackPresentationCount <= 0)
-            {
-                return;
-            }
-
-            for (int index = 0;
-                 index < pendingEnemyAttackPresentations.Length;
-                 index++)
-            {
-                if (pendingEnemyAttackPresentations[index].IsUsed
-                    && pendingEnemyAttackPresentations[index].OwnerRuntimeId
-                        == runtimeId)
-                {
-                    RemovePendingEnemyAttackPresentation(index);
-                }
-            }
-        }
-
-        private void RemovePendingEnemyAttackPresentation(int index)
-        {
-            if (index < 0
-                || index >= pendingEnemyAttackPresentations.Length
-                || !pendingEnemyAttackPresentations[index].IsUsed)
-            {
-                return;
-            }
-
-            pendingEnemyAttackPresentations[index] =
-                default(PendingEnemyAttackPresentation);
-            pendingEnemyAttackPresentationCount = Math.Max(
-                0,
-                pendingEnemyAttackPresentationCount - 1);
-        }
-
-        private void ClearPendingEnemyAttackPresentations()
-        {
-            if (pendingEnemyAttackPresentations != null
-                && pendingEnemyAttackPresentations.Length > 0)
-            {
-                Array.Clear(
-                    pendingEnemyAttackPresentations,
-                    0,
-                    pendingEnemyAttackPresentations.Length);
-            }
-
-            pendingEnemyAttackPresentationCount = 0;
         }
 
         private void ConsumeEnemyVitalsPresentation()
@@ -1213,92 +1001,36 @@ namespace FPG.Demo.Unity
             out int maxHitPartsPerEntity,
             out string error)
         {
-            Dictionary<string, int> counts = new Dictionary<string, int>(StringComparer.Ordinal);
-            for (int index = 0; index < encounterPlan.AllEntries.Count; index++)
+            IReadOnlyList<FpgEnemyPoolCapacityRequirement> poolRequirements =
+                requirements.EnemyPoolRequirements;
+            if (poolRequirements == null || poolRequirements.Count == 0)
             {
-                string id = encounterPlan.AllEntries[index].EnemyDefinitionId;
-                counts.TryGetValue(id, out int count);
-                counts[id] = checked(count + 1);
+                warmup = null;
+                requiredAttackPatterns = 0;
+                requiredConcurrentHitboxes = 0;
+                maxHitPartsPerEntity = 0;
+                error = "Formal preflight produced no entity-pool requirements.";
+                return false;
             }
 
-            if (requirements.SummonUpperBound > 0)
-            {
-                HashSet<string> reachableOwners =
-                    new HashSet<string>(StringComparer.Ordinal);
-                HashSet<string> summonCandidates =
-                    new HashSet<string>(StringComparer.Ordinal);
-                Queue<FpgEnemyDefinition> pendingOwners =
-                    new Queue<FpgEnemyDefinition>();
-
-                for (int index = 0; index < encounterPlan.AllEntries.Count; index++)
-                {
-                    string ownerId = encounterPlan.AllEntries[index].EnemyDefinitionId;
-                    FpgEnemyDefinition owner = FindDefinition(ownerId);
-                    if (owner != null && reachableOwners.Add(ownerId))
-                    {
-                        pendingOwners.Enqueue(owner);
-                    }
-                }
-
-                while (pendingOwners.Count > 0)
-                {
-                    FpgEnemyDefinition owner = pendingOwners.Dequeue();
-                    for (int attackIndex = 0;
-                        attackIndex < owner.AttackPatternCount;
-                        attackIndex++)
-                    {
-                        FpgEnemyAttackDefinition attack =
-                            owner.GetAttackPattern(attackIndex);
-                        if (attack == null
-                            || attack.Kind != FpgEnemyAttackKind.Summon
-                            || attack.Summon == null)
-                        {
-                            continue;
-                        }
-
-                        FpgEnemyDefinition[] candidates =
-                            attack.Summon.CandidateEnemies;
-                        for (int candidateIndex = 0;
-                            candidateIndex < candidates.Length;
-                            candidateIndex++)
-                        {
-                            FpgEnemyDefinition candidate = candidates[candidateIndex];
-                            if (candidate == null)
-                            {
-                                continue;
-                            }
-
-                            string candidateId = candidate.EnemyDefinitionId;
-                            if (summonCandidates.Add(candidateId))
-                            {
-                                counts.TryGetValue(candidateId, out int planned);
-                                counts[candidateId] = checked(
-                                    planned + requirements.SummonUpperBound);
-                            }
-
-                            if (reachableOwners.Add(candidateId))
-                            {
-                                pendingOwners.Enqueue(candidate);
-                            }
-                        }
-                    }
-                }
-            }
-
-            warmup = new List<FpgEnemyPoolWarmupRequest>(counts.Count);
+            warmup = new List<FpgEnemyPoolWarmupRequest>(poolRequirements.Count);
             requiredAttackPatterns = 0;
             requiredConcurrentHitboxes = 0;
             maxHitPartsPerEntity = 0;
             int maxAttackPatternsPerEntity = 0;
             int totalEntities = 0;
-            HashSet<FpgSummonActionDefinition> uniqueSummonActions =
-                new HashSet<FpgSummonActionDefinition>();
-            foreach (KeyValuePair<string, int> pair in counts)
+            for (int requirementIndex = 0;
+                requirementIndex < poolRequirements.Count;
+                requirementIndex++)
             {
-                FpgEnemyDefinition definition = FindDefinition(pair.Key);
+                FpgEnemyPoolCapacityRequirement poolRequirement =
+                    poolRequirements[requirementIndex];
+                FpgEnemyDefinition definition = FindDefinition(
+                    poolRequirement.EnemyDefinitionId);
                 if (definition == null)
                 {
-                    error = "Formal warmup cannot resolve enemy '" + pair.Key + "'.";
+                    error = "Formal warmup cannot resolve enemy '"
+                        + poolRequirement.EnemyDefinitionId + "'.";
                     return false;
                 }
 
@@ -1307,7 +1039,7 @@ namespace FPG.Demo.Unity
                     : definition.EntityPrefab.GetComponent<IFpgFormalEnemyEntityBinder>();
                 if (binder == null || binder.HitPartCount <= 0)
                 {
-                    error = "Formal enemy '" + pair.Key
+                    error = "Formal enemy '" + poolRequirement.EnemyDefinitionId
                         + "' prefab has no preflight-readable formal hitbox binder.";
                     return false;
                 }
@@ -1315,30 +1047,19 @@ namespace FPG.Demo.Unity
                 maxHitPartsPerEntity = Math.Max(
                     maxHitPartsPerEntity,
                     binder.HitPartCount);
-                totalEntities = checked(totalEntities + pair.Value);
+                totalEntities = checked(totalEntities + poolRequirement.Count);
                 maxAttackPatternsPerEntity = Math.Max(
                     maxAttackPatternsPerEntity,
                     definition.AttackPatternCount);
-                for (int attackIndex = 0;
-                    attackIndex < definition.AttackPatternCount;
-                    attackIndex++)
-                {
-                    FpgEnemyAttackDefinition attack =
-                        definition.GetAttackPattern(attackIndex);
-                    if (attack != null
-                        && attack.Kind == FpgEnemyAttackKind.Summon
-                        && attack.Summon != null)
-                    {
-                        uniqueSummonActions.Add(attack.Summon);
-                    }
-                }
-
-                warmup.Add(new FpgEnemyPoolWarmupRequest(definition, pair.Value));
+                warmup.Add(new FpgEnemyPoolWarmupRequest(
+                    definition,
+                    poolRequirement.Count));
             }
 
-            if (totalEntities > profile.EntityPoolCapacity)
+            if (totalEntities != requirements.EntityPoolSlots
+                || totalEntities > profile.EntityPoolCapacity)
             {
-                error = "Per-definition summon candidate upper bounds exceed entity pool capacity.";
+                error = "Per-definition entity-pool requirements are inconsistent or exceed capacity.";
                 return false;
             }
 
@@ -1369,10 +1090,9 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            requiredAttackPatterns = Math.Max(
-                checked(requirements.SimultaneousCombatants
-                    * maxAttackPatternsPerEntity),
-                uniqueSummonActions.Count);
+            requiredAttackPatterns = checked(
+                requirements.SimultaneousCombatants
+                    * maxAttackPatternsPerEntity);
             requiredConcurrentHitboxes = checked(
                 requirements.SimultaneousCombatants * maxHitPartsPerEntity);
             error = string.Empty;
@@ -1723,7 +1443,6 @@ namespace FPG.Demo.Unity
             // Session.Fault clears pure encounter/combat state. These Unity
             // ports are independent fixed stores and must also terminate now.
             entityPort?.ClearAll();
-            ClearPendingEnemyAttackPresentations();
             combatRuntime?.ClearForFault();
             TryClearOverheadHealthBars();
             formalHitboxRegistry?.Clear();
@@ -1744,10 +1463,8 @@ namespace FPG.Demo.Unity
             if (combatRuntime != null)
             {
                 combatRuntime.CombatPort.EnemyDied -= HandleEnemyDied;
-                combatRuntime.CombatPort.EnemyAttackStarted -=
-                    HandleEnemyAttackStarted;
-                combatRuntime.CombatPort.HealthChanged -=
-                    HandleCombatHealthChanged;
+                combatRuntime.AttackScheduler.TimelineEvent -=
+                    HandleEnemySkillTimelineEvent;
             }
 
             session?.Dispose();
@@ -1758,9 +1475,6 @@ namespace FPG.Demo.Unity
             spawnResolver = null;
             enemyVitalsBuffer = Array.Empty<FpgVitalsSnapshot>();
             enemyVitalsCursor = 0L;
-            pendingEnemyAttackPresentations =
-                Array.Empty<PendingEnemyAttackPresentation>();
-            pendingEnemyAttackPresentationCount = 0;
             prepared = false;
             combatStarted = false;
 

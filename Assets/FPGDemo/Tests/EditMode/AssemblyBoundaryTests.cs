@@ -26,21 +26,23 @@ namespace FPG.Demo.Tests.EditMode
             {
                 { "Runtime/Core/FPG.Core.asmdef", Array.Empty<string>() },
                 { "Runtime/Combat/FPG.Combat.asmdef", new[] { "FPG.Core" } },
-                { "Runtime/Player/FPG.Player.asmdef", new[] { "FPG.Core", "FPG.Combat" } },
-                { "Runtime/Enemy/FPG.Enemy.asmdef", new[] { "FPG.Core", "FPG.Combat" } },
-                { "Runtime/Run/FPG.Run.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy" } },
-                { "Runtime/Unity/FPG.Unity.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Run", "spine-unity", "Unity.InputSystem", "Unity.ugui" } },
+                { "Runtime/Skills/FPG.Skills.asmdef", new[] { "FPG.Core" } },
+                { "Runtime/Player/FPG.Player.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Skills" } },
+                { "Runtime/Enemy/FPG.Enemy.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Skills" } },
+                { "Runtime/Run/FPG.Run.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Skills" } },
+                { "Runtime/Unity/FPG.Unity.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Run", "FPG.Skills", "spine-unity", "Unity.InputSystem", "Unity.ugui" } },
                 { "Editor/LevelAuthoring/FPG.LevelAuthoring.Editor.asmdef", new[] { "FPG.Unity", "FPG.Run" } },
+                { "Editor/SkillAuthoring/FPG.SkillAuthoring.Editor.asmdef", new[] { "FPG.Core", "FPG.Skills" } },
                 // G3 CZN asset and fixed-pool tests inspect Spine types directly.
                 // This remains an Editor-only, non-auto-referenced test edge;
                 // no domain or runtime assembly may acquire this dependency.
-                { "Tests/EditMode/FPG.EditMode.Tests.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Run", "FPG.Unity", "spine-unity", "Unity.InputSystem" } },
+                { "Tests/EditMode/FPG.EditMode.Tests.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Run", "FPG.Unity", "FPG.Skills", "FPG.SkillAuthoring.Editor", "spine-unity", "Unity.InputSystem" } },
                 { "Tests/PlayMode/FPG.PlayMode.Tests.asmdef", new[] { "FPG.Unity", "FPG.Run", "FPG.Core", "FPG.Combat", "FPG.Enemy", "FPG.Player", "Unity.ugui" } }
             };
 
             string demoRoot = Path.Combine(Application.dataPath, "FPGDemo");
             string[] assemblyDefinitionFiles = Directory.GetFiles(demoRoot, "*.asmdef", SearchOption.AllDirectories);
-            Assert.That(assemblyDefinitionFiles.Length, Is.EqualTo(9));
+            Assert.That(assemblyDefinitionFiles.Length, Is.EqualTo(11));
 
             foreach (KeyValuePair<string, string[]> expectation in expectedReferences)
             {
@@ -55,10 +57,12 @@ namespace FPG.Demo.Tests.EditMode
 
             AssertDomainAssembly(demoRoot, "Runtime/Core/FPG.Core.asmdef");
             AssertDomainAssembly(demoRoot, "Runtime/Combat/FPG.Combat.asmdef");
+            AssertDomainAssembly(demoRoot, "Runtime/Skills/FPG.Skills.asmdef");
             AssertDomainAssembly(demoRoot, "Runtime/Player/FPG.Player.asmdef");
             AssertDomainAssembly(demoRoot, "Runtime/Enemy/FPG.Enemy.asmdef");
             AssertDomainAssembly(demoRoot, "Runtime/Run/FPG.Run.asmdef");
             AssertEditorAssembly(demoRoot, "Editor/LevelAuthoring/FPG.LevelAuthoring.Editor.asmdef");
+            AssertEditorAssembly(demoRoot, "Editor/SkillAuthoring/FPG.SkillAuthoring.Editor.asmdef");
             AssertTestAssembly(demoRoot, "Tests/EditMode/FPG.EditMode.Tests.asmdef");
             AssertTestAssembly(demoRoot, "Tests/PlayMode/FPG.PlayMode.Tests.asmdef");
         }

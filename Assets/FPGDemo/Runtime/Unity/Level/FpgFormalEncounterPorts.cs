@@ -337,14 +337,24 @@ namespace FPG.Demo.Unity
         public int HealthBarCallbackFaultCount { get; private set; }
         public int EnemyPresentationFailureCount { get; private set; }
 
-        public DomainResult Prepare(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId)
+        public DomainResult Prepare(
+            FpgSpawnEntry entry,
+            RuntimeId runtimeId,
+            FpgSpawnPlacement placement)
         {
             if (!runtimeId.IsValid
                 || entry.SpawnSequence < 0
-                || string.IsNullOrEmpty(pointId)
-                || !resolver.TryGetWorldPose(pointId, out Pose pose))
+                || !placement.IsValid)
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            DomainResult poseResult = TryResolvePlacementPose(
+                placement,
+                out Pose pose);
+            if (!poseResult.IsSuccess)
+            {
+                return poseResult;
             }
 
             if (FindBinding(runtimeId) >= 0)
@@ -399,6 +409,7 @@ namespace FPG.Demo.Unity
                 binder.ProjectileAnchor,
                 binder.WeakpointAnchor,
                 handle.Instance,
+                binder.SocketRegistry,
                 out _);
             if (!anchorRegistered)
             {
@@ -416,7 +427,7 @@ namespace FPG.Demo.Unity
                             out Collider collider,
                             out HitPart hitPart))
                     {
-                        RollbackPrepare(runtimeId, pointId, anchorRegistered);
+                        RollbackPrepare(runtimeId, anchorRegistered);
                         return DomainResult.Rejected(RejectReason.InvalidDefinition);
                     }
 
@@ -429,7 +440,7 @@ namespace FPG.Demo.Unity
                         out _);
                     if (!registered.IsSuccess)
                     {
-                        RollbackPrepare(runtimeId, pointId, anchorRegistered);
+                        RollbackPrepare(runtimeId, anchorRegistered);
                         return registered;
                     }
 
@@ -437,15 +448,18 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            if (!resolver.TryCommitReservation(pointId, runtimeId))
+            if (placement.RequiresRoomReservation
+                && !resolver.TryCommitReservation(
+                    placement.RoomPointId,
+                    runtimeId))
             {
-                RollbackPrepare(runtimeId, pointId, anchorRegistered);
+                RollbackPrepare(runtimeId, anchorRegistered);
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
             }
 
             bindings[bindingIndex] = new RuntimeBinding(
                 runtimeId,
-                pointId,
+                placement,
                 entry.SpawnSequence,
                 definition,
                 binder,
@@ -453,7 +467,10 @@ namespace FPG.Demo.Unity
             return DomainResult.Success;
         }
 
-        public DomainResult Activate(FpgSpawnEntry entry, RuntimeId runtimeId, string pointId)
+        public DomainResult Activate(
+            FpgSpawnEntry entry,
+            RuntimeId runtimeId,
+            FpgSpawnPlacement placement)
         {
             int index = FindBinding(runtimeId);
             if (index < 0)
@@ -463,7 +480,7 @@ namespace FPG.Demo.Unity
 
             RuntimeBinding binding = bindings[index];
             if (binding.SpawnSequence != entry.SpawnSequence
-                || !string.Equals(binding.PointId, pointId, StringComparison.Ordinal))
+                || binding.Placement != placement)
             {
                 return DomainResult.Rejected(RejectReason.InvalidTarget);
             }
@@ -508,15 +525,13 @@ namespace FPG.Demo.Unity
             return DomainResult.Success;
         }
 
-        public bool TryPlayAttack(
-            RuntimeId runtimeId,
-            int spawnSequence,
-            string attackPatternId)
+        public bool TryApplySkillSequenceFrame(
+            in FpgFormalEnemySkillSequenceFrame frame)
         {
-            int index = FindBinding(runtimeId);
+            int index = FindBinding(frame.OwnerRuntimeId);
             if (index < 0
-                || spawnSequence < 0
-                || string.IsNullOrWhiteSpace(attackPatternId))
+                || frame.SpawnSequence < 0
+                || frame.Definition == null)
             {
                 IncrementEnemyPresentationFailureCount();
                 return false;
@@ -524,34 +539,46 @@ namespace FPG.Demo.Unity
 
             RuntimeBinding binding = bindings[index];
             if (!binding.Activated
-                || binding.SpawnSequence != spawnSequence
-                || !(binding.Binder is IFpgFormalEnemyPresentationView view))
+                || binding.SpawnSequence != frame.SpawnSequence
+                || !(binding.Binder
+                    is IFpgFormalEnemyPresentationView view))
             {
                 IncrementEnemyPresentationFailureCount();
                 return false;
             }
 
-            FpgEnemyAttackDefinition attack = null;
-            for (int attackIndex = 0;
-                 attackIndex < binding.Definition.AttackPatternCount;
-                 attackIndex++)
+            try
             {
-                FpgEnemyAttackDefinition candidate =
-                    binding.Definition.GetAttackPattern(attackIndex);
-                if (candidate != null
-                    && string.Equals(
-                        candidate.AttackId,
-                        attackPatternId,
-                        StringComparison.Ordinal))
+                if (view.TrySetSkillSequenceFrame(frame))
                 {
-                    attack = candidate;
-                    break;
+                    return true;
                 }
+            }
+            catch (Exception)
+            {
+                // Presentation callbacks cannot affect encounter simulation.
+            }
+
+            IncrementEnemyPresentationFailureCount();
+            return false;
+        }
+        public bool TryPresentEnemySkillCue(
+            in FpgFormalEnemySkillCuePresentationEvent cueEvent)
+        {
+            FpgFormalEnemySkillTimelineEvent timelineEvent =
+                cueEvent.TimelineEvent;
+            if (!TryGetActivePresentationView(
+                    timelineEvent.OwnerRuntimeId,
+                    timelineEvent.SpawnSequence,
+                    out IFpgFormalEnemyPresentationView view))
+            {
+                IncrementEnemyPresentationFailureCount();
+                return false;
             }
 
             try
             {
-                if (attack != null && view.TryPlayAttack(attack))
+                if (view.TryPresentSkillCue(cueEvent))
                 {
                     return true;
                 }
@@ -565,21 +592,15 @@ namespace FPG.Demo.Unity
             return false;
         }
 
-        public bool TryInterruptAttack(
-            RuntimeId runtimeId,
-            int spawnSequence)
+        public bool TrySetEnemySkillWarning(
+            in FpgFormalEnemySkillWarningPresentationEvent warningEvent)
         {
-            int index = FindBinding(runtimeId);
-            if (index < 0 || spawnSequence < 0)
-            {
-                IncrementEnemyPresentationFailureCount();
-                return false;
-            }
-
-            RuntimeBinding binding = bindings[index];
-            if (!binding.Activated
-                || binding.SpawnSequence != spawnSequence
-                || !(binding.Binder is IFpgFormalEnemyPresentationView view))
+            FpgFormalEnemySkillTimelineEvent timelineEvent =
+                warningEvent.TimelineEvent;
+            if (!TryGetActivePresentationView(
+                    timelineEvent.OwnerRuntimeId,
+                    timelineEvent.SpawnSequence,
+                    out IFpgFormalEnemyPresentationView view))
             {
                 IncrementEnemyPresentationFailureCount();
                 return false;
@@ -587,7 +608,7 @@ namespace FPG.Demo.Unity
 
             try
             {
-                if (view.TryInterruptAttack())
+                if (view.TrySetSkillWarning(warningEvent))
                 {
                     return true;
                 }
@@ -598,6 +619,52 @@ namespace FPG.Demo.Unity
             }
 
             IncrementEnemyPresentationFailureCount();
+            return false;
+        }
+
+        public void ClearEnemySkillWarnings()
+        {
+            for (int index = 0; index < bindings.Length; index++)
+            {
+                RuntimeBinding binding = bindings[index];
+                if (!binding.RuntimeId.IsValid
+                    || !(binding.Binder
+                        is IFpgFormalEnemyPresentationView view))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    view.ClearSkillWarnings();
+                }
+                catch (Exception)
+                {
+                    IncrementEnemyPresentationFailureCount();
+                }
+            }
+        }
+
+        private bool TryGetActivePresentationView(
+            RuntimeId runtimeId,
+            int spawnSequence,
+            out IFpgFormalEnemyPresentationView view)
+        {
+            int index = FindBinding(runtimeId);
+            if (index >= 0)
+            {
+                RuntimeBinding binding = bindings[index];
+                if (binding.Activated
+                    && binding.SpawnSequence == spawnSequence
+                    && binding.Binder
+                        is IFpgFormalEnemyPresentationView resolved)
+                {
+                    view = resolved;
+                    return true;
+                }
+            }
+
+            view = null;
             return false;
         }
 
@@ -634,7 +701,6 @@ namespace FPG.Demo.Unity
             // All external references are gone before the entity becomes
             // available to another RuntimeId.
             bool entityReleased = entityPool.TryRelease(runtimeId);
-            resolver.Release(binding.PointId, runtimeId);
             bindings[index] = default(RuntimeBinding);
 
             return anchorRemoved
@@ -794,7 +860,6 @@ namespace FPG.Demo.Unity
 
         private void RollbackPrepare(
             RuntimeId runtimeId,
-            string pointId,
             bool anchorRegistered)
         {
             if (hitboxRegistry != null)
@@ -808,7 +873,69 @@ namespace FPG.Demo.Unity
             }
 
             entityPool.TryRelease(runtimeId);
-            resolver.Release(pointId, runtimeId);
+        }
+
+        private DomainResult TryResolvePlacementPose(
+            FpgSpawnPlacement placement,
+            out Pose pose)
+        {
+            pose = default(Pose);
+            switch (placement.Kind)
+            {
+                case FpgSpawnPlacementKind.EncounterSpawnPoint:
+                    if (!resolver.TryGetWorldPose(
+                            placement.RoomPointId,
+                            out pose))
+                    {
+                        return DomainResult.Rejected(RejectReason.InvalidTarget);
+                    }
+
+                    break;
+
+                case FpgSpawnPlacementKind.OwnerPosition:
+                    if (!anchorMap.TryGet(
+                            placement.SourceRuntimeId,
+                            out FpgCombatantAnchorSnapshot owner)
+                        || owner.RuntimeId != placement.SourceRuntimeId
+                        || owner.Actor == null
+                        || owner.GameplayAnchor == null
+                        || owner.IsPresentationLeaseActive
+                        || !owner.Actor.activeInHierarchy)
+                    {
+                        return DomainResult.Rejected(RejectReason.InvalidTarget);
+                    }
+
+                    Transform ownerRoot = owner.Actor.transform;
+                    pose = new Pose(ownerRoot.position, ownerRoot.rotation);
+                    break;
+
+                default:
+                    return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            return IsFinite(pose)
+                ? DomainResult.Success
+                : DomainResult.Rejected(RejectReason.InvalidDefinition);
+        }
+
+        private static bool IsFinite(Pose pose)
+        {
+            return IsFinite(pose.position.x)
+                && IsFinite(pose.position.y)
+                && IsFinite(pose.position.z)
+                && IsFinite(pose.rotation.x)
+                && IsFinite(pose.rotation.y)
+                && IsFinite(pose.rotation.z)
+                && IsFinite(pose.rotation.w)
+                && pose.rotation.x * pose.rotation.x
+                    + pose.rotation.y * pose.rotation.y
+                    + pose.rotation.z * pose.rotation.z
+                    + pose.rotation.w * pose.rotation.w > 0.000001f;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private int FindFreeBinding()
@@ -864,14 +991,14 @@ namespace FPG.Demo.Unity
         {
             public RuntimeBinding(
                 RuntimeId runtimeId,
-                string pointId,
+                FpgSpawnPlacement placement,
                 int spawnSequence,
                 FpgEnemyDefinition definition,
                 IFpgFormalEnemyEntityBinder binder,
                 int registeredHitPartCount)
             {
                 RuntimeId = runtimeId;
-                PointId = pointId ?? string.Empty;
+                Placement = placement;
                 SpawnSequence = spawnSequence;
                 Definition = definition;
                 Binder = binder;
@@ -881,7 +1008,7 @@ namespace FPG.Demo.Unity
             }
 
             public RuntimeId RuntimeId;
-            public string PointId;
+            public FpgSpawnPlacement Placement;
             public int SpawnSequence;
             public FpgEnemyDefinition Definition;
             public IFpgFormalEnemyEntityBinder Binder;

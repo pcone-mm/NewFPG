@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FPG.Demo.Run;
+using FPG.Demo.Skills;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -119,7 +120,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            HashSet<string> attackIds = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> skillIds = new HashSet<string>(StringComparer.Ordinal);
             for (int index = 0; index < attacks.Length; index++)
             {
                 if (attacks[index] == null || !attacks[index].TryValidate(out error))
@@ -128,9 +129,9 @@ namespace FPG.Demo.Unity
                     return false;
                 }
 
-                if (!attackIds.Add(attacks[index].AttackId))
+                if (!skillIds.Add(attacks[index].SkillId))
                 {
-                    error = $"Formal enemy '{enemyDefinitionId}' repeats attack ID '{attacks[index].AttackId}'.";
+                    error = $"Formal enemy '{enemyDefinitionId}' repeats skill ID '{attacks[index].SkillId}'.";
                     return false;
                 }
             }
@@ -152,8 +153,117 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            D0ActorSocketRegistry socketRegistry =
+                entityViewPrefab.GetComponentInChildren<
+                    D0ActorSocketRegistry>(true);
+            if (socketRegistry == null
+                || !socketRegistry.TryValidate(out error)
+                || !TryValidateAttackSockets(
+                    attacks,
+                    socketRegistry,
+                    out error))
+            {
+                if (string.IsNullOrEmpty(error))
+                {
+                    error = $"Formal enemy '{enemyDefinitionId}' prefab requires a valid socket registry for its skill events.";
+                }
+
+                return false;
+            }
+
             error = string.Empty;
             return true;
+        }
+
+        private static bool TryValidateAttackSockets(
+            FpgEnemyAttackDefinition[] attacks,
+            D0ActorSocketRegistry socketRegistry,
+            out string error)
+        {
+            for (int attackIndex = 0;
+                attackIndex < attacks.Length;
+                attackIndex++)
+            {
+                FpgEnemyAttackDefinition attack = attacks[attackIndex];
+                for (int sequenceIndex = 0;
+                    sequenceIndex < attack.Sequences.Count;
+                    sequenceIndex++)
+                {
+                    FpgSkillSequenceDefinition sequence =
+                        attack.Sequences[sequenceIndex];
+                    for (int eventIndex = 0;
+                        eventIndex < sequence.LogicEvents.Count;
+                        eventIndex++)
+                    {
+                        FpgSkillLogicEventDefinition skillEvent =
+                            sequence.LogicEvents[eventIndex];
+                        if (!TryValidateSocket(
+                                attack.SkillId,
+                                skillEvent.EventId,
+                                skillEvent.SocketId,
+                                socketRegistry,
+                                out error))
+                        {
+                            return false;
+                        }
+                    }
+
+                    for (int cueIndex = 0;
+                        cueIndex < sequence.PresentationCues.Count;
+                        cueIndex++)
+                    {
+                        FpgSkillPresentationCueDefinition cue =
+                            sequence.PresentationCues[cueIndex];
+                        if (!TryValidateSocket(
+                                attack.SkillId,
+                                cue.EventId,
+                                cue.SocketId,
+                                socketRegistry,
+                                out error))
+                        {
+                            return false;
+                        }
+                    }
+
+                    for (int warningIndex = 0;
+                        warningIndex < sequence.Warnings.Count;
+                        warningIndex++)
+                    {
+                        FpgSkillWarningDefinition warning =
+                            sequence.Warnings[warningIndex];
+                        if (!TryValidateSocket(
+                                attack.SkillId,
+                                warning.EventId,
+                                warning.SocketId,
+                                socketRegistry,
+                                out error))
+                        {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryValidateSocket(
+            string skillId,
+            string eventId,
+            string socketId,
+            D0ActorSocketRegistry socketRegistry,
+            out string error)
+        {
+            if (string.IsNullOrEmpty(socketId)
+                || socketRegistry.TryResolve(socketId, out _))
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            error = $"Enemy skill '{skillId}' event '{eventId}' cannot resolve prefab socket '{socketId}'.";
+            return false;
         }
     }
 
@@ -193,23 +303,38 @@ namespace FPG.Demo.Unity
 
             for (int index = 0; index < enemy.AttackPatternCount; index++)
             {
-                FpgSummonActionDefinition summon = enemy.GetAttackPattern(index).Summon;
-                if (summon == null)
+                FpgEnemyAttackDefinition attack =
+                    enemy.GetAttackPattern(index);
+                for (int payloadIndex = 0;
+                    payloadIndex < attack.PayloadSlots.Count;
+                    payloadIndex++)
                 {
-                    continue;
-                }
-
-                FpgEnemyDefinition[] candidates = summon.CandidateEnemies;
-                for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
-                {
-                    if (!TryValidateEnemyGraph(candidates[candidateIndex], visiting, depth + 1, out error))
+                    FpgEnemySkillPayloadSlot payload =
+                        attack.PayloadSlots[payloadIndex];
+                    if (payload == null
+                        || payload.Kind != FpgEnemySkillPayloadKind.Summon)
                     {
-                        error = $"Summon action '{summon.ActionId}' on '{enemy.EnemyDefinitionId}' is invalid: {error}";
-                        visiting.Remove(enemy);
-                        return false;
+                        continue;
                     }
 
-                    visiting.Remove(candidates[candidateIndex]);
+                    FpgEnemyDefinition[] candidates = payload.SummonCandidates;
+                    for (int candidateIndex = 0;
+                        candidateIndex < candidates.Length;
+                        candidateIndex++)
+                    {
+                        if (!TryValidateEnemyGraph(
+                            candidates[candidateIndex],
+                            visiting,
+                            depth + 1,
+                            out error))
+                        {
+                            error = $"Summon payload '{payload.SlotId}' on '{enemy.EnemyDefinitionId}' is invalid: {error}";
+                            visiting.Remove(enemy);
+                            return false;
+                        }
+
+                        visiting.Remove(candidates[candidateIndex]);
+                    }
                 }
             }
 

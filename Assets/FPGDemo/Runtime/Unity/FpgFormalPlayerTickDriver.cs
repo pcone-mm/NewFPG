@@ -4,6 +4,7 @@ using FPG.Demo.Core;
 using FPG.Demo.Enemy;
 using FPG.Demo.Player;
 using FPG.Demo.Run;
+using FPG.Demo.Skills;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -56,6 +57,7 @@ namespace FPG.Demo.Unity
             new FpgFormalPlayerPresentationSource();
 
         private UnityBattleInputSource inputSource;
+        private FpgPlayerSkillExecutionController skillExecutionController;
         private D0CharacterDefinition playerDefinition;
         private FpgPlayerEntityView playerEntity;
         private D0ThreeCProfile threeCProfile;
@@ -66,6 +68,7 @@ namespace FPG.Demo.Unity
         private bool playerConfigured;
         private bool runtimeObserved;
         private bool roomInteractionArmed;
+        private bool reloadCompletionActionPublishedThisTick;
 
         public FpgRoomEncounterDirector EncounterDirector => encounterDirector;
         public Transform AimAnchor => aimAnchor;
@@ -83,6 +86,7 @@ namespace FPG.Demo.Unity
         public FpgFormalAimSolution AimSolution => aimSolution;
         public int AimPreviewFaultCount { get; private set; }
         public int AimPresentationFaultCount { get; private set; }
+        public int SkillPresentationFaultCount { get; private set; }
         public FpgFormalPlayerPresentationSource PresentationSource =>
             presentationSource;
 
@@ -90,6 +94,18 @@ namespace FPG.Demo.Unity
         {
             add => presentationSource.ActionCommitted += value;
             remove => presentationSource.ActionCommitted -= value;
+        }
+
+        public event Action<FpgFormalPlayerSkillSequenceEvent> SkillSequenceAdvanced
+        {
+            add => presentationSource.SkillSequenceAdvanced += value;
+            remove => presentationSource.SkillSequenceAdvanced -= value;
+        }
+
+        public event Action<FpgFormalPlayerSkillCueEvent> SkillCueCommitted
+        {
+            add => presentationSource.SkillCueCommitted += value;
+            remove => presentationSource.SkillCueCommitted -= value;
         }
 
         private void Awake()
@@ -206,6 +222,40 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!definition.Weapon.TryCompileSkills(
+                    out FpgCompiledPlayerSkillDefinition compiledPrimary,
+                    out FpgCompiledPlayerSkillDefinition compiledSecondary,
+                    out FpgCompiledPlayerSkillDefinition compiledReload,
+                    out error)
+                || !TryValidatePresentationMappings(
+                    definition.Weapon.PrimarySkill,
+                    compiledPrimary,
+                    out error)
+                || !TryValidatePresentationMappings(
+                    definition.Weapon.SecondarySkill,
+                    compiledSecondary,
+                    out error)
+                || !TryValidatePresentationMappings(
+                    definition.Weapon.ReloadSkill,
+                    compiledReload,
+                    out error)
+                || !FpgPlayerSkillPresentationResolver.TryValidatePrefabBindings(
+                    definition.EntityPrefab,
+                    definition.Weapon.PrimarySkill,
+                    definition.Weapon.SecondarySkill,
+                    definition.Weapon.ReloadSkill,
+                    out error)
+                || !FpgPlayerSkillExecutionController.TryCreate(
+                    compiledPrimary,
+                    compiledSecondary,
+                    compiledReload,
+                    definition.Weapon.SecondaryTriggerMode,
+                    out FpgPlayerSkillExecutionController controller,
+                    out error))
+            {
+                return false;
+            }
+
             if (entity.AimAnchor == null)
             {
                 error = "Formal player entity has no aim anchor.";
@@ -219,6 +269,7 @@ namespace FPG.Demo.Unity
             }
 
             playerDefinition = definition;
+            skillExecutionController = controller;
             playerEntity = entity;
             threeCProfile = profile;
             aimAnchor = entity.AimAnchor;
@@ -251,7 +302,8 @@ namespace FPG.Demo.Unity
         public bool TryValidate(out string error)
         {
             if (!playerConfigured || playerDefinition == null
-                || playerEntity == null || threeCProfile == null)
+                || playerEntity == null || threeCProfile == null
+                || skillExecutionController == null)
             {
                 error = "Formal player tick driver must be configured before runtime binding.";
                 return false;
@@ -263,13 +315,13 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            
+
             if (aimFromPointerPosition && AimViewportSource == null)
             {
                 error = "Viewport-based formal aiming requires an ICombatAimViewportSource.";
                 return false;
             }
-if (aimViewportSource != null
+            if (aimViewportSource != null
                 && !(aimViewportSource is ICombatAimViewportSource))
             {
                 error = "Formal aim viewport component must implement ICombatAimViewportSource.";
@@ -467,9 +519,29 @@ if (aimViewportSource != null
         {
             roomInteractionArmed = inputSource == null
                 || !inputSource.PrimaryHeld && !inputSource.SecondaryHeld;
-            bool cancelSecondary =
-                encounterDirector?.CombatRuntime?.Player?.Weapon?.State
-                    == WeaponState.AltCharging;
+            WeaponRuntime weapon =
+                encounterDirector?.CombatRuntime?.Player?.Weapon;
+            bool cancelSecondary = weapon?.State == WeaponState.AltCharging;
+            if (weapon != null && skillExecutionController != null)
+            {
+                TickIndex interruptTick = skillExecutionController.NextTick.IsValid
+                    ? skillExecutionController.NextTick
+                    : weapon.LastProcessedTick.IsValid
+                        ? new TickIndex(weapon.LastProcessedTick.Value + 1L)
+                        : new TickIndex(0L);
+                DomainResult interrupted = skillExecutionController.HardInterrupt(
+                    interruptTick,
+                    weapon);
+                if (!interrupted.IsSuccess)
+                {
+                    captureFault = RejectReason.InvariantFault;
+                }
+                else
+                {
+                    PublishSkillSequenceFrames();
+                }
+            }
+
             weaponRelease.Reset();
             inputSource?.BeginRoomInteraction(cancelSecondary);
         }
@@ -488,6 +560,13 @@ if (aimViewportSource != null
                         : captureFault);
             }
 
+            if (!skillExecutionController.TryBindExecutionIdAllocator(
+                    runtime.SkillExecutionIds,
+                    out _))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
             runtimeObserved = true;
             if (lastProcessedTick.IsValid && tick.Value != lastProcessedTick.Value + 1L)
             {
@@ -498,6 +577,15 @@ if (aimViewportSource != null
             int ammoAtTickStart = runtime.Player.Weapon.Magazine.Ammo;
             if (runtime.Player.Combatant.IsDead)
             {
+                DomainResult interrupted = skillExecutionController.HardInterrupt(
+                    tick,
+                    runtime.Player.Weapon);
+                if (!interrupted.IsSuccess)
+                {
+                    return interrupted;
+                }
+
+                PublishSkillSequenceFrames();
                 lastProcessedTick = tick;
                 PublishSnapshot(runtime, tick);
                 return DomainResult.Success;
@@ -510,48 +598,41 @@ if (aimViewportSource != null
             }
 
             PlayerInputFrame frame = tickInput.CopyToPlayerInputFrame(edgeBuffer);
-            DomainResult posture = ApplyPosture(runtime.Player, frame, tick);
+            DomainResult posture = ApplyPosture(
+                runtime.Player,
+                frame,
+                tick,
+                skillExecutionController.IsExecuting
+                    && skillExecutionController.ActiveSlot
+                        != FpgPlayerSkillSlot.Reload);
             if (!posture.IsSuccess && posture.RejectReason != RejectReason.BarrierLocked)
             {
                 return posture;
             }
 
-            ulong playerSeed = runtime.RunContext.DeriveSeed(PlayerAttackRandomDomain);
-            WeaponRuntimeSnapshot weaponSnapshot =
-                runtime.Player.Weapon.CaptureRoomSnapshot();
-            DomainResult weapon = runtime.Player.Weapon.PrepareFrame(
+            DomainResult skill = skillExecutionController.ProcessFrame(
                 frame,
-                runtime.Player.Exposure,
-                runtime.Player.RuntimeId,
-                runtime.IdAllocator,
-                playerSeed,
-                weaponRelease);
-            if (!weapon.IsSuccess)
+                runtime.Player);
+            if (!skill.IsSuccess)
             {
-                return weapon;
+                return skill;
             }
 
-            if (weaponRelease.HasRelease)
-            {
-                DomainResult submitted = QueryAndSubmitHits(runtime, tickInput, tick);
-                if (!submitted.IsSuccess)
-                {
-                    if (!weaponRelease.IsCommitted)
-                    {
-                        DomainResult restored =
-                            runtime.Player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
-                        weaponRelease.Reset();
-                        if (!restored.IsSuccess)
-                        {
-                            return DomainResult.Rejected(RejectReason.InvariantFault);
-                        }
-                    }
+            PublishSkillCues(requiresGameplayCommit: false);
 
-                    PublishSnapshot(runtime, tick);
-                    return submitted;
-                }
+            DomainResult events = ProcessSkillEvents(
+                runtime,
+                tickInput,
+                tick,
+                roomInteraction: false);
+            if (!events.IsSuccess)
+            {
+                PublishSkillSequenceFrames();
+                PublishSnapshot(runtime, tick);
+                return events;
             }
 
+            PublishSkillPresentationEvents();
             PublishCommittedActions(
                 tick,
                 stateAtTickStart,
@@ -574,6 +655,13 @@ if (aimViewportSource != null
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
+            if (!skillExecutionController.TryBindExecutionIdAllocator(
+                    runtime.SkillExecutionIds,
+                    out _))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
             if (lastProcessedTick.IsValid
                 && tick.Value != lastProcessedTick.Value + 1L)
             {
@@ -584,6 +672,15 @@ if (aimViewportSource != null
             int ammoAtTickStart = runtime.Player.Weapon.Magazine.Ammo;
             if (runtime.Player.Combatant.IsDead)
             {
+                DomainResult interrupted = skillExecutionController.HardInterrupt(
+                    tick,
+                    runtime.Player.Weapon);
+                if (!interrupted.IsSuccess)
+                {
+                    return interrupted;
+                }
+
+                PublishSkillSequenceFrames();
                 lastProcessedTick = tick;
                 PublishSnapshot(runtime, tick);
                 return DomainResult.Success;
@@ -600,51 +697,41 @@ if (aimViewportSource != null
                 tickInput.CopyToPlayerInputFrame(edgeBuffer);
             PlayerInputFrame frame =
                 FilterRoomInteractionFrame(capturedFrame, tick);
-            DomainResult posture = ApplyPosture(runtime.Player, frame, tick);
+            DomainResult posture = ApplyPosture(
+                runtime.Player,
+                frame,
+                tick,
+                skillExecutionController.IsExecuting
+                    && skillExecutionController.ActiveSlot
+                        != FpgPlayerSkillSlot.Reload);
             if (!posture.IsSuccess
                 && posture.RejectReason != RejectReason.BarrierLocked)
             {
                 return posture;
             }
 
-            ulong playerSeed = runtime.RunContext.DeriveSeed(
-                PlayerAttackRandomDomain);
-            WeaponRuntimeSnapshot weaponSnapshot =
-                runtime.Player.Weapon.CaptureRoomSnapshot();
-            DomainResult weapon = runtime.Player.Weapon.PrepareFrame(
+            DomainResult skill = skillExecutionController.ProcessFrame(
                 frame,
-                runtime.Player.Exposure,
-                runtime.Player.RuntimeId,
-                runtime.IdAllocator,
-                playerSeed,
-                weaponRelease);
-            if (!weapon.IsSuccess)
+                runtime.Player);
+            if (!skill.IsSuccess)
             {
-                return weapon;
+                return skill;
             }
 
-            if (weaponRelease.HasRelease)
+            PublishSkillCues(requiresGameplayCommit: false);
+
+            DomainResult events = ProcessSkillEvents(
+                runtime,
+                tickInput,
+                tick,
+                roomInteraction: true);
+            if (!events.IsSuccess)
             {
-                DomainResult committed = QueryAndCommitRoomInteraction(
-                    runtime,
-                    tickInput,
-                    tick);
-                if (!committed.IsSuccess)
-                {
-                    if (!weaponRelease.IsCommitted)
-                    {
-                        DomainResult restored =
-                            runtime.Player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
-                        weaponRelease.Reset();
-                        if (!restored.IsSuccess)
-                        {
-                            return DomainResult.Rejected(RejectReason.InvariantFault);
-                        }
-                    }
-                    return committed;
-                }
+                PublishSkillSequenceFrames();
+                return events;
             }
 
+            PublishSkillPresentationEvents();
             PublishCommittedActions(
                 tick,
                 stateAtTickStart,
@@ -689,6 +776,7 @@ if (aimViewportSource != null
         {
             Clear();
             playerDefinition = null;
+            skillExecutionController = null;
             playerEntity = null;
             threeCProfile = null;
             aimAnchor = null;
@@ -733,10 +821,426 @@ if (aimViewportSource != null
                 secondaryHeld: false);
         }
 
+        private DomainResult ProcessSkillEvents(
+            FpgFormalCombatRuntimeBundle runtime,
+            BattleTickInput tickInput,
+            TickIndex tick,
+            bool roomInteraction)
+        {
+            reloadCompletionActionPublishedThisTick = false;
+            ulong playerSeed = runtime.RunContext.DeriveSeed(
+                PlayerAttackRandomDomain);
+            for (int index = 0;
+                index < skillExecutionController.ResultCount;
+                index++)
+            {
+                FpgPlayerSkillExecutionEvent skillEvent =
+                    skillExecutionController.GetResult(index);
+                if (skillEvent.Outcome != FpgSkillEventOutcome.Triggered
+                    || !skillEvent.HasGameplayPayload)
+                {
+                    continue;
+                }
+
+                if (skillEvent.Payload.Kind
+                    == FpgPlayerSkillPayloadKind.ReloadCommit)
+                {
+                    if (skillEvent.Event.TargetSource
+                            != FpgSkillTargetSource.Self)
+                    {
+                        skillExecutionController.AbortAfterProcessedTick(
+                            runtime.Player.Weapon);
+                        return DomainResult.Rejected(
+                            RejectReason.InvalidDefinition);
+                    }
+
+                    WeaponState stateBeforeReload =
+                        runtime.Player.Weapon.State;
+                    int ammoBeforeReload =
+                        runtime.Player.Weapon.Magazine.Ammo;
+                    DomainResult reloadCommitted =
+                        runtime.Player.Weapon.CommitSkillReloadEvent(tick);
+                    if (!reloadCommitted.IsSuccess)
+                    {
+                        skillExecutionController.AbortAfterProcessedTick(
+                            runtime.Player.Weapon);
+                        return reloadCommitted;
+                    }
+
+                    RecordSkillGameplayCommit(
+                        runtime,
+                        tick,
+                        skillEvent,
+                        AttackId.Invalid,
+                        ammoBeforeReload,
+                        runtime.Player.Weapon.Magazine.Ammo);
+                    PublishAction(
+                        tick,
+                        FpgFormalPlayerActionType.ReloadCompleted,
+                        WeaponReleaseKind.None,
+                        AttackId.Invalid,
+                        stateBeforeReload,
+                        runtime.Player.Weapon.State,
+                        ammoBeforeReload,
+                        runtime.Player.Weapon.Magazine.Ammo,
+                        skillEvent.RuntimeEvent.ExecutionId,
+                        skillEvent.Event.EventId);
+                    reloadCompletionActionPublishedThisTick = true;
+                    continue;
+                }
+
+                if (skillEvent.Event.TargetSource
+                        != FpgSkillTargetSource.CurrentAim
+                    || (skillEvent.Slot != FpgPlayerSkillSlot.Primary
+                        && skillEvent.Slot != FpgPlayerSkillSlot.Secondary))
+                {
+                    skillExecutionController.AbortAfterProcessedTick(
+                        runtime.Player.Weapon);
+                    return DomainResult.Rejected(RejectReason.InvalidDefinition);
+                }
+
+                WeaponReleaseKind releaseKind =
+                    skillEvent.Slot == FpgPlayerSkillSlot.Primary
+                        ? WeaponReleaseKind.Primary
+                        : WeaponReleaseKind.Secondary;
+                WeaponSkillReleaseSpec releaseSpec =
+                    new WeaponSkillReleaseSpec(
+                        releaseKind,
+                        skillEvent.Payload.Damage,
+                        skillEvent.Payload.QueryPolicy,
+                        skillEvent.Payload.QueryMode,
+                        skillEvent.Payload.PayloadCount,
+                        skillEvent.Payload.MaxImpactCount,
+                        skillEvent.Payload.AmmoCost,
+                        skillEvent.Payload.AdditionalPenetrationCount,
+                        skillEvent.Payload.AreaCombatantLimit,
+                        skillEvent.Payload.AreaProjectileLimit,
+                        skillEvent.Payload.AllowedTargetKinds);
+                WeaponState stateBeforeRelease = runtime.Player.Weapon.State;
+                int ammoBeforeRelease = runtime.Player.Weapon.Magazine.Ammo;
+                WeaponRuntimeSnapshot weaponSnapshot =
+                    runtime.Player.Weapon.CaptureRoomSnapshot();
+                DomainResult prepared = runtime.Player.Weapon.PrepareSkillRelease(
+                    tick,
+                    runtime.Player.RuntimeId,
+                    runtime.IdAllocator,
+                    playerSeed,
+                    releaseSpec,
+                    weaponRelease);
+                if (!prepared.IsSuccess)
+                {
+                    skillExecutionController.AbortAfterProcessedTick(
+                        runtime.Player.Weapon);
+                    return prepared;
+                }
+
+                BattleTickInput eventTickInput;
+                try
+                {
+                    eventTickInput = ApplySkillOffset(
+                        tickInput,
+                        skillEvent.Event.Offset);
+                }
+                catch (Exception exception) when (
+                    exception is ArgumentException
+                    || exception is OverflowException)
+                {
+                    weaponRelease.Reset();
+                    skillExecutionController.AbortAfterProcessedTick(
+                        runtime.Player.Weapon);
+                    return DomainResult.Rejected(RejectReason.InvalidDefinition);
+                }
+
+                DomainResult committed = roomInteraction
+                    ? QueryAndCommitRoomInteraction(
+                        runtime,
+                        eventTickInput,
+                        tick)
+                    : QueryAndSubmitHits(
+                        runtime,
+                        eventTickInput,
+                        tick,
+                        skillEvent);
+                if (!committed.IsSuccess)
+                {
+                    if (!weaponRelease.IsCommitted)
+                    {
+                        DomainResult restored =
+                            runtime.Player.Weapon.RestoreRoomSnapshot(
+                                weaponSnapshot);
+                        weaponRelease.Reset();
+                        if (!restored.IsSuccess)
+                        {
+                            skillExecutionController.AbortAfterProcessedTick(
+                                runtime.Player.Weapon);
+                            return DomainResult.Rejected(
+                                RejectReason.InvariantFault);
+                        }
+                    }
+
+                    skillExecutionController.AbortAfterProcessedTick(
+                        runtime.Player.Weapon);
+                    return committed;
+                }
+
+                RecordSkillGameplayCommit(
+                    runtime,
+                    tick,
+                    skillEvent,
+                    weaponRelease.Attack.AttackId,
+                    ammoBeforeRelease,
+                    runtime.Player.Weapon.Magazine.Ammo);
+                PublishAction(
+                    tick,
+                    releaseKind == WeaponReleaseKind.Secondary
+                        ? FpgFormalPlayerActionType.SecondaryReleaseCommitted
+                        : FpgFormalPlayerActionType.PrimaryReleaseCommitted,
+                    releaseKind,
+                    weaponRelease.Attack.AttackId,
+                    stateBeforeRelease,
+                    runtime.Player.Weapon.State,
+                    ammoBeforeRelease,
+                    runtime.Player.Weapon.Magazine.Ammo,
+                    skillEvent.RuntimeEvent.ExecutionId,
+                    skillEvent.Event.EventId);
+                weaponRelease.Reset();
+            }
+
+            return DomainResult.Success;
+        }
+
+        private void PublishSkillPresentationEvents()
+        {
+            PublishSkillSequenceFrames();
+            PublishSkillCues(requiresGameplayCommit: true);
+        }
+
+        private void PublishSkillCues(bool requiresGameplayCommit)
+        {
+            for (int index = 0;
+                index < skillExecutionController.ResultCount;
+                index++)
+            {
+                FpgPlayerSkillExecutionEvent skillEvent =
+                    skillExecutionController.GetResult(index);
+                if (skillEvent.Outcome != FpgSkillEventOutcome.Triggered
+                    || skillEvent.Event.Kind
+                        != FpgSkillEventKind.PresentationCue)
+                {
+                    continue;
+                }
+
+                bool isGameplayCommitBound =
+                    skillEvent.Event.BoundGameplayEventId > 0;
+                if (isGameplayCommitBound != requiresGameplayCommit)
+                {
+                    continue;
+                }
+
+                if (isGameplayCommitBound
+                    && !FpgPlayerSkillPresentationCommitGate
+                        .RequiresGameplayCommit(
+                            skillExecutionController,
+                            skillEvent))
+                {
+                    continue;
+                }
+
+                FpgPlayerSkillDefinition authored =
+                    ResolveAuthoredSkill(skillEvent.Slot);
+                if (!FpgPlayerSkillPresentationResolver.TryResolveCue(
+                        authored,
+                        skillEvent.RuntimeEvent.SequenceKind,
+                        skillEvent.Event,
+                        out FpgResolvedPlayerSkillCue resolvedCue))
+                {
+                    SkillPresentationFaultCount++;
+                    continue;
+                }
+
+                presentationSource.PublishSkillCue(
+                    skillEvent,
+                    resolvedCue,
+                    isGameplayCommitBound);
+            }
+        }
+
+        private void PublishSkillSequenceFrames()
+        {
+            if (skillExecutionController == null)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                index < skillExecutionController.SequenceFrameCount;
+                index++)
+            {
+                FpgPlayerSkillSequenceFrame frame =
+                    skillExecutionController.GetSequenceFrame(index);
+                FpgPlayerSkillDefinition authored =
+                    ResolveAuthoredSkill(frame.Slot);
+                if (!FpgPlayerSkillPresentationResolver
+                    .TryResolveAnimationName(
+                        authored,
+                        frame.Sequence.Kind,
+                        frame.ResolvedAnimationId,
+                        out string animationName))
+                {
+                    SkillPresentationFaultCount++;
+                    continue;
+                }
+
+                presentationSource.PublishSkillSequence(
+                    frame,
+                    animationName);
+            }
+        }
+
+        private FpgPlayerSkillDefinition ResolveAuthoredSkill(
+            FpgPlayerSkillSlot slot)
+        {
+            D0WeaponDefinition weapon = playerDefinition == null
+                ? null
+                : playerDefinition.Weapon;
+            if (weapon == null)
+            {
+                return null;
+            }
+
+            switch (slot)
+            {
+                case FpgPlayerSkillSlot.Primary:
+                    return weapon.PrimarySkill;
+                case FpgPlayerSkillSlot.Secondary:
+                    return weapon.SecondarySkill;
+                case FpgPlayerSkillSlot.Reload:
+                    return weapon.ReloadSkill;
+                default:
+                    return null;
+            }
+        }
+
+        private static bool TryValidatePresentationMappings(
+            FpgPlayerSkillDefinition authored,
+            FpgCompiledPlayerSkillDefinition compiled,
+            out string error)
+        {
+            if (authored == null || compiled == null)
+            {
+                error = "Player skill presentation mapping requires authored and compiled definitions.";
+                return false;
+            }
+
+            for (int sequenceIndex = 0;
+                sequenceIndex < compiled.Timeline.SequenceCount;
+                sequenceIndex++)
+            {
+                FpgCompiledSkillSequence sequence =
+                    compiled.Timeline.GetSequence(sequenceIndex);
+                for (int animationIndex = 0;
+                    animationIndex < sequence.AnimationVariantCount;
+                    animationIndex++)
+                {
+                    if (!FpgPlayerSkillPresentationResolver
+                        .TryResolveAnimationName(
+                            authored,
+                            sequence.Kind,
+                            sequence.GetAnimationVariant(animationIndex),
+                            out _))
+                    {
+                        error = $"Player skill '{authored.SkillId}' cannot resolve a compiled animation for sequence {sequence.Kind}.";
+                        return false;
+                    }
+                }
+
+                for (int eventIndex = 0;
+                    eventIndex < sequence.EventCount;
+                    eventIndex++)
+                {
+                    FpgCompiledSkillEvent skillEvent =
+                        sequence.GetEvent(eventIndex);
+                    if (skillEvent.Kind == FpgSkillEventKind.PresentationCue
+                        && !FpgPlayerSkillPresentationResolver.TryResolveCue(
+                            authored,
+                            sequence.Kind,
+                            skillEvent,
+                            out _))
+                    {
+                        error = $"Player skill '{authored.SkillId}' cannot resolve presentation cue {skillEvent.EventId}.";
+                        return false;
+                    }
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private BattleTickInput ApplySkillOffset(
+            BattleTickInput tickInput,
+            FpgSkillOffset offset)
+        {
+            if (offset.Equals(default(FpgSkillOffset)))
+            {
+                return tickInput;
+            }
+
+            AimPoseSnapshot pose = tickInput.AimPose;
+            SpatialVectorKey origin = new SpatialVectorKey(
+                ApplySkillOffsetAxis(
+                    pose.Origin.X,
+                    pose.Right.X,
+                    pose.Up.X,
+                    pose.Forward.X,
+                    offset),
+                ApplySkillOffsetAxis(
+                    pose.Origin.Y,
+                    pose.Right.Y,
+                    pose.Up.Y,
+                    pose.Forward.Y,
+                    offset),
+                ApplySkillOffsetAxis(
+                    pose.Origin.Z,
+                    pose.Right.Z,
+                    pose.Up.Z,
+                    pose.Forward.Z,
+                    offset));
+            AimPoseSnapshot adjustedPose = new AimPoseSnapshot(
+                pose.Tick,
+                origin,
+                pose.Forward,
+                pose.Right,
+                pose.Up,
+                pose.PoseVersion);
+            return new BattleTickInput(
+                tickInput.CopyToPlayerInputFrame(edgeBuffer),
+                adjustedPose);
+        }
+
+        private static int ApplySkillOffsetAxis(
+            int origin,
+            int right,
+            int up,
+            int forward,
+            FpgSkillOffset offset)
+        {
+            long displaced = checked(
+                (long)origin
+                + (long)right * offset.XMillimeters
+                    / SpatialContract.DirectionUnits
+                + (long)up * offset.YMillimeters
+                    / SpatialContract.DirectionUnits
+                + (long)forward * offset.ZMillimeters
+                    / SpatialContract.DirectionUnits);
+            return checked((int)displaced);
+        }
+
         private DomainResult QueryAndSubmitHits(
             FpgFormalCombatRuntimeBundle runtime,
             BattleTickInput tickInput,
-            TickIndex tick)
+            TickIndex tick,
+            in FpgPlayerSkillExecutionEvent skillEvent)
         {
             Array.Clear(queryCandidates, 0, queryCandidates.Length);
             Array.Clear(selectedCandidates, 0, selectedCandidates.Length);
@@ -823,21 +1327,23 @@ if (aimViewportSource != null
                 playerHitBatch[index] = new FpgPlayerHitCommand(
                     nextCommandSequence + index,
                     intent,
+                    skillEvent.RuntimeEvent.ExecutionId,
+                    skillEvent.Event.EventId,
                     priority);
-            }
-
-            DomainResult committed = runtime.Player.Weapon.CommitPreparedRelease(
-                weaponRelease,
-                runtime.IdAllocator);
-            if (!committed.IsSuccess)
-            {
-                return committed;
             }
 
             DomainResult submittedBatch = runtime.CombatPort.TrySubmitPlayerHits(
                 playerHitBatch,
                 selectedCount);
             if (!submittedBatch.IsSuccess)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            DomainResult committed = runtime.Player.Weapon.CommitPreparedSkillRelease(
+                weaponRelease,
+                runtime.IdAllocator);
+            if (!committed.IsSuccess)
             {
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
@@ -889,18 +1395,18 @@ if (aimViewportSource != null
                     out exitGeometryId);
             }
 
-            DomainResult committed =
-                runtime.Player.Weapon.CommitPreparedRelease(
-                    weaponRelease,
-                    runtime.IdAllocator);
-            if (!committed.IsSuccess)
-            {
-                return committed;
-            }
-
             if (exitGeometryId.IsValid
                 && (encounterDirector == null
                     || !encounterDirector.TrySelectExit(exitGeometryId, out _)))
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            DomainResult committed =
+                runtime.Player.Weapon.CommitPreparedSkillRelease(
+                    weaponRelease,
+                    runtime.IdAllocator);
+            if (!committed.IsSuccess)
             {
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
@@ -911,7 +1417,8 @@ if (aimViewportSource != null
         private static DomainResult ApplyPosture(
             PlayerRuntime player,
             PlayerInputFrame frame,
-            TickIndex tick)
+            TickIndex tick,
+            bool activeSkillRequiresExposure)
         {
             PlayerExposureState previousExposure = player.Exposure.State;
             bool reloadKeepsWithdrawn = player.Weapon.State == WeaponState.Reloading
@@ -920,7 +1427,8 @@ if (aimViewportSource != null
             bool reloadRequestsWithdrawn = reloadKeepsWithdrawn || frame.HasReloadInput;
             bool shouldExpose = !reloadRequestsWithdrawn
                 && !frame.CancelSecondary
-                && (frame.AimHeld
+                && (activeSkillRequiresExposure
+                    || frame.AimHeld
                     || frame.PrimaryHeld
                     || frame.HasSecondaryInput
                     || player.Weapon.State == WeaponState.AltCharging);
@@ -950,7 +1458,8 @@ if (aimViewportSource != null
             int ammoAfter)
         {
             if (stateBefore == WeaponState.Reloading
-                && stateAfter != WeaponState.Reloading)
+                && stateAfter != WeaponState.Reloading
+                && !reloadCompletionActionPublishedThisTick)
             {
                 PublishAction(
                     tick,
@@ -965,8 +1474,7 @@ if (aimViewportSource != null
 
             if (stateBefore == WeaponState.AltCharging
                 && stateAfter != WeaponState.AltCharging
-                && (!weaponRelease.HasRelease
-                    || weaponRelease.Kind != WeaponReleaseKind.Secondary))
+                && stateAfter != WeaponState.AltRecovery)
             {
                 PublishAction(
                     tick,
@@ -1007,22 +1515,6 @@ if (aimViewportSource != null
                     ammoAfter);
             }
 
-            if (!weaponRelease.HasRelease)
-            {
-                return;
-            }
-
-            PublishAction(
-                tick,
-                weaponRelease.Kind == WeaponReleaseKind.Secondary
-                    ? FpgFormalPlayerActionType.SecondaryReleaseCommitted
-                    : FpgFormalPlayerActionType.PrimaryReleaseCommitted,
-                weaponRelease.Kind,
-                weaponRelease.Attack.AttackId,
-                stateBefore,
-                stateAfter,
-                ammoBefore,
-                ammoAfter);
         }
 
         private void PublishAction(
@@ -1035,6 +1527,31 @@ if (aimViewportSource != null
             int ammoBefore,
             int ammoAfter)
         {
+            PublishAction(
+                tick,
+                type,
+                releaseKind,
+                attackId,
+                stateBefore,
+                stateAfter,
+                ammoBefore,
+                ammoAfter,
+                SkillExecutionId.Invalid,
+                0);
+        }
+
+        private void PublishAction(
+            TickIndex tick,
+            FpgFormalPlayerActionType type,
+            WeaponReleaseKind releaseKind,
+            AttackId attackId,
+            WeaponState stateBefore,
+            WeaponState stateAfter,
+            int ammoBefore,
+            int ammoAfter,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId)
+        {
             presentationSource.PublishAction(
                 tick,
                 type,
@@ -1043,7 +1560,9 @@ if (aimViewportSource != null
                 stateBefore,
                 stateAfter,
                 ammoBefore,
-                ammoAfter);
+                ammoAfter,
+                skillExecutionId,
+                gameplayEventId);
         }
 
         private void PublishSnapshot(
@@ -1076,14 +1595,17 @@ if (aimViewportSource != null
             Array.Clear(selectedCandidates, 0, selectedCandidates.Length);
             Array.Clear(playerHitBatch, 0, playerHitBatch.Length);
             weaponRelease.Reset();
+            skillExecutionController?.Reset();
             lastProcessedTick = TickIndex.Invalid;
             nextCommandSequence = 0L;
             captureFault = RejectReason.None;
             AimPreviewFaultCount = 0;
             AimPresentationFaultCount = 0;
+            SkillPresentationFaultCount = 0;
             aimSolution = FpgFormalAimSolution.Idle;
             presentationSource.Clear();
             roomInteractionArmed = false;
+            reloadCompletionActionPublishedThisTick = false;
             cameraFeedback?.ResetRuntimeFeedback();
             if (aimViewportSource is CombatAimReticle reticle)
             {
@@ -1141,6 +1663,28 @@ if (aimViewportSource != null
             inputSource?.ClearGameplayInput();
             SetAimSolution(FpgFormalAimSolution.Idle);
             SetAimViewportFrozen(false);
+        }
+
+        private static void RecordSkillGameplayCommit(
+            FpgFormalCombatRuntimeBundle runtime,
+            TickIndex tick,
+            in FpgPlayerSkillExecutionEvent skillEvent,
+            AttackId attackId,
+            int valueBefore,
+            int valueAfter)
+        {
+            runtime.CombatKernel.Trace.Record(
+                tick,
+                CombatEventType.SkillGameplayCommitted,
+                runtime.Player.RuntimeId,
+                RuntimeId.Invalid,
+                attackId,
+                ImpactId.Invalid,
+                valueBefore,
+                valueAfter,
+                skillExecutionId:
+                    skillEvent.RuntimeEvent.ExecutionId.Value,
+                gameplayEventId: skillEvent.Event.EventId);
         }
     }
 }

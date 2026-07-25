@@ -128,32 +128,128 @@ namespace FPG.Demo.Tests.EditMode
         {
             const string attackPath =
                 "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_Attack_Summon.asset";
-            const string summonPath =
-                "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_SummonHudie.asset";
             const string hudiePath =
                 "Assets/FPGDemo/Config/FormalEncounter/FPG_Hudie_Enemy.asset";
 
             FpgEnemyAttackDefinition attack =
                 AssetDatabase.LoadAssetAtPath<FpgEnemyAttackDefinition>(attackPath);
-            FpgSummonActionDefinition summon =
-                AssetDatabase.LoadAssetAtPath<FpgSummonActionDefinition>(summonPath);
             FpgEnemyDefinition hudie =
                 AssetDatabase.LoadAssetAtPath<FpgEnemyDefinition>(hudiePath);
 
             Assert.That(attack, Is.Not.Null, attackPath);
-            Assert.That(summon, Is.Not.Null, summonPath);
             Assert.That(hudie, Is.Not.Null, hudiePath);
             Assert.That(attack.TryValidate(out string attackError), Is.True, attackError);
-            Assert.That(summon.TryValidate(out string summonError), Is.True, summonError);
             Assert.That(hudie.TryValidate(out string hudieError), Is.True, hudieError);
-            Assert.That(attack.Summon, Is.SameAs(summon));
+            Assert.That(attack.PayloadSlots.Count, Is.EqualTo(1));
+            FpgEnemySkillPayloadSlot summon = attack.PayloadSlots[0];
+            Assert.That(summon.Kind, Is.EqualTo(FpgEnemySkillPayloadKind.Summon));
             Assert.That(
-                attack.SummonOwnerOutcome,
+                summon.SummonOwnerOutcome,
                 Is.EqualTo(FpgSummonOwnerOutcome.DieAfterSuccessfulSummon));
-            Assert.That(summon.MaxSummonsPerOwner, Is.EqualTo(1));
-            Assert.That(summon.CandidateEnemies, Has.Length.EqualTo(1));
-            Assert.That(summon.CandidateEnemies[0], Is.SameAs(hudie));
+            Assert.That(
+                summon.SummonOccupancyMode,
+                Is.EqualTo(FpgSummonOccupancyMode.ReplaceOwner));
+            Assert.That(
+                summon.SummonPlacementMode,
+                Is.EqualTo(FpgSummonPlacementMode.OwnerPosition));
+            Assert.That(summon.MaxSummonsPerOwner, Is.Zero);
+            Assert.That(summon.MaxTotalSummonsPerEncounter, Is.Zero);
+            Assert.That(summon.MaxSummonRecursionDepth, Is.EqualTo(1));
+            Assert.That(summon.SummonCandidates, Has.Length.EqualTo(1));
+            Assert.That(summon.SummonCandidates[0], Is.SameAs(hudie));
+            Assert.That(summon.GetSummonCandidateWeight(0), Is.EqualTo(1));
             Assert.That(hudie.EnemyDefinitionId, Is.EqualTo("hudie"));
+        }
+
+        [Test]
+        public void Level1ChallengePreflightCountsOnlyActualReplacementOwners()
+        {
+            const string roomPath =
+                "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
+            const string profilePath =
+                "Assets/FPGDemo/Config/FormalEncounter/Level1/FPG_L1_01_Profile.asset";
+            const string overridePath =
+                "Assets/FPGDemo/Config/FormalEncounter/Level1/FPG_L1_01_04_Challenge.asset";
+            const string enemyCatalogPath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_NormalRoom_EnemyCatalog.asset";
+
+            FpgRoomDefinition room =
+                AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(roomPath);
+            FpgEncounterProfile profile =
+                AssetDatabase.LoadAssetAtPath<FpgEncounterProfile>(profilePath);
+            FpgEncounterOverrideDefinition encounterOverride =
+                AssetDatabase.LoadAssetAtPath<FpgEncounterOverrideDefinition>(overridePath);
+            FpgEnemyDefinitionCatalog enemyCatalog =
+                AssetDatabase.LoadAssetAtPath<FpgEnemyDefinitionCatalog>(enemyCatalogPath);
+
+            Assert.That(room, Is.Not.Null, roomPath);
+            Assert.That(profile, Is.Not.Null, profilePath);
+            Assert.That(encounterOverride, Is.Not.Null, overridePath);
+            Assert.That(enemyCatalog, Is.Not.Null, enemyCatalogPath);
+
+            FpgEncounterRunContext runContext = new FpgEncounterRunContext(
+                runSeed: 1UL,
+                regionId: "level1-contract",
+                depth: 0,
+                difficultyMultiplierBasisPoints: FpgEncounterRunContext.BasisPointsOne,
+                roomVisitOrdinal: 0);
+            FpgRoomRunRequest request = FpgFormalRoomRequestFactory.Create(
+                room,
+                profile,
+                encounterOverride,
+                runContext);
+            FpgEncounterPlanGenerationResult generated =
+                FpgEncounterPlanGenerator.Generate(request);
+
+            Assert.That(generated.IsSuccess, Is.True, generated.Error);
+            FpgEncounterPreflightResult preflight = FpgEncounterPreflight.Validate(
+                request,
+                generated.Plan,
+                enemyCatalog);
+
+            Assert.That(preflight.IsSuccess, Is.True, preflight.Error);
+            Assert.That(preflight.Requirements.PlannedEnemies, Is.EqualTo(11));
+            Assert.That(preflight.Requirements.SummonUpperBound, Is.EqualTo(1));
+            Assert.That(
+                preflight.Requirements.GameplayQuotaSummonUpperBound,
+                Is.Zero);
+            Assert.That(preflight.Requirements.EntitySlots, Is.EqualTo(12));
+            Assert.That(preflight.Requirements.EntityPoolSlots, Is.EqualTo(7));
+            Assert.That(preflight.Requirements.SimultaneousCombatants, Is.EqualTo(3));
+            Assert.That(
+                preflight.Requirements.RequiredSummonRecursionDepth,
+                Is.EqualTo(1));
+            Assert.That(preflight.Requirements.RequiredRoomSpawnPoints, Is.EqualTo(2));
+            Assert.That(
+                preflight.Requirements.EnemyPoolRequirements.Count,
+                Is.EqualTo(3));
+
+            int luanPoolCount = 0;
+            int hudiePoolCount = 0;
+            for (int index = 0;
+                index < preflight.Requirements.EnemyPoolRequirements.Count;
+                index++)
+            {
+                FpgEnemyPoolCapacityRequirement poolRequirement =
+                    preflight.Requirements.EnemyPoolRequirements[index];
+                if (string.Equals(
+                        poolRequirement.EnemyDefinitionId,
+                        "luan",
+                        StringComparison.Ordinal))
+                {
+                    luanPoolCount = poolRequirement.Count;
+                }
+                else if (string.Equals(
+                    poolRequirement.EnemyDefinitionId,
+                    "hudie",
+                    StringComparison.Ordinal))
+                {
+                    hudiePoolCount = poolRequirement.Count;
+                }
+            }
+
+            Assert.That(luanPoolCount, Is.EqualTo(1));
+            Assert.That(hudiePoolCount, Is.EqualTo(3));
         }
 
         [Test]

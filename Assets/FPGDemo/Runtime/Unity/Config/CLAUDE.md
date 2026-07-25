@@ -2,7 +2,7 @@
 
 本目录保存正式 Unity 配置定义与运行时适配器。
 
-- `FpgEnemy*`、`FpgEncounter*`、`FpgFormal*`、`FpgSummonActionDefinition` 和 `FpgPlayableCharacterCatalog` 是正式配置合同。
+- `FpgEnemy*`、`FpgEncounter*`、`FpgFormal*`、统一技能定义和 `FpgPlayableCharacterCatalog` 是正式配置合同。
 - 正式资产仍引用的 D0 前缀类型是序列化/GUID 兼容合同；不得据此建立第二套运行入口。
 - `FpgFormalConfigAdapters` 只转换数据，不引入新战斗决策或按敌人 ID 特判。
 - character/enemy/pool/profile/override/catalog ID 是跨资产稳定合同。

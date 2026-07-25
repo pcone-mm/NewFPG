@@ -18,8 +18,12 @@ namespace FPG.Demo.Run
                 request.RuntimeId,
                 request.Tick,
                 request.ArrivalTick,
-                default(SpatialVectorKey),
-                default(SpatialVectorKey));
+                request.HasExplicitPath
+                    ? request.ExplicitStart
+                    : default(SpatialVectorKey),
+                request.HasExplicitPath
+                    ? request.ExplicitEnd
+                    : default(SpatialVectorKey));
             return DomainResult.Success;
         }
 

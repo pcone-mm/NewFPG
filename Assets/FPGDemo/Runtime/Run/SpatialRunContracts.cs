@@ -344,6 +344,75 @@ namespace FPG.Demo.Run
             int sweepRadiusKey,
             int presentationKey,
             bool interceptable)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                presentationKey,
+                interceptable,
+                false,
+                default(SpatialVectorKey),
+                default(SpatialVectorKey))
+        {
+        }
+
+        public ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
+            int presentationKey,
+            bool interceptable,
+            SpatialVectorKey explicitStart,
+            SpatialVectorKey explicitEnd)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                presentationKey,
+                interceptable,
+                true,
+                explicitStart,
+                explicitEnd)
+        {
+        }
+
+        private ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
+            int presentationKey,
+            bool interceptable,
+            bool hasExplicitPath,
+            SpatialVectorKey explicitStart,
+            SpatialVectorKey explicitEnd)
         {
             if (!tick.IsValid || !arrivalTick.IsValid || arrivalTick <= tick
                 || !projectileId.IsValid || !runtimeId.IsValid || !attackId.IsValid
@@ -353,7 +422,8 @@ namespace FPG.Demo.Run
             }
 
             if (!Enum.IsDefined(typeof(Team), team) || team == Team.Neutral
-                || definitionId <= 0 || sweepRadiusKey <= 0 || presentationKey <= 0)
+                || definitionId <= 0 || sweepRadiusKey <= 0 || presentationKey <= 0
+                || (hasExplicitPath && explicitStart == explicitEnd))
             {
                 throw new ArgumentOutOfRangeException(nameof(definitionId));
             }
@@ -370,6 +440,9 @@ namespace FPG.Demo.Run
             SweepRadiusKey = sweepRadiusKey;
             PresentationKey = presentationKey;
             Interceptable = interceptable;
+            HasExplicitPath = hasExplicitPath;
+            ExplicitStart = explicitStart;
+            ExplicitEnd = explicitEnd;
         }
 
         public TickIndex Tick { get; }
@@ -384,8 +457,10 @@ namespace FPG.Demo.Run
         public int SweepRadiusKey { get; }
         public int PresentationKey { get; }
         public bool Interceptable { get; }
+        public bool HasExplicitPath { get; }
+        public SpatialVectorKey ExplicitStart { get; }
+        public SpatialVectorKey ExplicitEnd { get; }
     }
-
     public readonly struct ProjectilePathSnapshot
     {
         public ProjectilePathSnapshot(
@@ -421,7 +496,10 @@ namespace FPG.Demo.Run
             return ProjectileId == request.ProjectileId
                 && RuntimeId == request.RuntimeId
                 && SpawnTick == request.Tick
-                && ArrivalTick == request.ArrivalTick;
+                && ArrivalTick == request.ArrivalTick
+                && (!request.HasExplicitPath
+                    || (Start == request.ExplicitStart
+                        && End == request.ExplicitEnd));
         }
 
         public SpatialVectorKey PositionAtTick(TickIndex tick)

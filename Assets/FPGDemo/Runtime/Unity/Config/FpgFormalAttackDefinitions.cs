@@ -13,11 +13,4 @@ namespace FPG.Demo.Unity
         Chase = 2
     }
 
-    public enum FpgEnemyAttackKind
-    {
-        Projectile = 0,
-        TimedImpact = 1,
-        Summon = 2
-    }
-
 }

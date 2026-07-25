@@ -1,4 +1,5 @@
 using System;
+using FPG.Demo.Skills;
 using Spine;
 using Spine.Unity;
 using UnityEngine;
@@ -29,9 +30,6 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private Transform pulseRoot;
 
-        [SerializeField, Min(0f)]
-        private float primaryRetriggerWindow = 0.48f;
-
         [SerializeField, Min(0.01f)]
         private float primaryPulseDuration = 0.075f;
 
@@ -46,13 +44,14 @@ namespace FPG.Demo.Unity
         private D0WeaponDefinition runtimeWeaponDefinition;
         private bool initialized;
         private D0ActorAnimationStateMachine animationStateMachine;
-        private int nextPrimaryVariant;
-        private float nextPrimaryAnimationTime;
         private float pulseEndTime;
         private Vector3 pulseBaseScale;
         private bool presentationPaused;
         private float pauseStartedAt;
         private float skeletonTimeScaleBeforePause = 1f;
+        private FpgSpineSkillAnimationEvaluator skillAnimationEvaluator;
+        private SkillExecutionId activeSkillExecutionId =
+            SkillExecutionId.Invalid;
 
         public SkeletonAnimation SkeletonAnimation => skeletonAnimation;
         public CombatPresentationProfile PresentationProfile => presentationProfile;
@@ -72,6 +71,9 @@ namespace FPG.Demo.Unity
         public PlayerActorPresentationDefinition ActivePlayerPresentation => ResolvePlayerPresentation();
         public EnemyActorPresentationDefinition ActiveEnemyPresentation => ResolveEnemyPresentation();
         public string CurrentAnimationName { get; private set; }
+        public bool HasActiveSkillAnimation => activeSkillExecutionId.IsValid;
+        public SkillExecutionId ActiveSkillExecutionId =>
+            activeSkillExecutionId;
 
         public bool TryConfigureRuntime(
             SkeletonAnimation nextSkeletonAnimation,
@@ -324,13 +326,126 @@ namespace FPG.Demo.Unity
             pauseStartedAt = 0f;
             animationStateMachine = new D0ActorAnimationStateMachine(playerActor);
             animationStateMachine.TryApply(D0ActorAnimationCommand.Initialize);
+            skillAnimationEvaluator =
+                new FpgSpineSkillAnimationEvaluator(skeletonAnimation);
+            activeSkillExecutionId = SkillExecutionId.Invalid;
             initialized = true;
             PlayIdle();
             error = string.Empty;
             return true;
         }
 
-        public void PlayPrimaryAttack()
+        public bool TryEvaluateSkillAnimation(
+            SkillExecutionId executionId,
+            string animationName,
+            FpgCompiledSkillSequence sequence,
+            int relativeTick,
+            double interpolation,
+            out string error)
+        {
+            if (!EnsureInitialized() || !playerActor || IsTerminal
+                || !executionId.IsValid
+                || string.IsNullOrWhiteSpace(animationName)
+                || !sequence.IsValid
+                || relativeTick < 0
+                || relativeTick > sequence.DurationTicks
+                || double.IsNaN(interpolation)
+                || double.IsInfinity(interpolation)
+                || interpolation < 0d
+                || interpolation >= 1d)
+            {
+                error =
+                    "Player skill animation evaluation requires a valid execution, compiled sequence, animation and absolute tick.";
+                return false;
+            }
+
+            if (presentationPaused)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            if (activeSkillExecutionId != executionId)
+            {
+                skillAnimationEvaluator.Reset();
+                activeSkillExecutionId = executionId;
+            }
+
+            if (!skillAnimationEvaluator.TryEvaluate(
+                    animationName,
+                    sequence,
+                    relativeTick,
+                    interpolation,
+                    out error))
+            {
+                return false;
+            }
+
+            CurrentAnimationName = animationName;
+            return true;
+        }
+
+        public void CompleteSkillAnimation(SkillExecutionId executionId)
+        {
+            if (!executionId.IsValid || activeSkillExecutionId != executionId)
+            {
+                return;
+            }
+
+            ResetSkillAnimationEvaluation();
+            if (!initialized || IsTerminal)
+            {
+                return;
+            }
+
+            if (IsChargingSecondary || IsReloading)
+            {
+                return;
+            }
+
+            PlayIdle();
+        }
+
+        public void CancelSkillAnimation(SkillExecutionId executionId)
+        {
+            if (executionId.IsValid && activeSkillExecutionId == executionId)
+            {
+                ResetSkillAnimationEvaluation();
+                if (initialized && !IsTerminal
+                    && !IsChargingSecondary && !IsReloading)
+                {
+                    PlayIdle();
+                }
+            }
+        }
+
+        public bool TryPlaySkillCueAnimation(
+            string animationName,
+            bool loop,
+            out string error)
+        {
+            error = string.Empty;
+            if (!EnsureInitialized() || !playerActor || IsTerminal
+                || !TryValidateAnimation(
+                    skeletonAnimation.Skeleton.Data,
+                    animationName,
+                    out error))
+            {
+                if (string.IsNullOrEmpty(error))
+                {
+                    error =
+                        "Player skill animation cue requires an available Spine animation.";
+                }
+
+                return false;
+            }
+
+            ResetSkillAnimationEvaluation();
+            SetAnimation(animationName, loop);
+            return true;
+        }
+
+        public void NotifyPrimarySkillCommitted()
         {
             if (!EnsureInitialized() || !playerActor || IsTerminal)
             {
@@ -342,29 +457,10 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            float now = Time.unscaledTime;
             PulsePrimary();
-            if (now < nextPrimaryAnimationTime)
-            {
-                return;
-            }
-
-            D0WeaponShotPresentationDefinition primary =
-                runtimeWeaponDefinition.PrimaryPresentation;
-            string animation = nextPrimaryVariant == 0
-                || string.IsNullOrWhiteSpace(primary.AlternateAnimationName)
-                ? primary.AnimationName
-                : primary.AlternateAnimationName;
-            nextPrimaryVariant = string.IsNullOrWhiteSpace(
-                primary.AlternateAnimationName)
-                ? 0
-                : 1 - nextPrimaryVariant;
-            nextPrimaryAnimationTime =
-                now + ResolvePrimaryRetriggerWindow();
-            PlayOneShotThenIdle(animation);
         }
 
-        public void BeginReload()
+        public void NotifyReloadStarted()
         {
             if (!EnsureInitialized() || !playerActor || IsTerminal
                 || !TryApplyAnimationCommand(
@@ -372,39 +468,26 @@ namespace FPG.Demo.Unity
             {
                 return;
             }
-
-            D0WeaponReloadPresentationDefinition reload =
-                runtimeWeaponDefinition.ReloadPresentation;
-            SetAnimation(reload.PlayAnimation, false);
-            AddAnimation(reload.ReadyAnimation, true);
         }
 
-        public void CompleteReload()
+        public void NotifyReloadCompleted()
         {
             if (!EnsureInitialized() || !playerActor || IsTerminal
                 || !TryApplyAnimationCommand(D0ActorAnimationCommand.CompleteReload))
             {
                 return;
             }
-
-            PlayIdle();
         }
 
-        public void BeginSecondaryCharge()
+        public void NotifySecondaryChargeStarted()
         {
             if (!EnsureInitialized() || !playerActor || IsTerminal)
             {
                 return;
             }
 
-            // A feed rebind can rebuild the durable charge visual after its
-            // original InputAccepted trace has fallen outside the retained
-            // window. Reassert the loop without requiring a duplicate state
-            // transition so the presenter can recover independently of short
-            // event delivery.
             if (IsChargingSecondary)
             {
-                PlayLooping(runtimeWeaponDefinition.SecondaryPresentation.ChargeAnimation);
                 return;
             }
 
@@ -412,30 +495,24 @@ namespace FPG.Demo.Unity
             {
                 return;
             }
-
-            PlayLooping(runtimeWeaponDefinition.SecondaryPresentation.ChargeAnimation);
         }
 
-        public void CancelSecondaryCharge()
+        public void NotifySecondaryChargeCanceled()
         {
             if (!EnsureInitialized() || !playerActor || IsTerminal
                 || !TryApplyAnimationCommand(D0ActorAnimationCommand.CancelSecondaryCharge))
             {
                 return;
             }
-
-            PlayOneShotThenIdle(runtimeWeaponDefinition.SecondaryPresentation.EndAnimation);
         }
 
-        public void PlaySecondaryRelease()
+        public void NotifySecondaryReleaseCommitted()
         {
             if (!EnsureInitialized() || !playerActor || IsTerminal
                 || !TryApplyAnimationCommand(D0ActorAnimationCommand.ReleaseSecondary))
             {
                 return;
             }
-
-            PlayOneShotThenIdle(runtimeWeaponDefinition.SecondaryPresentation.ReleaseAnimation);
         }
 
         public void PlayHit()
@@ -449,17 +526,6 @@ namespace FPG.Demo.Unity
             string hitAnimation = playerActor
                 ? ActivePlayerPresentation.HitAnimation
                 : ActiveEnemyPresentation.HitAnimation;
-            if (playerActor && IsChargingSecondary)
-            {
-                // Taking damage does not cancel the domain weapon charge. Keep
-                // the durable presentation state in sync by resuming its loop
-                // after the short reaction instead of silently falling idle.
-                PlayOneShotThenLoop(
-                    hitAnimation,
-                    runtimeWeaponDefinition.SecondaryPresentation.ChargeAnimation);
-                return;
-            }
-
             PlayOneShotThenIdle(hitAnimation);
         }
 
@@ -486,16 +552,8 @@ namespace FPG.Demo.Unity
                 // of locking the player actor indefinitely.
                 if (TryApplyAnimationCommand(D0ActorAnimationCommand.PlayerGroggy))
                 {
-                    if (IsChargingSecondary)
-                    {
-                        PlayOneShotThenLoop(
-                            ActivePlayerPresentation.GroggyAnimation,
-                            runtimeWeaponDefinition.SecondaryPresentation.ChargeAnimation);
-                    }
-                    else
-                    {
-                        PlayOneShotThenIdle(ActivePlayerPresentation.GroggyAnimation);
-                    }
+                    PlayOneShotThenIdle(
+                        ActivePlayerPresentation.GroggyAnimation);
                 }
 
                 return;
@@ -648,8 +706,7 @@ namespace FPG.Demo.Unity
             }
 
             animationStateMachine?.TryApply(D0ActorAnimationCommand.Reset);
-            nextPrimaryVariant = 0;
-            nextPrimaryAnimationTime = 0f;
+            ResetSkillAnimationEvaluation();
             pulseEndTime = 0f;
             if (pulseRoot != null)
             {
@@ -698,11 +755,6 @@ namespace FPG.Demo.Unity
                 pulseEndTime += pausedDuration;
             }
 
-            if (nextPrimaryAnimationTime > 0f)
-            {
-                nextPrimaryAnimationTime += pausedDuration;
-            }
-
             skeletonAnimation.timeScale = skeletonTimeScaleBeforePause;
             presentationPaused = false;
             pauseStartedAt = 0f;
@@ -710,6 +762,7 @@ namespace FPG.Demo.Unity
 
         private void OnDisable()
         {
+            ResetSkillAnimationEvaluation();
             pulseEndTime = 0f;
             if (initialized && presentationPaused && skeletonAnimation != null)
             {
@@ -782,12 +835,6 @@ namespace FPG.Demo.Unity
                 : ActiveEnemyPresentation.IdleAnimation, true);
         }
 
-        private void PlayOneShotThenLoop(string animation, string loopAnimation)
-        {
-            SetAnimation(animation, false);
-            AddAnimation(loopAnimation, true);
-        }
-
         private void PlayLooping(string animation)
         {
             SetAnimation(animation, true);
@@ -814,6 +861,12 @@ namespace FPG.Demo.Unity
             skeletonAnimation.AnimationState.AddAnimation(MainTrack, animation, loop, 0f);
         }
 
+        private void ResetSkillAnimationEvaluation()
+        {
+            skillAnimationEvaluator?.Reset();
+            activeSkillExecutionId = SkillExecutionId.Invalid;
+        }
+
         private void PulsePrimary()
         {
             if (pulseRoot == null || primaryPulseDuration <= 0f)
@@ -822,19 +875,6 @@ namespace FPG.Demo.Unity
             }
 
             pulseEndTime = Time.unscaledTime + primaryPulseDuration;
-        }
-
-        private float ResolvePrimaryRetriggerWindow()
-        {
-            D0WeaponShotPresentationDefinition primary =
-                runtimeWeaponDefinition == null
-                    ? null
-                    : runtimeWeaponDefinition.PrimaryPresentation;
-            return primary == null
-                ? primaryRetriggerWindow
-                : Mathf.Min(
-                    primaryRetriggerWindow,
-                    primary.TracerDuration);
         }
 
         private bool EnsureInitialized()

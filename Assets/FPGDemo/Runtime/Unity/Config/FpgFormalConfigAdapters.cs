@@ -29,16 +29,40 @@ namespace FPG.Demo.Unity
 
             int maxSummons = 0;
             int maxSummonDepth = 0;
+            bool hasSummonAction = false;
             for (int index = 0; index < enemy.AttackPatternCount; index++)
             {
                 FpgEnemyAttackDefinition attack = enemy.GetAttackPattern(index);
-                if (attack == null || attack.Summon == null)
+                if (attack == null)
                 {
                     continue;
                 }
 
-                maxSummons = Math.Max(maxSummons, attack.Summon.MaxTotalSummonsPerEncounter);
-                maxSummonDepth = Math.Max(maxSummonDepth, attack.Summon.MaxRecursionDepth);
+                for (int payloadIndex = 0;
+                    payloadIndex < attack.PayloadSlots.Count;
+                    payloadIndex++)
+                {
+                    FpgEnemySkillPayloadSlot payload =
+                        attack.PayloadSlots[payloadIndex];
+                    if (payload == null
+                        || payload.Kind != FpgEnemySkillPayloadKind.Summon)
+                    {
+                        continue;
+                    }
+
+                    hasSummonAction = true;
+                    if (payload.SummonOccupancyMode
+                        == FpgSummonOccupancyMode.AdditionalEntity)
+                    {
+                        maxSummons = Math.Max(
+                            maxSummons,
+                            payload.MaxTotalSummonsPerEncounter);
+                    }
+
+                    maxSummonDepth = Math.Max(
+                        maxSummonDepth,
+                        payload.MaxSummonRecursionDepth);
+                }
             }
 
             try
@@ -56,7 +80,8 @@ namespace FPG.Demo.Unity
                     enemy.Behavior == null ? string.Empty : enemy.Behavior.BehaviorId,
                     enemy.AttackPatternCount == 0
                         ? string.Empty
-                        : enemy.GetAttackPattern(0).AttackId);
+                        : enemy.GetAttackPattern(0).SkillId,
+                    hasSummonAction);
             }
             catch (Exception exception)
             {

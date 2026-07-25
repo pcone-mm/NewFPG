@@ -1,0 +1,192 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4818c1a910e12794fa92127eee4d9fb4, type: 3}
+  m_Name: FPG_Fei_Secondary
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgPlayerSkillDefinition
+  skillId: fei.secondary
+  displayName: Fei Secondary
+  designerNotes: Migrated charged secondary. ChargeEnter and ChargeLoop feed Release;
+    Release attacks at Tick 0.
+  sequences:
+  - kind: 1
+    durationTicks: 0
+    alternateAnimations: []
+    mainAnimation: u4_attack_ready
+    loop: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 0
+    sourceAnimationDurationTicks: 0
+    phases: []
+    logicEvents: []
+    presentationCues: []
+    warnings: []
+  - kind: 2
+    durationTicks: 0
+    alternateAnimations: []
+    mainAnimation: u4_attack_ready
+    loop: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 0
+    sourceAnimationDurationTicks: 0
+    phases: []
+    logicEvents: []
+    presentationCues:
+    - eventId: cue.fei.secondary.charge.enter
+      tick: 0
+      cueId: player.weapon.secondary.charge
+      authoredOrdinal: 0
+      socketId: weapon.secondary.muzzle
+      bindGameplayEventId: 
+    warnings: []
+  - kind: 3
+    durationTicks: 0
+    alternateAnimations: []
+    mainAnimation: u4_attack_ready
+    loop: 1
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 0
+    sourceAnimationDurationTicks: 0
+    phases: []
+    logicEvents: []
+    presentationCues: []
+    warnings: []
+  - kind: 4
+    durationTicks: 29
+    alternateAnimations: []
+    mainAnimation: defense_play
+    loop: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 29
+    sourceAnimationDurationTicks: 0
+    phases:
+    - phaseId: active
+      kind: 2
+      startTick: 0
+      endTick: 0
+    - phaseId: recovery
+      kind: 3
+      startTick: 0
+      endTick: 29
+    logicEvents:
+    - eventId: event.fei.secondary.release.attack.0
+      tick: 0
+      payloadSlotId: payload.fei.secondary
+      authoredOrdinal: 0
+      socketId: weapon.secondary.muzzle
+      targetSource: 1
+      targetOffset: {x: 0, y: 0, z: 0}
+    presentationCues:
+    - eventId: cue.fei.secondary.release.muzzle.0
+      tick: 0
+      cueId: player.weapon.secondary.muzzle
+      authoredOrdinal: 1
+      socketId: weapon.secondary.muzzle
+      bindGameplayEventId: event.fei.secondary.release.attack.0
+    - eventId: cue.fei.secondary.release.tracer.0
+      tick: 0
+      cueId: player.weapon.secondary.tracer
+      authoredOrdinal: 2
+      socketId: weapon.secondary.muzzle
+      bindGameplayEventId: event.fei.secondary.release.attack.0
+    - eventId: cue.fei.secondary.release.target.0
+      tick: 0
+      cueId: player.weapon.secondary.target-burst
+      authoredOrdinal: 3
+      socketId: 
+      bindGameplayEventId: event.fei.secondary.release.attack.0
+    warnings: []
+  - kind: 5
+    durationTicks: 0
+    alternateAnimations: []
+    mainAnimation: u4_attack_end
+    loop: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 0
+    sourceAnimationDurationTicks: 0
+    phases: []
+    logicEvents: []
+    presentationCues: []
+    warnings: []
+  secondaryTriggerMode: 0
+  minimumChargeTicks: 0
+  shotPresentation:
+    socketId: weapon.primary.muzzle
+    muzzleVfxKey: player.weapon.primary.muzzle
+    tracerVfxKey: player.weapon.primary.tracer
+    animationName: attack_play1
+    alternateAnimationName: attack_play2
+    effectColor: {r: 0.42, g: 0.9, b: 1, a: 0.96}
+    muzzleDuration: 0.07
+    muzzleLength: 0.34
+    muzzleWidth: 0.12
+    muzzleLightIntensity: 1.25
+    tracerDuration: 0.13
+    tracerWidth: 0.052
+    tracerEndpointLightIntensity: 0.8
+    muzzlePrewarmCapacity: 2
+    tracerPrewarmCapacity: 8
+  secondaryPresentation:
+    shot:
+      socketId: weapon.secondary.muzzle
+      muzzleVfxKey: player.weapon.secondary.muzzle
+      tracerVfxKey: player.weapon.secondary.tracer
+      animationName: defense_play
+      alternateAnimationName: 
+      effectColor: {r: 1, g: 0.98, b: 0.72, a: 1}
+      muzzleDuration: 0.13
+      muzzleLength: 0.62
+      muzzleWidth: 0.18
+      muzzleLightIntensity: 2.1
+      tracerDuration: 0.36
+      tracerWidth: 0.12
+      tracerEndpointLightIntensity: 1.55
+      muzzlePrewarmCapacity: 1
+      tracerPrewarmCapacity: 4
+    chargeVfxKey: player.weapon.secondary.charge
+    targetBurstVfxKey: player.weapon.secondary.target-burst
+    targetDepthAnchor: 0
+    fallbackCameraDistance: 8
+    chargePulseDuration: 0.18
+    targetBurstRadiusScale: 0.32
+    targetBurstMinRadius: 0.42
+    targetBurstMaxRadius: 1.4
+    chargeAnimation: u4_attack_ready
+    releaseAnimation: defense_play
+    endAnimation: u4_attack_end
+    hitMarkerTime: 0.033
+    stopMarkerTime: 1
+    chargePrewarmCapacity: 1
+    targetBurstPrewarmCapacity: 4
+  reloadPresentation:
+    playAnimation: u1_buff_play
+    readyAnimation: u1_buff_ready
+  sequenceCooldownTicks: 30
+  payloadSlots:
+  - slotId: payload.fei.secondary
+    displayName: Charged Area Shot
+    kind: 2
+    ammoCost: 2
+    baseDamage: 28
+    breakDamage: 20
+    weakpointDamageMultiplierBasisPoints: 12000
+    weakpointBreakMultiplierBasisPoints: 25000
+    queryMode: 2
+    pelletCount: 1
+    additionalPenetrationCount: 0
+    areaCombatantLimit: 4
+    areaProjectileLimit: 4
+    allowedTargetKinds: 3

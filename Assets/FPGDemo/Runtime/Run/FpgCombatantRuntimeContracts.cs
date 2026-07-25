@@ -1,5 +1,6 @@
 using System;
 using FPG.Demo.Core;
+using FPG.Demo.Skills;
 
 namespace FPG.Demo.Run
 {
@@ -48,11 +49,21 @@ namespace FPG.Demo.Run
             TickIndex readyTick,
             int priority,
             long scheduleSequence,
-            string attackPatternId)
+            string attackPatternId,
+            SkillExecutionId skillExecutionId = default(SkillExecutionId),
+            int gameplayEventId = 0)
         {
             if (!ownerRuntimeId.IsValid || !readyTick.IsValid || scheduleSequence < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(ownerRuntimeId));
+            }
+
+            if (gameplayEventId < 0
+                || skillExecutionId.IsValid != (gameplayEventId > 0))
+            {
+                throw new ArgumentException(
+                    "Attack schedule skill correlation requires both a valid execution and gameplay event ID.",
+                    nameof(gameplayEventId));
             }
 
             OwnerRuntimeId = ownerRuntimeId;
@@ -60,6 +71,8 @@ namespace FPG.Demo.Run
             Priority = priority;
             ScheduleSequence = scheduleSequence;
             AttackPatternId = attackPatternId ?? string.Empty;
+            SkillExecutionId = skillExecutionId;
+            GameplayEventId = gameplayEventId;
         }
 
         public RuntimeId OwnerRuntimeId { get; }
@@ -67,6 +80,9 @@ namespace FPG.Demo.Run
         public int Priority { get; }
         public long ScheduleSequence { get; }
         public string AttackPatternId { get; }
+        public SkillExecutionId SkillExecutionId { get; }
+        public int GameplayEventId { get; }
+        public bool HasSkillCorrelation => SkillExecutionId.IsValid;
     }
 
     public interface IFpgAttackOwnerEligibility

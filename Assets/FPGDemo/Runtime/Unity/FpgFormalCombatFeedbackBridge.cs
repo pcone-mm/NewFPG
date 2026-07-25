@@ -31,6 +31,13 @@ namespace FPG.Demo.Unity
         private bool prepared;
         private bool actionSubscribed;
         private bool lifecycleSubscribed;
+        private EnemySkillWarningBinding[] enemySkillWarnings =
+            Array.Empty<EnemySkillWarningBinding>();
+        [NonSerialized]
+        private IFpgFormalEnemySkillPresentationConsumer
+            enemySkillPresentationConsumer;
+
+        private int activeEnemySkillWarningCount;
 
         public int DroppedPoolCount { get; private set; }
         public int DroppedProjectionCount { get; private set; }
@@ -38,7 +45,18 @@ namespace FPG.Demo.Unity
         public int PresentationFaultCount { get; private set; }
         public int ReticleFeedbackFaultCount { get; private set; }
         public int PrepareFaultCount { get; private set; }
+        public int EnemySkillTimelineFaultCount { get; private set; }
+        public int EnemySkillCueCount { get; private set; }
+        public int EnemySkillWarningStartCount { get; private set; }
+        public int EnemySkillWarningEndCount { get; private set; }
+        public int ActiveEnemySkillWarningCount =>
+            activeEnemySkillWarningCount;
         public string LastPrepareError { get; private set; } = string.Empty;
+        public event Action<FpgFormalEnemySkillCuePresentationEvent>
+            EnemySkillCuePresented;
+        public event Action<FpgFormalEnemySkillWarningPresentationEvent>
+            EnemySkillWarningChanged;
+
         public int ActivePopupCount
         {
             get
@@ -193,6 +211,10 @@ namespace FPG.Demo.Unity
             popupPool = new FpgDamagePopupView[poolCapacity];
             framePositions = new Vector2[poolCapacity];
             feedbackBuffer = new FpgResolvedDamageFeedback[feedbackReadCapacity];
+            enemySkillWarnings = new EnemySkillWarningBinding[
+                presentationProfile.PoolCapacities
+                    .ThreatTelegraphCapacity];
+            activeEnemySkillWarningCount = 0;
             try
             {
                 for (int index = 0; index < popupPool.Length; index++)
@@ -235,7 +257,10 @@ namespace FPG.Demo.Unity
             }
 
             if (popupPool.Length != presentationProfile.PoolCapacities.HitTipCapacity
-                || feedbackBuffer.Length != feedbackReadCapacity)
+                || feedbackBuffer.Length != feedbackReadCapacity
+                || enemySkillWarnings.Length
+                    != presentationProfile.PoolCapacities
+                        .ThreatTelegraphCapacity)
             {
                 error = "Formal combat feedback fixed capacities changed after preparation.";
                 return false;
@@ -254,6 +279,10 @@ namespace FPG.Demo.Unity
             PresentationFaultCount = 0;
             ReticleFeedbackFaultCount = 0;
             PrepareFaultCount = 0;
+            EnemySkillTimelineFaultCount = 0;
+            EnemySkillCueCount = 0;
+            EnemySkillWarningStartCount = 0;
+            EnemySkillWarningEndCount = 0;
             LastPrepareError = string.Empty;
         }
 
@@ -310,6 +339,8 @@ namespace FPG.Demo.Unity
             }
 
             encounterDirector.LifecycleEvent += HandleEncounterLifecycle;
+            encounterDirector.EnemySkillTimelineEvent +=
+                HandleEnemySkillTimelineEvent;
             lifecycleSubscribed = true;
         }
 
@@ -323,6 +354,8 @@ namespace FPG.Demo.Unity
             if (encounterDirector != null)
             {
                 encounterDirector.LifecycleEvent -= HandleEncounterLifecycle;
+                encounterDirector.EnemySkillTimelineEvent -=
+                    HandleEnemySkillTimelineEvent;
             }
 
             lifecycleSubscribed = false;
@@ -331,12 +364,336 @@ namespace FPG.Demo.Unity
         private void HandleEncounterLifecycle(
             FpgEncounterLifecycleEvent lifecycle)
         {
-            if (lifecycle.Type != FpgEncounterLifecycleEventType.Restarted)
+            if (lifecycle.Type == FpgEncounterLifecycleEventType.Restarted
+                || lifecycle.Type
+                    == FpgEncounterLifecycleEventType.RoomCleared
+                || lifecycle.Type
+                    == FpgEncounterLifecycleEventType.Failed
+                || lifecycle.Type
+                    == FpgEncounterLifecycleEventType.Faulted
+                || lifecycle.Type
+                    == FpgEncounterLifecycleEventType.Disposed)
+            {
+                ResetRuntimePresentationState();
+            }
+        }
+
+        private void HandleEnemySkillTimelineEvent(
+            FpgFormalEnemySkillTimelineEvent skillEvent)
+        {
+            if (skillEvent.Event.Kind
+                    == FPG.Demo.Skills.FpgSkillEventKind.PresentationCue)
+            {
+                PresentEnemySkillCue(skillEvent);
+                return;
+            }
+
+            if (skillEvent.Event.Kind
+                    == FPG.Demo.Skills.FpgSkillEventKind.WarningStarted
+                || skillEvent.Event.Kind
+                    == FPG.Demo.Skills.FpgSkillEventKind.WarningEnded)
+            {
+                PresentEnemySkillWarning(skillEvent);
+            }
+        }
+
+        private void PresentEnemySkillCue(
+            in FpgFormalEnemySkillTimelineEvent skillEvent)
+        {
+            if (skillEvent.Outcome
+                    != FPG.Demo.Skills.FpgSkillEventOutcome.Triggered)
             {
                 return;
             }
 
-            ResetRuntimePresentationState();
+            if (!FpgEnemySkillPresentationResolver.TryResolveCue(
+                    skillEvent.Definition,
+                    skillEvent.RuntimeEvent.SequenceKind,
+                    skillEvent.Event,
+                    out FpgResolvedEnemySkillCue resolved))
+            {
+                IncrementEnemySkillTimelineFaultCount();
+                return;
+            }
+
+            FpgFormalEnemySkillCuePresentationEvent presentationEvent =
+                new FpgFormalEnemySkillCuePresentationEvent(
+                    skillEvent,
+                    resolved);
+            if (!TryPresentEnemySkillCueThroughProduction(
+                    presentationEvent))
+            {
+                IncrementEnemySkillTimelineFaultCount();
+            }
+
+            if (EnemySkillCueCount < int.MaxValue)
+            {
+                EnemySkillCueCount++;
+            }
+
+            try
+            {
+                EnemySkillCuePresented?.Invoke(presentationEvent);
+            }
+            catch (Exception)
+            {
+                IncrementEnemySkillTimelineFaultCount();
+            }
+        }
+
+        private void PresentEnemySkillWarning(
+            in FpgFormalEnemySkillTimelineEvent skillEvent)
+        {
+            if (!FpgEnemySkillPresentationResolver.TryResolveWarning(
+                    skillEvent.Definition,
+                    skillEvent.RuntimeEvent.SequenceKind,
+                    skillEvent.Event,
+                    out FpgResolvedEnemySkillWarning resolved))
+            {
+                IncrementEnemySkillTimelineFaultCount();
+                return;
+            }
+
+            bool started = skillEvent.Event.Kind
+                == FPG.Demo.Skills.FpgSkillEventKind.WarningStarted;
+            if (started)
+            {
+                if (skillEvent.Outcome
+                        != FPG.Demo.Skills.FpgSkillEventOutcome.Triggered)
+                {
+                    return;
+                }
+
+                if (!TryActivateEnemySkillWarning(skillEvent))
+                {
+                    IncrementEnemySkillTimelineFaultCount();
+                    return;
+                }
+            }
+            else if ((skillEvent.Outcome
+                        != FPG.Demo.Skills.FpgSkillEventOutcome.Triggered
+                    && skillEvent.Outcome
+                        != FPG.Demo.Skills.FpgSkillEventOutcome.Canceled)
+                || !TryReleaseEnemySkillWarning(skillEvent))
+            {
+                return;
+            }
+
+            FpgFormalEnemySkillWarningPresentationEvent presentationEvent =
+                new FpgFormalEnemySkillWarningPresentationEvent(
+                    skillEvent,
+                    resolved,
+                    started);
+            if (!TrySetEnemySkillWarningThroughProduction(
+                    presentationEvent))
+            {
+                if (started)
+                {
+                    TryReleaseEnemySkillWarning(skillEvent);
+                }
+
+                IncrementEnemySkillTimelineFaultCount();
+                return;
+            }
+
+            if (started)
+            {
+                if (EnemySkillWarningStartCount < int.MaxValue)
+                {
+                    EnemySkillWarningStartCount++;
+                }
+            }
+            else if (EnemySkillWarningEndCount < int.MaxValue)
+            {
+                EnemySkillWarningEndCount++;
+            }
+
+            try
+            {
+                EnemySkillWarningChanged?.Invoke(presentationEvent);
+            }
+            catch (Exception)
+            {
+                IncrementEnemySkillTimelineFaultCount();
+            }
+        }
+
+        private bool TryActivateEnemySkillWarning(
+            in FpgFormalEnemySkillTimelineEvent skillEvent)
+        {
+            int existing = FindEnemySkillWarning(
+                skillEvent.OwnerRuntimeId,
+                skillEvent.SpawnSequence,
+                skillEvent.RuntimeEvent.ExecutionId.Value,
+                skillEvent.Event.WarningId);
+            if (existing >= 0)
+            {
+                return true;
+            }
+
+            for (int index = 0;
+                index < enemySkillWarnings.Length;
+                index++)
+            {
+                if (enemySkillWarnings[index].IsActive)
+                {
+                    continue;
+                }
+
+                enemySkillWarnings[index] =
+                    new EnemySkillWarningBinding(
+                        skillEvent.OwnerRuntimeId,
+                        skillEvent.SpawnSequence,
+                        skillEvent.RuntimeEvent.ExecutionId.Value,
+                        skillEvent.Event.WarningId);
+                activeEnemySkillWarningCount++;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryReleaseEnemySkillWarning(
+            in FpgFormalEnemySkillTimelineEvent skillEvent)
+        {
+            int index = FindEnemySkillWarning(
+                skillEvent.OwnerRuntimeId,
+                skillEvent.SpawnSequence,
+                skillEvent.RuntimeEvent.ExecutionId.Value,
+                skillEvent.Event.WarningId);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            enemySkillWarnings[index] =
+                default(EnemySkillWarningBinding);
+            activeEnemySkillWarningCount = Math.Max(
+                0,
+                activeEnemySkillWarningCount - 1);
+            return true;
+        }
+
+        private int FindEnemySkillWarning(
+            RuntimeId ownerRuntimeId,
+            int spawnSequence,
+            long executionId,
+            int warningId)
+        {
+            for (int index = 0;
+                index < enemySkillWarnings.Length;
+                index++)
+            {
+                EnemySkillWarningBinding binding =
+                    enemySkillWarnings[index];
+                if (binding.IsActive
+                    && binding.OwnerRuntimeId == ownerRuntimeId
+                    && binding.SpawnSequence == spawnSequence
+                    && binding.ExecutionId == executionId
+                    && binding.WarningId == warningId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private void ClearEnemySkillWarnings()
+        {
+            TryClearEnemySkillWarningsThroughProduction();
+
+            if (enemySkillWarnings.Length > 0)
+            {
+                Array.Clear(
+                    enemySkillWarnings,
+                    0,
+                    enemySkillWarnings.Length);
+            }
+
+            activeEnemySkillWarningCount = 0;
+        }
+
+        private bool TryPresentEnemySkillCueThroughProduction(
+            in FpgFormalEnemySkillCuePresentationEvent presentationEvent)
+        {
+            IFpgFormalEnemySkillPresentationConsumer consumer =
+                ResolveEnemySkillPresentationConsumer();
+            if (consumer == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return consumer.TryPresentEnemySkillCue(
+                    presentationEvent);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private bool TrySetEnemySkillWarningThroughProduction(
+            in FpgFormalEnemySkillWarningPresentationEvent presentationEvent)
+        {
+            IFpgFormalEnemySkillPresentationConsumer consumer =
+                ResolveEnemySkillPresentationConsumer();
+            if (consumer == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return consumer.TrySetEnemySkillWarning(
+                    presentationEvent);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private void TryClearEnemySkillWarningsThroughProduction()
+        {
+            IFpgFormalEnemySkillPresentationConsumer consumer =
+                ResolveEnemySkillPresentationConsumer();
+            if (consumer == null)
+            {
+                return;
+            }
+
+            try
+            {
+                consumer.ClearEnemySkillWarnings();
+            }
+            catch (Exception)
+            {
+                IncrementEnemySkillTimelineFaultCount();
+            }
+        }
+
+        private IFpgFormalEnemySkillPresentationConsumer
+            ResolveEnemySkillPresentationConsumer()
+        {
+            if (enemySkillPresentationConsumer != null)
+            {
+                return enemySkillPresentationConsumer;
+            }
+
+            return encounterDirector != null
+                ? encounterDirector
+                : null;
+        }
+
+        private void IncrementEnemySkillTimelineFaultCount()
+        {
+            if (EnemySkillTimelineFaultCount < int.MaxValue)
+            {
+                EnemySkillTimelineFaultCount++;
+            }
         }
 
         private void ResetRuntimePresentationState()
@@ -345,6 +702,7 @@ namespace FPG.Demo.Unity
             damageCursor = 0L;
             framePositionCount = 0;
             ClearFeedbackBuffer(feedbackBuffer.Length);
+            ClearEnemySkillWarnings();
             ReleaseAll();
             TryResetReticle();
         }
@@ -553,13 +911,38 @@ namespace FPG.Demo.Unity
             popupPool = Array.Empty<FpgDamagePopupView>();
             feedbackBuffer = Array.Empty<FpgResolvedDamageFeedback>();
             framePositions = Array.Empty<Vector2>();
+            enemySkillWarnings =
+                Array.Empty<EnemySkillWarningBinding>();
+            activeEnemySkillWarningCount = 0;
             prepared = false;
         }
 
+        private readonly struct EnemySkillWarningBinding
+        {
+            public EnemySkillWarningBinding(
+                RuntimeId ownerRuntimeId,
+                int spawnSequence,
+                long executionId,
+                int warningId)
+            {
+                OwnerRuntimeId = ownerRuntimeId;
+                SpawnSequence = spawnSequence;
+                ExecutionId = executionId;
+                WarningId = warningId;
+                IsActive = true;
+            }
+
+            public RuntimeId OwnerRuntimeId { get; }
+            public int SpawnSequence { get; }
+            public long ExecutionId { get; }
+            public int WarningId { get; }
+            public bool IsActive { get; }
+        }
         private void OnDisable()
         {
             UnsubscribeFromActions();
             UnsubscribeFromLifecycle();
+            ClearEnemySkillWarnings();
             ReleaseAll();
         }
 

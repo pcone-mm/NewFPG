@@ -39,7 +39,8 @@ namespace FPG.Demo.Combat
         PerfectRetract,
         ThreatScheduleDecision,
         EnemyDespawned,
-        EnemySpawned
+        EnemySpawned,
+        SkillGameplayCommitted
     }
 
     public readonly struct CombatEvent
@@ -58,8 +59,18 @@ namespace FPG.Demo.Combat
             ulong payloadHash,
             DamageChannel damageChannel,
             int appliedBreakAmount,
-            bool perfectRetract)
+            bool perfectRetract,
+            long skillExecutionId = 0L,
+            int gameplayEventId = 0)
         {
+            if (skillExecutionId < 0L
+                || gameplayEventId < 0
+                || (skillExecutionId > 0L) != (gameplayEventId > 0))
+            {
+                throw new ArgumentException(
+                    "Combat skill correlation requires both a positive execution ID and gameplay event ID.");
+            }
+
             Sequence = sequence;
             Tick = tick;
             EventType = eventType;
@@ -74,6 +85,8 @@ namespace FPG.Demo.Combat
             DamageChannel = damageChannel;
             AppliedBreakAmount = appliedBreakAmount;
             PerfectRetract = perfectRetract;
+            SkillExecutionId = skillExecutionId;
+            GameplayEventId = gameplayEventId;
         }
 
         public long Sequence { get; }
@@ -90,6 +103,9 @@ namespace FPG.Demo.Combat
         public DamageChannel DamageChannel { get; }
         public int AppliedBreakAmount { get; }
         public bool PerfectRetract { get; }
+        public long SkillExecutionId { get; }
+        public int GameplayEventId { get; }
+        public bool HasSkillCorrelation => SkillExecutionId > 0L;
     }
 
     public sealed class CombatTrace : ICombatTraceView
@@ -133,10 +149,12 @@ namespace FPG.Demo.Combat
             ulong payloadHash = 0UL,
             DamageChannel damageChannel = DamageChannel.None,
             int appliedBreakAmount = 0,
-            bool perfectRetract = false)
+            bool perfectRetract = false,
+            long skillExecutionId = 0L,
+            int gameplayEventId = 0)
         {
             CombatEvent combatEvent = new CombatEvent(
-                nextSequence++,
+                nextSequence,
                 tick,
                 eventType,
                 sourceId,
@@ -149,7 +167,10 @@ namespace FPG.Demo.Combat
                 payloadHash,
                 damageChannel,
                 appliedBreakAmount,
-                perfectRetract);
+                perfectRetract,
+                skillExecutionId,
+                gameplayEventId);
+            nextSequence++;
 
             int writeIndex;
             if (count < events.Length)
@@ -206,6 +227,12 @@ namespace FPG.Demo.Combat
                 digest,
                 unchecked((ulong)combatEvent.AppliedBreakAmount));
             digest = StableHash.Append(digest, combatEvent.PerfectRetract ? 1UL : 0UL);
+            digest = StableHash.Append(
+                digest,
+                unchecked((ulong)combatEvent.SkillExecutionId));
+            digest = StableHash.Append(
+                digest,
+                unchecked((ulong)(uint)combatEvent.GameplayEventId));
         }
     }
 }

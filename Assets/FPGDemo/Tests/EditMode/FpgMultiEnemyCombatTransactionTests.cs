@@ -3,6 +3,8 @@ using System.Reflection;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Player;
+
+using FPG.Demo.Skills;
 using FPG.Demo.Run;
 using FPG.Demo.Unity;
 using NUnit.Framework;
@@ -192,22 +194,41 @@ namespace FPG.Demo.Tests.EditMode
                 "generic-child",
                 recursionDepth: 1,
                 requestSequence: 0L,
-                maxSummonsPerOwner: 1);
+                summonActionId: "generic-replacement",
+                maxSummonsPerOwner: 0,
+                occupancyMode: FpgSummonOccupancyMode.ReplaceOwner,
+                placementMode: FpgSummonPlacementMode.OwnerPosition);
             FpgEnemyAttackPayload payload = FpgEnemyAttackPayload.ForSummon(
                 new FpgFormalSummonPayload(
                     summonRequest,
-                    maxSummonsPerOwner: 1,
+                    maxSummonsPerOwner: 0,
                     releaseDelayTicks: 0,
                     ownerOutcome: FpgSummonOwnerOutcome.DieAfterSuccessfulSummon));
-            FpgEnemyAttackCommand command = new FpgEnemyAttackCommand(
+            FpgAttackScheduleRequest schedule =
                 new FpgAttackScheduleRequest(
                     ownerId,
                     new TickIndex(0L),
                     priority: 0,
                     scheduleSequence: 0L,
-                    attackPatternId: "generic-summon"),
+                    attackPatternId: "generic-summon",
+                    skillExecutionId: new SkillExecutionId(1L),
+                    gameplayEventId: 1);
+            FpgEnemyAttackSpatialContext spatialContext =
+                new FpgEnemyAttackSpatialContext(
+                    new TickIndex(0L),
+                    FpgSkillTargetSource.CurrentTarget,
+                    socketId: 0,
+                    new FpgSkillOffset(0, 0, 0),
+                    fixture.PlayerId,
+                    SpatialVectorKey.Zero,
+                    SpatialVectorKey.Zero);
+            FpgEnemyAttackCommand command = new FpgEnemyAttackCommand(
+                schedule,
                 spawnSequence: 0,
-                payload);
+                payload,
+                FpgEnemySkillCapacityReservation.Invalid,
+                default(ReservationToken),
+                spatialContext);
             FpgEnemyRoster roster = new FpgEnemyRoster(1);
             int enemyDiedCount = 0;
             int summonRequestedCount = 0;
@@ -251,6 +272,15 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(summonSink.CallCount, Is.EqualTo(2));
                 Assert.That(summonSink.LastRequest.OwnerRuntimeId, Is.EqualTo(ownerId));
                 Assert.That(summonSink.LastRequest.EnemyDefinitionId, Is.EqualTo("generic-child"));
+                Assert.That(
+                    summonSink.LastRequest.OccupancyMode,
+                    Is.EqualTo(FpgSummonOccupancyMode.ReplaceOwner));
+                Assert.That(
+                    summonSink.LastRequest.PlacementMode,
+                    Is.EqualTo(FpgSummonPlacementMode.OwnerPosition));
+                Assert.That(
+                    summonSink.LastRequest.SummonActionId,
+                    Is.EqualTo("generic-replacement"));
                 Assert.That(ownerAfterQueue.Combatant.IsDead, Is.True);
                 Assert.That(fixture.Port.CanAttack(ownerId), Is.False);
                 Assert.That(fixture.Port.PendingAttackCount, Is.Zero);

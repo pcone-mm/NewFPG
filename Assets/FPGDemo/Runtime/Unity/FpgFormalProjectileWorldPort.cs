@@ -113,9 +113,12 @@ namespace FPG.Demo.Unity
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
-            if (!TryResolveOrigin(request.OwnerId, out Transform owner)
-                || !TryResolveTarget(request.TargetId, out Transform target)
-                || request.OwnerId == request.TargetId)
+            Transform owner = null;
+            Transform target = null;
+            if (request.OwnerId == request.TargetId
+                || (!request.HasExplicitPath
+                    && (!TryResolveOrigin(request.OwnerId, out owner)
+                        || !TryResolveTarget(request.TargetId, out target))))
             {
                 return DomainResult.Rejected(RejectReason.InvalidTarget);
             }
@@ -137,12 +140,22 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            if (freeIndex < 0 || activeCount >= slots.Length
-                || !TryQuantizePosition(owner.position, out SpatialVectorKey start)
-                || !TryQuantizePosition(target.position, out SpatialVectorKey end))
+            if (freeIndex < 0 || activeCount >= slots.Length)
             {
-                return DomainResult.Rejected(
-                    freeIndex < 0 ? RejectReason.BufferCapacity : RejectReason.InvalidState);
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            SpatialVectorKey start = request.HasExplicitPath
+                ? request.ExplicitStart
+                : default(SpatialVectorKey);
+            SpatialVectorKey end = request.HasExplicitPath
+                ? request.ExplicitEnd
+                : default(SpatialVectorKey);
+            if (!request.HasExplicitPath
+                && (!TryQuantizePosition(owner.position, out start)
+                    || !TryQuantizePosition(target.position, out end)))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
             if (start == end)

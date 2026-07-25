@@ -50,11 +50,12 @@ namespace FPG.Demo.Tests.EditMode
                 LoadRequired<FpgRoomDefinition>(RoomPath));
             try
             {
+                string duplicateMarkerId = clone.EnemySpawnPoints[0].MarkerId;
                 SerializedObject serialized = new SerializedObject(clone);
                 SerializedProperty exits = serialized.FindProperty("exitSlots");
                 exits.arraySize = 1;
                 SerializedProperty duplicate = exits.GetArrayElementAtIndex(0);
-                duplicate.FindPropertyRelative("markerId").stringValue = "enemy-main";
+                duplicate.FindPropertyRelative("markerId").stringValue = duplicateMarkerId;
                 duplicate.FindPropertyRelative("displayName").stringValue = "Duplicate exit";
                 duplicate.FindPropertyRelative("localPosition").vector3Value = Vector3.zero;
                 duplicate.FindPropertyRelative("localEulerAngles").vector3Value = Vector3.zero;
@@ -64,7 +65,7 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(validation.IsValid, Is.False);
                 FpgRoomValidationIssue issue =
                     AssertRoomIssue(validation, FpgRoomValidationCode.DuplicateMarkerId);
-                Assert.That(issue.MarkerId, Is.EqualTo("enemy-main"));
+                Assert.That(issue.MarkerId, Is.EqualTo(duplicateMarkerId));
             }
             finally
             {

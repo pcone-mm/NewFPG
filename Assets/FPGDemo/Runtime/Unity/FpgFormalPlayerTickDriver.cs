@@ -55,6 +55,9 @@ namespace FPG.Demo.Unity
             new ProjectWideBattleInputAdapter();
         private readonly FpgFormalPlayerPresentationSource presentationSource =
             new FpgFormalPlayerPresentationSource();
+        private FpgSkillPresentationCommitCache
+            presentationCommitCache =
+                new FpgSkillPresentationCommitCache(1);
 
         private UnityBattleInputSource inputSource;
         private FpgPlayerSkillExecutionController skillExecutionController;
@@ -69,6 +72,7 @@ namespace FPG.Demo.Unity
         private bool runtimeObserved;
         private bool roomInteractionArmed;
         private bool reloadCompletionActionPublishedThisTick;
+        private bool presentationPaused;
 
         public FpgRoomEncounterDirector EncounterDirector => encounterDirector;
         public Transform AimAnchor => aimAnchor;
@@ -102,10 +106,11 @@ namespace FPG.Demo.Unity
             remove => presentationSource.SkillSequenceAdvanced -= value;
         }
 
-        public event Action<FpgFormalPlayerSkillCueEvent> SkillCueCommitted
+        public event Action<FpgFormalPlayerActivePresentationEvent>
+            ActivePresentationCommitted
         {
-            add => presentationSource.SkillCueCommitted += value;
-            remove => presentationSource.SkillCueCommitted -= value;
+            add => presentationSource.ActivePresentationCommitted += value;
+            remove => presentationSource.ActivePresentationCommitted -= value;
         }
 
         private void Awake()
@@ -120,8 +125,15 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            SetAimViewportFrozen(
-                encounterDirector != null && encounterDirector.IsPaused);
+            bool isPaused = encounterDirector != null
+                && encounterDirector.IsPaused;
+            if (isPaused && !presentationPaused)
+            {
+                presentationCommitCache.Clear();
+            }
+
+            presentationPaused = isPaused;
+            SetAimViewportFrozen(isPaused);
 
             if (inputSource == null)
             {
@@ -268,8 +280,30 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            int presentationCommitCapacity;
+            try
+            {
+                presentationCommitCapacity = checked(
+                    compiledPrimary.AttackActionCount
+                    + compiledPrimary.ProjectileActionCount
+                    + compiledPrimary.ReloadActionCount
+                    + compiledSecondary.AttackActionCount
+                    + compiledSecondary.ProjectileActionCount
+                    + compiledSecondary.ReloadActionCount
+                    + compiledReload.AttackActionCount
+                    + compiledReload.ProjectileActionCount
+                    + compiledReload.ReloadActionCount);
+            }
+            catch (OverflowException)
+            {
+                error = "Player skill presentation commit capacity overflowed.";
+                return false;
+            }
+
             playerDefinition = definition;
             skillExecutionController = controller;
+            presentationCommitCache = new FpgSkillPresentationCommitCache(
+                Math.Max(1, presentationCommitCapacity));
             playerEntity = entity;
             threeCProfile = profile;
             aimAnchor = entity.AimAnchor;
@@ -539,6 +573,7 @@ namespace FPG.Demo.Unity
                 else
                 {
                     PublishSkillSequenceFrames();
+                    ReleaseTerminalPresentationCommits();
                 }
             }
 
@@ -586,6 +621,7 @@ namespace FPG.Demo.Unity
                 }
 
                 PublishSkillSequenceFrames();
+                ReleaseTerminalPresentationCommits();
                 lastProcessedTick = tick;
                 PublishSnapshot(runtime, tick);
                 return DomainResult.Success;
@@ -618,7 +654,7 @@ namespace FPG.Demo.Unity
                 return skill;
             }
 
-            PublishSkillCues(requiresGameplayCommit: false);
+            PublishActivePresentations(requiresGameplayCommit: false);
 
             DomainResult events = ProcessSkillEvents(
                 runtime,
@@ -628,6 +664,7 @@ namespace FPG.Demo.Unity
             if (!events.IsSuccess)
             {
                 PublishSkillSequenceFrames();
+                ReleaseTerminalPresentationCommits();
                 PublishSnapshot(runtime, tick);
                 return events;
             }
@@ -681,6 +718,7 @@ namespace FPG.Demo.Unity
                 }
 
                 PublishSkillSequenceFrames();
+                ReleaseTerminalPresentationCommits();
                 lastProcessedTick = tick;
                 PublishSnapshot(runtime, tick);
                 return DomainResult.Success;
@@ -718,7 +756,7 @@ namespace FPG.Demo.Unity
                 return skill;
             }
 
-            PublishSkillCues(requiresGameplayCommit: false);
+            PublishActivePresentations(requiresGameplayCommit: false);
 
             DomainResult events = ProcessSkillEvents(
                 runtime,
@@ -728,6 +766,7 @@ namespace FPG.Demo.Unity
             if (!events.IsSuccess)
             {
                 PublishSkillSequenceFrames();
+                ReleaseTerminalPresentationCommits();
                 return events;
             }
 
@@ -837,13 +876,13 @@ namespace FPG.Demo.Unity
                 FpgPlayerSkillExecutionEvent skillEvent =
                     skillExecutionController.GetResult(index);
                 if (skillEvent.Outcome != FpgSkillEventOutcome.Triggered
-                    || !skillEvent.HasGameplayPayload)
+                    || !skillEvent.HasGameplayAction)
                 {
                     continue;
                 }
 
-                if (skillEvent.Payload.Kind
-                    == FpgPlayerSkillPayloadKind.ReloadCommit)
+                if (skillEvent.Action.Kind
+                    == FpgPlayerSkillActionKind.ReloadCommit)
                 {
                     if (skillEvent.Event.TargetSource
                             != FpgSkillTargetSource.Self)
@@ -886,6 +925,7 @@ namespace FPG.Demo.Unity
                         skillEvent.RuntimeEvent.ExecutionId,
                         skillEvent.Event.EventId);
                     reloadCompletionActionPublishedThisTick = true;
+                    RecordPresentationCommit(skillEvent);
                     continue;
                 }
 
@@ -906,16 +946,16 @@ namespace FPG.Demo.Unity
                 WeaponSkillReleaseSpec releaseSpec =
                     new WeaponSkillReleaseSpec(
                         releaseKind,
-                        skillEvent.Payload.Damage,
-                        skillEvent.Payload.QueryPolicy,
-                        skillEvent.Payload.QueryMode,
-                        skillEvent.Payload.PayloadCount,
-                        skillEvent.Payload.MaxImpactCount,
-                        skillEvent.Payload.AmmoCost,
-                        skillEvent.Payload.AdditionalPenetrationCount,
-                        skillEvent.Payload.AreaCombatantLimit,
-                        skillEvent.Payload.AreaProjectileLimit,
-                        skillEvent.Payload.AllowedTargetKinds);
+                        skillEvent.Action.Damage,
+                        skillEvent.Action.QueryPolicy,
+                        skillEvent.Action.QueryMode,
+                        skillEvent.Action.PayloadCount,
+                        skillEvent.Action.MaxImpactCount,
+                        skillEvent.Action.AmmoCost,
+                        skillEvent.Action.AdditionalPenetrationCount,
+                        skillEvent.Action.AreaCombatantLimit,
+                        skillEvent.Action.AreaProjectileLimit,
+                        skillEvent.Action.AllowedTargetKinds);
                 WeaponState stateBeforeRelease = runtime.Player.Weapon.State;
                 int ammoBeforeRelease = runtime.Player.Weapon.Magazine.Ammo;
                 WeaponRuntimeSnapshot weaponSnapshot =
@@ -955,14 +995,27 @@ namespace FPG.Demo.Unity
                     ? QueryAndCommitRoomInteraction(
                         runtime,
                         eventTickInput,
-                        tick)
-                    : QueryAndSubmitHits(
-                        runtime,
-                        eventTickInput,
                         tick,
-                        skillEvent);
+                        skillEvent)
+                    : skillEvent.Action.Kind
+                            == FpgPlayerSkillActionKind
+                                .ProjectileAreaAtFirstSurface
+                        ? SpawnAndCommitPlayerAreaProjectile(
+                            runtime,
+                            eventTickInput,
+                            tick,
+                            skillEvent)
+                        : QueryAndSubmitHits(
+                            runtime,
+                            eventTickInput,
+                            tick,
+                            skillEvent);
                 if (!committed.IsSuccess)
                 {
+                    (runtime.PlayerShotPresentationSink
+                        as IUncommittedPlayerShotPresentationSink)
+                        ?.DiscardUncommittedShot(
+                            weaponRelease.Attack.AttackId);
                     if (!weaponRelease.IsCommitted)
                     {
                         DomainResult restored =
@@ -1003,6 +1056,15 @@ namespace FPG.Demo.Unity
                     runtime.Player.Weapon.Magazine.Ammo,
                     skillEvent.RuntimeEvent.ExecutionId,
                     skillEvent.Event.EventId);
+                if (skillEvent.Event.ActionKind
+                    == FpgSkillActionKind.Attack)
+                {
+                    runtime.PlayerShotPresentationSink
+                        ?.PublishCommittedShot(
+                            weaponRelease.Attack.AttackId,
+                            releaseKind);
+                }
+                RecordPresentationCommit(skillEvent);
                 weaponRelease.Reset();
             }
 
@@ -1012,10 +1074,11 @@ namespace FPG.Demo.Unity
         private void PublishSkillPresentationEvents()
         {
             PublishSkillSequenceFrames();
-            PublishSkillCues(requiresGameplayCommit: true);
+            PublishActivePresentations(requiresGameplayCommit: true);
+            ReleaseTerminalPresentationCommits();
         }
 
-        private void PublishSkillCues(bool requiresGameplayCommit)
+        private void PublishActivePresentations(bool requiresGameplayCommit)
         {
             for (int index = 0;
                 index < skillExecutionController.ResultCount;
@@ -1025,43 +1088,53 @@ namespace FPG.Demo.Unity
                     skillExecutionController.GetResult(index);
                 if (skillEvent.Outcome != FpgSkillEventOutcome.Triggered
                     || skillEvent.Event.Kind
-                        != FpgSkillEventKind.PresentationCue)
+                        != FpgSkillEventKind.ActivePresentation)
                 {
                     continue;
                 }
 
-                bool isGameplayCommitBound =
-                    skillEvent.Event.BoundGameplayEventId > 0;
-                if (isGameplayCommitBound != requiresGameplayCommit)
+                bool isBound = skillEvent.Event.BoundGameplayEventId > 0;
+                if (isBound != requiresGameplayCommit)
                 {
                     continue;
                 }
 
-                if (isGameplayCommitBound
-                    && !FpgPlayerSkillPresentationCommitGate
-                        .RequiresGameplayCommit(
-                            skillExecutionController,
-                            skillEvent))
+                if (isBound
+                    && !presentationCommitCache.WasSuccessful(
+                        skillEvent.RuntimeEvent.ExecutionId,
+                        skillEvent.Event.BoundGameplayEventId))
                 {
                     continue;
                 }
 
-                FpgPlayerSkillDefinition authored =
-                    ResolveAuthoredSkill(skillEvent.Slot);
-                if (!FpgPlayerSkillPresentationResolver.TryResolveCue(
-                        authored,
-                        skillEvent.RuntimeEvent.SequenceKind,
-                        skillEvent.Event,
-                        out FpgResolvedPlayerSkillCue resolvedCue))
-                {
-                    SkillPresentationFaultCount++;
-                    continue;
-                }
+                presentationSource.PublishActivePresentation(skillEvent);
+            }
+        }
 
-                presentationSource.PublishSkillCue(
-                    skillEvent,
-                    resolvedCue,
-                    isGameplayCommitBound);
+        private void RecordPresentationCommit(
+            in FpgPlayerSkillExecutionEvent skillEvent)
+        {
+            if (!presentationCommitCache.TryRecordSuccess(
+                skillEvent.RuntimeEvent.ExecutionId,
+                skillEvent.Event.EventId))
+            {
+                SkillPresentationFaultCount++;
+            }
+        }
+
+        private void ReleaseTerminalPresentationCommits()
+        {
+            for (int index = 0;
+                index < skillExecutionController.SequenceFrameCount;
+                index++)
+            {
+                FpgPlayerSkillSequenceFrame frame =
+                    skillExecutionController.GetSequenceFrame(index);
+                if (frame.IsTerminal)
+                {
+                    presentationCommitCache.ReleaseExecution(
+                        frame.ExecutionId);
+                }
             }
         }
 
@@ -1154,23 +1227,6 @@ namespace FPG.Demo.Unity
                     }
                 }
 
-                for (int eventIndex = 0;
-                    eventIndex < sequence.EventCount;
-                    eventIndex++)
-                {
-                    FpgCompiledSkillEvent skillEvent =
-                        sequence.GetEvent(eventIndex);
-                    if (skillEvent.Kind == FpgSkillEventKind.PresentationCue
-                        && !FpgPlayerSkillPresentationResolver.TryResolveCue(
-                            authored,
-                            sequence.Kind,
-                            skillEvent,
-                            out _))
-                    {
-                        error = $"Player skill '{authored.SkillId}' cannot resolve presentation cue {skillEvent.EventId}.";
-                        return false;
-                    }
-                }
             }
 
             error = string.Empty;
@@ -1234,6 +1290,92 @@ namespace FPG.Demo.Unity
                 + (long)forward * offset.ZMillimeters
                     / SpatialContract.DirectionUnits);
             return checked((int)displaced);
+        }
+
+        private DomainResult SpawnAndCommitPlayerAreaProjectile(
+            FpgFormalCombatRuntimeBundle runtime,
+            BattleTickInput tickInput,
+            TickIndex tick,
+            in FpgPlayerSkillExecutionEvent skillEvent)
+        {
+            FpgPlayerSkillDefinition authored =
+                ResolveAuthoredSkill(skillEvent.Slot);
+            if (playerEntity == null
+                || !FpgPlayerSkillGameplayEventResolver.TryResolveSocketName(
+                    authored,
+                    skillEvent.RuntimeEvent.SequenceKind,
+                    skillEvent.Event,
+                    out string socketName)
+                || !FpgPlayerSkillPresentationResolver.TryResolvePresentationSource(
+                    playerEntity,
+                    socketName,
+                    out Transform muzzle)
+                || muzzle == null
+                || !TryQuantizePosition(muzzle.position, out SpatialVectorKey start))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            DomainResult aimed = runtime.AttackQueryPort.TryGetAimRangeEndpoint(
+                tickInput,
+                out SpatialVectorKey end);
+            if (!aimed.IsSuccess)
+            {
+                return aimed;
+            }
+
+            ProjectileDefinition projectileDefinition;
+            FpgPlayerAreaProjectileRequest request;
+            try
+            {
+                int flightTicks = skillEvent.Action.ProjectileFlightTicks;
+                projectileDefinition = new ProjectileDefinition(
+                    skillEvent.Action.ProjectileDefinitionId,
+                    new TickDuration(flightTicks),
+                    new TickDuration(
+                        skillEvent.Action.ProjectileLifetimeTicks),
+                    skillEvent.Action.Damage,
+                    maxHitPoints: skillEvent.Action.ProjectileMaxHitPoints,
+                    interceptable:
+                        skillEvent.Action.ProjectileInterceptable,
+                    budgetUnits: skillEvent.Action.ProjectileBudgetUnits,
+                    sweepRadiusKey: skillEvent.Action.ProjectileSweepRadiusKey);
+                request = new FpgPlayerAreaProjectileRequest(
+                    tick,
+                    weaponRelease.Attack,
+                    projectileDefinition,
+                    start,
+                    end,
+                    skillEvent.RuntimeEvent.ExecutionId,
+                    skillEvent.Event.EventId);
+            }
+            catch (Exception)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            DomainResult spawned = runtime.CombatPort.TrySpawnPlayerAreaProjectile(
+                request,
+                out RuntimeId projectileRuntimeId);
+            if (!spawned.IsSuccess)
+            {
+                return spawned;
+            }
+
+            DomainResult committed = runtime.Player.Weapon.CommitPreparedSkillRelease(
+                weaponRelease,
+                runtime.IdAllocator);
+            if (committed.IsSuccess)
+            {
+                return DomainResult.Success;
+            }
+
+            DomainResult cancelled = runtime.CombatPort.TryCancelPlayerAreaProjectile(
+                projectileRuntimeId,
+                tick);
+            return cancelled.IsSuccess
+                ? DomainResult.Rejected(RejectReason.InvariantFault)
+                : cancelled;
         }
 
         private DomainResult QueryAndSubmitHits(
@@ -1345,7 +1487,21 @@ namespace FPG.Demo.Unity
                 runtime.IdAllocator);
             if (!committed.IsSuccess)
             {
+                runtime.CombatPort.TryCompensatePlayerHitBatch(
+                    playerHitBatch,
+                    selectedCount);
                 return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            if (selectedCount == 0
+                && !runtime.CombatPort.TryCompleteImmediateSkillPresentationGroup(
+                    runtime.Player.RuntimeId,
+                    skillEvent.RuntimeEvent.ExecutionId,
+                    skillEvent.Event.EventId,
+                    tick,
+                    weaponRelease.Attack.AttackId))
+            {
+                SkillPresentationFaultCount++;
             }
 
             nextCommandSequence += selectedCount;
@@ -1355,7 +1511,8 @@ namespace FPG.Demo.Unity
         private DomainResult QueryAndCommitRoomInteraction(
             FpgFormalCombatRuntimeBundle runtime,
             BattleTickInput tickInput,
-            TickIndex tick)
+            TickIndex tick,
+            in FpgPlayerSkillExecutionEvent skillEvent)
         {
             Array.Clear(queryCandidates, 0, queryCandidates.Length);
             AttackQueryRequest request;
@@ -1411,7 +1568,56 @@ namespace FPG.Demo.Unity
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
+            if (!runtime.CombatPort.TryCompleteImmediateSkillPresentationGroup(
+                runtime.Player.RuntimeId,
+                skillEvent.RuntimeEvent.ExecutionId,
+                skillEvent.Event.EventId,
+                tick,
+                weaponRelease.Attack.AttackId))
+            {
+                SkillPresentationFaultCount++;
+            }
+
             return DomainResult.Success;
+        }
+
+        private static bool TryQuantizePosition(
+            Vector3 position,
+            out SpatialVectorKey key)
+        {
+            key = default(SpatialVectorKey);
+            if (!IsFinite(position.x) || !IsFinite(position.y)
+                || !IsFinite(position.z)
+                || !TryQuantizeAxis(position.x, out int x)
+                || !TryQuantizeAxis(position.y, out int y)
+                || !TryQuantizeAxis(position.z, out int z))
+            {
+                return false;
+            }
+
+            key = new SpatialVectorKey(x, y, z);
+            return true;
+        }
+
+        private static bool TryQuantizeAxis(float value, out int key)
+        {
+            double scaled = value * SpatialContract.PositionUnitsPerMeter;
+            if (double.IsNaN(scaled) || double.IsInfinity(scaled)
+                || scaled > int.MaxValue || scaled < int.MinValue)
+            {
+                key = 0;
+                return false;
+            }
+
+            key = checked((int)Math.Round(
+                scaled,
+                MidpointRounding.AwayFromZero));
+            return true;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static DomainResult ApplyPosture(
@@ -1604,8 +1810,10 @@ namespace FPG.Demo.Unity
             SkillPresentationFaultCount = 0;
             aimSolution = FpgFormalAimSolution.Idle;
             presentationSource.Clear();
+            presentationCommitCache.Clear();
             roomInteractionArmed = false;
             reloadCompletionActionPublishedThisTick = false;
+            presentationPaused = false;
             cameraFeedback?.ResetRuntimeFeedback();
             if (aimViewportSource is CombatAimReticle reticle)
             {

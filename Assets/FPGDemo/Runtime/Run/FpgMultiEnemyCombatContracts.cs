@@ -24,7 +24,8 @@ namespace FPG.Demo.Run
             int maxTotalSummons,
             int maxSummonRecursionDepth,
             int vitalsEventCapacity = 128,
-            int damageFeedbackCapacity = 128)
+            int damageFeedbackCapacity = 128,
+            int skillImpactPresentationCapacity = 128)
         {
             if (enemyCapacity <= 0
                 || playerHitCommandCapacity <= 0
@@ -36,7 +37,8 @@ namespace FPG.Demo.Run
                 || maxTotalSummons < 0
                 || maxSummonRecursionDepth < 0
                 || vitalsEventCapacity <= 0
-                || damageFeedbackCapacity <= 0)
+                || damageFeedbackCapacity <= 0
+                || skillImpactPresentationCapacity <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(enemyCapacity));
             }
@@ -52,6 +54,8 @@ namespace FPG.Demo.Run
             MaxSummonRecursionDepth = maxSummonRecursionDepth;
             VitalsEventCapacity = vitalsEventCapacity;
             DamageFeedbackCapacity = damageFeedbackCapacity;
+            SkillImpactPresentationCapacity =
+                skillImpactPresentationCapacity;
         }
 
         public int EnemyCapacity { get; }
@@ -65,6 +69,7 @@ namespace FPG.Demo.Run
         public int MaxSummonRecursionDepth { get; }
         public int VitalsEventCapacity { get; }
         public int DamageFeedbackCapacity { get; }
+        public int SkillImpactPresentationCapacity { get; }
     }
 
     /// <summary>
@@ -170,6 +175,65 @@ namespace FPG.Demo.Run
         public int GameplayEventId { get; }
         public bool HasSkillCorrelation => SkillExecutionId.IsValid;
         public ImpactPhasePriority Priority { get; }
+    }
+
+    /// <summary>
+    /// One player-owned projectile that resolves its authored area attack only
+    /// when its world sweep reaches a target, blocker, or range endpoint.
+    /// </summary>
+    public readonly struct FpgPlayerAreaProjectileRequest
+    {
+        public FpgPlayerAreaProjectileRequest(
+            TickIndex tick,
+            AttackSnapshot attack,
+            ProjectileDefinition definition,
+            SpatialVectorKey start,
+            SpatialVectorKey end,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId)
+        {
+            if (!tick.IsValid
+                || !attack.AttackId.IsValid
+                || !attack.ShotId.IsValid
+                || !attack.OwnerId.IsValid
+                || attack.Team != Team.Player
+                || attack.ReleaseTick != tick
+                || !attack.IsQueryConfigurationValid
+                || attack.QueryPolicy != QueryPolicy.DirectThenArea
+                || attack.QueryMode != AttackQueryMode.AreaAtFirstSurface
+                || attack.PayloadCount != 1
+                || attack.MaxImpactCount <= 0
+                || definition.DefinitionId <= 0
+                || definition.FlightDuration.Value <= 0
+                || definition.ExpireDuration.Value < definition.FlightDuration.Value
+                || definition.Interceptable
+                || definition.MaxHitPoints != 0
+                || definition.BudgetUnits <= 0
+                || definition.SweepRadiusKey <= 0
+                || start == end
+                || !skillExecutionId.IsValid
+                || gameplayEventId <= 0)
+            {
+                throw new ArgumentException(
+                    "Player area projectile request is invalid.");
+            }
+
+            Tick = tick;
+            Attack = attack;
+            Definition = definition;
+            Start = start;
+            End = end;
+            SkillExecutionId = skillExecutionId;
+            GameplayEventId = gameplayEventId;
+        }
+
+        public TickIndex Tick { get; }
+        public AttackSnapshot Attack { get; }
+        public ProjectileDefinition Definition { get; }
+        public SpatialVectorKey Start { get; }
+        public SpatialVectorKey End { get; }
+        public SkillExecutionId SkillExecutionId { get; }
+        public int GameplayEventId { get; }
     }
 
     public enum FpgEnemyAttackPayloadKind

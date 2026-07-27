@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using FPG.Demo.Skills;
 using UnityEditor;
 using UnityEngine;
 
@@ -21,6 +22,191 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public override string ToString()
         {
             return Label;
+        }
+    }
+    internal sealed class FpgSkillActionAuthoringOptions
+    {
+        private static readonly IReadOnlyList<FpgSkillTargetSource>
+            NoTargetSourceChoices = Array.Empty<FpgSkillTargetSource>();
+
+        public FpgSkillActionAuthoringOptions(
+            bool isKnownAction,
+            FpgSkillTargetSource defaultTargetSource,
+            bool hasFixedTargetSource,
+            IReadOnlyList<FpgSkillTargetSource> targetSourceChoices,
+            bool supportsSocket,
+            bool supportsTargetOffset)
+        {
+            IsKnownAction = isKnownAction;
+            DefaultTargetSource = defaultTargetSource;
+            HasFixedTargetSource = hasFixedTargetSource;
+            TargetSourceChoices = targetSourceChoices
+                ?? NoTargetSourceChoices;
+            SupportsSocket = supportsSocket;
+            SupportsTargetOffset = supportsTargetOffset;
+        }
+
+        public bool IsKnownAction { get; }
+        public FpgSkillTargetSource DefaultTargetSource { get; }
+        public bool HasFixedTargetSource { get; }
+        public IReadOnlyList<FpgSkillTargetSource> TargetSourceChoices { get; }
+        public bool SupportsTargetSourceSelection =>
+            TargetSourceChoices.Count > 0;
+        public bool SupportsSocket { get; }
+        public bool SupportsTargetOffset { get; }
+    }
+
+    internal static class FpgSkillActionAuthoringRules
+    {
+        private static readonly FpgSkillTargetSource[] EnemyProjectileSources =
+        {
+            FpgSkillTargetSource.CurrentAim,
+            FpgSkillTargetSource.CurrentTarget,
+            FpgSkillTargetSource.SocketForward
+        };
+
+        private static readonly FpgSkillTargetSource[] EnemyTargetedSources =
+        {
+            FpgSkillTargetSource.CurrentAim,
+            FpgSkillTargetSource.CurrentTarget
+        };
+
+        private static readonly FpgSkillActionAuthoringOptions Unknown =
+            new FpgSkillActionAuthoringOptions(
+                false,
+                FpgSkillTargetSource.None,
+                false,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+
+        private static readonly FpgSkillActionAuthoringOptions PlayerAttack =
+            new FpgSkillActionAuthoringOptions(
+                true,
+                FpgSkillTargetSource.CurrentAim,
+                true,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                true);
+
+        private static readonly FpgSkillActionAuthoringOptions PlayerReload =
+            new FpgSkillActionAuthoringOptions(
+                true,
+                FpgSkillTargetSource.Self,
+                true,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+
+        private static readonly FpgSkillActionAuthoringOptions EnemyProjectile =
+            new FpgSkillActionAuthoringOptions(
+                true,
+                FpgSkillTargetSource.CurrentTarget,
+                false,
+                EnemyProjectileSources,
+                true,
+                true);
+
+        private static readonly FpgSkillActionAuthoringOptions EnemyTargeted =
+            new FpgSkillActionAuthoringOptions(
+                true,
+                FpgSkillTargetSource.CurrentTarget,
+                true,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+
+        private static readonly FpgSkillActionAuthoringOptions
+            EnemyActionTargeted =
+                new FpgSkillActionAuthoringOptions(
+                    true,
+                    FpgSkillTargetSource.CurrentTarget,
+                    false,
+                    EnemyTargetedSources,
+                    false,
+                    false);
+
+        public static FpgSkillActionAuthoringOptions Get(
+            FpgSkillPreviewActionKind actionKind)
+        {
+            switch (actionKind)
+            {
+                case FpgSkillPreviewActionKind.PlayerPelletRay:
+                case FpgSkillPreviewActionKind.PlayerAreaAtFirstSurface:
+                    return PlayerAttack;
+
+                case FpgSkillPreviewActionKind.PlayerReload:
+                    return PlayerReload;
+
+                case FpgSkillPreviewActionKind.EnemyProjectile:
+                    return EnemyProjectile;
+
+                case FpgSkillPreviewActionKind.EnemyTimedImpact:
+                case FpgSkillPreviewActionKind.EnemySummon:
+                    return EnemyTargeted;
+
+                default:
+                    return Unknown;
+            }
+        }
+
+        public static FpgSkillActionAuthoringOptions Get(
+            string actionKindName)
+        {
+            switch (actionKindName)
+            {
+                case "PelletRay":
+                case "AreaAtFirstSurface":
+                case "ProjectileAreaAtFirstSurface":
+                    return PlayerAttack;
+
+                case "ReloadCommit":
+                    return PlayerReload;
+
+                case "Projectile":
+                    return EnemyProjectile;
+
+                case "TimedImpact":
+                case "Summon":
+                    return EnemyTargeted;
+
+                default:
+                    return Unknown;
+            }
+        }
+
+        public static FpgSkillActionAuthoringOptions Get(
+            FpgSkillActionKind actionKind,
+            bool enemy)
+        {
+            if (!enemy)
+            {
+                switch (actionKind)
+                {
+                    case FpgSkillActionKind.Attack:
+                    case FpgSkillActionKind.LaunchProjectile:
+                        return PlayerAttack;
+
+                    case FpgSkillActionKind.CommitReload:
+                        return PlayerReload;
+
+                    default:
+                        return Unknown;
+                }
+            }
+
+            switch (actionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                case FpgSkillActionKind.SummonActors:
+                    return EnemyActionTargeted;
+
+                case FpgSkillActionKind.LaunchProjectile:
+                    return EnemyProjectile;
+
+                default:
+                    return Unknown;
+            }
         }
     }
 
@@ -43,31 +229,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             "u4_attack_end",
             "defense_play",
             "die&broken"
-        };
-
-        private static readonly FpgSkillAuthoringChoice[] FormalCueChoices =
-        {
-            new FpgSkillAuthoringChoice(
-                "player.weapon.primary.muzzle",
-                "主武器 · 枪口火光"),
-            new FpgSkillAuthoringChoice(
-                "player.weapon.primary.tracer",
-                "主武器 · 曳光"),
-            new FpgSkillAuthoringChoice(
-                "animation.u1_buff_ready",
-                "装填 · 动画就绪"),
-            new FpgSkillAuthoringChoice(
-                "player.weapon.secondary.charge",
-                "副武器 · 蓄力"),
-            new FpgSkillAuthoringChoice(
-                "player.weapon.secondary.muzzle",
-                "副武器 · 枪口火光"),
-            new FpgSkillAuthoringChoice(
-                "player.weapon.secondary.tracer",
-                "副武器 · 曳光"),
-            new FpgSkillAuthoringChoice(
-                "player.weapon.secondary.target-burst",
-                "副武器 · 目标爆发")
         };
 
         private static readonly FpgSkillAuthoringChoice[] FormalWarningChoices =
@@ -151,12 +312,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return choices;
         }
 
-        public static List<FpgSkillAuthoringChoice> BuildCueChoices(
-            string currentValue)
-        {
-            return BuildFixedChoices(FormalCueChoices, currentValue);
-        }
-
         public static List<FpgSkillAuthoringChoice> BuildWarningChoices(
             string currentValue)
         {
@@ -210,42 +365,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return choices;
         }
 
-        public static List<FpgSkillAuthoringChoice> BuildPayloadChoices(
-            IList<FpgSkillPayloadRecord> payloads,
-            string currentValue)
-        {
-            List<FpgSkillAuthoringChoice> choices =
-                new List<FpgSkillAuthoringChoice>();
-            HashSet<string> values = new HashSet<string>(
-                StringComparer.Ordinal);
-            if (payloads != null)
-            {
-                for (int index = 0; index < payloads.Count; index++)
-                {
-                    FpgSkillPayloadRecord payload = payloads[index];
-                    if (payload == null || string.IsNullOrWhiteSpace(payload.Id))
-                    {
-                        continue;
-                    }
-
-                    string name = string.IsNullOrWhiteSpace(payload.Name)
-                        ? "载荷 " + (index + 1)
-                        : payload.Name;
-                    string kind = string.IsNullOrWhiteSpace(payload.Kind)
-                        ? "未分类"
-                        : payload.Kind;
-                    AddChoice(
-                        choices,
-                        values,
-                        payload.Id,
-                        name + " · " + kind);
-                }
-            }
-
-            AddCurrentChoice(choices, values, currentValue, "当前载荷（未找到）");
-            return choices;
-        }
-
         public static List<FpgSkillAuthoringChoice> BuildGameplayEventChoices(
             IList<FpgSkillEventRecord> events,
             string currentValue)
@@ -261,8 +380,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 {
                     FpgSkillEventRecord record = events[index];
                     if (record == null
-                        || (record.Track != FpgSkillEventTrackKind.Logic
-                            && record.Track != FpgSkillEventTrackKind.Generic)
+                        || record.Track != FpgSkillEventTrackKind.GameplayAction
                         || string.IsNullOrWhiteSpace(record.EventId))
                     {
                         continue;

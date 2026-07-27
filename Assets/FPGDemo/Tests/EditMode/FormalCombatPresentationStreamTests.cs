@@ -245,6 +245,8 @@ namespace FPG.Demo.Tests.EditMode
                     Is.EqualTo(new SpatialVectorKey(100, 200, 300)));
                 Assert.That(output[1].SpatialContext.GeometryId,
                     Is.EqualTo(new GeometryId(11)));
+                Assert.That(output[0].Tags, Is.EqualTo(CombatTags.Primary));
+                Assert.That(output[1].Tags, Is.EqualTo(CombatTags.Primary));
                 Assert.That(output[1].IsWeakpoint, Is.True);
             });
         }

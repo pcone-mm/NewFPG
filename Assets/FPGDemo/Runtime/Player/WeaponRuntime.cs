@@ -742,6 +742,12 @@ namespace FPG.Demo.Player
                 return DomainResult.Rejected(RejectReason.ActionLocked);
             }
 
+            if (!Magazine.CanConsume(definition.SecondaryAmmoCost))
+            {
+                RegisterReject(RejectReason.NotEnoughAmmo);
+                return DomainResult.Rejected(RejectReason.NotEnoughAmmo);
+            }
+
             State = WeaponState.AltCharging;
             secondaryChargeStartedTick = currentTick;
             stateUntilTick = TickIndex.Invalid;
@@ -1238,6 +1244,12 @@ namespace FPG.Demo.Player
                 return;
             }
 
+            if (!Magazine.CanConsume(definition.SecondaryAmmoCost))
+            {
+                RegisterReject(RejectReason.NotEnoughAmmo);
+                return;
+            }
+
             State = WeaponState.AltCharging;
             secondaryChargeStartedTick = currentTick;
         }
@@ -1257,6 +1269,13 @@ namespace FPG.Demo.Player
 
             if (State != WeaponState.AltCharging)
             {
+                if (State == WeaponState.Ready
+                    && !Magazine.CanConsume(definition.SecondaryAmmoCost))
+                {
+                    RegisterReject(RejectReason.NotEnoughAmmo);
+                    return;
+                }
+
                 RegisterReject(RejectReason.ActionLocked);
                 return;
             }

@@ -126,15 +126,18 @@ namespace FPG.Demo.Tests.EditMode
                 List<SkillExecutionId> starts = new List<SkillExecutionId>();
                 List<int> sortOrders = new List<int>();
                 List<long> eventTicks = new List<long>();
+                List<FpgEnemyAttackSpatialContext> spatialContexts =
+                    new List<FpgEnemyAttackSpatialContext>();
                 fixture.Scheduler.SkillStarted += value =>
                     starts.Add(value.ExecutionId);
                 fixture.Scheduler.TimelineEvent += value =>
                 {
-                    if (value.HasGameplayPayload
+                    if (value.HasGameplayAction
                         && value.Outcome == FpgSkillEventOutcome.Triggered)
                     {
                         sortOrders.Add(value.Event.SortOrder);
                         eventTicks.Add(value.RuntimeEvent.Tick.Value);
+                        spatialContexts.Add(value.SpatialContext);
                     }
                 };
 
@@ -143,6 +146,10 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(starts[0].Value, Is.EqualTo(1L));
                 CollectionAssert.AreEqual(new[] { 2, 5 }, sortOrders);
                 CollectionAssert.AreEqual(new long[] { 0L, 0L }, eventTicks);
+                Assert.That(spatialContexts[0].IsValid, Is.True);
+                Assert.That(spatialContexts[1].IsValid, Is.True);
+                Assert.That(spatialContexts[0].SampleTick,
+                    Is.EqualTo(new TickIndex(0L)));
 
                 AssertTickAndProcess(fixture, 1L);
                 AssertTickAndProcess(fixture, 2L);
@@ -153,6 +160,11 @@ namespace FPG.Demo.Tests.EditMode
                 CollectionAssert.AreEqual(
                     new long[] { 0L, 0L, 3L },
                     eventTicks);
+                Assert.That(spatialContexts[2].SampleTick,
+                    Is.EqualTo(new TickIndex(3L)));
+                Assert.That(spatialContexts[2].IsValid, Is.True);
+                Assert.That(spatialContexts[2].Target,
+                    Is.EqualTo(new SpatialVectorKey(1003, 0, 0)));
                 Assert.That(
                     CountDistinctAttackStarts(fixture.Kernel.Trace),
                     Is.EqualTo(3));
@@ -198,7 +210,7 @@ namespace FPG.Demo.Tests.EditMode
                 fixture.Scheduler.SkillStarted += starts.Add;
                 fixture.Scheduler.TimelineEvent += value =>
                 {
-                    if (value.HasGameplayPayload
+                    if (value.HasGameplayAction
                         && value.Outcome == FpgSkillEventOutcome.Canceled)
                     {
                         canceledGameplayEvents++;
@@ -415,288 +427,7 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
-        [Test]
-        public void TimelineWarningsAndCuesResolveForPresentationBinding()
-        {
-            SchedulerFixture fixture = new SchedulerFixture(
-                projectileCapacity: 2,
-                impactCapacity: 8,
-                projectileBudgetCapacity: 2,
-                projectileReservationCapacity: 2);
-            FpgEnemyAttackDefinition skill = CreateTimedImpactSkill(
-                "enemy.presentation.events",
-                durationTicks: 3,
-                cooldownTicks: 4,
-                new AuthoredEvent(3, 0));
-            FpgEnemyDefinition enemy = CreateEnemy(skill);
-            try
-            {
-                SerializedObject serialized = new SerializedObject(skill);
-                SerializedProperty execute = serialized
-                    .FindProperty("sequences")
-                    .GetArrayElementAtIndex(0);
-                SerializedProperty cues = execute
-                    .FindPropertyRelative("presentationCues");
-                cues.arraySize = 1;
-                SerializedProperty cue = cues.GetArrayElementAtIndex(0);
-                cue.FindPropertyRelative("eventId").stringValue =
-                    "event.cue.attack";
-                cue.FindPropertyRelative("tick").intValue = 1;
-                cue.FindPropertyRelative("cueId").stringValue =
-                    "vfx.enemy.attack";
-                cue.FindPropertyRelative("authoredOrdinal").intValue = 0;
-                cue.FindPropertyRelative("socketId").stringValue =
-                    "enemy.muzzle";
-
-                SerializedProperty warnings = execute
-                    .FindPropertyRelative("warnings");
-                warnings.arraySize = 1;
-                SerializedProperty warning =
-                    warnings.GetArrayElementAtIndex(0);
-                warning.FindPropertyRelative("eventId").stringValue =
-                    "event.warning.attack";
-                warning.FindPropertyRelative("warningId").stringValue =
-                    "warning.enemy.attack";
-                warning.FindPropertyRelative("startTick").intValue = 0;
-                warning.FindPropertyRelative("endTick").intValue = 2;
-                warning.FindPropertyRelative("authoredOrdinal").intValue = 0;
-                warning.FindPropertyRelative("socketId").stringValue =
-                    "enemy.muzzle";
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-                Assert.That(skill.TryValidate(out string error), Is.True, error);
-
-                List<FpgFormalEnemySkillTimelineEvent> presented =
-                    new List<FpgFormalEnemySkillTimelineEvent>();
-                fixture.Scheduler.TimelineEvent += presented.Add;
-                fixture.Register(enemy);
-                AssertTickAndProcess(fixture, 0L);
-                AssertTickAndProcess(fixture, 1L);
-                AssertTickAndProcess(fixture, 2L);
-
-                FpgFormalEnemySkillTimelineEvent warningStarted =
-                    presented.Find(value => value.Event.Kind
-                        == FpgSkillEventKind.WarningStarted);
-                FpgFormalEnemySkillTimelineEvent cueEvent =
-                    presented.Find(value => value.Event.Kind
-                        == FpgSkillEventKind.PresentationCue);
-                FpgFormalEnemySkillTimelineEvent warningEnded =
-                    presented.Find(value => value.Event.Kind
-                        == FpgSkillEventKind.WarningEnded);
-
-                Assert.That(
-                    FpgEnemySkillPresentationResolver.TryResolveWarning(
-                        skill,
-                        warningStarted.RuntimeEvent.SequenceKind,
-                        warningStarted.Event,
-                        out FpgResolvedEnemySkillWarning resolvedStart),
-                    Is.True);
-                Assert.That(
-                    resolvedStart.WarningName,
-                    Is.EqualTo("warning.enemy.attack"));
-                Assert.That(
-                    FpgEnemySkillPresentationResolver.TryResolveCue(
-                        skill,
-                        cueEvent.RuntimeEvent.SequenceKind,
-                        cueEvent.Event,
-                        out FpgResolvedEnemySkillCue resolvedCue),
-                    Is.True);
-                Assert.That(
-                    resolvedCue.CueName,
-                    Is.EqualTo("vfx.enemy.attack"));
-                Assert.That(
-                    FpgEnemySkillPresentationResolver.TryResolveWarning(
-                        skill,
-                        warningEnded.RuntimeEvent.SequenceKind,
-                        warningEnded.Event,
-                        out FpgResolvedEnemySkillWarning resolvedEnd),
-                    Is.True);
-
-
-                GameObject bridgeObject =
-                    new GameObject("EnemySkillFeedbackBridge");
-                bridgeObject.SetActive(false);
-                try
-                {
-                    FpgFormalCombatFeedbackBridge bridge =
-                        bridgeObject.AddComponent<
-                            FpgFormalCombatFeedbackBridge>();
-                    RecordingEnemySkillPresentationConsumer consumer =
-                        new RecordingEnemySkillPresentationConsumer();
-                    Type bridgeType =
-                        typeof(FpgFormalCombatFeedbackBridge);
-                    System.Reflection.BindingFlags flags =
-                        System.Reflection.BindingFlags.Instance
-                        | System.Reflection.BindingFlags.NonPublic;
-                    bridgeType.GetField(
-                            "enemySkillPresentationConsumer",
-                            flags)
-                        .SetValue(bridge, consumer);
-                    System.Reflection.FieldInfo warningBindingsField =
-                        bridgeType.GetField(
-                            "enemySkillWarnings",
-                            flags);
-                    Array warningBindings = Array.CreateInstance(
-                        warningBindingsField.FieldType.GetElementType(),
-                        4);
-                    warningBindingsField.SetValue(
-                        bridge,
-                        warningBindings);
-
-                    bridgeType.GetMethod(
-                            "PresentEnemySkillCue",
-                            flags)
-                        .Invoke(bridge, new object[] { cueEvent });
-                    bridgeType.GetMethod(
-                            "PresentEnemySkillWarning",
-                            flags)
-                        .Invoke(
-                            bridge,
-                            new object[] { warningStarted });
-                    bridgeType.GetMethod(
-                            "PresentEnemySkillWarning",
-                            flags)
-                        .Invoke(
-                            bridge,
-                            new object[] { warningEnded });
-
-                    Assert.That(consumer.CueCount, Is.EqualTo(1));
-                    Assert.That(
-                        consumer.WarningStates,
-                        Is.EqualTo(new[] { true, false }));
-                    Assert.That(
-                        bridge.EnemySkillTimelineFaultCount,
-                        Is.Zero);
-                    bridgeType.GetMethod(
-                            "ClearEnemySkillWarnings",
-                            flags)
-                        .Invoke(bridge, Array.Empty<object>());
-                    Assert.That(consumer.ClearCount, Is.EqualTo(1));
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(bridgeObject);
-                }
-                Assert.That(
-                    resolvedEnd.WarningName,
-                    Is.EqualTo(resolvedStart.WarningName));
-            }
-            finally
-            {
-                fixture.Dispose();
-                UnityEngine.Object.DestroyImmediate(enemy);
-                UnityEngine.Object.DestroyImmediate(skill);
-            }
-        }
-        [Test]
-        public void BoundCueRequiresMatchingSuccessfulGameplayCommit()
-        {
-            SchedulerFixture committedFixture = new SchedulerFixture(
-                projectileCapacity: 2,
-                impactCapacity: 8,
-                projectileBudgetCapacity: 2,
-                projectileReservationCapacity: 2);
-            FpgEnemyAttackDefinition committedSkill =
-                CreateTimedImpactSkill(
-                    "enemy.bound.cue.committed",
-                    durationTicks: 1,
-                    cooldownTicks: 4,
-                    new AuthoredEvent(0, 0));
-            FpgEnemyDefinition committedEnemy =
-                CreateEnemy(committedSkill);
-            try
-            {
-                ConfigurePresentationCue(
-                    committedSkill,
-                    tick: 0,
-                    cueId: "vfx.enemy.committed",
-                    bindGameplayEventId: "event.attack.0");
-                int triggeredCues = 0;
-                committedFixture.Scheduler.TimelineEvent += value =>
-                {
-                    if (value.Event.Kind
-                            == FpgSkillEventKind.PresentationCue
-                        && value.Outcome
-                            == FpgSkillEventOutcome.Triggered)
-                    {
-                        triggeredCues++;
-                    }
-                };
-
-                committedFixture.Register(committedEnemy);
-                AssertTickAndProcess(committedFixture, 0L);
-                Assert.That(triggeredCues, Is.EqualTo(1));
-            }
-            finally
-            {
-                committedFixture.Dispose();
-                UnityEngine.Object.DestroyImmediate(committedEnemy);
-                UnityEngine.Object.DestroyImmediate(committedSkill);
-            }
-
-            SchedulerFixture canceledFixture = new SchedulerFixture(
-                projectileCapacity: 2,
-                impactCapacity: 8,
-                projectileBudgetCapacity: 2,
-                projectileReservationCapacity: 2);
-            FpgEnemyAttackDefinition canceledSkill =
-                CreateTimedImpactSkill(
-                    "enemy.bound.cue.canceled",
-                    durationTicks: 3,
-                    cooldownTicks: 4,
-                    new AuthoredEvent(2, 0));
-            FpgEnemyDefinition canceledEnemy =
-                CreateEnemy(canceledSkill);
-            try
-            {
-                ConfigurePresentationCue(
-                    canceledSkill,
-                    tick: 2,
-                    cueId: "vfx.enemy.canceled",
-                    bindGameplayEventId: "event.attack.0");
-                int triggeredCues = 0;
-                int canceledCues = 0;
-                canceledFixture.Scheduler.TimelineEvent += value =>
-                {
-                    if (value.Event.Kind
-                        != FpgSkillEventKind.PresentationCue)
-                    {
-                        return;
-                    }
-
-                    if (value.Outcome
-                        == FpgSkillEventOutcome.Triggered)
-                    {
-                        triggeredCues++;
-                    }
-                    else if (value.Outcome
-                        == FpgSkillEventOutcome.Canceled)
-                    {
-                        canceledCues++;
-                    }
-                };
-
-                canceledFixture.Register(canceledEnemy);
-                AssertTickAndProcess(canceledFixture, 0L);
-                Assert.That(
-                    canceledFixture.EnemyRuntime.EnterGroggy(
-                        new TickIndex(1L),
-                        canceledFixture.Kernel.ProjectileBudget),
-                    Is.GreaterThanOrEqualTo(0));
-                Assert.That(
-                    canceledFixture.Scheduler.Tick(
-                        new TickIndex(1L)).IsSuccess,
-                    Is.True);
-                Assert.That(triggeredCues, Is.Zero);
-                Assert.That(canceledCues, Is.EqualTo(1));
-            }
-            finally
-            {
-                canceledFixture.Dispose();
-                UnityEngine.Object.DestroyImmediate(canceledEnemy);
-                UnityEngine.Object.DestroyImmediate(canceledSkill);
-            }
-        }
-        [Test]
+                        [Test]
         public void GameplayEventsResampleSpatialPathAndEmitCorrelatedTrace()
         {
             RecordingProjectileWorldPort projectileWorld =
@@ -720,7 +451,7 @@ namespace FPG.Demo.Tests.EditMode
                 SerializedProperty logic = serialized
                     .FindProperty("sequences")
                     .GetArrayElementAtIndex(0)
-                    .FindPropertyRelative("logicEvents");
+                    .FindPropertyRelative("projectileEvents");
                 logic.GetArrayElementAtIndex(0)
                     .FindPropertyRelative("socketId").stringValue =
                     "enemy.left";
@@ -771,6 +502,10 @@ namespace FPG.Demo.Tests.EditMode
                     Assert.That(
                         projectileWorld.Spawns[index].HasExplicitPath,
                         Is.True);
+                    Assert.That(
+                        projectileWorld.Spawns[index].PresentationKind,
+                        Is.EqualTo(
+                            FpgThreatPresentationKind.FastUninterceptable));
                 }
 
                 Assert.That(
@@ -920,205 +655,64 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
-        [Test]
-        public void SummonCommittedQuotaSurvivesOwnerUnregister()
+                                        [Test]
+        public void ProjectileThreatPresentationKindMustMatchInterceptability()
         {
-            SchedulerFixture fixture = new SchedulerFixture(
-                projectileCapacity: 2,
-                impactCapacity: 4,
-                projectileBudgetCapacity: 2,
-                projectileReservationCapacity: 2);
-            FpgEnemyDefinition candidate =
-                CreateSummonCandidate("enemy.summon.candidate.unregister");
-            FpgEnemyAttackDefinition skill = CreateSummonSkill(
-                "enemy.summon.unregister",
-                durationTicks: 0,
-                cooldownTicks: 4,
-                candidate,
-                maxPerOwner: 2,
-                maxPerEncounter: 2,
-                new AuthoredEvent(0, 0));
-            FpgEnemyDefinition enemy = CreateEnemy(skill);
-            try
-            {
-                Assert.That(
-                    skill.TryCompile(
-                        out FpgCompiledEnemySkillDefinition compiled,
-                        out string compileError),
-                    Is.True,
-                    compileError);
-                int actionStableId =
-                    compiled.PayloadSlots[0].SummonPayload.ActionStableId;
-                fixture.Register(enemy);
-
-                Assert.That(
-                    fixture.Scheduler.Tick(new TickIndex(0L)).IsSuccess,
-                    Is.True);
-                Assert.That(
-                    fixture.Scheduler.TryGetSummonQuotaState(
-                        actionStableId,
-                        out int committed,
-                        out int reserved),
-                    Is.True);
-                Assert.That(committed, Is.EqualTo(1));
-                Assert.That(reserved, Is.Zero);
-
-                Assert.That(
-                    fixture.Scheduler.TryUnregisterEnemy(fixture.EnemyId)
-                        .IsSuccess,
-                    Is.True);
-                Assert.That(
-                    fixture.Scheduler.TryGetSummonQuotaState(
-                        actionStableId,
-                        out committed,
-                        out reserved),
-                    Is.True);
-                Assert.That(committed, Is.EqualTo(1));
-                Assert.That(reserved, Is.Zero);
-            }
-            finally
-            {
-                fixture.Dispose();
-                UnityEngine.Object.DestroyImmediate(enemy);
-                UnityEngine.Object.DestroyImmediate(skill);
-                UnityEngine.Object.DestroyImmediate(candidate);
-            }
-        }
-
-        [Test]
-        public void SimultaneousSummonExecutionsCannotOverReserveGlobalQuota()
-        {
-            SchedulerFixture fixture = new SchedulerFixture(
-                projectileCapacity: 2,
-                impactCapacity: 4,
-                projectileBudgetCapacity: 2,
-                projectileReservationCapacity: 2);
-            FpgEnemyDefinition candidate =
-                CreateSummonCandidate("enemy.summon.candidate.concurrent");
-            FpgEnemyAttackDefinition skill = CreateSummonSkill(
-                "enemy.summon.concurrent",
+            FpgEnemyAttackDefinition skill = CreateProjectileSkill(
+                "enemy.presentation-kind.contract",
                 durationTicks: 1,
-                cooldownTicks: 4,
-                candidate,
-                maxPerOwner: 1,
-                maxPerEncounter: 1,
-                new AuthoredEvent(1, 0));
-            FpgEnemyDefinition enemy = CreateEnemy(skill);
+                cooldownTicks: 2,
+                eventTicks: new[] { 0 });
             try
             {
+                SerializedObject serialized = new SerializedObject(skill);
+                SerializedProperty projectile = serialized
+                    .FindProperty("sequences")
+                    .GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("projectileEvents")
+                    .GetArrayElementAtIndex(0);
+                projectile.FindPropertyRelative("projectileInterceptable")
+                    .boolValue = true;
+                projectile.FindPropertyRelative("projectileMaxHitPoints")
+                    .intValue = 1;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                Assert.That(skill.TryValidate(out string fastError), Is.False);
                 Assert.That(
-                    skill.TryCompile(
-                        out FpgCompiledEnemySkillDefinition compiled,
-                        out string compileError),
+                    fastError,
+                    Does.Contain("does not match projectile interceptability"));
+
+                serialized.Update();
+                projectile = serialized.FindProperty("sequences")
+                    .GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("projectileEvents")
+                    .GetArrayElementAtIndex(0);
+                projectile.FindPropertyRelative("threatPresentationKind")
+                    .enumValueIndex =
+                    (int)FpgThreatPresentationKind.InterceptableVolley;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                Assert.That(
+                    skill.TryValidate(out string volleyError),
                     Is.True,
-                    compileError);
-                int actionStableId =
-                    compiled.PayloadSlots[0].SummonPayload.ActionStableId;
-                fixture.Register(enemy);
-                fixture.RegisterAdditional(enemy);
+                    volleyError);
 
+                serialized.Update();
+                projectile = serialized.FindProperty("sequences")
+                    .GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("projectileEvents")
+                    .GetArrayElementAtIndex(0);
+                projectile.FindPropertyRelative("threatPresentationKind")
+                    .enumValueIndex =
+                    (int)FpgThreatPresentationKind.HeavyWeakpoint;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                Assert.That(skill.TryValidate(out string heavyError), Is.False);
                 Assert.That(
-                    fixture.Scheduler.Tick(new TickIndex(0L)).IsSuccess,
-                    Is.True);
-                Assert.That(
-                    fixture.Scheduler.TryGetSummonQuotaState(
-                        actionStableId,
-                        out int committed,
-                        out int reserved),
-                    Is.True);
-                Assert.That(committed, Is.Zero);
-                Assert.That(reserved, Is.EqualTo(1));
-                Assert.That(fixture.Port.PendingAttackCount, Is.Zero);
-
-                Assert.That(
-                    fixture.Scheduler.Tick(new TickIndex(1L)).IsSuccess,
-                    Is.True);
-                Assert.That(
-                    fixture.Scheduler.TryGetSummonQuotaState(
-                        actionStableId,
-                        out committed,
-                        out reserved),
-                    Is.True);
-                Assert.That(committed, Is.EqualTo(1));
-                Assert.That(reserved, Is.Zero);
-                Assert.That(fixture.Port.PendingAttackCount, Is.EqualTo(1));
+                    heavyError,
+                    Does.Contain("does not match projectile interceptability"));
             }
             finally
             {
-                fixture.Dispose();
-                UnityEngine.Object.DestroyImmediate(enemy);
                 UnityEngine.Object.DestroyImmediate(skill);
-                UnityEngine.Object.DestroyImmediate(candidate);
-            }
-        }
-
-        [Test]
-        public void InterruptedSummonExecutionReleasesOnlyUntriggeredQuota()
-        {
-            SchedulerFixture fixture = new SchedulerFixture(
-                projectileCapacity: 2,
-                impactCapacity: 4,
-                projectileBudgetCapacity: 2,
-                projectileReservationCapacity: 2);
-            FpgEnemyDefinition candidate =
-                CreateSummonCandidate("enemy.summon.candidate.interrupt");
-            FpgEnemyAttackDefinition skill = CreateSummonSkill(
-                "enemy.summon.interrupt",
-                durationTicks: 2,
-                cooldownTicks: 4,
-                candidate,
-                maxPerOwner: 2,
-                maxPerEncounter: 2,
-                new AuthoredEvent(0, 0),
-                new AuthoredEvent(2, 1));
-            FpgEnemyDefinition enemy = CreateEnemy(skill);
-            try
-            {
-                Assert.That(
-                    skill.TryCompile(
-                        out FpgCompiledEnemySkillDefinition compiled,
-                        out string compileError),
-                    Is.True,
-                    compileError);
-                int actionStableId =
-                    compiled.PayloadSlots[0].SummonPayload.ActionStableId;
-                fixture.Register(enemy);
-
-                Assert.That(
-                    fixture.Scheduler.Tick(new TickIndex(0L)).IsSuccess,
-                    Is.True);
-                Assert.That(
-                    fixture.Scheduler.TryGetSummonQuotaState(
-                        actionStableId,
-                        out int committed,
-                        out int reserved),
-                    Is.True);
-                Assert.That(committed, Is.EqualTo(1));
-                Assert.That(reserved, Is.EqualTo(1));
-
-                Assert.That(
-                    fixture.EnemyRuntime.EnterGroggy(
-                        new TickIndex(1L),
-                        fixture.Kernel.ProjectileBudget),
-                    Is.GreaterThanOrEqualTo(0));
-                Assert.That(
-                    fixture.Scheduler.Tick(new TickIndex(1L)).IsSuccess,
-                    Is.True);
-                Assert.That(
-                    fixture.Scheduler.TryGetSummonQuotaState(
-                        actionStableId,
-                        out committed,
-                        out reserved),
-                    Is.True);
-                Assert.That(committed, Is.EqualTo(1));
-                Assert.That(reserved, Is.Zero);
-            }
-            finally
-            {
-                fixture.Dispose();
-                UnityEngine.Object.DestroyImmediate(enemy);
-                UnityEngine.Object.DestroyImmediate(skill);
-                UnityEngine.Object.DestroyImmediate(candidate);
             }
         }
 
@@ -1127,7 +721,11 @@ namespace FPG.Demo.Tests.EditMode
             long tickValue)
         {
             TickIndex tick = new TickIndex(tickValue);
-            Assert.That(fixture.Scheduler.Tick(tick).IsSuccess, Is.True);
+            DomainResult schedulerResult = fixture.Scheduler.Tick(tick);
+            Assert.That(
+                schedulerResult.IsSuccess,
+                Is.True,
+                schedulerResult.RejectReason.ToString());
             Assert.That(
                 fixture.Port.Process(
                     FpgBattleTickPhase.EnemyAttackDirector,
@@ -1168,29 +766,98 @@ namespace FPG.Demo.Tests.EditMode
                 ScriptableObject.CreateInstance<FpgEnemyAttackDefinition>();
             SerializedObject serialized = new SerializedObject(skill);
             ConfigureSkillIdentity(serialized, skillId, cooldownTicks);
-            SerializedProperty payload = serialized.FindProperty("payloadSlots")
-                .GetArrayElementAtIndex(0);
-            payload.FindPropertyRelative("slotId").stringValue = "payload.impact";
-            payload.FindPropertyRelative("kind").enumValueIndex =
-                (int)FpgEnemySkillPayloadKind.TimedImpact;
-            payload.FindPropertyRelative("threatDefinitionId").intValue = 101;
-            payload.FindPropertyRelative("baseDamage").intValue = 5;
-            payload.FindPropertyRelative("breakDamage").intValue = 1;
-            payload.FindPropertyRelative(
-                "weakpointDamageMultiplierBasisPoints").intValue = 10000;
-            payload.FindPropertyRelative(
-                "weakpointBreakMultiplierBasisPoints").intValue = 10000;
-            payload.FindPropertyRelative("timedImpactTargetPolicy")
-                .enumValueIndex = (int)ThreatTargetPolicy.PlayerCombatant;
-            payload.FindPropertyRelative("timedImpactDelayTicks").intValue = 20;
-            payload.FindPropertyRelative("timedImpactPresentationKey")
-                .intValue = 21;
+            serialized.FindProperty("authoringSchemaVersion").intValue =
+                FpgSkillTimelineDefinition.CurrentAuthoringSchemaVersion;
             ConfigureExecute(
                 serialized,
                 durationTicks,
-                "enemy_combo",
-                "payload.impact",
-                authoredEvents);
+                "enemy_combo");
+            SerializedProperty attacks = serialized.FindProperty("sequences")
+                .GetArrayElementAtIndex(0)
+                .FindPropertyRelative("attackEvents");
+            attacks.arraySize = authoredEvents.Length;
+            for (int index = 0; index < authoredEvents.Length; index++)
+            {
+                AuthoredEvent authored = authoredEvents[index];
+                SerializedProperty attack = attacks.GetArrayElementAtIndex(index);
+                attack.FindPropertyRelative("eventId").stringValue =
+                    "event.attack." + index;
+                attack.FindPropertyRelative("tick").intValue = authored.Tick;
+                attack.FindPropertyRelative("authoredOrdinal").intValue =
+                    authored.Ordinal;
+                attack.FindPropertyRelative("targetSource").enumValueIndex =
+                    (int)FpgSkillTargetSource.CurrentTarget;
+                attack.FindPropertyRelative("mode").enumValueIndex =
+                    (int)FpgSkillAttackMode.BoundTarget;
+                attack.FindPropertyRelative("ammoCost").intValue = 0;
+                attack.FindPropertyRelative("baseDamage").intValue = 5;
+                attack.FindPropertyRelative("breakDamage").intValue = 1;
+                attack.FindPropertyRelative(
+                    "weakpointDamageMultiplierBasisPoints").intValue = 10000;
+                attack.FindPropertyRelative(
+                    "weakpointBreakMultiplierBasisPoints").intValue = 10000;
+                attack.FindPropertyRelative("threatDefinitionId").intValue = 101;
+                attack.FindPropertyRelative("boundTargetPolicy").enumValueIndex =
+                    (int)ThreatTargetPolicy.PlayerCombatant;
+                attack.FindPropertyRelative("delayTicks").intValue = 20;
+                attack.FindPropertyRelative("threatPresentationKind")
+                    .enumValueIndex =
+                    (int)FpgThreatPresentationKind.HeavyWeakpoint;
+            }
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(skill.TryValidate(out string error), Is.True, error);
+            return skill;
+        }
+
+        private static FpgEnemyAttackDefinition CreateTypedTimedImpactSkill(
+            string skillId,
+            int durationTicks,
+            int cooldownTicks,
+            int eventTick,
+            int delayTicks)
+        {
+            FpgEnemyAttackDefinition skill =
+                ScriptableObject.CreateInstance<FpgEnemyAttackDefinition>();
+            SerializedObject serialized = new SerializedObject(skill);
+            ConfigureSkillIdentity(serialized, skillId, cooldownTicks);
+            serialized.FindProperty("authoringSchemaVersion").intValue =
+                FpgSkillTimelineDefinition.CurrentAuthoringSchemaVersion;
+            ConfigureExecute(
+                serialized,
+                durationTicks,
+                "enemy_targeted");
+            SerializedProperty execute = serialized.FindProperty("sequences")
+                .GetArrayElementAtIndex(0);
+            SerializedProperty attacks =
+                execute.FindPropertyRelative("attackEvents");
+            attacks.arraySize = 1;
+            SerializedProperty attack = attacks.GetArrayElementAtIndex(0);
+            attack.FindPropertyRelative("eventId").stringValue =
+                "event.targeted";
+            attack.FindPropertyRelative("tick").intValue = eventTick;
+            attack.FindPropertyRelative("authoredOrdinal").intValue = 0;
+            attack.FindPropertyRelative("socketId").stringValue =
+                string.Empty;
+            attack.FindPropertyRelative("targetSource").enumValueIndex =
+                (int)FpgSkillTargetSource.CurrentTarget;
+            attack.FindPropertyRelative("targetOffset").vector3Value =
+                Vector3.zero;
+            attack.FindPropertyRelative("mode").enumValueIndex =
+                (int)FpgSkillAttackMode.BoundTarget;
+            attack.FindPropertyRelative("ammoCost").intValue = 0;
+            attack.FindPropertyRelative("baseDamage").intValue = 5;
+            attack.FindPropertyRelative("breakDamage").intValue = 1;
+            attack.FindPropertyRelative(
+                "weakpointDamageMultiplierBasisPoints").intValue = 10000;
+            attack.FindPropertyRelative(
+                "weakpointBreakMultiplierBasisPoints").intValue = 10000;
+            attack.FindPropertyRelative("threatDefinitionId").intValue = 101;
+            attack.FindPropertyRelative("boundTargetPolicy").enumValueIndex =
+                (int)ThreatTargetPolicy.PlayerCombatant;
+            attack.FindPropertyRelative("delayTicks").intValue = delayTicks;
+            attack.FindPropertyRelative("threatPresentationKind")
+                .enumValueIndex =
+                (int)FpgThreatPresentationKind.HeavyWeakpoint;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             Assert.That(skill.TryValidate(out string error), Is.True, error);
             return skill;
@@ -1202,143 +869,75 @@ namespace FPG.Demo.Tests.EditMode
             int cooldownTicks,
             int[] eventTicks)
         {
-            AuthoredEvent[] authored = new AuthoredEvent[eventTicks.Length];
+            FpgEnemyAttackDefinition skill =
+                ScriptableObject.CreateInstance<FpgEnemyAttackDefinition>();
+            SerializedObject serialized = new SerializedObject(skill);
+            ConfigureSkillIdentity(serialized, skillId, cooldownTicks);
+            serialized.FindProperty("authoringSchemaVersion").intValue =
+                FpgSkillTimelineDefinition.CurrentAuthoringSchemaVersion;
+            ConfigureExecute(
+                serialized,
+                durationTicks,
+                "enemy_projectile");
+            SerializedProperty sequence = serialized.FindProperty("sequences")
+                .GetArrayElementAtIndex(0);
+            sequence.FindPropertyRelative("attackEvents").arraySize = 0;
+            sequence.FindPropertyRelative("reloadEvents").arraySize = 0;
+            sequence.FindPropertyRelative("summonEvents").arraySize = 0;
+            SerializedProperty projectiles =
+                sequence.FindPropertyRelative("projectileEvents");
+            projectiles.arraySize = eventTicks.Length;
             for (int index = 0; index < eventTicks.Length; index++)
             {
-                authored[index] = new AuthoredEvent(eventTicks[index], index);
+                SerializedProperty projectile =
+                    projectiles.GetArrayElementAtIndex(index);
+                projectile.FindPropertyRelative("eventId").stringValue =
+                    "event.attack." + index;
+                projectile.FindPropertyRelative("tick").intValue =
+                    eventTicks[index];
+                projectile.FindPropertyRelative("authoredOrdinal").intValue =
+                    index;
+                projectile.FindPropertyRelative("socketId").stringValue =
+                    "enemy.muzzle";
+                projectile.FindPropertyRelative("targetSource").enumValueIndex =
+                    (int)FpgSkillTargetSource.CurrentTarget;
+                projectile.FindPropertyRelative("targetOffset").vector3Value =
+                    Vector3.zero;
+                projectile.FindPropertyRelative("impactMode").enumValueIndex =
+                    (int)FpgSkillProjectileImpactMode.BoundTarget;
+                projectile.FindPropertyRelative("ammoCost").intValue = 0;
+                projectile.FindPropertyRelative("baseDamage").intValue = 5;
+                projectile.FindPropertyRelative("breakDamage").intValue = 1;
+                projectile.FindPropertyRelative(
+                    "weakpointDamageMultiplierBasisPoints").intValue = 10000;
+                projectile.FindPropertyRelative(
+                    "weakpointBreakMultiplierBasisPoints").intValue = 10000;
+                projectile.FindPropertyRelative("threatDefinitionId").intValue =
+                    201;
+                projectile.FindPropertyRelative("projectileDefinitionId")
+                    .intValue = 301;
+                projectile.FindPropertyRelative("projectileCount").intValue = 1;
+                projectile.FindPropertyRelative("projectileFlightTicks")
+                    .intValue = 20;
+                projectile.FindPropertyRelative("projectileLifetimeTicks")
+                    .intValue = 30;
+                projectile.FindPropertyRelative("projectileMaxHitPoints")
+                    .intValue = 0;
+                projectile.FindPropertyRelative("projectileInterceptable")
+                    .boolValue = false;
+                projectile.FindPropertyRelative("projectileBudgetUnits")
+                    .intValue = 1;
+                projectile.FindPropertyRelative("projectileSweepRadiusKey")
+                    .intValue = 32;
+                projectile.FindPropertyRelative("threatPresentationKind")
+                    .enumValueIndex =
+                    (int)FpgThreatPresentationKind.FastUninterceptable;
             }
-
-            FpgEnemyAttackDefinition skill =
-                ScriptableObject.CreateInstance<FpgEnemyAttackDefinition>();
-            SerializedObject serialized = new SerializedObject(skill);
-            ConfigureSkillIdentity(serialized, skillId, cooldownTicks);
-            SerializedProperty payload = serialized.FindProperty("payloadSlots")
-                .GetArrayElementAtIndex(0);
-            payload.FindPropertyRelative("slotId").stringValue =
-                "payload.projectile";
-            payload.FindPropertyRelative("kind").enumValueIndex =
-                (int)FpgEnemySkillPayloadKind.Projectile;
-            payload.FindPropertyRelative("threatDefinitionId").intValue = 201;
-            payload.FindPropertyRelative("baseDamage").intValue = 5;
-            payload.FindPropertyRelative("breakDamage").intValue = 1;
-            payload.FindPropertyRelative(
-                "weakpointDamageMultiplierBasisPoints").intValue = 10000;
-            payload.FindPropertyRelative(
-                "weakpointBreakMultiplierBasisPoints").intValue = 10000;
-            payload.FindPropertyRelative("projectileDefinitionId").intValue = 301;
-            payload.FindPropertyRelative("projectileCount").intValue = 1;
-            payload.FindPropertyRelative("projectileFlightTicks").intValue = 20;
-            payload.FindPropertyRelative("projectileLifetimeTicks").intValue = 30;
-            payload.FindPropertyRelative("projectileMaxHitPoints").intValue = 0;
-            payload.FindPropertyRelative("projectileInterceptable").boolValue = false;
-            payload.FindPropertyRelative("projectileBudgetUnits").intValue = 1;
-            payload.FindPropertyRelative("projectilePresentationKey").intValue = 31;
-            payload.FindPropertyRelative("projectileSweepRadiusKey").intValue = 32;
-            ConfigureExecute(
-                serialized,
-                durationTicks,
-                "enemy_projectile",
-                "payload.projectile",
-                authored);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             Assert.That(skill.TryValidate(out string error), Is.True, error);
             return skill;
         }
 
-        private static FpgEnemyAttackDefinition CreateSummonSkill(
-            string skillId,
-            int durationTicks,
-            int cooldownTicks,
-            FpgEnemyDefinition candidate,
-            int maxPerOwner,
-            int maxPerEncounter,
-            params AuthoredEvent[] authoredEvents)
-        {
-            FpgEnemyAttackDefinition skill =
-                ScriptableObject.CreateInstance<FpgEnemyAttackDefinition>();
-            SerializedObject serialized = new SerializedObject(skill);
-            ConfigureSkillIdentity(serialized, skillId, cooldownTicks);
-            SerializedProperty payload = serialized.FindProperty("payloadSlots")
-                .GetArrayElementAtIndex(0);
-            payload.FindPropertyRelative("slotId").stringValue =
-                "payload.summon";
-            payload.FindPropertyRelative("displayName").stringValue =
-                "Summon";
-            payload.FindPropertyRelative("kind").enumValueIndex =
-                (int)FpgEnemySkillPayloadKind.Summon;
-            SerializedProperty candidates =
-                payload.FindPropertyRelative("summonCandidates");
-            candidates.arraySize = 1;
-            candidates.GetArrayElementAtIndex(0).objectReferenceValue =
-                candidate;
-            SerializedProperty weights =
-                payload.FindPropertyRelative("summonCandidateWeights");
-            weights.arraySize = 1;
-            weights.GetArrayElementAtIndex(0).intValue = 1;
-            payload.FindPropertyRelative("summonOccupancyMode")
-                .enumValueIndex =
-                (int)FpgSummonOccupancyMode.AdditionalEntity;
-            payload.FindPropertyRelative("summonPlacementMode")
-                .enumValueIndex =
-                (int)FpgSummonPlacementMode.EncounterSpawnPoint;
-            payload.FindPropertyRelative("summonOwnerOutcome")
-                .enumValueIndex =
-                (int)FpgSummonOwnerOutcome.RemainAlive;
-            payload.FindPropertyRelative("maxSummonsPerOwner").intValue =
-                maxPerOwner;
-            payload.FindPropertyRelative(
-                "maxTotalSummonsPerEncounter").intValue =
-                maxPerEncounter;
-            payload.FindPropertyRelative("maxSummonRecursionDepth")
-                .intValue = 2;
-            ConfigureExecute(
-                serialized,
-                durationTicks,
-                "enemy_summon",
-                "payload.summon",
-                authoredEvents);
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            Assert.That(skill.TryValidate(out string error), Is.True, error);
-            return skill;
-        }
-
-        private static FpgEnemyDefinition CreateSummonCandidate(
-            string enemyDefinitionId)
-        {
-            FpgEnemyDefinition candidate =
-                ScriptableObject.CreateInstance<FpgEnemyDefinition>();
-            SerializedObject serialized = new SerializedObject(candidate);
-            serialized.FindProperty("enemyDefinitionId").stringValue =
-                enemyDefinitionId;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            return candidate;
-        }
-        private static void ConfigurePresentationCue(
-            FpgEnemyAttackDefinition skill,
-            int tick,
-            string cueId,
-            string bindGameplayEventId)
-        {
-            SerializedObject serialized = new SerializedObject(skill);
-            SerializedProperty execute = serialized
-                .FindProperty("sequences")
-                .GetArrayElementAtIndex(0);
-            SerializedProperty cues = execute
-                .FindPropertyRelative("presentationCues");
-            cues.arraySize = 1;
-            SerializedProperty cue = cues.GetArrayElementAtIndex(0);
-            cue.FindPropertyRelative("eventId").stringValue =
-                "event.cue.bound";
-            cue.FindPropertyRelative("tick").intValue = tick;
-            cue.FindPropertyRelative("cueId").stringValue = cueId;
-            cue.FindPropertyRelative("authoredOrdinal").intValue = 1;
-            cue.FindPropertyRelative("socketId").stringValue =
-                "enemy.muzzle";
-            cue.FindPropertyRelative("bindGameplayEventId")
-                .stringValue = bindGameplayEventId;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            Assert.That(skill.TryValidate(out string error), Is.True, error);
-        }
         private static void ConfigureSkillIdentity(
             SerializedObject serialized,
             string skillId,
@@ -1355,9 +954,7 @@ namespace FPG.Demo.Tests.EditMode
         private static void ConfigureExecute(
             SerializedObject serialized,
             int durationTicks,
-            string animation,
-            string payloadSlotId,
-            AuthoredEvent[] authoredEvents)
+            string animation)
         {
             SerializedProperty sequences = serialized.FindProperty("sequences");
             sequences.arraySize = 1;
@@ -1368,36 +965,13 @@ namespace FPG.Demo.Tests.EditMode
                 durationTicks;
             execute.FindPropertyRelative("mainAnimation").stringValue = animation;
             execute.FindPropertyRelative("loop").boolValue = false;
-            execute.FindPropertyRelative("phases").arraySize = 0;
-            execute.FindPropertyRelative("presentationCues").arraySize = 0;
             execute.FindPropertyRelative("warnings").arraySize = 0;
-
-            SerializedProperty logic =
-                execute.FindPropertyRelative("logicEvents");
-            logic.arraySize = authoredEvents.Length;
-            for (int index = 0; index < authoredEvents.Length; index++)
-            {
-                AuthoredEvent authored = authoredEvents[index];
-                SerializedProperty value = logic.GetArrayElementAtIndex(index);
-                value.FindPropertyRelative("eventId").stringValue =
-                    "event.attack." + index;
-                value.FindPropertyRelative("tick").intValue = authored.Tick;
-                value.FindPropertyRelative("payloadSlotId").stringValue =
-                    payloadSlotId;
-                value.FindPropertyRelative("authoredOrdinal").intValue =
-                    authored.Ordinal;
-                value.FindPropertyRelative("socketId").stringValue =
-                    string.Equals(
-                        payloadSlotId,
-                        "payload.projectile",
-                        StringComparison.Ordinal)
-                        ? "enemy.muzzle"
-                        : string.Empty;
-                value.FindPropertyRelative("targetSource").enumValueIndex =
-                    (int)FpgSkillTargetSource.CurrentTarget;
-                value.FindPropertyRelative("targetOffset").vector3Value =
-                    Vector3.zero;
-            }
+            execute.FindPropertyRelative("activePresentationTracks")
+                .arraySize = 0;
+            execute.FindPropertyRelative("attackEvents").arraySize = 0;
+            execute.FindPropertyRelative("projectileEvents").arraySize = 0;
+            execute.FindPropertyRelative("reloadEvents").arraySize = 0;
+            execute.FindPropertyRelative("summonEvents").arraySize = 0;
         }
 
         private static FpgEnemyDefinition CreateEnemy(
@@ -1418,17 +992,9 @@ namespace FPG.Demo.Tests.EditMode
         private sealed class RecordingEnemySkillPresentationConsumer :
             IFpgFormalEnemySkillPresentationConsumer
         {
-            public int CueCount { get; private set; }
             public int ClearCount { get; private set; }
             public List<bool> WarningStates { get; } =
                 new List<bool>();
-
-            public bool TryPresentEnemySkillCue(
-                in FpgFormalEnemySkillCuePresentationEvent cueEvent)
-            {
-                CueCount++;
-                return true;
-            }
 
             public bool TrySetEnemySkillWarning(
                 in FpgFormalEnemySkillWarningPresentationEvent warningEvent)

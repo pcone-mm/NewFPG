@@ -374,6 +374,10 @@ namespace FPG.Demo.Tests.EditMode
                 {
                     FpgFormalCombatFeedbackBridge bridge =
                         FindSingle<FpgFormalCombatFeedbackBridge>(scene);
+                    FpgFormalPlayerPresentationBridge playerPresentationBridge =
+                        FindSingle<FpgFormalPlayerPresentationBridge>(scene);
+                    D0CombatVfxWorld skillVfxWorld =
+                        FindSingle<D0CombatVfxWorld>(scene);
                     FpgFormalEncounterHost host =
                         FindSingle<FpgFormalEncounterHost>(scene);
                     FpgRoomEncounterDirector director =
@@ -390,6 +394,25 @@ namespace FPG.Demo.Tests.EditMode
                     Assert.That(hud.PresentationProfile, Is.SameAs(profile));
 
                     SerializedObject data = new SerializedObject(bridge);
+                    Assert.That(
+                        playerPresentationBridge.SkillVfxWorld,
+                        Is.SameAs(skillVfxWorld));
+                    Assert.That(
+                        skillVfxWorld.PoolRoot,
+                        Is.SameAs(skillVfxWorld.transform));
+                    SerializedObject vfxData =
+                        new SerializedObject(skillVfxWorld);
+                    Assert.That(
+                        vfxData.FindProperty("prepareOnEnable").boolValue,
+                        Is.False);
+                    Assert.That(
+                        vfxData.FindProperty("automaticallyAdvance").boolValue,
+                        Is.True);
+                    Assert.That(
+                        GetReference<D0CombatVfxWorld>(
+                            data,
+                            "skillVfxWorld"),
+                        Is.SameAs(skillVfxWorld));
                     Assert.That(
                         GetReference<FpgRoomEncounterDirector>(
                             data,

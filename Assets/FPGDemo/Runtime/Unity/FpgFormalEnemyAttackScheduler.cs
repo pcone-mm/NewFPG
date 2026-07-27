@@ -41,15 +41,18 @@ namespace FPG.Demo.Unity
             int spawnSequence,
             FpgEnemyAttackDefinition definition,
             FpgSkillEventResult runtimeEvent,
-            FpgCompiledEnemySkillPayloadSlot payload,
-            bool hasGameplayPayload)
+            FpgCompiledEnemySkillAction action,
+            bool hasGameplayAction,
+            FpgEnemyAttackSpatialContext spatialContext =
+                default(FpgEnemyAttackSpatialContext))
         {
             OwnerRuntimeId = ownerRuntimeId;
             SpawnSequence = spawnSequence;
             Definition = definition;
             RuntimeEvent = runtimeEvent;
-            Payload = payload;
-            HasGameplayPayload = hasGameplayPayload;
+            Action = action;
+            HasGameplayAction = hasGameplayAction;
+            SpatialContext = spatialContext;
         }
 
         public RuntimeId OwnerRuntimeId { get; }
@@ -58,8 +61,9 @@ namespace FPG.Demo.Unity
         public FpgSkillEventResult RuntimeEvent { get; }
         public FpgCompiledSkillEvent Event => RuntimeEvent.Event;
         public FpgSkillEventOutcome Outcome => RuntimeEvent.Outcome;
-        public bool HasGameplayPayload { get; }
-        public FpgCompiledEnemySkillPayloadSlot Payload { get; }
+        public bool HasGameplayAction { get; }
+        public FpgCompiledEnemySkillAction Action { get; }
+        public FpgEnemyAttackSpatialContext SpatialContext { get; }
     }
 
     public readonly struct FpgFormalEnemySkillSequenceFrame
@@ -290,14 +294,14 @@ namespace FPG.Demo.Unity
                     execute.EventCount);
                 requiredPayloadCapacity = Math.Max(
                     requiredPayloadCapacity,
-                    compiledAttack.PayloadSlotCount);
+                    compiledAttack.GameplayActionCount);
                 for (int payloadIndex = 0;
-                    payloadIndex < compiledAttack.PayloadSlotCount;
+                    payloadIndex < compiledAttack.GameplayActionCount;
                     payloadIndex++)
                 {
-                    FpgCompiledEnemySkillPayloadSlot payload =
-                        compiledAttack.PayloadSlots[payloadIndex];
-                    if (payload.Kind == FpgEnemySkillPayloadKind.Summon
+                    FpgCompiledEnemySkillAction payload =
+                        compiledAttack.GetGameplayAction(payloadIndex);
+                    if (payload.Kind == FpgEnemySkillActionKind.Summon
                         && payload.SummonPayload.OccupancyMode
                             == FpgSummonOccupancyMode.AdditionalEntity)
                     {
@@ -597,6 +601,17 @@ namespace FPG.Demo.Unity
             PresentationCallbackFaultCount = 0;
         }
 
+        public void ClearPresentationCommitState()
+        {
+            for (int index = 0; index < patterns.Length; index++)
+            {
+                if (patterns[index].IsUsed)
+                {
+                    patterns[index].ClearGameplayEventSuccesses();
+                }
+            }
+        }
+
         private StartPatternResult TryStartPattern(
             PatternState pattern,
             TickIndex tick)
@@ -794,12 +809,12 @@ namespace FPG.Demo.Unity
                 index++)
             {
                 FpgSkillEventResult result = pattern.Runtime.GetResult(index);
-                FpgCompiledEnemySkillPayloadSlot payload =
-                    default(FpgCompiledEnemySkillPayloadSlot);
+                FpgCompiledEnemySkillAction payload =
+                    default(FpgCompiledEnemySkillAction);
                 bool hasPayload = result.Event.Kind
-                    == FpgSkillEventKind.GameplayPayload
-                    && pattern.Compiled.TryGetPayloadSlot(
-                        result.Event.PayloadSlotId,
+                    == FpgSkillEventKind.GameplayAction
+                    && pattern.Compiled.TryResolveAction(
+                        result.Event,
                         out payload);
                 PublishTimelineEvent(
                     new FpgFormalEnemySkillTimelineEvent(
@@ -809,7 +824,7 @@ namespace FPG.Demo.Unity
                         result,
                         hasPayload
                             ? payload
-                            : default(FpgCompiledEnemySkillPayloadSlot),
+                            : default(FpgCompiledEnemySkillAction),
                         hasPayload));
             }
 
@@ -828,16 +843,16 @@ namespace FPG.Demo.Unity
             PatternState pattern,
             FpgSkillEventResult result)
         {
-            if (result.Event.Kind != FpgSkillEventKind.GameplayPayload
+            if (result.Event.Kind != FpgSkillEventKind.GameplayAction
                 || result.Outcome
                     != FpgSkillEventOutcome.Triggered)
             {
                 return DomainResult.Success;
             }
 
-            if (!pattern.Compiled.TryGetPayloadSlot(
-                    result.Event.PayloadSlotId,
-                    out FpgCompiledEnemySkillPayloadSlot payload))
+            if (!pattern.Compiled.TryResolveAction(
+                    result.Event,
+                    out FpgCompiledEnemySkillAction payload))
             {
                 return DomainResult.Rejected(
                     RejectReason.InvalidDefinition);
@@ -848,11 +863,13 @@ namespace FPG.Demo.Unity
                 pattern,
                 owner,
                 result.Event,
-                payload);
+                payload,
+                out FpgEnemyAttackSpatialContext spatialContext);
             if (submitted.IsSuccess)
             {
                 pattern.MarkGameplayEventSucceeded(
-                    result.Event.EventId);
+                    result.Event.EventId,
+                    spatialContext);
             }
 
             return submitted;
@@ -863,25 +880,35 @@ namespace FPG.Demo.Unity
             FpgSkillEventResult result)
         {
             OwnerState owner = owners[pattern.OwnerIndex];
-            FpgCompiledEnemySkillPayloadSlot payload =
-                default(FpgCompiledEnemySkillPayloadSlot);
+            FpgCompiledEnemySkillAction payload =
+                default(FpgCompiledEnemySkillAction);
             bool hasPayload = result.Event.Kind
-                == FpgSkillEventKind.GameplayPayload;
+                == FpgSkillEventKind.GameplayAction;
             if (hasPayload
-                && !pattern.Compiled.TryGetPayloadSlot(
-                    result.Event.PayloadSlotId,
+                && !pattern.Compiled.TryResolveAction(
+                    result.Event,
                     out payload))
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
-            if (result.Event.Kind == FpgSkillEventKind.PresentationCue
+            if (result.Event.Kind == FpgSkillEventKind.ActivePresentation
                 && result.Outcome == FpgSkillEventOutcome.Triggered
                 && result.Event.BoundGameplayEventId != 0
                 && !pattern.HasSuccessfulGameplayEvent(
                     result.Event.BoundGameplayEventId))
             {
                 return DomainResult.Success;
+            }
+
+            FpgEnemyAttackSpatialContext spatialContext =
+                default(FpgEnemyAttackSpatialContext);
+            if (hasPayload
+                && result.Outcome == FpgSkillEventOutcome.Triggered)
+            {
+                pattern.TryGetSuccessfulGameplayEventSpatialContext(
+                    result.Event.EventId,
+                    out spatialContext);
             }
 
             PublishTimelineEvent(
@@ -891,7 +918,8 @@ namespace FPG.Demo.Unity
                     pattern.Attack,
                     result,
                     payload,
-                    hasPayload));
+                    hasPayload,
+                    spatialContext));
             return DomainResult.Success;
         }
 
@@ -899,8 +927,10 @@ namespace FPG.Demo.Unity
             PatternState pattern,
             OwnerState owner,
             FpgCompiledSkillEvent skillEvent,
-            FpgCompiledEnemySkillPayloadSlot payloadSlot)
+            FpgCompiledEnemySkillAction action,
+            out FpgEnemyAttackSpatialContext spatialContext)
         {
+            spatialContext = default(FpgEnemyAttackSpatialContext);
             if (nextScheduleSequence < 0L
                 || nextScheduleSequence == long.MaxValue)
             {
@@ -924,7 +954,7 @@ namespace FPG.Demo.Unity
                 combatPort.Player.RuntimeId,
                 socketName,
                 skillEvent,
-                out FpgEnemyAttackSpatialContext spatialContext);
+                out spatialContext);
             if (!sampled.IsSuccess)
             {
                 return sampled;
@@ -935,7 +965,7 @@ namespace FPG.Demo.Unity
                 pattern,
                 owner,
                 skillEvent,
-                payloadSlot,
+                action,
                 scheduleSequence,
                 out FpgEnemyAttackPayload payload);
             if (!payloadResult.IsSuccess)
@@ -967,11 +997,14 @@ namespace FPG.Demo.Unity
                 return submitted;
             }
 
-            if (payloadSlot.Kind == FpgEnemySkillPayloadKind.Summon
+            if (action.Kind == FpgEnemySkillActionKind.Summon
+                && action.SummonPayload.OccupancyMode
+                    == FpgSummonOccupancyMode.AdditionalEntity
                 && !CommitSummonQuotaReservation(
                     pattern,
-                    payloadSlot.SummonPayload.ActionStableId))
+                    action.SummonPayload.ActionStableId))
             {
+                combatPort.TryCompensateSummonAttack(scheduleSequence);
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
@@ -986,32 +1019,32 @@ namespace FPG.Demo.Unity
             PatternState pattern,
             OwnerState owner,
             FpgCompiledSkillEvent skillEvent,
-            FpgCompiledEnemySkillPayloadSlot payloadSlot,
+            FpgCompiledEnemySkillAction action,
             long scheduleSequence,
             out FpgEnemyAttackPayload payload)
         {
             payload = default(FpgEnemyAttackPayload);
-            if (payloadSlot.Kind == FpgEnemySkillPayloadKind.Projectile
-                || payloadSlot.Kind == FpgEnemySkillPayloadKind.TimedImpact)
+            if (action.Kind == FpgEnemySkillActionKind.Projectile
+                || action.Kind == FpgEnemySkillActionKind.TimedImpact)
             {
                 ThreatDefinition threat = new ThreatDefinition(
-                    payloadSlot.ThreatDefinitionId,
+                    action.ThreatDefinitionId,
                     TickDuration.Zero,
                     TickDuration.Zero,
                     TickDuration.Zero,
-                    payloadSlot.ThreatPayload);
+                    action.ThreatPayload);
                 payload = FpgEnemyAttackPayload.ForThreat(threat);
                 return DomainResult.Success;
             }
 
-            if (payloadSlot.Kind != FpgEnemySkillPayloadKind.Summon
-                || payloadSlot.SummonPayload == null)
+            if (action.Kind != FpgEnemySkillActionKind.Summon
+                || action.SummonPayload == null)
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
             FpgCompiledEnemySummonPayload summon =
-                payloadSlot.SummonPayload;
+                action.SummonPayload;
             if (owner.RecursionDepth >= summon.MaxRecursionDepth
                 || owner.RecursionDepth == int.MaxValue)
             {
@@ -1077,11 +1110,11 @@ namespace FPG.Demo.Unity
             {
                 FpgCompiledSkillEvent skillEvent =
                     pattern.Execute.GetEvent(eventIndex);
-                if (skillEvent.Kind != FpgSkillEventKind.GameplayPayload
-                    || !pattern.Compiled.TryGetPayloadSlot(
-                        skillEvent.PayloadSlotId,
-                        out FpgCompiledEnemySkillPayloadSlot payload)
-                    || payload.Kind != FpgEnemySkillPayloadKind.Projectile)
+                if (skillEvent.Kind != FpgSkillEventKind.GameplayAction
+                    || !pattern.Compiled.TryResolveAction(
+                        skillEvent,
+                        out FpgCompiledEnemySkillAction payload)
+                    || payload.Kind != FpgEnemySkillActionKind.Projectile)
                 {
                     continue;
                 }
@@ -1134,17 +1167,17 @@ namespace FPG.Demo.Unity
         {
             pattern.ClearSummonQuotaReservations();
             for (int payloadIndex = 0;
-                payloadIndex < pattern.Compiled.PayloadSlotCount;
+                payloadIndex < pattern.Compiled.GameplayActionCount;
                 payloadIndex++)
             {
-                FpgCompiledEnemySkillPayloadSlot payload =
-                    pattern.Compiled.PayloadSlots[payloadIndex];
-                if (payload.Kind != FpgEnemySkillPayloadKind.Summon)
+                FpgCompiledEnemySkillAction payload =
+                    pattern.Compiled.GetGameplayAction(payloadIndex);
+                if (payload.Kind != FpgEnemySkillActionKind.Summon)
                 {
                     continue;
                 }
 
-                int planned = pattern.CountExecuteEvents(payload.SlotId);
+                int planned = pattern.CountExecuteEvents(payload.ActionId);
                 if (planned == 0)
                 {
                     continue;
@@ -1326,9 +1359,10 @@ namespace FPG.Demo.Unity
             PatternState pattern,
             int actionStableId)
         {
-            if (!pattern.TryCommitSummonQuotaReservation(
+            if (!pattern.TryGetSummonQuotaReservation(
                     actionStableId,
-                    out SummonQuotaReservation reservation)
+                    out SummonQuotaReservation reservation,
+                    out int reservationIndex)
                 || reservation.ActionQuotaIndex < 0
                 || reservation.ActionQuotaIndex
                     >= summonActionQuotas.Length
@@ -1355,6 +1389,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            pattern.CommitSummonQuotaReservation(reservationIndex);
             actionQuota.Reserved--;
             actionQuota.Committed++;
             ownerQuota.Reserved--;
@@ -1541,12 +1576,12 @@ namespace FPG.Demo.Unity
             int actionStableId)
         {
             for (int index = 0;
-                index < pattern.Compiled.PayloadSlotCount;
+                index < pattern.Compiled.GameplayActionCount;
                 index++)
             {
-                FpgCompiledEnemySkillPayloadSlot payload =
-                    pattern.Compiled.PayloadSlots[index];
-                if (payload.Kind == FpgEnemySkillPayloadKind.Summon
+                FpgCompiledEnemySkillAction payload =
+                    pattern.Compiled.GetGameplayAction(index);
+                if (payload.Kind == FpgEnemySkillActionKind.Summon
                     && payload.SummonPayload.ActionStableId
                         == actionStableId)
                 {
@@ -1586,12 +1621,12 @@ namespace FPG.Demo.Unity
                 }
 
                 for (int payloadIndex = 0;
-                    payloadIndex < pattern.Compiled.PayloadSlotCount;
+                    payloadIndex < pattern.Compiled.GameplayActionCount;
                     payloadIndex++)
                 {
-                    FpgCompiledEnemySkillPayloadSlot payload =
-                        pattern.Compiled.PayloadSlots[payloadIndex];
-                    if (payload.Kind != FpgEnemySkillPayloadKind.Summon)
+                    FpgCompiledEnemySkillAction payload =
+                        pattern.Compiled.GetGameplayAction(payloadIndex);
+                    if (payload.Kind != FpgEnemySkillActionKind.Summon)
                     {
                         continue;
                     }
@@ -1610,16 +1645,16 @@ namespace FPG.Demo.Unity
 
                         int payloadLimit = previousPattern == patternIndex
                             ? payloadIndex
-                            : previous.Compiled.PayloadSlotCount;
+                            : previous.Compiled.GameplayActionCount;
                         for (int previousPayload = 0;
                             previousPayload < payloadLimit;
                             previousPayload++)
                         {
-                            FpgCompiledEnemySkillPayloadSlot candidate =
-                                previous.Compiled.PayloadSlots[
-                                    previousPayload];
+                            FpgCompiledEnemySkillAction candidate =
+                                previous.Compiled.GetGameplayAction(
+                                    previousPayload);
                             seen = candidate.Kind
-                                    == FpgEnemySkillPayloadKind.Summon
+                                    == FpgEnemySkillActionKind.Summon
                                 && candidate.SummonPayload.ActionStableId
                                     == actionId;
                             if (seen)
@@ -2037,16 +2072,16 @@ namespace FPG.Demo.Unity
                     FpgCompiledSkillEvent skillEvent =
                         execute.GetEvent(eventIndex);
                     if (skillEvent.Kind
-                        != FpgSkillEventKind.GameplayPayload)
+                        != FpgSkillEventKind.GameplayAction)
                     {
                         continue;
                     }
 
                     gameplayEventCount++;
-                    if (!compiled.TryGetPayloadSlot(
-                        skillEvent.PayloadSlotId,
-                        out FpgCompiledEnemySkillPayloadSlot payload)
-                        || payload.Kind == FpgEnemySkillPayloadKind.Summon)
+                    if (!compiled.TryResolveAction(
+                        skillEvent,
+                        out FpgCompiledEnemySkillAction payload)
+                        || payload.Kind == FpgEnemySkillActionKind.Summon)
                     {
                         continue;
                     }
@@ -2076,10 +2111,12 @@ namespace FPG.Demo.Unity
 
         private sealed class PatternState
         {
-            private long[] payloadOccurrences = Array.Empty<long>();
+            private long[] actionOccurrences = Array.Empty<long>();
             private SummonQuotaReservation[] summonQuotaReservations =
                 Array.Empty<SummonQuotaReservation>();
             private bool[] gameplayEventSucceeded = Array.Empty<bool>();
+            private FpgEnemyAttackSpatialContext[] gameplayEventSpatialContexts =
+                Array.Empty<FpgEnemyAttackSpatialContext>();
 
             public int OwnerIndex { get; private set; }
             public int PatternOrdinal { get; private set; }
@@ -2101,11 +2138,11 @@ namespace FPG.Demo.Unity
 
             public void EnsureCapacity(
                 int eventCapacity,
-                int payloadCapacity)
+                int actionCapacity)
             {
                 if (IsUsed
                     || eventCapacity < 0
-                    || payloadCapacity < 0)
+                    || actionCapacity < 0)
                 {
                     throw new InvalidOperationException(
                         "Enemy pattern buffers can only grow while unbound.");
@@ -2128,15 +2165,21 @@ namespace FPG.Demo.Unity
                     gameplayEventSucceeded = new bool[eventCapacity];
                 }
 
-                if (payloadOccurrences.Length < payloadCapacity)
+                if (gameplayEventSpatialContexts.Length < eventCapacity)
                 {
-                    payloadOccurrences = new long[payloadCapacity];
+                    gameplayEventSpatialContexts =
+                        new FpgEnemyAttackSpatialContext[eventCapacity];
                 }
 
-                if (summonQuotaReservations.Length < payloadCapacity)
+                if (actionOccurrences.Length < actionCapacity)
+                {
+                    actionOccurrences = new long[actionCapacity];
+                }
+
+                if (summonQuotaReservations.Length < actionCapacity)
                 {
                     summonQuotaReservations =
-                        new SummonQuotaReservation[payloadCapacity];
+                        new SummonQuotaReservation[actionCapacity];
                 }
             }
 
@@ -2153,10 +2196,12 @@ namespace FPG.Demo.Unity
                         < prepared.Execute.EventCount
                     || gameplayEventSucceeded.Length
                         < prepared.Execute.EventCount
-                    || payloadOccurrences.Length
-                        < prepared.Compiled.PayloadSlotCount
+                    || gameplayEventSpatialContexts.Length
+                        < prepared.Execute.EventCount
+                    || actionOccurrences.Length
+                        < prepared.Compiled.GameplayActionCount
                     || summonQuotaReservations.Length
-                        < prepared.Compiled.PayloadSlotCount)
+                        < prepared.Compiled.GameplayActionCount)
                 {
                     throw new InvalidOperationException(
                         "Enemy pattern slot was not prewarmed for this skill.");
@@ -2168,13 +2213,17 @@ namespace FPG.Demo.Unity
                     0,
                     EventBudgetReservations.Length);
                 Array.Clear(
-                    payloadOccurrences,
+                    actionOccurrences,
                     0,
-                    payloadOccurrences.Length);
+                    actionOccurrences.Length);
                 Array.Clear(
                     gameplayEventSucceeded,
                     0,
                     gameplayEventSucceeded.Length);
+                Array.Clear(
+                    gameplayEventSpatialContexts,
+                    0,
+                    gameplayEventSpatialContexts.Length);
                 Array.Clear(
                     summonQuotaReservations,
                     0,
@@ -2204,13 +2253,17 @@ namespace FPG.Demo.Unity
                     0,
                     EventBudgetReservations.Length);
                 Array.Clear(
-                    payloadOccurrences,
+                    actionOccurrences,
                     0,
-                    payloadOccurrences.Length);
+                    actionOccurrences.Length);
                 Array.Clear(
                     gameplayEventSucceeded,
                     0,
                     gameplayEventSucceeded.Length);
+                Array.Clear(
+                    gameplayEventSpatialContexts,
+                    0,
+                    gameplayEventSpatialContexts.Length);
                 Array.Clear(
                     summonQuotaReservations,
                     0,
@@ -2234,18 +2287,30 @@ namespace FPG.Demo.Unity
 
             public void BeginExecution()
             {
+                ClearGameplayEventSuccesses();
+            }
+
+            public void ClearGameplayEventSuccesses()
+            {
                 Array.Clear(
                     gameplayEventSucceeded,
                     0,
                     gameplayEventSucceeded.Length);
+                Array.Clear(
+                    gameplayEventSpatialContexts,
+                    0,
+                    gameplayEventSpatialContexts.Length);
             }
 
-            public void MarkGameplayEventSucceeded(int eventId)
+            public void MarkGameplayEventSucceeded(
+                int eventId,
+                in FpgEnemyAttackSpatialContext spatialContext)
             {
                 int index = FindEventIndex(eventId);
-                if (index >= 0)
+                if (index >= 0 && spatialContext.IsValid)
                 {
                     gameplayEventSucceeded[index] = true;
+                    gameplayEventSpatialContexts[index] = spatialContext;
                 }
             }
 
@@ -2254,6 +2319,23 @@ namespace FPG.Demo.Unity
                 int index = FindEventIndex(eventId);
                 return index >= 0
                     && gameplayEventSucceeded[index];
+            }
+
+            public bool TryGetSuccessfulGameplayEventSpatialContext(
+                int eventId,
+                out FpgEnemyAttackSpatialContext spatialContext)
+            {
+                int index = FindEventIndex(eventId);
+                if (index >= 0
+                    && gameplayEventSucceeded[index]
+                    && gameplayEventSpatialContexts[index].IsValid)
+                {
+                    spatialContext = gameplayEventSpatialContexts[index];
+                    return true;
+                }
+
+                spatialContext = default(FpgEnemyAttackSpatialContext);
+                return false;
             }
 
             public int FindEventIndex(int eventId)
@@ -2269,7 +2351,7 @@ namespace FPG.Demo.Unity
                 return -1;
             }
 
-            public int CountExecuteEvents(int payloadSlotId)
+            public int CountExecuteEvents(int actionId)
             {
                 int count = 0;
                 for (int index = 0; index < Execute.EventCount; index++)
@@ -2277,8 +2359,11 @@ namespace FPG.Demo.Unity
                     FpgCompiledSkillEvent skillEvent =
                         Execute.GetEvent(index);
                     if (skillEvent.Kind
-                            == FpgSkillEventKind.GameplayPayload
-                        && skillEvent.PayloadSlotId == payloadSlotId)
+                            == FpgSkillEventKind.GameplayAction
+                        && Compiled.TryResolveAction(
+                            skillEvent,
+                            out FpgCompiledEnemySkillAction action)
+                        && action.ActionId == actionId)
                     {
                         count++;
                     }
@@ -2336,9 +2421,10 @@ namespace FPG.Demo.Unity
                 return summonQuotaReservations[index];
             }
 
-            public bool TryCommitSummonQuotaReservation(
+            public bool TryGetSummonQuotaReservation(
                 int actionStableId,
-                out SummonQuotaReservation reservation)
+                out SummonQuotaReservation reservation,
+                out int reservationIndex)
             {
                 for (int index = 0;
                     index < SummonQuotaReservationCount;
@@ -2352,45 +2438,62 @@ namespace FPG.Demo.Unity
                         continue;
                     }
 
-                    candidate.RemainingReserved--;
-                    summonQuotaReservations[index] = candidate;
                     reservation = candidate;
+                    reservationIndex = index;
                     return true;
                 }
 
                 reservation = default(SummonQuotaReservation);
+                reservationIndex = -1;
                 return false;
             }
-            public void IncrementPayloadOccurrence(int payloadSlotId)
+
+            public void CommitSummonQuotaReservation(int reservationIndex)
+            {
+                if (reservationIndex < 0
+                    || reservationIndex >= SummonQuotaReservationCount
+                    || summonQuotaReservations[reservationIndex]
+                        .RemainingReserved <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "Summon quota reservation cannot be committed.");
+                }
+
+                SummonQuotaReservation reservation =
+                    summonQuotaReservations[reservationIndex];
+                reservation.RemainingReserved--;
+                summonQuotaReservations[reservationIndex] = reservation;
+            }
+            public void IncrementPayloadOccurrence(int actionId)
             {
                 for (int index = 0;
-                    index < Compiled.PayloadSlotCount;
+                    index < Compiled.GameplayActionCount;
                     index++)
                 {
-                    if (Compiled.PayloadSlots[index].SlotId
-                        == payloadSlotId)
+                    if (Compiled.GetGameplayAction(index).ActionId
+                        == actionId)
                     {
-                        payloadOccurrences[index]++;
+                        actionOccurrences[index]++;
                         return;
                     }
                 }
             }
 
-            public long CountPayloadOccurrences(int actionStableId)
+            public long CountActionOccurrences(int actionStableId)
             {
                 long count = 0L;
                 for (int index = 0;
-                    index < Compiled.PayloadSlotCount;
+                    index < Compiled.GameplayActionCount;
                     index++)
                 {
-                    FpgCompiledEnemySkillPayloadSlot payload =
-                        Compiled.PayloadSlots[index];
-                    if (payload.Kind == FpgEnemySkillPayloadKind.Summon
+                    FpgCompiledEnemySkillAction payload =
+                        Compiled.GetGameplayAction(index);
+                    if (payload.Kind == FpgEnemySkillActionKind.Summon
                         && payload.SummonPayload.ActionStableId
                             == actionStableId)
                     {
                         count = checked(
-                            count + payloadOccurrences[index]);
+                            count + actionOccurrences[index]);
                     }
                 }
 

@@ -8,250 +8,19 @@ using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
-    public enum FpgPlayerSkillPayloadKind
+    public enum FpgPlayerSkillActionKind
     {
         None = 0,
         PelletRay,
         AreaAtFirstSurface,
-        ReloadCommit
+        ReloadCommit,
+        ProjectileAreaAtFirstSurface
     }
 
-    [Serializable]
-    public sealed class FpgPlayerSkillPayloadSlot
+    public readonly struct FpgCompiledPlayerSkillAction
     {
-        [SerializeField]
-        private string slotId = "payload.primary";
-
-        [SerializeField]
-        private string displayName = "Primary Payload";
-
-        [SerializeField]
-        private FpgPlayerSkillPayloadKind kind =
-            FpgPlayerSkillPayloadKind.PelletRay;
-
-        [SerializeField, Min(0)]
-        private int ammoCost = 1;
-
-        [SerializeField, Min(0)]
-        private int baseDamage = 4;
-
-        [SerializeField, Min(0)]
-        private int breakDamage = 4;
-
-        [SerializeField, Min(0)]
-        private int weakpointDamageMultiplierBasisPoints = 12000;
-
-        [SerializeField, Min(0)]
-        private int weakpointBreakMultiplierBasisPoints = 25000;
-
-        [SerializeField]
-        private AttackQueryMode queryMode =
-            AttackQueryMode.FirstSurfacePenetration;
-
-        [SerializeField, Min(1)]
-        private int pelletCount = WeaponDefinition.PrimaryPelletCount;
-
-        [SerializeField, Min(0)]
-        private int additionalPenetrationCount;
-
-        [SerializeField, Min(1)]
-        private int areaCombatantLimit = 4;
-
-        [SerializeField, Min(0)]
-        private int areaProjectileLimit =
-            WeaponDefinition.DefaultSecondaryAreaProjectileLimit;
-
-        [SerializeField]
-        private AttackTargetKinds allowedTargetKinds =
-            WeaponDefinition.PlayerAttackTargetKinds;
-
-        public string SlotId => slotId;
-        public string DisplayName => displayName;
-        public FpgPlayerSkillPayloadKind Kind => kind;
-        public int AmmoCost => ammoCost;
-        public int BaseDamage => baseDamage;
-        public int BreakDamage => breakDamage;
-        public int WeakpointDamageMultiplierBasisPoints =>
-            weakpointDamageMultiplierBasisPoints;
-        public int WeakpointBreakMultiplierBasisPoints =>
-            weakpointBreakMultiplierBasisPoints;
-        public AttackQueryMode QueryMode => queryMode;
-        public int PelletCount => pelletCount;
-        public int AdditionalPenetrationCount => additionalPenetrationCount;
-        public int AreaCombatantLimit => areaCombatantLimit;
-        public int AreaProjectileLimit => areaProjectileLimit;
-        public AttackTargetKinds AllowedTargetKinds => allowedTargetKinds;
-
-        public bool TryValidate(out string error)
-        {
-            if (!FpgSkillStableId.IsValid(slotId)
-                || string.IsNullOrWhiteSpace(displayName)
-                || !Enum.IsDefined(typeof(FpgPlayerSkillPayloadKind), kind)
-                || kind == FpgPlayerSkillPayloadKind.None)
-            {
-                error = "Player skill payload requires a stable slot ID, display name and valid kind.";
-                return false;
-            }
-
-            if (ammoCost < 0
-                || baseDamage < 0
-                || breakDamage < 0
-                || weakpointDamageMultiplierBasisPoints < 0
-                || weakpointBreakMultiplierBasisPoints < 0)
-            {
-                error = $"Player skill payload '{slotId}' has invalid cost or damage values.";
-                return false;
-            }
-
-            switch (kind)
-            {
-                case FpgPlayerSkillPayloadKind.PelletRay:
-                    return TryValidatePelletRay(out error);
-
-                case FpgPlayerSkillPayloadKind.AreaAtFirstSurface:
-                    return TryValidateArea(out error);
-
-                case FpgPlayerSkillPayloadKind.ReloadCommit:
-                    return TryValidateReload(out error);
-
-                default:
-                    error = $"Player skill payload '{slotId}' has an unsupported kind.";
-                    return false;
-            }
-        }
-
-        internal FpgCompiledPlayerSkillPayloadSlot Compile()
-        {
-            QueryPolicy queryPolicy;
-            int payloadCount;
-            int maxImpactCount;
-            int compiledAdditionalPenetration;
-            int compiledAreaCombatantLimit;
-            int compiledAreaProjectileLimit;
-            AttackTargetKinds compiledTargetKinds;
-
-            switch (kind)
-            {
-                case FpgPlayerSkillPayloadKind.PelletRay:
-                    queryPolicy = QueryPolicy.PelletRays;
-                    payloadCount = pelletCount;
-                    maxImpactCount = checked(
-                        pelletCount * (additionalPenetrationCount + 1));
-                    compiledAdditionalPenetration = additionalPenetrationCount;
-                    compiledAreaCombatantLimit = 0;
-                    compiledAreaProjectileLimit = 0;
-                    compiledTargetKinds = allowedTargetKinds;
-                    break;
-
-                case FpgPlayerSkillPayloadKind.AreaAtFirstSurface:
-                    queryPolicy = QueryPolicy.DirectThenArea;
-                    payloadCount = 1;
-                    maxImpactCount = checked(
-                        areaCombatantLimit + areaProjectileLimit);
-                    compiledAdditionalPenetration = 0;
-                    compiledAreaCombatantLimit = areaCombatantLimit;
-                    compiledAreaProjectileLimit = areaProjectileLimit;
-                    compiledTargetKinds = allowedTargetKinds;
-                    break;
-
-                case FpgPlayerSkillPayloadKind.ReloadCommit:
-                    queryPolicy = QueryPolicy.None;
-                    payloadCount = 0;
-                    maxImpactCount = 0;
-                    compiledAdditionalPenetration = 0;
-                    compiledAreaCombatantLimit = 0;
-                    compiledAreaProjectileLimit = 0;
-                    compiledTargetKinds = AttackTargetKinds.None;
-                    break;
-
-                default:
-                    throw new InvalidOperationException(
-                        $"Unsupported player skill payload kind '{kind}'.");
-            }
-
-            return new FpgCompiledPlayerSkillPayloadSlot(
-                FpgSkillStableId.CompilePayloadSlot(slotId),
-                kind,
-                ammoCost,
-                new DamageSpec(
-                    baseDamage,
-                    breakDamage,
-                    weakpointDamageMultiplierBasisPoints,
-                    weakpointBreakMultiplierBasisPoints),
-                queryPolicy,
-                queryMode,
-                payloadCount,
-                maxImpactCount,
-                compiledAdditionalPenetration,
-                compiledAreaCombatantLimit,
-                compiledAreaProjectileLimit,
-                compiledTargetKinds);
-        }
-
-        private bool TryValidatePelletRay(out string error)
-        {
-            if (ammoCost <= 0
-                || queryMode != AttackQueryMode.FirstSurfacePenetration
-                || pelletCount <= 0
-                || additionalPenetrationCount < 0
-                || additionalPenetrationCount
-                    > (int.MaxValue / pelletCount) - 1
-                || !IsValidPlayerTargetKinds(allowedTargetKinds))
-            {
-                error = $"Pellet payload '{slotId}' has invalid ammo, query or capacity values.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-
-        private bool TryValidateArea(out string error)
-        {
-            if (ammoCost <= 0
-                || queryMode != AttackQueryMode.AreaAtFirstSurface
-                || areaCombatantLimit <= 0
-                || areaProjectileLimit < 0
-                || areaCombatantLimit > int.MaxValue - areaProjectileLimit
-                || !IsValidPlayerTargetKinds(allowedTargetKinds))
-            {
-                error = $"Area payload '{slotId}' has invalid ammo, query or capacity values.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-
-        private bool TryValidateReload(out string error)
-        {
-            if (ammoCost != 0
-                || baseDamage != 0
-                || breakDamage != 0
-                || queryMode != AttackQueryMode.Legacy
-                || allowedTargetKinds != AttackTargetKinds.None)
-            {
-                error = $"Reload payload '{slotId}' must not consume ammo, deal damage or query targets.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-
-        private static bool IsValidPlayerTargetKinds(AttackTargetKinds value)
-        {
-            return value != AttackTargetKinds.None
-                && (value & ~WeaponDefinition.PlayerAttackTargetKinds)
-                    == AttackTargetKinds.None;
-        }
-    }
-
-    public readonly struct FpgCompiledPlayerSkillPayloadSlot
-    {
-        public FpgCompiledPlayerSkillPayloadSlot(
-            int slotId,
-            FpgPlayerSkillPayloadKind kind,
+        public FpgCompiledPlayerSkillAction(
+            FpgPlayerSkillActionKind kind,
             int ammoCost,
             DamageSpec damage,
             QueryPolicy queryPolicy,
@@ -261,22 +30,44 @@ namespace FPG.Demo.Unity
             int additionalPenetrationCount,
             int areaCombatantLimit,
             int areaProjectileLimit,
-            AttackTargetKinds allowedTargetKinds)
+            AttackTargetKinds allowedTargetKinds,
+            int projectileFlightTicks = 0,
+            int projectileSweepRadiusKey = 0,
+            int projectileDefinitionId = 0,
+            int projectileCount = 0,
+            int projectileLifetimeTicks = 0,
+            int projectileMaxHitPoints = 0,
+            bool projectileInterceptable = false,
+            int projectileBudgetUnits = 0)
         {
-            if (slotId <= 0
-                || !Enum.IsDefined(typeof(FpgPlayerSkillPayloadKind), kind)
-                || kind == FpgPlayerSkillPayloadKind.None
+            if (!Enum.IsDefined(typeof(FpgPlayerSkillActionKind), kind)
+                || kind == FpgPlayerSkillActionKind.None
                 || ammoCost < 0
                 || payloadCount < 0
                 || maxImpactCount < 0
                 || additionalPenetrationCount < 0
                 || areaCombatantLimit < 0
-                || areaProjectileLimit < 0)
+                || areaProjectileLimit < 0
+                || projectileFlightTicks < 0
+                || projectileSweepRadiusKey < 0
+                || projectileDefinitionId < 0
+                || projectileCount < 0
+                || projectileLifetimeTicks < 0
+                || projectileMaxHitPoints < 0
+                || projectileBudgetUnits < 0
+                || (kind
+                        == FpgPlayerSkillActionKind
+                            .ProjectileAreaAtFirstSurface
+                    && (projectileFlightTicks <= 0
+                        || projectileSweepRadiusKey <= 0
+                        || projectileDefinitionId <= 0
+                        || projectileCount <= 0
+                        || projectileLifetimeTicks < projectileFlightTicks
+                        || projectileBudgetUnits <= 0)))
             {
-                throw new ArgumentOutOfRangeException(nameof(slotId));
+                throw new ArgumentOutOfRangeException(nameof(kind));
             }
 
-            SlotId = slotId;
             Kind = kind;
             AmmoCost = ammoCost;
             Damage = damage;
@@ -288,10 +79,17 @@ namespace FPG.Demo.Unity
             AreaCombatantLimit = areaCombatantLimit;
             AreaProjectileLimit = areaProjectileLimit;
             AllowedTargetKinds = allowedTargetKinds;
+            ProjectileFlightTicks = projectileFlightTicks;
+            ProjectileSweepRadiusKey = projectileSweepRadiusKey;
+            ProjectileDefinitionId = projectileDefinitionId;
+            ProjectileCount = projectileCount;
+            ProjectileLifetimeTicks = projectileLifetimeTicks;
+            ProjectileMaxHitPoints = projectileMaxHitPoints;
+            ProjectileInterceptable = projectileInterceptable;
+            ProjectileBudgetUnits = projectileBudgetUnits;
         }
 
-        public int SlotId { get; }
-        public FpgPlayerSkillPayloadKind Kind { get; }
+        public FpgPlayerSkillActionKind Kind { get; }
         public int AmmoCost { get; }
         public DamageSpec Damage { get; }
         public QueryPolicy QueryPolicy { get; }
@@ -302,6 +100,94 @@ namespace FPG.Demo.Unity
         public int AreaCombatantLimit { get; }
         public int AreaProjectileLimit { get; }
         public AttackTargetKinds AllowedTargetKinds { get; }
+        public int ProjectileFlightTicks { get; }
+        public int ProjectileSweepRadiusKey { get; }
+        public int ProjectileDefinitionId { get; }
+        public int ProjectileCount { get; }
+        public int ProjectileLifetimeTicks { get; }
+        public int ProjectileMaxHitPoints { get; }
+        public bool ProjectileInterceptable { get; }
+        public int ProjectileBudgetUnits { get; }
+    }
+
+    public readonly struct FpgCompiledPlayerAttackAction
+    {
+        public FpgCompiledPlayerAttackAction(
+            FpgSkillAttackMode mode,
+            FpgCompiledPlayerSkillAction payload)
+        {
+            if (!IsMatchingPayload(mode, payload.Kind))
+            {
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            }
+
+            Mode = mode;
+            Payload = payload;
+        }
+
+        public FpgSkillAttackMode Mode { get; }
+        public FpgCompiledPlayerSkillAction Payload { get; }
+        public bool IsValid => IsMatchingPayload(Mode, Payload.Kind);
+
+        private static bool IsMatchingPayload(
+            FpgSkillAttackMode mode,
+            FpgPlayerSkillActionKind payloadKind)
+        {
+            return (mode == FpgSkillAttackMode.PelletRays
+                    && payloadKind == FpgPlayerSkillActionKind.PelletRay)
+                || (mode == FpgSkillAttackMode.AreaAtFirstSurface
+                    && payloadKind
+                        == FpgPlayerSkillActionKind.AreaAtFirstSurface);
+        }
+    }
+
+    public readonly struct FpgCompiledPlayerProjectileAction
+    {
+        public FpgCompiledPlayerProjectileAction(
+            FpgSkillProjectileImpactMode impactMode,
+            FpgCompiledPlayerSkillAction payload,
+            int threatDefinitionId = 1)
+        {
+            if (impactMode
+                    != FpgSkillProjectileImpactMode.AreaAtFirstSurface
+                || payload.Kind != FpgPlayerSkillActionKind
+                    .ProjectileAreaAtFirstSurface
+                || threatDefinitionId <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(impactMode));
+            }
+
+            ImpactMode = impactMode;
+            Payload = payload;
+            ThreatDefinitionId = threatDefinitionId;
+        }
+
+        public FpgSkillProjectileImpactMode ImpactMode { get; }
+        public FpgCompiledPlayerSkillAction Payload { get; }
+        public int ThreatDefinitionId { get; }
+        public bool IsValid => ImpactMode
+                == FpgSkillProjectileImpactMode.AreaAtFirstSurface
+            && Payload.Kind == FpgPlayerSkillActionKind
+                .ProjectileAreaAtFirstSurface
+            && ThreatDefinitionId > 0;
+    }
+
+    public readonly struct FpgCompiledPlayerReloadAction
+    {
+        public FpgCompiledPlayerReloadAction(
+            FpgCompiledPlayerSkillAction payload)
+        {
+            if (payload.Kind != FpgPlayerSkillActionKind.ReloadCommit)
+            {
+                throw new ArgumentOutOfRangeException(nameof(payload));
+            }
+
+            Payload = payload;
+        }
+
+        public FpgCompiledPlayerSkillAction Payload { get; }
+        public bool IsValid => Payload.Kind
+            == FpgPlayerSkillActionKind.ReloadCommit;
     }
 
     public readonly struct FpgCompiledPlayerSkillSequenceSummary
@@ -337,13 +223,17 @@ namespace FPG.Demo.Unity
 
     public sealed class FpgCompiledPlayerSkillDefinition
     {
-        private readonly FpgCompiledPlayerSkillPayloadSlot[] payloadSlots;
+        private readonly FpgCompiledPlayerAttackAction[] attackActions;
+        private readonly FpgCompiledPlayerProjectileAction[] projectileActions;
+        private readonly FpgCompiledPlayerReloadAction[] reloadActions;
         private readonly FpgCompiledPlayerSkillSequenceSummary[] sequenceSummaries;
 
         public FpgCompiledPlayerSkillDefinition(
             FpgCompiledSkillDefinition timeline,
             int sequenceCooldownTicks,
-            FpgCompiledPlayerSkillPayloadSlot[] payloadSlots)
+            FpgCompiledPlayerAttackAction[] attackActions,
+            FpgCompiledPlayerProjectileAction[] projectileActions,
+            FpgCompiledPlayerReloadAction[] reloadActions)
         {
             Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             if (sequenceCooldownTicks < 0)
@@ -351,34 +241,59 @@ namespace FPG.Demo.Unity
                 throw new ArgumentOutOfRangeException(nameof(sequenceCooldownTicks));
             }
 
-            if (payloadSlots == null || payloadSlots.Length == 0)
+            if (attackActions == null
+                || projectileActions == null
+                || reloadActions == null
+                || checked(
+                    attackActions.Length
+                    + projectileActions.Length
+                    + reloadActions.Length) == 0)
             {
                 throw new ArgumentException(
-                    "Compiled player skill requires payload slots.",
-                    nameof(payloadSlots));
+                    "Compiled player skill requires at least one gameplay action.",
+                    nameof(attackActions));
             }
 
-            this.payloadSlots = CopyAndSortPayloadSlots(payloadSlots);
+            this.attackActions = CopyActions(attackActions);
+            this.projectileActions = CopyActions(projectileActions);
+            this.reloadActions = CopyActions(reloadActions);
+            ValidateTypedActions(
+                this.attackActions,
+                this.projectileActions,
+                this.reloadActions);
             SequenceCooldownTicks = sequenceCooldownTicks;
             sequenceSummaries = BuildSequenceSummaries(timeline);
-            MaximumImpactCount = ComputeMaximumImpactCount(this.payloadSlots);
-            MaximumPelletCount = ComputeMaximumPelletCount(this.payloadSlots);
+            MaximumImpactCount = ComputeMaximumImpactCount(
+                this.attackActions,
+                this.projectileActions);
+            MaximumPelletCount = ComputeMaximumPelletCount(
+                this.attackActions);
             GameplayHash = ComputeGameplayHash(
                 timeline,
                 sequenceCooldownTicks,
-                this.payloadSlots);
+                this.attackActions,
+                this.projectileActions,
+                this.reloadActions);
+            PresentationHash = timeline.PresentationHash;
         }
 
         public FpgCompiledSkillDefinition Timeline { get; }
         public int SequenceCooldownTicks { get; }
-        public IReadOnlyList<FpgCompiledPlayerSkillPayloadSlot> PayloadSlots =>
-            payloadSlots;
-        public int PayloadSlotCount => payloadSlots.Length;
+        public IReadOnlyList<FpgCompiledPlayerAttackAction> AttackActions =>
+            attackActions;
+        public int AttackActionCount => attackActions.Length;
+        public IReadOnlyList<FpgCompiledPlayerProjectileAction>
+            ProjectileActions => projectileActions;
+        public int ProjectileActionCount => projectileActions.Length;
+        public IReadOnlyList<FpgCompiledPlayerReloadAction> ReloadActions =>
+            reloadActions;
+        public int ReloadActionCount => reloadActions.Length;
         public IReadOnlyList<FpgCompiledPlayerSkillSequenceSummary> SequenceSummaries =>
             sequenceSummaries;
         public int MaximumImpactCount { get; }
         public int MaximumPelletCount { get; }
         public ulong GameplayHash { get; }
+        public ulong PresentationHash { get; }
 
         public int ExecuteAmmoCost => TryGetSequenceSummary(
             FpgSkillSequenceKind.Execute,
@@ -404,21 +319,50 @@ namespace FPG.Demo.Unity
                 ? summary.LastAttackTick
                 : -1;
 
-        public bool TryGetPayloadSlot(
-            int slotId,
-            out FpgCompiledPlayerSkillPayloadSlot payloadSlot)
+        public bool TryResolveAction(
+            FpgCompiledSkillEvent skillEvent,
+            out FpgCompiledPlayerSkillAction payload)
         {
-            for (int index = 0; index < payloadSlots.Length; index++)
+            payload = default(FpgCompiledPlayerSkillAction);
+            if (skillEvent.Kind != FpgSkillEventKind.GameplayAction)
             {
-                if (payloadSlots[index].SlotId == slotId)
-                {
-                    payloadSlot = payloadSlots[index];
-                    return true;
-                }
+                return false;
             }
 
-            payloadSlot = default(FpgCompiledPlayerSkillPayloadSlot);
-            return false;
+            int actionIndex = skillEvent.ActionIndex;
+            switch (skillEvent.ActionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    if (actionIndex < 0 || actionIndex >= attackActions.Length)
+                    {
+                        return false;
+                    }
+
+                    payload = attackActions[actionIndex].Payload;
+                    return true;
+
+                case FpgSkillActionKind.LaunchProjectile:
+                    if (actionIndex < 0
+                        || actionIndex >= projectileActions.Length)
+                    {
+                        return false;
+                    }
+
+                    payload = projectileActions[actionIndex].Payload;
+                    return true;
+
+                case FpgSkillActionKind.CommitReload:
+                    if (actionIndex < 0 || actionIndex >= reloadActions.Length)
+                    {
+                        return false;
+                    }
+
+                    payload = reloadActions[actionIndex].Payload;
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
         public bool TryGetSequenceSummary(
@@ -462,14 +406,14 @@ namespace FPG.Demo.Unity
                 {
                     FpgCompiledSkillEvent skillEvent =
                         sequence.GetEvent(eventIndex);
-                    if (skillEvent.Kind != FpgSkillEventKind.GameplayPayload)
+                    if (skillEvent.Kind != FpgSkillEventKind.GameplayAction)
                     {
                         continue;
                     }
 
-                    if (!TryGetPayloadSlot(
-                            skillEvent.PayloadSlotId,
-                            out FpgCompiledPlayerSkillPayloadSlot payload))
+                    if (!TryResolveAction(
+                            skillEvent,
+                            out FpgCompiledPlayerSkillAction payload))
                     {
                         throw new ArgumentException(
                             "Compiled timeline references a missing player payload slot.",
@@ -477,7 +421,7 @@ namespace FPG.Demo.Unity
                     }
 
                     totalAmmoCost = checked(totalAmmoCost + payload.AmmoCost);
-                    if (payload.Kind == FpgPlayerSkillPayloadKind.ReloadCommit)
+                    if (payload.Kind == FpgPlayerSkillActionKind.ReloadCommit)
                     {
                         reloadCommitEventCount++;
                         continue;
@@ -509,60 +453,81 @@ namespace FPG.Demo.Unity
             return summaries;
         }
 
-        private static FpgCompiledPlayerSkillPayloadSlot[] CopyAndSortPayloadSlots(
-            FpgCompiledPlayerSkillPayloadSlot[] source)
+        private static TAction[] CopyActions<TAction>(TAction[] source)
         {
-            FpgCompiledPlayerSkillPayloadSlot[] copy =
-                new FpgCompiledPlayerSkillPayloadSlot[source.Length];
+            TAction[] copy = new TAction[source.Length];
             Array.Copy(source, copy, source.Length);
-            for (int index = 1; index < copy.Length; index++)
-            {
-                FpgCompiledPlayerSkillPayloadSlot value = copy[index];
-                int insertionIndex = index - 1;
-                while (insertionIndex >= 0
-                    && copy[insertionIndex].SlotId > value.SlotId)
-                {
-                    copy[insertionIndex + 1] = copy[insertionIndex];
-                    insertionIndex--;
-                }
-
-                copy[insertionIndex + 1] = value;
-            }
-
-            for (int index = 1; index < copy.Length; index++)
-            {
-                if (copy[index - 1].SlotId == copy[index].SlotId)
-                {
-                    throw new ArgumentException(
-                        "Compiled player skill repeats a payload slot ID.",
-                        nameof(source));
-                }
-            }
-
             return copy;
         }
 
+        private static void ValidateTypedActions(
+            FpgCompiledPlayerAttackAction[] attacks,
+            FpgCompiledPlayerProjectileAction[] projectiles,
+            FpgCompiledPlayerReloadAction[] reloads)
+        {
+            for (int index = 0; index < attacks.Length; index++)
+            {
+                if (!attacks[index].IsValid)
+                {
+                    throw new ArgumentException(
+                        "Compiled player skill contains an invalid attack action.",
+                        nameof(attacks));
+                }
+            }
+
+            for (int index = 0; index < projectiles.Length; index++)
+            {
+                if (!projectiles[index].IsValid)
+                {
+                    throw new ArgumentException(
+                        "Compiled player skill contains an invalid projectile action.",
+                        nameof(projectiles));
+                }
+            }
+
+            for (int index = 0; index < reloads.Length; index++)
+            {
+                if (!reloads[index].IsValid)
+                {
+                    throw new ArgumentException(
+                        "Compiled player skill contains an invalid reload action.",
+                        nameof(reloads));
+                }
+            }
+        }
+
         private static int ComputeMaximumImpactCount(
-            FpgCompiledPlayerSkillPayloadSlot[] values)
+            FpgCompiledPlayerAttackAction[] attacks,
+            FpgCompiledPlayerProjectileAction[] projectiles)
         {
             int maximum = 0;
-            for (int index = 0; index < values.Length; index++)
+            for (int index = 0; index < attacks.Length; index++)
             {
-                maximum = Math.Max(maximum, values[index].MaxImpactCount);
+                maximum = Math.Max(
+                    maximum,
+                    attacks[index].Payload.MaxImpactCount);
+            }
+
+            for (int index = 0; index < projectiles.Length; index++)
+            {
+                maximum = Math.Max(
+                    maximum,
+                    projectiles[index].Payload.MaxImpactCount);
             }
 
             return maximum;
         }
 
         private static int ComputeMaximumPelletCount(
-            FpgCompiledPlayerSkillPayloadSlot[] values)
+            FpgCompiledPlayerAttackAction[] attacks)
         {
             int maximum = 0;
-            for (int index = 0; index < values.Length; index++)
+            for (int index = 0; index < attacks.Length; index++)
             {
-                if (values[index].QueryPolicy == QueryPolicy.PelletRays)
+                FpgCompiledPlayerSkillAction action = attacks[index].Payload;
+                if (action.QueryPolicy == QueryPolicy.PelletRays)
                 {
-                    maximum = Math.Max(maximum, values[index].PayloadCount);
+                    maximum = Math.Max(maximum, action.PayloadCount);
                 }
             }
 
@@ -572,49 +537,118 @@ namespace FPG.Demo.Unity
         private static ulong ComputeGameplayHash(
             FpgCompiledSkillDefinition timeline,
             int sequenceCooldownTicks,
-            FpgCompiledPlayerSkillPayloadSlot[] values)
+            FpgCompiledPlayerAttackAction[] attacks,
+            FpgCompiledPlayerProjectileAction[] projectiles,
+            FpgCompiledPlayerReloadAction[] reloads)
         {
             ulong hash = StableHash.Mix(0x4650475F50534B31UL);
             hash = StableHash.Append(hash, timeline.GameplayHash);
             hash = StableHash.Append(
                 hash,
                 unchecked((ulong)sequenceCooldownTicks));
-            hash = StableHash.Append(hash, unchecked((ulong)values.Length));
 
-            for (int index = 0; index < values.Length; index++)
+            hash = StableHash.Append(hash, unchecked((ulong)attacks.Length));
+            for (int index = 0; index < attacks.Length; index++)
             {
-                FpgCompiledPlayerSkillPayloadSlot payload = values[index];
-                hash = StableHash.Append(hash, unchecked((ulong)payload.SlotId));
-                hash = StableHash.Append(hash, unchecked((ulong)(int)payload.Kind));
-                hash = StableHash.Append(hash, unchecked((ulong)payload.AmmoCost));
-                hash = StableHash.Append(hash, unchecked((ulong)payload.Damage.BaseDamage));
-                hash = StableHash.Append(hash, unchecked((ulong)payload.Damage.BreakDamage));
                 hash = StableHash.Append(
                     hash,
-                    unchecked((ulong)payload.Damage.WeakpointDamageMultiplierBasisPoints));
+                    unchecked((ulong)(int)attacks[index].Mode));
+                hash = AppendActionHash(hash, attacks[index].Payload);
+            }
+
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)projectiles.Length));
+            for (int index = 0; index < projectiles.Length; index++)
+            {
                 hash = StableHash.Append(
                     hash,
-                    unchecked((ulong)payload.Damage.WeakpointBreakMultiplierBasisPoints));
-                hash = StableHash.Append(hash, unchecked((ulong)(int)payload.QueryPolicy));
-                hash = StableHash.Append(hash, unchecked((ulong)(int)payload.QueryMode));
-                hash = StableHash.Append(hash, unchecked((ulong)payload.PayloadCount));
-                hash = StableHash.Append(hash, unchecked((ulong)payload.MaxImpactCount));
+                    unchecked((ulong)(int)projectiles[index].ImpactMode));
                 hash = StableHash.Append(
                     hash,
-                    unchecked((ulong)payload.AdditionalPenetrationCount));
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)payload.AreaCombatantLimit));
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)payload.AreaProjectileLimit));
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)(int)payload.AllowedTargetKinds));
+                    unchecked((ulong)projectiles[index].ThreatDefinitionId));
+                hash = AppendActionHash(hash, projectiles[index].Payload);
+            }
+
+            hash = StableHash.Append(hash, unchecked((ulong)reloads.Length));
+            for (int index = 0; index < reloads.Length; index++)
+            {
+                hash = AppendActionHash(hash, reloads[index].Payload);
             }
 
             return hash;
         }
+
+        private static ulong AppendActionHash(
+            ulong hash,
+            in FpgCompiledPlayerSkillAction action)
+        {
+            hash = StableHash.Append(hash, unchecked((ulong)(int)action.Kind));
+            hash = StableHash.Append(hash, unchecked((ulong)action.AmmoCost));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.Damage.BaseDamage));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.Damage.BreakDamage));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.Damage
+                    .WeakpointDamageMultiplierBasisPoints));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.Damage
+                    .WeakpointBreakMultiplierBasisPoints));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)(int)action.QueryPolicy));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)(int)action.QueryMode));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.PayloadCount));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.MaxImpactCount));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.AdditionalPenetrationCount));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.AreaCombatantLimit));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.AreaProjectileLimit));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileFlightTicks));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileSweepRadiusKey));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileDefinitionId));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileCount));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileLifetimeTicks));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileMaxHitPoints));
+            hash = StableHash.Append(
+                hash,
+                action.ProjectileInterceptable ? 1UL : 0UL);
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)action.ProjectileBudgetUnits));
+            return StableHash.Append(
+                hash,
+                unchecked((ulong)(int)action.AllowedTargetKinds));
+        }
+
     }
 
     [CreateAssetMenu(
@@ -630,40 +664,13 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)]
         private int minimumChargeTicks;
 
-        [Header("Player Skill Presentation")]
-        [SerializeField]
-        private D0WeaponShotPresentationDefinition shotPresentation =
-            D0WeaponShotPresentationDefinition.CreatePrimaryDefaults();
-
-        [SerializeField]
-        private D0WeaponSecondaryPresentationDefinition secondaryPresentation =
-            D0WeaponSecondaryPresentationDefinition.CreateDefaults();
-
-        [SerializeField]
-        private D0WeaponReloadPresentationDefinition reloadPresentation =
-            new D0WeaponReloadPresentationDefinition();
-
         [SerializeField, Min(0)]
         private int sequenceCooldownTicks;
-
-        [SerializeField]
-        private FpgPlayerSkillPayloadSlot[] payloadSlots =
-        {
-            new FpgPlayerSkillPayloadSlot()
-        };
 
         public SecondaryTriggerMode SecondaryTriggerMode =>
             secondaryTriggerMode;
         public int MinimumChargeTicks => minimumChargeTicks;
-        public D0WeaponShotPresentationDefinition ShotPresentation =>
-            shotPresentation;
-        public D0WeaponSecondaryPresentationDefinition SecondaryPresentation =>
-            secondaryPresentation;
-        public D0WeaponReloadPresentationDefinition ReloadPresentation =>
-            reloadPresentation;
         public int SequenceCooldownTicks => sequenceCooldownTicks;
-        public IReadOnlyList<FpgPlayerSkillPayloadSlot> PayloadSlots =>
-            payloadSlots ?? Array.Empty<FpgPlayerSkillPayloadSlot>();
 
         public bool TryCompile(
             out FpgCompiledPlayerSkillDefinition definition,
@@ -679,19 +686,17 @@ namespace FPG.Demo.Unity
 
             try
             {
-                FpgPlayerSkillPayloadSlot[] values =
-                    payloadSlots ?? Array.Empty<FpgPlayerSkillPayloadSlot>();
-                FpgCompiledPlayerSkillPayloadSlot[] compiled =
-                    new FpgCompiledPlayerSkillPayloadSlot[values.Length];
-                for (int index = 0; index < values.Length; index++)
-                {
-                    compiled[index] = values[index].Compile();
-                }
-
+                CompileTypedActions(
+                    out FpgCompiledPlayerAttackAction[] attacks,
+                    out FpgCompiledPlayerProjectileAction[] projectiles,
+                    out FpgCompiledPlayerReloadAction[] reloads);
                 definition = new FpgCompiledPlayerSkillDefinition(
                     timeline,
                     sequenceCooldownTicks,
-                    compiled);
+                    attacks,
+                    projectiles,
+                    reloads);
+
                 error = string.Empty;
                 return true;
             }
@@ -706,66 +711,136 @@ namespace FPG.Demo.Unity
             }
         }
 
-        protected override bool TryValidatePayloadSlots(out string error)
+        private void CompileTypedActions(
+            out FpgCompiledPlayerAttackAction[] attacks,
+            out FpgCompiledPlayerProjectileAction[] projectiles,
+            out FpgCompiledPlayerReloadAction[] reloads)
         {
-            FpgPlayerSkillPayloadSlot[] values =
-                payloadSlots ?? Array.Empty<FpgPlayerSkillPayloadSlot>();
-            if (values.Length == 0)
+            int attackCount = 0;
+            int projectileCount = 0;
+            int reloadCount = 0;
+            for (int sequenceIndex = 0;
+                sequenceIndex < Sequences.Count;
+                sequenceIndex++)
             {
-                error = $"Player skill '{SkillId}' requires at least one payload slot.";
-                return false;
+                FpgSkillSequenceDefinition sequence = Sequences[sequenceIndex];
+                attackCount = checked(
+                    attackCount + sequence.AttackEvents.Count);
+                projectileCount = checked(
+                    projectileCount + sequence.ProjectileEvents.Count);
+                reloadCount = checked(
+                    reloadCount + sequence.ReloadEvents.Count);
             }
 
-            HashSet<string> slotIds = new HashSet<string>(StringComparer.Ordinal);
-            HashSet<int> compiledSlotIds = new HashSet<int>();
-            for (int index = 0; index < values.Length; index++)
+            attacks = new FpgCompiledPlayerAttackAction[attackCount];
+            projectiles =
+                new FpgCompiledPlayerProjectileAction[projectileCount];
+            reloads = new FpgCompiledPlayerReloadAction[reloadCount];
+            int attackWriteIndex = 0;
+            int projectileWriteIndex = 0;
+            int reloadWriteIndex = 0;
+
+            for (int sequenceIndex = 0;
+                sequenceIndex < Sequences.Count;
+                sequenceIndex++)
             {
-                FpgPlayerSkillPayloadSlot value = values[index];
-                if (value == null)
+                FpgSkillSequenceDefinition sequence = Sequences[sequenceIndex];
+                for (int index = 0;
+                    index < sequence.AttackEvents.Count;
+                    index++)
                 {
-                    error = $"Player skill '{SkillId}' has a missing payload slot at index {index}.";
-                    return false;
+                    FpgSkillAttackEventDefinition action =
+                        sequence.AttackEvents[index];
+                    attacks[attackWriteIndex++] = CompileAttackAction(action);
                 }
 
-                if (!value.TryValidate(out error))
+                for (int index = 0;
+                    index < sequence.ProjectileEvents.Count;
+                    index++)
                 {
-                    if (string.IsNullOrEmpty(error))
-                    {
-                        error = $"Player skill '{SkillId}' has an invalid payload slot at index {index}.";
-                    }
-
-                    return false;
+                    FpgSkillProjectileEventDefinition action =
+                        sequence.ProjectileEvents[index];
+                    projectiles[projectileWriteIndex++] =
+                        CompileProjectileAction(action);
                 }
 
-                int compiledId = FpgSkillStableId.CompilePayloadSlot(value.SlotId);
-                if (!slotIds.Add(value.SlotId) || !compiledSlotIds.Add(compiledId))
+                for (int index = 0;
+                    index < sequence.ReloadEvents.Count;
+                    index++)
                 {
-                    error = $"Player skill '{SkillId}' repeats payload slot '{value.SlotId}' or has a stable-ID collision.";
-                    return false;
+                    reloads[reloadWriteIndex++] = CompileReloadAction();
                 }
             }
-
-            error = string.Empty;
-            return true;
         }
 
-        protected override bool ContainsPayloadSlot(string payloadSlotId)
+        private static FpgCompiledPlayerAttackAction CompileAttackAction(
+            FpgSkillAttackEventDefinition action)
         {
-            FpgPlayerSkillPayloadSlot[] values =
-                payloadSlots ?? Array.Empty<FpgPlayerSkillPayloadSlot>();
-            for (int index = 0; index < values.Length; index++)
-            {
-                if (values[index] != null
-                    && string.Equals(
-                        values[index].SlotId,
-                        payloadSlotId,
-                        StringComparison.Ordinal))
-                {
-                    return true;
-                }
-            }
+            bool pellet = action.Mode == FpgSkillAttackMode.PelletRays;
+            FpgCompiledPlayerSkillAction payload =
+                new FpgCompiledPlayerSkillAction(
+                    pellet
+                        ? FpgPlayerSkillActionKind.PelletRay
+                        : FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                    action.AmmoCost,
+                    action.CompileDamage(),
+                    action.QueryPolicy,
+                    action.QueryMode,
+                    action.PayloadCount,
+                    action.MaxImpactCount,
+                    pellet ? action.AdditionalPenetrationCount : 0,
+                    pellet ? 0 : action.AreaCombatantLimit,
+                    pellet ? 0 : action.AreaProjectileLimit,
+                    action.AllowedTargetKinds);
+            return new FpgCompiledPlayerAttackAction(action.Mode, payload);
+        }
 
-            return false;
+        private static FpgCompiledPlayerProjectileAction
+            CompileProjectileAction(
+                FpgSkillProjectileEventDefinition action)
+        {
+            FpgCompiledPlayerSkillAction payload =
+                new FpgCompiledPlayerSkillAction(
+                    FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
+                    action.AmmoCost,
+                    action.CompileDamage(),
+                    QueryPolicy.DirectThenArea,
+                    AttackQueryMode.AreaAtFirstSurface,
+                    action.ProjectileCount,
+                    action.MaxImpactCount,
+                    0,
+                    action.AreaCombatantLimit,
+                    action.AreaProjectileLimit,
+                    action.AllowedTargetKinds,
+                    action.ProjectileFlightTicks,
+                    action.ProjectileSweepRadiusKey,
+                    action.ProjectileDefinitionId,
+                    action.ProjectileCount,
+                    action.ProjectileLifetimeTicks,
+                    action.ProjectileMaxHitPoints,
+                    action.ProjectileInterceptable,
+                    action.ProjectileBudgetUnits);
+            return new FpgCompiledPlayerProjectileAction(
+                action.ImpactMode,
+                payload,
+                action.ThreatDefinitionId);
+        }
+
+        private static FpgCompiledPlayerReloadAction CompileReloadAction()
+        {
+            return new FpgCompiledPlayerReloadAction(
+                new FpgCompiledPlayerSkillAction(
+                    FpgPlayerSkillActionKind.ReloadCommit,
+                    0,
+                    new DamageSpec(0, 0),
+                    QueryPolicy.None,
+                    AttackQueryMode.Legacy,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    AttackTargetKinds.None));
         }
 
         protected override bool TryValidateDefinition(out string error)
@@ -789,96 +864,20 @@ namespace FPG.Demo.Unity
             bool hasPelletPayload = false;
             bool hasAreaPayload = false;
             bool hasReloadPayload = false;
-            for (int sequenceIndex = 0;
-                sequenceIndex < Sequences.Count;
-                sequenceIndex++)
+            if (!TryInspectTypedGameplay(
+                    ref hasGameplayEvent,
+                    ref hasPelletPayload,
+                    ref hasAreaPayload,
+                    ref hasReloadPayload,
+                    out error))
             {
-                FpgSkillSequenceDefinition sequence = Sequences[sequenceIndex];
-                for (int eventIndex = 0;
-                    eventIndex < sequence.LogicEvents.Count;
-                    eventIndex++)
-                {
-                    FpgSkillLogicEventDefinition logicEvent =
-                        sequence.LogicEvents[eventIndex];
-                    if (!TryGetPayloadSlot(
-                            logicEvent.PayloadSlotId,
-                            out FpgPlayerSkillPayloadSlot payload))
-                    {
-                        error = $"Player skill '{SkillId}' references a missing payload slot '{logicEvent.PayloadSlotId}'.";
-                        return false;
-                    }
-
-                    FpgSkillTargetSource requiredSource =
-                        payload.Kind == FpgPlayerSkillPayloadKind.ReloadCommit
-                            ? FpgSkillTargetSource.Self
-                            : FpgSkillTargetSource.CurrentAim;
-                    if (logicEvent.TargetSource != requiredSource)
-                    {
-                        error = payload.Kind == FpgPlayerSkillPayloadKind.ReloadCommit
-                            ? $"Player reload payload '{payload.SlotId}' must target Self."
-                            : $"Player attack payload '{payload.SlotId}' must target CurrentAim.";
-                        return false;
-                    }
-
-                    hasGameplayEvent = true;
-                    hasPelletPayload |= payload.Kind
-                        == FpgPlayerSkillPayloadKind.PelletRay;
-                    hasAreaPayload |= payload.Kind
-                        == FpgPlayerSkillPayloadKind.AreaAtFirstSurface;
-                    hasReloadPayload |= payload.Kind
-                        == FpgPlayerSkillPayloadKind.ReloadCommit;
-                }
+                return false;
             }
 
             if (!hasGameplayEvent)
             {
-                error = $"Player skill '{SkillId}' requires at least one gameplay payload event.";
+                error = $"Player skill '{SkillId}' requires at least one gameplay action.";
                 return false;
-            }
-
-            if (hasPelletPayload)
-            {
-                if (shotPresentation == null)
-                {
-                    error = $"Player skill '{SkillId}' is missing shot presentation.";
-                    return false;
-                }
-
-                if (!shotPresentation.TryValidate(out error))
-                {
-                    error = $"Player skill '{SkillId}' has invalid shot presentation: {error}";
-                    return false;
-                }
-            }
-
-            if (hasAreaPayload)
-            {
-                if (secondaryPresentation == null)
-                {
-                    error = $"Player skill '{SkillId}' is missing secondary presentation.";
-                    return false;
-                }
-
-                if (!secondaryPresentation.TryValidate(out error))
-                {
-                    error = $"Player skill '{SkillId}' has invalid secondary presentation: {error}";
-                    return false;
-                }
-            }
-
-            if (hasReloadPayload)
-            {
-                if (reloadPresentation == null)
-                {
-                    error = $"Player skill '{SkillId}' is missing reload presentation.";
-                    return false;
-                }
-
-                if (!reloadPresentation.TryValidate(out error))
-                {
-                    error = $"Player skill '{SkillId}' has invalid reload presentation: {error}";
-                    return false;
-                }
             }
 
             if (hasAreaPayload
@@ -895,27 +894,101 @@ namespace FPG.Demo.Unity
             return true;
         }
 
-        private bool TryGetPayloadSlot(
-            string slotId,
-            out FpgPlayerSkillPayloadSlot payload)
+        private bool TryInspectTypedGameplay(
+            ref bool hasGameplayEvent,
+            ref bool hasPelletPayload,
+            ref bool hasAreaPayload,
+            ref bool hasReloadPayload,
+            out string error)
         {
-            FpgPlayerSkillPayloadSlot[] values =
-                payloadSlots ?? Array.Empty<FpgPlayerSkillPayloadSlot>();
-            for (int index = 0; index < values.Length; index++)
+            for (int sequenceIndex = 0;
+                sequenceIndex < Sequences.Count;
+                sequenceIndex++)
             {
-                if (values[index] != null
-                    && string.Equals(
-                        values[index].SlotId,
-                        slotId,
-                        StringComparison.Ordinal))
+                FpgSkillSequenceDefinition sequence = Sequences[sequenceIndex];
+                if (sequence.SummonEvents.Count > 0)
                 {
-                    payload = values[index];
-                    return true;
+                    error = $"Player skill '{SkillId}' cannot contain summon actions.";
+                    return false;
+                }
+
+                for (int index = 0;
+                    index < sequence.AttackEvents.Count;
+                    index++)
+                {
+                    FpgSkillAttackEventDefinition action =
+                        sequence.AttackEvents[index];
+                    if ((action.Mode != FpgSkillAttackMode.PelletRays
+                            && action.Mode
+                                != FpgSkillAttackMode.AreaAtFirstSurface)
+                        || action.TargetSource
+                            != FpgSkillTargetSource.CurrentAim
+                        || action.AmmoCost <= 0
+                        || !IsValidPlayerTargetKinds(
+                            action.AllowedTargetKinds))
+                    {
+                        error = $"Player attack action '{action.EventId}' has an unsupported mode, target source, ammo cost or target kind.";
+                        return false;
+                    }
+
+                    hasGameplayEvent = true;
+                    hasPelletPayload |= action.Mode
+                        == FpgSkillAttackMode.PelletRays;
+                    hasAreaPayload |= action.Mode
+                        == FpgSkillAttackMode.AreaAtFirstSurface;
+                }
+
+                for (int index = 0;
+                    index < sequence.ProjectileEvents.Count;
+                    index++)
+                {
+                    FpgSkillProjectileEventDefinition action =
+                        sequence.ProjectileEvents[index];
+                    if (action.ImpactMode != FpgSkillProjectileImpactMode
+                            .AreaAtFirstSurface
+                        || action.TargetSource
+                            != FpgSkillTargetSource.CurrentAim
+                        || action.AmmoCost <= 0
+                        || action.ProjectileCount != 1
+                        || action.ProjectileInterceptable
+                        || !IsValidPlayerTargetKinds(
+                            action.AllowedTargetKinds))
+                    {
+                        error = $"Player projectile action '{action.EventId}' must be one non-interceptable area projectile targeting CurrentAim.";
+                        return false;
+                    }
+
+                    hasGameplayEvent = true;
+                    hasAreaPayload = true;
+                }
+
+                for (int index = 0;
+                    index < sequence.ReloadEvents.Count;
+                    index++)
+                {
+                    FpgSkillReloadEventDefinition action =
+                        sequence.ReloadEvents[index];
+                    if (action.TargetSource != FpgSkillTargetSource.Self)
+                    {
+                        error = $"Player reload action '{action.EventId}' must target Self.";
+                        return false;
+                    }
+
+                    hasGameplayEvent = true;
+                    hasReloadPayload = true;
                 }
             }
 
-            payload = null;
-            return false;
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool IsValidPlayerTargetKinds(
+            AttackTargetKinds value)
+        {
+            return value != AttackTargetKinds.None
+                && (value & ~WeaponDefinition.PlayerAttackTargetKinds)
+                    == AttackTargetKinds.None;
         }
 
         private bool HasSequence(FpgSkillSequenceKind kind)

@@ -3,6 +3,7 @@ using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Enemy;
 using FPG.Demo.Player;
+using FPG.Demo.Skills;
 
 namespace FPG.Demo.Run
 {
@@ -329,6 +330,76 @@ namespace FPG.Demo.Run
         }
     }
 
+    /// <summary>
+    /// A deferred player projectile resolves its area at the terminal point,
+    /// after the world sweep has decided where that terminal is.
+    /// </summary>
+    public readonly struct PlayerProjectileAreaQueryRequest
+    {
+        public PlayerProjectileAreaQueryRequest(
+            TickIndex tick,
+            AttackSnapshot attack,
+            SpatialVectorKey center)
+        {
+            if (!tick.IsValid
+                || !attack.AttackId.IsValid
+                || !attack.ShotId.IsValid
+                || !attack.OwnerId.IsValid
+                || attack.Team != Team.Player
+                || !attack.IsQueryConfigurationValid
+                || attack.QueryPolicy != QueryPolicy.DirectThenArea
+                || attack.QueryMode != AttackQueryMode.AreaAtFirstSurface
+                || attack.PayloadCount != 1
+                || attack.MaxImpactCount <= 0)
+            {
+                throw new ArgumentException(
+                    "Player projectile area queries require a valid area attack.");
+            }
+
+            Tick = tick;
+            Attack = attack;
+            Center = center;
+        }
+
+        public TickIndex Tick { get; }
+        public AttackSnapshot Attack { get; }
+        public SpatialVectorKey Center { get; }
+    }
+
+    public interface IPlayerProjectileAreaQueryPort
+    {
+        DomainResult QueryAreaAtPoint(
+            in PlayerProjectileAreaQueryRequest request,
+            QueryCandidate[] output,
+            out AttackQueryResult result);
+    }
+
+    public sealed class NullPlayerProjectileAreaQueryPort :
+        IPlayerProjectileAreaQueryPort
+    {
+        public static readonly NullPlayerProjectileAreaQueryPort Instance =
+            new NullPlayerProjectileAreaQueryPort();
+
+        private NullPlayerProjectileAreaQueryPort()
+        {
+        }
+
+        public DomainResult QueryAreaAtPoint(
+            in PlayerProjectileAreaQueryRequest request,
+            QueryCandidate[] output,
+            out AttackQueryResult result)
+        {
+            result = AttackQueryResult.Empty;
+            return DomainResult.Rejected(RejectReason.InvalidState);
+        }
+    }
+
+    public enum ProjectileTargetingMode
+    {
+        LockedTarget = 0,
+        FirstSurface
+    }
+
     public readonly struct ProjectileSpawnRequest
     {
         public ProjectileSpawnRequest(
@@ -342,7 +413,6 @@ namespace FPG.Demo.Run
             Team team,
             int definitionId,
             int sweepRadiusKey,
-            int presentationKey,
             bool interceptable)
             : this(
                 tick,
@@ -355,8 +425,9 @@ namespace FPG.Demo.Run
                 team,
                 definitionId,
                 sweepRadiusKey,
-                presentationKey,
                 interceptable,
+                FpgThreatPresentationKind.FastUninterceptable,
+                ProjectileTargetingMode.LockedTarget,
                 false,
                 default(SpatialVectorKey),
                 default(SpatialVectorKey))
@@ -374,7 +445,39 @@ namespace FPG.Demo.Run
             Team team,
             int definitionId,
             int sweepRadiusKey,
-            int presentationKey,
+            bool interceptable,
+            FpgThreatPresentationKind presentationKind)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                interceptable,
+                presentationKind,
+                ProjectileTargetingMode.LockedTarget,
+                false,
+                default(SpatialVectorKey),
+                default(SpatialVectorKey))
+        {
+        }
+
+        public ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
             bool interceptable,
             SpatialVectorKey explicitStart,
             SpatialVectorKey explicitEnd)
@@ -389,8 +492,161 @@ namespace FPG.Demo.Run
                 team,
                 definitionId,
                 sweepRadiusKey,
-                presentationKey,
                 interceptable,
+                FpgThreatPresentationKind.FastUninterceptable,
+                ProjectileTargetingMode.LockedTarget,
+                true,
+                explicitStart,
+                explicitEnd)
+        {
+        }
+
+        public ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
+            bool interceptable,
+            FpgThreatPresentationKind presentationKind,
+            SpatialVectorKey explicitStart,
+            SpatialVectorKey explicitEnd)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                interceptable,
+                presentationKind,
+                ProjectileTargetingMode.LockedTarget,
+                true,
+                explicitStart,
+                explicitEnd)
+        {
+        }
+
+        public ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
+            bool interceptable,
+            FpgThreatPresentationKind presentationKind,
+            ProjectileTargetingMode targetingMode,
+            SpatialVectorKey explicitStart,
+            SpatialVectorKey explicitEnd,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                interceptable,
+                presentationKind,
+                targetingMode,
+                true,
+                explicitStart,
+                explicitEnd)
+        {
+            if (!skillExecutionId.IsValid || gameplayEventId <= 0)
+            {
+                throw new ArgumentException(
+                    "Projectile skill correlation must be valid.");
+            }
+
+            SkillExecutionId = skillExecutionId;
+            GameplayEventId = gameplayEventId;
+        }
+
+        public ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
+            bool interceptable,
+            ProjectileTargetingMode targetingMode,
+            SpatialVectorKey explicitStart,
+            SpatialVectorKey explicitEnd)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                interceptable,
+                FpgThreatPresentationKind.FastUninterceptable,
+                targetingMode,
+                true,
+                explicitStart,
+                explicitEnd)
+        {
+        }
+
+        public ProjectileSpawnRequest(
+            TickIndex tick,
+            TickIndex arrivalTick,
+            ProjectileId projectileId,
+            RuntimeId runtimeId,
+            AttackId attackId,
+            RuntimeId ownerId,
+            RuntimeId targetId,
+            Team team,
+            int definitionId,
+            int sweepRadiusKey,
+            bool interceptable,
+            FpgThreatPresentationKind presentationKind,
+            ProjectileTargetingMode targetingMode,
+            SpatialVectorKey explicitStart,
+            SpatialVectorKey explicitEnd)
+            : this(
+                tick,
+                arrivalTick,
+                projectileId,
+                runtimeId,
+                attackId,
+                ownerId,
+                targetId,
+                team,
+                definitionId,
+                sweepRadiusKey,
+                interceptable,
+                presentationKind,
+                targetingMode,
                 true,
                 explicitStart,
                 explicitEnd)
@@ -408,22 +664,32 @@ namespace FPG.Demo.Run
             Team team,
             int definitionId,
             int sweepRadiusKey,
-            int presentationKey,
             bool interceptable,
+            FpgThreatPresentationKind presentationKind,
+            ProjectileTargetingMode targetingMode,
             bool hasExplicitPath,
             SpatialVectorKey explicitStart,
             SpatialVectorKey explicitEnd)
         {
             if (!tick.IsValid || !arrivalTick.IsValid || arrivalTick <= tick
                 || !projectileId.IsValid || !runtimeId.IsValid || !attackId.IsValid
-                || !ownerId.IsValid || !targetId.IsValid)
+                || !ownerId.IsValid
+                || (targetingMode == ProjectileTargetingMode.LockedTarget
+                    && !targetId.IsValid))
             {
                 throw new ArgumentException("Projectile registration identifiers must be valid.");
             }
 
             if (!Enum.IsDefined(typeof(Team), team) || team == Team.Neutral
-                || definitionId <= 0 || sweepRadiusKey <= 0 || presentationKey <= 0
-                || (hasExplicitPath && explicitStart == explicitEnd))
+                || !Enum.IsDefined(typeof(ProjectileTargetingMode), targetingMode)
+                || !Enum.IsDefined(
+                    typeof(FpgThreatPresentationKind),
+                    presentationKind)
+                || definitionId <= 0 || sweepRadiusKey <= 0
+                || (hasExplicitPath && explicitStart == explicitEnd)
+                || (targetingMode == ProjectileTargetingMode.FirstSurface
+                    && (team != Team.Player || targetId.IsValid || interceptable
+                        || !hasExplicitPath)))
             {
                 throw new ArgumentOutOfRangeException(nameof(definitionId));
             }
@@ -438,11 +704,14 @@ namespace FPG.Demo.Run
             Team = team;
             DefinitionId = definitionId;
             SweepRadiusKey = sweepRadiusKey;
-            PresentationKey = presentationKey;
             Interceptable = interceptable;
+            PresentationKind = presentationKind;
+            TargetingMode = targetingMode;
             HasExplicitPath = hasExplicitPath;
             ExplicitStart = explicitStart;
             ExplicitEnd = explicitEnd;
+            SkillExecutionId = FPG.Demo.Skills.SkillExecutionId.Invalid;
+            GameplayEventId = 0;
         }
 
         public TickIndex Tick { get; }
@@ -455,11 +724,16 @@ namespace FPG.Demo.Run
         public Team Team { get; }
         public int DefinitionId { get; }
         public int SweepRadiusKey { get; }
-        public int PresentationKey { get; }
         public bool Interceptable { get; }
+        public FpgThreatPresentationKind PresentationKind { get; }
+        public ProjectileTargetingMode TargetingMode { get; }
         public bool HasExplicitPath { get; }
         public SpatialVectorKey ExplicitStart { get; }
         public SpatialVectorKey ExplicitEnd { get; }
+        public SkillExecutionId SkillExecutionId { get; }
+        public int GameplayEventId { get; }
+        public bool HasSkillCorrelation => SkillExecutionId.IsValid
+            && GameplayEventId > 0;
     }
     public readonly struct ProjectilePathSnapshot
     {

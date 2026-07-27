@@ -74,6 +74,10 @@ namespace FPG.Demo.Unity
             PlayerRuntime player,
             FpgMultiEnemyCombatPort combatPort,
             FpgFormalProjectileWorldPort projectileWorldPort,
+            IProjectilePresentationFeed projectilePresentationFeed,
+            IPlayerShotPresentationFeed playerShotPresentationFeed,
+            ICommittedPlayerShotPresentationSink
+                playerShotPresentationSink,
             UnityAttackQueryPort attackQueryPort,
             FpgFormalEnemyAttackScheduler attackScheduler,
             IFpgBattleTickSynchronizer synchronizer,
@@ -90,6 +94,9 @@ namespace FPG.Demo.Unity
             Player = player;
             CombatPort = combatPort;
             ProjectileWorldPort = projectileWorldPort;
+            ProjectilePresentationFeed = projectilePresentationFeed;
+            PlayerShotPresentationFeed = playerShotPresentationFeed;
+            PlayerShotPresentationSink = playerShotPresentationSink;
             AttackQueryPort = attackQueryPort;
             AttackScheduler = attackScheduler;
             Synchronizer = synchronizer;
@@ -107,6 +114,15 @@ namespace FPG.Demo.Unity
         public PlayerRuntime Player { get; }
         public FpgMultiEnemyCombatPort CombatPort { get; }
         public FpgFormalProjectileWorldPort ProjectileWorldPort { get; }
+        public IProjectilePresentationFeed ProjectilePresentationFeed { get; }
+        public IPlayerShotPresentationFeed PlayerShotPresentationFeed
+        {
+            get;
+        }
+        public ICommittedPlayerShotPresentationSink PlayerShotPresentationSink
+        {
+            get;
+        }
         public UnityAttackQueryPort AttackQueryPort { get; }
         public FpgFormalEnemyAttackScheduler AttackScheduler { get; }
         public IFpgBattleTickSynchronizer Synchronizer { get; }
@@ -129,6 +145,7 @@ namespace FPG.Demo.Unity
 
         public void ClearForRestart()
         {
+            ClearPendingShotPresentation();
             playerEntity.SetGameplayCollidersEnabled(true);
             CombatPort.ResetPresentationState(new TickIndex(0L));
             AttackScheduler.Clear();
@@ -153,6 +170,7 @@ namespace FPG.Demo.Unity
 
         public void ClearForFault()
         {
+            ClearPendingShotPresentation();
             playerEntity.SetGameplayCollidersEnabled(false);
             AttackScheduler.Clear();
             ProjectileWorldPort.ClearAll();
@@ -161,6 +179,15 @@ namespace FPG.Demo.Unity
             FpgFormalUnityTickSynchronizer synchronizer =
                 Synchronizer as FpgFormalUnityTickSynchronizer;
             synchronizer?.Reset();
+        }
+
+        public void ClearForDefeat()
+        {
+            ClearPendingShotPresentation();
+            playerEntity.SetGameplayCollidersEnabled(false);
+            ClearPendingShotPresentation();
+            AttackScheduler.Clear();
+            ProjectileWorldPort.ClearAll();
         }
 
         public void Dispose()
@@ -179,6 +206,12 @@ namespace FPG.Demo.Unity
             staticHitboxRegistry.TryUnbindPlayerEntity(playerEntity);
             staticHitboxRegistry.ClearDynamicAndStaticBindings();
             disposed = true;
+        }
+
+        private void ClearPendingShotPresentation()
+        {
+            (PlayerShotPresentationSink as PlayerShotPresentationBridge)
+                ?.ClearPending();
         }
 
 
@@ -655,10 +688,16 @@ namespace FPG.Demo.Unity
                 FpgCombinedHitboxLookup combinedLookup = new FpgCombinedHitboxLookup(
                     staticHitboxRegistry,
                     formalHitboxRegistry);
+                FixedPlayerShotPresentationFeed playerShotPresentationFeed =
+                    new FixedPlayerShotPresentationFeed();
+                PlayerShotPresentationBridge playerShotPresentationBridge =
+                    new PlayerShotPresentationBridge(
+                        playerShotPresentationFeed);
                 UnityAttackQueryPort attackQueryPort = new UnityAttackQueryPort(
                     combinedLookup,
                     querySettings,
-                    physics);
+                    physics,
+                    playerShotPresentationBridge);
                 FpgFormalProjectileWorldPort projectileWorldPort =
                     new FpgFormalProjectileWorldPort(
                         anchorMap,
@@ -667,6 +706,12 @@ namespace FPG.Demo.Unity
                         projectileCapacity,
                         physics,
                         projectileProxyPool);
+                FixedProjectilePresentationFeed projectilePresentationFeed =
+                    new FixedProjectilePresentationFeed(projectileCapacity);
+                IProjectileWorldPort observedProjectileWorldPort =
+                    new ObservingProjectileWorldPort(
+                        projectileWorldPort,
+                        projectilePresentationFeed);
                 CombatKernel combatKernel = new CombatKernel(
                     projectileBudgetCapacity,
                     impactHistoryCapacity,
@@ -701,8 +746,9 @@ namespace FPG.Demo.Unity
                     idAllocator,
                     Capacity,
                     new TickDuration(groggyDurationTicks),
-                    projectileWorldPort,
-                    summonSink);
+                    observedProjectileWorldPort,
+                    summonSink,
+                    playerProjectileAreaQueryPort: attackQueryPort);
                 FpgSkillExecutionIdAllocator skillExecutionIds =
                     new FpgSkillExecutionIdAllocator();
                 FpgFormalEnemyAttackScheduler scheduler = new FpgFormalEnemyAttackScheduler(
@@ -729,6 +775,9 @@ namespace FPG.Demo.Unity
                     player,
                     combatPort,
                     projectileWorldPort,
+                    projectilePresentationFeed,
+                    playerShotPresentationFeed,
+                    playerShotPresentationBridge,
                     attackQueryPort,
                     scheduler,
                     synchronizer,

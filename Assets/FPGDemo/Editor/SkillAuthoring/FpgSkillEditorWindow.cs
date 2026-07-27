@@ -11,10 +11,16 @@ namespace FPG.Demo.Editor.SkillAuthoring
 {
     public sealed class FpgSkillEditorWindow : EditorWindow
     {
+        private const string EnemySkillTypeName =
+            "FPG.Demo.Unity.FpgEnemyAttackDefinition";
+        private const string AttackTargetKindsTypeName =
+            "FPG.Demo.Combat.AttackTargetKinds";
         private const string LayoutPath =
             "Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditor.uxml";
         private const string SelectedAssetSessionKey =
             "FPGDemo.SkillAuthoring.SelectedAssetPath";
+        private const string SelectedSequenceIndexSessionKey =
+            "FPGDemo.SkillAuthoring.SelectedSequenceIndex";
         private const string PreviewPrefabSessionKey =
             "FPGDemo.SkillAuthoring.PreviewPrefabPath";
         private const int TickRate = FpgSkillRuntimeConstants.TickRate;
@@ -24,10 +30,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             new List<FpgSkillAssetRecord>();
         private readonly List<FpgSkillAssetRecord> filteredAssets =
             new List<FpgSkillAssetRecord>();
-        private readonly List<FpgSkillPayloadRecord> payloads =
-            new List<FpgSkillPayloadRecord>();
         private readonly List<FpgSkillEventRecord> events =
             new List<FpgSkillEventRecord>();
+        private readonly List<FpgSkillActivePresentationTrackRecord>
+            presentationTracks =
+                new List<FpgSkillActivePresentationTrackRecord>();
         private readonly List<FpgSkillCompiledTriggerRecord> compiledTriggers =
             new List<FpgSkillCompiledTriggerRecord>();
         private readonly FpgSkillPreviewExecution previewExecution =
@@ -46,9 +53,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private SerializedObject serializedAsset;
         private UnityEngine.Object selectedAsset;
         private int selectedSequenceIndex;
-        private int selectedPayloadIndex = -1;
-        private int selectedEventIndex = -1;
-        private int selectedPhaseIndex = -1;
+        private int selectedPresentationTrackIndex = -1;
+        private FpgSkillEventKey selectedEventKey;
         private bool selectedAnimationTrack;
         private int durationTicks = 120;
         private int currentTick;
@@ -57,6 +63,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private bool isPlaying;
         private bool hasCompiledSchedule;
         private FpgCompiledSkillSequence compiledSequence;
+        private string previewCompileError;
+        private string lastReportedPreviewFailureSignature;
         private bool refreshQueued;
         private double lastUpdateTime;
         private double tickAccumulator;
@@ -66,8 +74,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private DropdownField typeFilter;
         private ListView actionAssetList;
         private DropdownField sequenceDropdown;
-        private ListView payloadList;
-        private Label payloadCountLabel;
         private ObjectField previewPrefabField;
         private DropdownField targetCountDropdown;
         private Toggle showGeometryToggle;
@@ -83,15 +89,18 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private ListView eventLogList;
         private Label assetStateLabel;
         private Label statusLabel;
-        private Button addPayloadButton;
-        private Button duplicatePayloadButton;
-        private Button replacePayloadButton;
-        private Button deletePayloadButton;
         private Button addEventButton;
         private Button duplicateEventButton;
         private Button copyEventsButton;
         private Button pasteEventsButton;
         private Button deleteEventButton;
+        private VisualElement presentationTrackTools;
+        private DropdownField presentationTrackDropdown;
+        private TextField presentationTrackNameField;
+        private Button addPresentationTrackButton;
+        private Button movePresentationTrackUpButton;
+        private Button movePresentationTrackDownButton;
+        private Button deletePresentationTrackButton;
         private Button captureAnimationLengthButton;
         private FpgSkillPreviewView previewView;
         private FpgSkillTimelineView timelineView;
@@ -150,6 +159,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             EditorApplication.projectChanged -= OnProjectChanged;
             Undo.undoRedoPerformed -= OnUndoRedoPerformed;
             isPlaying = false;
+            tickAccumulator = 0d;
+            previewExecution.Reset();
+            previewSimulationFrame = null;
+            previewView?.ClearPresentationPreview();
+            previewView?.SetPreviewPrefab(null);
         }
 
         public void CreateGUI()
@@ -184,8 +198,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             typeFilter = rootVisualElement.Q<DropdownField>("type-filter");
             actionAssetList = rootVisualElement.Q<ListView>("action-asset-list");
             sequenceDropdown = rootVisualElement.Q<DropdownField>("sequence-dropdown");
-            payloadList = rootVisualElement.Q<ListView>("payload-list");
-            payloadCountLabel = rootVisualElement.Q<Label>("payload-count-label");
             previewPrefabField = rootVisualElement.Q<ObjectField>(
                 "preview-prefab-field");
             targetCountDropdown = rootVisualElement.Q<DropdownField>(
@@ -205,18 +217,26 @@ namespace FPG.Demo.Editor.SkillAuthoring
             eventLogList = rootVisualElement.Q<ListView>("event-log-list");
             assetStateLabel = rootVisualElement.Q<Label>("asset-state-label");
             statusLabel = rootVisualElement.Q<Label>("status-label");
-            addPayloadButton = rootVisualElement.Q<Button>("add-payload-button");
-            duplicatePayloadButton = rootVisualElement.Q<Button>(
-                "duplicate-payload-button");
-            replacePayloadButton = rootVisualElement.Q<Button>(
-                "replace-payload-button");
-            deletePayloadButton = rootVisualElement.Q<Button>("delete-payload-button");
             addEventButton = rootVisualElement.Q<Button>("add-event-button");
             duplicateEventButton = rootVisualElement.Q<Button>(
                 "duplicate-event-button");
             copyEventsButton = rootVisualElement.Q<Button>("copy-events-button");
             pasteEventsButton = rootVisualElement.Q<Button>("paste-events-button");
             deleteEventButton = rootVisualElement.Q<Button>("delete-event-button");
+            presentationTrackTools = rootVisualElement.Q<VisualElement>(
+                "presentation-track-tools");
+            presentationTrackDropdown = rootVisualElement.Q<DropdownField>(
+                "presentation-track-dropdown");
+            presentationTrackNameField = rootVisualElement.Q<TextField>(
+                "presentation-track-name-field");
+            addPresentationTrackButton = rootVisualElement.Q<Button>(
+                "add-presentation-track-button");
+            movePresentationTrackUpButton = rootVisualElement.Q<Button>(
+                "move-presentation-track-up-button");
+            movePresentationTrackDownButton = rootVisualElement.Q<Button>(
+                "move-presentation-track-down-button");
+            deletePresentationTrackButton = rootVisualElement.Q<Button>(
+                "delete-presentation-track-button");
             captureAnimationLengthButton = rootVisualElement.Q<Button>(
                 "capture-animation-length-button");
         }
@@ -251,12 +271,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             actionAssetList.makeItem = MakeAssetRow;
             actionAssetList.bindItem = BindAssetRow;
             actionAssetList.selectionChanged += OnAssetListSelectionChanged;
-
-            payloadList.itemsSource = payloads;
-            payloadList.fixedItemHeight = 38f;
-            payloadList.makeItem = MakePayloadRow;
-            payloadList.bindItem = BindPayloadRow;
-            payloadList.selectionChanged += OnPayloadSelectionChanged;
 
             validationList.itemsSource = validation;
             validationList.fixedItemHeight = 31f;
@@ -314,15 +328,22 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 Step(1);
             rootVisualElement.Q<Button>("clear-log-button").clicked += ClearLog;
 
-            addPayloadButton.clicked += AddPayload;
-            duplicatePayloadButton.clicked += DuplicatePayload;
-            replacePayloadButton.clicked += ShowReplacePayloadMenu;
-            deletePayloadButton.clicked += DeletePayload;
             addEventButton.clicked += ShowAddEventMenu;
             duplicateEventButton.clicked += DuplicateEvent;
             copyEventsButton.clicked += CopySelectedEvents;
             pasteEventsButton.clicked += PasteCopiedEvents;
             deleteEventButton.clicked += DeleteEvent;
+            presentationTrackDropdown.RegisterValueChangedCallback(
+                OnPresentationTrackChanged);
+            presentationTrackNameField.RegisterValueChangedCallback(
+                OnPresentationTrackRenamed);
+            addPresentationTrackButton.clicked += AddPresentationTrack;
+            movePresentationTrackUpButton.clicked += () =>
+                MovePresentationTrack(-1);
+            movePresentationTrackDownButton.clicked += () =>
+                MovePresentationTrack(1);
+            deletePresentationTrackButton.clicked +=
+                DeletePresentationTrack;
             captureAnimationLengthButton.clicked += CaptureAnimationSourceDuration;
 
             rootVisualElement.RegisterCallback<KeyDownEvent>(OnRootKeyDown);
@@ -489,19 +510,31 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             Pause();
+            string assetPath = AssetDatabase.GetAssetPath(asset);
+            string storedAssetPath = SessionState.GetString(
+                SelectedAssetSessionKey,
+                string.Empty);
+            int storedSequenceIndex = string.Equals(
+                storedAssetPath,
+                assetPath,
+                StringComparison.OrdinalIgnoreCase)
+                ? SessionState.GetInt(SelectedSequenceIndexSessionKey, -1)
+                : -1;
             selectedAsset = asset;
             serializedAsset = new SerializedObject(asset);
-            selectedSequenceIndex = 0;
-            selectedPayloadIndex = -1;
-            selectedEventIndex = -1;
-            selectedPhaseIndex = -1;
+            previewCompileError = string.Empty;
+            selectedSequenceIndex = ResolveSequenceSelection(
+                storedSequenceIndex);
+
+            selectedEventKey = FpgSkillEventKey.Invalid;
             selectedAnimationTrack = false;
             eventSelection.Clear();
             currentTick = 0;
             tickAccumulator = 0d;
             SessionState.SetString(
                 SelectedAssetSessionKey,
-                AssetDatabase.GetAssetPath(asset));
+                assetPath);
+            SaveSequenceSelection();
             RestorePreviewPrefab();
             if (revealInProject)
             {
@@ -511,6 +544,83 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             SelectCurrentAssetInList();
             RefreshFromSerialized();
+        }
+
+        private int ResolveSequenceSelection(int storedSequenceIndex)
+        {
+            SerializedProperty sequences = FpgSkillSerializedAdapter.GetSequences(
+                serializedAsset);
+            if (sequences == null || !sequences.isArray || sequences.arraySize == 0)
+            {
+                return -1;
+            }
+
+            if (storedSequenceIndex >= 0
+                && storedSequenceIndex < sequences.arraySize)
+            {
+                return storedSequenceIndex;
+            }
+
+            int firstEventSequence = -1;
+            int executeEventSequence = -1;
+            int releaseEventSequence = -1;
+            for (int index = 0; index < sequences.arraySize; index++)
+            {
+                SerializedProperty sequence = sequences.GetArrayElementAtIndex(index);
+                List<FpgSkillEventRecord> sequenceEvents =
+                    FpgSkillSerializedAdapter.ReadEvents(
+                        sequence,
+                        FpgSkillSerializedAdapter.GetDurationTicks(sequence));
+                if (sequenceEvents.Count == 0)
+                {
+                    continue;
+                }
+
+                if (firstEventSequence < 0)
+                {
+                    firstEventSequence = index;
+                }
+
+                SerializedProperty kind = sequence.FindPropertyRelative("kind");
+                if (kind == null
+                    || kind.propertyType != SerializedPropertyType.Enum)
+                {
+                    continue;
+                }
+
+                if (kind.enumValueIndex == (int)FpgSkillSequenceKind.Release)
+                {
+                    releaseEventSequence = index;
+                }
+                else if (kind.enumValueIndex == (int)FpgSkillSequenceKind.Execute)
+                {
+                    executeEventSequence = index;
+                }
+            }
+
+            bool isChargeReleaseSkill = string.Equals(
+                GetSerializedEnumName(
+                    serializedAsset.FindProperty("secondaryTriggerMode")),
+                "ChargeRelease",
+                StringComparison.Ordinal);
+
+            return isChargeReleaseSkill && releaseEventSequence >= 0
+                ? releaseEventSequence
+                : executeEventSequence >= 0
+                    ? executeEventSequence
+                    : firstEventSequence >= 0
+                        ? firstEventSequence
+                        : 0;
+        }
+
+        private void SaveSequenceSelection()
+        {
+            if (selectedAsset != null && selectedSequenceIndex >= 0)
+            {
+                SessionState.SetInt(
+                    SelectedSequenceIndexSessionKey,
+                    selectedSequenceIndex);
+            }
         }
 
         private void SelectCurrentAssetInList()
@@ -529,6 +639,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void RefreshFromSerialized()
         {
+            RefreshFromSerialized(true);
+        }
+
+        private void RefreshFromSerialized(bool refreshInspector)
+        {
             refreshQueued = false;
             if (serializedAsset == null || serializedAsset.targetObject == null)
             {
@@ -536,6 +651,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
+            previewView?.ClearPresentationPreview();
             serializedAsset.UpdateIfRequiredOrScript();
             RefreshSequenceChoices();
             SerializedProperty sequence = FpgSkillSerializedAdapter.GetSequence(
@@ -544,12 +660,20 @@ namespace FPG.Demo.Editor.SkillAuthoring
             durationTicks = FpgSkillSerializedAdapter.GetDurationTicks(sequence);
             currentTick = Mathf.Clamp(currentTick, 0, durationTicks);
 
-            payloads.Clear();
-            payloads.AddRange(FpgSkillSerializedAdapter.ReadPayloads(sequence));
+            presentationTracks.Clear();
+            presentationTracks.AddRange(
+                FpgSkillSerializedAdapter.ReadActivePresentationTracks(
+                    sequence));
+            selectedPresentationTrackIndex = presentationTracks.Count == 0
+                ? -1
+                : Mathf.Clamp(
+                    selectedPresentationTrackIndex,
+                    0,
+                    presentationTracks.Count - 1);
+
             events.Clear();
             events.AddRange(FpgSkillSerializedAdapter.ReadEvents(
                 sequence,
-                payloads,
                 durationTicks));
             compiledTriggers.Clear();
             hasCompiledSchedule = FpgSkillSerializedAdapter.TryReadCompiledSchedule(
@@ -574,6 +698,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
             {
                 previewExecution.Reset();
             }
+            else
+            {
+                previewExecution.ClearPendingResults();
+            }
 
             previewView.SetAnimation(
                 FpgSkillSerializedAdapter.GetMainAnimation(sequence),
@@ -584,59 +712,43 @@ namespace FPG.Demo.Editor.SkillAuthoring
             validation.AddRange(FpgSkillSerializedAdapter.Validate(
                 serializedAsset,
                 selectedSequenceIndex,
-                payloads,
                 events,
                 durationTicks,
                 measuredAnimationDurationTicks,
-                previewPrefabField.value as GameObject));
-            if (!hasCompiledSchedule
-                && !string.IsNullOrWhiteSpace(compileError)
-                && !validation.Any(item =>
-                    item.Severity == FpgSkillIssueSeverity.Error))
-            {
-                validation.Add(new FpgSkillValidationItem
-                {
-                    Severity = FpgSkillIssueSeverity.Error,
-                    Message = "编译预览不可用：" + compileError
-                });
-            }
-
-            selectedPayloadIndex = NormalizePayloadSelection(selectedPayloadIndex);
-            
-            SerializedProperty phases = sequence?.FindPropertyRelative("phases");
-            if (selectedPhaseIndex < 0
-                || phases == null
-                || !phases.isArray
-                || selectedPhaseIndex >= phases.arraySize)
-            {
-                selectedPhaseIndex = -1;
-            }
+                previewPrefabField.value as GameObject,
+                includeRuntimeValidation: false));
+            previewCompileError = hasCompiledSchedule
+                ? string.Empty
+                : compileError;
+            ReportPreviewFailureToConsole(previewCompileError);
 
             if (sequence == null)
             {
                 selectedAnimationTrack = false;
             }
-            selectedEventIndex = NormalizeEventSelection(selectedEventIndex);
-            HashSet<int> validEventIndices = new HashSet<int>(
-                events.Select(item => item.Index));
-            eventSelection.Retain(validEventIndices);
-            if (selectedEventIndex >= 0
-                && !eventSelection.Contains(selectedEventIndex))
+            selectedEventKey = NormalizeEventSelection(selectedEventKey);
+            HashSet<FpgSkillEventKey> validEventKeys =
+                new HashSet<FpgSkillEventKey>(events.Select(item => item.Key));
+            eventSelection.Retain(validEventKeys);
+            if (selectedEventKey.IsValid
+                && !eventSelection.Contains(selectedEventKey))
             {
-                eventSelection.SetSingle(selectedEventIndex);
+                eventSelection.SetSingle(selectedEventKey);
             }
             else
             {
-                eventSelection.MakePrimary(selectedEventIndex);
+                eventSelection.MakePrimary(selectedEventKey);
             }
-            payloadCountLabel.text = payloads.Count.ToString();
-            payloadList.Rebuild();
+            RefreshPresentationTrackControls();
             validationList.Rebuild();
             RefreshValidationSummary();
             RefreshAnimationLengthState(sequence);
             RefreshTimeline();
             RefreshPreview();
-            RefreshInspector();
+            if (refreshInspector)
+            {
+                RefreshInspector();
+            }
             RefreshButtons();
             RefreshAssetState();
         }
@@ -696,6 +808,36 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     sequence,
                     durationTicks,
                     measuredAnimationDurationTicks);
+            List<FpgSkillEventTrackKind> availableTracks =
+                new List<FpgSkillEventTrackKind>
+                {
+                    FpgSkillEventTrackKind.GameplayAction
+                };
+            if (FpgSkillSerializedAdapter.CanAddEventTrack(
+                    sequence,
+                    FpgSkillEventTrackKind.Warning))
+            {
+                availableTracks.Add(FpgSkillEventTrackKind.Warning);
+            }
+
+            List<FpgSkillTimelinePresentationTrackViewModel>
+                presentationTrackModels =
+                    new List<FpgSkillTimelinePresentationTrackViewModel>(
+                        presentationTracks.Count);
+            for (int index = 0; index < presentationTracks.Count; index++)
+            {
+                FpgSkillActivePresentationTrackRecord track =
+                    presentationTracks[index];
+                presentationTrackModels.Add(
+                    new FpgSkillTimelinePresentationTrackViewModel
+                    {
+                        Index = track.Index,
+                        Label = track.Name
+                    });
+            }
+
+            timelineView.SetAvailableTracks(availableTracks);
+            timelineView.SetPresentationTracks(presentationTrackModels);
             timelineView.SetModel(durationTicks, models, blocks);
             timelineView.SetPlayhead(currentTick);
             if (selectedAnimationTrack)
@@ -704,17 +846,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     FpgSkillTimelineBlockKind.Animation,
                     0);
             }
-            else if (selectedPhaseIndex >= 0)
-            {
-                timelineView.SelectBlock(
-                    FpgSkillTimelineBlockKind.Phase,
-                    selectedPhaseIndex);
-            }
             else
             {
                 timelineView.SelectEvents(
                     eventSelection.Items,
-                    eventSelection.PrimaryEventIndex);
+                    eventSelection.PrimaryEventKey);
                 if (eventSelection.Count == 0)
                 {
                     timelineView.SelectBlock(
@@ -747,7 +883,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     currentTick,
                     compiledTriggers,
                     events,
-                    payloads,
                     previewView)
                 : new FpgSkillPreviewSimulationFrame(currentTick);
             previewView.SetTickState(
@@ -783,25 +918,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            if (selectedPhaseIndex >= 0)
-            {
-                property = FpgSkillSerializedAdapter.GetPhaseProperty(
-                    serializedAsset,
-                    selectedSequenceIndex,
-                    selectedPhaseIndex);
-                inspectorTitle.text = "动作阶段 Inspector";
-                AddPhaseInspector(property);
-                return;
-            }
-
-            if (selectedEventIndex >= 0)
+            if (selectedEventKey.IsValid)
             {
                 property = FpgSkillSerializedAdapter.GetEventProperty(
                     serializedAsset,
                     selectedSequenceIndex,
-                    selectedEventIndex);
+                    selectedEventKey);
                 FpgSkillEventRecord record = events.FirstOrDefault(item =>
-                    item.Index == selectedEventIndex);
+                    item.Key == selectedEventKey);
                 inspectorTitle.text = record == null
                     ? "事件 Inspector"
                     : record.Kind + " Inspector";
@@ -809,19 +933,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            if (selectedPayloadIndex >= 0)
-            {
-                property = FpgSkillSerializedAdapter.GetPayloadProperty(
-                    serializedAsset,
-                    selectedSequenceIndex,
-                    selectedPayloadIndex);
-                FpgSkillPayloadRecord record = payloads.FirstOrDefault(item =>
-                    item.Index == selectedPayloadIndex);
-                inspectorTitle.text = "载荷 Inspector";
-                AddPayloadInspector(property, record);
-                return;
-            }
-
+            inspectorTitle.text = "载荷 Inspector";
             inspectorTitle.text = "动作 Inspector";
             AddTypedProperty(
                 serializedAsset.FindProperty("displayName"),
@@ -850,13 +962,32 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 if (iterator.depth != 0
                     || IsEditorOwnedRootProperty(iterator.name)
                     || iterator.propertyType == SerializedPropertyType.Generic
-                    || iterator.isArray)
+                    || iterator.isArray
+                    || !IsAdditionalAssetPropertyApplicable(iterator.name))
                 {
                     continue;
                 }
 
                 AddTypedProperty(iterator.Copy(), iterator.displayName);
             }
+        }
+
+        private bool IsAdditionalAssetPropertyApplicable(
+            string propertyName)
+        {
+            if (!string.Equals(
+                    propertyName,
+                    "minimumChargeTicks",
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return string.Equals(
+                GetSerializedEnumName(
+                    serializedAsset.FindProperty("secondaryTriggerMode")),
+                "ChargeRelease",
+                StringComparison.Ordinal);
         }
 
         private static bool IsEditorOwnedRootProperty(string propertyName)
@@ -867,10 +998,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 case "skillId":
                 case "displayName":
                 case "sequences":
-                case "payloadSlots":
-                case "payloads":
-                case "attackPayloads":
-                case "slots":
                     return true;
                 default:
                     return false;
@@ -906,6 +1033,59 @@ namespace FPG.Demo.Editor.SkillAuthoring
             validationSummaryLabel.text = errors + " 错误 / " + warnings + " 警告";
         }
 
+        private void ReportPreviewFailureToConsole(string failure = null)
+        {
+            List<string> messages = new List<string>();
+            if (!string.IsNullOrWhiteSpace(failure))
+            {
+                messages.Add(failure);
+            }
+
+            for (int index = 0; index < validation.Count; index++)
+            {
+                FpgSkillValidationItem item = validation[index];
+                if (item.Severity != FpgSkillIssueSeverity.Error
+                    || string.IsNullOrWhiteSpace(item.Message)
+                    || messages.Contains(item.Message))
+                {
+                    continue;
+                }
+
+                messages.Add(item.Message);
+            }
+
+            if (messages.Count == 0)
+            {
+                lastReportedPreviewFailureSignature = null;
+                return;
+            }
+
+            string assetPath = selectedAsset == null
+                ? "<no asset>"
+                : AssetDatabase.GetAssetPath(selectedAsset);
+            string message = string.Join(" | ", messages)
+                .Replace('\r', ' ')
+                .Replace('\n', ' ');
+            string signature = (selectedAsset == null
+                    ? "null"
+                    : selectedAsset.GetInstanceID().ToString())
+                + "|" + selectedSequenceIndex + "|" + message;
+            if (string.Equals(
+                    lastReportedPreviewFailureSignature,
+                    signature,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            lastReportedPreviewFailureSignature = signature;
+            Debug.LogError(
+                "[FPG Skill Preview] " + assetPath
+                + " | sequence " + (selectedSequenceIndex + 1)
+                + ": " + message,
+                selectedAsset);
+        }
+
         private void RefreshAssetState()
         {
             if (selectedAsset == null)
@@ -914,7 +1094,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            bool hasErrors = validation.Any(item =>
+            bool hasErrors = !hasCompiledSchedule || validation.Any(item =>
                 item.Severity == FpgSkillIssueSeverity.Error);
             bool hasWarnings = validation.Any(item =>
                 item.Severity == FpgSkillIssueSeverity.Warning);
@@ -936,60 +1116,198 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     serializedAsset,
                     selectedSequenceIndex)
                 : null;
-            addPayloadButton.SetEnabled(hasSequence
-                && FpgSkillSerializedAdapter.GetPayloads(sequence) != null);
-            duplicatePayloadButton.SetEnabled(selectedPayloadIndex >= 0);
-            replacePayloadButton.SetEnabled(
-                selectedPayloadIndex >= 0 && payloads.Count > 1);
-            deletePayloadButton.SetEnabled(selectedPayloadIndex >= 0);
             addEventButton.SetEnabled(hasSequence
                 && (FpgSkillSerializedAdapter.CanAddEventTrack(
                         sequence,
-                        FpgSkillEventTrackKind.Generic)
-                    || FpgSkillSerializedAdapter.CanAddEventTrack(
-                        sequence,
-                        FpgSkillEventTrackKind.Logic)
-                    || FpgSkillSerializedAdapter.CanAddEventTrack(
-                        sequence,
-                        FpgSkillEventTrackKind.Presentation)
+                        FpgSkillEventTrackKind.GameplayAction)
+                    || FpgSkillSerializedAdapter
+                        .GetActivePresentationTracks(sequence) != null
                     || FpgSkillSerializedAdapter.CanAddEventTrack(
                         sequence,
                         FpgSkillEventTrackKind.Warning)));
-            duplicateEventButton.SetEnabled(selectedEventIndex >= 0);
-            copyEventsButton.SetEnabled(selectedEventIndex >= 0);
+            duplicateEventButton.SetEnabled(selectedEventKey.IsValid);
+            copyEventsButton.SetEnabled(selectedEventKey.IsValid);
             pasteEventsButton.SetEnabled(hasSequence && !eventClipboard.IsEmpty);
-            deleteEventButton.SetEnabled(selectedEventIndex >= 0);
+            deleteEventButton.SetEnabled(selectedEventKey.IsValid);
+            RefreshPresentationTrackControls();
             captureAnimationLengthButton.SetEnabled(
                 hasSequence && measuredAnimationDurationTicks > 0);
         }
 
+        private void RefreshPresentationTrackControls()
+        {
+            if (presentationTrackTools == null)
+            {
+                return;
+            }
+
+            bool visible = serializedAsset != null
+                && selectedSequenceIndex >= 0;
+            presentationTrackTools.EnableInClassList(
+                "presentation-track-tools--hidden",
+                !visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            List<string> choices = new List<string>(
+                presentationTracks.Count);
+            for (int index = 0; index < presentationTracks.Count; index++)
+            {
+                FpgSkillActivePresentationTrackRecord track =
+                    presentationTracks[index];
+                choices.Add((index + 1) + ". " + track.Name
+                    + " (" + track.EventCount + ")");
+            }
+
+            selectedPresentationTrackIndex = choices.Count == 0
+                ? -1
+                : Mathf.Clamp(
+                    selectedPresentationTrackIndex,
+                    0,
+                    choices.Count - 1);
+            presentationTrackDropdown.choices = choices;
+            presentationTrackDropdown.SetValueWithoutNotify(
+                selectedPresentationTrackIndex >= 0
+                    ? choices[selectedPresentationTrackIndex]
+                    : string.Empty);
+            presentationTrackDropdown.SetEnabled(choices.Count > 0);
+
+            FpgSkillActivePresentationTrackRecord selectedTrack =
+                selectedPresentationTrackIndex >= 0
+                && selectedPresentationTrackIndex < presentationTracks.Count
+                    ? presentationTracks[selectedPresentationTrackIndex]
+                    : null;
+            presentationTrackNameField.SetValueWithoutNotify(
+                selectedTrack?.Name ?? string.Empty);
+            presentationTrackNameField.SetEnabled(selectedTrack != null);
+            addPresentationTrackButton.SetEnabled(true);
+            movePresentationTrackUpButton.SetEnabled(
+                selectedPresentationTrackIndex > 0);
+            movePresentationTrackDownButton.SetEnabled(
+                selectedPresentationTrackIndex >= 0
+                && selectedPresentationTrackIndex
+                    < presentationTracks.Count - 1);
+            bool canDelete = selectedTrack != null
+                && selectedTrack.EventCount == 0;
+            deletePresentationTrackButton.SetEnabled(canDelete);
+            deletePresentationTrackButton.tooltip = canDelete
+                ? "删除空表现轨道"
+                : "只有空表现轨道可以删除";
+        }
+
+        private void OnPresentationTrackChanged(ChangeEvent<string> evt)
+        {
+            int index = presentationTrackDropdown.choices.IndexOf(
+                evt.newValue);
+            if (index < 0 || index == selectedPresentationTrackIndex)
+            {
+                return;
+            }
+
+            selectedPresentationTrackIndex = index;
+            RefreshPresentationTrackControls();
+        }
+
+        private void OnPresentationTrackRenamed(ChangeEvent<string> evt)
+        {
+            if (!FpgSkillSerializedAdapter.RenameActivePresentationTrack(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    selectedPresentationTrackIndex,
+                    evt.newValue))
+            {
+                RefreshPresentationTrackControls();
+                return;
+            }
+
+            RefreshFromSerialized(false);
+        }
+
+        private void AddPresentationTrack()
+        {
+            int index = FpgSkillSerializedAdapter.AddActivePresentationTrack(
+                serializedAsset,
+                selectedSequenceIndex);
+            if (index < 0)
+            {
+                statusLabel.text = "当前序列不支持表现轨道。";
+                return;
+            }
+
+            selectedPresentationTrackIndex = index;
+            RefreshFromSerialized(false);
+        }
+
+        private void MovePresentationTrack(int delta)
+        {
+            if (!FpgSkillSerializedAdapter.MoveActivePresentationTrack(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    selectedPresentationTrackIndex,
+                    delta,
+                    out int movedTrackIndex))
+            {
+                return;
+            }
+
+            selectedPresentationTrackIndex = movedTrackIndex;
+            selectedEventKey = FpgSkillEventKey.Invalid;
+            eventSelection.Clear();
+            RefreshFromSerialized();
+        }
+
+        private void DeletePresentationTrack()
+        {
+            if (!FpgSkillSerializedAdapter.DeleteActivePresentationTrack(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    selectedPresentationTrackIndex))
+            {
+                statusLabel.text = "只有空表现轨道可以删除。";
+                return;
+            }
+
+            selectedPresentationTrackIndex--;
+            selectedEventKey = FpgSkillEventKey.Invalid;
+            eventSelection.Clear();
+            RefreshFromSerialized();
+        }
+
         private void ClearSelectedData()
         {
+            previewView?.ClearPresentationPreview();
             selectedAsset = null;
             serializedAsset = null;
             selectedSequenceIndex = -1;
-            selectedPayloadIndex = -1;
-            selectedEventIndex = -1;
-            selectedPhaseIndex = -1;
+
+            selectedPresentationTrackIndex = -1;
+            selectedEventKey = FpgSkillEventKey.Invalid;
             selectedAnimationTrack = false;
             eventSelection.Clear();
             durationTicks = 120;
             currentTick = 0;
-            payloads.Clear();
+
+            presentationTracks.Clear();
             events.Clear();
             compiledTriggers.Clear();
             hasCompiledSchedule = false;
             compiledSequence = default(FpgCompiledSkillSequence);
+            previewCompileError = string.Empty;
+            lastReportedPreviewFailureSignature = null;
             previewExecution.Reset();
             previewSimulationFrame = null;
             validation.Clear();
             RefreshAnimationLengthState(null);
-            payloadList?.Rebuild();
+
             validationList?.Rebuild();
             timelineView?.SetModel(
                 durationTicks,
                 Array.Empty<FpgSkillTimelineEventViewModel>(),
                 Array.Empty<FpgSkillTimelineBlockViewModel>());
+            timelineView?.SetPresentationTracks(
+                Array.Empty<FpgSkillTimelinePresentationTrackViewModel>());
             previewView?.SetAnimation(
                 string.Empty,
                 default(FpgCompiledSkillSequence));
@@ -1098,9 +1416,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             Pause();
             selectedSequenceIndex = index;
-            selectedPayloadIndex = -1;
-            selectedEventIndex = -1;
-            selectedPhaseIndex = -1;
+            SaveSequenceSelection();
+
+            selectedPresentationTrackIndex = -1;
+            selectedEventKey = FpgSkillEventKey.Invalid;
             selectedAnimationTrack = false;
             eventSelection.Clear();
             currentTick = 0;
@@ -1144,25 +1463,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
         }
 
-        private void OnPayloadSelectionChanged(
-            IEnumerable<object> selection)
-        {
-            FpgSkillPayloadRecord record = selection
-                .OfType<FpgSkillPayloadRecord>()
-                .FirstOrDefault();
-            selectedPayloadIndex = record == null ? -1 : record.Index;
-            selectedEventIndex = -1;
-            selectedPhaseIndex = -1;
-            selectedAnimationTrack = false;
-            eventSelection.Clear();
-            timelineView.SelectEvents(Array.Empty<int>(), -1);
-            timelineView.SelectBlock(
-                FpgSkillTimelineBlockKind.Animation,
-                -1);
-            RefreshInspector();
-            RefreshButtons();
-        }
-
         private void OnValidationSelectionChanged(IEnumerable<object> selection)
         {
             FpgSkillValidationItem item = selection
@@ -1173,15 +1473,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            if (item.EventIndex >= 0)
+            if (item.EventKey.IsValid)
             {
-                SelectEvent(item.EventIndex, true);
+                SelectEvent(item.EventKey, true);
             }
-            else if (item.PayloadIndex >= 0)
-            {
-                SelectPayload(item.PayloadIndex);
-            }
-
             if (item.Tick >= 0)
             {
                 SetCurrentTick(item.Tick, false, true);
@@ -1197,9 +1492,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             SetCurrentTick(item.Tick, false, true);
-            if (item.EventIndex >= 0)
+            if (item.EventKey.IsValid)
             {
-                SelectEvent(item.EventIndex, false);
+                SelectEvent(item.EventKey, false);
             }
         }
 
@@ -1210,22 +1505,27 @@ namespace FPG.Demo.Editor.SkillAuthoring
         }
 
         private void OnTimelineEventSelectionChanged(
-            IReadOnlyList<int> eventIndices)
+            IReadOnlyList<FpgSkillEventKey> eventKeys)
         {
             eventSelection.Set(
-                eventIndices,
-                timelineView.SelectedEventIndex);
-            selectedEventIndex = NormalizeEventSelection(
-                eventSelection.PrimaryEventIndex);
-            selectedPayloadIndex = -1;
-            selectedPhaseIndex = -1;
+                eventKeys,
+                timelineView.SelectedEventKey);
+            selectedEventKey = NormalizeEventSelection(
+                eventSelection.PrimaryEventKey);
+
             selectedAnimationTrack = false;
-            if (selectedEventIndex >= 0)
+            if (selectedEventKey.IsValid)
             {
                 FpgSkillEventRecord record = events.FirstOrDefault(item =>
-                    item.Index == selectedEventIndex);
+                    item.Key == selectedEventKey);
                 if (record != null)
                 {
+                    if (record.PresentationTrackIndex >= 0)
+                    {
+                        selectedPresentationTrackIndex =
+                            record.PresentationTrackIndex;
+                    }
+
                     SetCurrentTick(record.Tick, false, false);
                 }
             }
@@ -1235,14 +1535,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
         }
 
         private void OnTimelineEventsTickDeltaChanged(
-            IReadOnlyList<int> eventIndices,
+            IReadOnlyList<FpgSkillEventKey> eventKeys,
             int requestedDeltaTicks)
         {
             if (serializedAsset == null
                 || !FpgSkillSerializedAdapter.MoveEventsByDelta(
                     serializedAsset,
                     selectedSequenceIndex,
-                    eventIndices,
+                    eventKeys,
                     requestedDeltaTicks,
                     out _))
             {
@@ -1255,9 +1555,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 0,
                 durationTicks);
             eventSelection.Set(
-                eventIndices,
-                timelineView.SelectedEventIndex);
-            selectedEventIndex = eventSelection.PrimaryEventIndex;
+                eventKeys,
+                timelineView.SelectedEventKey);
+            selectedEventKey = eventSelection.PrimaryEventKey;
             RefreshFromSerialized();
         }
 
@@ -1310,35 +1610,32 @@ namespace FPG.Demo.Editor.SkillAuthoring
             currentTick = Mathf.Clamp(focusTick, 0, maximumTick);
             selectedAnimationTrack =
                 kind == FpgSkillTimelineBlockKind.Animation;
-            selectedPhaseIndex =
-                kind == FpgSkillTimelineBlockKind.Phase ? index : -1;
-            selectedEventIndex = -1;
-            selectedPayloadIndex = -1;
+            selectedEventKey = FpgSkillEventKey.Invalid;
+
             eventSelection.Clear();
             RefreshFromSerialized();
         }
 
 
         private void OnTimelineEventOrderDeltaChanged(
-            int eventIndex,
+            FpgSkillEventKey eventKey,
             int requestedDelta)
         {
             if (serializedAsset == null
                 || !FpgSkillSerializedAdapter.MoveEventOrder(
                     serializedAsset,
                     selectedSequenceIndex,
-                    eventIndex,
+                    eventKey,
                     requestedDelta))
             {
                 RefreshTimeline();
                 return;
             }
 
-            selectedEventIndex = eventIndex;
-            selectedPayloadIndex = -1;
-            selectedPhaseIndex = -1;
+            selectedEventKey = eventKey;
+
             selectedAnimationTrack = false;
-            eventSelection.SetSingle(eventIndex);
+            eventSelection.SetSingle(eventKey);
             RefreshFromSerialized();
         }
 
@@ -1347,15 +1644,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             int index)
         {
             Pause();
-            selectedEventIndex = -1;
-            selectedPayloadIndex = -1;
+            selectedEventKey = FpgSkillEventKey.Invalid;
+
             eventSelection.Clear();
             selectedAnimationTrack =
                 kind == FpgSkillTimelineBlockKind.Animation;
-            selectedPhaseIndex =
-                kind == FpgSkillTimelineBlockKind.Phase
-                    ? index
-                    : -1;
             RefreshInspector();
             RefreshButtons();
         }
@@ -1369,184 +1662,79 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            FpgSkillPayloadRecord payload = payloads.FirstOrDefault(item =>
-                item.Index == selectedPayloadIndex) ?? payloads.FirstOrDefault();
-            int eventIndex = FpgSkillSerializedAdapter.AddEvent(
+            currentTick = request.Tick;
+            if (request.Track == FpgSkillEventTrackKind.GameplayAction)
+            {
+                GenericMenu actionMenu = new GenericMenu();
+                BuildActionAddMenu(actionMenu, request.Tick);
+                actionMenu.ShowAsContext();
+                return;
+            }
+
+            if (request.PresentationTrackIndex >= 0)
+            {
+                selectedPresentationTrackIndex =
+                    request.PresentationTrackIndex;
+                RefreshPresentationTrackControls();
+                GenericMenu presentationMenu = new GenericMenu();
+                BuildActivePresentationAddMenu(
+                    presentationMenu,
+                    request.PresentationTrackIndex,
+                    request.Tick,
+                    string.Empty);
+                presentationMenu.ShowAsContext();
+                return;
+            }
+
+            if (request.Track != FpgSkillEventTrackKind.Warning)
+            {
+                return;
+            }
+
+            FpgSkillEventKey eventKey = FpgSkillSerializedAdapter.AddEvent(
                 serializedAsset,
                 selectedSequenceIndex,
                 request.Tick,
-                payload,
                 request.Track,
                 request.DurationTicks);
-            if (eventIndex < 0)
+            if (!eventKey.IsValid)
             {
                 statusLabel.text = "当前轨道不能创建事件。";
                 return;
             }
 
-            eventSelection.SetSingle(eventIndex);
-            selectedEventIndex = eventIndex;
-            selectedPayloadIndex = -1;
+            eventSelection.SetSingle(eventKey);
+            selectedEventKey = eventKey;
             currentTick = request.Tick;
             RefreshFromSerialized();
-            SelectEvent(eventIndex, true);
+            SelectEvent(eventKey, true);
         }
 
-        private void SelectEvent(int eventIndex, bool frame)
+        private void SelectEvent(FpgSkillEventKey eventKey, bool frame)
         {
-            selectedEventIndex = NormalizeEventSelection(eventIndex);
-            selectedPayloadIndex = -1;
-            selectedPhaseIndex = -1;
+            selectedEventKey = NormalizeEventSelection(eventKey);
+
             selectedAnimationTrack = false;
-            eventSelection.SetSingle(selectedEventIndex);
+            eventSelection.SetSingle(selectedEventKey);
             timelineView.SelectEvents(
                 eventSelection.Items,
-                eventSelection.PrimaryEventIndex);
-            if (selectedEventIndex >= 0)
+                eventSelection.PrimaryEventKey);
+            if (selectedEventKey.IsValid)
             {
                 FpgSkillEventRecord record = events.First(item =>
-                    item.Index == selectedEventIndex);
+                    item.Key == selectedEventKey);
+                if (record.PresentationTrackIndex >= 0)
+                {
+                    selectedPresentationTrackIndex =
+                        record.PresentationTrackIndex;
+                    RefreshPresentationTrackControls();
+                }
+
                 SetCurrentTick(record.Tick, false, frame);
             }
 
             RefreshInspector();
             RefreshButtons();
-        }
-
-        private void SelectPayload(int payloadIndex)
-        {
-            selectedPayloadIndex = NormalizePayloadSelection(payloadIndex);
-            selectedEventIndex = -1;
-            selectedPhaseIndex = -1;
-            selectedAnimationTrack = false;
-            eventSelection.Clear();
-            timelineView.SelectEvents(Array.Empty<int>(), -1);
-            timelineView.SelectBlock(
-                FpgSkillTimelineBlockKind.Animation,
-                -1);
-            int listIndex = payloads.FindIndex(item =>
-                item.Index == selectedPayloadIndex);
-            if (listIndex >= 0)
-            {
-                payloadList.SetSelectionWithoutNotify(new[] { listIndex });
-            }
-
-            RefreshInspector();
-            RefreshButtons();
-        }
-
-        private void AddPayload()
-        {
-            if (serializedAsset == null)
-            {
-                return;
-            }
-
-            int index = FpgSkillSerializedAdapter.AddPayload(
-                serializedAsset,
-                selectedSequenceIndex);
-            if (index < 0)
-            {
-                statusLabel.text = "当前序列没有可编辑的载荷槽数组。";
-                return;
-            }
-
-            selectedPayloadIndex = index;
-            selectedEventIndex = -1;
-            RefreshFromSerialized();
-            SelectPayload(index);
-        }
-
-        private void DuplicatePayload()
-        {
-            if (serializedAsset == null || selectedPayloadIndex < 0)
-            {
-                return;
-            }
-
-            int index = FpgSkillSerializedAdapter.DuplicatePayload(
-                serializedAsset,
-                selectedSequenceIndex,
-                selectedPayloadIndex);
-            if (index >= 0)
-            {
-                selectedPayloadIndex = index;
-                RefreshFromSerialized();
-                SelectPayload(index);
-            }
-        }
-
-        private void ShowReplacePayloadMenu()
-        {
-            if (serializedAsset == null
-                || selectedPayloadIndex < 0
-                || payloads.Count < 2)
-            {
-                return;
-            }
-
-            GenericMenu menu = new GenericMenu();
-            for (int index = 0; index < payloads.Count; index++)
-            {
-                FpgSkillPayloadRecord candidate = payloads[index];
-                if (candidate.Index == selectedPayloadIndex)
-                {
-                    continue;
-                }
-
-                int targetPayloadIndex = candidate.Index;
-                GUIContent label = new GUIContent(
-                    candidate.Name + " · " + candidate.Kind);
-                menu.AddItem(
-                    label,
-                    false,
-                    () => ReplaceSelectedPayloadReferences(targetPayloadIndex));
-            }
-
-            menu.DropDown(replacePayloadButton.worldBound);
-        }
-
-        private void ReplaceSelectedPayloadReferences(int targetPayloadIndex)
-        {
-            int sourcePayloadIndex = selectedPayloadIndex;
-            int replacementCount = FpgSkillSerializedAdapter.ReplacePayloadReferences(
-                serializedAsset,
-                selectedSequenceIndex,
-                sourcePayloadIndex,
-                targetPayloadIndex);
-            RefreshFromSerialized();
-            SelectPayload(sourcePayloadIndex);
-            statusLabel.text = replacementCount > 0
-                ? "已替换 " + replacementCount + " 个载荷引用，可删除原槽。"
-                : "当前载荷槽没有可替换的引用。";
-        }
-
-        private void DeletePayload()
-        {
-            if (serializedAsset == null || selectedPayloadIndex < 0)
-            {
-                return;
-            }
-
-            FpgSkillPayloadRecord payload = payloads.FirstOrDefault(item =>
-                item.Index == selectedPayloadIndex);
-            if (payload != null && payload.UseCount > 0)
-            {
-                EditorUtility.DisplayDialog(
-                    "无法删除载荷槽",
-                    "该载荷槽仍被 " + payload.UseCount + " 个事件引用。请先替换或删除这些事件。",
-                    "确定");
-                return;
-            }
-
-            if (FpgSkillSerializedAdapter.DeletePayload(
-                    serializedAsset,
-                    selectedSequenceIndex,
-                    selectedPayloadIndex))
-            {
-                selectedPayloadIndex = -1;
-                RefreshFromSerialized();
-            }
         }
 
         private void ShowAddEventMenu()
@@ -1560,65 +1748,158 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 serializedAsset,
                 selectedSequenceIndex);
             GenericMenu menu = new GenericMenu();
-            if (FpgSkillSerializedAdapter.CanAddEventTrack(
-                    sequence,
-                    FpgSkillEventTrackKind.Logic))
-            {
-                if (payloads.Count == 0)
-                {
-                    menu.AddDisabledItem(
-                        new GUIContent("逻辑载荷/没有可用载荷"));
-                }
-                else
-                {
-                    for (int index = 0; index < payloads.Count; index++)
-                    {
-                        FpgSkillPayloadRecord payload = payloads[index];
-                        int payloadIndex = payload.Index;
-                        string payloadName = string.IsNullOrWhiteSpace(payload.Name)
-                            ? "载荷 " + (index + 1)
-                            : payload.Name;
-                        string payloadKind = string.IsNullOrWhiteSpace(payload.Kind)
-                            ? "未分类"
-                            : payload.Kind;
-                        menu.AddItem(
-                            new GUIContent(
-                                "逻辑载荷/"
-                                + payloadName
-                                + " · "
-                                + payloadKind
-                                + " ("
-                                + (index + 1)
-                                + ")"),
-                            false,
-                            () => AddEvent(
-                                FpgSkillEventTrackKind.Logic,
-                                payloadIndex));
-                    }
-                }
-            }
-            else
-            {
-                menu.AddDisabledItem(
-                    new GUIContent("逻辑载荷/当前序列不支持"));
-            }
-
-            AddEventMenuItem(
+            BuildActionAddMenu(menu, currentTick);
+            menu.AddSeparator(string.Empty);
+            BuildActivePresentationAddMenu(
                 menu,
-                "演出事件",
-                sequence,
-                FpgSkillEventTrackKind.Presentation);
+                selectedPresentationTrackIndex,
+                currentTick,
+                "主动表现/");
             AddEventMenuItem(
                 menu,
                 "预警区间",
                 sequence,
                 FpgSkillEventTrackKind.Warning);
-            AddEventMenuItem(
-                menu,
-                "高级/通用事件",
-                sequence,
-                FpgSkillEventTrackKind.Generic);
             menu.DropDown(addEventButton.worldBound);
+        }
+
+        private void BuildActionAddMenu(
+            GenericMenu menu,
+            int tick)
+        {
+            bool enemy = selectedAsset != null
+                && selectedAsset.GetType().Name.IndexOf(
+                    "Enemy",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/射线攻击",
+                FpgSkillActionKind.Attack,
+                1,
+                !enemy,
+                tick);
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/范围攻击",
+                FpgSkillActionKind.Attack,
+                2,
+                !enemy,
+                tick);
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/指定目标攻击",
+                FpgSkillActionKind.Attack,
+                3,
+                enemy,
+                tick);
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/发射投射物",
+                FpgSkillActionKind.LaunchProjectile,
+                enemy ? 2 : 1,
+                true,
+                tick);
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/完成换弹",
+                FpgSkillActionKind.CommitReload,
+                0,
+                !enemy,
+                tick);
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/召唤单位",
+                FpgSkillActionKind.SummonActors,
+                0,
+                enemy,
+                tick);
+        }
+
+        private void AddTypedActionMenuItem(
+            GenericMenu menu,
+            string label,
+            FpgSkillActionKind actionKind,
+            int modeValue,
+            bool enabled,
+            int tick)
+        {
+            GUIContent content = new GUIContent(label);
+            if (enabled)
+            {
+                menu.AddItem(
+                    content,
+                    false,
+                    () => AddAction(actionKind, modeValue, tick));
+            }
+            else
+            {
+                menu.AddDisabledItem(content);
+            }
+        }
+
+        private void BuildActivePresentationAddMenu(
+            GenericMenu menu,
+            int presentationTrackIndex,
+            int tick,
+            string prefix)
+        {
+            string menuPrefix = prefix ?? string.Empty;
+            if (presentationTrackIndex < 0
+                || presentationTrackIndex >= presentationTracks.Count)
+            {
+                menu.AddDisabledItem(new GUIContent(
+                    menuPrefix + "请先添加表现轨道"));
+                return;
+            }
+
+            menu.AddItem(
+                new GUIContent(menuPrefix + "特效"),
+                false,
+                () => AddActivePresentationEvent(
+                    presentationTrackIndex,
+                    FpgSkillEventTrackKind.PresentationVfx,
+                    tick));
+            menu.AddItem(
+                new GUIContent(menuPrefix + "音效"),
+                false,
+                () => AddActivePresentationEvent(
+                    presentationTrackIndex,
+                    FpgSkillEventTrackKind.PresentationAudio,
+                    tick));
+            menu.AddItem(
+                new GUIContent(menuPrefix + "震屏"),
+                false,
+                () => AddActivePresentationEvent(
+                    presentationTrackIndex,
+                    FpgSkillEventTrackKind.PresentationCameraShake,
+                    tick));
+        }
+
+        private void AddActivePresentationEvent(
+            int presentationTrackIndex,
+            FpgSkillEventTrackKind eventTrack,
+            int tick)
+        {
+            FpgSkillEventKey eventKey =
+                FpgSkillSerializedAdapter.AddActivePresentationEvent(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    presentationTrackIndex,
+                    eventTrack,
+                    tick);
+            if (!eventKey.IsValid)
+            {
+                statusLabel.text = "无法创建该表现事件。";
+                return;
+            }
+
+            currentTick = tick;
+            selectedPresentationTrackIndex = presentationTrackIndex;
+            selectedEventKey = eventKey;
+
+            eventSelection.SetSingle(eventKey);
+            RefreshFromSerialized();
+            SelectEvent(eventKey, true);
         }
 
         private void AddEventMenuItem(
@@ -1638,81 +1919,93 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
         }
 
-        private void AddEvent(
-            FpgSkillEventTrackKind track,
-            int payloadIndex = -1)
+        private void AddEvent(FpgSkillEventTrackKind track)
         {
             if (serializedAsset == null)
             {
                 return;
             }
 
-            FpgSkillPayloadRecord payload = payloads.FirstOrDefault(item =>
-                item.Index == payloadIndex);
-            if (payload == null
-                && (track == FpgSkillEventTrackKind.Logic
-                    || track == FpgSkillEventTrackKind.Generic))
-            {
-                payload = payloads.FirstOrDefault(item =>
-                    item.Index == selectedPayloadIndex)
-                    ?? payloads.FirstOrDefault();
-            }
-
-            int index = FpgSkillSerializedAdapter.AddEvent(
+            FpgSkillEventKey eventKey = FpgSkillSerializedAdapter.AddEvent(
                 serializedAsset,
                 selectedSequenceIndex,
                 currentTick,
-                payload,
                 track);
-            if (index < 0)
+            if (!eventKey.IsValid)
             {
                 statusLabel.text = "当前序列没有可编辑的事件数组。";
                 return;
             }
 
-            selectedEventIndex = index;
-            selectedPayloadIndex = -1;
+            selectedEventKey = eventKey;
+
             RefreshFromSerialized();
-            SelectEvent(index, true);
+            SelectEvent(eventKey, true);
+        }
+
+        private void AddAction(
+            FpgSkillActionKind actionKind,
+            int modeValue,
+            int tick)
+        {
+            FpgSkillEventKey eventKey =
+                FpgSkillSerializedAdapter.AddAction(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    tick,
+                    actionKind,
+                    modeValue);
+            if (!eventKey.IsValid)
+            {
+                statusLabel.text = "无法创建该玩法动作。";
+                return;
+            }
+
+            selectedEventKey = eventKey;
+
+            currentTick = tick;
+            RefreshFromSerialized();
+            SelectEvent(eventKey, true);
         }
 
         private void DuplicateEvent()
         {
-            if (serializedAsset == null || selectedEventIndex < 0)
+            if (serializedAsset == null || !selectedEventKey.IsValid)
             {
                 return;
             }
 
-            int index = FpgSkillSerializedAdapter.DuplicateEvent(
+            FpgSkillEventKey eventKey = FpgSkillSerializedAdapter.DuplicateEvent(
                 serializedAsset,
                 selectedSequenceIndex,
-                selectedEventIndex,
+                selectedEventKey,
                 durationTicks);
-            if (index >= 0)
+            if (eventKey.IsValid)
             {
-                selectedEventIndex = index;
+                selectedEventKey = eventKey;
                 RefreshFromSerialized();
-                SelectEvent(index, true);
+                SelectEvent(eventKey, true);
             }
         }
 
         private void DeleteEvent()
         {
-            if (serializedAsset == null || selectedEventIndex < 0)
+            if (serializedAsset == null || !selectedEventKey.IsValid)
             {
                 return;
             }
 
-            IReadOnlyList<int> selectedIndices = eventSelection.Count > 0
+            IReadOnlyList<FpgSkillEventKey> selectedKeys =
+                eventSelection.Count > 0
                 ? eventSelection.Items
-                : new[] { selectedEventIndex };
+                : new[] { selectedEventKey };
             if (FpgSkillSerializedAdapter.DeleteEvents(
                     serializedAsset,
                     selectedSequenceIndex,
-                    selectedIndices))
+                    selectedKeys))
             {
-                int deletedCount = selectedIndices.Count;
-                selectedEventIndex = -1;
+                int deletedCount = selectedKeys.Count;
+                selectedEventKey = FpgSkillEventKey.Invalid;
                 eventSelection.Clear();
                 statusLabel.text = "已删除 " + deletedCount + " 个事件。";
                 RefreshFromSerialized();
@@ -1729,20 +2022,29 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             if (!hasCompiledSchedule)
             {
-                statusLabel.text = "当前技能未通过运行时编译，无法播放触发逻辑。";
+                ReportPreviewFailureToConsole(previewCompileError);
                 return;
             }
 
             if (validation.Any(item =>
                     item.Severity == FpgSkillIssueSeverity.Error))
             {
-                statusLabel.text = "当前技能存在阻塞错误，无法播放触发逻辑。";
+                ReportPreviewFailureToConsole();
                 return;
             }
 
             if (currentTick >= durationTicks)
             {
                 SetCurrentTick(0, false, false);
+            }
+
+            previewView.ClearPresentationPreview();
+            if (currentTick == 0)
+            {
+                if (!RestartPreviewExecutionAtZero(true))
+                {
+                    return;
+                }
             }
 
             isPlaying = true;
@@ -1754,6 +2056,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             isPlaying = false;
             tickAccumulator = 0d;
+            previewExecution.ClearPendingResults();
+            previewView?.ClearPresentationPreview();
         }
 
         private void Step(int delta)
@@ -1765,12 +2069,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void SetCurrentTick(int tick, bool writeLog, bool frame)
         {
             int normalizedTick = Mathf.Clamp(tick, 0, durationTicks);
+            bool crossedForwardTick = normalizedTick > currentTick;
             if (hasCompiledSchedule
                 && !previewExecution.AdvanceTo(
                     normalizedTick,
                     out string executionError))
             {
-                statusLabel.text = executionError;
+                Pause();
+                ReportPreviewFailureToConsole(executionError);
                 return;
             }
 
@@ -1782,14 +2088,20 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             RefreshPreview();
-            if (writeLog)
+            if (writeLog
+                && crossedForwardTick
+                && previewExecution.ResultCount > 0)
             {
+                PlayExecutionPresentations(
+                    timelineView == null
+                    || !timelineView.IsDirectManipulationActive);
                 LogExecutionResults();
             }
         }
 
         private void OnEditorTick()
         {
+            previewView?.UpdatePresentationPreview();
             if (!isPlaying || serializedAsset == null)
             {
                 return;
@@ -1813,7 +2125,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 {
                     if (loopToggle.value)
                     {
-                        nextTick = 0;
+                        previewView.ClearPresentationPreview();
+                        if (!RestartPreviewExecutionAtZero(true))
+                        {
+                            Pause();
+                            break;
+                        }
+
+                        continue;
                     }
                     else
                     {
@@ -1826,6 +2145,78 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 if (!isPlaying)
                 {
                     break;
+                }
+            }
+        }
+
+        private bool RestartPreviewExecutionAtZero(bool writeLog)
+        {
+            if (!previewExecution.Bind(
+                    compiledSequence,
+                    out string executionError)
+                || !previewExecution.AdvanceTo(
+                    0,
+                    out executionError))
+            {
+                ReportPreviewFailureToConsole(executionError);
+                return false;
+            }
+
+            currentTick = 0;
+            timelineView.SetPlayhead(0);
+            RefreshPreview();
+            if (previewExecution.ResultCount > 0)
+            {
+                PlayExecutionPresentations(true);
+                if (writeLog)
+                {
+                    LogExecutionResults();
+                }
+            }
+
+            return true;
+        }
+
+        private void PlayExecutionPresentations(bool allowAudio)
+        {
+            if (serializedAsset == null
+                || previewView == null
+                || !previewExecution.IsBound)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                index < previewExecution.ResultCount;
+                index++)
+            {
+                FpgSkillEventResult result = previewExecution.GetResult(index);
+                FpgSkillCompiledTriggerRecord trigger = compiledTriggers
+                    .FirstOrDefault(item =>
+                        item.CompiledEventId == result.EventId);
+                if (trigger == null
+                    || (trigger.EventKey.Track
+                        != FpgSkillEventTrackKind.PresentationVfx
+                        && trigger.EventKey.Track
+                        != FpgSkillEventTrackKind.PresentationAudio
+                        && trigger.EventKey.Track
+                        != FpgSkillEventTrackKind.PresentationCameraShake))
+                {
+                    continue;
+                }
+
+                SerializedProperty eventProperty =
+                    FpgSkillSerializedAdapter.GetEventProperty(
+                        serializedAsset,
+                        selectedSequenceIndex,
+                        trigger.EventKey);
+                if (!previewView.TryPlayActivePresentation(
+                        eventProperty,
+                        trigger.EventKey.Track,
+                        allowAudio,
+                        out string error))
+                {
+                    statusLabel.text = "表现预览跳过：" + error;
                 }
             }
         }
@@ -1867,7 +2258,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 eventLog.Add(new FpgSkillLogEntry
                 {
                     Tick = checked((int)result.Tick.Value),
-                    EventIndex = trigger.EventIndex,
+                    EventKey = trigger.EventKey,
                     Message = message
                 });
             }
@@ -1931,7 +2322,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             if ((evt.keyCode == KeyCode.Delete
                     || evt.keyCode == KeyCode.Backspace)
-                && selectedEventIndex >= 0)
+                && selectedEventKey.IsValid)
             {
                 DeleteEvent();
                 evt.StopPropagation();
@@ -1955,14 +2346,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
         }
 
-        private int NormalizePayloadSelection(int index)
+        private FpgSkillEventKey NormalizeEventSelection(
+            FpgSkillEventKey eventKey)
         {
-            return payloads.Any(item => item.Index == index) ? index : -1;
-        }
-
-        private int NormalizeEventSelection(int index)
-        {
-            return events.Any(item => item.Index == index) ? index : -1;
+            return events.Any(item => item.Key == eventKey)
+                ? eventKey
+                : FpgSkillEventKey.Invalid;
         }
 
         private static VisualElement MakeAssetRow()
@@ -1996,49 +2385,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             element.Q<Label>("asset-meta").text = record.SkillId;
             element.Q<Label>("asset-type").text = record.OwnerType;
             element.tooltip = record.Path;
-        }
-
-        private static VisualElement MakePayloadRow()
-        {
-            VisualElement row = new VisualElement();
-            row.AddToClassList("payload-row");
-            VisualElement swatch = new VisualElement { name = "payload-swatch" };
-            swatch.AddToClassList("payload-swatch");
-            row.Add(swatch);
-            VisualElement copy = new VisualElement();
-            copy.AddToClassList("payload-copy");
-            Label name = new Label { name = "payload-name" };
-            name.AddToClassList("payload-name");
-            Label meta = new Label { name = "payload-meta" };
-            meta.AddToClassList("payload-meta");
-            copy.Add(name);
-            copy.Add(meta);
-            row.Add(copy);
-            Label badge = new Label { name = "payload-usage" };
-            badge.AddToClassList("type-badge");
-            row.Add(badge);
-            return row;
-        }
-
-        private void BindPayloadRow(VisualElement element, int index)
-        {
-            if (index < 0 || index >= payloads.Count)
-            {
-                return;
-            }
-
-            FpgSkillPayloadRecord record = payloads[index];
-            element.Q<VisualElement>("payload-swatch").style.backgroundColor =
-                record.Color;
-            element.Q<Label>("payload-name").text = record.Name;
-            element.Q<Label>("payload-meta").text = record.Kind;
-            element.Q<Label>("payload-usage").text = record.UseCount + " 次";
-            element.tooltip = record.Kind
-                + " · "
-                + record.HitShape
-                + " · 使用 "
-                + record.UseCount
-                + " 次";
         }
 
         private static VisualElement MakeValidationRow()
@@ -2113,7 +2459,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private sealed class FpgSkillLogEntry
         {
             public int Tick;
-            public int EventIndex;
+            public FpgSkillEventKey EventKey;
             public string Message;
         }
 
@@ -2121,18 +2467,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void CopySelectedEvents()
         {
-            if (serializedAsset == null || selectedEventIndex < 0)
+            if (serializedAsset == null || !selectedEventKey.IsValid)
             {
                 return;
             }
 
-            IReadOnlyList<int> selectedIndices = eventSelection.Count > 0
+            IReadOnlyList<FpgSkillEventKey> selectedKeys =
+                eventSelection.Count > 0
                 ? eventSelection.Items
-                : new[] { selectedEventIndex };
+                : new[] { selectedEventKey };
             if (FpgSkillSerializedAdapter.CopyEvents(
                     serializedAsset,
                     selectedSequenceIndex,
-                    selectedIndices,
+                    selectedKeys,
                     eventClipboard))
             {
                 statusLabel.text = "已复制 "
@@ -2149,7 +2496,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            List<int> pasted = FpgSkillSerializedAdapter.PasteEvents(
+            List<FpgSkillEventKey> pasted =
+                FpgSkillSerializedAdapter.PasteEvents(
                 serializedAsset,
                 selectedSequenceIndex,
                 eventClipboard,
@@ -2161,8 +2509,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             eventSelection.Set(pasted, pasted[pasted.Count - 1]);
-            selectedEventIndex = eventSelection.PrimaryEventIndex;
-            selectedPayloadIndex = -1;
+            selectedEventKey = eventSelection.PrimaryEventKey;
+
             statusLabel.text = "已粘贴 "
                 + pasted.Count
                 + " 个事件，并生成新的内部引用。";
@@ -2429,32 +2777,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             ApplyInspectorChanges();
         }
 
-        private void AddPhaseInspector(SerializedProperty phase)
-        {
-            if (phase == null)
-            {
-                AddInspectorEmptyState("当前动作阶段无法读取。");
-                return;
-            }
-
-            SerializedProperty kind = phase.FindPropertyRelative("kind");
-            SerializedProperty start = phase.FindPropertyRelative("startTick");
-            SerializedProperty end = phase.FindPropertyRelative("endTick");
-            AddPhaseKindProperty(kind);
-
-            int startTick = start == null ? 0 : start.intValue;
-            int endTick = end == null ? startTick : end.intValue;
-            AddPhaseRangeFields(
-                selectedPhaseIndex,
-                startTick,
-                endTick);
-            AddReadOnlyInspectorValue(
-                "阶段持续时间",
-                FormatTickDuration(Mathf.Max(0, endTick - startTick)),
-                "动作阶段只标记时间结构，不会自行造成伤害、"
-                    + "取消窗口、无敌或霸体效果。");
-        }
-
         private void AddAnimationPlaybackModeProperty(
             SerializedProperty property)
         {
@@ -2506,94 +2828,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             inspectorContent.Add(field);
         }
 
-        private void AddPhaseKindProperty(SerializedProperty property)
-        {
-            if (property == null
-                || property.propertyType != SerializedPropertyType.Enum)
-            {
-                return;
-            }
-
-            List<string> labels = new List<string>
-            {
-                "未配置（无效）",
-                "前摇（Startup）",
-                "生效（Active）",
-                "后摇（Recovery）"
-            };
-            List<FpgSkillPhaseKind> values = new List<FpgSkillPhaseKind>
-            {
-                FpgSkillPhaseKind.None,
-                FpgSkillPhaseKind.Startup,
-                FpgSkillPhaseKind.Active,
-                FpgSkillPhaseKind.Recovery
-            };
-            FpgSkillPhaseKind current = Enum.IsDefined(
-                typeof(FpgSkillPhaseKind),
-                property.enumValueIndex)
-                    ? (FpgSkillPhaseKind)property.enumValueIndex
-                    : FpgSkillPhaseKind.None;
-            int selectedIndex = Mathf.Max(0, values.IndexOf(current));
-            DropdownField field = new DropdownField(
-                "动作阶段",
-                labels,
-                selectedIndex)
-            {
-                tooltip = "前摇、生效、后摇用于标记动作时间结构；"
-                    + "阶段本身不会触发伤害或附加战斗状态。"
-            };
-            string propertyPath = property.propertyPath;
-            field.RegisterValueChangedCallback(evt =>
-            {
-                int index = labels.IndexOf(evt.newValue);
-                if (index >= 0 && index < values.Count)
-                {
-                    ApplyEnumChoice(
-                        propertyPath,
-                        values[index],
-                        "修改动作阶段类型");
-                }
-            });
-            inspectorContent.Add(field);
-        }
-
-        private void AddPhaseRangeFields(
-            int phaseIndex,
-            int startTick,
-            int endTick)
-        {
-            IntegerField startField = new IntegerField("开始帧（Tick）")
-            {
-                isDelayed = true,
-                tooltip = "拖动阶段左侧手柄或在此输入开始帧；"
-                    + "范围会受相邻阶段和序列边界约束。"
-            };
-            IntegerField endField = new IntegerField("结束帧（Tick）")
-            {
-                isDelayed = true,
-                tooltip = "拖动阶段右侧手柄或在此输入结束帧；"
-                    + "范围会受相邻阶段和序列边界约束。"
-            };
-            startField.SetValueWithoutNotify(startTick);
-            endField.SetValueWithoutNotify(endTick);
-            startField.RegisterValueChangedCallback(evt =>
-                CommitTimelineBlockRange(
-                    FpgSkillTimelineBlockKind.Phase,
-                    phaseIndex,
-                    FpgSkillTimelineBlockEditMode.ResizeStart,
-                    evt.newValue,
-                    endField.value));
-            endField.RegisterValueChangedCallback(evt =>
-                CommitTimelineBlockRange(
-                    FpgSkillTimelineBlockKind.Phase,
-                    phaseIndex,
-                    FpgSkillTimelineBlockEditMode.ResizeEnd,
-                    startField.value,
-                    evt.newValue));
-            inspectorContent.Add(startField);
-            inspectorContent.Add(endField);
-        }
-
         private void AddReadOnlyInspectorValue(
             string label,
             string value,
@@ -2626,85 +2860,24 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
+            if (record.Key.ActionKind != FpgSkillActionKind.None)
+            {
+                AddActionInspector(eventProperty, record);
+                return;
+            }
+
             AddReadOnlyEventType(record.Track);
             GameObject previewPrefab = previewPrefabField.value as GameObject;
             switch (record.Track)
             {
-                case FpgSkillEventTrackKind.Logic:
-                case FpgSkillEventTrackKind.Generic:
-                {
-                    AddTypedProperty(
-                        eventProperty.FindPropertyRelative("tick"),
-                        "触发 Tick");
-                    AddTypedProperty(
-                        eventProperty.FindPropertyRelative("authoredOrdinal"),
-                        "同 Tick 顺序");
-
-                    SerializedProperty payloadReference =
-                        eventProperty.FindPropertyRelative("payloadSlotId");
-                    AddPayloadReferenceChoiceProperty(
-                        payloadReference,
-                        record.Index,
-                        FpgSkillAuthoringChoices.BuildPayloadChoices(
-                            payloads,
-                            payloadReference == null
-                                ? string.Empty
-                                : payloadReference.stringValue));
-                    AddTypedProperty(
-                        eventProperty.FindPropertyRelative("targetSource"),
-                        "目标来源");
-                    AddStringChoiceProperty(
-                        eventProperty.FindPropertyRelative("socketId"),
-                        "Socket",
-                        FpgSkillAuthoringChoices.BuildSocketChoices(
-                            previewPrefab,
-                            record.SocketId),
-                        "修改事件 Socket");
-                    AddTypedProperty(
-                        eventProperty.FindPropertyRelative("targetOffset"),
-                        "目标偏移");
+                case FpgSkillEventTrackKind.PresentationVfx:
+                case FpgSkillEventTrackKind.PresentationAudio:
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    AddActivePresentationInspector(
+                        eventProperty,
+                        record,
+                        previewPrefab);
                     break;
-                }
-
-                case FpgSkillEventTrackKind.Presentation:
-                {
-                    AddTypedProperty(
-                        eventProperty.FindPropertyRelative("tick"),
-                        "触发 Tick");
-                    AddTypedProperty(
-                        eventProperty.FindPropertyRelative("authoredOrdinal"),
-                        "同 Tick 顺序");
-
-                    SerializedProperty cue =
-                        eventProperty.FindPropertyRelative("cueId");
-                    AddStringChoiceProperty(
-                        cue,
-                        "演出类型",
-                        FpgSkillAuthoringChoices.BuildCueChoices(
-                            cue == null ? string.Empty : cue.stringValue),
-                        "修改演出类型");
-                    AddStringChoiceProperty(
-                        eventProperty.FindPropertyRelative("socketId"),
-                        "Socket",
-                        FpgSkillAuthoringChoices.BuildSocketChoices(
-                            previewPrefab,
-                            record.SocketId),
-                        "修改演出 Socket");
-
-                    SerializedProperty binding =
-                        eventProperty.FindPropertyRelative(
-                            "bindGameplayEventId");
-                    AddStringChoiceProperty(
-                        binding,
-                        "提交结果绑定",
-                        FpgSkillAuthoringChoices.BuildGameplayEventChoices(
-                            events,
-                            binding == null
-                                ? string.Empty
-                                : binding.stringValue),
-                        "修改演出提交结果绑定");
-                    break;
-                }
 
                 case FpgSkillEventTrackKind.Warning:
                 {
@@ -2739,146 +2912,373 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
         }
 
-        private void AddReadOnlyEventType(FpgSkillEventTrackKind track)
+        private void AddActivePresentationInspector(
+            SerializedProperty eventProperty,
+            FpgSkillEventRecord record,
+            GameObject previewPrefab)
         {
-            List<string> choices = new List<string>
+            if (presentationTracks.Count > 0)
             {
-                "逻辑事件",
-                "演出事件",
-                "预警事件",
-                "通用事件"
-            };
-            int selectedIndex;
-            switch (track)
-            {
-                case FpgSkillEventTrackKind.Presentation:
-                    selectedIndex = 1;
-                    break;
-                case FpgSkillEventTrackKind.Warning:
-                    selectedIndex = 2;
-                    break;
-                case FpgSkillEventTrackKind.Generic:
-                    selectedIndex = 3;
-                    break;
-                default:
-                    selectedIndex = 0;
-                    break;
-            }
+                List<string> trackNames = presentationTracks
+                    .Select(item => item.Name)
+                    .ToList();
+                int currentTrackIndex = Mathf.Clamp(
+                    record.PresentationTrackIndex,
+                    0,
+                    trackNames.Count - 1);
+                DropdownField trackField = new DropdownField(
+                    "表现轨道",
+                    trackNames,
+                    currentTrackIndex);
+                trackField.RegisterValueChangedCallback(evt =>
+                {
+                    int targetTrackIndex = trackNames.IndexOf(evt.newValue);
+                    if (targetTrackIndex < 0
+                        || targetTrackIndex
+                            == record.PresentationTrackIndex)
+                    {
+                        return;
+                    }
 
-            DropdownField field = new DropdownField(
-                "事件类型",
-                choices,
-                selectedIndex);
-            field.SetEnabled(false);
-            inspectorContent.Add(field);
-        }
+                    FpgSkillEventKey moved = FpgSkillSerializedAdapter
+                        .MoveActivePresentationEventToTrack(
+                            serializedAsset,
+                            selectedSequenceIndex,
+                            record.Key,
+                            targetTrackIndex);
+                    if (!moved.IsValid)
+                    {
+                        statusLabel.text = "无法移动主动表现事件。";
+                        trackField.SetValueWithoutNotify(
+                            trackNames[currentTrackIndex]);
+                        return;
+                    }
 
-        private void AddPayloadInspector(
-            SerializedProperty payload,
-            FpgSkillPayloadRecord record)
-        {
-            if (payload == null)
-            {
-                AddInspectorEmptyState("当前载荷无法读取。");
-                return;
+                    selectedPresentationTrackIndex = targetTrackIndex;
+                    selectedEventKey = moved;
+                    eventSelection.SetSingle(moved);
+                    RefreshFromSerialized();
+                    SelectEvent(moved, true);
+                });
+                inspectorContent.Add(trackField);
             }
 
             AddTypedProperty(
-                payload.FindPropertyRelative("displayName"),
-                "显示名称");
-            SerializedProperty kind = payload.FindPropertyRelative("kind");
-            AddPayloadKindProperty(
-                kind,
-                record == null ? selectedPayloadIndex : record.Index);
+                eventProperty.FindPropertyRelative("tick"),
+                "触发 Tick");
+            AddTypedProperty(
+                eventProperty.FindPropertyRelative("authoredOrdinal"),
+                "同 Tick 顺序");
+            SerializedProperty binding =
+                eventProperty.FindPropertyRelative(
+                    "boundGameplayEventId");
+            AddStringChoiceProperty(
+                binding,
+                "关联逻辑事件",
+                FpgSkillAuthoringChoices.BuildGameplayEventChoices(
+                    events,
+                    binding == null ? string.Empty : binding.stringValue),
+                "修改表现事件关联");
 
-            string kindName = GetSerializedEnumName(kind);
-            switch (kindName)
+            SerializedProperty presentation =
+                eventProperty.FindPropertyRelative("presentation");
+            switch (record.Track)
             {
-                case "PelletRay":
-                    AddPayloadProperties(
-                        payload,
-                        "ammoCost", "弹药消耗",
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    SerializedProperty anchor =
+                        eventProperty.FindPropertyRelative("anchor");
+                    AddVfxAnchorProperty(
+                        anchor,
+                        eventProperty.FindPropertyRelative("socketId"));
+                    if (anchor != null && anchor.intValue == 1)
+                    {
+                        AddStringChoiceProperty(
+                            eventProperty.FindPropertyRelative("socketId"),
+                            "Owner Socket",
+                            FpgSkillAuthoringChoices.BuildSocketChoices(
+                                previewPrefab,
+                                record.SocketId),
+                            "修改特效挂点");
+                    }
+
+                    AddActionProperties(
+                        presentation,
+                        "prefab", "特效 Prefab",
+                        "durationSeconds", "持续时间（秒）",
+                        "scale", "缩放",
+                        "rotationOffsetEuler", "旋转偏移");
+                    break;
+
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    AddActionProperties(
+                        presentation,
+                        "clip", "音效",
+                        "volume", "音量");
+                    break;
+
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    AddActionProperties(
+                        presentation,
+                        "strength", "强度",
+                        "durationSeconds", "持续时间（秒）");
+                    break;
+            }
+        }
+
+        private void AddVfxAnchorProperty(
+            SerializedProperty anchor,
+            SerializedProperty socketId)
+        {
+            if (anchor == null
+                || anchor.propertyType != SerializedPropertyType.Enum)
+            {
+                return;
+            }
+
+            List<string> labels = new List<string>
+            {
+                "Owner Root",
+                "Owner Socket"
+            };
+            DropdownField field = new DropdownField(
+                "挂载位置",
+                labels,
+                Mathf.Clamp(anchor.intValue, 0, labels.Count - 1));
+            string anchorPath = anchor.propertyPath;
+            string socketPath = socketId?.propertyPath;
+            field.RegisterValueChangedCallback(evt =>
+            {
+                int value = labels.IndexOf(evt.newValue);
+                if (value < 0
+                    || serializedAsset == null
+                    || serializedAsset.targetObject == null)
+                {
+                    return;
+                }
+
+                serializedAsset.UpdateIfRequiredOrScript();
+                SerializedProperty currentAnchor =
+                    serializedAsset.FindProperty(anchorPath);
+                SerializedProperty currentSocket =
+                    string.IsNullOrWhiteSpace(socketPath)
+                        ? null
+                        : serializedAsset.FindProperty(socketPath);
+                if (currentAnchor == null)
+                {
+                    return;
+                }
+
+                Undo.RecordObject(
+                    serializedAsset.targetObject,
+                    "修改特效挂载位置");
+                currentAnchor.intValue = value;
+                if (value == 0
+                    && currentSocket != null
+                    && currentSocket.propertyType
+                        == SerializedPropertyType.String)
+                {
+                    currentSocket.stringValue = string.Empty;
+                }
+
+                ApplyInspectorChanges();
+            });
+            inspectorContent.Add(field);
+        }
+
+        private void AddActionInspector(
+            SerializedProperty action,
+            FpgSkillEventRecord record)
+        {
+            AddReadOnlyInspectorValue(
+                "玩法动作类型",
+                GetActionKindLabel(record.Key.ActionKind),
+                "节点类型只读；使用下方转换命令显式改变类型。");
+            Button convertButton = new Button(
+                () => ShowActionConversionMenu(record.Key))
+            {
+                text = "转换事件类型..."
+            };
+            inspectorContent.Add(convertButton);
+
+            AddActionProperties(
+                action,
+                "tick", "触发 Tick",
+                "authoredOrdinal", "同 Tick 顺序");
+            bool enemy = selectedAsset != null
+                && selectedAsset.GetType().Name.IndexOf(
+                    "Enemy",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            FpgSkillActionAuthoringOptions spatialOptions =
+                FpgSkillActionAuthoringRules.Get(
+                    record.Key.ActionKind,
+                    enemy);
+            if (spatialOptions.SupportsTargetSourceSelection)
+            {
+                AddTargetSourceChoiceProperty(
+                    action.FindPropertyRelative("targetSource"),
+                    spatialOptions);
+            }
+
+            if (spatialOptions.SupportsSocket)
+            {
+                GameObject previewPrefab = previewPrefabField.value as GameObject;
+                AddStringChoiceProperty(
+                    action.FindPropertyRelative("socketId"),
+                    "Socket",
+                    FpgSkillAuthoringChoices.BuildSocketChoices(
+                        previewPrefab,
+                        record.SocketId),
+                    "修改玩法动作 Socket");
+            }
+
+            if (spatialOptions.SupportsTargetOffset)
+            {
+                AddTargetOffsetProperty(
+                    action.FindPropertyRelative("targetOffset"));
+            }
+
+            switch (record.Key.ActionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    AddConfirmedAttackModeProperty(
+                        action.FindPropertyRelative("mode"),
+                        record.Key);
+                    AddActionProperties(
+                        action,
+                        "ammoCost", "资源消耗",
+                        "baseDamage", "基础伤害",
+                        "breakDamage", "削韧伤害",
+                        "weakpointDamageMultiplierBasisPoints", "弱点伤害倍率（万分比）",
+                        "weakpointBreakMultiplierBasisPoints", "弱点削韧倍率（万分比）");
+                    AddAttackModeProperties(action);
+                    AddTypedProperty(
+                        action.FindPropertyRelative(
+                            "trajectoryPresentation"),
+                        "攻击轨迹特效");
+                    AddTypedProperty(
+                        action.FindPropertyRelative(
+                            "impactPresentation"),
+                        "命中表现");
+                    break;
+
+                case FpgSkillActionKind.LaunchProjectile:
+                    AddTypedProperty(
+                        action.FindPropertyRelative("impactMode"),
+                        "命中方式");
+                    AddActionProperties(
+                        action,
+                        "ammoCost", "资源消耗",
                         "baseDamage", "基础伤害",
                         "breakDamage", "削韧伤害",
                         "weakpointDamageMultiplierBasisPoints", "弱点伤害倍率（万分比）",
                         "weakpointBreakMultiplierBasisPoints", "弱点削韧倍率（万分比）",
-                        "queryMode", "查询方式",
-                        "pelletCount", "散射数量",
-                        "additionalPenetrationCount", "额外穿透数量",
-                        "allowedTargetKinds", "允许目标");
-                    break;
-
-                case "AreaAtFirstSurface":
-                    AddPayloadProperties(
-                        payload,
-                        "ammoCost", "弹药消耗",
-                        "baseDamage", "基础伤害",
-                        "breakDamage", "削韧伤害",
-                        "weakpointDamageMultiplierBasisPoints", "弱点伤害倍率（万分比）",
-                        "weakpointBreakMultiplierBasisPoints", "弱点削韧倍率（万分比）",
-                        "queryMode", "查询方式",
-                        "areaCombatantLimit", "战斗单位上限",
-                        "areaProjectileLimit", "弹体上限",
-                        "allowedTargetKinds", "允许目标");
-                    break;
-
-                case "ReloadCommit":
-                    break;
-
-                case "Projectile":
-                    AddPayloadProperties(
-                        payload,
-                        "threatDefinitionId", "威胁定义",
-                        "baseDamage", "基础伤害",
-                        "breakDamage", "削韧伤害",
-                        "weakpointDamageMultiplierBasisPoints", "弱点伤害倍率（万分比）",
-                        "weakpointBreakMultiplierBasisPoints", "弱点削韧倍率（万分比）",
-                        "projectileDefinitionId", "弹体定义",
-                        "projectileCount", "弹体数量",
+                        "projectileDefinitionId", "投射物定义 ID",
+                        "projectileCount", "发射数量",
                         "projectileFlightTicks", "飞行 Tick",
-                        "projectileLifetimeTicks", "生命周期 Tick",
-                        "projectileMaxHitPoints", "弹体生命",
+                        "projectileLifetimeTicks", "寿命 Tick",
                         "projectileInterceptable", "可拦截",
-                        "projectileBudgetUnits", "容量单位",
-                        "projectilePresentationKey", "表现类型",
-                        "projectileSweepRadiusKey", "扫掠半径类型");
+                        "projectileMaxHitPoints", "拦截生命值",
+                        "projectileBudgetUnits", "预算单位",
+                        "projectileSweepRadiusKey", "碰撞半径 Key");
+                    AddTypedProperty(
+                        action.FindPropertyRelative("flightVfx"),
+                        "投射物飞行特效");
+                    AddTypedProperty(
+                        action.FindPropertyRelative(
+                            "collisionPresentation"),
+                        "投射物命中表现");
+
+
+                    if (GetSerializedEnumName(
+                            action.FindPropertyRelative("impactMode"))
+                        == "AreaAtFirstSurface")
+                    {
+                        AddActionProperties(
+                            action,
+                            "areaCombatantLimit", "命中战斗单位上限",
+                            "areaProjectileLimit", "命中投射物上限",
+                            "allowedTargetKinds", "允许命中目标");
+                    }
+                    else
+                    {
+                        AddTypedProperty(
+                            action.FindPropertyRelative(
+                                "threatDefinitionId"),
+                            "威胁定义 ID");
+                    }
                     break;
 
-                case "TimedImpact":
-                    AddPayloadProperties(
-                        payload,
-                        "threatDefinitionId", "威胁定义",
-                        "baseDamage", "基础伤害",
-                        "breakDamage", "削韧伤害",
-                        "weakpointDamageMultiplierBasisPoints", "弱点伤害倍率（万分比）",
-                        "weakpointBreakMultiplierBasisPoints", "弱点削韧倍率（万分比）",
-                        "timedImpactTargetPolicy", "目标策略",
-                        "timedImpactDelayTicks", "延迟 Tick",
-                        "timedImpactPresentationKey", "表现类型");
+                case FpgSkillActionKind.CommitReload:
+                    AddReadOnlyInspectorValue(
+                        "提交行为",
+                        "原子提交弹匣状态",
+                        "执行器负责验证、提交与失败补偿，不开放事务内部步骤。");
+                    SerializedProperty successAnimation =
+                        action.FindPropertyRelative(
+                            "successAnimationName");
+                    AddStringChoiceProperty(
+                        successAnimation,
+                        "成功动画",
+                        FpgSkillAuthoringChoices.BuildAnimationChoices(
+                            previewPrefabField.value as GameObject,
+                            new[]
+                            {
+                                successAnimation == null
+                                    ? string.Empty
+                                    : successAnimation.stringValue
+                            }),
+                        "修改换弹成功动画");
                     break;
 
-                case "Summon":
-                    AddPayloadProperties(
-                        payload,
+                case FpgSkillActionKind.SummonActors:
+                    AddActionProperties(
+                        action,
                         "summonCandidates", "召唤候选",
                         "summonCandidateWeights", "候选权重",
                         "summonOccupancyMode", "占位方式",
                         "summonPlacementMode", "放置方式",
-                        "summonOwnerOutcome", "施法者结果",
-                        "maxSummonsPerOwner", "单个施法者上限",
-                        "maxTotalSummonsPerEncounter", "战斗总上限",
+                        "summonOwnerOutcome", "召唤者结果",
+                        "maxSummonsPerOwner", "每个召唤者上限",
+                        "maxTotalSummonsPerEncounter", "遭遇总上限",
                         "maxSummonRecursionDepth", "递归深度上限");
-                    break;
-
-                default:
-                    AddRemainingPayloadProperties(payload);
                     break;
             }
         }
 
-        private void AddPayloadKindProperty(
+        private void AddAttackModeProperties(SerializedProperty action)
+        {
+            switch (GetSerializedEnumName(
+                action.FindPropertyRelative("mode")))
+            {
+                case "PelletRays":
+                    AddActionProperties(
+                        action,
+                        "pelletCount", "射线数量",
+                        "additionalPenetrationCount", "额外穿透数量",
+                        "allowedTargetKinds", "允许命中目标");
+                    break;
+                case "AreaAtFirstSurface":
+                    AddActionProperties(
+                        action,
+                        "areaCombatantLimit", "命中战斗单位上限",
+                        "areaProjectileLimit", "命中投射物上限",
+                        "allowedTargetKinds", "允许命中目标");
+                    break;
+                case "BoundTarget":
+                    AddActionProperties(
+                        action,
+                        "threatDefinitionId", "威胁定义 ID",
+                        "boundTargetPolicy", "目标规则",
+                        "delayTicks", "锁定后延时 Tick");
+
+
+                    break;
+            }
+        }
+
+        private void AddConfirmedAttackModeProperty(
             SerializedProperty property,
-            int payloadIndex)
+            FpgSkillEventKey eventKey)
         {
             if (property == null
                 || property.propertyType != SerializedPropertyType.Enum)
@@ -2886,64 +3286,227 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            Enum currentValue;
-            try
-            {
-                currentValue = property.boxedValue as Enum;
-            }
-            catch (InvalidOperationException)
-            {
-                currentValue = null;
-            }
-
-            if (currentValue == null)
-            {
-                AddBoundProperty(property, "载荷类型");
-                return;
-            }
-
-            EnumField field = new EnumField("载荷类型", currentValue);
+            bool enemy = selectedAsset != null
+                && selectedAsset.GetType().Name.IndexOf(
+                    "Enemy",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            List<string> labels = enemy
+                ? new List<string> { "指定目标攻击" }
+                : new List<string> { "射线攻击", "范围攻击" };
+            List<int> values = enemy
+                ? new List<int> { 3 }
+                : new List<int> { 1, 2 };
+            int selectedIndex = Math.Max(
+                0,
+                values.IndexOf(property.intValue));
+            DropdownField field = new DropdownField(
+                "攻击模式",
+                labels,
+                selectedIndex);
             field.RegisterValueChangedCallback(evt =>
-                ApplyPayloadKindChoice(payloadIndex, evt.newValue));
+            {
+                int newIndex = labels.IndexOf(evt.newValue);
+                if (newIndex < 0
+                    || values[newIndex] == property.intValue)
+                {
+                    return;
+                }
+
+                bool confirmed = EditorUtility.DisplayDialog(
+                    "切换攻击模式",
+                    "切换会保留伤害、资源消耗、事件 ID、Tick 和顺序，"
+                        + "并重建模式专属查询参数。",
+                    "切换",
+                    "取消");
+                if (!confirmed)
+                {
+                    field.SetValueWithoutNotify(labels[selectedIndex]);
+                    return;
+                }
+
+                if (FpgSkillSerializedAdapter.SetActionMode(
+                        serializedAsset,
+                        selectedSequenceIndex,
+                        eventKey,
+                        values[newIndex]))
+                {
+                    QueueSerializedRefresh();
+                }
+            });
             inspectorContent.Add(field);
         }
 
+        private void ShowActionConversionMenu(FpgSkillEventKey sourceKey)
+        {
+            GenericMenu menu = new GenericMenu();
+            bool enemy = selectedAsset != null
+                && selectedAsset.GetType().Name.IndexOf(
+                    "Enemy",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+            AddActionConversionItem(
+                menu,
+                sourceKey,
+                "攻击",
+                FpgSkillActionKind.Attack,
+                enemy ? 3 : 1);
+            AddActionConversionItem(
+                menu,
+                sourceKey,
+                "发射投射物",
+                FpgSkillActionKind.LaunchProjectile,
+                enemy ? 2 : 1);
+            if (enemy)
+            {
+                AddActionConversionItem(
+                    menu,
+                    sourceKey,
+                    "召唤单位",
+                    FpgSkillActionKind.SummonActors,
+                    0);
+            }
+            else
+            {
+                AddActionConversionItem(
+                    menu,
+                    sourceKey,
+                    "完成换弹",
+                    FpgSkillActionKind.CommitReload,
+                    0);
+            }
 
-        private void AddPayloadProperties(
-            SerializedProperty payload,
+            menu.ShowAsContext();
+        }
+
+        private void AddActionConversionItem(
+            GenericMenu menu,
+            FpgSkillEventKey sourceKey,
+            string label,
+            FpgSkillActionKind targetKind,
+            int targetMode)
+        {
+            GUIContent content = new GUIContent(label);
+            if (sourceKey.ActionKind == targetKind)
+            {
+                menu.AddDisabledItem(content, true);
+                return;
+            }
+
+            menu.AddItem(
+                content,
+                false,
+                () => ConvertAction(sourceKey, targetKind, targetMode));
+        }
+
+        private void ConvertAction(
+            FpgSkillEventKey sourceKey,
+            FpgSkillActionKind targetKind,
+            int targetMode)
+        {
+            bool confirmed = EditorUtility.DisplayDialog(
+                "转换玩法动作类型",
+                "跨动作类型转换会保留事件 ID、Tick、同 Tick 顺序及兼容的伤害/消耗字段。"
+                    + "原节点中与目标动作不兼容的轨迹、命中、飞行、碰撞或成功动画表现会被清空，"
+                    + "其他参数使用目标类型的安全默认值。",
+                "转换",
+                "取消");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            FpgSkillEventKey converted =
+                FpgSkillSerializedAdapter.ConvertAction(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    sourceKey,
+                    targetKind,
+                    targetMode);
+            if (!converted.IsValid)
+            {
+                statusLabel.text = "无法转换该玩法动作。";
+                return;
+            }
+
+            selectedEventKey = converted;
+            eventSelection.SetSingle(converted);
+            RefreshFromSerialized();
+            SelectEvent(converted, true);
+        }
+
+        private static string GetActionKindLabel(
+            FpgSkillActionKind actionKind)
+        {
+            switch (actionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    return "攻击";
+                case FpgSkillActionKind.LaunchProjectile:
+                    return "发射投射物";
+                case FpgSkillActionKind.CommitReload:
+                    return "完成换弹";
+                case FpgSkillActionKind.SummonActors:
+                    return "召唤单位";
+                default:
+                    return "未知";
+            }
+        }
+
+        private void AddReadOnlyEventType(FpgSkillEventTrackKind track)
+        {
+            string label;
+            switch (track)
+            {
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    label = "特效";
+                    break;
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    label = "音效";
+                    break;
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    label = "震屏";
+                    break;
+                case FpgSkillEventTrackKind.Warning:
+                    label = "预警";
+                    break;
+                default:
+                    label = "玩法动作";
+                    break;
+            }
+
+            AddReadOnlyInspectorValue("事件类型", label, string.Empty);
+        }
+
+        private void AddActionProperties(
+            SerializedProperty parent,
             params string[] namesAndLabels)
         {
+            if (parent == null)
+            {
+                return;
+            }
+
             for (int index = 0;
                 index + 1 < namesAndLabels.Length;
                 index += 2)
             {
-                AddTypedProperty(
-                    payload.FindPropertyRelative(namesAndLabels[index]),
-                    namesAndLabels[index + 1]);
-            }
-        }
-
-        private void AddRemainingPayloadProperties(SerializedProperty payload)
-        {
-            SerializedProperty iterator = payload.Copy();
-            SerializedProperty end = iterator.GetEndProperty();
-            bool enterChildren = true;
-            while (iterator.NextVisible(enterChildren)
-                   && !SerializedProperty.EqualContents(iterator, end))
-            {
-                enterChildren = false;
-                if (iterator.depth != payload.depth + 1
-                    || IsHiddenStableReference(iterator.name)
-                    || iterator.name == "displayName"
-                    || iterator.name == "kind")
+                if (selectedAsset != null
+                    && string.Equals(
+                        selectedAsset.GetType().FullName,
+                        EnemySkillTypeName,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        namesAndLabels[index],
+                        "ammoCost",
+                        StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                AddTypedProperty(iterator.Copy(), iterator.displayName);
+                AddTypedProperty(
+                    parent.FindPropertyRelative(namesAndLabels[index]),
+                    namesAndLabels[index + 1]);
             }
         }
-
 
         private void AddTypedProperty(
             SerializedProperty property,
@@ -2961,6 +3524,146 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             AddBoundProperty(property, label);
+        }
+
+        private void AddTargetSourceChoiceProperty(
+            SerializedProperty property,
+            FpgSkillActionAuthoringOptions options)
+        {
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Enum
+                || options == null
+                || !options.SupportsTargetSourceSelection)
+            {
+                return;
+            }
+
+            List<string> labels = new List<string>();
+            List<FpgSkillTargetSource> values =
+                new List<FpgSkillTargetSource>();
+            for (int index = 0;
+                index < options.TargetSourceChoices.Count;
+                index++)
+            {
+                FpgSkillTargetSource source =
+                    options.TargetSourceChoices[index];
+                labels.Add(GetTargetSourceLabel(source));
+                values.Add(source);
+            }
+
+            int selectedIndex = values.IndexOf(
+                (FpgSkillTargetSource)property.enumValueIndex);
+            selectedIndex = Mathf.Max(0, selectedIndex);
+            DropdownField field = new DropdownField(
+                "目标来源",
+                labels,
+                selectedIndex);
+            field.name = "target-source-field";
+            string propertyPath = property.propertyPath;
+            field.RegisterValueChangedCallback(evt =>
+            {
+                int index = labels.IndexOf(evt.newValue);
+                if (index >= 0 && index < values.Count)
+                {
+                    ApplyTargetSourceChoice(propertyPath, values[index]);
+                }
+            });
+            inspectorContent.Add(field);
+        }
+
+        private void AddTargetOffsetProperty(SerializedProperty property)
+        {
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Vector3)
+            {
+                return;
+            }
+
+            Vector3Field field = new Vector3Field("目标偏移");
+            field.name = "target-offset-field";
+            field.isDelayed = true;
+            field.SetValueWithoutNotify(property.vector3Value);
+            string propertyPath = property.propertyPath;
+            field.RegisterValueChangedCallback(evt =>
+                ApplyTargetOffset(propertyPath, evt.newValue));
+            inspectorContent.Add(field);
+        }
+
+        private static string GetTargetSourceLabel(
+            FpgSkillTargetSource source)
+        {
+            switch (source)
+            {
+                case FpgSkillTargetSource.CurrentAim:
+                    return "当前瞄准";
+
+                case FpgSkillTargetSource.CurrentTarget:
+                    return "当前目标";
+
+                case FpgSkillTargetSource.SocketForward:
+                    return "Socket 正前方";
+
+                default:
+                    return source.ToString();
+            }
+        }
+
+        private void ApplyTargetSourceChoice(
+            string propertyPath,
+            FpgSkillTargetSource source)
+        {
+            if (serializedAsset == null
+                || serializedAsset.targetObject == null)
+            {
+                return;
+            }
+
+            serializedAsset.UpdateIfRequiredOrScript();
+            SerializedProperty property =
+                serializedAsset.FindProperty(propertyPath);
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Enum)
+            {
+                return;
+            }
+
+            int enumValueIndex = Array.IndexOf(
+                property.enumNames,
+                source.ToString());
+            if (enumValueIndex < 0
+                || property.enumValueIndex == enumValueIndex)
+            {
+                return;
+            }
+
+            Undo.RecordObject(serializedAsset.targetObject, "修改目标来源");
+            property.enumValueIndex = enumValueIndex;
+            ApplyInspectorChanges();
+        }
+
+        private void ApplyTargetOffset(string propertyPath, Vector3 value)
+        {
+            if (serializedAsset == null
+                || serializedAsset.targetObject == null)
+            {
+                return;
+            }
+
+            serializedAsset.UpdateIfRequiredOrScript();
+            SerializedProperty property =
+                serializedAsset.FindProperty(propertyPath);
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Vector3
+                || property.vector3Value == value)
+            {
+                return;
+            }
+
+            Undo.RecordObject(serializedAsset.targetObject, "修改目标偏移");
+            property.vector3Value = value;
+            serializedAsset.ApplyModifiedProperties();
+            EditorUtility.SetDirty(serializedAsset.targetObject);
+            RefreshFromSerialized(false);
         }
 
         private void AddEnumProperty(
@@ -2983,6 +3686,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
+            if (IsAttackTargetKinds(currentValue))
+            {
+                AddAttackTargetKindsProperty(property, label, currentValue);
+                return;
+            }
+
             BaseField<Enum> field = currentValue.GetType().IsDefined(
                 typeof(FlagsAttribute),
                 false)
@@ -2995,6 +3704,143 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     evt.newValue,
                     "修改" + label));
             inspectorContent.Add(field);
+        }
+
+        private void AddAttackTargetKindsProperty(
+            SerializedProperty property,
+            string label,
+            Enum currentValue)
+        {
+            int knownMask = GetAttackTargetKindsMask(currentValue.GetType());
+            int selectedMask = Convert.ToInt32(currentValue) & knownMask;
+            string propertyPath = property.propertyPath;
+
+            VisualElement field = new VisualElement();
+            field.style.marginBottom = 4f;
+            field.Add(new Label(label));
+
+            VisualElement choices = new VisualElement();
+            choices.style.flexDirection = FlexDirection.Row;
+            foreach (object definedValue in Enum.GetValues(
+                         currentValue.GetType()))
+            {
+                Enum enumValue = definedValue as Enum;
+                int targetKind = enumValue == null
+                    ? 0
+                    : Convert.ToInt32(enumValue);
+                if (!IsSingleFlag(targetKind))
+                {
+                    continue;
+                }
+
+                Toggle choice = new Toggle(
+                    GetAttackTargetKindLabel(enumValue.ToString()));
+                choice.style.marginRight = 12f;
+                choice.SetValueWithoutNotify(
+                    (selectedMask & targetKind) != 0);
+                choice.RegisterValueChangedCallback(evt =>
+                {
+                    int nextMask = evt.newValue
+                        ? selectedMask | targetKind
+                        : selectedMask & ~targetKind;
+                    if (nextMask == selectedMask)
+                    {
+                        return;
+                    }
+
+                    selectedMask = nextMask;
+                    ApplyAttackTargetKindsChoice(
+                        propertyPath,
+                        selectedMask,
+                        knownMask,
+                        "修改" + label);
+                });
+                choices.Add(choice);
+            }
+
+            field.Add(choices);
+            inspectorContent.Add(field);
+        }
+
+        private void ApplyAttackTargetKindsChoice(
+            string propertyPath,
+            int value,
+            int knownMask,
+            string undoName)
+        {
+            if (serializedAsset == null
+                || serializedAsset.targetObject == null)
+            {
+                return;
+            }
+
+            serializedAsset.UpdateIfRequiredOrScript();
+            SerializedProperty property =
+                serializedAsset.FindProperty(propertyPath);
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Enum)
+            {
+                return;
+            }
+
+            int normalizedValue = value & knownMask;
+            if (property.intValue == normalizedValue)
+            {
+                return;
+            }
+
+            Undo.RecordObject(serializedAsset.targetObject, undoName);
+            property.intValue = normalizedValue;
+            ApplyInspectorChanges();
+        }
+
+        private static bool IsAttackTargetKinds(Enum value)
+        {
+            return value != null
+                && string.Equals(
+                    value.GetType().FullName,
+                    AttackTargetKindsTypeName,
+                    StringComparison.Ordinal);
+        }
+
+        private static int GetAttackTargetKindsMask(Type enumType)
+        {
+            if (enumType == null)
+            {
+                return 0;
+            }
+
+            int mask = 0;
+            foreach (object definedValue in Enum.GetValues(enumType))
+            {
+                int value = Convert.ToInt32(definedValue);
+                if (IsSingleFlag(value))
+                {
+                    mask |= value;
+                }
+            }
+
+            return mask;
+        }
+
+        private static bool IsSingleFlag(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
+        }
+
+        private static string GetAttackTargetKindLabel(string enumName)
+        {
+            switch (enumName)
+            {
+                case "Combatant":
+                    return "战斗单位";
+
+                case "Projectile":
+                    return "投射物";
+
+                default:
+                    return enumName ?? string.Empty;
+            }
         }
 
         private void AddStringChoiceProperty(
@@ -3016,29 +3862,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     choices,
                     undoName));
         }
-
-        private void AddPayloadReferenceChoiceProperty(
-            SerializedProperty property,
-            int eventIndex,
-            IList<FpgSkillAuthoringChoice> choices)
-        {
-            if (property == null
-                || property.propertyType != SerializedPropertyType.String)
-            {
-                return;
-            }
-
-            inspectorContent.Add(
-                CreateStringChoiceField(
-                    property,
-                    "载荷",
-                    choices,
-                    "替换事件载荷",
-                    value => ApplyPayloadReferenceChoice(
-                        eventIndex,
-                        value)));
-        }
-
 
         private DropdownField CreateStringChoiceField(
             SerializedProperty property,
@@ -3138,53 +3961,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             Undo.RecordObject(serializedAsset.targetObject, undoName);
-            property.boxedValue = value;
+            if (IsAttackTargetKinds(value))
+            {
+                property.intValue = Convert.ToInt32(value)
+                    & GetAttackTargetKindsMask(value.GetType());
+            }
+            else
+            {
+                property.boxedValue = value;
+            }
             ApplyInspectorChanges();
         }
-
-        private void ApplyPayloadKindChoice(
-            int payloadIndex,
-            Enum value)
-        {
-            if (serializedAsset == null
-                || serializedAsset.targetObject == null
-                || value == null)
-            {
-                return;
-            }
-
-            serializedAsset.UpdateIfRequiredOrScript();
-            SerializedProperty payload =
-                FpgSkillSerializedAdapter.GetPayloadProperty(
-                    serializedAsset,
-                    selectedSequenceIndex,
-                    payloadIndex);
-            SerializedProperty kind = payload == null
-                ? null
-                : payload.FindPropertyRelative("kind");
-            if (kind == null
-                || kind.propertyType != SerializedPropertyType.Enum)
-            {
-                return;
-            }
-
-            int enumValueIndex = Array.IndexOf(
-                kind.enumNames,
-                value.ToString());
-            if (!FpgSkillSerializedAdapter.SetPayloadKindAndNormalize(
-                    serializedAsset,
-                    selectedSequenceIndex,
-                    payloadIndex,
-                    enumValueIndex))
-            {
-                statusLabel.text = "无法切换载荷类型。";
-                QueueSerializedRefresh();
-                return;
-            }
-
-            QueueSerializedRefresh();
-        }
-
 
         private void ApplyStringChoice(
             string propertyPath,
@@ -3210,31 +3997,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             property.stringValue = value ?? string.Empty;
             ApplyInspectorChanges();
         }
-
-        private void ApplyPayloadReferenceChoice(
-            int eventIndex,
-            string payloadId)
-        {
-            FpgSkillPayloadRecord payload = payloads.Find(item =>
-                item != null
-                && string.Equals(
-                    item.Id,
-                    payloadId,
-                    StringComparison.Ordinal));
-            if (payload == null
-                || !FpgSkillSerializedAdapter.SetEventPayloadReference(
-                    serializedAsset,
-                    selectedSequenceIndex,
-                    eventIndex,
-                    payload.Index))
-            {
-                statusLabel.text = "无法替换事件载荷。";
-                return;
-            }
-
-            QueueSerializedRefresh();
-        }
-
 
         private void ApplyInspectorChanges()
         {
@@ -3263,10 +4025,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             {
                 case "skillId":
                 case "eventId":
-                case "phaseId":
-                case "slotId":
-                case "payloadSlotId":
-                case "cueId":
                 case "warningId":
                 case "socketId":
                 case "bindGameplayEventId":

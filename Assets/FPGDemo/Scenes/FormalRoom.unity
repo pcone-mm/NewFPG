@@ -481,6 +481,7 @@ Transform:
   m_Children:
   - {fileID: 2092634765}
   - {fileID: 201108617}
+  - {fileID: 700534457}
   m_Father: {fileID: 820983132}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &690032142
@@ -499,6 +500,7 @@ MonoBehaviour:
   playerTickDriver: {fileID: 1408289653}
   playerHud: {fileID: 201108619}
   cameraFeedback: {fileID: 2017525627}
+  skillVfxWorld: {fileID: 700534458}
   cameraRig: {fileID: 2017525628}
   targetCamera: {fileID: 1030554702}
 --- !u!114 &690032143
@@ -517,11 +519,60 @@ MonoBehaviour:
   playerTickDriver: {fileID: 1408289653}
   presentationProfile: {fileID: 11400000, guid: f84b6a897901cf1459ec30416e307eab, type: 2}
   aimReticle: {fileID: 1740616206}
+  skillVfxWorld: {fileID: 700534458}
   worldCamera: {fileID: 1030554702}
   targetCanvas: {fileID: 201108618}
   popupRoot: {fileID: 225726574}
   popupPrefab: {fileID: 8532765460642453553, guid: 6aaf604db98f13e4da3980d7c7c3538c, type: 3}
   feedbackReadCapacity: 128
+--- !u!1 &700534456
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 700534457}
+  - component: {fileID: 700534458}
+  m_Layer: 0
+  m_Name: CombatVfx
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &700534457
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700534456}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 690032141}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &700534458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 700534456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4f7a1c93b265d4089f6e2a7c1d5b803, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0CombatVfxWorld
+  poolRoot: {fileID: 700534457}
+  pools: []
+  prepareOnEnable: 0
+  automaticallyAdvance: 1
 --- !u!1 &759244838
 GameObject:
   m_ObjectHideFlags: 0
@@ -1762,7 +1813,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 680280a254af60c46826ce8e247023ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.CombatAimReticle
-  sessionHost: {fileID: 0}
   pointerSensitivity: 1
   lockSystemCursor: 1
   resetOnApplicationFocus: 1

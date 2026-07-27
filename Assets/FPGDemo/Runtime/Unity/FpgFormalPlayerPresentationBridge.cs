@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using FPG.Demo.Combat;
+using FPG.Demo.Core;
 using FPG.Demo.Run;
 using FPG.Demo.Player;
 using FPG.Demo.Skills;
@@ -19,7 +21,7 @@ namespace FPG.Demo.Unity
     {
         private const int ActionQueueCapacity = 32;
         private const int SkillPresentationQueueCapacity = 64;
-        private const string AnimationCuePrefix = "animation.";
+        private const int ActionPresentationBindingCapacity = 64;
         [Header("Formal runtime")]
         [SerializeField] private FpgRoomEncounterDirector encounterDirector;
         [SerializeField] private FpgFormalPlayerTickDriver playerTickDriver;
@@ -28,6 +30,8 @@ namespace FPG.Demo.Unity
         [SerializeField] private FpgFormalPlayerHudPresenter playerHud;
         [SerializeField] private FpgFormalPlayerCameraFeedback cameraFeedback;
         [SerializeField] private D0CombatVfxWorld skillVfxWorld;
+        [SerializeField] private FpgSkillPresentationWorld
+            skillPresentationWorld;
 
         [Header("Scene-owned camera")]
         [SerializeField] private Transform cameraRig;
@@ -38,11 +42,26 @@ namespace FPG.Demo.Unity
         private readonly FpgFormalPlayerSkillSequenceEvent[] skillSequenceQueue =
             new FpgFormalPlayerSkillSequenceEvent[
                 SkillPresentationQueueCapacity];
-        private readonly FpgFormalPlayerSkillCueEvent[] skillCueQueue =
-            new FpgFormalPlayerSkillCueEvent[
-                SkillPresentationQueueCapacity];
+        private readonly FpgFormalPlayerActivePresentationEvent[]
+            activePresentationQueue =
+                new FpgFormalPlayerActivePresentationEvent[
+                    SkillPresentationQueueCapacity];
         private FpgVitalsSnapshot[] vitalsBuffer =
             Array.Empty<FpgVitalsSnapshot>();
+        private IProjectilePresentationFeed observedProjectilePresentationFeed;
+        private IPlayerShotPresentationFeed observedPlayerShotPresentationFeed;
+        private ProjectilePresentationState[] projectilePresentationStates =
+            Array.Empty<ProjectilePresentationState>();
+        private ProjectilePresentationEvent[] projectilePresentationEvents =
+            Array.Empty<ProjectilePresentationEvent>();
+        private PlayerShotPresentationEvent[] playerShotPresentationEvents =
+            Array.Empty<PlayerShotPresentationEvent>();
+        private PlayerProjectileVisualSlot[] playerProjectileVisuals =
+            Array.Empty<PlayerProjectileVisualSlot>();
+        private readonly ShotTrajectoryBinding[] shotTrajectoryBindings =
+            new ShotTrajectoryBinding[ActionPresentationBindingCapacity];
+        private readonly ProjectileFlightBinding[] projectileFlightBindings =
+            new ProjectileFlightBinding[ActionPresentationBindingCapacity];
 
         private FpgPlayableCharacterSelection selection;
         private FpgPlayerEntityView playerEntity;
@@ -53,12 +72,15 @@ namespace FPG.Demo.Unity
             FpgFormalPlayerPresentationSnapshot.Unavailable;
         private long nextCombatEventOrdinal;
         private long vitalsCursor;
+        private long projectilePresentationCursor;
+        private long playerShotPresentationCursor;
+        private long nextActionPresentationBindingOrdinal;
         private int actionHead;
         private int actionCount;
         private int skillSequenceHead;
         private int skillSequenceCount;
-        private int skillCueHead;
-        private int skillCueCount;
+        private int activePresentationHead;
+        private int activePresentationCount;
         private bool actionGap;
         private bool skillSequenceGap;
         private bool hasActiveSkillSequence;
@@ -71,6 +93,9 @@ namespace FPG.Demo.Unity
         public FpgFormalPlayerTickDriver PlayerTickDriver => playerTickDriver;
         public FpgFormalPlayerHudPresenter PlayerHud => playerHud;
         public FpgFormalPlayerCameraFeedback CameraFeedback => cameraFeedback;
+        public D0CombatVfxWorld SkillVfxWorld => skillVfxWorld;
+        public FpgSkillPresentationWorld SkillPresentationWorld =>
+            skillPresentationWorld;
         public Transform CameraRig => cameraRig;
         public Camera TargetCamera => targetCamera;
         public FpgPlayableCharacterSelection Selection => selection;
@@ -81,10 +106,13 @@ namespace FPG.Demo.Unity
         public int VitalsGapCount { get; private set; }
         public int VitalsReadCapacity => vitalsBuffer.Length;
         public int SkillSequenceGapCount { get; private set; }
-        public int SkillCueGapCount { get; private set; }
+        public int ActivePresentationGapCount { get; private set; }
         public int SkillPresentationFaultCount { get; private set; }
+        public string LastSkillPresentationPrepareError { get; private set; } =
+            string.Empty;
 
-        public event Action<FpgFormalPlayerSkillCueEvent> SkillCuePresented;
+        public event Action<FpgFormalPlayerActivePresentationEvent>
+            ActivePresentationPresented;
 
         private void LateUpdate()
         {
@@ -103,6 +131,11 @@ namespace FPG.Demo.Unity
 
             FpgFormalPlayerPresentationSnapshot previous = snapshot;
             snapshot = nextSnapshot;
+            if (snapshot.IsPaused && !previous.IsPaused)
+            {
+                ClearSkillRuntimePresentation();
+            }
+
             ConsumeSkillSequenceEvents();
             bool primaryPresented = ConsumeCommittedActions();
             PresentationFrameFlags traceFlags = ConsumeCombatTrace();
@@ -113,7 +146,9 @@ namespace FPG.Demo.Unity
                 traceFlags);
             actorPresenter?.SetPaused(snapshot.IsPaused);
             EvaluateActiveSkillAnimation();
-            ConsumeSkillCues();
+            ConsumeActivePresentations();
+            ConsumePlayerShotPresentation();
+            ConsumePlayerProjectilePresentation();
             cameraFeedback?.SetPaused(snapshot.IsPaused);
             playerHud?.Refresh(snapshot);
         }
@@ -170,8 +205,36 @@ namespace FPG.Demo.Unity
                     nextSelection.ThreeCProfile,
                     targetCamera,
                     cameraRig,
+                    playerHud.PresentationProfile.CameraShake,
+                    playerHud.PresentationProfile.PoolCapacities.ScreenEffectCapacity,
                     out error)
                 || !playerTickDriver.TryBindCameraFeedback(cameraFeedback, out error))
+            {
+                return false;
+            }
+
+            if (skillVfxWorld == null)
+            {
+                error =
+                    "Formal player presentation requires the shared skill VFX world.";
+                return false;
+            }
+
+            if (skillPresentationWorld == null)
+            {
+                skillPresentationWorld =
+                    skillVfxWorld.GetComponent<FpgSkillPresentationWorld>();
+                if (skillPresentationWorld == null)
+                {
+                    skillPresentationWorld = skillVfxWorld.gameObject
+                        .AddComponent<FpgSkillPresentationWorld>();
+                }
+            }
+
+            if (!skillPresentationWorld.TryConfigure(
+                    skillVfxWorld,
+                    cameraFeedback,
+                    out error))
             {
                 return false;
             }
@@ -200,6 +263,60 @@ namespace FPG.Demo.Unity
             prepared = true;
             error = string.Empty;
             return true;
+        }
+
+        private IReadOnlyList<FpgSkillTimelineDefinition>
+            CollectPresentationSkills(D0WeaponDefinition weapon)
+        {
+            List<FpgSkillTimelineDefinition> skills =
+                new List<FpgSkillTimelineDefinition>();
+            HashSet<FpgSkillTimelineDefinition> seen =
+                new HashSet<FpgSkillTimelineDefinition>();
+            AddPresentationSkill(weapon.PrimarySkill, skills, seen);
+            AddPresentationSkill(weapon.SecondarySkill, skills, seen);
+            AddPresentationSkill(weapon.ReloadSkill, skills, seen);
+
+            FpgEnemyDefinitionCatalog catalog = encounterDirector == null
+                ? null
+                : encounterDirector.EnemyCatalog;
+            if (catalog == null)
+            {
+                return skills;
+            }
+
+            for (int enemyIndex = 0;
+                enemyIndex < catalog.Definitions.Count;
+                enemyIndex++)
+            {
+                FpgEnemyDefinition enemy = catalog.Definitions[enemyIndex];
+                if (enemy == null)
+                {
+                    continue;
+                }
+
+                for (int attackIndex = 0;
+                    attackIndex < enemy.AttackPatternCount;
+                    attackIndex++)
+                {
+                    AddPresentationSkill(
+                        enemy.GetAttackPattern(attackIndex),
+                        skills,
+                        seen);
+                }
+            }
+
+            return skills;
+        }
+
+        private static void AddPresentationSkill(
+            FpgSkillTimelineDefinition skill,
+            ICollection<FpgSkillTimelineDefinition> output,
+            ISet<FpgSkillTimelineDefinition> seen)
+        {
+            if (skill != null && seen.Add(skill))
+            {
+                output.Add(skill);
+            }
         }
 
         /// <summary>
@@ -231,6 +348,36 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            D0WeaponDefinition weapon = selection.CharacterDefinition == null
+                ? null
+                : selection.CharacterDefinition.Weapon;
+            if (weapon == null)
+            {
+                error =
+                    "Formal player presentation requires a selected weapon definition.";
+                return false;
+            }
+
+            if (!skillPresentationWorld.TryPrepare(
+                    CollectPresentationSkills(weapon),
+                    playerHud.PresentationProfile,
+                    out string presentationError))
+            {
+                LastSkillPresentationPrepareError =
+                    string.IsNullOrWhiteSpace(presentationError)
+                        ? "Formal player presentation could not prepare the shared V3 skill registry."
+                        : presentationError;
+                SkillPresentationFaultCount++;
+            }
+            else
+            {
+                LastSkillPresentationPrepareError = string.Empty;
+            }
+
+            // Skill presentation is non-authoritative. A broken registry or
+            // resource pool disables presentation for this activation only.
+            error = string.Empty;
+
             int vitalsReadCapacity = runtime.CombatPort.Vitals.EventCapacity;
             if (vitalsReadCapacity <= 0)
             {
@@ -238,6 +385,20 @@ namespace FPG.Demo.Unity
                 return false;
             }
             vitalsBuffer = new FpgVitalsSnapshot[vitalsReadCapacity];
+
+            if (!TryBindProjectilePresentationFeed(
+                    runtime.ProjectilePresentationFeed,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryBindPlayerShotPresentationFeed(
+                    runtime.PlayerShotPresentationFeed,
+                    out error))
+            {
+                return false;
+            }
 
             playerEntity.gameObject.SetActive(true);
             if (playerEntity.VisualRoot != null)
@@ -253,6 +414,7 @@ namespace FPG.Demo.Unity
             observedTrace = runtime.CombatKernel.Trace;
             nextCombatEventOrdinal = observedTrace.TotalEventCount;
             active = true;
+            skillVfxWorld?.BeginCombat();
             if (playerTickDriver.TryRefreshPresentationSnapshot(out snapshot))
             {
                 ApplyDurableActorState(snapshot);
@@ -301,6 +463,8 @@ namespace FPG.Demo.Unity
         public void Clear()
         {
             Unsubscribe();
+            ClearPlayerProjectileVisuals();
+            skillVfxWorld?.EndCombat();
             if (playerEntity != null && playerEntity.Barrier != null)
             {
                 playerEntity.Barrier.UnbindFormalSource();
@@ -317,8 +481,9 @@ namespace FPG.Demo.Unity
             snapshot = FpgFormalPlayerPresentationSnapshot.Unavailable;
             VitalsGapCount = 0;
             SkillSequenceGapCount = 0;
-            SkillCueGapCount = 0;
+            ActivePresentationGapCount = 0;
             SkillPresentationFaultCount = 0;
+            LastSkillPresentationPrepareError = string.Empty;
             prepared = false;
             active = false;
             ResetEventCursors();
@@ -334,7 +499,8 @@ namespace FPG.Demo.Unity
             playerTickDriver.ActionCommitted += HandleActionCommitted;
             playerTickDriver.SkillSequenceAdvanced +=
                 HandleSkillSequenceAdvanced;
-            playerTickDriver.SkillCueCommitted += HandleSkillCueCommitted;
+            playerTickDriver.ActivePresentationCommitted +=
+                HandleActivePresentationCommitted;
             encounterDirector.LifecycleEvent += HandleEncounterLifecycle;
             subscribed = true;
         }
@@ -351,7 +517,8 @@ namespace FPG.Demo.Unity
                 playerTickDriver.ActionCommitted -= HandleActionCommitted;
                 playerTickDriver.SkillSequenceAdvanced -=
                     HandleSkillSequenceAdvanced;
-                playerTickDriver.SkillCueCommitted -= HandleSkillCueCommitted;
+                playerTickDriver.ActivePresentationCommitted -=
+                    HandleActivePresentationCommitted;
             }
 
             if (encounterDirector != null)
@@ -368,6 +535,8 @@ namespace FPG.Demo.Unity
             {
                 return;
             }
+
+            RegisterActionPresentationBindings(action);
 
             if (actionCount == actionQueue.Length)
             {
@@ -406,27 +575,29 @@ namespace FPG.Demo.Unity
             skillSequenceCount++;
         }
 
-        private void HandleSkillCueCommitted(
-            FpgFormalPlayerSkillCueEvent cueEvent)
+        private void HandleActivePresentationCommitted(
+            FpgFormalPlayerActivePresentationEvent presentationEvent)
         {
             if (!active)
             {
                 return;
             }
 
-            if (skillCueCount == skillCueQueue.Length)
+            if (activePresentationCount == activePresentationQueue.Length)
             {
-                skillCueQueue[skillCueHead] =
-                    default(FpgFormalPlayerSkillCueEvent);
-                skillCueHead = (skillCueHead + 1) % skillCueQueue.Length;
-                skillCueCount--;
-                SkillCueGapCount++;
+                activePresentationQueue[activePresentationHead] =
+                    default(FpgFormalPlayerActivePresentationEvent);
+                activePresentationHead = (activePresentationHead + 1)
+                    % activePresentationQueue.Length;
+                activePresentationCount--;
+                ActivePresentationGapCount++;
             }
 
-            int writeIndex = (skillCueHead + skillCueCount)
-                % skillCueQueue.Length;
-            skillCueQueue[writeIndex] = cueEvent;
-            skillCueCount++;
+            int writeIndex =
+                (activePresentationHead + activePresentationCount)
+                % activePresentationQueue.Length;
+            activePresentationQueue[writeIndex] = presentationEvent;
+            activePresentationCount++;
         }
 
         private void ConsumeSkillSequenceEvents()
@@ -459,6 +630,7 @@ namespace FPG.Demo.Unity
                 {
                     actorPresenter.CancelSkillAnimation(
                         sequenceEvent.ExecutionId);
+                    ClearSkillRuntimePresentation();
                     if (hasActiveSkillSequence
                         && activeSkillSequence.ExecutionId
                             == sequenceEvent.ExecutionId)
@@ -539,65 +711,980 @@ namespace FPG.Demo.Unity
             }
         }
 
-        private void ConsumeSkillCues()
+        private void ConsumeActivePresentations()
         {
             if (snapshot.IsPaused)
             {
                 return;
             }
 
-            while (skillCueCount > 0)
+            while (activePresentationCount > 0)
             {
-                FpgFormalPlayerSkillCueEvent cueEvent =
-                    skillCueQueue[skillCueHead];
-                skillCueQueue[skillCueHead] =
-                    default(FpgFormalPlayerSkillCueEvent);
-                skillCueHead = (skillCueHead + 1) % skillCueQueue.Length;
-                skillCueCount--;
-                PresentSkillCue(cueEvent);
+                FpgFormalPlayerActivePresentationEvent presentationEvent =
+                    activePresentationQueue[activePresentationHead];
+                activePresentationQueue[activePresentationHead] =
+                    default(FpgFormalPlayerActivePresentationEvent);
+                activePresentationHead = (activePresentationHead + 1)
+                    % activePresentationQueue.Length;
+                activePresentationCount--;
+                PresentActivePresentation(presentationEvent);
             }
         }
 
-        private void PresentSkillCue(
-            in FpgFormalPlayerSkillCueEvent cueEvent)
+        private void ClearSkillRuntimePresentation()
         {
-            if (cueEvent.CueName.StartsWith(
-                    AnimationCuePrefix,
-                    StringComparison.Ordinal))
+            Array.Clear(actionQueue, 0, actionQueue.Length);
+            actionHead = 0;
+            actionCount = 0;
+            actionGap = false;
+            Array.Clear(
+                activePresentationQueue,
+                0,
+                activePresentationQueue.Length);
+            activePresentationHead = 0;
+            activePresentationCount = 0;
+            ResetProjectilePresentation();
+            ResetPlayerShotPresentation();
+            skillPresentationWorld?.ClearRuntimePresentation();
+            cameraFeedback?.ClearPresentationShake();
+        }
+
+        private void PresentActivePresentation(
+            in FpgFormalPlayerActivePresentationEvent presentationEvent)
+        {
+            if (skillPresentationWorld == null
+                || !skillPresentationWorld.Registry.TryResolve(
+                    presentationEvent.Handle,
+                    out FpgRegisteredPresentation registered))
             {
-                string animationName = cueEvent.CueName.Substring(
-                    AnimationCuePrefix.Length);
-                if (!actorPresenter.TryPlaySkillCueAnimation(
-                        animationName,
-                        true,
-                        out _))
+                SkillPresentationFaultCount++;
+                return;
+            }
+
+            Transform source = playerEntity == null
+                ? null
+                : playerEntity.transform;
+            if (registered.Kind == FpgRegisteredPresentationKind.Vfx
+                && registered.Anchor == FpgVfxPresentationAnchor.OwnerSocket)
+            {
+                D0ActorSocketRegistry sockets = playerEntity == null
+                    ? null
+                    : playerEntity.SocketRegistry;
+                if (sockets == null
+                    || !sockets.TryResolve(registered.SocketId, out source))
                 {
                     SkillPresentationFaultCount++;
+                    return;
                 }
             }
-            else if (skillVfxWorld != null)
+
+            if (source == null
+                || !skillPresentationWorld.TryPresent(
+                    presentationEvent.Handle,
+                    source))
             {
-                if (!FpgPlayerSkillPresentationResolver.TryResolveCueSource(
-                        playerEntity,
-                        cueEvent.SocketName,
-                        out Transform source)
-                    || !skillVfxWorld.TryPresent(
-                        cueEvent.CueName,
-                        source,
-                        out _))
-                {
-                    SkillPresentationFaultCount++;
-                }
+                SkillPresentationFaultCount++;
+                return;
             }
 
             try
             {
-                SkillCuePresented?.Invoke(cueEvent);
+                ActivePresentationPresented?.Invoke(presentationEvent);
             }
             catch (Exception)
             {
                 SkillPresentationFaultCount++;
             }
+        }
+
+        private void RegisterActionPresentationBindings(
+            in FpgFormalPlayerActionEvent action)
+        {
+            if (!action.HasSkillCorrelation
+                || !action.AttackId.IsValid
+                || !TryResolveActionPresentation(
+                    action,
+                    out FpgCompiledSkillActionPresentation presentation))
+            {
+                return;
+            }
+
+            if (presentation.ActionKind == FpgSkillActionKind.Attack
+                && presentation.TrajectoryVfx.IsValid)
+            {
+                RegisterShotTrajectoryBinding(
+                    action.AttackId,
+                    presentation.TrajectoryVfx);
+            }
+            else if (presentation.ActionKind
+                    == FpgSkillActionKind.LaunchProjectile
+                && presentation.FlightVfx.IsValid)
+            {
+                RegisterProjectileFlightBinding(
+                    action.AttackId,
+                    presentation.FlightVfx);
+            }
+        }
+
+        private bool TryResolveActionPresentation(
+            in FpgFormalPlayerActionEvent action,
+            out FpgCompiledSkillActionPresentation presentation)
+        {
+            presentation = default(FpgCompiledSkillActionPresentation);
+            D0CharacterDefinition character = selection.CharacterDefinition;
+            D0WeaponDefinition weapon = character == null
+                ? null
+                : character.Weapon;
+            if (!action.HasSkillCorrelation || weapon == null)
+            {
+                return false;
+            }
+
+            FpgSkillTimelineDefinition skill =
+                action.Type == FpgFormalPlayerActionType.ReloadCompleted
+                    ? weapon.ReloadSkill
+                    : action.ReleaseKind == WeaponReleaseKind.Primary
+                        ? weapon.PrimarySkill
+                        : action.ReleaseKind == WeaponReleaseKind.Secondary
+                            ? weapon.SecondarySkill
+                            : null;
+            return FpgSkillPresentationRegistry.TryResolveActionPresentation(
+                skill,
+                action.GameplayEventId,
+                out presentation);
+        }
+
+        private void RegisterShotTrajectoryBinding(
+            AttackId attackId,
+            FpgPresentationHandle handle)
+        {
+            int slot = FindShotTrajectoryBinding(attackId);
+            if (slot < 0)
+            {
+                slot = FindAvailableShotTrajectoryBinding();
+            }
+
+            shotTrajectoryBindings[slot] = new ShotTrajectoryBinding
+            {
+                IsUsed = true,
+                AttackId = attackId,
+                Handle = handle,
+                Ordinal = ++nextActionPresentationBindingOrdinal
+            };
+        }
+
+        private void RegisterProjectileFlightBinding(
+            AttackId attackId,
+            FpgPresentationHandle handle)
+        {
+            int slot = FindProjectileFlightBinding(attackId);
+            if (slot < 0)
+            {
+                slot = FindAvailableProjectileFlightBinding();
+            }
+
+            projectileFlightBindings[slot] = new ProjectileFlightBinding
+            {
+                IsUsed = true,
+                AttackId = attackId,
+                Handle = handle,
+                Ordinal = ++nextActionPresentationBindingOrdinal
+            };
+        }
+
+        private void ConsumePlayerShotPresentation()
+        {
+            try
+            {
+                ConsumePlayerShotPresentationCore();
+            }
+            catch (Exception)
+            {
+                SkillPresentationFaultCount++;
+                ResetPlayerShotPresentation();
+            }
+        }
+
+        private void ConsumePlayerShotPresentationCore()
+        {
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            IPlayerShotPresentationFeed feed = runtime == null
+                    || runtime.IsDisposed
+                ? null
+                : runtime.PlayerShotPresentationFeed;
+            if (!ReferenceEquals(feed, observedPlayerShotPresentationFeed)
+                || feed != null
+                    && feed.EventCapacity > playerShotPresentationEvents.Length)
+            {
+                if (!TryBindPlayerShotPresentationFeed(feed, out _))
+                {
+                    SkillPresentationFaultCount++;
+                    return;
+                }
+            }
+
+            if (feed == null)
+            {
+                return;
+            }
+
+            if (feed.LastSequence < playerShotPresentationCursor)
+            {
+                ResetPlayerShotPresentationCursor(feed);
+            }
+
+            int eventCount = feed.CopyEventsAfter(
+                playerShotPresentationCursor,
+                playerShotPresentationEvents,
+                out bool hasGap);
+            if (hasGap)
+            {
+                ClearShotTrajectoryBindings();
+                playerShotPresentationCursor = feed.LastSequence;
+                if (eventCount > 0)
+                {
+                    Array.Clear(
+                        playerShotPresentationEvents,
+                        0,
+                        eventCount);
+                }
+
+                return;
+            }
+
+            for (int index = 0; index < eventCount; index++)
+            {
+                PlayerShotPresentationEvent presentationEvent =
+                    playerShotPresentationEvents[index];
+                playerShotPresentationCursor = Math.Max(
+                    playerShotPresentationCursor,
+                    presentationEvent.Sequence);
+                PresentPlayerShotTrajectories(presentationEvent.Snapshot);
+                playerShotPresentationEvents[index] =
+                    default(PlayerShotPresentationEvent);
+            }
+        }
+
+        private void PresentPlayerShotTrajectories(
+            in PlayerShotPresentationSnapshot snapshot)
+        {
+            if (!TryTakeShotTrajectoryBinding(
+                    snapshot.AttackId,
+                    out FpgPresentationHandle handle))
+            {
+                return;
+            }
+
+            for (int index = 0; index < snapshot.TrajectoryCount; index++)
+            {
+                PlayerShotTrajectory trajectory = snapshot.GetTrajectory(index);
+                if (!skillPresentationWorld.TryPresentTrajectory(
+                        handle,
+                        ToWorldPosition(trajectory.Start),
+                        ToWorldPosition(trajectory.TerminalPoint)))
+                {
+                    SkillPresentationFaultCount++;
+                }
+            }
+        }
+
+        private bool TryBindPlayerShotPresentationFeed(
+            IPlayerShotPresentationFeed feed,
+            out string error)
+        {
+            if (feed == null)
+            {
+                ResetPlayerShotPresentation();
+                error = string.Empty;
+                return true;
+            }
+
+            if (feed.EventCapacity <= 0)
+            {
+                ResetPlayerShotPresentation();
+                error =
+                    "Player shot presentation feed capacity must be positive.";
+                return false;
+            }
+
+            if (ReferenceEquals(feed, observedPlayerShotPresentationFeed)
+                && playerShotPresentationEvents.Length >= feed.EventCapacity)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            try
+            {
+                playerShotPresentationEvents =
+                    new PlayerShotPresentationEvent[feed.EventCapacity];
+                observedPlayerShotPresentationFeed = feed;
+                playerShotPresentationCursor = feed.LastSequence;
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                ResetPlayerShotPresentation();
+                error =
+                    $"Unable to allocate player shot presentation buffer: {exception.Message}";
+                return false;
+            }
+        }
+
+        private void ResetPlayerShotPresentation()
+        {
+            observedPlayerShotPresentationFeed = null;
+            playerShotPresentationCursor = 0L;
+            ClearShotTrajectoryBindings();
+            if (playerShotPresentationEvents.Length > 0)
+            {
+                Array.Clear(
+                    playerShotPresentationEvents,
+                    0,
+                    playerShotPresentationEvents.Length);
+            }
+        }
+
+        private void ResetPlayerShotPresentationCursor(
+            IPlayerShotPresentationFeed feed)
+        {
+            playerShotPresentationCursor = feed == null
+                ? 0L
+                : feed.LastSequence;
+            ClearShotTrajectoryBindings();
+            if (playerShotPresentationEvents.Length > 0)
+            {
+                Array.Clear(
+                    playerShotPresentationEvents,
+                    0,
+                    playerShotPresentationEvents.Length);
+            }
+        }
+
+        private void ConsumePlayerProjectilePresentation()
+        {
+            try
+            {
+                ConsumePlayerProjectilePresentationCore();
+            }
+            catch (Exception)
+            {
+                SkillPresentationFaultCount++;
+                ResetProjectilePresentation();
+            }
+        }
+
+        private void ConsumePlayerProjectilePresentationCore()
+        {
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            IProjectilePresentationFeed feed = runtime == null || runtime.IsDisposed
+                ? null
+                : runtime.ProjectilePresentationFeed;
+            if (!ReferenceEquals(feed, observedProjectilePresentationFeed))
+            {
+                if (!TryBindProjectilePresentationFeed(feed, out _))
+                {
+                    SkillPresentationFaultCount++;
+                    return;
+                }
+            }
+
+            if (feed == null)
+            {
+                return;
+            }
+
+            if (feed.ActiveCapacity > projectilePresentationStates.Length
+                || feed.EventCapacity > projectilePresentationEvents.Length
+                || feed.ActiveCapacity > playerProjectileVisuals.Length)
+            {
+                if (!TryBindProjectilePresentationFeed(feed, out _))
+                {
+                    SkillPresentationFaultCount++;
+                    return;
+                }
+            }
+
+            if (feed.LastSequence < projectilePresentationCursor)
+            {
+                ResetProjectilePresentationCursor(feed);
+            }
+
+            int eventCount = feed.CopyEventsAfter(
+                projectilePresentationCursor,
+                projectilePresentationEvents,
+                out bool hasGap);
+            if (hasGap)
+            {
+                ClearPlayerProjectileVisuals();
+                projectilePresentationCursor = feed.LastSequence;
+                if (eventCount > 0)
+                {
+                    Array.Clear(
+                        projectilePresentationEvents,
+                        0,
+                        eventCount);
+                }
+
+                SynchronizePlayerProjectileVisuals(feed);
+                return;
+            }
+
+            for (int index = 0; index < eventCount; index++)
+            {
+                ProjectilePresentationEvent presentationEvent =
+                    projectilePresentationEvents[index];
+                projectilePresentationCursor = Math.Max(
+                    projectilePresentationCursor,
+                    presentationEvent.Sequence);
+                if (presentationEvent.State.Request.Team == Team.Player)
+                {
+                    if (presentationEvent.Type
+                        == ProjectilePresentationEventType.Spawn)
+                    {
+                        PresentPlayerProjectileSpawn(
+                            presentationEvent.State);
+                    }
+                    else if (presentationEvent.Type
+                        == ProjectilePresentationEventType.Terminal)
+                    {
+                        PresentPlayerProjectileTerminal(
+                            presentationEvent);
+                    }
+                }
+
+                projectilePresentationEvents[index] =
+                    default(ProjectilePresentationEvent);
+            }
+
+            SynchronizePlayerProjectileVisuals(feed);
+        }
+
+        private bool TryBindProjectilePresentationFeed(
+            IProjectilePresentationFeed feed,
+            out string error)
+        {
+            if (feed == null)
+            {
+                ResetProjectilePresentation();
+                error = string.Empty;
+                return true;
+            }
+
+            if (feed.ActiveCapacity <= 0 || feed.EventCapacity <= 0)
+            {
+                ResetProjectilePresentation();
+                error = "Projectile presentation feed capacities must be positive.";
+                return false;
+            }
+
+            if (ReferenceEquals(feed, observedProjectilePresentationFeed)
+                && projectilePresentationStates.Length >= feed.ActiveCapacity
+                && projectilePresentationEvents.Length >= feed.EventCapacity
+                && playerProjectileVisuals.Length >= feed.ActiveCapacity)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            ClearPlayerProjectileVisuals();
+            try
+            {
+                projectilePresentationStates =
+                    new ProjectilePresentationState[feed.ActiveCapacity];
+                projectilePresentationEvents =
+                    new ProjectilePresentationEvent[feed.EventCapacity];
+                playerProjectileVisuals =
+                    new PlayerProjectileVisualSlot[feed.ActiveCapacity];
+                observedProjectilePresentationFeed = feed;
+                projectilePresentationCursor = feed.LastSequence;
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                ResetProjectilePresentation();
+                error = $"Unable to allocate projectile presentation buffers: {exception.Message}";
+                return false;
+            }
+        }
+
+        private void SynchronizePlayerProjectileVisuals(
+            IProjectilePresentationFeed feed)
+        {
+            int stateCount = feed.CopyActiveStates(
+                projectilePresentationStates);
+            ResetProjectileFlightBindingSnapshotFlags();
+            for (int index = 0; index < playerProjectileVisuals.Length; index++)
+            {
+                PlayerProjectileVisualSlot slot = playerProjectileVisuals[index];
+                slot.SeenInActiveSnapshot = false;
+                playerProjectileVisuals[index] = slot;
+            }
+
+            for (int index = 0; index < stateCount; index++)
+            {
+                ProjectilePresentationState state =
+                    projectilePresentationStates[index];
+                if (state.Request.Team == Team.Player)
+                {
+                    MarkProjectileFlightBindingSeen(
+                        state.Request.AttackId);
+                    if (TryAcquirePlayerProjectileVisual(
+                            state,
+                            out int slotIndex))
+                    {
+                        UpdatePlayerProjectileVisual(slotIndex, state);
+                        PlayerProjectileVisualSlot slot =
+                            playerProjectileVisuals[slotIndex];
+                        slot.SeenInActiveSnapshot = true;
+                        playerProjectileVisuals[slotIndex] = slot;
+                    }
+                }
+
+                projectilePresentationStates[index] =
+                    default(ProjectilePresentationState);
+            }
+
+            for (int index = 0; index < playerProjectileVisuals.Length; index++)
+            {
+                if (playerProjectileVisuals[index].IsUsed
+                    && !playerProjectileVisuals[index].SeenInActiveSnapshot)
+                {
+                    ReleasePlayerProjectileVisual(index);
+                }
+            }
+
+            ClearCompletedProjectileFlightBindings();
+        }
+
+        private void PresentPlayerProjectileSpawn(
+            in ProjectilePresentationState state)
+        {
+            MarkProjectileFlightBindingSeen(state.Request.AttackId);
+            if (TryAcquirePlayerProjectileVisual(state, out int slotIndex))
+            {
+                UpdatePlayerProjectileVisual(slotIndex, state);
+            }
+        }
+
+        private void PresentPlayerProjectileTerminal(
+            in ProjectilePresentationEvent presentationEvent)
+        {
+            ProjectilePresentationState state = presentationEvent.State;
+            int slotIndex = FindPlayerProjectileVisualSlot(state);
+            if (slotIndex >= 0)
+            {
+                PlayerProjectileVisualSlot slot =
+                    playerProjectileVisuals[slotIndex];
+                if (slot.Instance != null
+                    && !skillPresentationWorld.TryUpdateFlightVfx(
+                        slot.Handle,
+                        slot.Instance,
+                        ToWorldPosition(state.LastPoint),
+                        ResolveProjectileRotation(state, slot.LastPoint)))
+                {
+                    SkillPresentationFaultCount++;
+                }
+
+                ReleasePlayerProjectileVisual(slotIndex);
+            }
+        }
+
+        private bool TryAcquirePlayerProjectileVisual(
+            in ProjectilePresentationState state,
+            out int slotIndex)
+        {
+            slotIndex = FindPlayerProjectileVisualSlot(state);
+            if (slotIndex >= 0)
+            {
+                return true;
+            }
+
+            if (state.Request.Team != Team.Player
+                || skillPresentationWorld == null
+                || !TryGetProjectileFlightBinding(
+                    state.Request.AttackId,
+                    out FpgPresentationHandle handle))
+            {
+                return false;
+            }
+
+            slotIndex = FindFreePlayerProjectileVisualSlot();
+            if (slotIndex < 0)
+            {
+                SkillPresentationFaultCount++;
+                return false;
+            }
+
+            if (!skillPresentationWorld.TryBorrowFlightVfx(
+                    handle,
+                    ToWorldPosition(state.LastPoint),
+                    ResolveProjectileRotation(state, state.Path.Start),
+                    out GameObject instance))
+            {
+                SkillPresentationFaultCount++;
+                slotIndex = -1;
+                return false;
+            }
+
+            playerProjectileVisuals[slotIndex] =
+                new PlayerProjectileVisualSlot
+                {
+                    IsUsed = true,
+                    Instance = instance,
+                    Handle = handle,
+                    State = state,
+                    LastPoint = state.LastPoint
+                };
+            return true;
+        }
+
+        private void UpdatePlayerProjectileVisual(
+            int slotIndex,
+            in ProjectilePresentationState state)
+        {
+            if (slotIndex < 0 || slotIndex >= playerProjectileVisuals.Length)
+            {
+                return;
+            }
+
+            if (skillPresentationWorld == null)
+            {
+                ReleasePlayerProjectileVisual(slotIndex);
+                return;
+            }
+
+            PlayerProjectileVisualSlot slot =
+                playerProjectileVisuals[slotIndex];
+            if (!slot.IsUsed)
+            {
+                return;
+            }
+
+            if (slot.Instance != null)
+            {
+                if (!skillPresentationWorld.TryUpdateFlightVfx(
+                    slot.Handle,
+                    slot.Instance,
+                    ToWorldPosition(state.LastPoint),
+                    ResolveProjectileRotation(state, slot.LastPoint)))
+                {
+                    SkillPresentationFaultCount++;
+                }
+            }
+
+            slot.State = state;
+            slot.LastPoint = state.LastPoint;
+            playerProjectileVisuals[slotIndex] = slot;
+        }
+
+        private void ClearPlayerProjectileVisuals()
+        {
+            for (int index = 0; index < playerProjectileVisuals.Length; index++)
+            {
+                ReleasePlayerProjectileVisual(index);
+            }
+        }
+
+        private void ReleasePlayerProjectileVisual(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= playerProjectileVisuals.Length)
+            {
+                return;
+            }
+
+            PlayerProjectileVisualSlot slot =
+                playerProjectileVisuals[slotIndex];
+            if (!slot.IsUsed)
+            {
+                return;
+            }
+
+            if (slot.Instance != null)
+            {
+                if (skillPresentationWorld == null
+                    || !skillPresentationWorld.TryReleaseFlightVfx(
+                        slot.Instance))
+                {
+                    SkillPresentationFaultCount++;
+                }
+            }
+
+            playerProjectileVisuals[slotIndex] =
+                default(PlayerProjectileVisualSlot);
+        }
+
+        private void ResetProjectilePresentation()
+        {
+            ClearPlayerProjectileVisuals();
+            ClearProjectileFlightBindings();
+            observedProjectilePresentationFeed = null;
+            projectilePresentationCursor = 0L;
+            if (projectilePresentationStates.Length > 0)
+            {
+                Array.Clear(
+                    projectilePresentationStates,
+                    0,
+                    projectilePresentationStates.Length);
+            }
+
+            if (projectilePresentationEvents.Length > 0)
+            {
+                Array.Clear(
+                    projectilePresentationEvents,
+                    0,
+                    projectilePresentationEvents.Length);
+            }
+        }
+
+        private void ResetProjectilePresentationCursor(
+            IProjectilePresentationFeed feed)
+        {
+            ClearPlayerProjectileVisuals();
+            ClearProjectileFlightBindings();
+            projectilePresentationCursor = feed == null
+                ? 0L
+                : feed.LastSequence;
+            if (projectilePresentationStates.Length > 0)
+            {
+                Array.Clear(
+                    projectilePresentationStates,
+                    0,
+                    projectilePresentationStates.Length);
+            }
+
+            if (projectilePresentationEvents.Length > 0)
+            {
+                Array.Clear(
+                    projectilePresentationEvents,
+                    0,
+                    projectilePresentationEvents.Length);
+            }
+        }
+
+        private int FindPlayerProjectileVisualSlot(
+            in ProjectilePresentationState state)
+        {
+            for (int index = 0; index < playerProjectileVisuals.Length; index++)
+            {
+                PlayerProjectileVisualSlot slot =
+                    playerProjectileVisuals[index];
+                if (slot.IsUsed
+                    && slot.State.Request.ProjectileId
+                        == state.Request.ProjectileId
+                    && slot.State.Request.RuntimeId
+                        == state.Request.RuntimeId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindFreePlayerProjectileVisualSlot()
+        {
+            for (int index = 0; index < playerProjectileVisuals.Length; index++)
+            {
+                if (!playerProjectileVisuals[index].IsUsed)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindShotTrajectoryBinding(AttackId attackId)
+        {
+            for (int index = 0; index < shotTrajectoryBindings.Length; index++)
+            {
+                if (shotTrajectoryBindings[index].IsUsed
+                    && shotTrajectoryBindings[index].AttackId == attackId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindAvailableShotTrajectoryBinding()
+        {
+            int oldest = 0;
+            for (int index = 0; index < shotTrajectoryBindings.Length; index++)
+            {
+                if (!shotTrajectoryBindings[index].IsUsed)
+                {
+                    return index;
+                }
+
+                if (shotTrajectoryBindings[index].Ordinal
+                    < shotTrajectoryBindings[oldest].Ordinal)
+                {
+                    oldest = index;
+                }
+            }
+
+            return oldest;
+        }
+
+        private bool TryTakeShotTrajectoryBinding(
+            AttackId attackId,
+            out FpgPresentationHandle handle)
+        {
+            handle = default(FpgPresentationHandle);
+            int slot = FindShotTrajectoryBinding(attackId);
+            if (slot < 0)
+            {
+                return false;
+            }
+
+            handle = shotTrajectoryBindings[slot].Handle;
+            shotTrajectoryBindings[slot] = default(ShotTrajectoryBinding);
+            return handle.IsValid;
+        }
+
+        private void ClearShotTrajectoryBindings()
+        {
+            Array.Clear(
+                shotTrajectoryBindings,
+                0,
+                shotTrajectoryBindings.Length);
+        }
+
+        private int FindProjectileFlightBinding(AttackId attackId)
+        {
+            for (int index = 0; index < projectileFlightBindings.Length; index++)
+            {
+                if (projectileFlightBindings[index].IsUsed
+                    && projectileFlightBindings[index].AttackId == attackId)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindAvailableProjectileFlightBinding()
+        {
+            int oldest = 0;
+            for (int index = 0; index < projectileFlightBindings.Length; index++)
+            {
+                if (!projectileFlightBindings[index].IsUsed)
+                {
+                    return index;
+                }
+
+                if (projectileFlightBindings[index].Ordinal
+                    < projectileFlightBindings[oldest].Ordinal)
+                {
+                    oldest = index;
+                }
+            }
+
+            return oldest;
+        }
+
+        private bool TryGetProjectileFlightBinding(
+            AttackId attackId,
+            out FpgPresentationHandle handle)
+        {
+            handle = default(FpgPresentationHandle);
+            int slot = FindProjectileFlightBinding(attackId);
+            if (slot < 0)
+            {
+                return false;
+            }
+
+            handle = projectileFlightBindings[slot].Handle;
+            return handle.IsValid;
+        }
+
+        private void ResetProjectileFlightBindingSnapshotFlags()
+        {
+            for (int index = 0;
+                index < projectileFlightBindings.Length;
+                index++)
+            {
+                ProjectileFlightBinding binding =
+                    projectileFlightBindings[index];
+                binding.SeenInActiveSnapshot = false;
+                projectileFlightBindings[index] = binding;
+            }
+        }
+
+        private void MarkProjectileFlightBindingSeen(AttackId attackId)
+        {
+            int slot = FindProjectileFlightBinding(attackId);
+            if (slot < 0)
+            {
+                return;
+            }
+
+            ProjectileFlightBinding binding =
+                projectileFlightBindings[slot];
+            binding.SpawnObserved = true;
+            binding.SeenInActiveSnapshot = true;
+            projectileFlightBindings[slot] = binding;
+        }
+
+        private void ClearCompletedProjectileFlightBindings()
+        {
+            for (int index = 0;
+                index < projectileFlightBindings.Length;
+                index++)
+            {
+                ProjectileFlightBinding binding =
+                    projectileFlightBindings[index];
+                if (binding.IsUsed && binding.SpawnObserved
+                    && !binding.SeenInActiveSnapshot)
+                {
+                    projectileFlightBindings[index] =
+                        default(ProjectileFlightBinding);
+                }
+            }
+        }
+
+        private void ClearProjectileFlightBindings()
+        {
+            Array.Clear(
+                projectileFlightBindings,
+                0,
+                projectileFlightBindings.Length);
+        }
+
+        private static Vector3 ToWorldPosition(SpatialVectorKey point)
+        {
+            float scale = 1f / SpatialContract.PositionUnitsPerMeter;
+            return new Vector3(
+                point.X * scale,
+                point.Y * scale,
+                point.Z * scale);
+        }
+
+        private static Quaternion ResolveProjectileRotation(
+            in ProjectilePresentationState state,
+            SpatialVectorKey previousPoint)
+        {
+            Vector3 direction = ToWorldPosition(state.LastPoint)
+                - ToWorldPosition(previousPoint);
+            if (direction.sqrMagnitude <= 0.000001f)
+            {
+                direction = ToWorldPosition(state.Path.End)
+                    - ToWorldPosition(state.Path.Start);
+            }
+
+            return direction.sqrMagnitude <= 0.000001f
+                ? Quaternion.identity
+                : Quaternion.LookRotation(direction, Vector3.up);
         }
 
         private bool ConsumeCommittedActions()
@@ -630,6 +1717,7 @@ namespace FPG.Demo.Unity
                         break;
                     case FpgFormalPlayerActionType.ReloadCompleted:
                         actorPresenter.NotifyReloadCompleted();
+                        PresentReloadSuccessAnimation(action);
                         break;
                 }
 
@@ -637,6 +1725,74 @@ namespace FPG.Demo.Unity
             }
 
             return primaryPresented;
+        }
+
+        private void PresentReloadSuccessAnimation(
+            in FpgFormalPlayerActionEvent action)
+        {
+            if (!action.HasSkillCorrelation
+                || actorPresenter == null
+                || !TryResolveReloadSuccessAnimationName(
+                    action.GameplayEventId,
+                    out string animationName))
+            {
+                return;
+            }
+
+            if (!actorPresenter.TryPlaySkillOneShotAnimation(
+                    animationName,
+                    false,
+                    out _))
+            {
+                SkillPresentationFaultCount++;
+            }
+        }
+
+        private bool TryResolveReloadSuccessAnimationName(
+            int gameplayEventId,
+            out string animationName)
+        {
+            animationName = string.Empty;
+            D0CharacterDefinition character = selection.CharacterDefinition;
+            FpgSkillTimelineDefinition skill = character == null
+                    || character.Weapon == null
+                ? null
+                : character.Weapon.ReloadSkill;
+            if (skill == null || gameplayEventId <= 0)
+            {
+                return false;
+            }
+
+            for (int sequenceIndex = 0;
+                sequenceIndex < skill.Sequences.Count;
+                sequenceIndex++)
+            {
+                FpgSkillSequenceDefinition sequence =
+                    skill.Sequences[sequenceIndex];
+                if (sequence == null)
+                {
+                    continue;
+                }
+
+                for (int actionIndex = 0;
+                    actionIndex < sequence.ReloadEvents.Count;
+                    actionIndex++)
+                {
+                    FpgSkillReloadEventDefinition reload =
+                        sequence.ReloadEvents[actionIndex];
+                    if (reload != null
+                        && FpgSkillStableId.CompileEvent(reload.EventId)
+                            == gameplayEventId
+                        && !string.IsNullOrWhiteSpace(
+                            reload.SuccessAnimationName))
+                    {
+                        animationName = reload.SuccessAnimationName;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private PresentationFrameFlags ConsumeCombatTrace()
@@ -937,11 +2093,14 @@ namespace FPG.Demo.Unity
                 skillSequenceQueue,
                 0,
                 skillSequenceQueue.Length);
-            Array.Clear(skillCueQueue, 0, skillCueQueue.Length);
+            Array.Clear(
+                activePresentationQueue,
+                0,
+                activePresentationQueue.Length);
             skillSequenceHead = 0;
             skillSequenceCount = 0;
-            skillCueHead = 0;
-            skillCueCount = 0;
+            activePresentationHead = 0;
+            activePresentationCount = 0;
             skillSequenceGap = false;
             hasActiveSkillSequence = false;
             activeSkillSequence =
@@ -953,6 +2112,9 @@ namespace FPG.Demo.Unity
             {
                 Array.Clear(vitalsBuffer, 0, vitalsBuffer.Length);
             }
+            ResetProjectilePresentation();
+            ResetPlayerShotPresentation();
+            nextActionPresentationBindingOrdinal = 0L;
         }
 
         private void OnEnable()
@@ -963,6 +2125,7 @@ namespace FPG.Demo.Unity
             }
 
             Subscribe();
+            skillVfxWorld?.BeginCombat();
             actorPresenter?.ClearAndReturnToIdle();
             cameraFeedback?.ResetRuntimeFeedback();
             playerHud?.Clear();
@@ -980,11 +2143,42 @@ namespace FPG.Demo.Unity
         private void OnDisable()
         {
             Unsubscribe();
+            ClearPlayerProjectileVisuals();
+            skillVfxWorld?.EndCombat();
+            skillPresentationWorld?.ClearRuntimePresentation();
         }
 
         private void OnDestroy()
         {
             Clear();
+        }
+
+        private struct PlayerProjectileVisualSlot
+        {
+            public bool IsUsed;
+            public bool SeenInActiveSnapshot;
+            public ProjectilePresentationState State;
+            public SpatialVectorKey LastPoint;
+            public FpgPresentationHandle Handle;
+            public GameObject Instance;
+        }
+
+        private struct ShotTrajectoryBinding
+        {
+            public bool IsUsed;
+            public AttackId AttackId;
+            public FpgPresentationHandle Handle;
+            public long Ordinal;
+        }
+
+        private struct ProjectileFlightBinding
+        {
+            public bool IsUsed;
+            public bool SpawnObserved;
+            public bool SeenInActiveSnapshot;
+            public AttackId AttackId;
+            public FpgPresentationHandle Handle;
+            public long Ordinal;
         }
 
         private struct PresentationFrameFlags
@@ -998,6 +2192,18 @@ namespace FPG.Demo.Unity
         private void HandleEncounterLifecycle(
             FpgEncounterLifecycleEvent lifecycle)
         {
+            if (lifecycle.Type == FpgEncounterLifecycleEventType.Defeated
+                || lifecycle.Type == FpgEncounterLifecycleEventType.Failed
+                || lifecycle.Type == FpgEncounterLifecycleEventType.Faulted
+                || lifecycle.Type == FpgEncounterLifecycleEventType.Disposed)
+            {
+                ClearPlayerProjectileVisuals();
+                skillVfxWorld?.ClearActive();
+                skillPresentationWorld?.ClearRuntimePresentation();
+                cameraFeedback?.ResetRuntimeFeedback();
+                return;
+            }
+
             if (lifecycle.Type != FpgEncounterLifecycleEventType.Restarted)
             {
                 return;
@@ -1005,6 +2211,9 @@ namespace FPG.Demo.Unity
 
             actorPresenter?.SetPaused(false);
             actorPresenter?.ClearAndReturnToIdle();
+            ClearPlayerProjectileVisuals();
+            skillVfxWorld?.ClearActive();
+            skillPresentationWorld?.ClearRuntimePresentation();
             cameraFeedback?.ResetRuntimeFeedback();
             playerHud?.Clear();
             snapshot = FpgFormalPlayerPresentationSnapshot.Unavailable;

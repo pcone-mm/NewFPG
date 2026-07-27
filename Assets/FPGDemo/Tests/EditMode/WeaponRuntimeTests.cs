@@ -259,6 +259,41 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void SecondaryChargeWithInsufficientAmmoStaysReadyAndDoesNotReserveIds()
+        {
+            WeaponRuntime weapon = new WeaponRuntime(CreateDefinition(
+                magazineCapacity: 2,
+                secondaryAmmoCost: 2));
+            ExposureRuntime exposure = new ExposureRuntime();
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer output = new WeaponReleaseBuffer();
+            Assert.That(weapon.Magazine.RestoreAmmo(1).IsSuccess, Is.True);
+
+            ProcessEdge(
+                weapon,
+                exposure,
+                ids,
+                output,
+                0L,
+                1L,
+                InputEdgeType.SecondaryPressed);
+            AttackShotReservation next = ids.ReserveAttackAndShot();
+
+            AssertAll(() =>
+            {
+                Assert.That(output.HasRelease, Is.False);
+                Assert.That(weapon.State, Is.EqualTo(WeaponState.Ready));
+                Assert.That(weapon.SecondaryChargeStartedTick,
+                    Is.EqualTo(TickIndex.Invalid));
+                Assert.That(weapon.Magazine.Ammo, Is.EqualTo(1));
+                Assert.That(weapon.LastRejectReason,
+                    Is.EqualTo(RejectReason.NotEnoughAmmo));
+                Assert.That(next.AttackId, Is.EqualTo(new AttackId(1L)));
+                Assert.That(next.ShotId, Is.EqualTo(new ShotId(1L)));
+            });
+        }
+
+        [Test]
         public void CancelForWithdrawnClearsSecondaryChargeWithoutSpendingAmmoOrIds()
         {
             WeaponRuntime weapon = new WeaponRuntime(CreateDefinition(secondaryMinimumCharge: 29));

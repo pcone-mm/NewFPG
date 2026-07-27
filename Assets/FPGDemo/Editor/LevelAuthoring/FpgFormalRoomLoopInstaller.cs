@@ -910,6 +910,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgFormalCombatPortFactory factory =
                 FindSingleSceneComponent<FpgFormalCombatPortFactory>(scene);
             Camera worldCamera = FindSingleSceneComponent<Camera>(scene);
+            D0CombatVfxWorld skillVfxWorld =
+                FindSingleSceneComponent<D0CombatVfxWorld>(scene);
             CombatPresentationProfile presentationProfile =
                 LoadRequired<CombatPresentationProfile>(
                     CombatPresentationProfilePath);
@@ -943,6 +945,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 director,
                 playerDriver,
                 aimReticle,
+                skillVfxWorld,
                 presentationProfile,
                 worldCamera,
                 targetCanvas,
@@ -956,6 +959,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SerializedObject bridgeData =
                 new SerializedObject(presentationBridge);
             SetObject(bridgeData, "playerHud", playerHud);
+            SetObject(bridgeData, "skillVfxWorld", skillVfxWorld);
             bridgeData.ApplyModifiedPropertiesWithoutUndo();
 
             SerializedObject poolData = new SerializedObject(healthBarPool);
@@ -965,6 +969,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SerializedObject factoryData = new SerializedObject(factory);
             ConfigureAttackQueryTechnicalSettings(factoryData);
             factoryData.ApplyModifiedPropertiesWithoutUndo();
+            ConfigureCombatVfxWorld(skillVfxWorld, skillVfxWorld.transform);
 
             bool barValid =
                 healthBarPrefab.TryValidate(out string barError);
@@ -1057,6 +1062,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Transform healthBarRoot = Child(
                 presentationRoot,
                 "OverheadHealthBars");
+            Transform combatVfxRoot = Child(
+                presentationRoot,
+                "CombatVfx");
             Transform projectileProxyRoot = Child(
                 servicesRoot,
                 "ProjectileProxies");
@@ -1090,6 +1098,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgFormalPlayerPresentationBridge presentationBridge =
                 presentationRoot.gameObject.AddComponent<
                     FpgFormalPlayerPresentationBridge>();
+            D0CombatVfxWorld skillVfxWorld =
+                combatVfxRoot.gameObject.AddComponent<D0CombatVfxWorld>();
             CombatAimReticle aimReticle = CreateFormalPlayerHud(
                 presentationRoot,
                 presentationProfile,
@@ -1134,12 +1144,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 factory,
                 playerDriver);
             ConfigureCameraFeedback(cameraFeedback, cameraRoot, camera);
+            ConfigureCombatVfxWorld(skillVfxWorld, combatVfxRoot);
             ConfigurePresentationBridge(
                 presentationBridge,
                 director,
                 playerDriver,
                 playerHud,
                 cameraFeedback,
+                skillVfxWorld,
                 cameraRoot,
                 camera);
             ConfigureFormalCombatFeedbackBridge(
@@ -1147,6 +1159,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 director,
                 playerDriver,
                 aimReticle,
+                skillVfxWorld,
                 presentationProfile,
                 camera,
                 targetCanvas,
@@ -1692,12 +1705,49 @@ namespace FPG.Demo.Editor.LevelAuthoring
             data.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        private static void ConfigureCombatVfxWorld(
+            D0CombatVfxWorld skillVfxWorld,
+            Transform poolRoot)
+        {
+            SerializedObject data = new SerializedObject(skillVfxWorld);
+            SetObject(data, "poolRoot", poolRoot);
+            SetBool(data, "prepareOnEnable", false);
+            SetBool(data, "automaticallyAdvance", true);
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static bool TryValidateCombatVfxWorld(
+            D0CombatVfxWorld skillVfxWorld,
+            Transform presentationRoot,
+            out string error)
+        {
+            if (skillVfxWorld == null || presentationRoot == null)
+            {
+                error = "Formal combat VFX world or presentation root is missing.";
+                return false;
+            }
+
+            SerializedObject data = new SerializedObject(skillVfxWorld);
+            if (skillVfxWorld.transform.parent != presentationRoot
+                || skillVfxWorld.PoolRoot != skillVfxWorld.transform
+                || Required(data, "prepareOnEnable").boolValue
+                || !Required(data, "automaticallyAdvance").boolValue)
+            {
+                error =
+                    "Formal combat VFX world must be under Presentation and prepare only after character binding.";
+                return false;
+            }
+
+            return skillVfxWorld.TryValidate(out error);
+        }
+
         private static void ConfigurePresentationBridge(
             FpgFormalPlayerPresentationBridge bridge,
             FpgRoomEncounterDirector director,
             FpgFormalPlayerTickDriver playerDriver,
             FpgFormalPlayerHudPresenter playerHud,
             FpgFormalPlayerCameraFeedback cameraFeedback,
+            D0CombatVfxWorld skillVfxWorld,
             Transform cameraRig,
             Camera targetCamera)
         {
@@ -1706,6 +1756,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObject(data, "playerTickDriver", playerDriver);
             SetObject(data, "playerHud", playerHud);
             SetObject(data, "cameraFeedback", cameraFeedback);
+            SetObject(data, "skillVfxWorld", skillVfxWorld);
             SetObject(data, "cameraRig", cameraRig);
             SetObject(data, "targetCamera", targetCamera);
             data.ApplyModifiedPropertiesWithoutUndo();
@@ -1716,6 +1767,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgRoomEncounterDirector director,
             FpgFormalPlayerTickDriver playerTickDriver,
             CombatAimReticle aimReticle,
+            D0CombatVfxWorld skillVfxWorld,
             CombatPresentationProfile presentationProfile,
             Camera worldCamera,
             Canvas targetCanvas,
@@ -1726,6 +1778,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SetObject(data, "encounterDirector", director);
             SetObject(data, "playerTickDriver", playerTickDriver);
             SetObject(data, "aimReticle", aimReticle);
+            SetObject(data, "skillVfxWorld", skillVfxWorld);
             SetObject(data, "presentationProfile", presentationProfile);
             SetObject(data, "worldCamera", worldCamera);
             SetObject(data, "targetCanvas", targetCanvas);
@@ -2459,6 +2512,22 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 throw new InvalidOperationException(error);
             }
 
+            D0CombatVfxWorld skillVfxWorld =
+                FindSingleSceneComponent<D0CombatVfxWorld>(formalScene);
+            string vfxError = string.Empty;
+            if (bridge.SkillVfxWorld != skillVfxWorld
+                || feedbackBridge.SkillVfxWorld != skillVfxWorld
+                || !TryValidateCombatVfxWorld(
+                    skillVfxWorld,
+                    formalHost.PresentationRoot,
+                    out vfxError))
+            {
+                throw new InvalidOperationException(
+                    string.IsNullOrWhiteSpace(vfxError)
+                        ? "Formal combat VFX world wiring is incomplete."
+                        : vfxError);
+            }
+
             if (factory.HasPlayerBinding || driver.IsPlayerConfigured
                 || director.HasPlayerBinding
                 || factory.PlayerDefinition != null
@@ -3000,13 +3069,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     || FindSceneComponents<FpgFormalCombatFeedbackBridge>(
                         formalScene).Count != 1
                     || FindSceneComponents<FpgFormalPlayerHudPresenter>(formalScene).Count != 1
-                    || FindSceneComponents<CombatAimReticle>(formalScene).Count != 1)
+                    || FindSceneComponents<CombatAimReticle>(formalScene).Count != 1
+                    || FindSceneComponents<D0CombatVfxWorld>(formalScene).Count != 1)
                 {
                     return false;
                 }
 
                 FpgFormalEncounterHost formalHost =
                     FindSingleSceneComponent<FpgFormalEncounterHost>(formalScene);
+                FpgFormalPlayerPresentationBridge presentationBridge =
+                    FindSingleSceneComponent<FpgFormalPlayerPresentationBridge>(
+                        formalScene);
+                D0CombatVfxWorld skillVfxWorld =
+                    FindSingleSceneComponent<D0CombatVfxWorld>(formalScene);
                 FpgFormalCombatPortFactory factory =
                     FindSingleSceneComponent<FpgFormalCombatPortFactory>(formalScene);
                 FpgFormalPlayerTickDriver driver =
@@ -3028,6 +3103,16 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         CombatPresentationProfilePath);
                 FpgDamagePopupView damagePopupPrefab =
                     LoadRequired<FpgDamagePopupView>(DamagePopupPrefabPath);
+                if (presentationBridge.SkillVfxWorld != skillVfxWorld
+                    || feedbackBridge.SkillVfxWorld != skillVfxWorld
+                    || !TryValidateCombatVfxWorld(
+                        skillVfxWorld,
+                        formalHost.PresentationRoot,
+                        out _))
+                {
+                    return false;
+                }
+
                 if (!formalHost.TryValidateAuthoring(out _)
                     || formalHost.PlayableCharacterCatalog != playableCharacterCatalog
                     || factory.HasPlayerBinding

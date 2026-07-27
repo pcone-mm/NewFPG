@@ -153,7 +153,9 @@ namespace FPG.Demo.Unity
         }
     }
 
-    public sealed class UnityAttackQueryPort : IAttackQueryPort
+    public sealed class UnityAttackQueryPort :
+        IAttackQueryPort,
+        IPlayerProjectileAreaQueryPort
     {
         private const int UInt24Max = 0xFFFFFF;
 
@@ -309,6 +311,124 @@ namespace FPG.Demo.Unity
                 solution = FpgFormalAimSolution.FromCandidate(nearest);
             }
 
+            return DomainResult.Success;
+        }
+
+        /// <summary>
+        /// Resolves the deterministic full-range endpoint for a deferred player
+        /// projectile. Collision is deliberately deferred to its swept world path.
+        /// </summary>
+        public DomainResult TryGetAimRangeEndpoint(
+            in BattleTickInput tickInput,
+            out SpatialVectorKey endpoint)
+        {
+            endpoint = default(SpatialVectorKey);
+            if (!tickInput.IsValid || !settings.IsValid)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            Vector3 origin = ToPosition(tickInput.AimPose.Origin);
+            Vector3 forward = ToDirection(tickInput.AimPose.Forward);
+            if (!IsFinite(origin) || !IsUsableDirection(forward))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            forward.Normalize();
+            return TryQuantizePosition(
+                origin + forward * settings.MaxDistance,
+                out endpoint)
+                ? DomainResult.Success
+                : DomainResult.Rejected(RejectReason.InvalidState);
+        }
+
+        public DomainResult QueryAreaAtPoint(
+            in PlayerProjectileAreaQueryRequest request,
+            QueryCandidate[] output,
+            out AttackQueryResult result)
+        {
+            result = AttackQueryResult.Empty;
+            if (output == null || !IsHitboxLookupReady
+                || !settings.IsValid
+                || !IsProjectileAreaRequestValid(request))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            Vector3 center = ToPosition(request.Center);
+            if (!IsFinite(center))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            physics.SyncTransforms();
+            NonAllocPhysicsQueryResult areaBatch = physics.OverlapSphereNonAlloc(
+                center,
+                settings.SecondaryAreaRadius,
+                overlapBuffer,
+                settings.HitboxLayerMask,
+                QueryTriggerInteraction.Collide);
+            DomainResult validated = ValidateBatch(
+                areaBatch,
+                overlapBuffer.Length,
+                out int droppedCandidateCount);
+            if (!validated.IsSuccess)
+            {
+                result = new AttackQueryResult(0, droppedCandidateCount);
+                return validated;
+            }
+
+            int candidateCount = 0;
+            for (int colliderIndex = 0; colliderIndex < areaBatch.Count; colliderIndex++)
+            {
+                if (!TryCreateAreaCandidate(
+                        overlapBuffer[colliderIndex],
+                        center,
+                        request.Attack,
+                        out QueryCandidate candidate))
+                {
+                    continue;
+                }
+
+                DomainResult appended = TryAppend(
+                    candidate,
+                    ref candidateCount,
+                    out droppedCandidateCount);
+                if (!appended.IsSuccess)
+                {
+                    result = new AttackQueryResult(
+                        candidateCount,
+                        droppedCandidateCount);
+                    return appended;
+                }
+            }
+
+            if (candidateCount > output.Length)
+            {
+                result = new AttackQueryResult(
+                    0,
+                    candidateCount - output.Length);
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            Canonicalize(candidateCount);
+            for (int index = 0; index < candidateCount; index++)
+            {
+                QueryCandidate candidate = canonicalBuffer[index];
+                output[index] = new QueryCandidate(
+                    candidate.QueryStage,
+                    candidate.SampleIndex,
+                    candidate.TargetId,
+                    candidate.TargetKind,
+                    candidate.HitPart,
+                    candidate.GeometryId,
+                    candidate.DistanceKey,
+                    candidate.ImpactPointKey,
+                    index);
+            }
+
+            result = new AttackQueryResult(candidateCount, 0);
             return DomainResult.Success;
         }
 
@@ -1022,6 +1142,20 @@ namespace FPG.Demo.Unity
                 : settings.HitboxLayerMask;
             return layer >= 0 && layer < 32
                 && (expectedMask & (1 << layer)) != 0;
+        }
+
+        private static bool IsProjectileAreaRequestValid(
+            in PlayerProjectileAreaQueryRequest request)
+        {
+            return request.Tick.IsValid
+                && request.Attack.AttackId.IsValid
+                && request.Attack.ShotId.IsValid
+                && request.Attack.OwnerId.IsValid
+                && request.Attack.Team == Team.Player
+                && request.Attack.IsQueryConfigurationValid
+                && request.Attack.QueryPolicy == QueryPolicy.DirectThenArea
+                && request.Attack.QueryMode
+                    == AttackQueryMode.AreaAtFirstSurface;
         }
 
         private static bool IsRequestValid(in AttackQueryRequest request)

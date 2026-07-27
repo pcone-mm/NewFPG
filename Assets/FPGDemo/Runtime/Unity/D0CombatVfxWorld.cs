@@ -124,6 +124,7 @@ namespace FPG.Demo.Unity
         private bool prepared;
         private bool combatActive;
         private float presentationTime;
+        private int globalActiveCapacity = int.MaxValue;
 
         public Transform PoolRoot => poolRoot;
         public IReadOnlyList<D0CombatVfxPoolDefinition> Pools =>
@@ -138,6 +139,28 @@ namespace FPG.Demo.Unity
         public int HotPathDestroyCount { get; private set; }
         public int AcquireRejectCount { get; private set; }
         public int ReleaseCount { get; private set; }
+
+        public bool TrySetGlobalActiveCapacity(
+            int capacity,
+            out string error)
+        {
+            if (capacity <= 0)
+            {
+                error = "Combat VFX global active capacity must be positive.";
+                return false;
+            }
+
+            if (prepared && globalActiveCapacity != capacity)
+            {
+                error =
+                    "Combat VFX global active capacity cannot change after preparation.";
+                return false;
+            }
+
+            globalActiveCapacity = capacity;
+            error = string.Empty;
+            return true;
+        }
 
         private void Update()
         {
@@ -293,195 +316,6 @@ namespace FPG.Demo.Unity
             }
         }
 
-        /// <summary>
-        /// Collects weapon and attack-owned presentation references before
-        /// preparing the world. Existing serialized pool bindings win when a
-        /// key is already configured; logical procedural keys are still
-        /// registered so scenario validation sees the complete dependency set.
-        /// </summary>
-        public bool TryPrepareForScenario(
-            IEnumerable<D0WeaponDefinition> weapons,
-            IEnumerable<D0EnemyAttackDefinition> attacks,
-            IEnumerable<D0LuanSummonHudieDefinition> summons,
-            out string error)
-        {
-            return TryPrepareForScenario(
-                weapons,
-                attacks,
-                summons,
-                null,
-                out error);
-        }
-
-        public bool TryPrepareForScenario(
-            IEnumerable<D0WeaponDefinition> weapons,
-            IEnumerable<D0EnemyAttackDefinition> attacks,
-            IEnumerable<D0LuanSummonHudieDefinition> summons,
-            IEnumerable<D0ActorPresentationDefinition> actorStates,
-            out string error)
-        {
-            List<D0CombatVfxAssetReference> references =
-                new List<D0CombatVfxAssetReference>();
-
-            if (weapons != null)
-            {
-                foreach (D0WeaponDefinition weapon in weapons)
-                {
-                    if (weapon == null)
-                    {
-                        continue;
-                    }
-
-                    if (!weapon.TryValidatePresentation(out error))
-                    {
-                        return false;
-                    }
-
-                    D0WeaponShotPresentationDefinition primary = weapon.PrimaryPresentation;
-                    AddReference(
-                        references,
-                        primary.MuzzleVfxKey,
-                        null,
-                        primary.MuzzlePrewarmCapacity,
-                        primary.MuzzleDuration,
-                        "muzzle",
-                        D0CombatVfxCategory.WeaponMuzzle);
-                    AddReference(
-                        references,
-                        primary.TracerVfxKey,
-                        null,
-                        primary.TracerPrewarmCapacity,
-                        primary.TracerDuration,
-                        "tracer",
-                        D0CombatVfxCategory.WeaponTracer);
-
-                    D0WeaponSecondaryPresentationDefinition secondary =
-                        weapon.SecondaryPresentation;
-                    D0WeaponShotPresentationDefinition secondaryShot = secondary.Shot;
-                    AddReference(
-                        references,
-                        secondaryShot.MuzzleVfxKey,
-                        null,
-                        secondaryShot.MuzzlePrewarmCapacity,
-                        secondaryShot.MuzzleDuration,
-                        "muzzle",
-                        D0CombatVfxCategory.WeaponMuzzle);
-                    AddReference(
-                        references,
-                        secondaryShot.TracerVfxKey,
-                        null,
-                        secondaryShot.TracerPrewarmCapacity,
-                        secondaryShot.TracerDuration,
-                        "tracer",
-                        D0CombatVfxCategory.WeaponTracer);
-                    AddReference(
-                        references,
-                        secondary.ChargeVfxKey,
-                        null,
-                        secondary.ChargePrewarmCapacity,
-                        secondary.ChargePulseDuration,
-                        "charge",
-                        D0CombatVfxCategory.WeaponCharge);
-                    AddReference(
-                        references,
-                        secondary.TargetBurstVfxKey,
-                        null,
-                        secondary.TargetBurstPrewarmCapacity,
-                        secondary.TargetBurstMaxRadius,
-                        "target-burst",
-                        D0CombatVfxCategory.WeaponTargetBurst);
-                }
-            }
-
-            if (attacks != null)
-            {
-                foreach (D0EnemyAttackDefinition attack in attacks)
-                {
-                    if (attack == null)
-                    {
-                        continue;
-                    }
-
-                    if (!attack.TryValidatePresentation(out error))
-                    {
-                        return false;
-                    }
-
-                    AddReference(
-                        references,
-                        attack.EffectiveVisualEffectKey,
-                        attack.VisualEffectPrefab,
-                        attack.VfxPrewarmCapacity,
-                        attack.VfxDuration,
-                        "animation",
-                        D0CombatVfxCategory.EnemyAttack,
-                        attack.VfxSortingOrderOffset);
-                }
-            }
-
-            if (summons != null)
-            {
-                foreach (D0LuanSummonHudieDefinition summon in summons)
-                {
-                    summon?.CollectPresentationVfxReferences(references);
-                }
-            }
-
-            if (actorStates != null)
-            {
-                foreach (D0ActorPresentationDefinition actorState in actorStates)
-                {
-                    if (actorState == null
-                        || !actorState.TryGetEnemyEffects(
-                            out D0EnemyEffectPresentationDefinition effects)
-                        || effects == null)
-                    {
-                        continue;
-                    }
-
-                    if (!effects.TryValidate(out error))
-                    {
-                        error = "Actor state VFX presentation is invalid: " + error;
-                        return false;
-                    }
-
-                    D0EnemyEffectSlot[] stateSlots =
-                    {
-                        D0EnemyEffectSlot.DeathLayerF4,
-                        D0EnemyEffectSlot.DeathLayerF3,
-                        D0EnemyEffectSlot.DeathLayerF2,
-                        D0EnemyEffectSlot.DeathLayerF1
-                    };
-                    for (int slotIndex = 0; slotIndex < stateSlots.Length; slotIndex++)
-                    {
-                        if (!effects.TryGet(
-                                stateSlots[slotIndex],
-                                out D0EnemyEffectPoolDefinition pool)
-                            || pool == null)
-                        {
-                            continue;
-                        }
-
-                        string key = "actor."
-                            + actorState.ActorId
-                            + ".state."
-                            + stateSlots[slotIndex];
-                        AddReference(
-                            references,
-                            key,
-                            pool.VisualPrefab,
-                            pool.PrewarmCapacity,
-                            pool.Duration,
-                            pool.AnimationName,
-                            D0CombatVfxCategory.ActorState,
-                            pool.SortingOrderOffset);
-                    }
-                }
-            }
-
-            return TryPrepareForScenario(references, out error);
-        }
-
         public bool TryPrepareForScenario(
             IEnumerable<D0CombatVfxAssetReference> references,
             out string error)
@@ -578,16 +412,55 @@ namespace FPG.Demo.Unity
             Vector3 worldScale,
             out GameObject instance)
         {
+            return TryAcquireCore(
+                key,
+                worldPosition,
+                worldRotation,
+                worldScale,
+                holdUntilRelease: false,
+                out instance);
+        }
+
+        /// <summary>
+        /// Borrows an instance until TryRelease is called. Projectile flight
+        /// presentation uses this path so every terminal reason owns cleanup.
+        /// </summary>
+        public bool TryAcquireHeld(
+            string key,
+            Vector3 worldPosition,
+            Quaternion worldRotation,
+            Vector3 worldScale,
+            out GameObject instance)
+        {
+            return TryAcquireCore(
+                key,
+                worldPosition,
+                worldRotation,
+                worldScale,
+                holdUntilRelease: true,
+                out instance);
+        }
+
+        private bool TryAcquireCore(
+            string key,
+            Vector3 worldPosition,
+            Quaternion worldRotation,
+            Vector3 worldScale,
+            bool holdUntilRelease,
+            out GameObject instance)
+        {
             instance = null;
             if (!prepared
+                || ActiveInstanceCount >= globalActiveCapacity
                 || string.IsNullOrWhiteSpace(key)
                 || !runtimePools.TryGetValue(key, out RuntimePool pool)
                 || !pool.TryAcquire(
                     worldPosition,
-                    worldRotation,
-                    worldScale,
-                    presentationTime,
-                    out RuntimeSlot slot))
+                        worldRotation,
+                        worldScale,
+                        presentationTime,
+                        holdUntilRelease,
+                        out RuntimeSlot slot))
             {
                 AcquireRejectCount++;
                 return false;
@@ -712,31 +585,6 @@ namespace FPG.Demo.Unity
             return false;
         }
 
-        private static void AddReference(
-            List<D0CombatVfxAssetReference> references,
-            string key,
-            GameObject prefab,
-            int capacity,
-            float duration,
-            string animationName,
-            D0CombatVfxCategory category,
-            int sortingOrderOffset = 0)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                return;
-            }
-
-            references.Add(new D0CombatVfxAssetReference(
-                key,
-                prefab,
-                Mathf.Max(1, capacity),
-                Mathf.Max(0.01f, duration),
-                string.IsNullOrWhiteSpace(animationName) ? "animation" : animationName,
-                sortingOrderOffset,
-                category));
-        }
-
         private void SeedRuntimeDefinitionsFromSerialized()
         {
             D0CombatVfxPoolDefinition[] configured =
@@ -839,6 +687,7 @@ namespace FPG.Demo.Unity
                 Quaternion worldRotation,
                 Vector3 worldScale,
                 float now,
+                bool holdUntilRelease,
                 out RuntimeSlot slot)
             {
                 for (int index = 0; index < slots.Count; index++)
@@ -849,7 +698,12 @@ namespace FPG.Demo.Unity
                         continue;
                     }
 
-                    candidate.Activate(worldPosition, worldRotation, worldScale, now);
+                    candidate.Activate(
+                        worldPosition,
+                        worldRotation,
+                        worldScale,
+                        now,
+                        holdUntilRelease);
                     slot = candidate;
                     return true;
                 }
@@ -863,7 +717,7 @@ namespace FPG.Demo.Unity
                 for (int index = 0; index < slots.Count; index++)
                 {
                     RuntimeSlot slot = slots[index];
-                    if (slot.Active && now >= slot.ExpireAt)
+                    if (slot.Active && !slot.Held && now >= slot.ExpireAt)
                     {
                         owner.OnSlotExpired(slot);
                     }
@@ -886,37 +740,69 @@ namespace FPG.Demo.Unity
         private sealed class RuntimeSlot
         {
             private readonly float duration;
+            private readonly ParticleSystem[] particleSystems;
 
             public RuntimeSlot(GameObject instance, float duration)
             {
                 Instance = instance;
                 this.duration = duration;
+                particleSystems = instance == null
+                    ? Array.Empty<ParticleSystem>()
+                    : instance.GetComponentsInChildren<ParticleSystem>(true);
             }
 
             public GameObject Instance { get; }
             public bool Active { get; private set; }
+            public bool Held { get; private set; }
             public float ExpireAt { get; private set; }
 
             public void Activate(
                 Vector3 position,
                 Quaternion rotation,
                 Vector3 scale,
-                float now)
+                float now,
+                bool holdUntilRelease)
             {
                 Transform target = Instance.transform;
                 target.SetPositionAndRotation(position, rotation);
                 target.localScale = scale;
-                ExpireAt = now + duration;
+                Held = holdUntilRelease;
+                ExpireAt = holdUntilRelease
+                    ? float.PositiveInfinity
+                    : now + duration;
                 Active = true;
                 Instance.SetActive(true);
+                for (int index = 0; index < particleSystems.Length; index++)
+                {
+                    ParticleSystem particleSystem = particleSystems[index];
+                    if (particleSystem == null)
+                    {
+                        continue;
+                    }
+
+                    particleSystem.Clear(true);
+                    particleSystem.Play(true);
+                }
             }
 
             public void Deactivate()
             {
                 Active = false;
+                Held = false;
                 ExpireAt = 0f;
                 if (Instance != null)
                 {
+                    for (int index = 0; index < particleSystems.Length; index++)
+                    {
+                        ParticleSystem particleSystem = particleSystems[index];
+                        if (particleSystem != null)
+                        {
+                            particleSystem.Stop(
+                                true,
+                                ParticleSystemStopBehavior.StopEmittingAndClear);
+                        }
+                    }
+
                     Instance.SetActive(false);
                 }
             }

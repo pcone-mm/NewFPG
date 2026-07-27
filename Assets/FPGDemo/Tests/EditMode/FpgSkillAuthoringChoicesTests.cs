@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FPG.Demo.Editor.SkillAuthoring;
+using FPG.Demo.Skills;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -31,50 +32,16 @@ namespace FPG.Demo.Tests.EditMode
             };
 
         [Test]
-        public void CueAndWarningChoicesDoNotOfferEmptyValues()
+        public void WarningChoicesDoNotOfferEmptyValues()
         {
-            List<FpgSkillAuthoringChoice> cues =
-                FpgSkillAuthoringChoices.BuildCueChoices(string.Empty);
             List<FpgSkillAuthoringChoice> warnings =
                 FpgSkillAuthoringChoices.BuildWarningChoices(string.Empty);
 
-            Assert.That(cues, Is.Not.Empty);
             Assert.That(warnings, Is.Not.Empty);
-            Assert.That(
-                cues.All(choice =>
-                    !string.IsNullOrWhiteSpace(choice.Value)),
-                Is.True);
             Assert.That(
                 warnings.All(choice =>
                     !string.IsNullOrWhiteSpace(choice.Value)),
                 Is.True);
-        }
-
-        [Test]
-        public void PayloadChoiceLabelUsesDisplayNameAndKindWithoutStableId()
-        {
-            const string StableId = "payload.internal.primary-shot";
-            List<FpgSkillPayloadRecord> payloads =
-                new List<FpgSkillPayloadRecord>
-                {
-                    new FpgSkillPayloadRecord
-                    {
-                        Index = 0,
-                        Id = StableId,
-                        Name = "Primary Shot",
-                        Kind = "PelletRay"
-                    }
-                };
-
-            List<FpgSkillAuthoringChoice> choices =
-                FpgSkillAuthoringChoices.BuildPayloadChoices(
-                    payloads,
-                    StableId);
-            FpgSkillAuthoringChoice choice = choices.Single();
-
-            Assert.That(choice.Value, Is.EqualTo(StableId));
-            Assert.That(choice.Label, Is.EqualTo("Primary Shot · PelletRay"));
-            Assert.That(choice.Label, Does.Not.Contain(StableId));
         }
 
         [Test]
@@ -194,6 +161,236 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 missingChoice.Label,
                 Is.Not.EqualTo(MissingAnimation));
+        }
+
+        [Test]
+        public void PreviewActionOptionsExposeOnlySupportedSpatialFields()
+        {
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.PlayerPelletRay,
+                true,
+                true,
+                FpgSkillTargetSource.CurrentAim,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                true);
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.PlayerAreaAtFirstSurface,
+                true,
+                true,
+                FpgSkillTargetSource.CurrentAim,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                true);
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.PlayerReload,
+                true,
+                true,
+                FpgSkillTargetSource.Self,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.EnemyProjectile,
+                true,
+                false,
+                FpgSkillTargetSource.CurrentTarget,
+                new[]
+                {
+                    FpgSkillTargetSource.CurrentAim,
+                    FpgSkillTargetSource.CurrentTarget,
+                    FpgSkillTargetSource.SocketForward
+                },
+                true,
+                true);
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.EnemyTimedImpact,
+                true,
+                true,
+                FpgSkillTargetSource.CurrentTarget,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.EnemySummon,
+                true,
+                true,
+                FpgSkillTargetSource.CurrentTarget,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.Unknown,
+                false,
+                false,
+                FpgSkillTargetSource.None,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+        }
+
+        [Test]
+        public void TypedActionOptionsExposeOnlySupportedSpatialFields()
+        {
+            AssertActionOptions(
+                FpgSkillActionKind.Attack,
+                false,
+                true,
+                true,
+                FpgSkillTargetSource.CurrentAim,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                true);
+            AssertActionOptions(
+                FpgSkillActionKind.LaunchProjectile,
+                false,
+                true,
+                true,
+                FpgSkillTargetSource.CurrentAim,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                true);
+            AssertActionOptions(
+                FpgSkillActionKind.CommitReload,
+                false,
+                true,
+                true,
+                FpgSkillTargetSource.Self,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertActionOptions(
+                FpgSkillActionKind.SummonActors,
+                false,
+                false,
+                false,
+                FpgSkillTargetSource.None,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertActionOptions(
+                FpgSkillActionKind.Attack,
+                true,
+                true,
+                false,
+                FpgSkillTargetSource.CurrentTarget,
+                new[]
+                {
+                    FpgSkillTargetSource.CurrentAim,
+                    FpgSkillTargetSource.CurrentTarget
+                },
+                false,
+                false);
+            AssertActionOptions(
+                FpgSkillActionKind.LaunchProjectile,
+                true,
+                true,
+                false,
+                FpgSkillTargetSource.CurrentTarget,
+                new[]
+                {
+                    FpgSkillTargetSource.CurrentAim,
+                    FpgSkillTargetSource.CurrentTarget,
+                    FpgSkillTargetSource.SocketForward
+                },
+                true,
+                true);
+            AssertActionOptions(
+                FpgSkillActionKind.SummonActors,
+                true,
+                true,
+                false,
+                FpgSkillTargetSource.CurrentTarget,
+                new[]
+                {
+                    FpgSkillTargetSource.CurrentAim,
+                    FpgSkillTargetSource.CurrentTarget
+                },
+                false,
+                false);
+            AssertActionOptions(
+                FpgSkillActionKind.CommitReload,
+                true,
+                false,
+                false,
+                FpgSkillTargetSource.None,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+        }
+
+        private static void AssertPreviewActionOptions(
+            FpgSkillPreviewActionKind actionKind,
+            bool isKnownAction,
+            bool hasFixedTargetSource,
+            FpgSkillTargetSource defaultTargetSource,
+            FpgSkillTargetSource[] targetSourceChoices,
+            bool supportsSocket,
+            bool supportsTargetOffset)
+        {
+            FpgSkillActionAuthoringOptions options =
+                FpgSkillActionAuthoringRules.Get(actionKind);
+
+            AssertSpatialOptions(
+                options,
+                isKnownAction,
+                hasFixedTargetSource,
+                defaultTargetSource,
+                targetSourceChoices,
+                supportsSocket,
+                supportsTargetOffset);
+        }
+
+        private static void AssertActionOptions(
+            FpgSkillActionKind actionKind,
+            bool enemy,
+            bool isKnownAction,
+            bool hasFixedTargetSource,
+            FpgSkillTargetSource defaultTargetSource,
+            FpgSkillTargetSource[] targetSourceChoices,
+            bool supportsSocket,
+            bool supportsTargetOffset)
+        {
+            FpgSkillActionAuthoringOptions options =
+                FpgSkillActionAuthoringRules.Get(actionKind, enemy);
+
+            AssertSpatialOptions(
+                options,
+                isKnownAction,
+                hasFixedTargetSource,
+                defaultTargetSource,
+                targetSourceChoices,
+                supportsSocket,
+                supportsTargetOffset);
+        }
+
+        private static void AssertSpatialOptions(
+            FpgSkillActionAuthoringOptions options,
+            bool isKnownAction,
+            bool hasFixedTargetSource,
+            FpgSkillTargetSource defaultTargetSource,
+            FpgSkillTargetSource[] targetSourceChoices,
+            bool supportsSocket,
+            bool supportsTargetOffset)
+        {
+
+            Assert.That(options.IsKnownAction, Is.EqualTo(isKnownAction));
+            Assert.That(
+                options.HasFixedTargetSource,
+                Is.EqualTo(hasFixedTargetSource));
+            Assert.That(
+                options.DefaultTargetSource,
+                Is.EqualTo(defaultTargetSource));
+            CollectionAssert.AreEqual(
+                targetSourceChoices,
+                options.TargetSourceChoices);
+            Assert.That(
+                options.SupportsTargetSourceSelection,
+                Is.EqualTo(targetSourceChoices.Length > 0));
+            Assert.That(options.SupportsSocket, Is.EqualTo(supportsSocket));
+            Assert.That(
+                options.SupportsTargetOffset,
+                Is.EqualTo(supportsTargetOffset));
         }
 
     }

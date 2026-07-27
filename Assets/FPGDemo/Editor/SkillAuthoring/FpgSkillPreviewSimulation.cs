@@ -111,8 +111,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public int LaunchTick;
         public int ExpectedHitTick;
         public string EventName;
-        public string PayloadName;
-        public FpgSkillPreviewPayloadKind PayloadKind;
+        public string ActionName;
+        public FpgSkillPreviewActionKind PreviewKind;
         public bool IsInFlight;
         public bool IsImpactTick;
         public bool IsSummon;
@@ -193,11 +193,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             string name = string.IsNullOrWhiteSpace(EventName)
                 ? "Gameplay Event"
                 : EventName;
-            string payload = string.IsNullOrWhiteSpace(PayloadName)
-                ? PayloadKind.ToString()
-                : PayloadName;
+            string action = string.IsNullOrWhiteSpace(ActionName)
+                ? PreviewKind.ToString()
+                : ActionName;
             return "#" + AuthoredOrdinal + " " + name
-                + " · " + payload + " · " + BuildSummary();
+                + " · " + action + " · " + BuildSummary();
         }
     }
 
@@ -299,7 +299,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             int currentTick,
             IReadOnlyList<FpgSkillCompiledTriggerRecord> compiledTriggers,
             IReadOnlyList<FpgSkillEventRecord> authoredEvents,
-            IReadOnlyList<FpgSkillPayloadRecord> payloads,
             IFpgSkillPreviewPoseProvider poseProvider)
         {
             FpgSkillPreviewSimulationFrame frame =
@@ -307,7 +306,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             if (!sequence.IsValid
                 || compiledTriggers == null
                 || authoredEvents == null
-                || payloads == null
                 || poseProvider == null)
             {
                 return frame;
@@ -327,7 +325,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 }
 
                 if (compiledEvent.Kind
-                    != FpgSkillEventKind.GameplayPayload)
+                    != FpgSkillEventKind.GameplayAction)
                 {
                     continue;
                 }
@@ -339,18 +337,20 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     : FindAuthoredEvent(
                         authoredEvents,
                         trigger.EventIndex);
-                FpgSkillPayloadRecord payload = authored == null
-                    || authored.PayloadIndex < 0
-                    || authored.PayloadIndex >= payloads.Count
-                        ? null
-                        : payloads[authored.PayloadIndex];
-                if (payload == null)
+                FpgSkillActionPreviewRecord actionPreview =
+                    authored?.InlineActionPreview;
+                if (actionPreview == null)
                 {
                     continue;
                 }
 
+                FpgSkillActionAuthoringOptions options =
+                    FpgSkillActionAuthoringRules.Get(actionPreview.PreviewKind);
+                string socketId = options.SupportsSocket
+                    ? authored.SocketId
+                    : string.Empty;
                 poseProvider.TryResolvePreviewOrigin(
-                    authored.SocketId,
+                    socketId,
                     out Vector3 origin,
                     out Vector3 forward);
                 if (forward.sqrMagnitude <= 0.000001f)
@@ -377,54 +377,54 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         compiledEvent,
                         trigger,
                         authored,
-                        payload);
+                        actionPreview);
 
-                switch (payload.PreviewKind)
+                switch (actionPreview.PreviewKind)
                 {
-                    case FpgSkillPreviewPayloadKind.PlayerPelletRay:
+                    case FpgSkillPreviewActionKind.PlayerPelletRay:
                         EvaluatePelletRay(
                             frame,
                             result,
-                            payload,
+                            actionPreview,
                             origin,
                             aim,
                             targets,
                             currentTick);
                         break;
 
-                    case FpgSkillPreviewPayloadKind.PlayerAreaAtFirstSurface:
+                    case FpgSkillPreviewActionKind.PlayerAreaAtFirstSurface:
                         EvaluateArea(
                             frame,
                             result,
-                            payload,
+                            actionPreview,
                             origin,
                             aim,
                             targets,
                             currentTick);
                         break;
 
-                    case FpgSkillPreviewPayloadKind.EnemyProjectile:
+                    case FpgSkillPreviewActionKind.EnemyProjectile:
                         EvaluateProjectiles(
                             frame,
                             result,
-                            payload,
+                            actionPreview,
                             origin,
                             aim,
                             targets,
                             currentTick);
                         break;
 
-                    case FpgSkillPreviewPayloadKind.EnemyTimedImpact:
+                    case FpgSkillPreviewActionKind.EnemyTimedImpact:
                         EvaluateTimedImpact(
                             frame,
                             result,
-                            payload,
+                            actionPreview,
                             aim,
                             targets,
                             currentTick);
                         break;
 
-                    case FpgSkillPreviewPayloadKind.EnemySummon:
+                    case FpgSkillPreviewActionKind.EnemySummon:
                         EvaluateSummon(
                             frame,
                             result,
@@ -432,7 +432,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                             currentTick);
                         break;
 
-                    case FpgSkillPreviewPayloadKind.PlayerReload:
+                    case FpgSkillPreviewActionKind.PlayerReload:
                         result.ExpectedHitTick = compiledEvent.Tick;
                         result.IsReload = true;
                         break;
@@ -453,7 +453,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
             in FpgCompiledSkillEvent compiledEvent,
             FpgSkillCompiledTriggerRecord trigger,
             FpgSkillEventRecord authored,
-            FpgSkillPayloadRecord payload)
+            FpgSkillActionPreviewRecord actionPreview)
         {
             return new FpgSkillPreviewEventResult
             {
@@ -463,17 +463,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     ?? compiledEvent.SortOrder,
                 LaunchTick = compiledEvent.Tick,
                 ExpectedHitTick = compiledEvent.Tick
-                    + Mathf.Max(0, payload.ImpactDelayTicks),
+                    + Mathf.Max(0, actionPreview.ImpactDelayTicks),
                 EventName = trigger?.Name ?? authored?.Name,
-                PayloadName = payload.Name,
-                PayloadKind = payload.PreviewKind
+                ActionName = actionPreview.Name,
+                PreviewKind = actionPreview.PreviewKind
             };
         }
 
         private static void EvaluatePelletRay(
             FpgSkillPreviewSimulationFrame frame,
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             Vector3 origin,
             Vector3 aim,
             IReadOnlyList<FpgSkillPreviewTarget> targets,
@@ -488,12 +488,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
             Vector3 baseDirection = SafeDirection(origin, aim, Vector3.right);
             float distance = ResolveRayDistance(origin, targets);
             int pelletCount = Mathf.Clamp(
-                Mathf.Max(1, payload.PelletCount),
+                Mathf.Max(1, actionPreview.PelletCount),
                 1,
                 MaximumPreviewPellets);
             int penetration = Mathf.Max(
                 1,
-                payload.AdditionalPenetrationCount + 1);
+                actionPreview.AdditionalPenetrationCount + 1);
             for (int pelletIndex = 0;
                 pelletIndex < pelletCount;
                 pelletIndex++)
@@ -511,7 +511,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     0.025f));
                 AddRayHits(
                     result,
-                    payload,
+                    actionPreview,
                     origin,
                     direction,
                     targets,
@@ -523,7 +523,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private static void EvaluateArea(
             FpgSkillPreviewSimulationFrame frame,
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             Vector3 origin,
             Vector3 aim,
             IReadOnlyList<FpgSkillPreviewTarget> targets,
@@ -556,10 +556,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     radius));
             }
 
-            int limit = Mathf.Max(1, payload.AreaCombatantLimit);
+            int limit = Mathf.Max(1, actionPreview.AreaCombatantLimit);
             AddAreaHits(
                 result,
-                payload,
+                actionPreview,
                 center,
                 radius,
                 targets,
@@ -570,30 +570,28 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private static void EvaluateProjectiles(
             FpgSkillPreviewSimulationFrame frame,
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             Vector3 origin,
             Vector3 aim,
             IReadOnlyList<FpgSkillPreviewTarget> targets,
             int currentTick)
         {
-            int flightTicks = Mathf.Max(1, payload.ImpactDelayTicks);
+            int flightTicks = Mathf.Max(1, actionPreview.ImpactDelayTicks);
             result.ExpectedHitTick = result.LaunchTick + flightTicks;
             result.IsInFlight = currentTick >= result.LaunchTick
                 && currentTick < result.ExpectedHitTick;
             result.IsImpactTick = currentTick == result.ExpectedHitTick;
             int projectileCount = Mathf.Clamp(
-                Mathf.Max(1, payload.ProjectileCount),
+                Mathf.Max(1, actionPreview.ProjectileCount),
                 1,
                 MaximumPreviewProjectiles);
             for (int index = 0; index < projectileCount; index++)
             {
                 FpgSkillPreviewTarget? target = targets.Count == 0
                     ? (FpgSkillPreviewTarget?)null
-                    : targets[index % targets.Count];
+                    : targets[0];
                 Vector3 destination = target.HasValue
-                    ? (index == 0
-                        ? target.Value.WeakpointCenter
-                        : target.Value.BodyCenter)
+                    ? target.Value.BodyCenter
                     : aim;
                 float lateral = projectileCount == 1
                     ? 0f
@@ -627,14 +625,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
                 if (target.HasValue)
                 {
-                    FpgSkillPreviewHitPart part = index == 0
-                        ? FpgSkillPreviewHitPart.Weakpoint
-                        : FpgSkillPreviewHitPart.Body;
-                    AddHit(
+                    AddEnemyPlayerBodyHit(
                         result,
-                        payload,
+                        actionPreview,
                         target.Value,
-                        part,
                         result.ExpectedHitTick);
                 }
             }
@@ -643,8 +637,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             {
                 frame.AddGeometry(new FpgSkillPreviewGeometry(
                     FpgSkillPreviewGeometryKind.Area,
-                    targets.Count > 0 ? targets[0].WeakpointCenter : aim,
-                    targets.Count > 0 ? targets[0].WeakpointCenter : aim,
+                    targets.Count > 0 ? targets[0].BodyCenter : aim,
+                    targets.Count > 0 ? targets[0].BodyCenter : aim,
                     ResolveMarkerRadius(targets)));
             }
         }
@@ -652,41 +646,38 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private static void EvaluateTimedImpact(
             FpgSkillPreviewSimulationFrame frame,
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             Vector3 aim,
             IReadOnlyList<FpgSkillPreviewTarget> targets,
             int currentTick)
         {
-            int delay = Mathf.Max(0, payload.ImpactDelayTicks);
+            int delay = Mathf.Max(0, actionPreview.ImpactDelayTicks);
             result.ExpectedHitTick = result.LaunchTick + delay;
             result.IsInFlight = currentTick >= result.LaunchTick
                 && currentTick < result.ExpectedHitTick;
             result.IsImpactTick = currentTick == result.ExpectedHitTick;
             float radius = ResolveMarkerRadius(targets) * 1.35f;
+            FpgSkillPreviewTarget? target = targets.Count == 0
+                ? (FpgSkillPreviewTarget?)null
+                : FindNearestTarget(targets, aim);
+            Vector3 impactPoint = target.HasValue
+                ? target.Value.BodyCenter
+                : aim;
             if (currentTick <= result.ExpectedHitTick)
             {
                 frame.AddGeometry(new FpgSkillPreviewGeometry(
                     FpgSkillPreviewGeometryKind.TimedImpact,
-                    aim,
-                    aim,
+                    impactPoint,
+                    impactPoint,
                     radius));
             }
 
-            if (targets.Count > 0)
+            if (target.HasValue)
             {
-                FpgSkillPreviewTarget target = FindNearestTarget(
-                    targets,
-                    aim);
-                FpgSkillPreviewHitPart part =
-                    Vector3.Distance(aim, target.WeakpointCenter)
-                        <= Vector3.Distance(aim, target.BodyCenter)
-                            ? FpgSkillPreviewHitPart.Weakpoint
-                            : FpgSkillPreviewHitPart.Body;
-                AddHit(
+                AddEnemyPlayerBodyHit(
                     result,
-                    payload,
-                    target,
-                    part,
+                    actionPreview,
+                    target.Value,
                     result.ExpectedHitTick);
             }
         }
@@ -744,7 +735,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private static void AddRayHits(
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             Vector3 origin,
             Vector3 direction,
             IReadOnlyList<FpgSkillPreviewTarget> targets,
@@ -767,7 +758,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
                 AddHit(
                     result,
-                    payload,
+                    actionPreview,
                     candidate.Target,
                     candidate.Part,
                     expectedHitTick,
@@ -777,7 +768,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private static void AddAreaHits(
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             Vector3 center,
             float radius,
             IReadOnlyList<FpgSkillPreviewTarget> targets,
@@ -820,16 +811,32 @@ namespace FPG.Demo.Editor.SkillAuthoring
             {
                 AddHit(
                     result,
-                    payload,
+                    actionPreview,
                     hits[index].Target,
                     hits[index].Part,
                     expectedHitTick);
             }
         }
 
+        private static void AddEnemyPlayerBodyHit(
+            FpgSkillPreviewEventResult result,
+            FpgSkillActionPreviewRecord actionPreview,
+            in FpgSkillPreviewTarget target,
+            int expectedHitTick)
+        {
+            result.AddHit(new FpgSkillPreviewHit(
+                result.CompiledEventId,
+                target.Index,
+                FpgSkillPreviewHitPart.Body,
+                target.BodyCenter,
+                expectedHitTick,
+                actionPreview.BaseDamage,
+                0));
+        }
+
         private static void AddHit(
             FpgSkillPreviewEventResult result,
-            FpgSkillPayloadRecord payload,
+            FpgSkillActionPreviewRecord actionPreview,
             in FpgSkillPreviewTarget target,
             FpgSkillPreviewHitPart part,
             int expectedHitTick,
@@ -846,11 +853,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         : target.BodyCenter),
                 expectedHitTick,
                 weakpoint
-                    ? payload.WeakpointDamage
-                    : payload.BaseDamage,
+                    ? actionPreview.WeakpointDamage
+                    : actionPreview.BaseDamage,
                 weakpoint
-                    ? payload.WeakpointBreakDamage
-                    : payload.BreakDamage));
+                    ? actionPreview.WeakpointBreakDamage
+                    : actionPreview.BreakDamage));
         }
 
         private static bool TryFindFirstRayHit(

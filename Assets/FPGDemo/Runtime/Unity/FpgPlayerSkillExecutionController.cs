@@ -19,21 +19,21 @@ namespace FPG.Demo.Unity
         internal FpgPlayerSkillExecutionEvent(
             FpgPlayerSkillSlot slot,
             FpgSkillEventResult runtimeEvent,
-            FpgCompiledPlayerSkillPayloadSlot payload,
-            bool hasGameplayPayload)
+            FpgCompiledPlayerSkillAction action,
+            bool hasGameplayAction)
         {
             Slot = slot;
             RuntimeEvent = runtimeEvent;
-            Payload = payload;
-            HasGameplayPayload = hasGameplayPayload;
+            Action = action;
+            HasGameplayAction = hasGameplayAction;
         }
 
         public FpgPlayerSkillSlot Slot { get; }
         public FpgSkillEventResult RuntimeEvent { get; }
         public FpgCompiledSkillEvent Event => RuntimeEvent.Event;
         public FpgSkillEventOutcome Outcome => RuntimeEvent.Outcome;
-        public bool HasGameplayPayload { get; }
-        public FpgCompiledPlayerSkillPayloadSlot Payload { get; }
+        public bool HasGameplayAction { get; }
+        public FpgCompiledPlayerSkillAction Action { get; }
     }
 
     public readonly struct FpgPlayerSkillSequenceFrame
@@ -66,61 +66,6 @@ namespace FPG.Demo.Unity
         public int ResolvedAnimationId { get; }
         public bool IsTerminal => State == FpgSkillExecutionState.Completed
             || State == FpgSkillExecutionState.Canceled;
-    }
-
-    /// <summary>
-    /// V1 cue binding rule: an unbound cue is immediate. A bound cue only
-    /// resolves the exact triggered gameplay event from the same execution and
-    /// scheduled tick.
-    /// </summary>
-    public static class FpgPlayerSkillPresentationCommitGate
-    {
-        public static bool RequiresGameplayCommit(
-            FpgPlayerSkillExecutionController controller,
-            in FpgPlayerSkillExecutionEvent cue)
-        {
-            return TryResolveGameplayCommit(
-                controller,
-                cue,
-                out FpgPlayerSkillExecutionEvent _);
-        }
-
-        public static bool TryResolveGameplayCommit(
-            FpgPlayerSkillExecutionController controller,
-            in FpgPlayerSkillExecutionEvent cue,
-            out FpgPlayerSkillExecutionEvent gameplayEvent)
-        {
-            gameplayEvent = default(FpgPlayerSkillExecutionEvent);
-            int boundGameplayEventId = cue.Event.BoundGameplayEventId;
-            if (controller == null
-                || cue.Outcome != FpgSkillEventOutcome.Triggered
-                || cue.Event.Kind != FpgSkillEventKind.PresentationCue
-                || boundGameplayEventId <= 0)
-            {
-                return false;
-            }
-
-            for (int index = 0; index < controller.ResultCount; index++)
-            {
-                FpgPlayerSkillExecutionEvent candidate =
-                    controller.GetResult(index);
-                if (candidate.HasGameplayPayload
-                    && candidate.Outcome == FpgSkillEventOutcome.Triggered
-                    && candidate.Event.Kind
-                        == FpgSkillEventKind.GameplayPayload
-                    && candidate.Event.EventId == boundGameplayEventId
-                    && candidate.RuntimeEvent.ExecutionId
-                        == cue.RuntimeEvent.ExecutionId
-                    && candidate.RuntimeEvent.ScheduledTick
-                        == cue.RuntimeEvent.ScheduledTick)
-                {
-                    gameplayEvent = candidate;
-                    return true;
-                }
-            }
-
-            return false;
-        }
     }
 
     /// <summary>
@@ -219,13 +164,15 @@ namespace FPG.Demo.Unity
             if (!TryValidateAction(
                     primary,
                     FpgSkillSequenceKind.Execute,
-                    FpgPlayerSkillPayloadKind.PelletRay,
+                    FpgPlayerSkillActionKind.PelletRay,
+                    FpgPlayerSkillActionKind.None,
                     "Primary",
                     out error)
                 || !TryValidateAction(
                     secondary,
                     secondaryActionKind,
-                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface,
+                    FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                    FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
                     "Secondary",
                     out error)
                 || !TryValidateReload(reload, out error)
@@ -886,12 +833,12 @@ namespace FPG.Demo.Unity
 
                 FpgSkillEventResult runtimeEvent = runtime.GetResult(index);
                 bool hasPayload = runtimeEvent.Event.Kind
-                    == FpgSkillEventKind.GameplayPayload;
-                FpgCompiledPlayerSkillPayloadSlot payload =
-                    default(FpgCompiledPlayerSkillPayloadSlot);
+                    == FpgSkillEventKind.GameplayAction;
+                FpgCompiledPlayerSkillAction payload =
+                    default(FpgCompiledPlayerSkillAction);
                 if (hasPayload
-                    && !activeDefinition.TryGetPayloadSlot(
-                        runtimeEvent.Event.PayloadSlotId,
+                    && !activeDefinition.TryResolveAction(
+                        runtimeEvent.Event,
                         out payload))
                 {
                     return DomainResult.Rejected(RejectReason.InvalidDefinition);
@@ -977,7 +924,8 @@ namespace FPG.Demo.Unity
         private static bool TryValidateAction(
             FpgCompiledPlayerSkillDefinition definition,
             FpgSkillSequenceKind kind,
-            FpgPlayerSkillPayloadKind payloadKind,
+            FpgPlayerSkillActionKind payloadKind,
+            FpgPlayerSkillActionKind alternatePayloadKind,
             string label,
             out string error)
         {
@@ -1000,11 +948,12 @@ namespace FPG.Demo.Unity
                 eventIndex++)
             {
                 FpgCompiledSkillEvent skillEvent = sequence.GetEvent(eventIndex);
-                if (skillEvent.Kind == FpgSkillEventKind.GameplayPayload
-                    && (!definition.TryGetPayloadSlot(
-                            skillEvent.PayloadSlotId,
-                            out FpgCompiledPlayerSkillPayloadSlot payload)
-                        || payload.Kind != payloadKind))
+                if (skillEvent.Kind == FpgSkillEventKind.GameplayAction
+                    && (!definition.TryResolveAction(
+                            skillEvent,
+                            out FpgCompiledPlayerSkillAction payload)
+                        || (payload.Kind != payloadKind
+                            && payload.Kind != alternatePayloadKind)))
                 {
                     error = label + " skill contains an incompatible gameplay payload.";
                     return false;
@@ -1051,14 +1000,14 @@ namespace FPG.Demo.Unity
                 {
                     FpgCompiledSkillEvent skillEvent =
                         sequence.GetEvent(eventIndex);
-                    if (skillEvent.Kind != FpgSkillEventKind.GameplayPayload)
+                    if (skillEvent.Kind != FpgSkillEventKind.GameplayAction)
                     {
                         continue;
                     }
 
-                    if (!definition.TryGetPayloadSlot(
-                            skillEvent.PayloadSlotId,
-                            out FpgCompiledPlayerSkillPayloadSlot payload))
+                    if (!definition.TryResolveAction(
+                            skillEvent,
+                            out FpgCompiledPlayerSkillAction payload))
                     {
                         error = "Player skill references a missing compiled payload.";
                         return false;
@@ -1073,12 +1022,12 @@ namespace FPG.Demo.Unity
                     }
 
                     FpgSkillTargetSource expected =
-                        payload.Kind == FpgPlayerSkillPayloadKind.ReloadCommit
+                        payload.Kind == FpgPlayerSkillActionKind.ReloadCommit
                             ? FpgSkillTargetSource.Self
                             : FpgSkillTargetSource.CurrentAim;
                     if (skillEvent.TargetSource != expected)
                     {
-                        error = payload.Kind == FpgPlayerSkillPayloadKind.ReloadCommit
+                        error = payload.Kind == FpgPlayerSkillActionKind.ReloadCommit
                             ? "Player reload events must target Self."
                             : "Player attack events must target CurrentAim.";
                         return false;

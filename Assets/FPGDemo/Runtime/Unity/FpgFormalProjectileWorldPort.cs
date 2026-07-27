@@ -186,6 +186,7 @@ namespace FPG.Demo.Unity
                 request.Team,
                 request.SweepRadiusKey,
                 request.Interceptable,
+                request.TargetingMode,
                 path);
             activeCount++;
             return DomainResult.Success;
@@ -262,6 +263,7 @@ namespace FPG.Demo.Unity
                         hitBuffer[index],
                         slot.TargetId,
                         slot.Team,
+                        slot.TargetingMode,
                         distance,
                         out SweepCandidate candidate))
                 {
@@ -381,6 +383,7 @@ namespace FPG.Demo.Unity
             in UnityPhysicsHit physicsHit,
             RuntimeId targetId,
             Team ownerTeam,
+            ProjectileTargetingMode targetingMode,
             float maxDistance,
             out SweepCandidate candidate)
         {
@@ -414,8 +417,17 @@ namespace FPG.Demo.Unity
                 return true;
             }
 
-            if (registered.TargetKind != QueryTargetKind.Combatant
-                || registered.RuntimeId != targetId)
+            if (targetingMode == ProjectileTargetingMode.LockedTarget
+                && (registered.TargetKind != QueryTargetKind.Combatant
+                    || registered.RuntimeId != targetId))
+            {
+                return false;
+            }
+
+            if (targetingMode == ProjectileTargetingMode.FirstSurface
+                && ((registered.TargetKind != QueryTargetKind.Combatant
+                        && registered.TargetKind != QueryTargetKind.Projectile)
+                    || !registered.RuntimeId.IsValid))
             {
                 return false;
             }
@@ -454,6 +466,13 @@ namespace FPG.Demo.Unity
 
         private static bool IsSpawnRequestValid(in ProjectileSpawnRequest request)
         {
+            bool lockedTarget = request.TargetingMode
+                == ProjectileTargetingMode.LockedTarget;
+            bool firstSurfacePlayerPath = request.TargetingMode
+                == ProjectileTargetingMode.FirstSurface
+                && request.Team == Team.Player
+                && !request.TargetId.IsValid
+                && request.HasExplicitPath;
             return request.Tick.IsValid
                 && request.ArrivalTick.IsValid
                 && request.ArrivalTick > request.Tick
@@ -461,13 +480,15 @@ namespace FPG.Demo.Unity
                 && request.RuntimeId.IsValid
                 && request.AttackId.IsValid
                 && request.OwnerId.IsValid
-                && request.TargetId.IsValid
+                && (lockedTarget ? request.TargetId.IsValid : firstSurfacePlayerPath)
                 && request.Team != Team.Neutral
                 && Enum.IsDefined(typeof(Team), request.Team)
+                && Enum.IsDefined(
+                    typeof(ProjectileTargetingMode),
+                    request.TargetingMode)
                 && (!request.Interceptable || request.Team == Team.Enemy)
                 && request.DefinitionId > 0
-                && request.SweepRadiusKey > 0
-                && request.PresentationKey > 0;
+                && request.SweepRadiusKey > 0;
         }
 
         private static bool IsSweepRequestValid(in ProjectileSweepRequest request)
@@ -567,6 +588,7 @@ namespace FPG.Demo.Unity
                 Team team,
                 int sweepRadiusKey,
                 bool interceptable,
+                ProjectileTargetingMode targetingMode,
                 ProjectilePathSnapshot path)
             {
                 ProjectileId = projectileId;
@@ -575,6 +597,7 @@ namespace FPG.Demo.Unity
                 Team = team;
                 SweepRadiusKey = sweepRadiusKey;
                 Interceptable = interceptable;
+                TargetingMode = targetingMode;
                 Path = path;
                 Active = true;
             }
@@ -585,6 +608,7 @@ namespace FPG.Demo.Unity
             public Team Team { get; }
             public int SweepRadiusKey { get; }
             public bool Interceptable { get; }
+            public ProjectileTargetingMode TargetingMode { get; }
             public ProjectilePathSnapshot Path { get; }
             public bool Active { get; }
         }

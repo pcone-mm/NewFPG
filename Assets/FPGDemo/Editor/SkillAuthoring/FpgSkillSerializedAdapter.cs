@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using FPG.Demo.Core;
 using FPG.Demo.Skills;
 using UnityEditor;
 using UnityEngine;
 
 namespace FPG.Demo.Editor.SkillAuthoring
 {
-    internal enum FpgSkillPreviewPayloadKind
+    internal enum FpgSkillPreviewActionKind
     {
         Unknown = 0,
         PlayerPelletRay,
@@ -25,10 +26,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
     internal enum FpgSkillEventTrackKind
     {
-        Generic = 0,
-        Logic,
-        Presentation,
-        Warning
+        GameplayAction = 0,
+        Warning,
+        PresentationVfx,
+        PresentationAudio,
+        PresentationCameraShake
+    }
+
+    internal sealed class FpgSkillActivePresentationTrackRecord
+    {
+        public int Index;
+        public string Id;
+        public string Name;
+        public int EventCount;
     }
 
     internal sealed class FpgSkillAssetRecord
@@ -40,10 +50,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public string OwnerType;
     }
 
-    internal sealed class FpgSkillPayloadRecord
+    internal sealed class FpgSkillActionPreviewRecord
     {
-        public int Index;
-        public string Id;
         public string Name;
         public string Kind;
         public string HitShape;
@@ -59,9 +67,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public int AreaProjectileLimit;
         public int ProjectileCount;
         public int SummonCandidateCount;
-        public FpgSkillPreviewPayloadKind PreviewKind;
+        public FpgSkillPreviewActionKind PreviewKind;
         public bool HasDamagePreview;
-        public int UseCount;
         public Color Color;
 
         public string BuildPreviewSummary(int eventTick)
@@ -84,20 +91,24 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
     internal sealed class FpgSkillEventRecord
     {
+        public FpgSkillEventKey Key;
+        // Preview correlation only. Editor selection and mutation use Key.
         public int Index;
         public int ArrayIndex;
         public int Tick;
         public int DurationTicks;
         public int AuthoredOrdinal;
-        public int PayloadIndex;
         public string EventId;
-        public string PayloadId;
         public string SocketId;
         public string Name;
         public string Kind;
         public FpgSkillTargetSource TargetSource;
         public Vector3 TargetOffset;
         public FpgSkillEventTrackKind Track;
+        public int PresentationTrackIndex = -1;
+        public string PresentationTrackId;
+        public string PresentationTrackName;
+        public FpgSkillActionPreviewRecord InlineActionPreview;
         public bool IsInvalid;
         public Color Color;
 
@@ -105,26 +116,32 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             return new FpgSkillTimelineEventViewModel
             {
-                Index = Index,
+                Key = Key,
                 Tick = Tick,
                 DurationTicks = DurationTicks,
                 AuthoredOrdinal = AuthoredOrdinal,
                 Label = Name,
                 Lane = GetLane(Track),
-                LaneLabel = GetTrackLabel(Track),
-                PayloadPreview = PayloadPreview,
+                Track = this.Track,
+                PresentationTrackIndex = PresentationTrackIndex,
+                LaneLabel = string.IsNullOrWhiteSpace(PresentationTrackName)
+                    ? GetTrackLabel(Track)
+                    : PresentationTrackName,
+                PreviewSummary = PreviewSummary,
                 Color = Color,
                 IsInvalid = IsInvalid
             };
         }
 
-        public string PayloadPreview;
+        public string PreviewSummary;
 
         private static int GetLane(FpgSkillEventTrackKind track)
         {
             switch (track)
             {
-                case FpgSkillEventTrackKind.Presentation:
+                case FpgSkillEventTrackKind.PresentationVfx:
+                case FpgSkillEventTrackKind.PresentationAudio:
+                case FpgSkillEventTrackKind.PresentationCameraShake:
                     return 3;
                 case FpgSkillEventTrackKind.Warning:
                     return 4;
@@ -137,10 +154,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             switch (track)
             {
-                case FpgSkillEventTrackKind.Logic:
-                    return "逻辑";
-                case FpgSkillEventTrackKind.Presentation:
-                    return "演出";
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    return "VFX";
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    return "Audio";
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    return "Camera Shake";
+                case FpgSkillEventTrackKind.GameplayAction:
+                    return "玩法动作";
                 case FpgSkillEventTrackKind.Warning:
                     return "预警";
                 default:
@@ -153,8 +174,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
     {
         public FpgSkillIssueSeverity Severity;
         public string Message;
-        public int EventIndex = -1;
-        public int PayloadIndex = -1;
+        public FpgSkillEventKey EventKey;
         public int Tick = -1;
     }
 
@@ -163,6 +183,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public int CompiledEventId;
         public int Tick;
         public int AuthoredOrdinal;
+        public FpgSkillEventKey EventKey;
+        // Preview simulation still correlates through the merged list position.
         public int EventIndex = -1;
         public string Kind;
         public string Name;
@@ -172,14 +194,23 @@ namespace FPG.Demo.Editor.SkillAuthoring
     internal static class FpgSkillSerializedAdapter
     {
         private static readonly string[] SequenceNames = { "sequences" };
-        private static readonly string[] PayloadArrayNames =
-            { "payloadSlots", "payloads", "attackPayloads", "slots" };
-        private static readonly string[] GenericEventArrayNames =
-            { "events", "attackEvents", "timelineEvents" };
-        private static readonly string[] LogicEventArrayNames = { "logicEvents" };
-        private static readonly string[] PresentationEventArrayNames =
-            { "presentationCues" };
+        private static readonly string[] ActivePresentationTrackArrayNames =
+            { "activePresentationTracks" };
+        private static readonly string[] VfxPresentationEventArrayNames =
+            { "vfxEvents" };
+        private static readonly string[] AudioPresentationEventArrayNames =
+            { "audioEvents" };
+        private static readonly string[] CameraShakePresentationEventArrayNames =
+            { "cameraShakeEvents" };
         private static readonly string[] WarningEventArrayNames = { "warnings" };
+        private static readonly string[] AttackEventArrayNames =
+            { "attackEvents" };
+        private static readonly string[] ProjectileEventArrayNames =
+            { "projectileEvents" };
+        private static readonly string[] ReloadEventArrayNames =
+            { "reloadEvents" };
+        private static readonly string[] SummonEventArrayNames =
+            { "summonEvents" };
         private static readonly string[] DurationNames =
             { "durationTicks", "totalTicks", "lengthTicks", "endTick" };
         private static readonly string[] TickNames =
@@ -188,10 +219,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             { "durationTicks", "activeTicks", "lengthTicks" };
         private static readonly string[] AuthoredOrdinalNames =
             { "authoredOrdinal" };
-        private static readonly string[] PayloadIndexNames =
-            { "payloadIndex", "payloadSlotIndex", "slotIndex" };
-        private static readonly string[] PayloadIdNames =
-            { "payloadSlotId", "payloadId", "slotId" };
 
         private static readonly Color[] Palette =
         {
@@ -284,19 +311,204 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     : null;
         }
 
-        public static SerializedProperty GetPayloads(SerializedProperty sequence)
+        public static SerializedProperty GetActivePresentationTracks(
+            SerializedProperty sequence)
         {
-            SerializedProperty rootPayloads = sequence == null
-                ? null
-                : FindFirst(sequence.serializedObject, PayloadArrayNames);
-            return rootPayloads != null && rootPayloads.isArray
-                ? rootPayloads
-                : FindFirstRelative(sequence, PayloadArrayNames);
+            SerializedProperty tracks = FindFirstRelative(
+                sequence,
+                ActivePresentationTrackArrayNames);
+            return tracks != null && tracks.isArray ? tracks : null;
         }
 
-        public static SerializedProperty GetEvents(SerializedProperty sequence)
+        public static List<FpgSkillActivePresentationTrackRecord>
+            ReadActivePresentationTracks(SerializedProperty sequence)
         {
-            return GetEventArray(sequence, GetDefaultEventTrack(sequence));
+            List<FpgSkillActivePresentationTrackRecord> result =
+                new List<FpgSkillActivePresentationTrackRecord>();
+            SerializedProperty tracks = GetActivePresentationTracks(sequence);
+            if (tracks == null)
+            {
+                return result;
+            }
+
+            for (int index = 0; index < tracks.arraySize; index++)
+            {
+                SerializedProperty track = tracks.GetArrayElementAtIndex(index);
+                string trackId = ReadFirstString(track, "trackId");
+                string displayName = ReadFirstString(track, "displayName");
+                result.Add(new FpgSkillActivePresentationTrackRecord
+                {
+                    Index = index,
+                    Id = trackId,
+                    Name = string.IsNullOrWhiteSpace(displayName)
+                        ? "Presentation " + (index + 1)
+                        : displayName,
+                    EventCount = CountPresentationTrackEvents(track)
+                });
+            }
+
+            return result;
+        }
+
+        public static int AddActivePresentationTrack(
+            SerializedObject serializedObject,
+            int sequenceIndex)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null)
+            {
+                return -1;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty tracks = GetActivePresentationTracks(
+                GetSequence(serializedObject, sequenceIndex));
+            if (tracks == null || !tracks.isArray)
+            {
+                return -1;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Add presentation track");
+            int index = tracks.arraySize;
+            tracks.InsertArrayElementAtIndex(index);
+            SerializedProperty track = tracks.GetArrayElementAtIndex(index);
+            ResetProperty(track);
+            WriteString(
+                track,
+                "presentation.track." + Guid.NewGuid().ToString("N"),
+                "trackId");
+            WriteString(track, "Presentation " + (index + 1), "displayName");
+            Apply(serializedObject);
+            return index;
+        }
+
+        public static bool RenameActivePresentationTrack(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            int trackIndex,
+            string displayName)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null
+                || string.IsNullOrWhiteSpace(displayName))
+            {
+                return false;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty track = GetActivePresentationTrack(
+                GetSequence(serializedObject, sequenceIndex),
+                trackIndex);
+            SerializedProperty name = track?.FindPropertyRelative("displayName");
+            if (name == null
+                || name.propertyType != SerializedPropertyType.String)
+            {
+                return false;
+            }
+
+            string normalizedName = displayName.Trim();
+            if (string.Equals(
+                    name.stringValue,
+                    normalizedName,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Rename presentation track");
+            name.stringValue = normalizedName;
+            Apply(serializedObject);
+            return true;
+        }
+
+        public static bool MoveActivePresentationTrack(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            int trackIndex,
+            int requestedDelta,
+            out int movedTrackIndex)
+        {
+            movedTrackIndex = trackIndex;
+            if (serializedObject == null
+                || serializedObject.targetObject == null
+                || requestedDelta == 0)
+            {
+                return false;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty tracks = GetActivePresentationTracks(
+                GetSequence(serializedObject, sequenceIndex));
+            if (tracks == null
+                || !tracks.isArray
+                || trackIndex < 0
+                || trackIndex >= tracks.arraySize)
+            {
+                return false;
+            }
+
+            movedTrackIndex = Mathf.Clamp(
+                trackIndex + requestedDelta,
+                0,
+                tracks.arraySize - 1);
+            if (movedTrackIndex == trackIndex)
+            {
+                return true;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Reorder presentation track");
+            tracks.MoveArrayElement(trackIndex, movedTrackIndex);
+            Apply(serializedObject);
+            return true;
+        }
+
+        public static bool CanDeleteActivePresentationTrack(
+            SerializedProperty sequence,
+            int trackIndex)
+        {
+            SerializedProperty track = GetActivePresentationTrack(
+                sequence,
+                trackIndex);
+            return track != null && CountPresentationTrackEvents(track) == 0;
+        }
+
+        public static bool DeleteActivePresentationTrack(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            int trackIndex)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null)
+            {
+                return false;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            SerializedProperty tracks = GetActivePresentationTracks(sequence);
+            if (tracks == null
+                || !tracks.isArray
+                || trackIndex < 0
+                || trackIndex >= tracks.arraySize
+                || !CanDeleteActivePresentationTrack(sequence, trackIndex))
+            {
+                return false;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Delete empty presentation track");
+            DeleteArrayElementWithoutApply(tracks, trackIndex);
+            Apply(serializedObject);
+            return true;
         }
 
         public static int GetDurationTicks(SerializedProperty sequence)
@@ -519,86 +731,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 AllowSequenceExtension = true
             });
 
-            SerializedProperty phases = sequence.FindPropertyRelative("phases");
-            if (phases == null || !phases.isArray)
-            {
-                return result;
-            }
-
-            for (int index = 0; index < phases.arraySize; index++)
-            {
-                SerializedProperty phase = phases.GetArrayElementAtIndex(index);
-                string phaseId = ReadFirstString(phase, "phaseId", "id");
-                SerializedProperty kindProperty =
-                    phase.FindPropertyRelative("kind");
-                FpgSkillPhaseKind phaseKind =
-                    kindProperty != null
-                    && kindProperty.propertyType == SerializedPropertyType.Enum
-                    && Enum.IsDefined(
-                        typeof(FpgSkillPhaseKind),
-                        kindProperty.enumValueIndex)
-                        ? (FpgSkillPhaseKind)kindProperty.enumValueIndex
-                        : FpgSkillPhaseKind.None;
-                int startTick = ReadRawInt(
-                    phase.FindPropertyRelative("startTick"),
-                    -1);
-                int endTick = ReadRawInt(
-                    phase.FindPropertyRelative("endTick"),
-                    -1);
-                int minimumStartTick = index > 0
-                    ? ReadRawInt(
-                        phases.GetArrayElementAtIndex(index - 1)
-                            .FindPropertyRelative("endTick"),
-                        0)
-                    : 0;
-                int maximumEndTick = index + 1 < phases.arraySize
-                    ? ReadRawInt(
-                        phases.GetArrayElementAtIndex(index + 1)
-                            .FindPropertyRelative("startTick"),
-                        durationTicks)
-                    : durationTicks;
-                minimumStartTick = Mathf.Clamp(
-                    minimumStartTick,
-                    0,
-                    Mathf.Max(0, durationTicks));
-                maximumEndTick = Mathf.Clamp(
-                    maximumEndTick,
-                    0,
-                    Mathf.Max(0, durationTicks));
-                bool invalid = string.IsNullOrWhiteSpace(phaseId)
-                    || phaseKind == FpgSkillPhaseKind.None
-                    || startTick < 0
-                    || endTick < startTick
-                    || endTick > durationTicks
-                    || startTick < minimumStartTick
-                    || endTick > maximumEndTick;
-                string phaseLabel = GetPhaseLabel(phaseKind);
-                int phaseDurationTicks = Mathf.Max(0, endTick - startTick);
-                result.Add(new FpgSkillTimelineBlockViewModel
-                {
-                    Kind = FpgSkillTimelineBlockKind.Phase,
-                    Index = index,
-                    StartTick = startTick,
-                    EndTick = endTick,
-                    Lane = 1,
-                    Label = phaseLabel + " · " + phaseDurationTicks + "帧",
-                    Tooltip = string.Format(
-                        "{0}阶段 · {1} 帧\nTick {2}-{3} · 可编辑边界 {4}-{5}\n阶段只描述动作节奏，不会直接触发伤害；伤害时机由逻辑事件决定。",
-                        phaseLabel,
-                        phaseDurationTicks,
-                        startTick,
-                        endTick,
-                        minimumStartTick,
-                        maximumEndTick),
-                    Color = GetPhaseColor(phaseKind),
-                    IsInvalid = invalid,
-                    MinimumStartTick = minimumStartTick,
-                    MaximumEndTick = maximumEndTick,
-                    CanResize = true,
-                    AllowSequenceExtension = false
-                });
-            }
-
             return result;
         }
 
@@ -622,120 +754,123 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 : kind;
         }
 
-        public static List<FpgSkillPayloadRecord> ReadPayloads(
-            SerializedProperty sequence)
-        {
-            SerializedProperty payloads = GetPayloads(sequence);
-            List<FpgSkillPayloadRecord> result = new List<FpgSkillPayloadRecord>();
-            if (payloads == null || !payloads.isArray)
-            {
-                return result;
-            }
-
-            for (int index = 0; index < payloads.arraySize; index++)
-            {
-                SerializedProperty payload = payloads.GetArrayElementAtIndex(index);
-                string id = ReadFirstString(payload, "slotId", "payloadId", "id");
-                string name = ReadFirstString(
-                    payload,
-                    "displayName",
-                    "name",
-                    "label");
-                string kind = ReadDisplayValue(payload, "kind", "payloadKind", "type");
-                FpgSkillPayloadRecord record = new FpgSkillPayloadRecord
-                {
-                    Index = index,
-                    Id = string.IsNullOrWhiteSpace(id) ? "slot-" + index : id,
-                    Name = !string.IsNullOrWhiteSpace(name)
-                        ? name
-                        : !string.IsNullOrWhiteSpace(id)
-                            ? id
-                            : "载荷 " + (index + 1),
-                    Kind = string.IsNullOrWhiteSpace(kind) ? "未分类" : kind,
-                    Color = GetPaletteColor(index)
-                };
-                PopulatePayloadPreview(payload, record);
-                result.Add(record);
-            }
-
-            PopulatePayloadUseCounts(sequence.serializedObject, result);
-
-            return result;
-        }
-
         public static List<FpgSkillEventRecord> ReadEvents(
             SerializedProperty sequence,
-            IList<FpgSkillPayloadRecord> payloads,
             int durationTicks)
         {
-            List<FpgSkillEventRecord> result = new List<FpgSkillEventRecord>();
+            List<FpgSkillEventRecord> result =
+                new List<FpgSkillEventRecord>();
             if (sequence == null)
             {
                 return result;
             }
 
-            Dictionary<string, int> payloadIdToIndex = new Dictionary<string, int>(
-                StringComparer.Ordinal);
-            for (int index = 0; index < payloads.Count; index++)
+            AppendEventRecords(
+                result,
+                FindFirstRelative(sequence, AttackEventArrayNames),
+                FpgSkillEventTrackKind.GameplayAction,
+                durationTicks,
+                FpgSkillActionKind.Attack);
+            AppendEventRecords(
+                result,
+                FindFirstRelative(sequence, ProjectileEventArrayNames),
+                FpgSkillEventTrackKind.GameplayAction,
+                durationTicks,
+                FpgSkillActionKind.LaunchProjectile);
+            AppendEventRecords(
+                result,
+                FindFirstRelative(sequence, ReloadEventArrayNames),
+                FpgSkillEventTrackKind.GameplayAction,
+                durationTicks,
+                FpgSkillActionKind.CommitReload);
+            AppendEventRecords(
+                result,
+                FindFirstRelative(sequence, SummonEventArrayNames),
+                FpgSkillEventTrackKind.GameplayAction,
+                durationTicks,
+                FpgSkillActionKind.SummonActors);
+
+            SerializedProperty tracks = GetActivePresentationTracks(sequence);
+            if (tracks != null)
             {
-                if (!string.IsNullOrWhiteSpace(payloads[index].Id))
+                for (int trackIndex = 0;
+                    trackIndex < tracks.arraySize;
+                    trackIndex++)
                 {
-                    payloadIdToIndex[payloads[index].Id] = payloads[index].Index;
+                    SerializedProperty track =
+                        tracks.GetArrayElementAtIndex(trackIndex);
+                    string trackId = ReadFirstString(track, "trackId");
+                    string trackName = ReadFirstString(track, "displayName");
+                    AppendEventRecords(
+                        result,
+                        FindFirstRelative(
+                            track,
+                            VfxPresentationEventArrayNames),
+                        FpgSkillEventTrackKind.PresentationVfx,
+                        durationTicks,
+                        FpgSkillActionKind.None,
+                        trackIndex,
+                        trackId,
+                        trackName);
+                    AppendEventRecords(
+                        result,
+                        FindFirstRelative(
+                            track,
+                            AudioPresentationEventArrayNames),
+                        FpgSkillEventTrackKind.PresentationAudio,
+                        durationTicks,
+                        FpgSkillActionKind.None,
+                        trackIndex,
+                        trackId,
+                        trackName);
+                    AppendEventRecords(
+                        result,
+                        FindFirstRelative(
+                            track,
+                            CameraShakePresentationEventArrayNames),
+                        FpgSkillEventTrackKind.PresentationCameraShake,
+                        durationTicks,
+                        FpgSkillActionKind.None,
+                        trackIndex,
+                        trackId,
+                        trackName);
                 }
             }
 
             AppendEventRecords(
                 result,
-                GetEventArray(sequence, FpgSkillEventTrackKind.Generic),
-                FpgSkillEventTrackKind.Generic,
-                payloads,
-                payloadIdToIndex,
-                durationTicks);
-            AppendEventRecords(
-                result,
-                GetEventArray(sequence, FpgSkillEventTrackKind.Logic),
-                FpgSkillEventTrackKind.Logic,
-                payloads,
-                payloadIdToIndex,
-                durationTicks);
-            AppendEventRecords(
-                result,
-                GetEventArray(sequence, FpgSkillEventTrackKind.Presentation),
-                FpgSkillEventTrackKind.Presentation,
-                payloads,
-                payloadIdToIndex,
-                durationTicks);
-            AppendEventRecords(
-                result,
-                GetEventArray(sequence, FpgSkillEventTrackKind.Warning),
+                FindFirstRelative(sequence, WarningEventArrayNames),
                 FpgSkillEventTrackKind.Warning,
-                payloads,
-                payloadIdToIndex,
                 durationTicks);
+            result.Sort(CompareAuthoredEvents);
+            for (int index = 0; index < result.Count; index++)
+            {
+                result[index].Index = index;
+            }
 
             return result;
         }
 
-        private static void PopulatePayloadPreview(
-            SerializedProperty payload,
-            FpgSkillPayloadRecord record)
+        private static void PopulatePreviewSummary(
+            SerializedProperty action,
+            FpgSkillActionPreviewRecord record)
         {
             string kind = record.Kind ?? string.Empty;
-            string queryMode = ReadDisplayValue(payload, "queryMode", "queryPolicy");
+            string queryMode = ReadDisplayValue(action, "queryMode", "queryPolicy");
             string discriminator = kind + " " + queryMode;
             if (ContainsAny(discriminator, "PelletRay", "Pellet Ray", "Ray", "射线"))
             {
-                record.PreviewKind = FpgSkillPreviewPayloadKind.PlayerPelletRay;
+                record.PreviewKind = FpgSkillPreviewActionKind.PlayerPelletRay;
                 record.HitShape = "射线";
                 record.PelletCount = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "pelletCount", "payloadCount"),
+                        FindFirstRelative(action, "pelletCount"),
                         1));
                 record.AdditionalPenetrationCount = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "additionalPenetrationCount"),
+                        FindFirstRelative(action, "additionalPenetrationCount"),
                         0));
                 record.MaxHitCount = SaturatingMultiply(
                     record.PelletCount,
@@ -749,17 +884,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
                          "范围"))
             {
                 record.PreviewKind =
-                    FpgSkillPreviewPayloadKind.PlayerAreaAtFirstSurface;
+                    FpgSkillPreviewActionKind.PlayerAreaAtFirstSurface;
                 record.HitShape = "范围";
                 record.AreaCombatantLimit = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "areaCombatantLimit"),
+                        FindFirstRelative(action, "areaCombatantLimit"),
                         0));
                 record.AreaProjectileLimit = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "areaProjectileLimit"),
+                        FindFirstRelative(action, "areaProjectileLimit"),
                         0));
                 record.MaxHitCount = SaturatingAdd(
                     record.AreaCombatantLimit,
@@ -767,17 +902,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
             else if (ContainsAny(discriminator, "Projectile", "弹道", "投射"))
             {
-                record.PreviewKind = FpgSkillPreviewPayloadKind.EnemyProjectile;
+                record.PreviewKind = FpgSkillPreviewActionKind.EnemyProjectile;
                 record.HitShape = "弹道";
                 record.ImpactDelayTicks = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "projectileFlightTicks"),
+                        FindFirstRelative(action, "projectileFlightTicks"),
                         0));
                 record.ProjectileCount = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "projectileCount"),
+                        FindFirstRelative(action, "projectileCount"),
                         1));
                 record.MaxHitCount = record.ProjectileCount;
             }
@@ -787,21 +922,21 @@ namespace FPG.Demo.Editor.SkillAuthoring
                          "Timed Impact",
                          "延迟"))
             {
-                record.PreviewKind = FpgSkillPreviewPayloadKind.EnemyTimedImpact;
+                record.PreviewKind = FpgSkillPreviewActionKind.EnemyTimedImpact;
                 record.HitShape = "延迟命中";
                 record.ImpactDelayTicks = Mathf.Max(
                     0,
                     ReadRawInt(
-                        FindFirstRelative(payload, "timedImpactDelayTicks"),
+                        FindFirstRelative(action, "timedImpactDelayTicks"),
                         0));
                 record.MaxHitCount = 1;
             }
             else if (ContainsAny(discriminator, "Summon", "召唤"))
             {
-                record.PreviewKind = FpgSkillPreviewPayloadKind.EnemySummon;
+                record.PreviewKind = FpgSkillPreviewActionKind.EnemySummon;
                 record.HitShape = "召唤";
                 SerializedProperty candidates = FindFirstRelative(
-                    payload,
+                    action,
                     "summonCandidates");
                 record.SummonCandidateCount = candidates != null
                     && candidates.isArray
@@ -811,13 +946,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
             else if (ContainsAny(discriminator, "Reload", "装填"))
             {
-                record.PreviewKind = FpgSkillPreviewPayloadKind.PlayerReload;
+                record.PreviewKind = FpgSkillPreviewActionKind.PlayerReload;
                 record.HitShape = "装填";
                 record.MaxHitCount = 0;
             }
             else
             {
-                record.PreviewKind = FpgSkillPreviewPayloadKind.Unknown;
+                record.PreviewKind = FpgSkillPreviewActionKind.Unknown;
                 record.HitShape = string.IsNullOrWhiteSpace(kind)
                     ? "未分类"
                     : kind;
@@ -825,7 +960,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     0,
                     ReadRawInt(
                         FindFirstRelative(
-                            payload,
+                            action,
                             "impactDelayTicks",
                             "delayTicks"),
                         0));
@@ -833,18 +968,18 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     0,
                     ReadRawInt(
                         FindFirstRelative(
-                            payload,
+                            action,
                             "maxHitCount",
                             "maxImpactCount"),
                         0));
             }
 
             SerializedProperty baseDamage = FindFirstRelative(
-                payload,
+                action,
                 "baseDamage",
                 "damage");
             SerializedProperty breakDamage = FindFirstRelative(
-                payload,
+                action,
                 "breakDamage");
             record.HasDamagePreview = baseDamage != null || breakDamage != null;
             record.BaseDamage = Mathf.Max(0, ReadRawInt(baseDamage, 0));
@@ -853,14 +988,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 0,
                 ReadRawInt(
                     FindFirstRelative(
-                        payload,
+                        action,
                         "weakpointDamageMultiplierBasisPoints"),
                     10000));
             int weakpointBreakBasisPoints = Mathf.Max(
                 0,
                 ReadRawInt(
                     FindFirstRelative(
-                        payload,
+                        action,
                         "weakpointBreakMultiplierBasisPoints"),
                     10000));
             record.WeakpointDamage = RoundBasisPoints(
@@ -869,6 +1004,71 @@ namespace FPG.Demo.Editor.SkillAuthoring
             record.WeakpointBreakDamage = RoundBasisPoints(
                 record.BreakDamage,
                 weakpointBreakBasisPoints);
+        }
+
+        private static FpgSkillActionPreviewRecord BuildActionPreview(
+            SerializedProperty action,
+            FpgSkillActionKind actionKind,
+            int arrayIndex)
+        {
+            string kind;
+            switch (actionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    SerializedProperty attackModeProperty =
+                        FindFirstRelative(action, "mode");
+                    string attackMode = attackModeProperty != null
+                        && attackModeProperty.propertyType
+                            == SerializedPropertyType.Enum
+                        && attackModeProperty.enumValueIndex >= 0
+                        && attackModeProperty.enumValueIndex
+                            < attackModeProperty.enumNames.Length
+                            ? attackModeProperty.enumNames[
+                                attackModeProperty.enumValueIndex]
+                            : ReadDisplayValue(attackModeProperty);
+                    kind = string.Equals(
+                        attackMode,
+                        "BoundTarget",
+                        StringComparison.Ordinal)
+                            ? "TimedImpact"
+                            : attackMode;
+                    break;
+                case FpgSkillActionKind.LaunchProjectile:
+                    kind = "Projectile";
+                    break;
+                case FpgSkillActionKind.CommitReload:
+                    kind = "ReloadCommit";
+                    break;
+                case FpgSkillActionKind.SummonActors:
+                    kind = "Summon";
+                    break;
+                default:
+                    kind = string.Empty;
+                    break;
+            }
+
+            FpgSkillActionPreviewRecord record = new FpgSkillActionPreviewRecord
+            {
+                Name = GetActionKindLabel(actionKind),
+                Kind = kind,
+                Color = GetPaletteColor(arrayIndex)
+            };
+            PopulatePreviewSummary(action, record);
+            if (actionKind == FpgSkillActionKind.Attack
+                && string.Equals(
+                    kind,
+                    "TimedImpact",
+                    StringComparison.Ordinal))
+            {
+                record.ImpactDelayTicks = Mathf.Max(
+                    0,
+                    ReadRawInt(
+                        FindFirstRelative(action, "delayTicks"),
+                        0));
+                record.MaxHitCount = 1;
+            }
+
+            return record;
         }
 
         private static int SaturatingMultiply(int left, int right)
@@ -895,212 +1095,112 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return rounded > int.MaxValue ? int.MaxValue : (int)rounded;
         }
 
-        private static void PopulatePayloadUseCounts(
-            SerializedObject serializedObject,
-            IList<FpgSkillPayloadRecord> payloads)
-        {
-            if (serializedObject == null || payloads == null || payloads.Count == 0)
-            {
-                return;
-            }
-
-            Dictionary<string, int> payloadIdToIndex = new Dictionary<string, int>(
-                StringComparer.Ordinal);
-            for (int index = 0; index < payloads.Count; index++)
-            {
-                payloads[index].UseCount = 0;
-                if (!string.IsNullOrWhiteSpace(payloads[index].Id))
-                {
-                    payloadIdToIndex[payloads[index].Id] = index;
-                }
-            }
-
-            SerializedProperty sequences = GetSequences(serializedObject);
-            if (sequences == null || !sequences.isArray)
-            {
-                return;
-            }
-
-            for (int sequenceIndex = 0;
-                sequenceIndex < sequences.arraySize;
-                sequenceIndex++)
-            {
-                SerializedProperty sequence =
-                    sequences.GetArrayElementAtIndex(sequenceIndex);
-                CountPayloadUses(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Generic),
-                    payloads,
-                    payloadIdToIndex);
-                CountPayloadUses(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Logic),
-                    payloads,
-                    payloadIdToIndex);
-            }
-        }
-
-        private static void CountPayloadUses(
-            SerializedProperty eventArray,
-            IList<FpgSkillPayloadRecord> payloads,
-            IReadOnlyDictionary<string, int> payloadIdToIndex)
-        {
-            if (eventArray == null || !eventArray.isArray)
-            {
-                return;
-            }
-
-            for (int index = 0; index < eventArray.arraySize; index++)
-            {
-                SerializedProperty eventProperty =
-                    eventArray.GetArrayElementAtIndex(index);
-                int payloadIndex = ResolvePayloadIndex(
-                    eventProperty,
-                    payloads,
-                    payloadIdToIndex);
-                if (payloadIndex >= 0 && payloadIndex < payloads.Count)
-                {
-                    payloads[payloadIndex].UseCount++;
-                }
-            }
-        }
-
-        private static int ResolvePayloadIndex(
-            SerializedProperty eventProperty,
-            IList<FpgSkillPayloadRecord> payloads,
-            IReadOnlyDictionary<string, int> payloadIdToIndex)
-        {
-            string payloadId = ReadFirstString(
-                eventProperty,
-                PayloadIdNames);
-            if (!string.IsNullOrWhiteSpace(payloadId))
-            {
-                return payloadIdToIndex != null
-                    && payloadIdToIndex.TryGetValue(
-                        payloadId,
-                        out int resolvedIndex)
-                    && resolvedIndex >= 0
-                    && resolvedIndex < payloads.Count
-                        ? resolvedIndex
-                        : -1;
-            }
-
-            int payloadIndex = ReadRawInt(
-                FindFirstRelative(eventProperty, PayloadIndexNames),
-                -1);
-            return payloadIndex >= 0 && payloadIndex < payloads.Count
-                ? payloadIndex
-                : -1;
-        }
-
         private static void AppendEventRecords(
-            ICollection<FpgSkillEventRecord> result,
+            ICollection<FpgSkillEventRecord> destination,
             SerializedProperty eventArray,
             FpgSkillEventTrackKind track,
-            IList<FpgSkillPayloadRecord> payloads,
-            IReadOnlyDictionary<string, int> payloadIdToIndex,
-            int durationTicks)
+            int durationTicks,
+            FpgSkillActionKind actionKind = FpgSkillActionKind.None,
+            int presentationTrackIndex = -1,
+            string presentationTrackId = null,
+            string presentationTrackName = null)
         {
             if (eventArray == null || !eventArray.isArray)
             {
                 return;
             }
 
-            for (int arrayIndex = 0; arrayIndex < eventArray.arraySize; arrayIndex++)
+            for (int arrayIndex = 0;
+                arrayIndex < eventArray.arraySize;
+                arrayIndex++)
             {
                 SerializedProperty eventProperty =
                     eventArray.GetArrayElementAtIndex(arrayIndex);
-                SerializedProperty tickProperty = track == FpgSkillEventTrackKind.Warning
-                    ? eventProperty.FindPropertyRelative("startTick")
-                    : FindFirstRelative(eventProperty, TickNames);
-                int tick = ReadRawInt(tickProperty, 0);
+                int tick = track == FpgSkillEventTrackKind.Warning
+                    ? ReadRawInt(
+                        eventProperty.FindPropertyRelative("startTick"),
+                        0)
+                    : ReadRawInt(
+                        FindFirstRelative(eventProperty, TickNames),
+                        0);
                 int eventDuration;
                 if (track == FpgSkillEventTrackKind.Warning)
                 {
                     int endTick = ReadRawInt(
                         eventProperty.FindPropertyRelative("endTick"),
                         tick);
-                    eventDuration = endTick - tick;
+                    eventDuration = Mathf.Max(0, endTick - tick);
                 }
                 else
                 {
                     eventDuration = ReadRawInt(
-                        FindFirstRelative(eventProperty, EventDurationNames),
+                        FindFirstRelative(
+                            eventProperty,
+                            EventDurationNames),
                         0);
                 }
 
                 int authoredOrdinal = ReadRawInt(
-                    FindFirstRelative(eventProperty, AuthoredOrdinalNames),
-                    arrayIndex);
-                int payloadIndex = ResolvePayloadIndex(
-                    eventProperty,
-                    payloads,
-                    payloadIdToIndex);
-                string payloadId = ReadFirstString(
-                    eventProperty,
-                    PayloadIdNames);
-
-                string eventId = ReadFirstString(eventProperty, "eventId", "id");
-                string socketId = ReadFirstString(
-                    eventProperty,
-                    "socketId",
-                    "socket");
-                FpgSkillTargetSource targetSource = ReadTargetSource(
-                    eventProperty);
-                Vector3 targetOffset = ReadVector3(
-                    FindFirstRelative(eventProperty, "targetOffset"),
-                    Vector3.zero);
-                string kind = GetTrackLabel(track, eventProperty);
-                string name = ReadFirstString(
-                    eventProperty,
-                    "displayName",
-                    "name",
-                    "label");
-                if (string.IsNullOrWhiteSpace(name))
-                {
-                    name = BuildEventName(
+                    FindFirstRelative(
                         eventProperty,
-                        track,
-                        arrayIndex,
-                        eventId,
-                        payloadIndex,
-                        payloads);
+                        AuthoredOrdinalNames),
+                    arrayIndex);
+                string eventId = ReadFirstString(
+                    eventProperty,
+                    "eventId");
+                FpgSkillActionPreviewRecord actionPreview =
+                    actionKind == FpgSkillActionKind.None
+                        ? null
+                        : BuildActionPreview(
+                            eventProperty,
+                            actionKind,
+                            arrayIndex);
+                string kind = actionKind == FpgSkillActionKind.None
+                    ? GetTrackLabel(track, eventProperty)
+                    : GetActionKindLabel(actionKind);
+                string detail = track == FpgSkillEventTrackKind.Warning
+                    ? ReadFirstString(eventProperty, "warningId")
+                    : string.Empty;
+                string name = string.IsNullOrWhiteSpace(eventId)
+                    ? kind + " " + (arrayIndex + 1)
+                    : eventId;
+                if (!string.IsNullOrWhiteSpace(detail))
+                {
+                    name += " / " + detail;
                 }
 
-                bool requiresPayload = track == FpgSkillEventTrackKind.Logic
-                    || track == FpgSkillEventTrackKind.Generic
-                        && (!string.IsNullOrWhiteSpace(payloadId)
-                            || FindFirstRelative(eventProperty, PayloadIndexNames) != null);
-                Color color = payloadIndex >= 0 && payloadIndex < payloads.Count
-                    ? payloads[payloadIndex].Color
-                    : GetTrackColor(track, arrayIndex);
-                bool invalid = tick < 0
-                    || tick > durationTicks
-                    || eventDuration < 0
-                    || tick + eventDuration > durationTicks
-                    || authoredOrdinal < 0
-                    || requiresPayload
-                        && (payloadIndex < 0 || payloadIndex >= payloads.Count);
-                result.Add(new FpgSkillEventRecord
+                FpgSkillEventKey key = MakeEventKey(
+                    track,
+                    actionKind,
+                    presentationTrackIndex,
+                    arrayIndex);
+                destination.Add(new FpgSkillEventRecord
                 {
-                    Index = MakeEventKey(track, arrayIndex),
+                    Key = key,
                     ArrayIndex = arrayIndex,
                     Tick = tick,
                     DurationTicks = eventDuration,
                     AuthoredOrdinal = authoredOrdinal,
-                    PayloadIndex = payloadIndex,
                     EventId = eventId,
-                    PayloadId = payloadId,
-                    SocketId = socketId,
-                    TargetSource = targetSource,
-                    TargetOffset = targetOffset,
-                    PayloadPreview = payloadIndex >= 0
-                        && payloadIndex < payloads.Count
-                            ? payloads[payloadIndex].BuildPreviewSummary(tick)
-                            : string.Empty,
+                    SocketId = ReadFirstString(eventProperty, "socketId"),
                     Name = name,
                     Kind = kind,
+                    TargetSource = ReadTargetSource(eventProperty),
+                    TargetOffset = ReadVector3(
+                        eventProperty.FindPropertyRelative("targetOffset"),
+                        Vector3.zero),
                     Track = track,
-                    IsInvalid = invalid,
-                    Color = color
+                    PresentationTrackIndex = presentationTrackIndex,
+                    PresentationTrackId = presentationTrackId,
+                    PresentationTrackName = presentationTrackName,
+                    InlineActionPreview = actionPreview,
+                    IsInvalid = tick < 0
+                        || tick > durationTicks
+                        || eventDuration < 0
+                        || (long)tick + eventDuration > durationTicks,
+                    PreviewSummary = actionPreview?.BuildPreviewSummary(tick)
+                        ?? string.Empty,
+                    Color = GetTrackColor(track, arrayIndex)
                 });
             }
         }
@@ -1108,11 +1208,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public static List<FpgSkillValidationItem> Validate(
             SerializedObject serializedObject,
             int sequenceIndex,
-            IList<FpgSkillPayloadRecord> payloads,
             IList<FpgSkillEventRecord> events,
             int durationTicks,
             int actualAnimationDurationTicks = -1,
-            GameObject previewPrefab = null)
+            GameObject previewPrefab = null,
+            bool includeRuntimeValidation = true)
         {
             List<FpgSkillValidationItem> result = new List<FpgSkillValidationItem>();
             if (serializedObject == null || serializedObject.targetObject == null)
@@ -1152,11 +1252,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             if (durationTicks < 0)
             {
                 result.Add(Error("序列时长不能小于 0 Tick。"));
-            }
-
-            if (GetPayloads(sequence) == null)
-            {
-                result.Add(Warning("当前序列尚未提供 payloadSlots/payloads 字段。"));
             }
 
             if (!HasAnyEventArray(sequence))
@@ -1211,19 +1306,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 }
             }
 
-            for (int index = 0; index < payloads.Count; index++)
-            {
-                FpgSkillPayloadRecord payload = payloads[index];
-                if (payload.UseCount == 0)
-                {
-                    result.Add(new FpgSkillValidationItem
-                    {
-                        Severity = FpgSkillIssueSeverity.Warning,
-                        Message = "载荷槽“" + payload.Name + "”未被任何事件引用。",
-                        PayloadIndex = payload.Index
-                    });
-                }
-            }
+
 
             for (int index = 0; index < events.Count; index++)
             {
@@ -1234,7 +1317,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     {
                         Severity = FpgSkillIssueSeverity.Error,
                         Message = "事件“" + eventRecord.Name + "”超出序列时长。",
-                        EventIndex = eventRecord.Index,
+                        EventKey = eventRecord.Key,
                         Tick = eventRecord.Tick
                     });
                 }
@@ -1246,35 +1329,28 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     {
                         Severity = FpgSkillIssueSeverity.Error,
                         Message = "事件“" + eventRecord.Name + "”的有效区间非法。",
-                        EventIndex = eventRecord.Index,
+                        EventKey = eventRecord.Key,
                         Tick = eventRecord.Tick
                     });
                 }
 
-                bool requiresPayload = eventRecord.Track == FpgSkillEventTrackKind.Logic
-                    || eventRecord.Track == FpgSkillEventTrackKind.Generic
-                        && !string.IsNullOrWhiteSpace(eventRecord.PayloadId);
-                if (requiresPayload
-                    && (eventRecord.PayloadIndex < 0
-                        || eventRecord.PayloadIndex >= payloads.Count))
-                {
-                    result.Add(new FpgSkillValidationItem
-                    {
-                        Severity = FpgSkillIssueSeverity.Error,
-                        Message = "事件“" + eventRecord.Name + "”没有可解析的载荷槽。",
-                        EventIndex = eventRecord.Index,
-                        Tick = eventRecord.Tick
-                    });
-                }
+
             }
 
+            AppendActivePresentationValidation(
+                result,
+                sequence,
+                events);
             AppendAuthoredPositionValidation(result, events);
             AppendPreviewPrefabValidation(
                 result,
                 sequence,
                 events,
                 previewPrefab);
-            AppendRuntimeValidation(result, serializedObject, events);
+            if (includeRuntimeValidation)
+            {
+                AppendRuntimeValidation(result, serializedObject, events);
+            }
 
             if (result.Count == 0)
             {
@@ -1282,6 +1358,239 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             return result;
+        }
+
+        private static void AppendActivePresentationValidation(
+            ICollection<FpgSkillValidationItem> result,
+            SerializedProperty sequence,
+            IList<FpgSkillEventRecord> events)
+        {
+            SerializedProperty tracks = GetActivePresentationTracks(sequence);
+            if (tracks == null)
+            {
+                return;
+            }
+
+            HashSet<string> trackIds = new HashSet<string>(
+                StringComparer.Ordinal);
+            for (int index = 0; index < tracks.arraySize; index++)
+            {
+                SerializedProperty track = tracks.GetArrayElementAtIndex(index);
+                string trackId = ReadFirstString(track, "trackId");
+                string displayName = ReadFirstString(track, "displayName");
+                if (string.IsNullOrWhiteSpace(trackId)
+                    || !trackIds.Add(trackId))
+                {
+                    result.Add(Error(
+                        "表现轨道 " + (index + 1)
+                        + " 缺少唯一稳定 ID。"));
+                }
+
+                if (string.IsNullOrWhiteSpace(displayName))
+                {
+                    result.Add(Error(
+                        "表现轨道 " + (index + 1)
+                        + " 缺少显示名称。"));
+                }
+            }
+
+            Dictionary<string, int> gameplayTicks =
+                new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int index = 0; index < events.Count; index++)
+            {
+                FpgSkillEventRecord eventRecord = events[index];
+                if (eventRecord.Track == FpgSkillEventTrackKind.GameplayAction
+                    && !string.IsNullOrWhiteSpace(eventRecord.EventId))
+                {
+                    gameplayTicks[eventRecord.EventId] = eventRecord.Tick;
+                }
+            }
+
+            for (int index = 0; index < events.Count; index++)
+            {
+                FpgSkillEventRecord eventRecord = events[index];
+                if (!IsActivePresentationEventTrack(eventRecord.Track))
+                {
+                    continue;
+                }
+
+                SerializedProperty eventProperty = GetEventArray(
+                        sequence,
+                        eventRecord.Key)
+                    ?.GetArrayElementAtIndex(eventRecord.Key.LocalIndex);
+                if (eventProperty == null)
+                {
+                    continue;
+                }
+
+                string binding = ReadFirstString(
+                    eventProperty,
+                    "boundGameplayEventId");
+                if (!string.IsNullOrWhiteSpace(binding)
+                    && (!gameplayTicks.TryGetValue(
+                            binding,
+                            out int gameplayTick)
+                        || eventRecord.Tick < gameplayTick))
+                {
+                    result.Add(EventError(
+                        eventRecord,
+                        "表现事件“" + eventRecord.Name
+                        + "”必须绑定现有逻辑事件，且触发 Tick 不能早于它。"));
+                }
+
+                SerializedProperty presentation =
+                    eventProperty.FindPropertyRelative("presentation");
+                switch (eventRecord.Track)
+                {
+                    case FpgSkillEventTrackKind.PresentationVfx:
+                        ValidateVfxPresentation(
+                            result,
+                            eventRecord,
+                            eventProperty,
+                            presentation);
+                        break;
+                    case FpgSkillEventTrackKind.PresentationAudio:
+                        ValidateAudioPresentation(
+                            result,
+                            eventRecord,
+                            presentation);
+                        break;
+                    case FpgSkillEventTrackKind.PresentationCameraShake:
+                        ValidateCameraShakePresentation(
+                            result,
+                            eventRecord,
+                            presentation);
+                        break;
+                }
+            }
+        }
+
+        private static void ValidateVfxPresentation(
+            ICollection<FpgSkillValidationItem> result,
+            FpgSkillEventRecord eventRecord,
+            SerializedProperty eventProperty,
+            SerializedProperty presentation)
+        {
+            SerializedProperty prefab =
+                presentation?.FindPropertyRelative("prefab");
+            float duration = ReadFloat(
+                presentation?.FindPropertyRelative("durationSeconds"),
+                0f);
+            Vector3 scale = ReadVector3(
+                presentation?.FindPropertyRelative("scale"),
+                Vector3.zero);
+            Vector3 rotation = ReadVector3(
+                presentation?.FindPropertyRelative("rotationOffsetEuler"),
+                new Vector3(float.NaN, 0f, 0f));
+            if (prefab == null
+                || prefab.objectReferenceValue == null
+                || !IsFinitePositive(duration)
+                || !IsFinitePositive(scale.x)
+                || !IsFinitePositive(scale.y)
+                || !IsFinitePositive(scale.z)
+                || !IsFinite(rotation.x)
+                || !IsFinite(rotation.y)
+                || !IsFinite(rotation.z))
+            {
+                result.Add(EventError(
+                    eventRecord,
+                    "特效事件“" + eventRecord.Name
+                    + "”需要 Prefab、正持续时间和正缩放。"));
+            }
+
+            SerializedProperty anchorProperty =
+                eventProperty.FindPropertyRelative("anchor");
+            int anchor = anchorProperty != null
+                && anchorProperty.propertyType == SerializedPropertyType.Enum
+                    ? anchorProperty.intValue
+                    : -1;
+            string socketId = ReadFirstString(eventProperty, "socketId");
+            if ((anchor == 0 && !string.IsNullOrEmpty(socketId))
+                || (anchor == 1 && string.IsNullOrWhiteSpace(socketId))
+                || (anchor != 0 && anchor != 1))
+            {
+                result.Add(EventError(
+                    eventRecord,
+                    "特效事件“" + eventRecord.Name
+                    + "”的 Owner Root / Owner Socket 配置无效。"));
+            }
+        }
+
+        private static void ValidateAudioPresentation(
+            ICollection<FpgSkillValidationItem> result,
+            FpgSkillEventRecord eventRecord,
+            SerializedProperty presentation)
+        {
+            SerializedProperty clip = presentation?.FindPropertyRelative("clip");
+            float volume = ReadFloat(
+                presentation?.FindPropertyRelative("volume"),
+                -1f);
+            if (clip == null
+                || clip.objectReferenceValue == null
+                || !IsFinite(volume)
+                || volume < 0f
+                || volume > 1f)
+            {
+                result.Add(EventError(
+                    eventRecord,
+                    "音效事件“" + eventRecord.Name
+                    + "”需要 AudioClip 和 0-1 音量。"));
+            }
+        }
+
+        private static void ValidateCameraShakePresentation(
+            ICollection<FpgSkillValidationItem> result,
+            FpgSkillEventRecord eventRecord,
+            SerializedProperty presentation)
+        {
+            float strength = ReadFloat(
+                presentation?.FindPropertyRelative("strength"),
+                -1f);
+            float duration = ReadFloat(
+                presentation?.FindPropertyRelative("durationSeconds"),
+                0f);
+            if (!IsFinite(strength)
+                || strength < 0f
+                || !IsFinitePositive(duration))
+            {
+                result.Add(EventError(
+                    eventRecord,
+                    "震屏事件“" + eventRecord.Name
+                    + "”需要非负强度和正持续时间。"));
+            }
+        }
+
+        private static FpgSkillValidationItem EventError(
+            FpgSkillEventRecord eventRecord,
+            string message)
+        {
+            return new FpgSkillValidationItem
+            {
+                Severity = FpgSkillIssueSeverity.Error,
+                Message = message,
+                EventKey = eventRecord.Key,
+                Tick = eventRecord.Tick
+            };
+        }
+
+        private static float ReadFloat(
+            SerializedProperty property,
+            float fallback)
+        {
+            return property != null
+                && property.propertyType == SerializedPropertyType.Float
+                    ? property.floatValue
+                    : fallback;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return IsFinite(value) && value > 0f;
         }
 
         public static bool TryReadCompiledSchedule(
@@ -1361,6 +1670,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         CompiledEventId = compiledEvent.EventId,
                         Tick = compiledEvent.Tick,
                         AuthoredOrdinal = compiledEvent.SortOrder,
+                        EventKey = authored?.Key
+                            ?? FpgSkillEventKey.Invalid,
                         EventIndex = authored?.Index ?? -1,
                         Kind = GetCompiledKindLabel(kind),
                         Name = authored?.Name ?? kind,
@@ -1379,54 +1690,18 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
 
 
-        public static SerializedProperty GetPayloadProperty(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int payloadIndex)
-        {
-            SerializedProperty payloads = GetPayloads(GetSequence(serializedObject, sequenceIndex));
-            return payloads != null
-                && payloads.isArray
-                && payloadIndex >= 0
-                && payloadIndex < payloads.arraySize
-                    ? payloads.GetArrayElementAtIndex(payloadIndex)
-                    : null;
-        }
-
-        public static SerializedProperty GetPhaseProperty(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int phaseIndex)
-        {
-            SerializedProperty sequence = GetSequence(
-                serializedObject,
-                sequenceIndex);
-            SerializedProperty phases = sequence?.FindPropertyRelative("phases");
-            return phases != null
-                && phases.isArray
-                && phaseIndex >= 0
-                && phaseIndex < phases.arraySize
-                    ? phases.GetArrayElementAtIndex(phaseIndex)
-                    : null;
-        }
-
-
         public static SerializedProperty GetEventProperty(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int eventIndex)
+            FpgSkillEventKey eventKey)
         {
             SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
-            DecodeEventKey(
-                eventIndex,
-                out FpgSkillEventTrackKind track,
-                out int arrayIndex);
-            SerializedProperty events = GetEventArray(sequence, track);
+            SerializedProperty events = GetEventArray(sequence, eventKey);
             return events != null
                 && events.isArray
-                && arrayIndex >= 0
-                && arrayIndex < events.arraySize
-                    ? events.GetArrayElementAtIndex(arrayIndex)
+                && eventKey.IsValid
+                && eventKey.LocalIndex < events.arraySize
+                    ? events.GetArrayElementAtIndex(eventKey.LocalIndex)
                     : null;
         }
 
@@ -1441,18 +1716,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public static bool SetEventTick(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int eventIndex,
+            FpgSkillEventKey eventKey,
             int tick)
         {
             SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
             SerializedProperty eventProperty = GetEventProperty(
                 serializedObject,
                 sequenceIndex,
-                eventIndex);
-            DecodeEventKey(
-                eventIndex,
-                out FpgSkillEventTrackKind track,
-                out _);
+                eventKey);
+            FpgSkillEventTrackKind track = eventKey.Track;
             SerializedProperty tickProperty = track == FpgSkillEventTrackKind.Warning
                 ? eventProperty?.FindPropertyRelative("startTick")
                 : FindFirstRelative(eventProperty, TickNames);
@@ -1484,165 +1756,393 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return true;
         }
 
-        public static bool SetEventPayloadReference(
+        public static FpgSkillEventKey AddAction(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int eventIndex,
-            int payloadIndex)
+            int tick,
+            FpgSkillActionKind actionKind,
+            int modeValue = 0)
         {
             if (serializedObject == null
-                || serializedObject.targetObject == null)
+                || serializedObject.targetObject == null
+                || actionKind == FpgSkillActionKind.None)
             {
-                return false;
+                return FpgSkillEventKey.Invalid;
+            }
+
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            FpgSkillEventKey lookupKey = new FpgSkillEventKey(
+                FpgSkillEventTrackKind.GameplayAction,
+                actionKind,
+                0);
+            SerializedProperty eventArray = GetEventArray(sequence, lookupKey);
+            if (eventArray == null || !eventArray.isArray)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "添加技能玩法动作");
+            int index = eventArray.arraySize;
+            eventArray.InsertArrayElementAtIndex(index);
+            SerializedProperty action = eventArray.GetArrayElementAtIndex(index);
+            ResetProperty(action);
+            FpgSkillEventKey eventKey = new FpgSkillEventKey(
+                FpgSkillEventTrackKind.GameplayAction,
+                actionKind,
+                index);
+            int normalizedTick = Mathf.Clamp(
+                tick,
+                0,
+                GetDurationTicks(sequence));
+            string eventId = "event." + Guid.NewGuid().ToString("N");
+            WriteString(action, eventId, "eventId");
+            WriteInt(action, normalizedTick, "tick");
+            WriteInt(
+                action,
+                FindNextAuthoredOrdinal(sequence, eventKey),
+                "authoredOrdinal");
+            ConfigureDefaultAction(
+                action,
+                actionKind,
+                modeValue,
+                IsEnemyAsset(serializedObject));
+            NormalizeActionSpatialMetadata(
+                action,
+                actionKind,
+                IsEnemyAsset(serializedObject));
+            Apply(serializedObject);
+            return eventKey;
+        }
+
+        public static FpgSkillEventKey AddActivePresentationEvent(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            int presentationTrackIndex,
+            FpgSkillEventTrackKind eventTrack,
+            int tick)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null
+                || !IsActivePresentationEventTrack(eventTrack))
+            {
+                return FpgSkillEventKey.Invalid;
             }
 
             serializedObject.UpdateIfRequiredOrScript();
             SerializedProperty sequence = GetSequence(
                 serializedObject,
                 sequenceIndex);
-            List<FpgSkillPayloadRecord> authoredPayloads =
-                ReadPayloads(sequence);
-            FpgSkillPayloadRecord payload = authoredPayloads.Find(item =>
-                item.Index == payloadIndex);
-            DecodeEventKey(
-                eventIndex,
-                out FpgSkillEventTrackKind track,
-                out _);
-            SerializedProperty eventProperty = GetEventProperty(
+            SerializedProperty eventArray = GetActivePresentationEventArray(
+                sequence,
+                presentationTrackIndex,
+                eventTrack);
+            if (eventArray == null || !eventArray.isArray)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Add active presentation event");
+            int index = eventArray.arraySize;
+            eventArray.InsertArrayElementAtIndex(index);
+            SerializedProperty eventProperty =
+                eventArray.GetArrayElementAtIndex(index);
+            ResetProperty(eventProperty);
+            FpgSkillEventKey eventKey = MakeEventKey(
+                eventTrack,
+                FpgSkillActionKind.None,
+                presentationTrackIndex,
+                index);
+            WriteString(
+                eventProperty,
+                "event." + Guid.NewGuid().ToString("N"),
+                "eventId");
+            WriteInt(
+                eventProperty,
+                Mathf.Clamp(tick, 0, GetDurationTicks(sequence)),
+                "tick");
+            WriteInt(
+                eventProperty,
+                FindNextAuthoredOrdinal(sequence, eventKey),
+                "authoredOrdinal");
+            WriteString(eventProperty, string.Empty, "boundGameplayEventId");
+            ConfigureDefaultActivePresentationEvent(
+                eventProperty,
+                eventTrack);
+            Apply(serializedObject);
+            return eventKey;
+        }
+
+        public static FpgSkillEventKey MoveActivePresentationEventToTrack(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            FpgSkillEventKey sourceKey,
+            int targetPresentationTrackIndex)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null
+                || !sourceKey.IsValid
+                || !IsActivePresentationEventTrack(sourceKey.Track)
+                || sourceKey.PresentationTrackIndex
+                    == targetPresentationTrackIndex)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            SerializedProperty sourceArray = GetEventArray(
+                sequence,
+                sourceKey);
+            FpgSkillEventKey targetArrayKey = MakeEventKey(
+                sourceKey.Track,
+                FpgSkillActionKind.None,
+                targetPresentationTrackIndex,
+                0);
+            SerializedProperty targetArray = GetEventArray(
+                sequence,
+                targetArrayKey);
+            if (sourceArray == null
+                || targetArray == null
+                || !sourceArray.isArray
+                || !targetArray.isArray
+                || sourceKey.LocalIndex < 0
+                || sourceKey.LocalIndex >= sourceArray.arraySize)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            FpgSerializedPropertySnapshot snapshot =
+                FpgSerializedPropertySnapshot.Capture(
+                    sourceArray.GetArrayElementAtIndex(
+                        sourceKey.LocalIndex));
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Move active presentation event to track");
+            int targetIndex = targetArray.arraySize;
+            targetArray.InsertArrayElementAtIndex(targetIndex);
+            SerializedProperty target =
+                targetArray.GetArrayElementAtIndex(targetIndex);
+            ResetProperty(target);
+            snapshot.ApplyTo(target);
+            DeleteArrayElementWithoutApply(
+                sourceArray,
+                sourceKey.LocalIndex);
+            Apply(serializedObject);
+            return MakeEventKey(
+                sourceKey.Track,
+                FpgSkillActionKind.None,
+                targetPresentationTrackIndex,
+                targetIndex);
+        }
+
+        public static bool SetActionMode(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            FpgSkillEventKey eventKey,
+            int modeValue)
+        {
+            if (serializedObject == null
+                || (eventKey.ActionKind != FpgSkillActionKind.Attack
+                    && eventKey.ActionKind
+                        != FpgSkillActionKind.LaunchProjectile))
+            {
+                return false;
+            }
+
+            SerializedProperty action = GetEventProperty(
                 serializedObject,
                 sequenceIndex,
-                eventIndex);
-            if (payload == null
-                || eventProperty == null
-                || (track != FpgSkillEventTrackKind.Logic
-                    && track != FpgSkillEventTrackKind.Generic))
+                eventKey);
+            if (action == null)
             {
                 return false;
             }
 
             Undo.RecordObject(
                 serializedObject.targetObject,
-                "替换事件载荷");
-            WriteInt(
-                eventProperty,
-                payload.Index,
-                PayloadIndexNames);
-            WriteString(
-                eventProperty,
-                payload.Id,
-                PayloadIdNames);
-            SetDefaultEventTargetSource(eventProperty, payload);
+                "切换玩法动作模式");
+            ConfigureActionModeDefaults(
+                action,
+                eventKey.ActionKind,
+                modeValue,
+                IsEnemyAsset(serializedObject));
+            NormalizeActionSpatialMetadata(
+                action,
+                eventKey.ActionKind,
+                IsEnemyAsset(serializedObject));
             Apply(serializedObject);
             return true;
         }
 
-
-        public static int AddEvent(
+        public static FpgSkillEventKey ConvertAction(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int tick,
-            FpgSkillPayloadRecord payload)
+            FpgSkillEventKey sourceKey,
+            FpgSkillActionKind targetKind,
+            int targetModeValue)
         {
-            SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
-            return AddEvent(
+            if (serializedObject == null
+                || !sourceKey.IsValid
+                || sourceKey.ActionKind == FpgSkillActionKind.None
+                || targetKind == FpgSkillActionKind.None
+                || targetKind == sourceKey.ActionKind)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            SerializedProperty sourceArray = GetEventArray(sequence, sourceKey);
+            SerializedProperty source = GetEventProperty(
                 serializedObject,
                 sequenceIndex,
-                tick,
-                payload,
-                GetDefaultEventTrack(sequence));
+                sourceKey);
+            FpgSkillEventKey targetLookup = new FpgSkillEventKey(
+                FpgSkillEventTrackKind.GameplayAction,
+                targetKind,
+                0);
+            SerializedProperty targetArray = GetEventArray(
+                sequence,
+                targetLookup);
+            if (sourceArray == null
+                || source == null
+                || targetArray == null
+                || !targetArray.isArray)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            string eventId = ReadFirstString(source, "eventId");
+            int tick = ReadRawInt(
+                source.FindPropertyRelative("tick"),
+                0);
+            int authoredOrdinal = ReadRawInt(
+                source.FindPropertyRelative("authoredOrdinal"),
+                0);
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "转换玩法动作类型");
+            int targetIndex = targetArray.arraySize;
+            targetArray.InsertArrayElementAtIndex(targetIndex);
+            SerializedProperty target =
+                targetArray.GetArrayElementAtIndex(targetIndex);
+            ResetProperty(target);
+            ConfigureDefaultAction(
+                target,
+                targetKind,
+                targetModeValue,
+                IsEnemyAsset(serializedObject));
+            WriteString(target, eventId, "eventId");
+            WriteInt(target, tick, "tick");
+            WriteInt(target, authoredOrdinal, "authoredOrdinal");
+            CopyCompatibleInteger(source, target, "ammoCost");
+            CopyCompatibleInteger(source, target, "baseDamage");
+            CopyCompatibleInteger(source, target, "breakDamage");
+            CopyCompatibleInteger(
+                source,
+                target,
+                "weakpointDamageMultiplierBasisPoints");
+            CopyCompatibleInteger(
+                source,
+                target,
+                "weakpointBreakMultiplierBasisPoints");
+            CopyCompatibleString(source, target, "socketId");
+            CopyCompatibleEnum(source, target, "targetSource");
+            CopyCompatibleVector3(source, target, "targetOffset");
+            NormalizeConvertedActionSpatialMetadata(
+                target,
+                targetKind,
+                IsEnemyAsset(serializedObject));
+            sourceArray.DeleteArrayElementAtIndex(sourceKey.LocalIndex);
+            Apply(serializedObject);
+            return new FpgSkillEventKey(
+                FpgSkillEventTrackKind.GameplayAction,
+                targetKind,
+                targetIndex);
         }
 
-        public static int AddEvent(
+        public static FpgSkillEventKey AddEvent(
             SerializedObject serializedObject,
             int sequenceIndex,
             int tick,
-            FpgSkillPayloadRecord payload,
             FpgSkillEventTrackKind track,
             int eventDurationTicks = 0)
         {
-            SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
+            if (serializedObject == null
+                || serializedObject.targetObject == null
+                || track != FpgSkillEventTrackKind.Warning)
+            {
+                return FpgSkillEventKey.Invalid;
+            }
+
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
             SerializedProperty eventArray = GetEventArray(sequence, track);
             if (eventArray == null || !eventArray.isArray)
             {
-                return -1;
+                return FpgSkillEventKey.Invalid;
             }
 
-            Undo.RecordObject(serializedObject.targetObject, "添加技能事件");
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Add skill warning");
             int index = eventArray.arraySize;
             eventArray.InsertArrayElementAtIndex(index);
-            SerializedProperty eventProperty = eventArray.GetArrayElementAtIndex(index);
-            ResetProperty(eventProperty);
-            SetDefaultEventTargetSource(eventProperty, payload);
-            int normalizedTick = Mathf.Clamp(tick, 0, GetDurationTicks(sequence));
-            if (track == FpgSkillEventTrackKind.Warning)
-            {
-                WriteInt(eventProperty, normalizedTick, "startTick");
-                WriteInt(
-                    eventProperty,
-                    Mathf.Min(
-                        GetDurationTicks(sequence),
-                        normalizedTick + Mathf.Max(1, eventDurationTicks)),
-                    "endTick");
-            }
-            else
-            {
-                WriteInt(eventProperty, normalizedTick, TickNames);
-                if (eventDurationTicks > 0)
-                {
-                    WriteInt(
-                        eventProperty,
-                        eventDurationTicks,
-                        EventDurationNames);
-                }
-            }
-
+            SerializedProperty warning =
+                eventArray.GetArrayElementAtIndex(index);
+            ResetProperty(warning);
+            int normalizedTick = Mathf.Clamp(
+                tick,
+                0,
+                GetDurationTicks(sequence));
+            WriteInt(warning, normalizedTick, "startTick");
             WriteInt(
-                eventProperty,
-                FindNextAuthoredOrdinal(sequence, MakeEventKey(track, index)),
+                warning,
+                Mathf.Min(
+                    GetDurationTicks(sequence),
+                    normalizedTick + Mathf.Max(1, eventDurationTicks)),
+                "endTick");
+            WriteInt(
+                warning,
+                FindNextAuthoredOrdinal(
+                    sequence,
+                    MakeEventKey(track, index)),
                 AuthoredOrdinalNames);
-            string uniqueSuffix = Guid.NewGuid().ToString("N");
-            WriteString(eventProperty, "event." + uniqueSuffix, "eventId", "id");
-            WriteString(eventProperty, "攻击事件 " + (index + 1), "displayName", "name", "label");
-            if (track == FpgSkillEventTrackKind.Logic
-                || track == FpgSkillEventTrackKind.Generic)
-            {
-                if (payload != null)
-                {
-                    WriteInt(eventProperty, payload.Index, PayloadIndexNames);
-                    WriteString(eventProperty, payload.Id, PayloadIdNames);
-                }
-            }
-            else if (track == FpgSkillEventTrackKind.Presentation)
-            {
-                WriteString(eventProperty, "cue." + uniqueSuffix, "cueId");
-            }
-            else if (track == FpgSkillEventTrackKind.Warning)
-            {
-                WriteString(eventProperty, "warning." + uniqueSuffix, "warningId");
-            }
-
+            WriteString(
+                warning,
+                "warning." + Guid.NewGuid().ToString("N"),
+                "warningId");
             Apply(serializedObject);
             return MakeEventKey(track, index);
         }
 
-        public static int DuplicateEvent(
+        public static FpgSkillEventKey DuplicateEvent(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int eventIndex,
+            FpgSkillEventKey eventKey,
             int durationTicks)
         {
             SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
-            DecodeEventKey(
-                eventIndex,
-                out FpgSkillEventTrackKind track,
-                out int arrayIndex);
-            SerializedProperty eventArray = GetEventArray(sequence, track);
+            FpgSkillEventTrackKind track = eventKey.Track;
+            int arrayIndex = eventKey.LocalIndex;
+            SerializedProperty eventArray = GetEventArray(sequence, eventKey);
             if (eventArray == null
                 || !eventArray.isArray
                 || arrayIndex < 0
                 || arrayIndex >= eventArray.arraySize)
             {
-                return -1;
+                return FpgSkillEventKey.Invalid;
             }
 
             Undo.RecordObject(serializedObject.targetObject, "复制技能事件");
@@ -1670,22 +2170,38 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 copy,
                 FindNextAuthoredOrdinal(
                     sequence,
-                    MakeEventKey(track, insertionIndex)),
+                    MakeEventKey(
+                        track,
+                        eventKey.ActionKind,
+                        eventKey.PresentationTrackIndex,
+                        insertionIndex)),
                 AuthoredOrdinalNames);
             WriteString(copy, "event." + Guid.NewGuid().ToString("N"), "eventId", "id");
+            if (eventKey.ActionKind != FpgSkillActionKind.None)
+            {
+                NormalizeActionSpatialMetadata(
+                    copy,
+                    eventKey.ActionKind,
+                    IsEnemyAsset(serializedObject));
+            }
+
             Apply(serializedObject);
-            return MakeEventKey(track, insertionIndex);
+            return MakeEventKey(
+                track,
+                eventKey.ActionKind,
+                eventKey.PresentationTrackIndex,
+                insertionIndex);
         }
 
         public static bool CopyEvents(
             SerializedObject serializedObject,
             int sequenceIndex,
-            IEnumerable<int> eventIndices,
+            IEnumerable<FpgSkillEventKey> eventKeys,
             FpgSkillEventClipboard clipboard)
         {
             if (serializedObject == null
                 || serializedObject.targetObject == null
-                || eventIndices == null
+                || eventKeys == null
                 || clipboard == null)
             {
                 return false;
@@ -1693,16 +2209,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             serializedObject.UpdateIfRequiredOrScript();
             SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
-            List<FpgSkillPayloadRecord> payloads = ReadPayloads(sequence);
             List<FpgSkillEventRecord> authored = ReadEvents(
                 sequence,
-                payloads,
                 GetDurationTicks(sequence));
-            HashSet<int> selected = new HashSet<int>(eventIndices);
+            HashSet<FpgSkillEventKey> selected =
+                new HashSet<FpgSkillEventKey>(eventKeys);
             List<FpgSkillEventRecord> copied = new List<FpgSkillEventRecord>();
             for (int index = 0; index < authored.Count; index++)
             {
-                if (selected.Contains(authored[index].Index))
+                if (selected.Contains(authored[index].Key))
                 {
                     copied.Add(authored[index]);
                 }
@@ -1737,7 +2252,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 SerializedProperty property = GetEventProperty(
                     serializedObject,
                     sequenceIndex,
-                    record.Index);
+                    record.Key);
                 if (property == null)
                 {
                     continue;
@@ -1746,6 +2261,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 items.Add(new FpgSkillEventClipboardItem
                 {
                     Track = record.Track,
+                    ActionKind = record.Key.ActionKind,
+                    PresentationTrackId = record.PresentationTrackId,
                     RelativeTick = record.Tick - minimumTick,
                     DurationTicks = record.DurationTicks,
                     RelativeAuthoredOrdinal =
@@ -1759,13 +2276,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return !clipboard.IsEmpty;
         }
 
-        public static List<int> PasteEvents(
+        public static List<FpgSkillEventKey> PasteEvents(
             SerializedObject serializedObject,
             int sequenceIndex,
             FpgSkillEventClipboard clipboard,
             int anchorTick)
         {
-            List<int> result = new List<int>();
+            List<FpgSkillEventKey> result =
+                new List<FpgSkillEventKey>();
             if (serializedObject == null
                 || serializedObject.targetObject == null
                 || clipboard == null
@@ -1778,7 +2296,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
             int durationTicks = GetDurationTicks(sequence);
             int maximumAnchor = Mathf.Max(0, durationTicks - clipboard.TickSpan);
             int normalizedAnchor = Mathf.Clamp(anchorTick, 0, maximumAnchor);
-            int nextOrdinal = FindNextAuthoredOrdinal(sequence, -1);
+            int nextOrdinal = FindNextAuthoredOrdinal(
+                sequence,
+                FpgSkillEventKey.Invalid);
             int maximumRelativeOrdinal = 0;
             for (int index = 0; index < clipboard.Items.Count; index++)
             {
@@ -1792,9 +2312,24 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return result;
             }
 
+            int[] presentationTrackIndices =
+                new int[clipboard.Items.Count];
             for (int index = 0; index < clipboard.Items.Count; index++)
             {
-                if (GetEventArray(sequence, clipboard.Items[index].Track) == null)
+                FpgSkillEventClipboardItem item = clipboard.Items[index];
+                int presentationTrackIndex =
+                    IsActivePresentationEventTrack(item.Track)
+                        ? FindActivePresentationTrackIndex(
+                            sequence,
+                            item.PresentationTrackId)
+                        : -1;
+                presentationTrackIndices[index] = presentationTrackIndex;
+                FpgSkillEventKey arrayKey = MakeEventKey(
+                    item.Track,
+                    item.ActionKind,
+                    presentationTrackIndex,
+                    0);
+                if (GetEventArray(sequence, arrayKey) == null)
                 {
                     return result;
                 }
@@ -1804,7 +2339,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
             for (int index = 0; index < clipboard.Items.Count; index++)
             {
                 FpgSkillEventClipboardItem item = clipboard.Items[index];
-                SerializedProperty eventArray = GetEventArray(sequence, item.Track);
+                int presentationTrackIndex =
+                    presentationTrackIndices[index];
+                FpgSkillEventKey arrayKey = MakeEventKey(
+                    item.Track,
+                    item.ActionKind,
+                    presentationTrackIndex,
+                    0);
+                SerializedProperty eventArray = GetEventArray(sequence, arrayKey);
                 int arrayIndex = eventArray.arraySize;
                 eventArray.InsertArrayElementAtIndex(arrayIndex);
                 SerializedProperty copy =
@@ -1835,7 +2377,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     "event." + Guid.NewGuid().ToString("N"),
                     "eventId",
                     "id");
-                result.Add(MakeEventKey(item.Track, arrayIndex));
+                result.Add(MakeEventKey(
+                    item.Track,
+                    item.ActionKind,
+                    presentationTrackIndex,
+                    arrayIndex));
             }
 
             Apply(serializedObject);
@@ -1845,33 +2391,32 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public static bool MoveEventsByDelta(
             SerializedObject serializedObject,
             int sequenceIndex,
-            IEnumerable<int> eventIndices,
+            IEnumerable<FpgSkillEventKey> eventKeys,
             int requestedDeltaTicks,
             out int appliedDeltaTicks)
         {
             appliedDeltaTicks = 0;
             if (serializedObject == null
                 || serializedObject.targetObject == null
-                || eventIndices == null)
+                || eventKeys == null)
             {
                 return false;
             }
 
             SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
             int durationTicks = GetDurationTicks(sequence);
-            List<FpgSkillPayloadRecord> payloads = ReadPayloads(sequence);
             List<FpgSkillEventRecord> authored = ReadEvents(
                 sequence,
-                payloads,
                 durationTicks);
-            HashSet<int> selected = new HashSet<int>(eventIndices);
+            HashSet<FpgSkillEventKey> selected =
+                new HashSet<FpgSkillEventKey>(eventKeys);
             List<FpgSkillEventRecord> moving = new List<FpgSkillEventRecord>();
             int minimumDelta = int.MinValue;
             int maximumDelta = int.MaxValue;
             for (int index = 0; index < authored.Count; index++)
             {
                 FpgSkillEventRecord record = authored[index];
-                if (!selected.Contains(record.Index))
+                if (!selected.Contains(record.Key))
                 {
                     continue;
                 }
@@ -1904,7 +2449,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 SerializedProperty property = GetEventProperty(
                     serializedObject,
                     sequenceIndex,
-                    record.Index);
+                    record.Key);
                 int nextTick = record.Tick + appliedDeltaTicks;
                 if (record.Track == FpgSkillEventTrackKind.Warning)
                 {
@@ -1943,36 +2488,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
             SerializedProperty sequence = GetSequence(
                 serializedObject,
                 sequenceIndex);
-            int startTick;
-            int endTick;
-            if (kind == FpgSkillTimelineBlockKind.Animation)
-            {
-                if (blockIndex != 0 || sequence == null)
-                {
-                    return false;
-                }
-
-                startTick = GetAnimationStartTick(sequence);
-                endTick = GetAnimationEndTick(sequence);
-            }
-            else if (kind == FpgSkillTimelineBlockKind.Phase)
-            {
-                SerializedProperty phase = GetPhaseProperty(
-                    serializedObject,
-                    sequenceIndex,
-                    blockIndex);
-                startTick = ReadRawInt(
-                    phase?.FindPropertyRelative("startTick"),
-                    -1);
-                endTick = ReadRawInt(
-                    phase?.FindPropertyRelative("endTick"),
-                    -1);
-            }
-            else
+            if (kind != FpgSkillTimelineBlockKind.Animation
+                || blockIndex != 0
+                || sequence == null)
             {
                 return false;
             }
 
+            int startTick = GetAnimationStartTick(sequence);
+            int endTick = GetAnimationEndTick(sequence);
             if (startTick < 0 || endTick < startTick)
             {
                 return false;
@@ -2008,7 +2532,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public static bool MoveEventOrder(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int eventIndex,
+            FpgSkillEventKey eventKey,
             int requestedDelta)
         {
             if (serializedObject == null
@@ -2023,13 +2547,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 serializedObject,
                 sequenceIndex);
             int durationTicks = GetDurationTicks(sequence);
-            List<FpgSkillPayloadRecord> payloads = ReadPayloads(sequence);
             List<FpgSkillEventRecord> authored = ReadEvents(
                 sequence,
-                payloads,
                 durationTicks);
             FpgSkillEventRecord moving = authored.Find(item =>
-                item.Index == eventIndex);
+                item.Key == eventKey);
             if (moving == null)
             {
                 return false;
@@ -2043,10 +2565,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     right.AuthoredOrdinal);
                 return orderComparison != 0
                     ? orderComparison
-                    : left.Index.CompareTo(right.Index);
+                    : left.Key.CompareTo(right.Key);
             });
             int currentIndex = sameTick.FindIndex(item =>
-                item.Index == eventIndex);
+                item.Key == eventKey);
             int targetIndex = Mathf.Clamp(
                 currentIndex + requestedDelta,
                 0,
@@ -2068,11 +2590,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 SerializedProperty currentProperty = GetEventProperty(
                     serializedObject,
                     sequenceIndex,
-                    current.Index);
+                    current.Key);
                 SerializedProperty adjacentProperty = GetEventProperty(
                     serializedObject,
                     sequenceIndex,
-                    adjacent.Index);
+                    adjacent.Key);
                 WriteInt(
                     currentProperty,
                     adjacent.AuthoredOrdinal,
@@ -2098,43 +2620,53 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public static bool DeleteEvent(
             SerializedObject serializedObject,
             int sequenceIndex,
-            int eventIndex)
+            FpgSkillEventKey eventKey)
         {
-            DecodeEventKey(
-                eventIndex,
-                out FpgSkillEventTrackKind track,
-                out int arrayIndex);
             SerializedProperty eventArray = GetEventArray(
                 GetSequence(serializedObject, sequenceIndex),
-                track);
+                eventKey);
             return DeleteArrayElement(
                 serializedObject,
                 eventArray,
-                arrayIndex,
+                eventKey.LocalIndex,
                 "删除技能事件");
         }
 
         public static bool DeleteEvents(
             SerializedObject serializedObject,
             int sequenceIndex,
-            IEnumerable<int> eventIndices)
+            IEnumerable<FpgSkillEventKey> eventKeys)
         {
             if (serializedObject == null
                 || serializedObject.targetObject == null
-                || eventIndices == null)
+                || eventKeys == null)
             {
                 return false;
             }
 
-            List<int> keys = new List<int>(new HashSet<int>(eventIndices));
+            List<FpgSkillEventKey> keys = new List<FpgSkillEventKey>(
+                new HashSet<FpgSkillEventKey>(eventKeys));
             keys.Sort((left, right) =>
             {
-                DecodeEventKey(left, out FpgSkillEventTrackKind leftTrack, out int leftIndex);
-                DecodeEventKey(right, out FpgSkillEventTrackKind rightTrack, out int rightIndex);
-                int trackComparison = leftTrack.CompareTo(rightTrack);
-                return trackComparison != 0
-                    ? trackComparison
-                    : rightIndex.CompareTo(leftIndex);
+                int trackComparison = left.Track.CompareTo(right.Track);
+                if (trackComparison != 0)
+                {
+                    return trackComparison;
+                }
+
+                int actionComparison = left.ActionKind.CompareTo(
+                    right.ActionKind);
+                if (actionComparison != 0)
+                {
+                    return actionComparison;
+                }
+
+                int presentationTrackComparison =
+                    left.PresentationTrackIndex.CompareTo(
+                        right.PresentationTrackIndex);
+                return presentationTrackComparison != 0
+                    ? presentationTrackComparison
+                    : right.LocalIndex.CompareTo(left.LocalIndex);
             });
             if (keys.Count == 0)
             {
@@ -2144,15 +2676,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
             SerializedProperty sequence = GetSequence(serializedObject, sequenceIndex);
             for (int index = 0; index < keys.Count; index++)
             {
-                DecodeEventKey(
-                    keys[index],
-                    out FpgSkillEventTrackKind track,
-                    out int arrayIndex);
-                SerializedProperty eventArray = GetEventArray(sequence, track);
+                FpgSkillEventKey key = keys[index];
+                SerializedProperty eventArray = GetEventArray(sequence, key);
                 if (eventArray == null
                     || !eventArray.isArray
-                    || arrayIndex < 0
-                    || arrayIndex >= eventArray.arraySize)
+                    || !key.IsValid
+                    || key.LocalIndex >= eventArray.arraySize)
                 {
                     return false;
                 }
@@ -2161,253 +2690,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
             Undo.RecordObject(serializedObject.targetObject, "删除技能事件");
             for (int index = 0; index < keys.Count; index++)
             {
-                DecodeEventKey(
-                    keys[index],
-                    out FpgSkillEventTrackKind track,
-                    out int arrayIndex);
+                FpgSkillEventKey key = keys[index];
                 DeleteArrayElementWithoutApply(
-                    GetEventArray(sequence, track),
-                    arrayIndex);
+                    GetEventArray(sequence, key),
+                    key.LocalIndex);
             }
 
             Apply(serializedObject);
             return true;
-        }
-
-        public static int AddPayload(
-            SerializedObject serializedObject,
-            int sequenceIndex)
-        {
-            SerializedProperty payloadArray = GetPayloads(GetSequence(serializedObject, sequenceIndex));
-            if (payloadArray == null || !payloadArray.isArray)
-            {
-                return -1;
-            }
-
-            Undo.RecordObject(serializedObject.targetObject, "添加载荷槽");
-            int index = payloadArray.arraySize;
-            payloadArray.InsertArrayElementAtIndex(index);
-            SerializedProperty payload = payloadArray.GetArrayElementAtIndex(index);
-            ResetProperty(payload);
-            WriteString(payload, "payload-" + Guid.NewGuid().ToString("N"), "slotId", "payloadId", "id");
-            WriteString(payload, "载荷 " + (index + 1), "displayName", "name", "label");
-            SerializedProperty kind = FindFirstRelative(
-                payload,
-                "kind",
-                "payloadKind",
-                "type");
-            if (kind != null
-                && kind.propertyType == SerializedPropertyType.Enum
-                && kind.enumDisplayNames.Length > 1)
-            {
-                kind.enumValueIndex = 1;
-            }
-            ConfigureDefaultPayload(payload);
-            Apply(serializedObject);
-            return index;
-        }
-
-        public static bool SetPayloadKindAndNormalize(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int payloadIndex,
-            int enumValueIndex)
-        {
-            if (serializedObject == null
-                || serializedObject.targetObject == null)
-            {
-                return false;
-            }
-
-            serializedObject.UpdateIfRequiredOrScript();
-            SerializedProperty payload = GetPayloadProperty(
-                serializedObject,
-                sequenceIndex,
-                payloadIndex);
-            SerializedProperty kind = FindFirstRelative(
-                payload,
-                "kind",
-                "payloadKind",
-                "type");
-            if (payload == null
-                || kind == null
-                || kind.propertyType != SerializedPropertyType.Enum
-                || enumValueIndex <= 0
-                || enumValueIndex >= kind.enumNames.Length)
-            {
-                return false;
-            }
-
-            Undo.RecordObject(
-                serializedObject.targetObject,
-                "修改载荷类型");
-            kind.enumValueIndex = enumValueIndex;
-            string kindName = GetEnumName(kind);
-            NormalizePayloadForCurrentKind(payload);
-            string payloadId = ReadFirstString(
-                payload,
-                "slotId",
-                "payloadId",
-                "id");
-            FpgSkillTargetSource targetSource =
-                GetDefaultTargetSourceForPayloadKind(kind);
-            bool clearSpatialMetadata =
-                string.Equals(
-                    kindName,
-                    "TimedImpact",
-                    StringComparison.Ordinal)
-                || string.Equals(
-                    kindName,
-                    "Summon",
-                    StringComparison.Ordinal);
-            UpdateReferencedEventTargets(
-                serializedObject,
-                payloadIndex,
-                payloadId,
-                targetSource,
-                clearSpatialMetadata);
-            Apply(serializedObject);
-            return true;
-        }
-
-
-        public static int DuplicatePayload(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int payloadIndex)
-        {
-            SerializedProperty payloadArray = GetPayloads(GetSequence(serializedObject, sequenceIndex));
-            if (payloadArray == null
-                || !payloadArray.isArray
-                || payloadIndex < 0
-                || payloadIndex >= payloadArray.arraySize)
-            {
-                return -1;
-            }
-
-            Undo.RecordObject(serializedObject.targetObject, "复制载荷槽");
-            int insertionIndex = payloadIndex + 1;
-            payloadArray.InsertArrayElementAtIndex(insertionIndex);
-            SerializedProperty copy = payloadArray.GetArrayElementAtIndex(insertionIndex);
-            WriteString(
-                copy,
-                "payload-" + Guid.NewGuid().ToString("N"),
-                "slotId",
-                "payloadId",
-                "id");
-            AdjustPayloadIndicesAfterInsert(
-                serializedObject,
-                insertionIndex);
-            Apply(serializedObject);
-            return insertionIndex;
-        }
-
-        public static bool DeletePayload(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int payloadIndex)
-        {
-            if (!CanDeletePayload(
-                    serializedObject,
-                    sequenceIndex,
-                    payloadIndex,
-                    out _))
-            {
-                return false;
-            }
-
-            SerializedProperty payloadArray = GetPayloads(
-                GetSequence(serializedObject, sequenceIndex));
-            Undo.RecordObject(serializedObject.targetObject, "删除载荷槽");
-            DeleteArrayElementWithoutApply(payloadArray, payloadIndex);
-            AdjustPayloadIndicesAfterDelete(serializedObject, payloadIndex);
-            Apply(serializedObject);
-            return true;
-        }
-
-        public static bool CanDeletePayload(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int payloadIndex,
-            out int referenceCount)
-        {
-            referenceCount = 0;
-            if (serializedObject == null
-                || serializedObject.targetObject == null)
-            {
-                return false;
-            }
-
-            List<FpgSkillPayloadRecord> records = ReadPayloads(
-                GetSequence(serializedObject, sequenceIndex));
-            if (payloadIndex < 0 || payloadIndex >= records.Count)
-            {
-                return false;
-            }
-
-            referenceCount = records[payloadIndex].UseCount;
-            return referenceCount == 0;
-        }
-
-        public static int ReplacePayloadReferences(
-            SerializedObject serializedObject,
-            int sequenceIndex,
-            int sourcePayloadIndex,
-            int targetPayloadIndex)
-        {
-            if (serializedObject == null
-                || serializedObject.targetObject == null
-                || sourcePayloadIndex == targetPayloadIndex)
-            {
-                return 0;
-            }
-
-            List<FpgSkillPayloadRecord> payloads = ReadPayloads(
-                GetSequence(serializedObject, sequenceIndex));
-            if (sourcePayloadIndex < 0
-                || sourcePayloadIndex >= payloads.Count
-                || targetPayloadIndex < 0
-                || targetPayloadIndex >= payloads.Count)
-            {
-                return 0;
-            }
-
-            string sourceId = payloads[sourcePayloadIndex].Id;
-            string targetId = payloads[targetPayloadIndex].Id;
-            SerializedProperty sequences = GetSequences(serializedObject);
-            if (sequences == null || !sequences.isArray)
-            {
-                return 0;
-            }
-
-            int replacementCount = 0;
-            Undo.RecordObject(serializedObject.targetObject, "替换载荷引用");
-            for (int currentSequence = 0;
-                currentSequence < sequences.arraySize;
-                currentSequence++)
-            {
-                SerializedProperty sequence =
-                    sequences.GetArrayElementAtIndex(currentSequence);
-                replacementCount += ReplacePayloadReferencesInArray(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Generic),
-                    sourcePayloadIndex,
-                    sourceId,
-                    targetPayloadIndex,
-                    targetId);
-                replacementCount += ReplacePayloadReferencesInArray(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Logic),
-                    sourcePayloadIndex,
-                    sourceId,
-                    targetPayloadIndex,
-                    targetId);
-            }
-
-            if (replacementCount > 0)
-            {
-                Apply(serializedObject);
-            }
-
-            return replacementCount;
         }
 
         public static Color GetPaletteColor(int index)
@@ -2434,267 +2724,214 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             int trackComparison = left.Track.CompareTo(right.Track);
-            return trackComparison != 0
-                ? trackComparison
+            if (trackComparison != 0)
+            {
+                return trackComparison;
+            }
+
+            int presentationTrackComparison =
+                left.PresentationTrackIndex.CompareTo(
+                    right.PresentationTrackIndex);
+            return presentationTrackComparison != 0
+                ? presentationTrackComparison
                 : left.ArrayIndex.CompareTo(right.ArrayIndex);
-        }
-
-        private static int ReplacePayloadReferencesInArray(
-            SerializedProperty eventArray,
-            int sourcePayloadIndex,
-            string sourcePayloadId,
-            int targetPayloadIndex,
-            string targetPayloadId)
-        {
-            if (eventArray == null || !eventArray.isArray)
-            {
-                return 0;
-            }
-
-            int count = 0;
-            for (int index = 0; index < eventArray.arraySize; index++)
-            {
-                SerializedProperty eventProperty =
-                    eventArray.GetArrayElementAtIndex(index);
-                int referencedIndex = ReadRawInt(
-                    FindFirstRelative(eventProperty, PayloadIndexNames),
-                    -1);
-                string referencedId = ReadFirstString(
-                    eventProperty,
-                    PayloadIdNames);
-                bool hasReferencedId =
-                    !string.IsNullOrWhiteSpace(referencedId);
-                bool matchesId = hasReferencedId
-                    && !string.IsNullOrWhiteSpace(sourcePayloadId)
-                    && string.Equals(
-                        referencedId,
-                        sourcePayloadId,
-                        StringComparison.Ordinal);
-                bool matchesIndex = !hasReferencedId
-                    && referencedIndex == sourcePayloadIndex;
-                if (!matchesId && !matchesIndex)
-                {
-                    continue;
-                }
-
-                WriteInt(eventProperty, targetPayloadIndex, PayloadIndexNames);
-                WriteString(eventProperty, targetPayloadId, PayloadIdNames);
-                count++;
-            }
-
-            return count;
-        }
-
-        private static void AdjustPayloadIndicesAfterInsert(
-            SerializedObject serializedObject,
-            int insertedPayloadIndex)
-        {
-            SerializedProperty sequences = GetSequences(serializedObject);
-            if (sequences == null || !sequences.isArray)
-            {
-                return;
-            }
-
-            for (int sequenceIndex = 0;
-                sequenceIndex < sequences.arraySize;
-                sequenceIndex++)
-            {
-                SerializedProperty sequence =
-                    sequences.GetArrayElementAtIndex(sequenceIndex);
-                AdjustPayloadIndicesInArrayAfterInsert(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Generic),
-                    insertedPayloadIndex);
-                AdjustPayloadIndicesInArrayAfterInsert(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Logic),
-                    insertedPayloadIndex);
-            }
-        }
-
-        private static void AdjustPayloadIndicesInArrayAfterInsert(
-            SerializedProperty eventArray,
-            int insertedPayloadIndex)
-        {
-            if (eventArray == null || !eventArray.isArray)
-            {
-                return;
-            }
-
-            for (int index = 0; index < eventArray.arraySize; index++)
-            {
-                SerializedProperty eventProperty =
-                    eventArray.GetArrayElementAtIndex(index);
-                string payloadId = ReadFirstString(
-                    eventProperty,
-                    PayloadIdNames);
-                if (!string.IsNullOrWhiteSpace(payloadId))
-                {
-                    continue;
-                }
-
-                SerializedProperty payloadIndex = FindFirstRelative(
-                    eventProperty,
-                    PayloadIndexNames);
-                if (payloadIndex != null
-                    && payloadIndex.propertyType == SerializedPropertyType.Integer
-                    && payloadIndex.intValue >= insertedPayloadIndex)
-                {
-                    payloadIndex.intValue++;
-                }
-            }
-        }
-
-        private static void AdjustPayloadIndicesAfterDelete(
-            SerializedObject serializedObject,
-            int deletedPayloadIndex)
-        {
-            SerializedProperty sequences = GetSequences(serializedObject);
-            if (sequences == null || !sequences.isArray)
-            {
-                return;
-            }
-
-            for (int sequenceIndex = 0;
-                sequenceIndex < sequences.arraySize;
-                sequenceIndex++)
-            {
-                SerializedProperty sequence =
-                    sequences.GetArrayElementAtIndex(sequenceIndex);
-                AdjustPayloadIndicesInArray(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Generic),
-                    deletedPayloadIndex);
-                AdjustPayloadIndicesInArray(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Logic),
-                    deletedPayloadIndex);
-            }
-        }
-
-        private static void AdjustPayloadIndicesInArray(
-            SerializedProperty eventArray,
-            int deletedPayloadIndex)
-        {
-            if (eventArray == null || !eventArray.isArray)
-            {
-                return;
-            }
-
-            for (int index = 0; index < eventArray.arraySize; index++)
-            {
-                SerializedProperty payloadIndex = FindFirstRelative(
-                    eventArray.GetArrayElementAtIndex(index),
-                    PayloadIndexNames);
-                if (payloadIndex != null
-                    && payloadIndex.propertyType == SerializedPropertyType.Integer
-                    && payloadIndex.intValue > deletedPayloadIndex)
-                {
-                    payloadIndex.intValue--;
-                }
-            }
         }
 
         private static SerializedProperty GetEventArray(
             SerializedProperty sequence,
             FpgSkillEventTrackKind track)
         {
-            switch (track)
+            return track == FpgSkillEventTrackKind.Warning
+                ? FindFirstRelative(sequence, WarningEventArrayNames)
+                : null;
+        }
+
+        private static SerializedProperty GetEventArray(
+            SerializedProperty sequence,
+            FpgSkillEventKey eventKey)
+        {
+            if (!eventKey.IsValid)
             {
-                case FpgSkillEventTrackKind.Logic:
-                    return FindFirstRelative(sequence, LogicEventArrayNames);
-                case FpgSkillEventTrackKind.Presentation:
-                    return FindFirstRelative(sequence, PresentationEventArrayNames);
-                case FpgSkillEventTrackKind.Warning:
-                    return FindFirstRelative(sequence, WarningEventArrayNames);
+                return null;
+            }
+
+            if (IsActivePresentationEventTrack(eventKey.Track))
+            {
+                return GetActivePresentationEventArray(
+                    sequence,
+                    eventKey.PresentationTrackIndex,
+                    eventKey.Track);
+            }
+
+            if (eventKey.ActionKind == FpgSkillActionKind.None)
+            {
+                return GetEventArray(sequence, eventKey.Track);
+            }
+
+            switch (eventKey.ActionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    return FindFirstRelative(sequence, AttackEventArrayNames);
+                case FpgSkillActionKind.LaunchProjectile:
+                    return FindFirstRelative(
+                        sequence,
+                        ProjectileEventArrayNames);
+                case FpgSkillActionKind.CommitReload:
+                    return FindFirstRelative(sequence, ReloadEventArrayNames);
+                case FpgSkillActionKind.SummonActors:
+                    return FindFirstRelative(sequence, SummonEventArrayNames);
                 default:
-                    return FindFirstRelative(sequence, GenericEventArrayNames);
+                    return null;
             }
         }
 
-        private static FpgSkillEventTrackKind GetDefaultEventTrack(
-            SerializedProperty sequence)
+        public static bool IsActivePresentationEventTrack(
+            FpgSkillEventTrackKind track)
         {
-            if (GetEventArray(sequence, FpgSkillEventTrackKind.Generic) != null)
+            return track == FpgSkillEventTrackKind.PresentationVfx
+                || track == FpgSkillEventTrackKind.PresentationAudio
+                || track == FpgSkillEventTrackKind.PresentationCameraShake;
+        }
+
+        private static SerializedProperty GetActivePresentationEventArray(
+            SerializedProperty sequence,
+            int presentationTrackIndex,
+            FpgSkillEventTrackKind eventTrack)
+        {
+            SerializedProperty presentationTrack = GetActivePresentationTrack(
+                sequence,
+                presentationTrackIndex);
+            if (presentationTrack == null)
             {
-                return FpgSkillEventTrackKind.Generic;
+                return null;
             }
 
-            if (GetEventArray(sequence, FpgSkillEventTrackKind.Logic) != null)
+            switch (eventTrack)
             {
-                return FpgSkillEventTrackKind.Logic;
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    return FindFirstRelative(
+                        presentationTrack,
+                        VfxPresentationEventArrayNames);
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    return FindFirstRelative(
+                        presentationTrack,
+                        AudioPresentationEventArrayNames);
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    return FindFirstRelative(
+                        presentationTrack,
+                        CameraShakePresentationEventArrayNames);
+                default:
+                    return null;
+            }
+        }
+
+        private static SerializedProperty GetActivePresentationTrack(
+            SerializedProperty sequence,
+            int presentationTrackIndex)
+        {
+            SerializedProperty tracks = GetActivePresentationTracks(sequence);
+            return tracks != null
+                && presentationTrackIndex >= 0
+                && presentationTrackIndex < tracks.arraySize
+                    ? tracks.GetArrayElementAtIndex(presentationTrackIndex)
+                    : null;
+        }
+
+        private static int FindActivePresentationTrackIndex(
+            SerializedProperty sequence,
+            string trackId)
+        {
+            if (string.IsNullOrWhiteSpace(trackId))
+            {
+                return -1;
             }
 
-            if (GetEventArray(sequence, FpgSkillEventTrackKind.Presentation) != null)
+            SerializedProperty tracks = GetActivePresentationTracks(sequence);
+            if (tracks == null)
             {
-                return FpgSkillEventTrackKind.Presentation;
+                return -1;
             }
 
-            return FpgSkillEventTrackKind.Warning;
+            for (int index = 0; index < tracks.arraySize; index++)
+            {
+                SerializedProperty track = tracks.GetArrayElementAtIndex(index);
+                if (string.Equals(
+                        ReadFirstString(track, "trackId"),
+                        trackId,
+                        StringComparison.Ordinal))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private static int CountPresentationTrackEvents(
+            SerializedProperty presentationTrack)
+        {
+            if (presentationTrack == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            SerializedProperty vfx = FindFirstRelative(
+                presentationTrack,
+                VfxPresentationEventArrayNames);
+            SerializedProperty audio = FindFirstRelative(
+                presentationTrack,
+                AudioPresentationEventArrayNames);
+            SerializedProperty cameraShake = FindFirstRelative(
+                presentationTrack,
+                CameraShakePresentationEventArrayNames);
+            count += vfx != null && vfx.isArray ? vfx.arraySize : 0;
+            count += audio != null && audio.isArray ? audio.arraySize : 0;
+            count += cameraShake != null && cameraShake.isArray
+                ? cameraShake.arraySize
+                : 0;
+            return count;
         }
 
         private static bool HasAnyEventArray(SerializedProperty sequence)
         {
-            return GetEventArray(sequence, FpgSkillEventTrackKind.Generic) != null
-                || GetEventArray(sequence, FpgSkillEventTrackKind.Logic) != null
-                || GetEventArray(sequence, FpgSkillEventTrackKind.Presentation) != null
+            return FindFirstRelative(sequence, AttackEventArrayNames) != null
+                || FindFirstRelative(sequence, ProjectileEventArrayNames) != null
+                || FindFirstRelative(sequence, ReloadEventArrayNames) != null
+                || FindFirstRelative(sequence, SummonEventArrayNames) != null
+                || GetActivePresentationTracks(sequence) != null
                 || GetEventArray(sequence, FpgSkillEventTrackKind.Warning) != null;
         }
 
-        private static int MakeEventKey(
+        private static FpgSkillEventKey MakeEventKey(
             FpgSkillEventTrackKind track,
             int arrayIndex)
         {
-            const int trackStride = 1000000;
-            return (int)track * trackStride + arrayIndex;
+            return MakeEventKey(
+                track,
+                FpgSkillActionKind.None,
+                arrayIndex);
         }
 
-        private static void DecodeEventKey(
-            int eventKey,
-            out FpgSkillEventTrackKind track,
-            out int arrayIndex)
-        {
-            const int trackStride = 1000000;
-            if (eventKey < 0)
-            {
-                track = FpgSkillEventTrackKind.Generic;
-                arrayIndex = -1;
-                return;
-            }
-
-            int trackValue = eventKey / trackStride;
-            track = Enum.IsDefined(typeof(FpgSkillEventTrackKind), trackValue)
-                ? (FpgSkillEventTrackKind)trackValue
-                : FpgSkillEventTrackKind.Generic;
-            arrayIndex = eventKey % trackStride;
-        }
-
-        private static string BuildEventName(
-            SerializedProperty eventProperty,
+        private static FpgSkillEventKey MakeEventKey(
             FpgSkillEventTrackKind track,
-            int arrayIndex,
-            string eventId,
-            int payloadIndex,
-            IList<FpgSkillPayloadRecord> payloads)
+            FpgSkillActionKind actionKind,
+            int arrayIndex)
         {
-            string primary = string.IsNullOrWhiteSpace(eventId)
-                ? GetTrackLabel(track, eventProperty) + " " + (arrayIndex + 1)
-                : eventId;
-            string secondary = string.Empty;
-            switch (track)
-            {
-                case FpgSkillEventTrackKind.Logic:
-                    secondary = payloadIndex >= 0 && payloadIndex < payloads.Count
-                        ? payloads[payloadIndex].Name
-                        : ReadFirstString(eventProperty, PayloadIdNames);
-                    break;
-                case FpgSkillEventTrackKind.Presentation:
-                    secondary = ReadFirstString(eventProperty, "cueId");
-                    break;
-                case FpgSkillEventTrackKind.Warning:
-                    secondary = ReadFirstString(eventProperty, "warningId");
-                    break;
-            }
+            return MakeEventKey(track, actionKind, -1, arrayIndex);
+        }
 
-            return string.IsNullOrWhiteSpace(secondary)
-                ? primary
-                : primary + " · " + secondary;
+        private static FpgSkillEventKey MakeEventKey(
+            FpgSkillEventTrackKind track,
+            FpgSkillActionKind actionKind,
+            int presentationTrackIndex,
+            int arrayIndex)
+        {
+            return new FpgSkillEventKey(
+                track,
+                actionKind,
+                presentationTrackIndex,
+                arrayIndex);
         }
 
         private static string GetTrackLabel(
@@ -2703,10 +2940,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             switch (track)
             {
-                case FpgSkillEventTrackKind.Logic:
-                    return "逻辑事件";
-                case FpgSkillEventTrackKind.Presentation:
-                    return "演出提示";
+                case FpgSkillEventTrackKind.GameplayAction:
+                    return "玩法动作";
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    return "特效";
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    return "音效";
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    return "震屏";
                 case FpgSkillEventTrackKind.Warning:
                     return "预警区间";
                 default:
@@ -2725,9 +2966,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             switch (track)
             {
-                case FpgSkillEventTrackKind.Logic:
+                case FpgSkillEventTrackKind.GameplayAction:
                     return GetPaletteColor(arrayIndex);
-                case FpgSkillEventTrackKind.Presentation:
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    return Palette[2];
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    return Palette[4];
+                case FpgSkillEventTrackKind.PresentationCameraShake:
                     return Palette[3];
                 case FpgSkillEventTrackKind.Warning:
                     return Palette[1];
@@ -2740,58 +2985,53 @@ namespace FPG.Demo.Editor.SkillAuthoring
             ICollection<FpgSkillValidationItem> result,
             IList<FpgSkillEventRecord> events)
         {
-            Dictionary<ulong, FpgSkillEventRecord> positions =
-                new Dictionary<ulong, FpgSkillEventRecord>();
+            Dictionary<int, FpgSkillEventRecord> ordinals =
+                new Dictionary<int, FpgSkillEventRecord>();
             for (int index = 0; index < events.Count; index++)
             {
                 FpgSkillEventRecord eventRecord = events[index];
-                AppendAuthoredPosition(
+                AppendAuthoredOrdinal(
                     result,
-                    positions,
+                    ordinals,
                     eventRecord,
-                    eventRecord.Tick,
                     eventRecord.AuthoredOrdinal);
-                if (eventRecord.Track == FpgSkillEventTrackKind.Warning)
+                if (eventRecord.Track == FpgSkillEventTrackKind.Warning
+                    && eventRecord.AuthoredOrdinal < int.MaxValue)
                 {
-                    AppendAuthoredPosition(
+                    AppendAuthoredOrdinal(
                         result,
-                        positions,
+                        ordinals,
                         eventRecord,
-                        eventRecord.Tick + eventRecord.DurationTicks,
                         eventRecord.AuthoredOrdinal + 1);
                 }
             }
         }
 
-        private static void AppendAuthoredPosition(
+        private static void AppendAuthoredOrdinal(
             ICollection<FpgSkillValidationItem> result,
-            IDictionary<ulong, FpgSkillEventRecord> positions,
+            IDictionary<int, FpgSkillEventRecord> ordinals,
             FpgSkillEventRecord eventRecord,
-            int tick,
             int authoredOrdinal)
         {
-            if (tick < 0 || authoredOrdinal < 0)
+            if (authoredOrdinal < 0)
             {
                 return;
             }
 
-            ulong key = unchecked(
-                ((ulong)(uint)tick << 32) | (uint)authoredOrdinal);
-            if (positions.ContainsKey(key))
+            if (ordinals.ContainsKey(authoredOrdinal))
             {
                 result.Add(new FpgSkillValidationItem
                 {
                     Severity = FpgSkillIssueSeverity.Error,
-                    Message = "Tick " + tick
-                        + " 存在重复的 authoredOrdinal "
+                    Message = "序列存在重复 authoredOrdinal "
                         + authoredOrdinal + "。",
-                    EventIndex = eventRecord.Index,
-                    Tick = tick
+                    EventKey = eventRecord.Key,
+                    Tick = eventRecord.Tick
                 });
                 return;
             }
 
-            positions[key] = eventRecord;
+            ordinals[authoredOrdinal] = eventRecord;
         }
 
         private static void AppendRuntimeValidation(
@@ -2889,7 +3129,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     Message = "事件“" + eventRecord.Name
                         + "”的 Socket “" + eventRecord.SocketId
                         + "”无法由当前预览 Prefab 的 D0ActorSocketRegistry 解析。",
-                    EventIndex = eventRecord.Index,
+                    EventKey = eventRecord.Key,
                     Tick = eventRecord.Tick
                 });
             }
@@ -3059,7 +3299,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             if (bestMatch != null)
             {
-                item.EventIndex = bestMatch.Index;
+                item.EventKey = bestMatch.Key;
                 item.Tick = bestMatch.Tick;
             }
         }
@@ -3138,15 +3378,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     continue;
                 }
 
-                if (compiledKind == "GameplayPayload"
-                    && authored.Track != FpgSkillEventTrackKind.Logic
-                    && authored.Track != FpgSkillEventTrackKind.Generic)
+                if (compiledKind == "GameplayAction"
+                    && authored.Track != FpgSkillEventTrackKind.GameplayAction)
                 {
                     continue;
                 }
 
-                if (compiledKind == "PresentationCue"
-                    && authored.Track != FpgSkillEventTrackKind.Presentation)
+                if (compiledKind == "ActivePresentation"
+                    && !IsActivePresentationEventTrack(authored.Track))
                 {
                     continue;
                 }
@@ -3168,10 +3407,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             switch (compiledKind)
             {
-                case "GameplayPayload":
-                    return "逻辑事件";
-                case "PresentationCue":
-                    return "演出提示";
+                case "GameplayAction":
+                    return "玩法动作";
+                case "ActivePresentation":
+                    return "主动表现";
                 case "WarningStarted":
                     return "预警开始";
                 case "WarningEnded":
@@ -3406,19 +3645,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
         }
 
-        private static void SetFirstNonZeroEnum(
-            SerializedProperty parent,
-            params string[] names)
-        {
-            SerializedProperty property = FindFirstRelative(parent, names);
-            if (property != null
-                && property.propertyType == SerializedPropertyType.Enum
-                && property.enumDisplayNames.Length > 1)
-            {
-                property.enumValueIndex = 1;
-            }
-        }
-
         private static bool DeleteArrayElement(
             SerializedObject serializedObject,
             SerializedProperty array,
@@ -3454,20 +3680,63 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private static int FindNextAuthoredOrdinal(
             SerializedProperty sequence,
-            int ignoredEventKey)
+            FpgSkillEventKey ignoredEventKey)
         {
             int maximum = -1;
-            FpgSkillEventTrackKind[] tracks =
+            List<FpgSkillEventKey> arrayKeys =
+                new List<FpgSkillEventKey>
             {
-                FpgSkillEventTrackKind.Generic,
-                FpgSkillEventTrackKind.Logic,
-                FpgSkillEventTrackKind.Presentation,
-                FpgSkillEventTrackKind.Warning
+                MakeEventKey(
+                    FpgSkillEventTrackKind.GameplayAction,
+                    FpgSkillActionKind.Attack,
+                    0),
+                MakeEventKey(
+                    FpgSkillEventTrackKind.GameplayAction,
+                    FpgSkillActionKind.LaunchProjectile,
+                    0),
+                MakeEventKey(
+                    FpgSkillEventTrackKind.GameplayAction,
+                    FpgSkillActionKind.CommitReload,
+                    0),
+                MakeEventKey(
+                    FpgSkillEventTrackKind.GameplayAction,
+                    FpgSkillActionKind.SummonActors,
+                    0),
+                MakeEventKey(FpgSkillEventTrackKind.Warning, 0)
             };
-            for (int trackIndex = 0; trackIndex < tracks.Length; trackIndex++)
+
+            SerializedProperty activePresentationTracks =
+                GetActivePresentationTracks(sequence);
+            if (activePresentationTracks != null)
             {
-                FpgSkillEventTrackKind track = tracks[trackIndex];
-                SerializedProperty eventArray = GetEventArray(sequence, track);
+                for (int trackIndex = 0;
+                    trackIndex < activePresentationTracks.arraySize;
+                    trackIndex++)
+                {
+                    arrayKeys.Add(MakeEventKey(
+                        FpgSkillEventTrackKind.PresentationVfx,
+                        FpgSkillActionKind.None,
+                        trackIndex,
+                        0));
+                    arrayKeys.Add(MakeEventKey(
+                        FpgSkillEventTrackKind.PresentationAudio,
+                        FpgSkillActionKind.None,
+                        trackIndex,
+                        0));
+                    arrayKeys.Add(MakeEventKey(
+                        FpgSkillEventTrackKind.PresentationCameraShake,
+                        FpgSkillActionKind.None,
+                        trackIndex,
+                        0));
+                }
+            }
+
+            for (int keyIndex = 0; keyIndex < arrayKeys.Count; keyIndex++)
+            {
+                FpgSkillEventKey arrayKey = arrayKeys[keyIndex];
+                SerializedProperty eventArray = GetEventArray(
+                    sequence,
+                    arrayKey);
                 if (eventArray == null || !eventArray.isArray)
                 {
                     continue;
@@ -3475,7 +3744,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
                 for (int index = 0; index < eventArray.arraySize; index++)
                 {
-                    if (MakeEventKey(track, index) == ignoredEventKey)
+                    FpgSkillEventKey eventKey = MakeEventKey(
+                        arrayKey.Track,
+                        arrayKey.ActionKind,
+                        arrayKey.PresentationTrackIndex,
+                        index);
+                    if (eventKey == ignoredEventKey)
                     {
                         continue;
                     }
@@ -3486,7 +3760,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         FindFirstRelative(item, AuthoredOrdinalNames),
                         index);
                     maximum = Mathf.Max(maximum, ordinal);
-                    if (track == FpgSkillEventTrackKind.Warning
+                    if (arrayKey.Track == FpgSkillEventTrackKind.Warning
                         && ordinal < int.MaxValue)
                     {
                         maximum = Mathf.Max(maximum, ordinal + 1);
@@ -3603,39 +3877,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
         }
     
 
-        private static string GetPhaseLabel(
-            FpgSkillPhaseKind phaseKind)
-        {
-            switch (phaseKind)
-            {
-                case FpgSkillPhaseKind.Startup:
-                    return "前摇";
-                case FpgSkillPhaseKind.Active:
-                    return "生效";
-                case FpgSkillPhaseKind.Recovery:
-                    return "后摇";
-                default:
-                    return "阶段";
-            }
-        }
-
-        private static Color GetPhaseColor(
-            FpgSkillPhaseKind phaseKind)
-        {
-            switch (phaseKind)
-            {
-                case FpgSkillPhaseKind.Startup:
-                    return new Color(0.38f, 0.48f, 0.62f, 0.92f);
-                case FpgSkillPhaseKind.Active:
-                    return new Color(0.82f, 0.36f, 0.24f, 0.92f);
-                case FpgSkillPhaseKind.Recovery:
-                    return new Color(0.30f, 0.62f, 0.42f, 0.92f);
-                default:
-                    return new Color(0.56f, 0.42f, 0.67f, 0.92f);
-            }
-        }
-
-
         private static void SetEnumRawValue(
             SerializedProperty parent,
             int value,
@@ -3649,551 +3890,355 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
         }
 
-
-        private static void ConfigureDefaultPayload(
-            SerializedProperty payload)
+        private static void ConfigureDefaultAction(
+            SerializedProperty action,
+            FpgSkillActionKind actionKind,
+            int modeValue,
+            bool enemy)
         {
-            NormalizePayloadForCurrentKind(payload);
-        }
-
-        private static void NormalizePayloadForCurrentKind(
-            SerializedProperty payload)
-        {
-            SerializedProperty kind = FindFirstRelative(
-                payload,
-                "kind",
-                "payloadKind",
-                "type");
-            string kindName = GetEnumName(kind);
-            switch (kindName)
-            {
-                case "PelletRay":
-                    NormalizePlayerAttackPayload(
-                        payload,
-                        1,
-                        8,
-                        0);
-                    break;
-
-                case "AreaAtFirstSurface":
-                    NormalizePlayerAttackPayload(
-                        payload,
-                        2,
-                        0,
-                        4);
-                    break;
-
-                case "ReloadCommit":
-                    WriteInt(payload, 0, "ammoCost");
-                    WriteInt(payload, 0, "baseDamage");
-                    WriteInt(payload, 0, "breakDamage");
-                    SetEnumRawValue(payload, 0, "queryMode");
-                    SetEnumRawValue(payload, 0, "allowedTargetKinds");
-                    break;
-
-                case "Projectile":
-                    NormalizeEnemyDamage(payload);
-                    EnsurePositiveInt(payload, 1, "threatDefinitionId");
-                    EnsurePositiveInt(payload, 1, "projectileDefinitionId");
-                    EnsurePositiveInt(payload, 1, "projectileCount");
-                    EnsurePositiveInt(payload, 30, "projectileFlightTicks");
-                    EnsureMinimumInt(
-                        payload,
-                        GetInt(payload, "projectileFlightTicks"),
-                        "projectileLifetimeTicks");
-                    EnsureNonNegativeInt(payload, 0, "projectileMaxHitPoints");
-                    EnsurePositiveInt(payload, 1, "projectileBudgetUnits");
-                    EnsurePositiveInt(payload, 1, "projectilePresentationKey");
-                    EnsurePositiveInt(payload, 1, "projectileSweepRadiusKey");
-                    ClampInt(
-                        payload,
-                        1,
-                        int.MaxValue / Mathf.Max(
-                            1,
-                            GetInt(payload, "projectileBudgetUnits")),
-                        "projectileCount");
-                    EnsureInterceptableProjectileHasHitPoints(payload);
-                    break;
-
-                case "TimedImpact":
-                    NormalizeEnemyDamage(payload);
-                    EnsurePositiveInt(payload, 1, "threatDefinitionId");
-                    EnsureEnumIndex(payload, 0, "timedImpactTargetPolicy");
-                    EnsureNonNegativeInt(payload, 0, "timedImpactDelayTicks");
-                    EnsurePositiveInt(payload, 1, "timedImpactPresentationKey");
-                    break;
-
-                case "Summon":
-                    NormalizeSummonPayload(payload);
-                    break;
-            }
-        }
-
-        private static string GetEnumName(
-            SerializedProperty property)
-        {
-            if (property == null
-                || property.propertyType != SerializedPropertyType.Enum
-                || property.enumValueIndex < 0
-                || property.enumValueIndex >= property.enumNames.Length)
-            {
-                return string.Empty;
-            }
-
-            return property.enumNames[property.enumValueIndex];
-        }
-
-        private static void NormalizePlayerAttackPayload(
-            SerializedProperty payload,
-            int queryModeIndex,
-            int pelletCount,
-            int areaCombatantLimit)
-        {
-            EnsurePositiveInt(payload, 1, "ammoCost");
-            EnsurePositiveInt(payload, 4, "baseDamage");
-            EnsurePositiveInt(payload, 4, "breakDamage");
-            EnsurePositiveInt(
-                payload,
-                12000,
-                "weakpointDamageMultiplierBasisPoints");
-            EnsurePositiveInt(
-                payload,
-                25000,
-                "weakpointBreakMultiplierBasisPoints");
-            SetEnumRawValue(payload, queryModeIndex, "queryMode");
-            if (pelletCount > 0)
-            {
-                EnsurePositiveInt(
-                    payload,
-                    pelletCount,
-                    "pelletCount");
-                EnsureNonNegativeInt(
-                    payload,
-                    0,
-                    "additionalPenetrationCount");
-                int normalizedPelletCount = Mathf.Max(
-                    1,
-                    GetInt(payload, "pelletCount"));
-                ClampInt(
-                    payload,
-                    0,
-                    Mathf.Max(
-                        0,
-                        int.MaxValue / normalizedPelletCount - 1),
-                    "additionalPenetrationCount");
-            }
-
-            if (areaCombatantLimit > 0)
-            {
-                EnsurePositiveInt(
-                    payload,
-                    areaCombatantLimit,
-                    "areaCombatantLimit");
-                EnsureNonNegativeInt(
-                    payload,
-                    0,
-                    "areaProjectileLimit");
-                int normalizedCombatantLimit = Mathf.Max(
-                    1,
-                    GetInt(payload, "areaCombatantLimit"));
-                ClampInt(
-                    payload,
-                    0,
-                    int.MaxValue - normalizedCombatantLimit,
-                    "areaProjectileLimit");
-            }
-
-            SetEnumRawValue(payload, 3, "allowedTargetKinds");
-        }
-
-        private static void NormalizeEnemyDamage(
-            SerializedProperty payload)
-        {
-            EnsureNonNegativeInt(payload, 10, "baseDamage");
-            EnsureNonNegativeInt(payload, 0, "breakDamage");
-            EnsurePositiveInt(
-                payload,
-                10000,
-                "weakpointDamageMultiplierBasisPoints");
-            EnsurePositiveInt(
-                payload,
-                10000,
-                "weakpointBreakMultiplierBasisPoints");
-        }
-
-        private static void NormalizeSummonPayload(
-            SerializedProperty payload)
-        {
-            EnsureEnumIndex(payload, 0, "summonOccupancyMode");
-            EnsureEnumIndex(payload, 0, "summonPlacementMode");
-            EnsureEnumIndex(payload, 0, "summonOwnerOutcome");
-            SerializedProperty occupancy = FindFirstRelative(
-                payload,
-                "summonOccupancyMode");
-            SerializedProperty ownerOutcome = FindFirstRelative(
-                payload,
-                "summonOwnerOutcome");
-            if (string.Equals(
-                    GetEnumName(occupancy),
-                    "ReplaceOwner",
-                    StringComparison.Ordinal))
-            {
-                SetEnumByName(
-                    ownerOutcome,
-                    "DieAfterSuccessfulSummon",
-                    0);
-                WriteInt(payload, 0, "maxSummonsPerOwner");
-                WriteInt(payload, 0, "maxTotalSummonsPerEncounter");
-            }
-            else
-            {
-                if (string.Equals(
-                        GetEnumName(ownerOutcome),
-                        "DieAfterSuccessfulSummon",
-                        StringComparison.Ordinal))
-                {
-                    SetEnumByName(ownerOutcome, "RemainAlive", 0);
-                }
-
-                EnsurePositiveInt(payload, 2, "maxSummonsPerOwner");
-                EnsurePositiveInt(
-                    payload,
-                    8,
-                    "maxTotalSummonsPerEncounter");
-            }
-
-            EnsureNonNegativeInt(
-                payload,
-                2,
-                "maxSummonRecursionDepth");
-            ClampInt(
-                payload,
-                0,
-                8,
-                "maxSummonRecursionDepth");
-            NormalizeSummonWeights(payload);
-        }
-
-        private static void NormalizeSummonWeights(
-            SerializedProperty payload)
-        {
-            SerializedProperty candidates = FindFirstRelative(
-                payload,
-                "summonCandidates");
-            SerializedProperty weights = FindFirstRelative(
-                payload,
-                "summonCandidateWeights");
-            if (candidates == null
-                || weights == null
-                || !candidates.isArray
-                || !weights.isArray)
-            {
-                return;
-            }
-
-            if (candidates.arraySize == 0)
-            {
-                weights.arraySize = 0;
-                return;
-            }
-
-            if (weights.arraySize == 0)
-            {
-                return;
-            }
-
-            weights.arraySize = candidates.arraySize;
-            for (int index = 0; index < weights.arraySize; index++)
-            {
-                SerializedProperty weight =
-                    weights.GetArrayElementAtIndex(index);
-                if (weight.propertyType == SerializedPropertyType.Integer
-                    && weight.intValue <= 0)
-                {
-                    weight.intValue = 1;
-                }
-            }
-        }
-
-
-
-
-
-
-
-
-        private static void EnsurePositiveInt(
-            SerializedProperty parent,
-            int fallback,
-            params string[] names)
-        {
-            SerializedProperty property = FindFirstRelative(parent, names);
-            if (property != null
-                && property.propertyType == SerializedPropertyType.Integer
-                && property.intValue <= 0)
-            {
-                property.intValue = Mathf.Max(1, fallback);
-            }
-        }
-
-        private static void EnsureNonNegativeInt(
-            SerializedProperty parent,
-            int fallback,
-            params string[] names)
-        {
-            SerializedProperty property = FindFirstRelative(parent, names);
-            if (property != null
-                && property.propertyType == SerializedPropertyType.Integer
-                && property.intValue < 0)
-            {
-                property.intValue = Mathf.Max(0, fallback);
-            }
-        }
-
-        private static void EnsureMinimumInt(
-            SerializedProperty parent,
-            int minimum,
-            params string[] names)
-        {
-            SerializedProperty property = FindFirstRelative(parent, names);
-            if (property != null
-                && property.propertyType == SerializedPropertyType.Integer
-                && property.intValue < minimum)
-            {
-                property.intValue = minimum;
-            }
-        }
-
-        private static void ClampInt(
-            SerializedProperty parent,
-            int minimum,
-            int maximum,
-            params string[] names)
-        {
-            SerializedProperty property = FindFirstRelative(parent, names);
-            if (property != null
-                && property.propertyType == SerializedPropertyType.Integer)
-            {
-                property.intValue = Mathf.Clamp(
-                    property.intValue,
-                    minimum,
-                    Mathf.Max(minimum, maximum));
-            }
-        }
-
-
-        private static int GetInt(
-            SerializedProperty parent,
-            params string[] names)
-        {
-            return ReadRawInt(FindFirstRelative(parent, names), 0);
-        }
-
-        private static void EnsureEnumIndex(
-            SerializedProperty parent,
-            int fallbackIndex,
-            params string[] names)
-        {
-            SerializedProperty property = FindFirstRelative(parent, names);
-            if (property == null
-                || property.propertyType != SerializedPropertyType.Enum)
-            {
-                return;
-            }
-
-            if (property.enumValueIndex < 0
-                || property.enumValueIndex >= property.enumNames.Length)
-            {
-                property.enumValueIndex = Mathf.Clamp(
-                    fallbackIndex,
-                    0,
-                    Mathf.Max(0, property.enumNames.Length - 1));
-            }
-        }
-
-        private static void SetEnumByName(
-            SerializedProperty property,
-            string enumName,
-            int fallbackIndex)
-        {
-            if (property == null
-                || property.propertyType != SerializedPropertyType.Enum)
-            {
-                return;
-            }
-
-            for (int index = 0; index < property.enumNames.Length; index++)
-            {
-                if (string.Equals(
-                        property.enumNames[index],
-                        enumName,
-                        StringComparison.Ordinal))
-                {
-                    property.enumValueIndex = index;
-                    return;
-                }
-            }
-
-            property.enumValueIndex = Mathf.Clamp(
-                fallbackIndex,
-                0,
-                Mathf.Max(0, property.enumNames.Length - 1));
-        }
-
-        private static void EnsureInterceptableProjectileHasHitPoints(
-            SerializedProperty payload)
-        {
-            SerializedProperty interceptable = FindFirstRelative(
-                payload,
-                "projectileInterceptable");
-            SerializedProperty hitPoints = FindFirstRelative(
-                payload,
-                "projectileMaxHitPoints");
-            if (interceptable != null
-                && interceptable.propertyType == SerializedPropertyType.Boolean
-                && interceptable.boolValue
-                && hitPoints != null
-                && hitPoints.propertyType == SerializedPropertyType.Integer
-                && hitPoints.intValue <= 0)
-            {
-                hitPoints.intValue = 1;
-            }
-        }
-
-        private static FpgSkillTargetSource GetDefaultTargetSourceForPayloadKind(
-            SerializedProperty kind)
-        {
-            switch (GetEnumName(kind))
-            {
-                case "ReloadCommit":
-                    return FpgSkillTargetSource.Self;
-
-                case "Projectile":
-                case "TimedImpact":
-                case "Summon":
-                    return FpgSkillTargetSource.CurrentTarget;
-
-                default:
-                    return FpgSkillTargetSource.CurrentAim;
-            }
-        }
-
-        private static void UpdateReferencedEventTargets(
-            SerializedObject serializedObject,
-            int payloadIndex,
-            string payloadId,
-            FpgSkillTargetSource targetSource,
-            bool clearSpatialMetadata)
-        {
-            SerializedProperty sequences = GetSequences(serializedObject);
-            if (sequences == null || !sequences.isArray)
-            {
-                return;
-            }
-
-            for (int sequenceIndex = 0;
-                sequenceIndex < sequences.arraySize;
-                sequenceIndex++)
-            {
-                SerializedProperty sequence =
-                    sequences.GetArrayElementAtIndex(sequenceIndex);
-                UpdateReferencedEventTargetsInArray(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Generic),
-                    payloadIndex,
-                    payloadId,
-                    targetSource,
-                    clearSpatialMetadata);
-                UpdateReferencedEventTargetsInArray(
-                    GetEventArray(sequence, FpgSkillEventTrackKind.Logic),
-                    payloadIndex,
-                    payloadId,
-                    targetSource,
-                    clearSpatialMetadata);
-            }
-        }
-
-        private static void UpdateReferencedEventTargetsInArray(
-            SerializedProperty eventArray,
-            int payloadIndex,
-            string payloadId,
-            FpgSkillTargetSource targetSource,
-            bool clearSpatialMetadata)
-        {
-            if (eventArray == null || !eventArray.isArray)
-            {
-                return;
-            }
-
-            for (int index = 0; index < eventArray.arraySize; index++)
-            {
-                SerializedProperty eventProperty =
-                    eventArray.GetArrayElementAtIndex(index);
-                int referencedIndex = ReadRawInt(
-                    FindFirstRelative(eventProperty, PayloadIndexNames),
-                    -1);
-                string referencedId = ReadFirstString(
-                    eventProperty,
-                    PayloadIdNames);
-                bool hasReferencedId =
-                    !string.IsNullOrWhiteSpace(referencedId);
-                bool matchesId = hasReferencedId
-                    && !string.IsNullOrWhiteSpace(payloadId)
-                    && string.Equals(
-                        referencedId,
-                        payloadId,
-                        StringComparison.Ordinal);
-                bool matchesIndex = !hasReferencedId
-                    && referencedIndex == payloadIndex;
-                if (!matchesId && !matchesIndex)
-                {
-                    continue;
-                }
-
-                SetEnumRawValue(
-                    eventProperty,
-                    (int)targetSource,
-                    "targetSource");
-                if (clearSpatialMetadata)
-                {
-                    ClearEventSpatialMetadata(eventProperty);
-                }
-            }
-        }
-
-        private static void SetDefaultEventTargetSource(
-            SerializedProperty eventProperty,
-            FpgSkillPayloadRecord payload)
-        {
-            FpgSkillTargetSource source =
-                FpgSkillTargetSource.CurrentAim;
-            if (payload != null)
-            {
-                switch (payload.PreviewKind)
-                {
-                    case FpgSkillPreviewPayloadKind.PlayerReload:
-                        source = FpgSkillTargetSource.Self;
-                        break;
-
-                    case FpgSkillPreviewPayloadKind.EnemyProjectile:
-                    case FpgSkillPreviewPayloadKind.EnemyTimedImpact:
-                    case FpgSkillPreviewPayloadKind.EnemySummon:
-                        source = FpgSkillTargetSource.CurrentTarget;
-                        break;
-                }
-            }
-
             SetEnumRawValue(
-                eventProperty,
-                (int)source,
+                action,
+                enemy
+                    ? (int)FpgSkillTargetSource.CurrentTarget
+                    : (int)FpgSkillTargetSource.CurrentAim,
                 "targetSource");
-            if (payload != null
-                && (payload.PreviewKind
-                        == FpgSkillPreviewPayloadKind.EnemyTimedImpact
-                    || payload.PreviewKind
-                        == FpgSkillPreviewPayloadKind.EnemySummon))
+
+            switch (actionKind)
             {
-                ClearEventSpatialMetadata(eventProperty);
+                case FpgSkillActionKind.Attack:
+                    WriteInt(action, enemy ? 0 : 1, "ammoCost");
+                    ConfigureDefaultDamage(action, enemy ? 10 : 4);
+                    ConfigureActionModeDefaults(
+                        action,
+                        actionKind,
+                        modeValue,
+                        enemy);
+                    break;
+
+                case FpgSkillActionKind.LaunchProjectile:
+                    WriteInt(action, enemy ? 0 : 1, "ammoCost");
+                    ConfigureDefaultDamage(action, 10);
+                    WriteInt(action, 1, "threatDefinitionId");
+                    WriteInt(action, 1, "projectileDefinitionId");
+                    WriteInt(action, 1, "projectileCount");
+                    WriteInt(action, 30, "projectileFlightTicks");
+                    WriteInt(action, 45, "projectileLifetimeTicks");
+                    WriteInt(action, 0, "projectileMaxHitPoints");
+                    WriteInt(action, 1, "projectileBudgetUnits");
+                    WriteInt(action, 1, "projectileSweepRadiusKey");
+                    ConfigureActionModeDefaults(
+                        action,
+                        actionKind,
+                        modeValue,
+                        enemy);
+                    break;
+
+                case FpgSkillActionKind.CommitReload:
+                    SetEnumRawValue(
+                        action,
+                        (int)FpgSkillTargetSource.Self,
+                        "targetSource");
+                    break;
+
+                case FpgSkillActionKind.SummonActors:
+                    WriteInt(action, 2, "maxSummonsPerOwner");
+                    WriteInt(action, 8, "maxTotalSummonsPerEncounter");
+                    WriteInt(action, 2, "maxSummonRecursionDepth");
+                    break;
             }
+        }
+
+        private static void ConfigureDefaultActivePresentationEvent(
+            SerializedProperty eventProperty,
+            FpgSkillEventTrackKind eventTrack)
+        {
+            SerializedProperty presentation =
+                eventProperty?.FindPropertyRelative("presentation");
+            if (presentation == null)
+            {
+                return;
+            }
+
+            switch (eventTrack)
+            {
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    SerializedProperty vfxDuration =
+                        presentation.FindPropertyRelative("durationSeconds");
+                    SerializedProperty scale =
+                        presentation.FindPropertyRelative("scale");
+                    if (vfxDuration != null
+                        && vfxDuration.propertyType
+                            == SerializedPropertyType.Float)
+                    {
+                        vfxDuration.floatValue = 1f;
+                    }
+
+                    if (scale != null
+                        && scale.propertyType == SerializedPropertyType.Vector3)
+                    {
+                        scale.vector3Value = Vector3.one;
+                    }
+
+                    SetEnumRawValue(eventProperty, 0, "anchor");
+                    WriteString(eventProperty, string.Empty, "socketId");
+                    break;
+
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    SerializedProperty volume =
+                        presentation.FindPropertyRelative("volume");
+                    if (volume != null
+                        && volume.propertyType == SerializedPropertyType.Float)
+                    {
+                        volume.floatValue = 1f;
+                    }
+
+                    break;
+
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    SerializedProperty shakeDuration =
+                        presentation.FindPropertyRelative("durationSeconds");
+                    if (shakeDuration != null
+                        && shakeDuration.propertyType
+                            == SerializedPropertyType.Float)
+                    {
+                        shakeDuration.floatValue = 0.1f;
+                    }
+
+                    break;
+            }
+        }
+
+        private static string GetActionKindLabel(
+            FpgSkillActionKind actionKind)
+        {
+            switch (actionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    return "攻击";
+                case FpgSkillActionKind.LaunchProjectile:
+                    return "发射投射物";
+                case FpgSkillActionKind.CommitReload:
+                    return "完成换弹";
+                case FpgSkillActionKind.SummonActors:
+                    return "召唤单位";
+                default:
+                    return "未知";
+            }
+        }
+
+        private static void ConfigureActionModeDefaults(
+            SerializedProperty action,
+            FpgSkillActionKind actionKind,
+            int modeValue,
+            bool enemy)
+        {
+            if (actionKind == FpgSkillActionKind.Attack)
+            {
+                SetEnumRawValue(action, modeValue, "mode");
+                WriteInt(action, 8, "pelletCount");
+                WriteInt(action, 0, "additionalPenetrationCount");
+                WriteInt(action, 4, "areaCombatantLimit");
+                WriteInt(action, 4, "areaProjectileLimit");
+                SetEnumRawValue(action, 3, "allowedTargetKinds");
+                WriteInt(action, 1, "threatDefinitionId");
+                SetEnumRawValue(action, 0, "boundTargetPolicy");
+                WriteInt(action, 0, "delayTicks");
+            }
+            else if (actionKind == FpgSkillActionKind.LaunchProjectile)
+            {
+                SetEnumRawValue(action, modeValue, "impactMode");
+                WriteInt(action, 4, "areaCombatantLimit");
+                WriteInt(action, 4, "areaProjectileLimit");
+                SetEnumRawValue(action, 3, "allowedTargetKinds");
+            }
+
+        }
+
+        private static void CopyCompatibleInteger(
+            SerializedProperty source,
+            SerializedProperty target,
+            string propertyName)
+        {
+            SerializedProperty sourceValue =
+                source?.FindPropertyRelative(propertyName);
+            SerializedProperty targetValue =
+                target?.FindPropertyRelative(propertyName);
+            if (sourceValue != null
+                && targetValue != null
+                && sourceValue.propertyType
+                    == SerializedPropertyType.Integer
+                && targetValue.propertyType
+                    == SerializedPropertyType.Integer)
+            {
+                targetValue.intValue = sourceValue.intValue;
+            }
+        }
+
+        private static void CopyCompatibleString(
+            SerializedProperty source,
+            SerializedProperty target,
+            string propertyName)
+        {
+            SerializedProperty sourceValue =
+                source?.FindPropertyRelative(propertyName);
+            SerializedProperty targetValue =
+                target?.FindPropertyRelative(propertyName);
+            if (sourceValue != null
+                && targetValue != null
+                && sourceValue.propertyType
+                    == SerializedPropertyType.String
+                && targetValue.propertyType
+                    == SerializedPropertyType.String)
+            {
+                targetValue.stringValue = sourceValue.stringValue;
+            }
+        }
+
+        private static void CopyCompatibleEnum(
+            SerializedProperty source,
+            SerializedProperty target,
+            string propertyName)
+        {
+            SerializedProperty sourceValue =
+                source?.FindPropertyRelative(propertyName);
+            SerializedProperty targetValue =
+                target?.FindPropertyRelative(propertyName);
+            if (sourceValue != null
+                && targetValue != null
+                && sourceValue.propertyType
+                    == SerializedPropertyType.Enum
+                && targetValue.propertyType
+                    == SerializedPropertyType.Enum)
+            {
+                targetValue.intValue = sourceValue.intValue;
+            }
+        }
+
+        private static void CopyCompatibleVector3(
+            SerializedProperty source,
+            SerializedProperty target,
+            string propertyName)
+        {
+            SerializedProperty sourceValue =
+                source?.FindPropertyRelative(propertyName);
+            SerializedProperty targetValue =
+                target?.FindPropertyRelative(propertyName);
+            if (sourceValue != null
+                && targetValue != null
+                && sourceValue.propertyType
+                    == SerializedPropertyType.Vector3
+                && targetValue.propertyType
+                    == SerializedPropertyType.Vector3)
+            {
+                targetValue.vector3Value = sourceValue.vector3Value;
+            }
+        }
+
+        private static void NormalizeConvertedActionSpatialMetadata(
+            SerializedProperty action,
+            FpgSkillActionKind targetKind,
+            bool enemy)
+        {
+            NormalizeActionSpatialMetadata(action, targetKind, enemy);
+        }
+
+        private static void NormalizeActionSpatialMetadata(
+            SerializedProperty action,
+            FpgSkillActionKind actionKind,
+            bool enemy)
+        {
+            FpgSkillActionAuthoringOptions options =
+                FpgSkillActionAuthoringRules.Get(actionKind, enemy);
+            if (action == null || !options.IsKnownAction)
+            {
+                return;
+            }
+
+            if (options.HasFixedTargetSource)
+            {
+                SetEnumRawValue(
+                    action,
+                    (int)options.DefaultTargetSource,
+                    "targetSource");
+            }
+            else if (options.SupportsTargetSourceSelection)
+            {
+                SerializedProperty targetSource =
+                    action.FindPropertyRelative("targetSource");
+                FpgSkillTargetSource source = targetSource == null
+                    ? FpgSkillTargetSource.None
+                    : (FpgSkillTargetSource)targetSource.intValue;
+                bool hasAllowedSource = false;
+                for (int index = 0;
+                    index < options.TargetSourceChoices.Count;
+                    index++)
+                {
+                    if (options.TargetSourceChoices[index] == source)
+                    {
+                        hasAllowedSource = true;
+                        break;
+                    }
+                }
+
+                if (!hasAllowedSource
+                    || (source == FpgSkillTargetSource.SocketForward
+                        && string.IsNullOrWhiteSpace(
+                            ReadFirstString(action, "socketId"))))
+                {
+                    SetEnumRawValue(
+                        action,
+                        (int)options.DefaultTargetSource,
+                        "targetSource");
+                }
+            }
+
+            if (!options.SupportsSocket && !options.SupportsTargetOffset)
+            {
+                ClearEventSpatialMetadata(action);
+                return;
+            }
+
+            if (!options.SupportsSocket)
+            {
+                WriteString(action, string.Empty, "socketId", "socket");
+            }
+
+            if (!options.SupportsTargetOffset)
+            {
+                SerializedProperty targetOffset = FindFirstRelative(
+                    action,
+                    "targetOffset");
+                if (targetOffset != null
+                    && targetOffset.propertyType
+                        == SerializedPropertyType.Vector3)
+                {
+                    targetOffset.vector3Value = Vector3.zero;
+                }
+            }
+        }
+
+        private static void ConfigureDefaultDamage(
+            SerializedProperty action,
+            int baseDamage)
+        {
+            WriteInt(action, baseDamage, "baseDamage");
+            WriteInt(action, baseDamage, "breakDamage");
+            WriteInt(
+                action,
+                10000,
+                "weakpointDamageMultiplierBasisPoints");
+            WriteInt(
+                action,
+                10000,
+                "weakpointBreakMultiplierBasisPoints");
+        }
+
+        private static bool IsEnemyAsset(SerializedObject serializedObject)
+        {
+            return serializedObject?.targetObject != null
+                && serializedObject.targetObject.GetType().Name.IndexOf(
+                    "Enemy",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
 
@@ -4253,51 +4298,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return false;
             }
 
-            SerializedProperty startProperty;
-            SerializedProperty endProperty;
-            SerializedProperty phases = null;
-            int startTick;
-            int endTick;
-            int rawEndTick;
-            if (kind == FpgSkillTimelineBlockKind.Animation)
-            {
-                if (blockIndex != 0)
-                {
-                    return false;
-                }
-
-                startProperty = sequence.FindPropertyRelative(
-                    "animationStartTick");
-                endProperty = sequence.FindPropertyRelative(
-                    "animationEndTick");
-                startTick = GetAnimationStartTick(sequence);
-                endTick = GetAnimationEndTick(sequence);
-                rawEndTick = ReadRawInt(endProperty, -1);
-            }
-            else if (kind == FpgSkillTimelineBlockKind.Phase)
-            {
-                phases = sequence.FindPropertyRelative("phases");
-                if (phases == null
-                    || !phases.isArray
-                    || blockIndex < 0
-                    || blockIndex >= phases.arraySize)
-                {
-                    return false;
-                }
-
-                SerializedProperty phase =
-                    phases.GetArrayElementAtIndex(blockIndex);
-                startProperty = phase.FindPropertyRelative("startTick");
-                endProperty = phase.FindPropertyRelative("endTick");
-                startTick = ReadRawInt(startProperty, -1);
-                endTick = ReadRawInt(endProperty, -1);
-                rawEndTick = endTick;
-            }
-            else
+            if (kind != FpgSkillTimelineBlockKind.Animation
+                || blockIndex != 0)
             {
                 return false;
             }
 
+            SerializedProperty startProperty = sequence.FindPropertyRelative(
+                "animationStartTick");
+            SerializedProperty endProperty = sequence.FindPropertyRelative(
+                "animationEndTick");
+            int startTick = GetAnimationStartTick(sequence);
+            int endTick = GetAnimationEndTick(sequence);
+            int rawEndTick = ReadRawInt(endProperty, -1);
             appliedStartTick = startTick;
             appliedEndTick = endTick;
             if (startProperty == null
@@ -4381,70 +4394,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     durationTicks,
                     nextEndTick);
             }
-            else
-            {
-                int minimumStartTick = 0;
-                int maximumEndTick = durationTicks;
-                if (blockIndex > 0)
-                {
-                    minimumStartTick = ReadRawInt(
-                        phases.GetArrayElementAtIndex(blockIndex - 1)
-                            .FindPropertyRelative("endTick"),
-                        -1);
-                }
-
-                if (blockIndex + 1 < phases.arraySize)
-                {
-                    maximumEndTick = ReadRawInt(
-                        phases.GetArrayElementAtIndex(blockIndex + 1)
-                            .FindPropertyRelative("startTick"),
-                        -1);
-                }
-
-                if (minimumStartTick < 0
-                    || maximumEndTick < 0
-                    || minimumStartTick > startTick
-                    || maximumEndTick < endTick)
-                {
-                    return false;
-                }
-
-                switch (editMode)
-                {
-                    case FpgSkillTimelineBlockEditMode.Move:
-                    {
-                        int intervalTicks = endTick - startTick;
-                        int maximumStartTick =
-                            maximumEndTick - intervalTicks;
-                        nextStartTick = Mathf.Clamp(
-                            requestedStartTick,
-                            minimumStartTick,
-                            maximumStartTick);
-                        nextEndTick = nextStartTick + intervalTicks;
-                        break;
-                    }
-                    case FpgSkillTimelineBlockEditMode.ResizeStart:
-                        nextStartTick = Mathf.Clamp(
-                            requestedStartTick,
-                            minimumStartTick,
-                            endTick);
-                        break;
-                    case FpgSkillTimelineBlockEditMode.ResizeEnd:
-                        nextEndTick = Mathf.Clamp(
-                            requestedEndTick,
-                            startTick,
-                            maximumEndTick);
-                        break;
-                    default:
-                        return false;
-                }
-            }
-
             appliedStartTick = nextStartTick;
             appliedEndTick = nextEndTick;
             bool materializeResolvedAnimationEnd =
-                kind == FpgSkillTimelineBlockKind.Animation
-                && rawEndTick != endTick;
+                rawEndTick != endTick;
             if (nextStartTick == startTick
                 && nextEndTick == endTick
                 && nextDurationTicks == durationTicks
@@ -4455,9 +4408,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             Undo.RecordObject(
                 serializedObject.targetObject,
-                kind == FpgSkillTimelineBlockKind.Animation
-                    ? "编辑技能动画区间"
-                    : "编辑技能阶段区间");
+                "编辑技能动画区间");
             startProperty.intValue = nextStartTick;
             endProperty.intValue = nextEndTick;
             if (nextDurationTicks != durationTicks)

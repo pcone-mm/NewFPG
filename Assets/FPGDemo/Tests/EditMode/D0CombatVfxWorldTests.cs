@@ -1,5 +1,6 @@
 using FPG.Demo.Unity;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace FPG.Demo.Tests.EditMode
@@ -95,5 +96,119 @@ namespace FPG.Demo.Tests.EditMode
                 Object.DestroyImmediate(prefab);
             }
         }
+
+                        [Test]
+        public void HeldInstancesIgnoreDurationAndReleaseExplicitly()
+        {
+            GameObject root = new GameObject("D0CombatVfxHeldTestRoot");
+            GameObject prefab = new GameObject("D0CombatVfxHeldTestPrefab");
+            try
+            {
+                D0CombatVfxWorld world = root.AddComponent<D0CombatVfxWorld>();
+                D0CombatVfxAssetReference reference =
+                    new D0CombatVfxAssetReference(
+                        "test.flight",
+                        prefab,
+                        1,
+                        0.05f,
+                        "presentation",
+                        0,
+                        D0CombatVfxCategory.SkillPresentation);
+                Assert.That(
+                    world.TryPrepareForScenario(
+                        new[] { reference },
+                        out string error),
+                    Is.True,
+                    error);
+                world.BeginCombat();
+
+                Assert.That(
+                    world.TryAcquireHeld(
+                        "test.flight",
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out GameObject instance),
+                    Is.True);
+                world.Advance(5f);
+                Assert.That(instance.activeSelf, Is.True);
+                Assert.That(world.ActiveInstanceCount, Is.EqualTo(1));
+
+                Assert.That(world.TryRelease(instance), Is.True);
+                Assert.That(instance.activeSelf, Is.False);
+                Assert.That(world.ActiveInstanceCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(prefab);
+            }
+        }
+
+        [Test]
+        public void GlobalActiveCapacityRejectsWithoutAllocating()
+        {
+            GameObject root = new GameObject("D0CombatVfxCapacityTestRoot");
+            GameObject prefab = new GameObject("D0CombatVfxCapacityTestPrefab");
+            try
+            {
+                D0CombatVfxWorld world = root.AddComponent<D0CombatVfxWorld>();
+                Assert.That(
+                    world.TrySetGlobalActiveCapacity(1, out string error),
+                    Is.True,
+                    error);
+                Assert.That(
+                    world.TryPrepareForScenario(
+                        new[]
+                        {
+                            new D0CombatVfxAssetReference(
+                                "test.capacity",
+                                prefab,
+                                2,
+                                1f,
+                                "presentation",
+                                0,
+                                D0CombatVfxCategory.SkillPresentation)
+                        },
+                        out error),
+                    Is.True,
+                    error);
+                world.BeginCombat();
+
+                Assert.That(
+                    world.TryAcquire(
+                        "test.capacity",
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out GameObject first),
+                    Is.True);
+                Assert.That(
+                    world.TryAcquire(
+                        "test.capacity",
+                        Vector3.one,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out _),
+                    Is.False);
+                Assert.That(world.HotPathInstantiateCount, Is.Zero);
+
+                Assert.That(world.TryRelease(first), Is.True);
+                Assert.That(
+                    world.TryAcquire(
+                        "test.capacity",
+                        Vector3.one,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out _),
+                    Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(prefab);
+            }
+        }
+
     }
 }

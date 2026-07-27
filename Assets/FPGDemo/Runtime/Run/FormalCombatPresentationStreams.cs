@@ -324,6 +324,7 @@ namespace FPG.Demo.Run
             TargetId = intent.TargetId;
             HitPart = intent.HitPart;
             DamageType = intent.DamageType;
+            Tags = intent.Tags;
             AppliedDamage = packet.AppliedAmount;
             Channel = packet.Channel;
             PelletIndex = intent.PelletIndex;
@@ -341,6 +342,7 @@ namespace FPG.Demo.Run
         public RuntimeId TargetId { get; }
         public HitPart HitPart { get; }
         public DamageType DamageType { get; }
+        public CombatTags Tags { get; }
         public int AppliedDamage { get; }
         public DamageChannel Channel { get; }
         public int PelletIndex { get; }

@@ -119,6 +119,67 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void TypedActionIndexResolvesActionDuringExecution()
+        {
+            FpgCompiledSkillEvent actionEvent = new FpgCompiledSkillEvent(
+                10,
+                0,
+                FpgSkillActionKind.Attack,
+                0,
+                targetSource: FpgSkillTargetSource.CurrentAim);
+            FpgCompiledPlayerSkillDefinition primary =
+                new FpgCompiledPlayerSkillDefinition(
+                    new FpgCompiledSkillDefinition(
+                        1,
+                        new[]
+                        {
+                            new FpgCompiledSkillSequence(
+                                FpgSkillSequenceKind.Execute,
+                                0,
+                                1001,
+                                false,
+                                new[] { actionEvent })
+                        }),
+                    0,
+                    new[]
+                    {
+                        new FpgCompiledPlayerAttackAction(
+                            FpgSkillAttackMode.PelletRays,
+                            PelletPayload(101, 1))
+                    },
+                    Array.Empty<FpgCompiledPlayerProjectileAction>(),
+                    Array.Empty<FpgCompiledPlayerReloadAction>());
+            Assert.That(
+                primary.TryResolveAction(
+                    actionEvent,
+                    out FpgCompiledPlayerSkillAction resolved),
+                Is.True);
+            Assert.That(resolved.Kind,
+                Is.EqualTo(FpgPlayerSkillActionKind.PelletRay));
+
+            FpgPlayerSkillExecutionController controller = CreateController(primary);
+            PlayerRuntime player = CreatePlayer(magazineCapacity: 2);
+            Assert.That(
+                controller.ProcessFrame(
+                    PlayerInputFrame.Empty(
+                        new TickIndex(0L),
+                        true,
+                        true),
+                    player).IsSuccess,
+                Is.True);
+
+            Assert.That(controller.ResultCount, Is.EqualTo(1));
+            FpgPlayerSkillExecutionEvent result = controller.GetResult(0);
+            Assert.That(result.HasGameplayAction, Is.True);
+            Assert.That(result.Event.ActionKind,
+                Is.EqualTo(FpgSkillActionKind.Attack));
+            Assert.That(result.Event.ActionIndex, Is.Zero);
+            Assert.That(result.Action.Kind,
+                Is.EqualTo(FpgPlayerSkillActionKind.PelletRay));
+            Assert.That(result.Action.AmmoCost, Is.EqualTo(1));
+        }
+
+        [Test]
         public void CooldownIsAnchoredToLastAttackAndNeverShorterThanSequence()
         {
             FpgCompiledPlayerSkillDefinition primary = CreatePrimary(
@@ -324,6 +385,44 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void SecondaryChargeWithInsufficientAmmoDoesNotStartPresentationTimeline()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 0,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary());
+            PlayerRuntime player = CreatePlayer(magazineCapacity: 2);
+            Assert.That(player.Weapon.Magazine.RestoreAmmo(0).IsSuccess, Is.True);
+            InputEdgeCommand[] edges =
+            {
+                new InputEdgeCommand(
+                    new InputSequence(1L),
+                    InputEdgeType.SecondaryPressed)
+            };
+
+            Assert.That(controller.ProcessFrame(
+                new PlayerInputFrame(
+                    new TickIndex(0L),
+                    true,
+                    false,
+                    edges,
+                    edges.Length,
+                    secondaryHeld: true),
+                player).IsSuccess, Is.True);
+
+            Assert.That(controller.IsExecuting, Is.False);
+            Assert.That(controller.ResultCount, Is.Zero);
+            Assert.That(controller.SequenceFrameCount, Is.Zero);
+            Assert.That(player.Weapon.State, Is.EqualTo(WeaponState.Ready));
+            Assert.That(player.Weapon.Magazine.Ammo, Is.Zero);
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.NotEnoughAmmo));
+        }
+
+        [Test]
         public void SequenceFramesResolveAnimationVariantFromExecutionId()
         {
             FpgCompiledSkillSequence sequence =
@@ -371,168 +470,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(sequence.ResolveAnimation(second.ExecutionId)));
         }
 
-        [Test]
-        public void CueCommitGateMatchesExactSameTickGameplayEventAndLeavesUnboundCueDirect()
-        {
-            FpgCompiledSkillEvent gameplayA = Event(10, 0, 101, 0);
-            FpgCompiledSkillEvent gameplayB = Event(20, 0, 101, 1);
-            FpgCompiledSkillEvent cueA =
-                new FpgCompiledSkillEvent(
-                    11,
-                    0,
-                    FpgSkillEventKind.PresentationCue,
-                    0,
-                    501,
-                    0,
-                    sortOrder: 2,
-                    boundGameplayEventId: 10);
-            FpgCompiledSkillEvent cueB =
-                new FpgCompiledSkillEvent(
-                    12,
-                    0,
-                    FpgSkillEventKind.PresentationCue,
-                    0,
-                    502,
-                    0,
-                    sortOrder: 3,
-                    boundGameplayEventId: 20);
-            FpgCompiledSkillEvent unboundCue =
-                new FpgCompiledSkillEvent(
-                    13,
-                    0,
-                    FpgSkillEventKind.PresentationCue,
-                    0,
-                    503,
-                    0,
-                    sortOrder: 4);
-            FpgCompiledPlayerSkillDefinition primary = CreatePrimary(
-                durationTicks: 0,
-                cooldownTicks: 0,
-                ammoCost: 1,
-                gameplayA,
-                gameplayB,
-                cueA,
-                cueB,
-                unboundCue);
-            FpgPlayerSkillExecutionController controller = CreateController(
-                primary);
-            PlayerRuntime player = CreatePlayer(magazineCapacity: 4);
-
-            Assert.That(controller.ProcessFrame(
-                PlayerInputFrame.Empty(new TickIndex(0L), true, true),
-                player).IsSuccess, Is.True);
-
-            FpgPlayerSkillExecutionEvent resolvedCueA =
-                FindCue(controller, 501);
-            Assert.That(
-                FpgPlayerSkillPresentationCommitGate.TryResolveGameplayCommit(
-                    controller,
-                    resolvedCueA,
-                    out FpgPlayerSkillExecutionEvent resolvedGameplayA),
-                Is.True);
-            Assert.That(resolvedGameplayA.Event.EventId, Is.EqualTo(10));
-            Assert.That(
-                FpgPlayerSkillPresentationCommitGate.RequiresGameplayCommit(
-                    controller,
-                    resolvedCueA),
-                Is.True);
-
-            FpgPlayerSkillExecutionEvent resolvedCueB =
-                FindCue(controller, 502);
-            Assert.That(
-                FpgPlayerSkillPresentationCommitGate.TryResolveGameplayCommit(
-                    controller,
-                    resolvedCueB,
-                    out FpgPlayerSkillExecutionEvent resolvedGameplayB),
-                Is.True);
-            Assert.That(resolvedGameplayB.Event.EventId, Is.EqualTo(20));
-            Assert.That(
-                FpgPlayerSkillPresentationCommitGate.RequiresGameplayCommit(
-                    controller,
-                    resolvedCueB),
-                Is.True);
-
-            FpgPlayerSkillExecutionEvent resolvedUnboundCue =
-                FindCue(controller, 503);
-            Assert.That(
-                FpgPlayerSkillPresentationCommitGate.TryResolveGameplayCommit(
-                    controller,
-                    resolvedUnboundCue,
-                    out FpgPlayerSkillExecutionEvent _),
-                Is.False);
-            Assert.That(
-                FpgPlayerSkillPresentationCommitGate.RequiresGameplayCommit(
-                    controller,
-                    resolvedUnboundCue),
-                Is.False);
-        }
-
-        [Test]
-        public void AuthoredPresentationResolverMapsCompiledVariantAndCue()
-        {
-            const string assetPath =
-                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset";
-            FpgPlayerSkillDefinition authored =
-                AssetDatabase.LoadAssetAtPath<FpgPlayerSkillDefinition>(
-                    assetPath);
-
-            Assert.That(authored, Is.Not.Null, assetPath);
-            Assert.That(
-                authored.TryCompile(
-                    out FpgCompiledPlayerSkillDefinition compiled,
-                    out string error),
-                Is.True,
-                error);
-            Assert.That(
-                compiled.Timeline.TryGetSequence(
-                    FpgSkillSequenceKind.Execute,
-                    out FpgCompiledSkillSequence sequence),
-                Is.True);
-
-            int variantId = sequence.ResolveAnimation(
-                new SkillExecutionId(2L));
-            Assert.That(
-                FpgPlayerSkillPresentationResolver.TryResolveAnimationName(
-                    authored,
-                    sequence.Kind,
-                    variantId,
-                    out string animationName),
-                Is.True);
-            Assert.That(animationName, Is.EqualTo("attack_play2"));
-
-            FpgCompiledSkillEvent cue = default(FpgCompiledSkillEvent);
-            bool foundCue = false;
-            for (int index = 0; index < sequence.EventCount; index++)
-            {
-                if (sequence.GetEvent(index).Kind
-                    == FpgSkillEventKind.PresentationCue)
-                {
-                    cue = sequence.GetEvent(index);
-                    foundCue = true;
-                    break;
-                }
-            }
-
-            Assert.That(foundCue, Is.True);
-            Assert.That(
-                FpgPlayerSkillPresentationResolver.TryResolveCue(
-                    authored,
-                    sequence.Kind,
-                    cue,
-                    out FpgResolvedPlayerSkillCue resolvedCue),
-                Is.True);
-            Assert.That(
-                resolvedCue.EventName,
-                Is.EqualTo("cue.fei.primary.muzzle.0"));
-            Assert.That(
-                resolvedCue.CueName,
-                Is.EqualTo("player.weapon.primary.muzzle"));
-            Assert.That(
-                resolvedCue.SocketName,
-                Is.EqualTo("weapon.primary.muzzle"));
-        }
-
-        private static FpgPlayerSkillExecutionController CreateController(
+                        private static FpgPlayerSkillExecutionController CreateController(
             FpgCompiledPlayerSkillDefinition primary)
         {
             return CreateController(primary, CreateSecondary());
@@ -582,9 +520,8 @@ namespace FPG.Demo.Tests.EditMode
                     1002,
                     false,
                     new[] { Event(40, 0, 201) }),
-                new FpgCompiledPlayerSkillPayloadSlot(
-                    201,
-                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface,
+                new FpgCompiledPlayerSkillAction(
+                    FpgPlayerSkillActionKind.AreaAtFirstSurface,
                     1,
                     new DamageSpec(8, 2),
                     QueryPolicy.DirectThenArea,
@@ -638,20 +575,23 @@ namespace FPG.Demo.Tests.EditMode
                 2,
                 new[]
                 {
-                    new FpgCompiledPlayerSkillPayloadSlot(
-                        201,
-                        FpgPlayerSkillPayloadKind.AreaAtFirstSurface,
-                        1,
-                        new DamageSpec(8, 2),
-                        QueryPolicy.DirectThenArea,
-                        AttackQueryMode.AreaAtFirstSurface,
-                        1,
-                        2,
-                        0,
-                        1,
-                        1,
-                        WeaponDefinition.PlayerAttackTargetKinds)
-                });
+                    new FpgCompiledPlayerAttackAction(
+                        FpgSkillAttackMode.AreaAtFirstSurface,
+                        new FpgCompiledPlayerSkillAction(
+                            FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                            1,
+                            new DamageSpec(8, 2),
+                            QueryPolicy.DirectThenArea,
+                            AttackQueryMode.AreaAtFirstSurface,
+                            1,
+                            2,
+                            0,
+                            1,
+                            1,
+                            WeaponDefinition.PlayerAttackTargetKinds))
+                },
+                Array.Empty<FpgCompiledPlayerProjectileAction>(),
+                Array.Empty<FpgCompiledPlayerReloadAction>());
         }
 
         private static FpgCompiledPlayerSkillDefinition CreateReload()
@@ -659,9 +599,7 @@ namespace FPG.Demo.Tests.EditMode
             FpgCompiledSkillEvent reloadEvent = new FpgCompiledSkillEvent(
                 50,
                 1,
-                FpgSkillEventKind.GameplayPayload,
-                301,
-                0,
+                FpgSkillActionKind.CommitReload,
                 0,
                 targetSource: FpgSkillTargetSource.Self);
             return Definition(
@@ -673,9 +611,8 @@ namespace FPG.Demo.Tests.EditMode
                     1003,
                     false,
                     new[] { reloadEvent }),
-                new FpgCompiledPlayerSkillPayloadSlot(
-                    301,
-                    FpgPlayerSkillPayloadKind.ReloadCommit,
+                new FpgCompiledPlayerSkillAction(
+                    FpgPlayerSkillActionKind.ReloadCommit,
                     0,
                     new DamageSpec(0, 0),
                     QueryPolicy.None,
@@ -692,21 +629,45 @@ namespace FPG.Demo.Tests.EditMode
             int skillId,
             int cooldownTicks,
             FpgCompiledSkillSequence sequence,
-            FpgCompiledPlayerSkillPayloadSlot payload)
+            FpgCompiledPlayerSkillAction payload)
         {
+            FpgCompiledPlayerAttackAction[] attacks =
+                Array.Empty<FpgCompiledPlayerAttackAction>();
+            FpgCompiledPlayerReloadAction[] reloads =
+                Array.Empty<FpgCompiledPlayerReloadAction>();
+            if (payload.Kind == FpgPlayerSkillActionKind.ReloadCommit)
+            {
+                reloads = new[]
+                {
+                    new FpgCompiledPlayerReloadAction(payload)
+                };
+            }
+            else
+            {
+                FpgSkillAttackMode mode = payload.Kind
+                        == FpgPlayerSkillActionKind.PelletRay
+                    ? FpgSkillAttackMode.PelletRays
+                    : FpgSkillAttackMode.AreaAtFirstSurface;
+                attacks = new[]
+                {
+                    new FpgCompiledPlayerAttackAction(mode, payload)
+                };
+            }
+
             return new FpgCompiledPlayerSkillDefinition(
                 new FpgCompiledSkillDefinition(skillId, new[] { sequence }),
                 cooldownTicks,
-                new[] { payload });
+                attacks,
+                System.Array.Empty<FpgCompiledPlayerProjectileAction>(),
+                reloads);
         }
 
-        private static FpgCompiledPlayerSkillPayloadSlot PelletPayload(
+        private static FpgCompiledPlayerSkillAction PelletPayload(
             int slotId,
             int ammoCost)
         {
-            return new FpgCompiledPlayerSkillPayloadSlot(
-                slotId,
-                FpgPlayerSkillPayloadKind.PelletRay,
+            return new FpgCompiledPlayerSkillAction(
+                FpgPlayerSkillActionKind.PelletRay,
                 ammoCost,
                 new DamageSpec(4, 1),
                 QueryPolicy.PelletRays,
@@ -722,37 +683,16 @@ namespace FPG.Demo.Tests.EditMode
         private static FpgCompiledSkillEvent Event(
             int eventId,
             int tick,
-            int payloadSlotId,
+            int actionToken,
             int sortOrder = 0)
         {
             return new FpgCompiledSkillEvent(
                 eventId,
                 tick,
-                FpgSkillEventKind.GameplayPayload,
-                payloadSlotId,
-                0,
+                FpgSkillActionKind.Attack,
                 0,
                 sortOrder: sortOrder,
                 targetSource: FpgSkillTargetSource.CurrentAim);
-        }
-
-        private static FpgPlayerSkillExecutionEvent FindCue(
-            FpgPlayerSkillExecutionController controller,
-            int cueId)
-        {
-            for (int index = 0; index < controller.ResultCount; index++)
-            {
-                FpgPlayerSkillExecutionEvent candidate =
-                    controller.GetResult(index);
-                if (candidate.Event.Kind == FpgSkillEventKind.PresentationCue
-                    && candidate.Event.CueId == cueId)
-                {
-                    return candidate;
-                }
-            }
-
-            Assert.Fail("Expected presentation cue " + cueId + ".");
-            return default(FpgPlayerSkillExecutionEvent);
         }
 
         private static PlayerRuntime CreatePlayer(int magazineCapacity)
@@ -802,7 +742,7 @@ namespace FPG.Demo.Tests.EditMode
             WeaponReleaseBuffer release,
             long tick)
         {
-            FpgCompiledPlayerSkillPayloadSlot payload = skillEvent.Payload;
+            FpgCompiledPlayerSkillAction payload = skillEvent.Action;
             WeaponSkillReleaseSpec spec = new WeaponSkillReleaseSpec(
                 WeaponReleaseKind.Primary,
                 payload.Damage,

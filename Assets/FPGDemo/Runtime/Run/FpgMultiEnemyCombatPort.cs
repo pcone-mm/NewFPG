@@ -35,10 +35,17 @@ namespace FPG.Demo.Run
         private readonly ThreatAdvanceBinding[] threatAdvanceBuffer;
         private readonly ThreatExecutionBinding[] threatExecutionBindings;
         private readonly QueuedImpact[] dueImpactBuffer;
+        private readonly bool[] dueImpactIsProjectile;
+        private readonly ImpactId[] projectileOriginImpactIds;
         private readonly IProjectileWorldPort projectileWorldPort;
+        private readonly IPlayerProjectileAreaQueryPort playerProjectileAreaQueryPort;
         private readonly IFpgSummonRequestSink summonRequestSink;
+        private readonly QueryCandidate[] playerProjectileAreaCandidates;
+        private readonly QueryCandidate[] playerProjectileAreaSelected;
         private readonly FixedFpgVitalsStream vitalsStream;
         private readonly FixedResolvedDamageFeedbackStream damageFeedbackStream;
+        private readonly FixedFpgSkillImpactPresentationStream
+            skillImpactPresentationStream;
 
         private TickIndex currentTick = TickIndex.Invalid;
         private int enemyCount;
@@ -54,7 +61,8 @@ namespace FPG.Demo.Run
             TickDuration defaultGroggyDuration,
             IProjectileWorldPort projectileWorldPort,
             IFpgSummonRequestSink summonRequestSink,
-            FpgPlayerDefensePolicy? playerDefense = null)
+            FpgPlayerDefensePolicy? playerDefense = null,
+            IPlayerProjectileAreaQueryPort playerProjectileAreaQueryPort = null)
         {
             this.combatKernel = combatKernel ?? throw new ArgumentNullException(nameof(combatKernel));
             this.player = player ?? throw new ArgumentNullException(nameof(player));
@@ -63,6 +71,8 @@ namespace FPG.Demo.Run
                 ?? throw new ArgumentNullException(nameof(projectileWorldPort));
             this.summonRequestSink = summonRequestSink
                 ?? throw new ArgumentNullException(nameof(summonRequestSink));
+            this.playerProjectileAreaQueryPort = playerProjectileAreaQueryPort
+                ?? NullPlayerProjectileAreaQueryPort.Instance;
             if (projectileWorldPort is NullProjectileWorldPort)
             {
                 throw new ArgumentException(
@@ -95,11 +105,22 @@ namespace FPG.Demo.Run
             threatExecutionBindings = new ThreatExecutionBinding[
                 capacity.ThreatAdvanceCapacity];
             dueImpactBuffer = new QueuedImpact[combatKernel.ImpactQueue.Capacity];
+            dueImpactIsProjectile = new bool[
+                combatKernel.ImpactQueue.Capacity];
+            projectileOriginImpactIds = new ImpactId[
+                combatKernel.ImpactQueue.Capacity];
+            playerProjectileAreaCandidates = new QueryCandidate[
+                TargetSelector.DefaultCandidateCapacity];
+            playerProjectileAreaSelected = new QueryCandidate[
+                TargetSelector.DefaultCandidateCapacity];
             vitalsStream = new FixedFpgVitalsStream(
                 capacity.EnemyCapacity + 1,
                 capacity.VitalsEventCapacity);
             damageFeedbackStream = new FixedResolvedDamageFeedbackStream(
                 capacity.DamageFeedbackCapacity);
+            skillImpactPresentationStream =
+                new FixedFpgSkillImpactPresentationStream(
+                    capacity.SkillImpactPresentationCapacity);
             PublishVitals(
                 player.Combatant,
                 new TickIndex(0L),
@@ -119,7 +140,39 @@ namespace FPG.Demo.Run
         public PlayerRuntime Player => player;
         public IFpgVitalsView Vitals => vitalsStream;
         public IFpgResolvedDamageFeedbackView DamageFeedback => damageFeedbackStream;
+        public IFpgSkillImpactPresentationView SkillImpactPresentation =>
+            skillImpactPresentationStream;
         public int PresentationCallbackFaultCount { get; private set; }
+
+        /// <summary>
+        /// Closes a successfully committed immediate action that produced no
+        /// impact intents. This writes presentation state only.
+        /// </summary>
+        public bool TryCompleteImmediateSkillPresentationGroup(
+            RuntimeId sourceRuntimeId,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId,
+            TickIndex tick,
+            AttackId attackId)
+        {
+            try
+            {
+                return skillImpactPresentationStream.TryRecordGroupCompletion(
+                    new FpgSkillImpactGroupCompletion(
+                        new FpgSkillImpactCorrelation(
+                            sourceRuntimeId,
+                            skillExecutionId,
+                            gameplayEventId),
+                        FpgSkillImpactPresentationGroupKind.ImmediateAttack,
+                        tick,
+                        attackId));
+            }
+            catch (Exception)
+            {
+                IncrementPresentationCallbackFaultCount();
+                return false;
+            }
+        }
 
         public event Action<FpgEnemyDiedEvent> EnemyDied;
         public event Action<FpgEnemyAttackStartedEvent> EnemyAttackStarted;
@@ -290,6 +343,43 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
+        public DomainResult TryCompensatePlayerHitBatch(
+            FpgPlayerHitCommand[] commands,
+            int commandCount)
+        {
+            if (commands == null
+                || commandCount <= 0
+                || commandCount > commands.Length
+                || commandCount > playerHitCommandCount)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            int firstStoredIndex = playerHitCommandCount - commandCount;
+            for (int index = 0; index < commandCount; index++)
+            {
+                FpgPlayerHitCommand expected = commands[index];
+                FpgPlayerHitCommand stored =
+                    playerHitCommands[firstStoredIndex + index];
+                if (stored.CommandSequence != expected.CommandSequence
+                    || stored.Intent.ImpactId != expected.Intent.ImpactId
+                    || stored.SkillExecutionId != expected.SkillExecutionId
+                    || stored.GameplayEventId != expected.GameplayEventId)
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+            }
+
+            Array.Clear(
+                playerHitCommands,
+                firstStoredIndex,
+                commandCount);
+            playerHitCommandCount = firstStoredIndex;
+            lastPlayerHitCommandSequence =
+                commands[0].CommandSequence - 1L;
+            return DomainResult.Success;
+        }
+
         public DomainResult TryReserveEnemySkillCapacity(
             RuntimeId ownerRuntimeId,
             int attackEventCount,
@@ -328,7 +418,7 @@ namespace FPG.Demo.Run
             long projectileDemand = CountActiveProjectiles()
                 + CountScheduledProjectileCapacity();
             long impactDemand = combatKernel.ImpactQueue.Count
-                + CountActiveProjectiles()
+                + CountActiveProjectileImpactCapacity()
                 + CountScheduledImpactCapacity();
             long summonDemand = CountScheduledSummonCapacity();
             long globalThreatDemand = CountActiveThreats()
@@ -461,6 +551,11 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
             }
 
+            if (IsCommittedTargetedAttack(command))
+            {
+                return CommitTargetedAttack(command, reservationIndex);
+            }
+
             int payloadIndex = FindFreeScheduledPayload();
             if (payloadIndex < 0)
             {
@@ -496,6 +591,120 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
+        private DomainResult CommitTargetedAttack(
+            FpgEnemyAttackCommand command,
+            int reservationIndex)
+        {
+            ThreatPayloadDefinition payload = command.Payload.Threat.Payload;
+            AttackId attackId = idAllocator.NextAttackId();
+            ImpactIntent intent = new ImpactIntent(
+                idAllocator.NextImpactId(),
+                attackId,
+                ShotId.Invalid,
+                command.Schedule.OwnerRuntimeId,
+                command.SpatialContext.TargetRuntimeId,
+                command.Schedule.ReadyTick + payload.ImpactDelay,
+                payload.TimedImpactDamage,
+                HitPart.Body,
+                DamageType.Normal,
+                CombatTags.EnemyAttack,
+                impactOrdinal: 0,
+                spatialContext: new ImpactSpatialContext(
+                    command.SpatialContext.Target,
+                    QueryTargetKind.Combatant,
+                    HitPart.Body));
+            DomainResult queued = combatKernel.ImpactQueue.TryEnqueue(
+                intent,
+                ImpactPhasePriority.EnemyImpact,
+                command.Schedule.OwnerRuntimeId,
+                command.SkillExecutionId.Value,
+                command.GameplayEventId);
+            if (!queued.IsSuccess)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            if (reservationIndex >= 0)
+            {
+                EnemySkillCapacityReservationEntry entry =
+                    enemySkillCapacityReservations[reservationIndex];
+                ConsumeEnemySkillCapacity(ref entry, command.Payload);
+                enemySkillCapacityReservations[reservationIndex] = entry;
+            }
+
+            combatKernel.Trace.Record(
+                command.Schedule.ReadyTick,
+                CombatEventType.SkillGameplayCommitted,
+                command.Schedule.OwnerRuntimeId,
+                command.SpatialContext.TargetRuntimeId,
+                AttackId.Invalid,
+                ImpactId.Invalid,
+                (int)command.Payload.Kind,
+                0,
+                skillExecutionId: command.SkillExecutionId.Value,
+                gameplayEventId: command.GameplayEventId);
+            combatKernel.Trace.Record(
+                command.Schedule.ReadyTick,
+                CombatEventType.ThreatScheduleDecision,
+                command.Schedule.OwnerRuntimeId,
+                command.SpatialContext.TargetRuntimeId,
+                attackId,
+                ImpactId.Invalid,
+                command.SpawnSequence,
+                command.Payload.Threat.DefinitionId,
+                skillExecutionId: command.SkillExecutionId.Value,
+                gameplayEventId: command.GameplayEventId);
+            PublishEnemyAttackStarted(
+                command.Schedule,
+                command.SpawnSequence,
+                command.Payload.Kind,
+                command.Schedule.ReadyTick);
+            return DomainResult.Success;
+        }
+
+        private static bool IsCommittedTargetedAttack(
+            FpgEnemyAttackCommand command)
+        {
+            if (!command.HasSkillCorrelation
+                || command.Payload.Kind
+                    != FpgEnemyAttackPayloadKind.Threat)
+            {
+                return false;
+            }
+
+            ThreatDefinition threat = command.Payload.Threat;
+            return threat.Payload.IsTimedImpact
+                && threat.TelegraphDuration.Value == 0
+                && threat.WindupDuration.Value == 0
+                && threat.RecoveryDuration.Value == 0;
+        }
+
+        public DomainResult TryCompensateSummonAttack(long scheduleSequence)
+        {
+            int payloadIndex = FindScheduledPayload(scheduleSequence);
+            if (payloadIndex < 0
+                || scheduledPayloads[payloadIndex].Payload.Kind
+                    != FpgEnemyAttackPayloadKind.Summon
+                || !attackSchedule.TryCancel(scheduleSequence))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            ScheduledPayload scheduled = scheduledPayloads[payloadIndex];
+            int reservationIndex = FindEnemySkillCapacityReservation(
+                scheduled.CapacityReservation);
+            if (reservationIndex >= 0)
+            {
+                EnemySkillCapacityReservationEntry entry =
+                    enemySkillCapacityReservations[reservationIndex];
+                RestoreEnemySkillCapacity(ref entry, scheduled.Payload);
+                enemySkillCapacityReservations[reservationIndex] = entry;
+            }
+
+            scheduledPayloads[payloadIndex] = default(ScheduledPayload);
+            return DomainResult.Success;
+        }
+
         /// <summary>
         /// Optional explicit activation hook. The port also discovers active
         /// roster entries at EnemyRecovery, so lifecycle adapters may either
@@ -518,6 +727,186 @@ namespace FPG.Demo.Run
             int index = FindProjectile(runtimeId, includeTerminal: false);
             projectile = index < 0 ? null : projectiles[index].Runtime;
             return projectile != null;
+        }
+
+        public DomainResult TrySpawnPlayerAreaProjectile(
+            in FpgPlayerAreaProjectileRequest request,
+            out RuntimeId projectileRuntimeId)
+        {
+            projectileRuntimeId = RuntimeId.Invalid;
+            if (!currentTick.IsValid || request.Tick != currentTick)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            if (player.Combatant.IsDead
+                || request.Attack.OwnerId != player.RuntimeId
+                || request.Attack.Team != Team.Player
+                || request.Definition.Interceptable)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            int free = FindFreeProjectile();
+            if (free < 0
+                || !CanQueueImpacts(request.Attack.MaxImpactCount))
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            DomainResult reserved = combatKernel.ProjectileBudget.TryReserve(
+                request.Definition.BudgetUnits,
+                out ReservationToken reservationToken);
+            if (!reserved.IsSuccess)
+            {
+                return reserved;
+            }
+
+            ProjectileRuntime projectile = new ProjectileRuntime(
+                idAllocator.NextProjectileId(),
+                idAllocator.NextRuntimeId(),
+                request.Attack.AttackId,
+                player.RuntimeId,
+                Team.Player,
+                request.Definition,
+                request.Tick,
+                reservationToken);
+            ProjectileSpawnRequest spawnRequest = new ProjectileSpawnRequest(
+                request.Tick,
+                projectile.ImpactTick,
+                projectile.ProjectileId,
+                projectile.RuntimeId,
+                projectile.AttackId,
+                projectile.OwnerId,
+                RuntimeId.Invalid,
+                projectile.Team,
+                projectile.Definition.DefinitionId,
+                projectile.Definition.SweepRadiusKey,
+                false,
+                ProjectileTargetingMode.FirstSurface,
+                request.Start,
+                request.End);
+            DomainResult registered = projectileWorldPort.Register(
+                spawnRequest,
+                out ProjectilePathSnapshot path);
+            if (!registered.IsSuccess)
+            {
+                return ReleasePlayerProjectileReservation(
+                    reservationToken,
+                    registered);
+            }
+
+            if (!path.Matches(spawnRequest))
+            {
+                DomainResult worldRelease = projectileWorldPort.Release(
+                    new ProjectileReleaseRequest(
+                        request.Tick,
+                        projectile.ProjectileId,
+                        projectile.RuntimeId,
+                        ProjectileTerminalReason.SessionEnded));
+                DomainResult budgetRelease = combatKernel.ProjectileBudget
+                    .ReleaseReservation(reservationToken);
+                if (!worldRelease.IsSuccess)
+                {
+                    return worldRelease;
+                }
+
+                return budgetRelease.IsSuccess
+                    ? DomainResult.Rejected(RejectReason.InvalidState)
+                    : budgetRelease;
+            }
+
+            DomainResult travelling = projectile.StartTravelling();
+            if (!travelling.IsSuccess)
+            {
+                projectileWorldPort.Release(new ProjectileReleaseRequest(
+                    request.Tick,
+                    projectile.ProjectileId,
+                    projectile.RuntimeId,
+                    ProjectileTerminalReason.SessionEnded));
+                return ReleasePlayerProjectileReservation(
+                    reservationToken,
+                    travelling);
+            }
+
+            DomainResult activated = combatKernel.ProjectileBudget.Activate(
+                reservationToken);
+            if (!activated.IsSuccess)
+            {
+                projectile.TryCancel(
+                    request.Tick,
+                    ProjectileTerminalReason.OwnerCanceled);
+                projectileWorldPort.Release(new ProjectileReleaseRequest(
+                    request.Tick,
+                    projectile.ProjectileId,
+                    projectile.RuntimeId,
+                    ProjectileTerminalReason.OwnerCanceled));
+                return ReleasePlayerProjectileReservation(
+                    reservationToken,
+                    activated);
+            }
+
+            projectiles[free] = new ProjectileBinding(
+                projectile,
+                RuntimeId.Invalid,
+                path,
+                request.SkillExecutionId,
+                request.GameplayEventId,
+                request.Attack,
+                request.Attack.MaxImpactCount,
+                CountExistingProjectilesInGroup(
+                    player.RuntimeId,
+                    request.SkillExecutionId,
+                    request.GameplayEventId));
+            combatKernel.Trace.Record(
+                request.Tick,
+                CombatEventType.ProjectileStateChanged,
+                projectile.OwnerId,
+                projectile.RuntimeId,
+                projectile.AttackId,
+                ImpactId.Invalid,
+                (int)ProjectileState.Scheduled,
+                (int)ProjectileState.Travelling,
+                skillExecutionId: request.SkillExecutionId.Value,
+                gameplayEventId: request.GameplayEventId);
+            projectileRuntimeId = projectile.RuntimeId;
+            return DomainResult.Success;
+        }
+
+        public DomainResult TryCancelPlayerAreaProjectile(
+            RuntimeId projectileRuntimeId,
+            TickIndex tick)
+        {
+            if (!currentTick.IsValid || !tick.IsValid || tick != currentTick)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            int index = FindProjectile(projectileRuntimeId, includeTerminal: false);
+            if (index < 0 || !projectiles[index].IsPlayerAreaProjectile)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            ProjectileRuntime projectile = projectiles[index].Runtime;
+            DomainResult cancelled = projectile.TryCancel(
+                tick,
+                ProjectileTerminalReason.OwnerCanceled);
+            if (!cancelled.IsSuccess)
+            {
+                return cancelled;
+            }
+
+            TryPublishProjectileTerminal(index);
+
+            DomainResult released = ReleaseProjectileResources(index);
+            if (!released.IsSuccess)
+            {
+                return released;
+            }
+
+            projectiles[index] = default(ProjectileBinding);
+            return DomainResult.Success;
         }
 
         public DomainResult Process(FpgBattleTickPhase phase, TickIndex tick, FpgEnemyRoster roster)
@@ -646,6 +1035,7 @@ namespace FPG.Demo.Run
 
             vitalsStream.Clear();
             damageFeedbackStream.Clear();
+            skillImpactPresentationStream.Clear();
             PublishVitals(
                 player.Combatant,
                 tick,
@@ -833,12 +1223,31 @@ namespace FPG.Demo.Run
                 DomainResult resolved = ResolveImpact(
                     command.Intent,
                     command.SkillExecutionId.Value,
-                    command.GameplayEventId);
-                playerHitDueBuffer[index] = default(FpgPlayerHitCommand);
+                    command.GameplayEventId,
+                    publishImmediateContact: command.HasSkillCorrelation);
                 if (!resolved.IsSuccess)
                 {
                     return resolved;
                 }
+
+                if (command.HasSkillCorrelation
+                    && IsFinalPlayerHitInGroup(
+                        command,
+                        playerHitDueBuffer,
+                        index + 1,
+                        dueCount)
+                    && IsFinalPlayerHitInGroup(
+                        command,
+                        playerHitCommands,
+                        0,
+                        playerHitCommandCount))
+                {
+                    TryPublishImmediateGroupCompletion(command.Intent,
+                        command.SkillExecutionId.Value,
+                        command.GameplayEventId);
+                }
+
+                playerHitDueBuffer[index] = default(FpgPlayerHitCommand);
             }
 
             return DomainResult.Success;
@@ -1465,10 +1874,13 @@ namespace FPG.Demo.Run
                     projectile.Team,
                     projectile.Definition.DefinitionId,
                     projectile.Definition.SweepRadiusKey,
-                    projectile.Definition.PresentationKey,
                     projectile.Definition.Interceptable,
+                    payload.PresentationKind,
+                    ProjectileTargetingMode.LockedTarget,
                     execution.SpatialContext.Origin,
-                    execution.SpatialContext.Target);
+                    execution.SpatialContext.Target,
+                    execution.SkillExecutionId,
+                    execution.GameplayEventId);
                 DomainResult registered = projectileWorldPort.Register(
                     spawnRequest,
                     out ProjectilePathSnapshot path);
@@ -1506,7 +1918,8 @@ namespace FPG.Demo.Run
                     execution.SpatialContext.TargetRuntimeId,
                     path,
                     execution.SkillExecutionId,
-                    execution.GameplayEventId);
+                    execution.GameplayEventId,
+                    payloadIndex);
                 combatKernel.Trace.Record(
                     tick,
                     CombatEventType.ProjectileStateChanged,
@@ -1536,6 +1949,7 @@ namespace FPG.Demo.Run
 
                 if (projectile.IsTerminal)
                 {
+                    TryPublishProjectileTerminal(index);
                     DomainResult terminalRelease = ReleaseProjectileResources(index);
                     if (!terminalRelease.IsSuccess)
                     {
@@ -1546,18 +1960,30 @@ namespace FPG.Demo.Run
                     continue;
                 }
 
-                if (projectile.State != ProjectileState.Travelling || tick <= projectile.SpawnTick)
+                if (projectile.State != ProjectileState.Travelling
+                    || tick <= projectile.SpawnTick)
                 {
                     continue;
                 }
 
                 if (tick <= projectile.ImpactTick)
                 {
-                    if (binding.Path.ProjectileId != projectile.ProjectileId
-                        || binding.Path.RuntimeId != projectile.RuntimeId
-                        || binding.Path.SpawnTick != projectile.SpawnTick
-                        || binding.Path.ArrivalTick != projectile.ImpactTick
-                        || !binding.TargetRuntimeId.IsValid)
+                    bool validPath = binding.Path.ProjectileId
+                            == projectile.ProjectileId
+                        && binding.Path.RuntimeId == projectile.RuntimeId
+                        && binding.Path.SpawnTick == projectile.SpawnTick
+                        && binding.Path.ArrivalTick == projectile.ImpactTick
+                        && binding.ImpactCapacityReservation > 0;
+                    bool validBinding = binding.IsPlayerAreaProjectile
+                        ? !binding.TargetRuntimeId.IsValid
+                            && projectile.Team == Team.Player
+                            && binding.PlayerAttack.AttackId
+                                == projectile.AttackId
+                            && binding.PlayerAttack.OwnerId == player.RuntimeId
+                            && binding.PlayerAttack.Team == Team.Player
+                            && binding.PlayerAttack.IsQueryConfigurationValid
+                        : binding.TargetRuntimeId.IsValid;
+                    if (!validPath || !validBinding)
                     {
                         return DomainResult.Rejected(RejectReason.InvalidState);
                     }
@@ -1591,8 +2017,28 @@ namespace FPG.Demo.Run
                         return DomainResult.Rejected(RejectReason.InvalidState);
                     }
 
+                    if (binding.IsPlayerAreaProjectile)
+                    {
+                        DomainResult playerAdvanced = AdvancePlayerAreaProjectile(
+                            index,
+                            binding,
+                            tick,
+                            sweepHit);
+                        if (!playerAdvanced.IsSuccess)
+                        {
+                            return playerAdvanced;
+                        }
+
+                        continue;
+                    }
+
                     ProjectileState previous = projectile.State;
                     ImpactId impactId = ImpactId.Invalid;
+                    bool hasTerminalContact = false;
+                    SpatialVectorKey terminalContactPoint =
+                        default(SpatialVectorKey);
+                    RuntimeId terminalContactTarget = RuntimeId.Invalid;
+                    HitPart terminalHitPart = HitPart.Body;
                     switch (sweepHit.Kind)
                     {
                         case ProjectileSweepHitKind.None:
@@ -1613,6 +2059,9 @@ namespace FPG.Demo.Run
                             {
                                 return blocked;
                             }
+
+                            hasTerminalContact = true;
+                            terminalContactPoint = sweepHit.Point;
                             break;
                         }
 
@@ -1640,7 +2089,19 @@ namespace FPG.Demo.Run
                                 projectile.Definition.DamageSpec,
                                 sweepHit.HitPart,
                                 DamageType.Normal,
-                                CombatTags.EnemyAttack);
+                                CombatTags.EnemyAttack,
+                                impactOrdinal: binding.PresentationOrdinal,
+                                spatialContext: new ImpactSpatialContext(
+                                    sweepHit.Point,
+                                    sweepHit.GeometryId,
+                                    QueryTargetKind.Combatant,
+                                    sweepHit.HitPart));
+                            if (!TryMarkProjectileOriginImpact(impactId))
+                            {
+                                return DomainResult.Rejected(
+                                    RejectReason.InvariantFault);
+                            }
+
                             DomainResult queued = combatKernel.ImpactQueue.TryEnqueue(
                                 intent,
                                 ImpactPhasePriority.EnemyImpact,
@@ -1649,6 +2110,7 @@ namespace FPG.Demo.Run
                                 binding.GameplayEventId);
                             if (!queued.IsSuccess)
                             {
+                                RemoveProjectileOriginImpact(impactId);
                                 return queued;
                             }
 
@@ -1657,6 +2119,12 @@ namespace FPG.Demo.Run
                             {
                                 return hit;
                             }
+
+
+                            hasTerminalContact = true;
+                            terminalContactPoint = sweepHit.Point;
+                            terminalContactTarget = sweepHit.TargetId;
+                            terminalHitPart = sweepHit.HitPart;
                             break;
                         }
 
@@ -1682,6 +2150,13 @@ namespace FPG.Demo.Run
                     if (projectile.IsTerminal)
                     {
                         projectiles[index] = binding;
+                        TryPublishProjectileTerminal(
+                            index,
+                            hasTerminalContact,
+                            terminalContactPoint,
+                            terminalContactTarget,
+                            terminalHitPart,
+                            impactId);
                         DomainResult released = ReleaseProjectileResources(index);
                         if (!released.IsSuccess)
                         {
@@ -1696,6 +2171,20 @@ namespace FPG.Demo.Run
 
                 if (tick >= projectile.ExpireTick)
                 {
+                    if (binding.IsPlayerAreaProjectile)
+                    {
+                        DomainResult playerExpired = ExpirePlayerAreaProjectile(
+                            index,
+                            binding,
+                            tick);
+                        if (!playerExpired.IsSuccess)
+                        {
+                            return playerExpired;
+                        }
+
+                        continue;
+                    }
+
                     ProjectileState previous = projectile.State;
                     DomainResult expired = projectile.TryExpire(tick);
                     if (!expired.IsSuccess)
@@ -1715,6 +2204,7 @@ namespace FPG.Demo.Run
                         skillExecutionId: binding.SkillExecutionId.Value,
                         gameplayEventId: binding.GameplayEventId);
                     projectiles[index] = binding;
+                    TryPublishProjectileTerminal(index);
                     DomainResult released = ReleaseProjectileResources(index);
                     if (!released.IsSuccess)
                     {
@@ -1727,22 +2217,305 @@ namespace FPG.Demo.Run
 
             return DomainResult.Success;
         }
+
+        private DomainResult AdvancePlayerAreaProjectile(
+            int projectileIndex,
+            ProjectileBinding binding,
+            TickIndex tick,
+            ProjectileSweepHit sweepHit)
+        {
+            ProjectileRuntime projectile = binding.Runtime;
+            ProjectileState previous = projectile.State;
+            SpatialVectorKey terminalPoint = default(SpatialVectorKey);
+            switch (sweepHit.Kind)
+            {
+                case ProjectileSweepHitKind.None:
+                    if (tick < projectile.ImpactTick)
+                    {
+                        return DomainResult.Success;
+                    }
+
+                    terminalPoint = binding.Path.End;
+                    DomainResult missed = projectile.TryMiss(tick);
+                    if (!missed.IsSuccess)
+                    {
+                        return missed;
+                    }
+                    break;
+
+                case ProjectileSweepHitKind.EnvironmentBlocked:
+                    terminalPoint = sweepHit.Point;
+                    DomainResult blocked = projectile.TryBlock(tick);
+                    if (!blocked.IsSuccess)
+                    {
+                        return blocked;
+                    }
+                    break;
+
+                case ProjectileSweepHitKind.Target:
+                    if (!sweepHit.TargetId.IsValid)
+                    {
+                        return DomainResult.Rejected(RejectReason.InvalidTarget);
+                    }
+
+                    terminalPoint = sweepHit.Point;
+                    DomainResult hit = projectile.TryHit(tick);
+                    if (!hit.IsSuccess)
+                    {
+                        return hit;
+                    }
+                    break;
+
+                default:
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            return projectile.IsTerminal
+                ? ResolvePlayerAreaProjectileTerminal(
+                    projectileIndex,
+                    binding,
+                    previous,
+                    tick,
+                    terminalPoint,
+                    sweepHit.Kind != ProjectileSweepHitKind.None,
+                    sweepHit.Kind == ProjectileSweepHitKind.Target
+                        ? sweepHit.TargetId
+                        : RuntimeId.Invalid,
+                    sweepHit.Kind == ProjectileSweepHitKind.Target
+                        ? sweepHit.HitPart
+                        : HitPart.Body)
+                : DomainResult.Success;
+        }
+
+        private DomainResult ExpirePlayerAreaProjectile(
+            int projectileIndex,
+            ProjectileBinding binding,
+            TickIndex tick)
+        {
+            ProjectileRuntime projectile = binding.Runtime;
+            ProjectileState previous = projectile.State;
+            DomainResult expired = projectile.TryExpire(tick);
+            if (!expired.IsSuccess)
+            {
+                return expired;
+            }
+
+            return ResolvePlayerAreaProjectileTerminal(
+                projectileIndex,
+                binding,
+                previous,
+                tick,
+                binding.Path.End,
+                false,
+                RuntimeId.Invalid,
+                HitPart.Body);
+        }
+
+        private DomainResult ResolvePlayerAreaProjectileTerminal(
+            int projectileIndex,
+            ProjectileBinding binding,
+            ProjectileState previous,
+            TickIndex tick,
+            SpatialVectorKey terminalPoint,
+            bool hasTerminalContact,
+            RuntimeId terminalContactTarget,
+            HitPart terminalHitPart)
+        {
+            ProjectileRuntime projectile = binding.Runtime;
+            if (projectile == null || !projectile.IsTerminal
+                || !projectile.TerminalTick.IsValid)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            DomainResult queued = QueuePlayerAreaProjectileImpacts(
+                binding,
+                tick,
+                terminalPoint);
+            if (!queued.IsSuccess)
+            {
+                return queued;
+            }
+
+            combatKernel.Trace.Record(
+                tick,
+                CombatEventType.ProjectileStateChanged,
+                projectile.OwnerId,
+                projectile.RuntimeId,
+                projectile.AttackId,
+                ImpactId.Invalid,
+                (int)previous,
+                (int)projectile.State,
+                skillExecutionId: binding.SkillExecutionId.Value,
+                gameplayEventId: binding.GameplayEventId);
+            projectiles[projectileIndex] = binding;
+            TryPublishProjectileTerminal(
+                projectileIndex,
+                hasTerminalContact,
+                terminalPoint,
+                terminalContactTarget,
+                terminalHitPart,
+                ImpactId.Invalid);
+            DomainResult released = ReleaseProjectileResources(projectileIndex);
+            if (!released.IsSuccess)
+            {
+                return released;
+            }
+
+            projectiles[projectileIndex] = default(ProjectileBinding);
+            return DomainResult.Success;
+        }
+
+        private DomainResult QueuePlayerAreaProjectileImpacts(
+            ProjectileBinding binding,
+            TickIndex tick,
+            SpatialVectorKey terminalPoint)
+        {
+            Array.Clear(
+                playerProjectileAreaCandidates,
+                0,
+                playerProjectileAreaCandidates.Length);
+            Array.Clear(
+                playerProjectileAreaSelected,
+                0,
+                playerProjectileAreaSelected.Length);
+            PlayerProjectileAreaQueryRequest request;
+            try
+            {
+                request = new PlayerProjectileAreaQueryRequest(
+                    tick,
+                    binding.PlayerAttack,
+                    terminalPoint);
+            }
+            catch (Exception)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            DomainResult queried = playerProjectileAreaQueryPort.QueryAreaAtPoint(
+                request,
+                playerProjectileAreaCandidates,
+                out AttackQueryResult queryResult);
+            if (!queried.IsSuccess)
+            {
+                return queried;
+            }
+
+            DomainResult selected = TargetSelector.Select(
+                binding.PlayerAttack,
+                playerProjectileAreaCandidates,
+                queryResult,
+                playerProjectileAreaSelected,
+                out int selectedCount);
+            if (!selected.IsSuccess)
+            {
+                return selected;
+            }
+
+            if (selectedCount > binding.ImpactCapacityReservation
+                || !CanQueueImpacts(selectedCount))
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            ProjectileRuntime projectile = binding.Runtime;
+            for (int index = 0; index < selectedCount; index++)
+            {
+                QueryCandidate candidate = playerProjectileAreaSelected[index];
+                if (!IsPlayerHitTargetLive(candidate.TargetId))
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidTarget);
+                }
+
+                bool isProjectile = candidate.TargetKind
+                    == QueryTargetKind.Projectile;
+                ImpactIntent intent = new ImpactIntent(
+                    idAllocator.NextImpactId(),
+                    binding.PlayerAttack.AttackId,
+                    binding.PlayerAttack.ShotId,
+                    player.RuntimeId,
+                    candidate.TargetId,
+                    tick,
+                    binding.PlayerAttack.DamageSpec,
+                    candidate.HitPart,
+                    isProjectile
+                        ? DamageType.ProjectileIntercept
+                        : DamageType.Explosive,
+                    CombatTags.Secondary,
+                    -1,
+                    index,
+                    new ImpactSpatialContext(
+                        candidate.ImpactPointKey,
+                        candidate.GeometryId,
+                        candidate.TargetKind,
+                        candidate.HitPart));
+                if (!TryMarkProjectileOriginImpact(intent.ImpactId))
+                {
+                    return DomainResult.Rejected(RejectReason.InvariantFault);
+                }
+
+                DomainResult queued = combatKernel.ImpactQueue.TryEnqueue(
+                    intent,
+                    isProjectile
+                        ? ImpactPhasePriority.PlayerProjectileIntercept
+                        : ImpactPhasePriority.PlayerCombatantHit,
+                    projectile.RuntimeId,
+                    binding.SkillExecutionId.Value,
+                    binding.GameplayEventId);
+                if (!queued.IsSuccess)
+                {
+                    RemoveProjectileOriginImpact(intent.ImpactId);
+                    return queued;
+                }
+            }
+
+            return DomainResult.Success;
+        }
         private DomainResult ProcessImpactResolution(TickIndex tick)
         {
             int count = combatKernel.ImpactQueue.DrainDue(tick, dueImpactBuffer);
             for (int index = 0; index < count; index++)
             {
+                dueImpactIsProjectile[index] =
+                    ContainsProjectileOriginImpact(
+                        dueImpactBuffer[index].Intent.ImpactId);
+            }
+
+            for (int index = 0; index < count; index++)
+            {
                 QueuedImpact queued = dueImpactBuffer[index];
                 ImpactIntent intent = queued.Intent;
-                dueImpactBuffer[index] = default(QueuedImpact);
+                bool projectileOrigin = dueImpactIsProjectile[index];
                 DomainResult resolved = ResolveImpact(
                     intent,
                     queued.SkillExecutionId,
-                    queued.GameplayEventId);
+                    queued.GameplayEventId,
+                    queued.HasSkillCorrelation && !projectileOrigin);
                 if (!resolved.IsSuccess)
                 {
                     return resolved;
                 }
+
+                if (projectileOrigin)
+                {
+                    RemoveProjectileOriginImpact(intent.ImpactId);
+                }
+                else if (queued.HasSkillCorrelation
+                    && IsFinalImmediateImpactInDueBatch(
+                        queued,
+                        dueImpactBuffer,
+                        dueImpactIsProjectile,
+                        index + 1,
+                        count))
+                {
+                    TryPublishImmediateGroupCompletion(
+                        intent,
+                        queued.SkillExecutionId,
+                        queued.GameplayEventId);
+                }
+
+                dueImpactBuffer[index] = default(QueuedImpact);
+                dueImpactIsProjectile[index] = false;
             }
 
             return DomainResult.Success;
@@ -1751,12 +2524,14 @@ namespace FPG.Demo.Run
         private DomainResult ResolveImpact(
             ImpactIntent intent,
             long skillExecutionId = 0L,
-            int gameplayEventId = 0)
+            int gameplayEventId = 0,
+            bool publishImmediateContact = false)
         {
             int projectileIndex = FindProjectile(intent.TargetId, includeTerminal: false);
             if (projectileIndex >= 0)
             {
-                ProjectileRuntime projectile = projectiles[projectileIndex].Runtime;
+                ProjectileBinding projectileBinding = projectiles[projectileIndex];
+                ProjectileRuntime projectile = projectileBinding.Runtime;
                 ImpactResolution projectileResolution = combatKernel.DamageResolver.ResolveProjectile(
                     intent,
                     projectile);
@@ -1765,9 +2540,22 @@ namespace FPG.Demo.Run
                     return projectileResolution.Result;
                 }
 
-                RecordResolution(intent, projectileResolution, skillExecutionId, gameplayEventId);
+                RecordResolution(
+                    intent,
+                    projectileResolution,
+                    skillExecutionId,
+                    gameplayEventId,
+                    publishImmediateContact,
+                    projectile.ProjectileId);
                 if (projectileResolution.ProjectileDestroyed)
                 {
+                    TryPublishProjectileTerminal(
+                        projectileIndex,
+                        intent.SpatialContext.HasValue,
+                        intent.SpatialContext.ImpactPointKey,
+                        projectile.RuntimeId,
+                        HitPart.Projectile,
+                        intent.ImpactId);
                     DomainResult released = ReleaseProjectileResources(projectileIndex);
                     if (!released.IsSuccess)
                     {
@@ -1786,7 +2574,10 @@ namespace FPG.Demo.Run
                 EnemyBinding binding = enemies[enemyIndex];
                 if (binding.Runtime.Combatant.IsDead)
                 {
-                    return ConsumeStaleImpact(intent, skillExecutionId, gameplayEventId);
+                    return ConsumeStaleImpact(
+                        intent,
+                        skillExecutionId,
+                        gameplayEventId);
                 }
 
                 ImpactResolution resolution = combatKernel.DamageResolver.ResolveCombatant(
@@ -1799,7 +2590,12 @@ namespace FPG.Demo.Run
                     return resolution.Result;
                 }
 
-                RecordResolution(intent, resolution, skillExecutionId, gameplayEventId);
+                RecordResolution(
+                    intent,
+                    resolution,
+                    skillExecutionId,
+                    gameplayEventId,
+                    publishImmediateContact);
                 if (resolution.BreakTriggered)
                 {
                     int canceled = binding.Runtime.EnterGroggy(intent.ImpactTick, combatKernel.ProjectileBudget);
@@ -1855,7 +2651,10 @@ namespace FPG.Demo.Run
             {
                 if (player.Combatant.IsDead)
                 {
-                    return ConsumeStaleImpact(intent, skillExecutionId, gameplayEventId);
+                    return ConsumeStaleImpact(
+                        intent,
+                        skillExecutionId,
+                        gameplayEventId);
                 }
 
                 ImpactResolution resolution = combatKernel.DamageResolver.ResolveCombatant(
@@ -1868,7 +2667,12 @@ namespace FPG.Demo.Run
                     return resolution.Result;
                 }
 
-                RecordResolution(intent, resolution, skillExecutionId, gameplayEventId);
+                RecordResolution(
+                    intent,
+                    resolution,
+                    skillExecutionId,
+                    gameplayEventId,
+                    publishImmediateContact);
                 PublishVitals(
                     player.Combatant,
                     intent.ImpactTick,
@@ -1879,7 +2683,10 @@ namespace FPG.Demo.Run
                 return DomainResult.Success;
             }
 
-            return ConsumeStaleImpact(intent, skillExecutionId, gameplayEventId);
+            return ConsumeStaleImpact(
+                intent,
+                skillExecutionId,
+                gameplayEventId);
         }
 
         private DomainResult ConsumeStaleImpact(
@@ -1912,7 +2719,9 @@ namespace FPG.Demo.Run
             ImpactIntent intent,
             ImpactResolution resolution,
             long skillExecutionId,
-            int gameplayEventId)
+            int gameplayEventId,
+            bool publishImmediateContact = false,
+            ProjectileId contactedProjectileId = default(ProjectileId))
         {
             DamagePacket packet = resolution.Packet;
             combatKernel.Trace.Record(
@@ -1955,6 +2764,17 @@ namespace FPG.Demo.Run
             {
                 // Presentation feedback is diagnostic-only and cannot fail combat.
             }
+
+            if (publishImmediateContact)
+            {
+                TryPublishAcceptedImmediateContact(
+                    intent,
+                    resolution,
+                    skillExecutionId,
+                    gameplayEventId,
+                    contactedProjectileId);
+            }
+
         }
 
         private void PublishVitals(
@@ -2108,6 +2928,318 @@ namespace FPG.Demo.Run
             }
         }
 
+        private void TryPublishAcceptedImmediateContact(
+            ImpactIntent intent,
+            ImpactResolution resolution,
+            long skillExecutionId,
+            int gameplayEventId,
+            ProjectileId contactedProjectileId)
+        {
+            if (!resolution.Result.IsSuccess
+                || skillExecutionId <= 0L
+                || gameplayEventId <= 0
+                || !intent.SpatialContext.HasValue
+                || intent.ImpactOrdinal < 0)
+            {
+                return;
+            }
+
+            try
+            {
+                FpgSkillImpactCorrelation correlation =
+                    new FpgSkillImpactCorrelation(
+                        intent.SourceId,
+                        new SkillExecutionId(skillExecutionId),
+                        gameplayEventId);
+                FpgSkillImpactContactKind contactKind =
+                    intent.HitPart == HitPart.Projectile
+                        && resolution.ProjectileDestroyed
+                        ? FpgSkillImpactContactKind.Intercepted
+                        : FpgSkillImpactContactKind.TargetImpact;
+                skillImpactPresentationStream.TryRecordContact(
+                    new FpgSkillImpactContact(
+                        correlation,
+                        FpgSkillImpactPresentationGroupKind.ImmediateAttack,
+                        intent.ImpactTick,
+                        intent.AttackId,
+                        contactedProjectileId,
+                        intent.ImpactId,
+                        intent.TargetId,
+                        contactKind,
+                        intent.SpatialContext.ImpactPointKey,
+                        intent.HitPart,
+                        intent.ImpactOrdinal));
+            }
+            catch (Exception)
+            {
+                IncrementPresentationCallbackFaultCount();
+            }
+        }
+
+        private void TryPublishImmediateGroupCompletion(
+            ImpactIntent intent,
+            long skillExecutionId,
+            int gameplayEventId)
+        {
+            if (skillExecutionId <= 0L || gameplayEventId <= 0)
+            {
+                return;
+            }
+
+            try
+            {
+                skillImpactPresentationStream.TryRecordGroupCompletion(
+                    new FpgSkillImpactGroupCompletion(
+                        new FpgSkillImpactCorrelation(
+                            intent.SourceId,
+                            new SkillExecutionId(skillExecutionId),
+                            gameplayEventId),
+                        FpgSkillImpactPresentationGroupKind.ImmediateAttack,
+                        intent.ImpactTick,
+                        intent.AttackId));
+            }
+            catch (Exception)
+            {
+                IncrementPresentationCallbackFaultCount();
+            }
+        }
+
+        private void TryPublishProjectileTerminal(
+            int projectileIndex,
+            bool hasContactPoint = false,
+            SpatialVectorKey contactPoint = default(SpatialVectorKey),
+            RuntimeId contactTarget = default(RuntimeId),
+            HitPart hitPart = HitPart.Body,
+            ImpactId impactId = default(ImpactId))
+        {
+            if (projectileIndex < 0 || projectileIndex >= projectiles.Length)
+            {
+                return;
+            }
+
+            ProjectileBinding binding = projectiles[projectileIndex];
+            ProjectileRuntime projectile = binding.Runtime;
+            if (projectile == null
+                || !projectile.IsTerminal
+                || binding.PresentationTerminalPublished)
+            {
+                return;
+            }
+
+            binding.PresentationTerminalPublished = true;
+            projectiles[projectileIndex] = binding;
+            if (!binding.SkillExecutionId.IsValid
+                || binding.GameplayEventId <= 0)
+            {
+                return;
+            }
+
+            try
+            {
+                FpgSkillImpactCorrelation correlation =
+                    new FpgSkillImpactCorrelation(
+                        projectile.OwnerId,
+                        binding.SkillExecutionId,
+                        binding.GameplayEventId);
+                bool collisionEligible =
+                    FpgSkillImpactPresentationRules
+                        .TryResolveProjectileContactKind(
+                            projectile.TerminalReason,
+                            out FpgSkillImpactContactKind contactKind);
+                if (projectile.TerminalReason
+                    == ProjectileTerminalReason.EnvironmentBlocked)
+                {
+                    contactTarget = RuntimeId.Invalid;
+                    hitPart = HitPart.Body;
+                }
+                else if (projectile.TerminalReason
+                    == ProjectileTerminalReason.Intercepted)
+                {
+                    contactTarget = projectile.RuntimeId;
+                    hitPart = HitPart.Projectile;
+                }
+
+                if (collisionEligible && hasContactPoint)
+                {
+                    skillImpactPresentationStream.TryRecordContact(
+                        new FpgSkillImpactContact(
+                            correlation,
+                            FpgSkillImpactPresentationGroupKind.Projectile,
+                            projectile.TerminalTick,
+                            projectile.AttackId,
+                            projectile.ProjectileId,
+                            impactId,
+                            contactTarget,
+                            contactKind,
+                            contactPoint,
+                            hitPart,
+                            binding.PresentationOrdinal));
+                }
+
+                if (!HasOutstandingProjectileInGroup(
+                    projectileIndex,
+                    projectile.OwnerId,
+                    binding.SkillExecutionId,
+                    binding.GameplayEventId))
+                {
+                    skillImpactPresentationStream.TryRecordGroupCompletion(
+                        new FpgSkillImpactGroupCompletion(
+                            correlation,
+                            FpgSkillImpactPresentationGroupKind.Projectile,
+                            projectile.TerminalTick,
+                            projectile.AttackId));
+                }
+            }
+            catch (Exception)
+            {
+                IncrementPresentationCallbackFaultCount();
+            }
+        }
+
+        private bool HasOutstandingProjectileInGroup(
+            int terminalIndex,
+            RuntimeId sourceRuntimeId,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId)
+        {
+            for (int index = 0; index < projectiles.Length; index++)
+            {
+                if (index == terminalIndex)
+                {
+                    continue;
+                }
+
+                ProjectileBinding candidate = projectiles[index];
+                if (candidate.Runtime != null
+                    && !candidate.PresentationTerminalPublished
+                    && candidate.Runtime.OwnerId == sourceRuntimeId
+                    && candidate.SkillExecutionId == skillExecutionId
+                    && candidate.GameplayEventId == gameplayEventId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private int CountExistingProjectilesInGroup(
+            RuntimeId sourceRuntimeId,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId)
+        {
+            int count = 0;
+            for (int index = 0; index < projectiles.Length; index++)
+            {
+                ProjectileBinding binding = projectiles[index];
+                if (binding.Runtime != null
+                    && binding.Runtime.OwnerId == sourceRuntimeId
+                    && binding.SkillExecutionId == skillExecutionId
+                    && binding.GameplayEventId == gameplayEventId)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static bool IsFinalPlayerHitInGroup(
+            FpgPlayerHitCommand current,
+            FpgPlayerHitCommand[] commands,
+            int startIndex,
+            int count)
+        {
+            for (int index = startIndex; index < count; index++)
+            {
+                FpgPlayerHitCommand candidate = commands[index];
+                if (candidate.HasSkillCorrelation
+                    && candidate.Intent.SourceId == current.Intent.SourceId
+                    && candidate.SkillExecutionId == current.SkillExecutionId
+                    && candidate.GameplayEventId == current.GameplayEventId)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsFinalImmediateImpactInDueBatch(
+            QueuedImpact current,
+            QueuedImpact[] impacts,
+            bool[] projectileOrigins,
+            int startIndex,
+            int count)
+        {
+            for (int index = startIndex; index < count; index++)
+            {
+                QueuedImpact candidate = impacts[index];
+                if (!projectileOrigins[index]
+                    && candidate.SkillExecutionId == current.SkillExecutionId
+                    && candidate.GameplayEventId == current.GameplayEventId
+                    && candidate.Intent.SourceId == current.Intent.SourceId)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool TryMarkProjectileOriginImpact(ImpactId impactId)
+        {
+            if (!impactId.IsValid
+                || ContainsProjectileOriginImpact(impactId))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < projectileOriginImpactIds.Length;
+                index++)
+            {
+                if (!projectileOriginImpactIds[index].IsValid)
+                {
+                    projectileOriginImpactIds[index] = impactId;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ContainsProjectileOriginImpact(ImpactId impactId)
+        {
+            if (!impactId.IsValid)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < projectileOriginImpactIds.Length;
+                index++)
+            {
+                if (projectileOriginImpactIds[index] == impactId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void RemoveProjectileOriginImpact(ImpactId impactId)
+        {
+            for (int index = 0; index < projectileOriginImpactIds.Length;
+                index++)
+            {
+                if (projectileOriginImpactIds[index] == impactId)
+                {
+                    projectileOriginImpactIds[index] = ImpactId.Invalid;
+                    return;
+                }
+            }
+        }
+
         private DomainResult MarkEnemyDead(
             ref EnemyBinding binding,
             TickIndex tick,
@@ -2178,21 +3310,33 @@ namespace FPG.Demo.Run
             int additionalCount,
             int releasingProjectileCredits = 0)
         {
+            int activeProjectileImpactCapacity =
+                CountActiveProjectileImpactCapacity();
             if (additionalCount < 0
                 || releasingProjectileCredits < 0
-                || releasingProjectileCredits > CountActiveProjectiles())
+                || releasingProjectileCredits
+                    > activeProjectileImpactCapacity)
             {
                 return false;
             }
 
             long demand = combatKernel.ImpactQueue.Count
-                + CountActiveProjectiles()
+                + activeProjectileImpactCapacity
                 - releasingProjectileCredits
                 + CountScheduledImpactCapacity()
                 + CountRemainingReservedImpactCapacity()
                 + additionalCount;
             return demand <= combatKernel.ImpactQueue.Capacity
                 && demand <= combatKernel.ImpactLedger.RemainingCapacity;
+        }
+
+        private DomainResult ReleasePlayerProjectileReservation(
+            ReservationToken reservationToken,
+            DomainResult failure)
+        {
+            DomainResult released = combatKernel.ProjectileBudget
+                .ReleaseReservation(reservationToken);
+            return released.IsSuccess ? failure : released;
         }
 
         private DomainResult ReleaseProjectileResources(int projectileIndex)
@@ -2283,6 +3427,7 @@ namespace FPG.Demo.Run
                 enemies[index] = default(EnemyBinding);
             }
 
+            skillImpactPresentationStream.Clear();
             for (int index = 0; index < projectiles.Length; index++)
             {
                 ProjectileBinding binding = projectiles[index];
@@ -2297,6 +3442,8 @@ namespace FPG.Demo.Run
                     TickIndex cancelTick = currentTick.IsValid ? currentTick : projectile.SpawnTick;
                     projectile.TryCancel(cancelTick, ProjectileTerminalReason.SessionEnded);
                 }
+
+                TryPublishProjectileTerminal(index);
 
                 if (!binding.WorldReleased && projectile.TerminalTick.IsValid
                     && projectile.TerminalReason != ProjectileTerminalReason.None)
@@ -2313,6 +3460,14 @@ namespace FPG.Demo.Run
 
             Array.Clear(playerHitCommands, 0, playerHitCommands.Length);
             Array.Clear(playerHitDueBuffer, 0, playerHitDueBuffer.Length);
+            Array.Clear(
+                playerProjectileAreaCandidates,
+                0,
+                playerProjectileAreaCandidates.Length);
+            Array.Clear(
+                playerProjectileAreaSelected,
+                0,
+                playerProjectileAreaSelected.Length);
             Array.Clear(scheduledPayloads, 0, scheduledPayloads.Length);
             Array.Clear(
                 enemySkillCapacityReservations,
@@ -2324,6 +3479,14 @@ namespace FPG.Demo.Run
                 0,
                 threatExecutionBindings.Length);
             Array.Clear(dueImpactBuffer, 0, dueImpactBuffer.Length);
+            Array.Clear(
+                dueImpactIsProjectile,
+                0,
+                dueImpactIsProjectile.Length);
+            Array.Clear(
+                projectileOriginImpactIds,
+                0,
+                projectileOriginImpactIds.Length);
             attackSchedule.Clear();
 
             combatKernel.ImpactQueue.Clear();
@@ -2767,6 +3930,17 @@ namespace FPG.Demo.Run
             entry.RemainingSummonCapacity -= GetSummonCapacity(payload);
         }
 
+        private static void RestoreEnemySkillCapacity(
+            ref EnemySkillCapacityReservationEntry entry,
+            FpgEnemyAttackPayload payload)
+        {
+            entry.RemainingAttackEvents++;
+            entry.RemainingProjectileCapacity +=
+                GetProjectileCapacity(payload);
+            entry.RemainingImpactCapacity += GetImpactCapacity(payload);
+            entry.RemainingSummonCapacity += GetSummonCapacity(payload);
+        }
+
         private static int GetProjectileCapacity(
             FpgEnemyAttackPayload payload)
         {
@@ -2874,6 +4048,23 @@ namespace FPG.Demo.Run
                 {
                     count++;
                 }
+            }
+
+            return count;
+        }
+
+        private int CountActiveProjectileImpactCapacity()
+        {
+            int count = 0;
+            for (int index = 0; index < projectiles.Length; index++)
+            {
+                ProjectileBinding binding = projectiles[index];
+                if (binding.Runtime == null || binding.Runtime.IsTerminal)
+                {
+                    continue;
+                }
+
+                count += binding.ImpactCapacityReservation;
             }
 
             return count;
@@ -3078,15 +4269,59 @@ namespace FPG.Demo.Run
                 RuntimeId targetRuntimeId,
                 ProjectilePathSnapshot path,
                 SkillExecutionId skillExecutionId,
-                int gameplayEventId)
+                int gameplayEventId,
+                int presentationOrdinal = 0)
             {
+                if (presentationOrdinal < 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        nameof(presentationOrdinal));
+                }
+
                 Runtime = runtime;
                 TargetRuntimeId = targetRuntimeId;
                 Path = path;
                 SkillExecutionId = skillExecutionId;
                 GameplayEventId = gameplayEventId;
+                IsPlayerAreaProjectile = false;
+                PlayerAttack = default(AttackSnapshot);
+                ImpactCapacityReservation = 1;
+                PresentationOrdinal = presentationOrdinal;
+                PresentationTerminalPublished = false;
                 WorldReleased = false;
                 BudgetReleased = false;
+            }
+
+            public ProjectileBinding(
+                ProjectileRuntime runtime,
+                RuntimeId targetRuntimeId,
+                ProjectilePathSnapshot path,
+                SkillExecutionId skillExecutionId,
+                int gameplayEventId,
+                AttackSnapshot playerAttack,
+                int impactCapacityReservation,
+                int presentationOrdinal = 0)
+                : this(
+                    runtime,
+                    targetRuntimeId,
+                    path,
+                    skillExecutionId,
+                    gameplayEventId,
+                    presentationOrdinal)
+            {
+                if (playerAttack.Team != Team.Player
+                    || !playerAttack.IsQueryConfigurationValid
+                    || playerAttack.QueryMode
+                        != AttackQueryMode.AreaAtFirstSurface
+                    || impactCapacityReservation <= 0)
+                {
+                    throw new ArgumentException(
+                        "Player projectile binding is invalid.");
+                }
+
+                IsPlayerAreaProjectile = true;
+                PlayerAttack = playerAttack;
+                ImpactCapacityReservation = impactCapacityReservation;
             }
 
             public ProjectileRuntime Runtime;
@@ -3094,6 +4329,11 @@ namespace FPG.Demo.Run
             public ProjectilePathSnapshot Path;
             public SkillExecutionId SkillExecutionId;
             public int GameplayEventId;
+            public bool IsPlayerAreaProjectile;
+            public AttackSnapshot PlayerAttack;
+            public int ImpactCapacityReservation;
+            public int PresentationOrdinal;
+            public bool PresentationTerminalPublished;
             public bool WorldReleased;
             public bool BudgetReleased;
         }

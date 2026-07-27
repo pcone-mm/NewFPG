@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Player;
@@ -80,10 +81,12 @@ namespace FPG.Demo.Unity
         public bool IsDead => IsValid && Life <= 0;
 
         public bool IsCombatActive => IsValid
+            && !IsDead
             && !IsPaused
             && EncounterPhase != FpgEncounterPhase.None
             && EncounterPhase != FpgEncounterPhase.Preparing
             && EncounterPhase != FpgEncounterPhase.Cleared
+            && EncounterPhase != FpgEncounterPhase.Defeated
             && EncounterPhase != FpgEncounterPhase.Failed
             && EncounterPhase != FpgEncounterPhase.Faulted
             && EncounterPhase != FpgEncounterPhase.Disposed;
@@ -97,7 +100,7 @@ namespace FPG.Demo.Unity
                     return FpgFormalPlayerPresentationState.Unavailable;
                 }
 
-                if (IsDead)
+                if (IsDead || EncounterPhase == FpgEncounterPhase.Defeated)
                 {
                     return FpgFormalPlayerPresentationState.Defeat;
                 }
@@ -231,25 +234,6 @@ namespace FPG.Demo.Unity
         public bool HasSkillCorrelation => SkillExecutionId.IsValid;
     }
 
-    public readonly struct FpgResolvedPlayerSkillCue
-    {
-        public FpgResolvedPlayerSkillCue(
-            string eventName,
-            string cueName,
-            string socketName)
-        {
-            EventName = eventName ?? string.Empty;
-            CueName = cueName ?? string.Empty;
-            SocketName = socketName ?? string.Empty;
-        }
-
-        public string EventName { get; }
-        public string CueName { get; }
-        public string SocketName { get; }
-        public bool IsValid => !string.IsNullOrWhiteSpace(EventName)
-            && !string.IsNullOrWhiteSpace(CueName);
-    }
-
     public readonly struct FpgFormalPlayerSkillSequenceEvent
     {
         internal FpgFormalPlayerSkillSequenceEvent(
@@ -284,27 +268,33 @@ namespace FPG.Demo.Unity
             || State == FpgSkillExecutionState.Canceled;
     }
 
-    public readonly struct FpgFormalPlayerSkillCueEvent
+    public readonly struct FpgFormalPlayerActivePresentationEvent
     {
-        internal FpgFormalPlayerSkillCueEvent(
+        internal FpgFormalPlayerActivePresentationEvent(
             long sequence,
-            in FpgPlayerSkillExecutionEvent skillEvent,
-            in FpgResolvedPlayerSkillCue resolvedCue,
-            bool requiresGameplayCommit)
+            in FpgPlayerSkillExecutionEvent skillEvent)
         {
+            if (sequence <= 0L
+                || skillEvent.Outcome != FpgSkillEventOutcome.Triggered
+                || skillEvent.Event.Kind
+                    != FpgSkillEventKind.ActivePresentation)
+            {
+                throw new ArgumentException(
+                    "Active skill presentation event is invalid.");
+            }
+
             Sequence = sequence;
             Slot = skillEvent.Slot;
             ExecutionId = skillEvent.RuntimeEvent.ExecutionId;
             SequenceKind = skillEvent.RuntimeEvent.SequenceKind;
             EventId = skillEvent.Event.EventId;
-            CueId = skillEvent.Event.CueId;
+            Kind = skillEvent.Event.ActivePresentationKind;
+            Handle = skillEvent.Event.PresentationHandle;
             SocketId = skillEvent.Event.SocketId;
+            BoundGameplayEventId =
+                skillEvent.Event.BoundGameplayEventId;
             ScheduledTick = skillEvent.RuntimeEvent.ScheduledTick;
             Tick = skillEvent.RuntimeEvent.Tick;
-            EventName = resolvedCue.EventName;
-            CueName = resolvedCue.CueName;
-            SocketName = resolvedCue.SocketName;
-            RequiresGameplayCommit = requiresGameplayCommit;
         }
 
         public long Sequence { get; }
@@ -312,14 +302,13 @@ namespace FPG.Demo.Unity
         public SkillExecutionId ExecutionId { get; }
         public FpgSkillSequenceKind SequenceKind { get; }
         public int EventId { get; }
-        public int CueId { get; }
+        public FpgActivePresentationKind Kind { get; }
+        public FpgPresentationHandle Handle { get; }
         public int SocketId { get; }
+        public int BoundGameplayEventId { get; }
         public TickIndex ScheduledTick { get; }
         public TickIndex Tick { get; }
-        public string EventName { get; }
-        public string CueName { get; }
-        public string SocketName { get; }
-        public bool RequiresGameplayCommit { get; }
+        public bool RequiresGameplayCommit => BoundGameplayEventId > 0;
     }
 
     public static class FpgPlayerSkillPresentationResolver
@@ -373,58 +362,6 @@ namespace FPG.Demo.Unity
             return false;
         }
 
-        public static bool TryResolveCue(
-            FpgPlayerSkillDefinition definition,
-            FpgSkillSequenceKind sequenceKind,
-            in FpgCompiledSkillEvent compiledCue,
-            out FpgResolvedPlayerSkillCue resolvedCue)
-        {
-            resolvedCue = default(FpgResolvedPlayerSkillCue);
-            if (definition == null
-                || compiledCue.Kind != FpgSkillEventKind.PresentationCue)
-            {
-                return false;
-            }
-
-            for (int sequenceIndex = 0;
-                sequenceIndex < definition.Sequences.Count;
-                sequenceIndex++)
-            {
-                FpgSkillSequenceDefinition sequence =
-                    definition.Sequences[sequenceIndex];
-                if (sequence == null || sequence.Kind != sequenceKind)
-                {
-                    continue;
-                }
-
-                for (int cueIndex = 0;
-                    cueIndex < sequence.PresentationCues.Count;
-                    cueIndex++)
-                {
-                    FpgSkillPresentationCueDefinition cue =
-                        sequence.PresentationCues[cueIndex];
-                    if (cue != null
-                        && cue.Tick == compiledCue.Tick
-                        && FpgSkillStableId.CompileEvent(cue.EventId)
-                            == compiledCue.EventId
-                        && FpgSkillStableId.CompileCue(cue.CueId)
-                            == compiledCue.CueId
-                        && FpgSkillStableId.CompileOptionalSocket(cue.SocketId)
-                            == compiledCue.SocketId)
-                    {
-                        resolvedCue = new FpgResolvedPlayerSkillCue(
-                            cue.EventId,
-                            cue.CueId,
-                            cue.SocketId);
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            return false;
-        }
         public static bool TryValidatePrefabBindings(
             FpgPlayerEntityView entityPrefab,
             FpgPlayerSkillDefinition primarySkill,
@@ -496,7 +433,7 @@ namespace FPG.Demo.Unity
                     out error);
         }
 
-        public static bool TryResolveCueSource(
+        public static bool TryResolvePresentationSource(
             FpgPlayerEntityView entity,
             string socketName,
             out Transform source)
@@ -574,54 +511,28 @@ namespace FPG.Demo.Unity
                     }
                 }
 
-                for (int eventIndex = 0;
-                    eventIndex < sequence.LogicEvents.Count;
-                    eventIndex++)
+                if (!TryValidateActionSockets(
+                        definition,
+                        sequence.AttackEvents,
+                        socketRegistry,
+                        out error)
+                    || !TryValidateActionSockets(
+                        definition,
+                        sequence.ProjectileEvents,
+                        socketRegistry,
+                        out error)
+                    || !TryValidateActionSockets(
+                        definition,
+                        sequence.ReloadEvents,
+                        socketRegistry,
+                        out error)
+                    || !TryValidateActionSockets(
+                        definition,
+                        sequence.SummonEvents,
+                        socketRegistry,
+                        out error))
                 {
-                    FpgSkillLogicEventDefinition skillEvent =
-                        sequence.LogicEvents[eventIndex];
-                    if (skillEvent == null)
-                    {
-                        error =
-                            "Formal player skill '" + definition.SkillId
-                            + "' contains a missing logic event.";
-                        return false;
-                    }
-
-                    if (!TryValidateSocket(
-                            definition,
-                            skillEvent.EventId,
-                            skillEvent.SocketId,
-                            socketRegistry,
-                            out error))
-                    {
-                        return false;
-                    }
-                }
-
-                for (int cueIndex = 0;
-                    cueIndex < sequence.PresentationCues.Count;
-                    cueIndex++)
-                {
-                    FpgSkillPresentationCueDefinition cue =
-                        sequence.PresentationCues[cueIndex];
-                    if (cue == null)
-                    {
-                        error =
-                            "Formal player skill '" + definition.SkillId
-                            + "' contains a missing presentation cue.";
-                        return false;
-                    }
-
-                    if (!TryValidateSocket(
-                            definition,
-                            cue.EventId,
-                            cue.SocketId,
-                            socketRegistry,
-                            out error))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 for (int warningIndex = 0;
@@ -647,6 +558,41 @@ namespace FPG.Demo.Unity
                     {
                         return false;
                     }
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryValidateActionSockets<TAction>(
+            FpgPlayerSkillDefinition definition,
+            IReadOnlyList<TAction> actions,
+            D0ActorSocketRegistry socketRegistry,
+            out string error)
+            where TAction : FpgSkillGameplayActionDefinition
+        {
+            for (int actionIndex = 0;
+                actionIndex < actions.Count;
+                actionIndex++)
+            {
+                TAction action = actions[actionIndex];
+                if (action == null)
+                {
+                    error =
+                        "Formal player skill '" + definition.SkillId
+                        + "' contains a missing gameplay action.";
+                    return false;
+                }
+
+                if (!TryValidateSocket(
+                        definition,
+                        action.EventId,
+                        action.SocketId,
+                        socketRegistry,
+                        out error))
+                {
+                    return false;
                 }
             }
 
@@ -698,6 +644,159 @@ namespace FPG.Demo.Unity
         }
     }
 
+    public static class FpgPlayerSkillGameplayEventResolver
+    {
+        public static bool TryResolveSocketName(
+            FpgPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            in FpgCompiledSkillEvent compiledEvent,
+            out string socketName)
+        {
+            socketName = string.Empty;
+            if (definition == null
+                || compiledEvent.Kind != FpgSkillEventKind.GameplayAction)
+            {
+                return false;
+            }
+
+            return TryResolveTypedSocketName(
+                definition,
+                sequenceKind,
+                compiledEvent,
+                out socketName);
+        }
+
+        private static bool TryResolveTypedSocketName(
+            FpgPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            in FpgCompiledSkillEvent compiledEvent,
+            out string socketName)
+        {
+            socketName = string.Empty;
+            int actionOffset = 0;
+            for (int sequenceIndex = 0;
+                sequenceIndex < definition.Sequences.Count;
+                sequenceIndex++)
+            {
+                FpgSkillSequenceDefinition sequence =
+                    definition.Sequences[sequenceIndex];
+                if (sequence == null)
+                {
+                    return false;
+                }
+
+                int actionCount = GetActionCount(
+                    sequence,
+                    compiledEvent.ActionKind);
+                if (sequence.Kind == sequenceKind)
+                {
+                    int localIndex = compiledEvent.ActionIndex - actionOffset;
+                    if (!TryGetAction(
+                            sequence,
+                            compiledEvent.ActionKind,
+                            localIndex,
+                            out FpgSkillGameplayActionDefinition action)
+                        || !Matches(action, compiledEvent))
+                    {
+                        return false;
+                    }
+
+                    socketName = action.SocketId;
+                    return true;
+                }
+
+                actionOffset = checked(actionOffset + actionCount);
+            }
+
+            return false;
+        }
+
+        private static int GetActionCount(
+            FpgSkillSequenceDefinition sequence,
+            FpgSkillActionKind actionKind)
+        {
+            switch (actionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    return sequence.AttackEvents.Count;
+                case FpgSkillActionKind.LaunchProjectile:
+                    return sequence.ProjectileEvents.Count;
+                case FpgSkillActionKind.CommitReload:
+                    return sequence.ReloadEvents.Count;
+                case FpgSkillActionKind.SummonActors:
+                    return sequence.SummonEvents.Count;
+                default:
+                    return 0;
+            }
+        }
+
+        private static bool TryGetAction(
+            FpgSkillSequenceDefinition sequence,
+            FpgSkillActionKind actionKind,
+            int index,
+            out FpgSkillGameplayActionDefinition action)
+        {
+            action = null;
+            if (index < 0)
+            {
+                return false;
+            }
+
+            switch (actionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    if (index < sequence.AttackEvents.Count)
+                    {
+                        action = sequence.AttackEvents[index];
+                    }
+
+                    break;
+                case FpgSkillActionKind.LaunchProjectile:
+                    if (index < sequence.ProjectileEvents.Count)
+                    {
+                        action = sequence.ProjectileEvents[index];
+                    }
+
+                    break;
+                case FpgSkillActionKind.CommitReload:
+                    if (index < sequence.ReloadEvents.Count)
+                    {
+                        action = sequence.ReloadEvents[index];
+                    }
+
+                    break;
+                case FpgSkillActionKind.SummonActors:
+                    if (index < sequence.SummonEvents.Count)
+                    {
+                        action = sequence.SummonEvents[index];
+                    }
+
+                    break;
+            }
+
+            return action != null;
+        }
+
+        private static bool Matches(
+            FpgSkillGameplayActionDefinition action,
+            in FpgCompiledSkillEvent compiledEvent)
+        {
+            return action.Tick == compiledEvent.Tick
+                && action.AuthoredOrdinal == compiledEvent.SortOrder
+                && FpgSkillStableId.CompileEvent(action.EventId)
+                    == compiledEvent.EventId
+                && FpgSkillStableId.CompileOptionalSocket(action.SocketId)
+                    == compiledEvent.SocketId
+                && action.TargetSource == compiledEvent.TargetSource
+                && action.OffsetXMillimeters
+                    == compiledEvent.Offset.XMillimeters
+                && action.OffsetYMillimeters
+                    == compiledEvent.Offset.YMillimeters
+                && action.OffsetZMillimeters
+                    == compiledEvent.Offset.ZMillimeters;
+        }
+    }
+
     public static class FpgFormalPlayerSkillAnimationClock
     {
         private const double MaximumInterpolation = 0.999999999d;
@@ -745,7 +844,8 @@ namespace FPG.Demo.Unity
 
         public event Action<FpgFormalPlayerActionEvent> ActionCommitted;
         public event Action<FpgFormalPlayerSkillSequenceEvent> SkillSequenceAdvanced;
-        public event Action<FpgFormalPlayerSkillCueEvent> SkillCueCommitted;
+        public event Action<FpgFormalPlayerActivePresentationEvent>
+            ActivePresentationCommitted;
 
         public bool HasSnapshot => snapshot.IsValid;
 
@@ -843,21 +943,17 @@ namespace FPG.Demo.Unity
             }
         }
 
-        public void PublishSkillCue(
-            in FpgPlayerSkillExecutionEvent skillEvent,
-            in FpgResolvedPlayerSkillCue resolvedCue,
-            bool requiresGameplayCommit)
+        public void PublishActivePresentation(
+            in FpgPlayerSkillExecutionEvent skillEvent)
         {
             long sequence = NextSkillPresentationSequence();
-            FpgFormalPlayerSkillCueEvent cueEvent =
-                new FpgFormalPlayerSkillCueEvent(
+            FpgFormalPlayerActivePresentationEvent presentationEvent =
+                new FpgFormalPlayerActivePresentationEvent(
                     sequence,
-                    skillEvent,
-                    resolvedCue,
-                    requiresGameplayCommit);
+                    skillEvent);
             try
             {
-                SkillCueCommitted?.Invoke(cueEvent);
+                ActivePresentationCommitted?.Invoke(presentationEvent);
             }
             catch (Exception)
             {

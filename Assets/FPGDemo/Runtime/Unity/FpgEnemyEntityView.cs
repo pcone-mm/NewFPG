@@ -18,9 +18,6 @@ namespace FPG.Demo.Unity
         IFpgFormalEnemyEntityBinder,
         IFpgFormalEnemyPresentationView
     {
-        private const string AnimationCuePrefix = "animation.";
-        private const int CueFlashFrameBudget = 2;
-
         private const int MainAnimationTrack = 0;
 
         [SerializeField]
@@ -46,10 +43,6 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private Color skillWarningTint =
             new Color(1f, 0.3f, 0.12f, 1f);
-
-        [SerializeField]
-        private Color skillCueTint =
-            new Color(1f, 0.9f, 0.25f, 1f);
 
         [SerializeField]
         private SkeletonAnimation skeletonAnimation;
@@ -87,9 +80,6 @@ namespace FPG.Demo.Unity
 
         [NonSerialized]
         private int activeSkillWarningCount;
-
-        [NonSerialized]
-        private int cueFlashFramesRemaining;
 
         [NonSerialized]
         private bool hasSkeletonBaseColor;
@@ -233,47 +223,6 @@ namespace FPG.Demo.Unity
             return true;
         }
 
-        public bool TryPresentSkillCue(
-            in FpgFormalEnemySkillCuePresentationEvent cueEvent)
-        {
-            if (!CanPresentSkillEvent(cueEvent.TimelineEvent)
-                || !TryValidatePresentationSocket(
-                    cueEvent.Resolved.SocketName))
-            {
-                return false;
-            }
-
-            string cueName = cueEvent.Resolved.CueName;
-            if (cueName.StartsWith(
-                    AnimationCuePrefix,
-                    StringComparison.Ordinal))
-            {
-                string animationName = cueName.Substring(
-                    AnimationCuePrefix.Length);
-                if (!HasAnimation(animationName))
-                {
-                    return false;
-                }
-
-                try
-                {
-                    skeletonAnimation.AnimationState.SetAnimation(
-                        MainAnimationTrack,
-                        animationName,
-                        false);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-
-            cueFlashFramesRemaining = CueFlashFrameBudget;
-            ApplySkillFeedbackColor();
-            return true;
-        }
-
         public bool TrySetSkillWarning(
             in FpgFormalEnemySkillWarningPresentationEvent warningEvent)
         {
@@ -305,7 +254,6 @@ namespace FPG.Demo.Unity
         public void ClearSkillWarnings()
         {
             activeSkillWarningCount = 0;
-            cueFlashFramesRemaining = 0;
             ApplySkillFeedbackColor();
         }
 
@@ -417,16 +365,6 @@ namespace FPG.Demo.Unity
         private void LateUpdate()
         {
             EvaluatePendingSkillFrame();
-            if (cueFlashFramesRemaining <= 0)
-            {
-                return;
-            }
-
-            cueFlashFramesRemaining--;
-            if (cueFlashFramesRemaining == 0)
-            {
-                ApplySkillFeedbackColor();
-            }
         }
 
         private void OnDisable()
@@ -451,7 +389,6 @@ namespace FPG.Demo.Unity
 
                 CaptureSkeletonBaseColor();
                 activeSkillWarningCount = 0;
-                cueFlashFramesRemaining = 0;
                 boundDefinition = definition;
                 boundBehavior = definition.Behavior;
                 skillAnimationEvaluator =
@@ -713,12 +650,6 @@ namespace FPG.Demo.Unity
                 color.r *= skillWarningTint.r;
                 color.g *= skillWarningTint.g;
                 color.b *= skillWarningTint.b;
-            }
-
-            if (cueFlashFramesRemaining > 0)
-            {
-                color = Color.Lerp(color, skillCueTint, 0.7f);
-                color.a = skeletonBaseColor.a;
             }
 
             skeleton.R = color.r;

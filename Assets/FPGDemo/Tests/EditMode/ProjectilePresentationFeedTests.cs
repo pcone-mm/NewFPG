@@ -3,6 +3,7 @@ using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Enemy;
 using FPG.Demo.Run;
+using FPG.Demo.Skills;
 using NUnit.Framework;
 
 namespace FPG.Demo.Tests.EditMode
@@ -69,6 +70,9 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(feed.ActiveCount, Is.EqualTo(1));
             Assert.That(feed.RejectedWriteCount, Is.EqualTo(1));
             Assert.That(states[0].Request.RuntimeId, Is.EqualTo(first.RuntimeId));
+            Assert.That(
+                states[0].Request.PresentationKind,
+                Is.EqualTo(FpgThreatPresentationKind.InterceptableVolley));
             Assert.That(states[0].LastPoint, Is.EqualTo(new SpatialVectorKey(0, 0, 900)));
         }
 
@@ -203,6 +207,48 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(observed.FinalSnapshot.ActiveProjectileUnits, Is.EqualTo(direct.FinalSnapshot.ActiveProjectileUnits));
         }
 
+        [Test]
+        public void FeedPreservesSkillCorrelationForEnemyFlightPresentation()
+        {
+            ProjectileSpawnRequest request = new ProjectileSpawnRequest(
+                new TickIndex(4),
+                new TickIndex(10),
+                new ProjectileId(5),
+                new RuntimeId(15),
+                new AttackId(25),
+                new RuntimeId(35),
+                new RuntimeId(45),
+                Team.Enemy,
+                301,
+                2,
+                true,
+                FpgThreatPresentationKind.InterceptableVolley,
+                ProjectileTargetingMode.LockedTarget,
+                new SpatialVectorKey(0, 0, 1000),
+                new SpatialVectorKey(0, 0, 5000),
+                new SkillExecutionId(55),
+                65);
+            ProjectilePathSnapshot path = new ProjectilePathSnapshot(
+                request.ProjectileId,
+                request.RuntimeId,
+                request.Tick,
+                request.ArrivalTick,
+                request.ExplicitStart,
+                request.ExplicitEnd);
+            FixedProjectilePresentationFeed feed =
+                new FixedProjectilePresentationFeed(1, 2);
+
+            Assert.That(feed.TryRecordSpawn(request, path), Is.True);
+            ProjectilePresentationState[] states =
+                new ProjectilePresentationState[1];
+            Assert.That(feed.CopyActiveStates(states), Is.EqualTo(1));
+            Assert.That(states[0].Request.HasSkillCorrelation, Is.True);
+            Assert.That(
+                states[0].Request.SkillExecutionId,
+                Is.EqualTo(new SkillExecutionId(55)));
+            Assert.That(states[0].Request.GameplayEventId, Is.EqualTo(65));
+        }
+
         private static ReplaySummary RunProjectileSequence(bool useObserver)
         {
             ScenarioDefinition scenario = CombatLabHarness.CreateScenario(
@@ -251,8 +297,8 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 1,
-                1,
-                true);
+                true,
+                FpgThreatPresentationKind.InterceptableVolley);
         }
 
         private static ProjectilePathSnapshot CreatePath(in ProjectileSpawnRequest request)

@@ -70,14 +70,22 @@ namespace FPG.Demo.Unity
             primarySkill == null ? 0 : primarySkill.SequenceCooldownTicks;
 
         public AttackQueryMode PrimaryQueryMode =>
-            FindPayload(primarySkill, FpgPlayerSkillPayloadKind.PelletRay)
-                ?.QueryMode
-            ?? AttackQueryMode.FirstSurfacePenetration;
+            TryFindCompiledPayload(
+                primarySkill,
+                FpgPlayerSkillActionKind.PelletRay,
+                FpgPlayerSkillActionKind.None,
+                out FpgCompiledPlayerSkillAction payload)
+                ? payload.QueryMode
+                : AttackQueryMode.FirstSurfacePenetration;
 
         public int PrimaryAdditionalPenetrationCount =>
-            FindPayload(primarySkill, FpgPlayerSkillPayloadKind.PelletRay)
-                ?.AdditionalPenetrationCount
-            ?? 0;
+            TryFindCompiledPayload(
+                primarySkill,
+                FpgPlayerSkillActionKind.PelletRay,
+                FpgPlayerSkillActionKind.None,
+                out FpgCompiledPlayerSkillAction payload)
+                ? payload.AdditionalPenetrationCount
+                : 0;
 
         public SecondaryTriggerMode SecondaryTriggerMode =>
             secondarySkill == null
@@ -85,11 +93,13 @@ namespace FPG.Demo.Unity
                 : secondarySkill.SecondaryTriggerMode;
 
         public AttackQueryMode SecondaryQueryMode =>
-            FindPayload(
-                    secondarySkill,
-                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface)
-                ?.QueryMode
-            ?? AttackQueryMode.AreaAtFirstSurface;
+            TryFindCompiledPayload(
+                secondarySkill,
+                FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
+                out FpgCompiledPlayerSkillAction payload)
+                ? payload.QueryMode
+                : AttackQueryMode.AreaAtFirstSurface;
 
         public int SecondaryMinimumChargeTicks =>
             secondarySkill == null ? 0 : secondarySkill.MinimumChargeTicks;
@@ -99,18 +109,22 @@ namespace FPG.Demo.Unity
             ResolveSecondarySequenceKind());
 
         public int SecondaryEnemyMaxImpactCount =>
-            FindPayload(
-                    secondarySkill,
-                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface)
-                ?.AreaCombatantLimit
-            ?? 0;
+            TryFindCompiledPayload(
+                secondarySkill,
+                FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
+                out FpgCompiledPlayerSkillAction payload)
+                ? payload.AreaCombatantLimit
+                : 0;
 
         public int SecondaryProjectileMaxImpactCount =>
-            FindPayload(
-                    secondarySkill,
-                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface)
-                ?.AreaProjectileLimit
-            ?? 0;
+            TryFindCompiledPayload(
+                secondarySkill,
+                FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
+                out FpgCompiledPlayerSkillAction payload)
+                ? payload.AreaProjectileLimit
+                : 0;
 
         public int ReloadDurationTicks => GetSequenceDuration(
             reloadSkill,
@@ -120,49 +134,12 @@ namespace FPG.Demo.Unity
         public FpgPlayerSkillDefinition SecondarySkill => secondarySkill;
         public FpgPlayerSkillDefinition ReloadSkill => reloadSkill;
 
-        public D0WeaponShotPresentationDefinition PrimaryPresentation =>
-            primarySkill == null ? null : primarySkill.ShotPresentation;
-
-        public D0WeaponSecondaryPresentationDefinition SecondaryPresentation =>
-            secondarySkill == null ? null : secondarySkill.SecondaryPresentation;
-
-        public D0WeaponReloadPresentationDefinition ReloadPresentation =>
-            reloadSkill == null ? null : reloadSkill.ReloadPresentation;
-
         public PlayerAimIndicatorPresentationDefinition AimIndicator =>
             aimIndicator;
 
         public bool TryValidatePresentation(out string error)
         {
             error = string.Empty;
-            D0WeaponShotPresentationDefinition primary = PrimaryPresentation;
-            if (primary == null || !primary.TryValidate(out error))
-            {
-                error = string.IsNullOrEmpty(error)
-                    ? "Primary skill presentation is missing."
-                    : "Primary skill presentation is invalid: " + error;
-                return false;
-            }
-
-            D0WeaponSecondaryPresentationDefinition secondary =
-                SecondaryPresentation;
-            if (secondary == null || !secondary.TryValidate(out error))
-            {
-                error = string.IsNullOrEmpty(error)
-                    ? "Secondary skill presentation is missing."
-                    : "Secondary skill presentation is invalid: " + error;
-                return false;
-            }
-
-            D0WeaponReloadPresentationDefinition reload = ReloadPresentation;
-            if (reload == null || !reload.TryValidate(out error))
-            {
-                error = string.IsNullOrEmpty(error)
-                    ? "Reload skill presentation is missing."
-                    : "Reload skill presentation is invalid: " + error;
-                return false;
-            }
-
             if (aimIndicator == null || !aimIndicator.TryValidate(out error))
             {
                 error = string.IsNullOrEmpty(error)
@@ -331,17 +308,19 @@ namespace FPG.Demo.Unity
                     compiledPrimary,
                     primarySequence,
                     primarySummary,
-                    FpgPlayerSkillPayloadKind.PelletRay,
+                    FpgPlayerSkillActionKind.PelletRay,
+                    FpgPlayerSkillActionKind.None,
                     "Primary",
-                    out FpgCompiledPlayerSkillPayloadSlot primaryPayload,
+                    out FpgCompiledPlayerSkillAction primaryPayload,
                     out error)
                 || !TryValidateAttackSequence(
                     compiledSecondary,
                     secondarySequence,
                     secondarySummary,
-                    FpgPlayerSkillPayloadKind.AreaAtFirstSurface,
+                    FpgPlayerSkillActionKind.AreaAtFirstSurface,
+                    FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
                     "Secondary",
-                    out FpgCompiledPlayerSkillPayloadSlot secondaryPayload,
+                    out FpgCompiledPlayerSkillAction secondaryPayload,
                     out error))
             {
                 return false;
@@ -410,12 +389,13 @@ namespace FPG.Demo.Unity
             FpgCompiledPlayerSkillDefinition definition,
             FpgCompiledSkillSequence sequence,
             FpgCompiledPlayerSkillSequenceSummary summary,
-            FpgPlayerSkillPayloadKind requiredKind,
+            FpgPlayerSkillActionKind requiredKind,
+            FpgPlayerSkillActionKind alternateKind,
             string label,
-            out FpgCompiledPlayerSkillPayloadSlot representativePayload,
+            out FpgCompiledPlayerSkillAction representativePayload,
             out string error)
         {
-            representativePayload = default(FpgCompiledPlayerSkillPayloadSlot);
+            representativePayload = default(FpgCompiledPlayerSkillAction);
             if (summary.AttackEventCount <= 0
                 || summary.ReloadCommitEventCount != 0
                 || summary.TotalAmmoCost <= 0)
@@ -428,15 +408,16 @@ namespace FPG.Demo.Unity
             for (int eventIndex = 0; eventIndex < sequence.EventCount; eventIndex++)
             {
                 FpgCompiledSkillEvent skillEvent = sequence.GetEvent(eventIndex);
-                if (skillEvent.Kind != FpgSkillEventKind.GameplayPayload)
+                if (skillEvent.Kind != FpgSkillEventKind.GameplayAction)
                 {
                     continue;
                 }
 
-                if (!definition.TryGetPayloadSlot(
-                        skillEvent.PayloadSlotId,
-                        out FpgCompiledPlayerSkillPayloadSlot payload)
-                    || payload.Kind != requiredKind)
+                if (!definition.TryResolveAction(
+                        skillEvent,
+                        out FpgCompiledPlayerSkillAction payload)
+                    || (payload.Kind != requiredKind
+                        && payload.Kind != alternateKind))
                 {
                     error = label + " sequence contains an incompatible gameplay payload.";
                     return false;
@@ -470,8 +451,8 @@ namespace FPG.Demo.Unity
         private readonly struct WeaponProjection
         {
             public WeaponProjection(
-                FpgCompiledPlayerSkillPayloadSlot primaryPayload,
-                FpgCompiledPlayerSkillPayloadSlot secondaryPayload,
+                FpgCompiledPlayerSkillAction primaryPayload,
+                FpgCompiledPlayerSkillAction secondaryPayload,
                 int primaryAmmoCost,
                 int secondaryAmmoCost,
                 int primaryLockTicks,
@@ -489,8 +470,8 @@ namespace FPG.Demo.Unity
                 MaximumImpactCount = maximumImpactCount;
             }
 
-            public FpgCompiledPlayerSkillPayloadSlot PrimaryPayload { get; }
-            public FpgCompiledPlayerSkillPayloadSlot SecondaryPayload { get; }
+            public FpgCompiledPlayerSkillAction PrimaryPayload { get; }
+            public FpgCompiledPlayerSkillAction SecondaryPayload { get; }
             public int PrimaryAmmoCost { get; }
             public int SecondaryAmmoCost { get; }
             public int PrimaryLockTicks { get; }
@@ -507,27 +488,45 @@ namespace FPG.Demo.Unity
                 : FpgSkillSequenceKind.Execute;
         }
 
-        private static FpgPlayerSkillPayloadSlot FindPayload(
+        private static bool TryFindCompiledPayload(
             FpgPlayerSkillDefinition definition,
-            FpgPlayerSkillPayloadKind kind)
+            FpgPlayerSkillActionKind requiredKind,
+            FpgPlayerSkillActionKind alternateKind,
+            out FpgCompiledPlayerSkillAction payload)
         {
-            if (definition == null)
+            payload = default(FpgCompiledPlayerSkillAction);
+            if (definition == null
+                || !definition.TryCompile(
+                    out FpgCompiledPlayerSkillDefinition compiled,
+                    out _))
             {
-                return null;
+                return false;
             }
 
-            IReadOnlyList<FpgPlayerSkillPayloadSlot> slots =
-                definition.PayloadSlots;
-            for (int index = 0; index < slots.Count; index++)
+            for (int sequenceIndex = 0;
+                sequenceIndex < compiled.Timeline.SequenceCount;
+                sequenceIndex++)
             {
-                FpgPlayerSkillPayloadSlot slot = slots[index];
-                if (slot != null && slot.Kind == kind)
+                FpgCompiledSkillSequence sequence =
+                    compiled.Timeline.GetSequence(sequenceIndex);
+                for (int eventIndex = 0;
+                    eventIndex < sequence.EventCount;
+                    eventIndex++)
                 {
-                    return slot;
+                    FpgCompiledSkillEvent skillEvent =
+                        sequence.GetEvent(eventIndex);
+                    if (skillEvent.Kind == FpgSkillEventKind.GameplayAction
+                        && compiled.TryResolveAction(skillEvent, out payload)
+                        && (payload.Kind == requiredKind
+                            || payload.Kind == alternateKind))
+                    {
+                        return true;
+                    }
                 }
             }
 
-            return null;
+            payload = default(FpgCompiledPlayerSkillAction);
+            return false;
         }
 
         private static int GetSequenceAmmoCost(

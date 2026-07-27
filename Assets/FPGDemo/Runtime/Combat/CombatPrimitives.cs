@@ -74,7 +74,8 @@ namespace FPG.Demo.Combat
     {
         None = 0,
         Combatant = 1 << 0,
-        Projectile = 1 << 1
+        Projectile = 1 << 1,
+        All = Combatant | Projectile
     }
 
     public readonly struct DamageSpec
@@ -125,7 +126,7 @@ namespace FPG.Demo.Combat
     public readonly struct AttackSnapshot
     {
         public const AttackTargetKinds DefaultAllowedTargetKinds =
-            AttackTargetKinds.Combatant | AttackTargetKinds.Projectile;
+            AttackTargetKinds.All;
 
         public AttackSnapshot(
             AttackId attackId,

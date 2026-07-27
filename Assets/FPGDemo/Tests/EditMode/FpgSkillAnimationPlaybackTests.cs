@@ -28,7 +28,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void AnimationPlaybackModeChangesGameplayHash()
+        public void AnimationPlaybackModeChangesPresentationHash()
         {
             FpgCompiledSkillSequence natural =
                 new FpgCompiledSkillSequence(
@@ -51,7 +51,10 @@ namespace FPG.Demo.Tests.EditMode
                     60,
                     new FpgCompiledSkillEvent[0]);
 
-            Assert.That(fitted.GameplayHash, Is.Not.EqualTo(natural.GameplayHash));
+            Assert.That(fitted.GameplayHash, Is.EqualTo(natural.GameplayHash));
+            Assert.That(
+                fitted.PresentationHash,
+                Is.Not.EqualTo(natural.PresentationHash));
         }
     
 
@@ -103,7 +106,7 @@ namespace FPG.Demo.Tests.EditMode
 
 
         [Test]
-        public void AnimationVariantsParticipateInGameplayHash()
+        public void AnimationVariantsParticipateInPresentationHash()
         {
             FpgCompiledSkillSequence baseline =
                 new FpgCompiledSkillSequence(
@@ -127,7 +130,10 @@ namespace FPG.Demo.Tests.EditMode
                     new[] { 200 },
                     new FpgCompiledSkillEvent[0]);
 
-            Assert.That(variant.GameplayHash, Is.Not.EqualTo(baseline.GameplayHash));
+            Assert.That(variant.GameplayHash, Is.EqualTo(baseline.GameplayHash));
+            Assert.That(
+                variant.PresentationHash,
+                Is.Not.EqualTo(baseline.PresentationHash));
         }
 
 

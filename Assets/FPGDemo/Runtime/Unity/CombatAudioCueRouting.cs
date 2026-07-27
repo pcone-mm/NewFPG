@@ -1,7 +1,6 @@
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Enemy;
-using FPG.Demo.Player;
 using FPG.Demo.Run;
 
 namespace FPG.Demo.Unity
@@ -14,90 +13,6 @@ namespace FPG.Demo.Unity
     /// </summary>
     public static class CombatAudioCueRouting
     {
-        /// <summary>
-        /// Selects the one release sound for a committed player shot. The
-        /// player-shot feed is already post-resolution, so this never turns an
-        /// input intent into an audible attack.
-        /// </summary>
-        public static bool TryGetShotReleaseCue(
-            in PlayerShotPresentationSnapshot snapshot,
-            out CombatAudioCue cue)
-        {
-            if (!snapshot.IsValid)
-            {
-                cue = CombatAudioCue.None;
-                return false;
-            }
-
-            switch (snapshot.ReleaseKind)
-            {
-                case WeaponReleaseKind.Primary:
-                    cue = CombatAudioCue.PlayerPrimaryShot;
-                    return true;
-
-                case WeaponReleaseKind.Secondary:
-                    cue = CombatAudioCue.PlayerSecondaryRelease;
-                    return true;
-
-                default:
-                    cue = CombatAudioCue.None;
-                    return false;
-            }
-        }
-
-        /// <summary>
-        /// Mirrors the D0 visual aggregation rule so an eight-pellet primary
-        /// shot can produce at most one terminal hit sound. The selected
-        /// trajectory is frozen in the committed shot snapshot; no Physics
-        /// query is performed here.
-        /// </summary>
-        public static bool TryGetShotHitCue(
-            in PlayerShotPresentationSnapshot snapshot,
-            out CombatAudioCue cue)
-        {
-            cue = CombatAudioCue.None;
-            if (!snapshot.IsValid)
-            {
-                return false;
-            }
-
-            PlayerShotTrajectory trajectory;
-            if (snapshot.ReleaseKind == WeaponReleaseKind.Primary)
-            {
-                if (!PlayerShotVisualAggregation.TryGetPrimaryRepresentative(
-                        snapshot,
-                        out trajectory))
-                {
-                    return false;
-                }
-            }
-            else if (snapshot.ReleaseKind == WeaponReleaseKind.Secondary
-                && snapshot.TrajectoryCount > 0)
-            {
-                trajectory = snapshot.GetTrajectory(0);
-            }
-            else
-            {
-                return false;
-            }
-
-            switch (trajectory.TerminalKind)
-            {
-                case PlayerShotTerminalKind.Combatant:
-                    cue = trajectory.HitPart == HitPart.Weakpoint
-                        ? CombatAudioCue.PlayerWeakpointHit
-                        : CombatAudioCue.PlayerBodyHit;
-                    return true;
-
-                case PlayerShotTerminalKind.Projectile:
-                    cue = CombatAudioCue.ProjectileIntercept;
-                    return true;
-
-                default:
-                    return false;
-            }
-        }
-
         /// <summary>
         /// Emits the free-reticle lock feedback only on the visual transition
         /// into the weakpoint. This is intentionally based on presentation
@@ -154,26 +69,6 @@ namespace FPG.Demo.Unity
             cue = CombatAudioCue.None;
             switch (combatEvent.EventType)
             {
-                case CombatEventType.InputAccepted:
-                    if (combatEvent.SourceId == playerRuntimeId
-                        && combatEvent.ValueBefore == (int)WeaponState.Ready
-                        && combatEvent.ValueAfter == (int)WeaponState.AltCharging)
-                    {
-                        cue = CombatAudioCue.PlayerSecondaryCharge;
-                        return true;
-                    }
-
-                    return false;
-
-                case CombatEventType.ReloadStarted:
-                    if (combatEvent.SourceId == playerRuntimeId)
-                    {
-                        cue = CombatAudioCue.PlayerReload;
-                        return true;
-                    }
-
-                    return false;
-
                 case CombatEventType.DamageApplied:
                     if (combatEvent.TargetId == playerRuntimeId
                         && combatEvent.ValueBefore > combatEvent.ValueAfter)
@@ -223,13 +118,13 @@ namespace FPG.Demo.Unity
         }
 
         /// <summary>
-        /// Routes an explicit threat state transition using the presentation key
+        /// Routes an explicit threat state transition using the semantic kind
         /// held by the read-only threat snapshot. Threat state records carry no
-        /// visual key themselves, which is why the presenter maintains a small
+        /// presentation fields themselves, so the presenter maintains a small
         /// snapshot cache before calling this method.
         /// </summary>
         public static bool TryGetThreatTransitionCue(
-            int presentationKey,
+            FpgThreatPresentationKind presentationKind,
             ThreatState previousState,
             ThreatState currentState,
             out CombatAudioCue cue)
@@ -247,21 +142,21 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            switch (presentationKey)
+            switch (presentationKind)
             {
-                case CombatPresentationProfile.FastThreatPresentationKey:
+                case FpgThreatPresentationKind.FastUninterceptable:
                     cue = telegraph
                         ? CombatAudioCue.EnemyFastThreatTelegraph
                         : CombatAudioCue.EnemyFastThreatRelease;
                     return true;
 
-                case CombatPresentationProfile.InterceptableVolleyThreatPresentationKey:
+                case FpgThreatPresentationKind.InterceptableVolley:
                     cue = telegraph
                         ? CombatAudioCue.EnemyInterceptableThreatTelegraph
                         : CombatAudioCue.EnemyInterceptableThreatRelease;
                     return true;
 
-                case CombatPresentationProfile.HeavyWeakpointThreatPresentationKey:
+                case FpgThreatPresentationKind.HeavyWeakpoint:
                     cue = telegraph
                         ? CombatAudioCue.EnemyHeavyThreatTelegraph
                         : CombatAudioCue.EnemyHeavyThreatRelease;

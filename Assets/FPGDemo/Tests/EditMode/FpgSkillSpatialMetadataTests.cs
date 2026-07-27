@@ -11,10 +11,8 @@ namespace FPG.Demo.Tests.EditMode
             FpgCompiledSkillEvent authored = new FpgCompiledSkillEvent(
                 1,
                 0,
-                FpgSkillEventKind.GameplayPayload,
+                FpgSkillActionKind.Attack,
                 2,
-                0,
-                0,
                 0,
                 3,
                 FpgSkillTargetSource.CurrentTarget,
@@ -64,10 +62,8 @@ namespace FPG.Demo.Tests.EditMode
                     new FpgCompiledSkillEvent(
                         1,
                         0,
-                        FpgSkillEventKind.GameplayPayload,
+                        FpgSkillActionKind.Attack,
                         2,
-                        0,
-                        0,
                         0,
                         3,
                         source,

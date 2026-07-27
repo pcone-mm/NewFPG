@@ -8,226 +8,6 @@ using UnityEngine.Serialization;
 namespace FPG.Demo.Unity
 {
     [Serializable]
-    public sealed class FpgSkillPhaseDefinition
-    {
-        [SerializeField]
-        private string phaseId = "phase";
-
-        [SerializeField]
-        private FpgSkillPhaseKind kind = FpgSkillPhaseKind.Active;
-
-        [SerializeField, Min(0)]
-        private int startTick;
-
-        [SerializeField, Min(0)]
-        private int endTick;
-
-        public string PhaseId => phaseId;
-        public FpgSkillPhaseKind Kind => kind;
-        public int StartTick => startTick;
-        public int EndTick => endTick;
-
-        internal bool TryValidate(int durationTicks, out string error)
-        {
-            if (!FpgSkillStableId.IsValid(phaseId))
-            {
-                error = "Skill phase requires a stable phase ID.";
-                return false;
-            }
-
-            if (!Enum.IsDefined(typeof(FpgSkillPhaseKind), kind)
-                || kind == FpgSkillPhaseKind.None
-                || startTick < 0
-                || endTick < startTick
-                || endTick > durationTicks)
-            {
-                error = $"Skill phase '{phaseId}' has an invalid kind or tick range.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-    }
-
-    [Serializable]
-    public sealed class FpgSkillLogicEventDefinition
-    {
-        [SerializeField]
-        private string eventId = "payload";
-
-        [SerializeField, Min(0)]
-        private int tick;
-
-        [SerializeField]
-        private string payloadSlotId = "payload.default";
-
-        [FormerlySerializedAs("sortOrder")]
-        [SerializeField, Min(0)]
-        private int authoredOrdinal;
-
-        [SerializeField]
-        private string socketId = string.Empty;
-
-        [SerializeField]
-        private FpgSkillTargetSource targetSource =
-            FpgSkillTargetSource.CurrentAim;
-
-        [SerializeField]
-        private Vector3 targetOffset;
-
-        public string EventId => eventId;
-        public int Tick => tick;
-        public string PayloadSlotId => payloadSlotId;
-        public int AuthoredOrdinal => authoredOrdinal;
-        public string SocketId => socketId;
-        public FpgSkillTargetSource TargetSource => targetSource;
-        public Vector3 TargetOffset => targetOffset;
-        internal int OffsetXMillimeters =>
-            Mathf.RoundToInt(targetOffset.x * 1000f);
-        internal int OffsetYMillimeters =>
-            Mathf.RoundToInt(targetOffset.y * 1000f);
-        internal int OffsetZMillimeters =>
-            Mathf.RoundToInt(targetOffset.z * 1000f);
-
-        internal bool TryValidate(
-            int durationTicks,
-            Func<string, bool> containsPayloadSlot,
-            out string error)
-        {
-            if (!FpgSkillStableId.IsValid(eventId)
-                || !FpgSkillStableId.IsValid(payloadSlotId))
-            {
-                error = "Skill logic event requires stable event and payload slot IDs.";
-                return false;
-            }
-
-            if (tick < 0 || tick > durationTicks || authoredOrdinal < 0)
-            {
-                error = $"Skill logic event '{eventId}' has an invalid tick or authored ordinal.";
-                return false;
-            }
-
-            if (!string.IsNullOrEmpty(socketId)
-                && !FpgSkillStableId.IsValid(socketId))
-            {
-                error = $"Skill logic event '{eventId}' has an invalid socket ID.";
-                return false;
-            }
-
-            if (!Enum.IsDefined(typeof(FpgSkillTargetSource), targetSource)
-                || targetSource == FpgSkillTargetSource.None
-                || !IsFinite(targetOffset)
-                || Mathf.Abs(targetOffset.x) > 2147483f
-                || Mathf.Abs(targetOffset.y) > 2147483f
-                || Mathf.Abs(targetOffset.z) > 2147483f)
-            {
-                error = $"Skill logic event '{eventId}' has an invalid target source or offset.";
-                return false;
-            }
-
-            if (containsPayloadSlot == null || !containsPayloadSlot(payloadSlotId))
-            {
-                error = $"Skill logic event '{eventId}' references missing payload slot '{payloadSlotId}'.";
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
-
-        private static bool IsFinite(Vector3 value)
-        {
-            return !float.IsNaN(value.x) && !float.IsInfinity(value.x)
-                && !float.IsNaN(value.y) && !float.IsInfinity(value.y)
-                && !float.IsNaN(value.z) && !float.IsInfinity(value.z);
-        }
-    }
-
-    [Serializable]
-    public sealed class FpgSkillPresentationCueDefinition
-    {
-        [SerializeField]
-        private string eventId = "cue";
-
-        [SerializeField, Min(0)]
-        private int tick;
-
-        [SerializeField]
-        private string cueId = "cue.default";
-
-        [FormerlySerializedAs("sortOrder")]
-        [SerializeField, Min(0)]
-        private int authoredOrdinal;
-
-        [SerializeField]
-        private string socketId = string.Empty;
-
-        [SerializeField]
-        private string bindGameplayEventId = string.Empty;
-
-        public string EventId => eventId;
-        public int Tick => tick;
-        public string CueId => cueId;
-        public int AuthoredOrdinal => authoredOrdinal;
-        public string SocketId => socketId;
-        public string BindGameplayEventId => bindGameplayEventId;
-
-        internal bool TryValidate(
-            int durationTicks,
-            Func<string, int> resolveLogicEventTick,
-            out string error)
-        {
-            if (!FpgSkillStableId.IsValid(eventId)
-                || !FpgSkillStableId.IsValid(cueId))
-            {
-                error = "Skill presentation cue requires stable event and cue IDs.";
-                return false;
-            }
-
-            if (tick < 0 || tick > durationTicks || authoredOrdinal < 0)
-            {
-                error = $"Skill presentation cue '{eventId}' has an invalid tick or authored ordinal.";
-                return false;
-            }
-
-            if (!string.IsNullOrEmpty(socketId)
-                && !FpgSkillStableId.IsValid(socketId))
-            {
-                error = $"Skill presentation cue '{eventId}' has an invalid socket ID.";
-                return false;
-            }
-
-            if (!string.IsNullOrEmpty(bindGameplayEventId))
-            {
-                if (!FpgSkillStableId.IsValid(bindGameplayEventId)
-                    || resolveLogicEventTick == null)
-                {
-                    error = $"Skill presentation cue '{eventId}' references missing gameplay event '{bindGameplayEventId}'.";
-                    return false;
-                }
-
-                int gameplayTick =
-                    resolveLogicEventTick(bindGameplayEventId);
-                if (gameplayTick < 0)
-                {
-                    error = $"Skill presentation cue '{eventId}' references missing gameplay event '{bindGameplayEventId}'.";
-                    return false;
-                }
-
-                if (gameplayTick != tick)
-                {
-                    error = $"Skill presentation cue '{eventId}' must bind gameplay event '{bindGameplayEventId}' on the same Tick (cue Tick {tick}, gameplay Tick {gameplayTick}).";
-                    return false;
-                }
-            }
-
-            error = string.Empty;
-            return true;
-        }
-    }
-
-    [Serializable]
     public sealed class FpgSkillWarningDefinition
     {
         [SerializeField]
@@ -322,15 +102,25 @@ namespace FPG.Demo.Unity
         private int sourceAnimationDurationTicks;
 
         [SerializeField]
-        private FpgSkillPhaseDefinition[] phases = Array.Empty<FpgSkillPhaseDefinition>();
+        private FpgSkillAttackEventDefinition[] attackEvents =
+            Array.Empty<FpgSkillAttackEventDefinition>();
 
         [SerializeField]
-        private FpgSkillLogicEventDefinition[] logicEvents =
-            Array.Empty<FpgSkillLogicEventDefinition>();
+        private FpgSkillProjectileEventDefinition[] projectileEvents =
+            Array.Empty<FpgSkillProjectileEventDefinition>();
 
         [SerializeField]
-        private FpgSkillPresentationCueDefinition[] presentationCues =
-            Array.Empty<FpgSkillPresentationCueDefinition>();
+        private FpgSkillReloadEventDefinition[] reloadEvents =
+            Array.Empty<FpgSkillReloadEventDefinition>();
+
+        [SerializeField]
+        private FpgSkillSummonEventDefinition[] summonEvents =
+            Array.Empty<FpgSkillSummonEventDefinition>();
+
+        [SerializeField]
+        private FpgSkillActivePresentationTrackDefinition[]
+            activePresentationTracks =
+                Array.Empty<FpgSkillActivePresentationTrackDefinition>();
 
         [SerializeField]
         private FpgSkillWarningDefinition[] warnings =
@@ -353,17 +143,34 @@ namespace FPG.Demo.Unity
                 ? durationTicks
                 : animationEndTick;
 
-        public IReadOnlyList<FpgSkillPhaseDefinition> Phases =>
-            phases ?? Array.Empty<FpgSkillPhaseDefinition>();
-        public IReadOnlyList<FpgSkillLogicEventDefinition> LogicEvents =>
-            logicEvents ?? Array.Empty<FpgSkillLogicEventDefinition>();
-        public IReadOnlyList<FpgSkillPresentationCueDefinition> PresentationCues =>
-            presentationCues ?? Array.Empty<FpgSkillPresentationCueDefinition>();
+        public IReadOnlyList<FpgSkillAttackEventDefinition> AttackEvents =>
+            attackEvents ?? Array.Empty<FpgSkillAttackEventDefinition>();
+        public IReadOnlyList<FpgSkillProjectileEventDefinition>
+            ProjectileEvents =>
+                projectileEvents
+                ?? Array.Empty<FpgSkillProjectileEventDefinition>();
+        public IReadOnlyList<FpgSkillReloadEventDefinition> ReloadEvents =>
+            reloadEvents ?? Array.Empty<FpgSkillReloadEventDefinition>();
+        public IReadOnlyList<FpgSkillSummonEventDefinition> SummonEvents =>
+            summonEvents ?? Array.Empty<FpgSkillSummonEventDefinition>();
+        public IReadOnlyList<FpgSkillActivePresentationTrackDefinition>
+            ActivePresentationTracks =>
+                activePresentationTracks
+                ?? Array.Empty<FpgSkillActivePresentationTrackDefinition>();
         public IReadOnlyList<FpgSkillWarningDefinition> Warnings =>
             warnings ?? Array.Empty<FpgSkillWarningDefinition>();
 
+        public bool HasGameplayActions => AttackEvents.Count > 0
+            || ProjectileEvents.Count > 0
+            || ReloadEvents.Count > 0
+            || SummonEvents.Count > 0;
+        public int GameplayActionCount => checked(
+            AttackEvents.Count
+            + ProjectileEvents.Count
+            + ReloadEvents.Count
+            + SummonEvents.Count);
+
         internal bool TryValidate(
-            Func<string, bool> containsPayloadSlot,
             HashSet<string> eventIds,
             HashSet<int> compiledEventIds,
             out string error)
@@ -410,76 +217,110 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (!TryValidatePhases(out error))
+            HashSet<int> authoredPositions = new HashSet<int>();
+            Dictionary<string, int> gameplayEventTicks =
+                new Dictionary<string, int>(StringComparer.Ordinal);
+
+            if (!TryValidateActions(
+                    attackEvents
+                        ?? Array.Empty<FpgSkillAttackEventDefinition>(),
+                    "attack",
+                    gameplayEventTicks,
+                    eventIds,
+                    compiledEventIds,
+                    authoredPositions,
+                    out error)
+                || !TryValidateActions(
+                    projectileEvents
+                        ?? Array.Empty<FpgSkillProjectileEventDefinition>(),
+                    "projectile",
+                    gameplayEventTicks,
+                    eventIds,
+                    compiledEventIds,
+                    authoredPositions,
+                    out error)
+                || !TryValidateActions(
+                    reloadEvents
+                        ?? Array.Empty<FpgSkillReloadEventDefinition>(),
+                    "reload",
+                    gameplayEventTicks,
+                    eventIds,
+                    compiledEventIds,
+                    authoredPositions,
+                    out error)
+                || !TryValidateActions(
+                    summonEvents
+                        ?? Array.Empty<FpgSkillSummonEventDefinition>(),
+                    "summon",
+                    gameplayEventTicks,
+                    eventIds,
+                    compiledEventIds,
+                    authoredPositions,
+                    out error))
             {
                 return false;
             }
 
-            HashSet<ulong> authoredPositions = new HashSet<ulong>();
-            Dictionary<string, int> logicEventTicks =
-                new Dictionary<string, int>(StringComparer.Ordinal);
+            FpgSkillActivePresentationTrackDefinition[] activeTracks =
+                activePresentationTracks
+                ?? Array.Empty<FpgSkillActivePresentationTrackDefinition>();
 
-            FpgSkillLogicEventDefinition[] logic =
-                logicEvents ?? Array.Empty<FpgSkillLogicEventDefinition>();
-            for (int index = 0; index < logic.Length; index++)
+            HashSet<string> trackIds =
+                new HashSet<string>(StringComparer.Ordinal);
+            HashSet<int> compiledTrackIds = new HashSet<int>();
+            for (int trackIndex = 0;
+                trackIndex < activeTracks.Length;
+                trackIndex++)
             {
-                FpgSkillLogicEventDefinition value = logic[index];
-                if (value == null)
+                FpgSkillActivePresentationTrackDefinition track =
+                    activeTracks[trackIndex];
+                if (track == null)
                 {
-                    error = $"Skill sequence '{kind}' has a missing logic event at index {index}.";
+                    error =
+                        $"Skill sequence '{kind}' has a missing active presentation track at index {trackIndex}.";
                     return false;
                 }
 
-                if (!value.TryValidate(durationTicks, containsPayloadSlot, out error)
-                    || !TryAddEventId(value.EventId, eventIds, compiledEventIds, out error)
-                    || !TryAddAuthoredPosition(
-                        value.Tick,
-                        value.AuthoredOrdinal,
-                        authoredPositions,
-                        out error))
+                int compiledTrackId = FpgSkillStableId
+                    .CompilePresentationTrack(track.TrackId);
+                if (!track.TryValidateHeader(out error)
+                    || !trackIds.Add(track.TrackId)
+                    || !compiledTrackIds.Add(compiledTrackId))
                 {
                     if (string.IsNullOrEmpty(error))
                     {
-                        error = $"Skill sequence '{kind}' has an invalid logic event at index {index}.";
+                        error =
+                            $"Skill sequence '{kind}' repeats active presentation track '{track.TrackId}' or has a stable-ID collision.";
                     }
 
                     return false;
                 }
 
-                logicEventTicks.Add(value.EventId, value.Tick);
-            }
-
-            FpgSkillPresentationCueDefinition[] cues =
-                presentationCues ?? Array.Empty<FpgSkillPresentationCueDefinition>();
-            for (int index = 0; index < cues.Length; index++)
-            {
-                FpgSkillPresentationCueDefinition value = cues[index];
-                if (value == null)
-                {
-                    error = $"Skill sequence '{kind}' has a missing presentation cue at index {index}.";
-                    return false;
-                }
-
-                if (!value.TryValidate(
-                        durationTicks,
-                        logicEventId => logicEventTicks.TryGetValue(
-                            logicEventId,
-                            out int logicEventTick)
-                                ? logicEventTick
-                                : -1,
+                if (!TryValidatePresentationEvents(
+                        track.VfxEvents,
+                        "VFX",
+                        gameplayEventTicks,
+                        eventIds,
+                        compiledEventIds,
+                        authoredPositions,
                         out error)
-                    || !TryAddEventId(value.EventId, eventIds, compiledEventIds, out error)
-                    || !TryAddAuthoredPosition(
-                        value.Tick,
-                        value.AuthoredOrdinal,
+                    || !TryValidatePresentationEvents(
+                        track.AudioEvents,
+                        "audio",
+                        gameplayEventTicks,
+                        eventIds,
+                        compiledEventIds,
+                        authoredPositions,
+                        out error)
+                    || !TryValidatePresentationEvents(
+                        track.CameraShakeEvents,
+                        "camera shake",
+                        gameplayEventTicks,
+                        eventIds,
+                        compiledEventIds,
                         authoredPositions,
                         out error))
                 {
-                    if (string.IsNullOrEmpty(error))
-                    {
-                        error = $"Skill sequence '{kind}' has an invalid presentation cue at index {index}.";
-                    }
-
                     return false;
                 }
             }
@@ -539,54 +380,97 @@ namespace FPG.Demo.Unity
             return true;
         }
 
-        internal FpgCompiledSkillSequence Compile()
+        internal FpgCompiledSkillSequence Compile(
+            string skillId,
+            FpgSkillActionIndexOffsets actionOffsets)
         {
-            FpgSkillLogicEventDefinition[] logic =
-                logicEvents ?? Array.Empty<FpgSkillLogicEventDefinition>();
-            FpgSkillPresentationCueDefinition[] cues =
-                presentationCues ?? Array.Empty<FpgSkillPresentationCueDefinition>();
+            FpgSkillAttackEventDefinition[] attacks =
+                attackEvents ?? Array.Empty<FpgSkillAttackEventDefinition>();
+            FpgSkillProjectileEventDefinition[] projectiles =
+                projectileEvents
+                ?? Array.Empty<FpgSkillProjectileEventDefinition>();
+            FpgSkillReloadEventDefinition[] reloads =
+                reloadEvents ?? Array.Empty<FpgSkillReloadEventDefinition>();
+            FpgSkillSummonEventDefinition[] summons =
+                summonEvents ?? Array.Empty<FpgSkillSummonEventDefinition>();
+            FpgSkillActivePresentationTrackDefinition[] activeTracks =
+                activePresentationTracks
+                ?? Array.Empty<FpgSkillActivePresentationTrackDefinition>();
             FpgSkillWarningDefinition[] warningValues =
                 warnings ?? Array.Empty<FpgSkillWarningDefinition>();
-            int eventCount = checked(logic.Length + cues.Length + warningValues.Length * 2);
+            int gameplayEventCount = checked(
+                attacks.Length
+                + projectiles.Length
+                + reloads.Length
+                + summons.Length);
+            int activePresentationEventCount = 0;
+            for (int index = 0; index < activeTracks.Length; index++)
+            {
+                activePresentationEventCount = checked(
+                    activePresentationEventCount
+                    + activeTracks[index].VfxEvents.Count
+                    + activeTracks[index].AudioEvents.Count
+                    + activeTracks[index].CameraShakeEvents.Count);
+            }
+            int eventCount = checked(
+                gameplayEventCount
+                + activePresentationEventCount
+                + warningValues.Length * 2);
             FpgCompiledSkillEvent[] compiled = new FpgCompiledSkillEvent[eventCount];
             int writeIndex = 0;
+            string presentationScope = skillId + ":" + kind;
 
-            for (int index = 0; index < logic.Length; index++)
-            {
-                FpgSkillLogicEventDefinition value = logic[index];
-                compiled[writeIndex++] = new FpgCompiledSkillEvent(
-                    FpgSkillStableId.CompileEvent(value.EventId),
-                    value.Tick,
-                    FpgSkillEventKind.GameplayPayload,
-                    FpgSkillStableId.CompilePayloadSlot(value.PayloadSlotId),
-                    0,
-                    0,
-                    value.AuthoredOrdinal,
-                    FpgSkillStableId.CompileOptionalSocket(value.SocketId),
-                    value.TargetSource,
-                    value.OffsetXMillimeters,
-                    value.OffsetYMillimeters,
-                    value.OffsetZMillimeters);
-            }
+            writeIndex = CompileActions(
+                attacks,
+                FpgSkillActionKind.Attack,
+                actionOffsets.Attack,
+                compiled,
+                writeIndex);
+            writeIndex = CompileActions(
+                projectiles,
+                FpgSkillActionKind.LaunchProjectile,
+                actionOffsets.LaunchProjectile,
+                compiled,
+                writeIndex);
+            writeIndex = CompileActions(
+                reloads,
+                FpgSkillActionKind.CommitReload,
+                actionOffsets.CommitReload,
+                compiled,
+                writeIndex);
+            writeIndex = CompileActions(
+                summons,
+                FpgSkillActionKind.SummonActors,
+                actionOffsets.SummonActors,
+                compiled,
+                writeIndex);
 
-            for (int index = 0; index < cues.Length; index++)
+            for (int trackIndex = 0;
+                trackIndex < activeTracks.Length;
+                trackIndex++)
             {
-                FpgSkillPresentationCueDefinition value = cues[index];
-                compiled[writeIndex++] = new FpgCompiledSkillEvent(
-                    FpgSkillStableId.CompileEvent(value.EventId),
-                    value.Tick,
-                    FpgSkillEventKind.PresentationCue,
-                    0,
-                    FpgSkillStableId.CompileCue(value.CueId),
-                    0,
-                    value.AuthoredOrdinal,
-                    FpgSkillStableId.CompileOptionalSocket(value.SocketId),
-                    FpgSkillTargetSource.CurrentAim,
-                    0,
-                    0,
-                    0,
-                    FpgSkillStableId.CompileOptionalEvent(
-                        value.BindGameplayEventId));
+                FpgSkillActivePresentationTrackDefinition track =
+                    activeTracks[trackIndex];
+                int trackId = FpgSkillStableId.CompilePresentationTrack(
+                    track.TrackId);
+                writeIndex = CompilePresentationEvents(
+                    track.VfxEvents,
+                    trackId,
+                    presentationScope,
+                    compiled,
+                    writeIndex);
+                writeIndex = CompilePresentationEvents(
+                    track.AudioEvents,
+                    trackId,
+                    presentationScope,
+                    compiled,
+                    writeIndex);
+                writeIndex = CompilePresentationEvents(
+                    track.CameraShakeEvents,
+                    trackId,
+                    presentationScope,
+                    compiled,
+                    writeIndex);
             }
 
             for (int index = 0; index < warningValues.Length; index++)
@@ -598,8 +482,6 @@ namespace FPG.Demo.Unity
                     FpgSkillStableId.CompileEvent(value.StartEventId),
                     value.StartTick,
                     FpgSkillEventKind.WarningStarted,
-                    0,
-                    0,
                     warningId,
                     value.AuthoredOrdinal,
                     socketId);
@@ -607,25 +489,9 @@ namespace FPG.Demo.Unity
                     FpgSkillStableId.CompileEvent(value.EndEventId),
                     value.EndTick,
                     FpgSkillEventKind.WarningEnded,
-                    0,
-                    0,
                     warningId,
                     value.AuthoredOrdinal + 1,
                     socketId);
-            }
-
-            FpgSkillPhaseDefinition[] authoredPhases =
-                phases ?? Array.Empty<FpgSkillPhaseDefinition>();
-            FpgCompiledSkillPhase[] compiledPhases =
-                new FpgCompiledSkillPhase[authoredPhases.Length];
-            for (int index = 0; index < authoredPhases.Length; index++)
-            {
-                FpgSkillPhaseDefinition value = authoredPhases[index];
-                compiledPhases[index] = new FpgCompiledSkillPhase(
-                    FpgSkillStableId.CompilePhase(value.PhaseId),
-                    value.Kind,
-                    value.StartTick,
-                    value.EndTick);
             }
 
             string[] authoredVariants =
@@ -637,6 +503,35 @@ namespace FPG.Demo.Unity
                     FpgSkillStableId.CompileAnimation(authoredVariants[index]);
             }
 
+            int actionPresentationCount = CountActionPresentations(attacks)
+                + CountActionPresentations(projectiles)
+                + CountActionPresentations(reloads);
+            FpgCompiledSkillActionPresentation[] actionPresentations =
+                new FpgCompiledSkillActionPresentation[
+                    actionPresentationCount];
+            int actionPresentationIndex = 0;
+            actionPresentationIndex = CompileActionPresentations(
+                attacks,
+                FpgSkillActionKind.Attack,
+                actionOffsets.Attack,
+                presentationScope,
+                actionPresentations,
+                actionPresentationIndex);
+            actionPresentationIndex = CompileActionPresentations(
+                projectiles,
+                FpgSkillActionKind.LaunchProjectile,
+                actionOffsets.LaunchProjectile,
+                presentationScope,
+                actionPresentations,
+                actionPresentationIndex);
+            CompileActionPresentations(
+                reloads,
+                FpgSkillActionKind.CommitReload,
+                actionOffsets.CommitReload,
+                presentationScope,
+                actionPresentations,
+                actionPresentationIndex);
+
             return new FpgCompiledSkillSequence(
                 kind,
                 durationTicks,
@@ -646,76 +541,193 @@ namespace FPG.Demo.Unity
                 animationStartTick,
                 ResolvedAnimationEndTick,
                 compiledVariants,
-                compiledPhases,
-                compiled);
+                compiled,
+                actionPresentations);
         }
 
-        private bool TryValidatePhases(out string error)
+        private static int CountActionPresentations<TAction>(TAction[] values)
+            where TAction : FpgSkillGameplayActionDefinition
         {
-            FpgSkillPhaseDefinition[] values =
-                phases ?? Array.Empty<FpgSkillPhaseDefinition>();
-            HashSet<string> phaseIds =
-                new HashSet<string>(StringComparer.Ordinal);
-            HashSet<int> compiledPhaseIds = new HashSet<int>();
-            HashSet<FpgSkillPhaseKind> kinds =
-                new HashSet<FpgSkillPhaseKind>();
-            FpgSkillPhaseDefinition previous = null;
-
+            int count = 0;
             for (int index = 0; index < values.Length; index++)
             {
-                FpgSkillPhaseDefinition value = values[index];
+                if (values[index].HasPresentation)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static int CompileActionPresentations<TAction>(
+            TAction[] values,
+            FpgSkillActionKind actionKind,
+            int actionOffset,
+            string scopePrefix,
+            FpgCompiledSkillActionPresentation[] destination,
+            int writeIndex)
+            where TAction : FpgSkillGameplayActionDefinition
+        {
+            for (int index = 0; index < values.Length; index++)
+            {
+                if (values[index].HasPresentation)
+                {
+                    destination[writeIndex++] = values[index]
+                        .CompilePresentation(
+                            actionKind,
+                            checked(actionOffset + index),
+                            scopePrefix);
+                }
+            }
+
+            return writeIndex;
+        }
+
+        private static int CompilePresentationEvents<TEvent>(
+            IReadOnlyList<TEvent> values,
+            int trackId,
+            string scopePrefix,
+            FpgCompiledSkillEvent[] destination,
+            int writeIndex)
+            where TEvent : FpgActivePresentationEventDefinition
+        {
+            for (int index = 0; index < values.Count; index++)
+            {
+                destination[writeIndex++] = values[index].Compile(
+                    trackId,
+                    scopePrefix);
+            }
+
+            return writeIndex;
+        }
+
+        private bool TryValidatePresentationEvents<TEvent>(
+            IReadOnlyList<TEvent> values,
+            string label,
+            Dictionary<string, int> gameplayEventTicks,
+            HashSet<string> eventIds,
+            HashSet<int> compiledEventIds,
+            HashSet<int> authoredPositions,
+            out string error)
+            where TEvent : FpgActivePresentationEventDefinition
+        {
+            for (int index = 0; index < values.Count; index++)
+            {
+                TEvent value = values[index];
                 if (value == null)
                 {
-                    error = $"Skill sequence '{kind}' has a missing phase at index {index}.";
+                    error =
+                        $"Skill sequence '{kind}' has a missing {label} presentation event at index {index}.";
                     return false;
                 }
 
-                if (!value.TryValidate(durationTicks, out error))
+                if (!value.TryValidate(
+                        durationTicks,
+                        eventId => gameplayEventTicks.TryGetValue(
+                            eventId,
+                            out int gameplayEventTick)
+                                ? gameplayEventTick
+                                : -1,
+                        out error)
+                    || !TryAddEventId(
+                        value.EventId,
+                        eventIds,
+                        compiledEventIds,
+                        out error)
+                    || !TryAddAuthoredPosition(
+                        value.Tick,
+                        value.AuthoredOrdinal,
+                        authoredPositions,
+                        out error))
                 {
                     if (string.IsNullOrEmpty(error))
                     {
-                        error = $"Skill sequence '{kind}' has an invalid phase at index {index}.";
+                        error =
+                            $"Skill sequence '{kind}' has an invalid {label} presentation event at index {index}.";
+                    }
+
+                    return false;
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private bool TryValidateActions<TAction>(
+            TAction[] values,
+            string label,
+            Dictionary<string, int> gameplayEventTicks,
+            HashSet<string> eventIds,
+            HashSet<int> compiledEventIds,
+            HashSet<int> authoredPositions,
+            out string error)
+            where TAction : FpgSkillGameplayActionDefinition
+        {
+            for (int index = 0; index < values.Length; index++)
+            {
+                TAction value = values[index];
+                if (value == null)
+                {
+                    error =
+                        $"Skill sequence '{kind}' has a missing {label} action at index {index}.";
+                    return false;
+                }
+
+                if (!value.TryValidate(durationTicks, out error)
+                    || !TryAddEventId(
+                        value.EventId,
+                        eventIds,
+                        compiledEventIds,
+                        out error)
+                    || !TryAddAuthoredPosition(
+                        value.Tick,
+                        value.AuthoredOrdinal,
+                        authoredPositions,
+                        out error))
+                {
+                    if (string.IsNullOrEmpty(error))
+                    {
+                        error =
+                            $"Skill sequence '{kind}' has an invalid {label} action at index {index}.";
                     }
 
                     return false;
                 }
 
-                if (!phaseIds.Add(value.PhaseId))
-                {
-                    error =
-                        $"Skill sequence '{kind}' repeats phase ID '{value.PhaseId}'.";
-                    return false;
-                }
-
-                int compiledPhaseId =
-                    FpgSkillStableId.CompilePhase(value.PhaseId);
-                if (!compiledPhaseIds.Add(compiledPhaseId))
-                {
-                    error =
-                        $"Skill sequence '{kind}' phase ID '{value.PhaseId}' has a stable-ID collision.";
-                    return false;
-                }
-
-                if (!kinds.Add(value.Kind))
-                {
-                    error =
-                        $"Skill sequence '{kind}' repeats phase kind '{value.Kind}'.";
-                    return false;
-                }
-
-                if (previous != null
-                    && (value.StartTick < previous.EndTick
-                        || value.Kind <= previous.Kind))
-                {
-                    error = $"Skill sequence '{kind}' phases must be ordered and non-overlapping.";
-                    return false;
-                }
-
-                previous = value;
+                gameplayEventTicks.Add(value.EventId, value.Tick);
             }
 
             error = string.Empty;
             return true;
+        }
+
+        private static int CompileActions<TAction>(
+            TAction[] values,
+            FpgSkillActionKind actionKind,
+            int actionOffset,
+            FpgCompiledSkillEvent[] destination,
+            int writeIndex)
+            where TAction : FpgSkillGameplayActionDefinition
+        {
+            for (int index = 0; index < values.Length; index++)
+            {
+                TAction value = values[index];
+                destination[writeIndex++] = new FpgCompiledSkillEvent(
+                    FpgSkillStableId.CompileEvent(value.EventId),
+                    value.Tick,
+                    actionKind,
+                    checked(actionOffset + index),
+                    value.AuthoredOrdinal,
+                    FpgSkillStableId.CompileOptionalSocket(value.SocketId),
+                    value.TargetSource,
+                    value.OffsetXMillimeters,
+                    value.OffsetYMillimeters,
+                    value.OffsetZMillimeters);
+            }
+
+            return writeIndex;
         }
 
         private static bool TryAddEventId(
@@ -753,14 +765,12 @@ namespace FPG.Demo.Unity
         private static bool TryAddAuthoredPosition(
             int tick,
             int authoredOrdinal,
-            HashSet<ulong> positions,
+            HashSet<int> positions,
             out string error)
         {
-            ulong key = unchecked(
-                ((ulong)(uint)tick << 32) | (uint)authoredOrdinal);
-            if (!positions.Add(key))
+            if (!positions.Add(authoredOrdinal))
             {
-                error = $"Skill sequence repeats authored ordinal {authoredOrdinal} on tick {tick}.";
+                error = $"Skill sequence repeats authored ordinal {authoredOrdinal}.";
                 return false;
             }
 
@@ -769,8 +779,49 @@ namespace FPG.Demo.Unity
         }
     }
 
+    internal readonly struct FpgSkillActionIndexOffsets
+    {
+        public FpgSkillActionIndexOffsets(
+            int attack,
+            int launchProjectile,
+            int commitReload,
+            int summonActors)
+        {
+            Attack = attack;
+            LaunchProjectile = launchProjectile;
+            CommitReload = commitReload;
+            SummonActors = summonActors;
+        }
+
+        public int Attack { get; }
+        public int LaunchProjectile { get; }
+        public int CommitReload { get; }
+        public int SummonActors { get; }
+
+        public FpgSkillActionIndexOffsets Advance(
+            FpgSkillSequenceDefinition sequence)
+        {
+            if (sequence == null)
+            {
+                throw new ArgumentNullException(nameof(sequence));
+            }
+
+            return new FpgSkillActionIndexOffsets(
+                checked(Attack + sequence.AttackEvents.Count),
+                checked(
+                    LaunchProjectile + sequence.ProjectileEvents.Count),
+                checked(CommitReload + sequence.ReloadEvents.Count),
+                checked(SummonActors + sequence.SummonEvents.Count));
+        }
+    }
+
     public abstract class FpgSkillTimelineDefinition : ScriptableObject
     {
+        public const int CurrentAuthoringSchemaVersion = 3;
+
+        [SerializeField, HideInInspector, Min(0)]
+        private int authoringSchemaVersion;
+
         [SerializeField]
         private string skillId = "skill";
 
@@ -786,23 +837,28 @@ namespace FPG.Demo.Unity
             new FpgSkillSequenceDefinition()
         };
 
+        public int AuthoringSchemaVersion => authoringSchemaVersion;
         public string SkillId => skillId;
         public string DisplayName => displayName;
         public string DesignerNotes => designerNotes;
         public IReadOnlyList<FpgSkillSequenceDefinition> Sequences =>
             sequences ?? Array.Empty<FpgSkillSequenceDefinition>();
+        public FpgSkillAuthoringSchemaState AuthoringSchemaState =>
+            FpgSkillAuthoringSchemaState.V3Only;
 
         public virtual bool TryValidate(out string error)
         {
+            if (authoringSchemaVersion != CurrentAuthoringSchemaVersion)
+            {
+                error =
+                    $"Skill timeline requires authoring schema version {CurrentAuthoringSchemaVersion}, but found {authoringSchemaVersion}.";
+                return false;
+            }
+
             if (!FpgSkillStableId.IsValid(skillId)
                 || string.IsNullOrWhiteSpace(displayName))
             {
                 error = "Skill timeline requires a stable skill ID and display name.";
-                return false;
-            }
-
-            if (!TryValidatePayloadSlots(out error))
-            {
                 return false;
             }
 
@@ -836,7 +892,6 @@ namespace FPG.Demo.Unity
                 }
 
                 if (!value.TryValidate(
-                        ContainsPayloadSlot,
                         eventIds,
                         compiledEventIds,
                         out error))
@@ -879,9 +934,14 @@ namespace FPG.Demo.Unity
                     sequences ?? Array.Empty<FpgSkillSequenceDefinition>();
                 FpgCompiledSkillSequence[] compiled =
                     new FpgCompiledSkillSequence[values.Length];
+                FpgSkillActionIndexOffsets actionOffsets =
+                    default(FpgSkillActionIndexOffsets);
                 for (int index = 0; index < values.Length; index++)
                 {
-                    compiled[index] = values[index].Compile();
+                    compiled[index] = values[index].Compile(
+                        skillId,
+                        actionOffsets);
+                    actionOffsets = actionOffsets.Advance(values[index]);
                 }
 
                 definition = new FpgCompiledSkillDefinition(
@@ -901,9 +961,6 @@ namespace FPG.Demo.Unity
             }
         }
 
-        protected abstract bool TryValidatePayloadSlots(out string error);
-        protected abstract bool ContainsPayloadSlot(string payloadSlotId);
-
         protected virtual bool TryValidateDefinition(out string error)
         {
             error = string.Empty;
@@ -914,13 +971,13 @@ namespace FPG.Demo.Unity
     internal static class FpgSkillStableId
     {
         private const ulong SkillDomain = 0x4650475F534B494CUL;
-        private const ulong PhaseDomain = 0x4650475F50484153UL;
         private const ulong EventDomain = 0x4650475F45564E54UL;
-        private const ulong PayloadDomain = 0x4650475F5041594CUL;
-        private const ulong CueDomain = 0x4650475F4355455FUL;
         private const ulong WarningDomain = 0x4650475F5741524EUL;
         private const ulong SocketDomain = 0x4650475F534F434BUL;
         private const ulong AnimationDomain = 0x4650475F414E494DUL;
+        private const ulong PresentationDomain = 0x4650475F50524553UL;
+        private const ulong PresentationTrackDomain =
+            0x4650475F5054524BUL;
 
         public static bool IsValid(string value)
         {
@@ -955,11 +1012,6 @@ namespace FPG.Demo.Unity
             return Compile(value, SkillDomain);
         }
 
-        public static int CompilePhase(string value)
-        {
-            return Compile(value, PhaseDomain);
-        }
-
         public static int CompileEvent(string value)
         {
             return Compile(value, EventDomain);
@@ -968,16 +1020,6 @@ namespace FPG.Demo.Unity
         public static int CompileOptionalEvent(string value)
         {
             return string.IsNullOrEmpty(value) ? 0 : Compile(value, EventDomain);
-        }
-
-        public static int CompilePayloadSlot(string value)
-        {
-            return Compile(value, PayloadDomain);
-        }
-
-        public static int CompileCue(string value)
-        {
-            return Compile(value, CueDomain);
         }
 
         public static int CompileWarning(string value)
@@ -993,6 +1035,18 @@ namespace FPG.Demo.Unity
         public static int CompileAnimation(string value)
         {
             return Compile(value, AnimationDomain);
+        }
+
+        public static FpgPresentationHandle CompilePresentationHandle(
+            string value)
+        {
+            return new FpgPresentationHandle(
+                Compile(value, PresentationDomain));
+        }
+
+        public static int CompilePresentationTrack(string value)
+        {
+            return Compile(value, PresentationTrackDomain);
         }
 
         private static int Compile(string value, ulong domain)

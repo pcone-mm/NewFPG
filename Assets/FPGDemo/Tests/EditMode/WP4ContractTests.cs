@@ -9,7 +9,7 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class WP4ContractTests
     {
-        private const ulong LegacyAttackQueryDigest = 18326669108299386086UL;
+        private const ulong LegacyAttackQueryDigest = 2704286958802732809UL;
 
         [Test]
         public void BattleTickInputCopiesEdgeCommandsAndRejectsMismatchedPoseTick()
@@ -178,7 +178,6 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 2,
-                9,
                 true);
             Assert.That(new NullProjectileWorldPort().Register(request, out ProjectilePathSnapshot path).IsSuccess, Is.False);
             Assert.That(path.ProjectileId.IsValid, Is.False);
@@ -215,18 +214,17 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 2,
-                9,
                 false));
         }
 
         [Test]
-        public void SpatialContractV2IncludesInterceptabilityInProjectileReplayIdentity()
+        public void SpatialContractV3IncludesThreatPresentationInProjectileReplayIdentity()
         {
-            Assert.That(SpatialContract.Version, Is.EqualTo(2));
-            Assert.That(new SpatialDecisionTranscript(1).ContractVersion, Is.EqualTo(2));
+            Assert.That(SpatialContract.Version, Is.EqualTo(3));
+            Assert.That(new SpatialDecisionTranscript(1).ContractVersion, Is.EqualTo(3));
 
             SpatialPortTranscript transcript = new SpatialPortTranscript(2, 1);
-            Assert.That(transcript.ContractVersion, Is.EqualTo(2));
+            Assert.That(transcript.ContractVersion, Is.EqualTo(3));
             ProjectileSpawnRequest recordedRequest = new ProjectileSpawnRequest(
                 new TickIndex(2),
                 new TickIndex(5),
@@ -238,8 +236,8 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 2,
-                9,
-                true);
+                true,
+                FpgThreatPresentationKind.InterceptableVolley);
             RecordingProjectileWorldPort recording = new RecordingProjectileWorldPort(
                 new EchoProjectileWorldPort(),
                 transcript);
@@ -259,13 +257,36 @@ namespace FPG.Demo.Tests.EditMode
                 recordedRequest.Team,
                 recordedRequest.DefinitionId,
                 recordedRequest.SweepRadiusKey,
-                recordedRequest.PresentationKey,
-                false);
+                false,
+                recordedRequest.PresentationKind);
 
             Assert.That(replay.Register(changedInterceptability, out ProjectilePathSnapshot rejectedPath).RejectReason,
                 Is.EqualTo(RejectReason.InvariantFault));
             Assert.That(rejectedPath.ProjectileId.IsValid, Is.False);
             Assert.That(transcript.ReplayRemaining, Is.EqualTo(1));
+
+            ProjectileSpawnRequest changedPresentationKind =
+                new ProjectileSpawnRequest(
+                    recordedRequest.Tick,
+                    recordedRequest.ArrivalTick,
+                    recordedRequest.ProjectileId,
+                    recordedRequest.RuntimeId,
+                    recordedRequest.AttackId,
+                    recordedRequest.OwnerId,
+                    recordedRequest.TargetId,
+                    recordedRequest.Team,
+                    recordedRequest.DefinitionId,
+                    recordedRequest.SweepRadiusKey,
+                    recordedRequest.Interceptable,
+                    FpgThreatPresentationKind.FastUninterceptable);
+            Assert.That(
+                replay.Register(
+                    changedPresentationKind,
+                    out rejectedPath).RejectReason,
+                Is.EqualTo(RejectReason.InvariantFault));
+            Assert.That(rejectedPath.ProjectileId.IsValid, Is.False);
+            Assert.That(transcript.ReplayRemaining, Is.EqualTo(1));
+
             Assert.That(replay.Register(recordedRequest, out ProjectilePathSnapshot replayedPath).IsSuccess, Is.True);
             Assert.That(replayedPath.Start, Is.EqualTo(recordedPath.Start));
             Assert.That(replayedPath.End, Is.EqualTo(recordedPath.End));
@@ -439,20 +460,69 @@ namespace FPG.Demo.Tests.EditMode
                 10,
                 true,
                 2,
-                7,
                 2);
-            ThreatPayloadDefinition swept = ThreatPayloadDefinition.SweptProjectile(projectile, 3);
+            ThreatPayloadDefinition swept = ThreatPayloadDefinition.SweptProjectile(
+                projectile,
+                3,
+                FpgThreatPresentationKind.InterceptableVolley,
+                7);
+            ProjectileDefinition sameResourceFastProjectile =
+                new ProjectileDefinition(
+                    301,
+                    new TickDuration(3),
+                    new TickDuration(5),
+                    new DamageSpec(20, 3),
+                    0,
+                    false,
+                    2,
+                    2);
+            ThreatPayloadDefinition sameResourceFast =
+                ThreatPayloadDefinition.SweptProjectile(
+                    sameResourceFastProjectile,
+                    3,
+                    FpgThreatPresentationKind.FastUninterceptable,
+                    7);
+            ThreatPayloadDefinition alternateWarningResource =
+                ThreatPayloadDefinition.SweptProjectile(
+                    projectile,
+                    3,
+                    FpgThreatPresentationKind.InterceptableVolley,
+                    99);
             ThreatPayloadDefinition timed = ThreatPayloadDefinition.TimedImpact(
                 new DamageSpec(50, 10),
                 ThreatTargetPolicy.PlayerCombatant,
                 new TickDuration(1),
-                8);
+                8,
+                FpgThreatPresentationKind.HeavyWeakpoint);
 
             Assert.That(swept.IsValid, Is.True);
             Assert.That(swept.TotalBudgetUnits, Is.EqualTo(6));
+            Assert.That(swept.PresentationKind,
+                Is.EqualTo(FpgThreatPresentationKind.InterceptableVolley));
             Assert.That(swept.PresentationKey, Is.EqualTo(7));
+            Assert.That(sameResourceFast.PresentationKey, Is.EqualTo(7));
+            Assert.That(
+                swept.AppendStableHash(0UL),
+                Is.Not.EqualTo(sameResourceFast.AppendStableHash(0UL)));
+            Assert.That(
+                swept.AppendStableHash(0UL),
+                Is.EqualTo(alternateWarningResource.AppendStableHash(0UL)));
             Assert.That(timed.IsTimedImpact, Is.True);
+            Assert.That(timed.PresentationKind,
+                Is.EqualTo(FpgThreatPresentationKind.HeavyWeakpoint));
             Assert.That(timed.TotalBudgetUnits, Is.Zero);
+            Assert.Throws<System.ArgumentException>(() =>
+                ThreatPayloadDefinition.SweptProjectile(
+                    projectile,
+                    3,
+                    FpgThreatPresentationKind.FastUninterceptable));
+            Assert.Throws<System.ArgumentException>(() =>
+                ThreatPayloadDefinition.TimedImpact(
+                    new DamageSpec(50, 10),
+                    ThreatTargetPolicy.PlayerCombatant,
+                    new TickDuration(1),
+                    8,
+                    FpgThreatPresentationKind.InterceptableVolley));
             Assert.Throws<System.OverflowException>(() => ThreatPayloadDefinition.SweptProjectile(
                 new ProjectileDefinition(
                     999,
@@ -462,7 +532,8 @@ namespace FPG.Demo.Tests.EditMode
                     1,
                     true,
                     int.MaxValue),
-                2));
+                2,
+                FpgThreatPresentationKind.InterceptableVolley));
         }
 
         [Test]
@@ -477,7 +548,10 @@ namespace FPG.Demo.Tests.EditMode
                 10,
                 true,
                 1);
-            ThreatPayloadDefinition payload = ThreatPayloadDefinition.SweptProjectile(projectile, 1);
+            ThreatPayloadDefinition payload = ThreatPayloadDefinition.SweptProjectile(
+                projectile,
+                1,
+                FpgThreatPresentationKind.InterceptableVolley);
             ThreatScheduleEntry[] entries =
             {
                 new ThreatScheduleEntry(2, new TickIndex(4), 202, new TickDuration(1), new TickDuration(1), new TickDuration(1), payload, ThreatRetryPolicy.HoldPendingNextTick),
@@ -492,7 +566,10 @@ namespace FPG.Demo.Tests.EditMode
             entries[0] = new ThreatScheduleEntry(9, new TickIndex(99), 999, new TickDuration(1), new TickDuration(1), new TickDuration(1), payload, ThreatRetryPolicy.HoldPendingNextTick);
             Assert.That(scheduled.GetThreatScheduleEntry(1).ScheduleSequence, Is.EqualTo(2));
 
-            ThreatPayloadDefinition oversized = ThreatPayloadDefinition.SweptProjectile(projectile, baseline.ProjectileCapacity + 1);
+            ThreatPayloadDefinition oversized = ThreatPayloadDefinition.SweptProjectile(
+                projectile,
+                baseline.ProjectileCapacity + 1,
+                FpgThreatPresentationKind.InterceptableVolley);
             Assert.Throws<System.ArgumentException>(() => CopyScenario(
                 baseline,
                 new[]
@@ -617,7 +694,6 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 2,
-                9,
                 true);
             Assert.That(recordingWorld.Register(spawn, out ProjectilePathSnapshot recordedPath).IsSuccess, Is.True);
             ProjectileSweepRequest sweep = new ProjectileSweepRequest(

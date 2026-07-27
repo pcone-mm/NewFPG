@@ -1,15 +1,9 @@
 using System;
+using FPG.Demo.Enemy;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
-    public enum CombatThreatPresentationKind
-    {
-        FastUninterceptable = 0,
-        InterceptableVolley = 1,
-        HeavyWeakpoint = 2
-    }
-
     public enum CombatThreatTelegraphShape
     {
         SourcePulse = 0,
@@ -34,7 +28,7 @@ namespace FPG.Demo.Unity
     [Serializable]
     public sealed class CombatThreatPresentationDefinition
     {
-        [SerializeField] private CombatThreatPresentationKind kind;
+        [SerializeField] private FpgThreatPresentationKind kind;
         [SerializeField, Min(1)] private int presentationKey = 1;
         [SerializeField] private CombatThreatTelegraphShape telegraphShape;
         [SerializeField] private bool showsInterceptionMarker;
@@ -50,7 +44,7 @@ namespace FPG.Demo.Unity
         }
 
         public CombatThreatPresentationDefinition(
-            CombatThreatPresentationKind kind,
+            FpgThreatPresentationKind kind,
             int presentationKey,
             CombatThreatTelegraphShape telegraphShape,
             bool showsInterceptionMarker,
@@ -73,7 +67,7 @@ namespace FPG.Demo.Unity
             this.sortingOrder = sortingOrder;
         }
 
-        public CombatThreatPresentationKind Kind => kind;
+        public FpgThreatPresentationKind Kind => kind;
         public int PresentationKey => presentationKey;
         public CombatThreatTelegraphShape TelegraphShape => telegraphShape;
         public bool ShowsInterceptionMarker => showsInterceptionMarker;
@@ -207,6 +201,53 @@ namespace FPG.Demo.Unity
         }
     }
 
+    [Serializable]
+    public sealed class CombatCameraShakePresentation
+    {
+        [SerializeField, Range(0.01f, 1f)]
+        private float maxCombinedStrength = 1f;
+
+        [SerializeField, Min(0f)]
+        private float maximumPositionOffset = 0.08f;
+
+        [SerializeField, Min(0f)]
+        private float maximumRotationDegrees = 0.7f;
+
+        [SerializeField, Min(0.01f)]
+        private float frequencyHz = 28f;
+
+        public float MaxCombinedStrength => maxCombinedStrength;
+        public float MaximumPositionOffset => maximumPositionOffset;
+        public float MaximumRotationDegrees => maximumRotationDegrees;
+        public float FrequencyHz => frequencyHz;
+
+        internal bool TryValidate(out string error)
+        {
+            if (!IsFinitePositive(maxCombinedStrength)
+                || maxCombinedStrength > 1f
+                || !IsFiniteNonNegative(maximumPositionOffset)
+                || !IsFiniteNonNegative(maximumRotationDegrees)
+                || !IsFinitePositive(frequencyHz))
+            {
+                error = "Camera shake presentation requires finite amplitudes, frequency and a normalized global cap.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value > 0f;
+        }
+
+        private static bool IsFiniteNonNegative(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value) && value >= 0f;
+        }
+    }
+
     /// <summary>
     /// Global combat presentation language only. Actor identity, state
     /// animations, weapon shots and enemy attacks belong to concrete
@@ -217,9 +258,9 @@ namespace FPG.Demo.Unity
         menuName = "FPG Demo/Combat Presentation Profile")]
     public sealed class CombatPresentationProfile : ScriptableObject
     {
-        public const int FastThreatPresentationKey = 1;
-        public const int InterceptableVolleyThreatPresentationKey = 2;
-        public const int HeavyWeakpointThreatPresentationKey = 3;
+        public const int DefaultFastThreatResourceKey = 1;
+        public const int DefaultInterceptableVolleyThreatResourceKey = 2;
+        public const int DefaultHeavyWeakpointThreatResourceKey = 3;
         public const int RequiredEnemyProjectileCapacity = 32;
         public const int RequiredAudioSourceCapacity =
             CombatAudioBank.DefaultConcurrentVoiceLimit;
@@ -228,8 +269,8 @@ namespace FPG.Demo.Unity
         private CombatThreatPresentationDefinition[] threatDefinitions =
         {
             new CombatThreatPresentationDefinition(
-                CombatThreatPresentationKind.FastUninterceptable,
-                FastThreatPresentationKey,
+                FpgThreatPresentationKind.FastUninterceptable,
+                DefaultFastThreatResourceKey,
                 CombatThreatTelegraphShape.SourcePulse,
                 false,
                 false,
@@ -239,8 +280,8 @@ namespace FPG.Demo.Unity
                 0.22f,
                 20),
             new CombatThreatPresentationDefinition(
-                CombatThreatPresentationKind.InterceptableVolley,
-                InterceptableVolleyThreatPresentationKey,
+                FpgThreatPresentationKind.InterceptableVolley,
+                DefaultInterceptableVolleyThreatResourceKey,
                 CombatThreatTelegraphShape.ProjectileOutline,
                 true,
                 false,
@@ -250,8 +291,8 @@ namespace FPG.Demo.Unity
                 0.32f,
                 20),
             new CombatThreatPresentationDefinition(
-                CombatThreatPresentationKind.HeavyWeakpoint,
-                HeavyWeakpointThreatPresentationKey,
+                FpgThreatPresentationKind.HeavyWeakpoint,
+                DefaultHeavyWeakpointThreatResourceKey,
                 CombatThreatTelegraphShape.WeakpointLock,
                 false,
                 true,
@@ -329,8 +370,13 @@ namespace FPG.Demo.Unity
         private CombatPresentationPoolCapacities poolCapacities =
             new CombatPresentationPoolCapacities();
 
+        [SerializeField]
+        private CombatCameraShakePresentation cameraShake =
+            new CombatCameraShakePresentation();
+
         public CombatPresentationSorting Sorting => sorting;
         public CombatPresentationPoolCapacities PoolCapacities => poolCapacities;
+        public CombatCameraShakePresentation CameraShake => cameraShake;
         public FpgDamagePopupPresentation FormalDamagePopup => formalDamagePopup;
         public FpgReticlePresentation FormalReticle => formalReticle;
         public int FormalHudResourceCount =>
@@ -381,6 +427,26 @@ namespace FPG.Demo.Unity
         }
 
         public bool TryGetThreatDefinition(
+            FpgThreatPresentationKind kind,
+            out CombatThreatPresentationDefinition definition)
+        {
+            CombatThreatPresentationDefinition[] definitions = threatDefinitions
+                ?? Array.Empty<CombatThreatPresentationDefinition>();
+            for (int index = 0; index < definitions.Length; index++)
+            {
+                CombatThreatPresentationDefinition candidate = definitions[index];
+                if (candidate != null && candidate.Kind == kind)
+                {
+                    definition = candidate;
+                    return true;
+                }
+            }
+
+            definition = null;
+            return false;
+        }
+
+        public bool TryGetThreatDefinitionByPresentationKey(
             int presentationKey,
             out CombatThreatPresentationDefinition definition)
         {
@@ -389,7 +455,8 @@ namespace FPG.Demo.Unity
             for (int index = 0; index < definitions.Length; index++)
             {
                 CombatThreatPresentationDefinition candidate = definitions[index];
-                if (candidate != null && candidate.PresentationKey == presentationKey)
+                if (candidate != null
+                    && candidate.PresentationKey == presentationKey)
                 {
                     definition = candidate;
                     return true;
@@ -425,6 +492,7 @@ namespace FPG.Demo.Unity
             error = string.Empty;
             if (sorting == null || !sorting.TryValidate(out error)
                 || poolCapacities == null || !poolCapacities.TryValidate(out error)
+                || cameraShake == null || !cameraShake.TryValidate(out error)
                 || !TryValidateThreatDefinitions(out error)
                 || !TryValidateHitDefinitions(out error)
                 || !TryValidateFormalHudResources(out error)
@@ -465,7 +533,7 @@ namespace FPG.Demo.Unity
             {
                 CombatThreatPresentationDefinition definition = threatDefinitions[index];
                 if (definition == null
-                    || !Enum.IsDefined(typeof(CombatThreatPresentationKind), definition.Kind)
+                    || !Enum.IsDefined(typeof(FpgThreatPresentationKind), definition.Kind)
                     || !Enum.IsDefined(typeof(CombatThreatTelegraphShape), definition.TelegraphShape)
                     || definition.PresentationKey <= 0
                     || !IsFinitePositive(definition.TelegraphDuration)
@@ -493,9 +561,8 @@ namespace FPG.Demo.Unity
 
                 switch (definition.Kind)
                 {
-                    case CombatThreatPresentationKind.FastUninterceptable:
+                    case FpgThreatPresentationKind.FastUninterceptable:
                         if (hasFast
-                            || definition.PresentationKey != FastThreatPresentationKey
                             || definition.TelegraphShape !=
                                 CombatThreatTelegraphShape.SourcePulse
                             || definition.ShowsInterceptionMarker
@@ -508,10 +575,8 @@ namespace FPG.Demo.Unity
                         hasFast = true;
                         break;
 
-                    case CombatThreatPresentationKind.InterceptableVolley:
+                    case FpgThreatPresentationKind.InterceptableVolley:
                         if (hasVolley
-                            || definition.PresentationKey !=
-                                InterceptableVolleyThreatPresentationKey
                             || definition.TelegraphShape !=
                                 CombatThreatTelegraphShape.ProjectileOutline
                             || !definition.ShowsInterceptionMarker
@@ -525,10 +590,8 @@ namespace FPG.Demo.Unity
                         hasVolley = true;
                         break;
 
-                    case CombatThreatPresentationKind.HeavyWeakpoint:
+                    case FpgThreatPresentationKind.HeavyWeakpoint:
                         if (hasHeavy
-                            || definition.PresentationKey !=
-                                HeavyWeakpointThreatPresentationKey
                             || definition.TelegraphShape !=
                                 CombatThreatTelegraphShape.WeakpointLock
                             || definition.ShowsInterceptionMarker

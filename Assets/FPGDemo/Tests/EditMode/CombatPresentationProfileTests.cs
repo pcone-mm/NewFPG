@@ -1,5 +1,9 @@
+using System.Reflection;
+using System.Linq;
 using FPG.Demo.Combat;
+using FPG.Demo.Enemy;
 using FPG.Demo.Player;
+using FPG.Demo.Skills;
 using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
@@ -69,16 +73,25 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(player.VictoryAnimation, Is.EqualTo("victory"));
 
             Assert.That(weapon.TryValidatePresentation(out string weaponError), Is.True, weaponError);
-            Assert.That(weapon.PrimaryPresentation.AnimationName, Is.EqualTo("attack_play1"));
-            Assert.That(weapon.PrimaryPresentation.AlternateAnimationName, Is.EqualTo("attack_play2"));
+            FpgSkillSequenceDefinition primary = weapon.PrimarySkill.Sequences
+                .Single(item => item.Kind == FpgSkillSequenceKind.Execute);
+            Assert.That(primary.MainAnimation, Is.EqualTo("attack_play1"));
+            Assert.That(primary.AlternateAnimations, Contains.Item("attack_play2"));
             Assert.That(
-                weapon.PrimaryPresentation.SocketId,
+                primary.ActivePresentationTracks[0].VfxEvents[0].OwnerSocketId,
                 Is.EqualTo(D0ActorSocketRegistry.PrimaryMuzzleId));
-            Assert.That(weapon.SecondaryPresentation.ReleaseAnimation, Is.EqualTo("defense_play"));
+            FpgSkillSequenceDefinition secondary = weapon.SecondarySkill.Sequences
+                .Single(item => item.Kind == FpgSkillSequenceKind.Release);
+            Assert.That(secondary.MainAnimation, Is.EqualTo("defense_play"));
             Assert.That(
-                weapon.SecondaryPresentation.Shot.SocketId,
+                secondary.ActivePresentationTracks[0].VfxEvents[0].OwnerSocketId,
                 Is.EqualTo(D0ActorSocketRegistry.SecondaryMuzzleId));
-            Assert.That(weapon.ReloadPresentation.PlayAnimation, Is.EqualTo("u1_buff_play"));
+            FpgSkillSequenceDefinition reload = weapon.ReloadSkill.Sequences
+                .Single(item => item.Kind == FpgSkillSequenceKind.Execute);
+            Assert.That(reload.MainAnimation, Is.EqualTo("u1_buff_play"));
+            Assert.That(
+                reload.ReloadEvents[0].SuccessAnimationName,
+                Is.EqualTo("u1_buff_ready"));
 
             Assert.That(burstbug.TryValidate(out string behaviorError), Is.True, behaviorError);
             Assert.That(burstbug.EntryAnimation, Is.EqualTo("normal_enter"));
@@ -156,7 +169,7 @@ namespace FPG.Demo.Tests.EditMode
                 SerializedProperty threats = serialized.FindProperty("threatDefinitions");
                 threats.GetArrayElementAtIndex(1)
                     .FindPropertyRelative("presentationKey").intValue =
-                    CombatPresentationProfile.FastThreatPresentationKey;
+                    CombatPresentationProfile.DefaultFastThreatResourceKey;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 Assert.That(profile.TryValidateStatic(out string error), Is.False);
@@ -190,6 +203,75 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
+        [Test]
+        public void StaticValidationAllowsThreatResourceKeysToVaryIndependentlyFromKinds()
+        {
+            CombatPresentationProfile profile =
+                ScriptableObject.CreateInstance<CombatPresentationProfile>();
+            try
+            {
+                SerializedObject serialized = new SerializedObject(profile);
+                SerializedProperty threats =
+                    serialized.FindProperty("threatDefinitions");
+                threats.GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("presentationKey").intValue = 41;
+                threats.GetArrayElementAtIndex(1)
+                    .FindPropertyRelative("presentationKey").intValue = 52;
+                threats.GetArrayElementAtIndex(2)
+                    .FindPropertyRelative("presentationKey").intValue = 63;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                MethodInfo validateThreats = typeof(CombatPresentationProfile)
+                    .GetMethod(
+                        "TryValidateThreatDefinitions",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(validateThreats, Is.Not.Null);
+                object[] validationArguments = { string.Empty };
+                Assert.That(
+                    (bool)validateThreats.Invoke(profile, validationArguments),
+                    Is.True,
+                    validationArguments[0] as string);
+                Assert.That(
+                    profile.TryGetThreatDefinition(
+                        FpgThreatPresentationKind.InterceptableVolley,
+                        out CombatThreatPresentationDefinition volley),
+                    Is.True);
+                Assert.That(volley.PresentationKey, Is.EqualTo(52));
+                Assert.That(
+                    profile.TryGetThreatDefinitionByPresentationKey(
+                        52,
+                        out CombatThreatPresentationDefinition resource),
+                    Is.True);
+                Assert.That(
+                    resource.Kind,
+                    Is.EqualTo(
+                        FpgThreatPresentationKind.InterceptableVolley));
+            }
+            finally
+            {
+                Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
+        public void CameraShakeDefaultsUseOneNormalizedGlobalCap()
+        {
+            CombatPresentationProfile profile =
+                ScriptableObject.CreateInstance<CombatPresentationProfile>();
+            try
+            {
+                Assert.That(profile.CameraShake, Is.Not.Null);
+                Assert.That(profile.CameraShake.MaxCombinedStrength, Is.EqualTo(1f));
+                Assert.That(profile.CameraShake.MaximumPositionOffset, Is.GreaterThanOrEqualTo(0f));
+                Assert.That(profile.CameraShake.MaximumRotationDegrees, Is.GreaterThanOrEqualTo(0f));
+                Assert.That(profile.CameraShake.FrequencyHz, Is.GreaterThan(0f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(profile);
+            }
+        }
+
         private static void AssertGlobalContract(CombatPresentationProfile profile)
         {
             Assert.That(profile.ThreatDefinitionCount, Is.EqualTo(3));
@@ -197,28 +279,41 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(
                 profile.TryGetThreatDefinition(
-                    CombatPresentationProfile.FastThreatPresentationKey,
+                    FpgThreatPresentationKind.FastUninterceptable,
                     out CombatThreatPresentationDefinition fast),
                 Is.True);
-            Assert.That(fast.Kind, Is.EqualTo(CombatThreatPresentationKind.FastUninterceptable));
+            Assert.That(fast.Kind, Is.EqualTo(FpgThreatPresentationKind.FastUninterceptable));
+            Assert.That(
+                fast.PresentationKey,
+                Is.EqualTo(
+                    CombatPresentationProfile.DefaultFastThreatResourceKey));
             Assert.That(fast.TelegraphShape, Is.EqualTo(CombatThreatTelegraphShape.SourcePulse));
             Assert.That(fast.ShowsInterceptionMarker, Is.False);
 
             Assert.That(
                 profile.TryGetThreatDefinition(
-                    CombatPresentationProfile.InterceptableVolleyThreatPresentationKey,
+                    FpgThreatPresentationKind.InterceptableVolley,
                     out CombatThreatPresentationDefinition volley),
                 Is.True);
-            Assert.That(volley.Kind, Is.EqualTo(CombatThreatPresentationKind.InterceptableVolley));
+            Assert.That(volley.Kind, Is.EqualTo(FpgThreatPresentationKind.InterceptableVolley));
+            Assert.That(
+                volley.PresentationKey,
+                Is.EqualTo(
+                    CombatPresentationProfile
+                        .DefaultInterceptableVolleyThreatResourceKey));
             Assert.That(volley.TelegraphShape, Is.EqualTo(CombatThreatTelegraphShape.ProjectileOutline));
             Assert.That(volley.ShowsInterceptionMarker, Is.True);
 
             Assert.That(
                 profile.TryGetThreatDefinition(
-                    CombatPresentationProfile.HeavyWeakpointThreatPresentationKey,
+                    FpgThreatPresentationKind.HeavyWeakpoint,
                     out CombatThreatPresentationDefinition heavy),
                 Is.True);
-            Assert.That(heavy.Kind, Is.EqualTo(CombatThreatPresentationKind.HeavyWeakpoint));
+            Assert.That(heavy.Kind, Is.EqualTo(FpgThreatPresentationKind.HeavyWeakpoint));
+            Assert.That(
+                heavy.PresentationKey,
+                Is.EqualTo(
+                    CombatPresentationProfile.DefaultHeavyWeakpointThreatResourceKey));
             Assert.That(heavy.TelegraphShape, Is.EqualTo(CombatThreatTelegraphShape.WeakpointLock));
             Assert.That(heavy.AllowsWeakpointInterrupt, Is.True);
 
@@ -255,6 +350,7 @@ namespace FPG.Demo.Tests.EditMode
                 profile.PoolCapacities.AudioSourceCapacity,
                 Is.GreaterThanOrEqualTo(
                     CombatPresentationProfile.RequiredAudioSourceCapacity));
+            Assert.That(profile.CameraShake.MaxCombinedStrength, Is.EqualTo(1f));
         }
 
         private static T LoadRequired<T>(string path) where T : Object

@@ -68,32 +68,34 @@ namespace FPG.Demo.Unity
                 {
                     FpgEnemyAttackDefinition attack =
                         owner.GetAttackPattern(attackIndex);
-                    for (int payloadIndex = 0;
-                        payloadIndex < attack.PayloadSlots.Count;
-                        payloadIndex++)
+                    if (!attack.TryCompile(
+                            out FpgCompiledEnemySkillDefinition compiledAttack,
+                            out error))
                     {
-                        FpgEnemySkillPayloadSlot payload =
-                            attack.PayloadSlots[payloadIndex];
-                        if (payload == null
-                            || payload.Kind
-                                != FpgEnemySkillPayloadKind.Summon)
-                        {
-                            continue;
-                        }
+                        error = $"Enemy skill '{attack.SkillId}' cannot compile while building the summon graph: {error}";
+                        return false;
+                    }
 
+                    for (int actionIndex = 0;
+                        actionIndex < compiledAttack.SummonActions.Count;
+                        actionIndex++)
+                    {
+                        FpgCompiledEnemySummonPayload summon =
+                            compiledAttack.SummonActions[actionIndex]
+                                .SummonPayload;
                         int projectionIndex = FindSummonProjection(
                             summonPayloads,
-                            payload.SlotId);
+                            summon.ActionId);
                         if (projectionIndex < 0)
                         {
                             summonPayloads.Add(
                                 new SummonProjection(
-                                    payload,
+                                    summon,
                                     owner.EnemyDefinitionId));
                         }
                         else if (!summonPayloads[projectionIndex]
                             .TryAddOwner(
-                                payload,
+                                summon,
                                 owner.EnemyDefinitionId,
                                 out error))
                         {
@@ -110,25 +112,29 @@ namespace FPG.Demo.Unity
                 actionIndex++)
             {
                 SummonProjection action = summonPayloads[actionIndex];
-                FpgEnemyDefinition[] candidates =
-                    action.Payload.SummonCandidates;
-                List<string> candidateIds = new List<string>(candidates.Length);
-                for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+                FpgCompiledEnemySummonPayload summon = action.Payload;
+                List<string> candidateIds =
+                    new List<string>(summon.CandidateCount);
+                for (int candidateIndex = 0;
+                    candidateIndex < summon.CandidateCount;
+                    candidateIndex++)
                 {
-                    candidateIds.Add(candidates[candidateIndex].EnemyDefinitionId);
+                    candidateIds.Add(
+                        summon.GetCandidate(candidateIndex)
+                            .EnemyDefinitionId);
                 }
 
                 try
                 {
                     projected.Add(new FpgSummonActionData(
-                        action.Payload.SlotId,
+                        summon.ActionId,
                         action.OwnerIds,
                         candidateIds,
-                        action.Payload.MaxSummonsPerOwner,
-                        action.Payload.MaxTotalSummonsPerEncounter,
-                        action.Payload.MaxSummonRecursionDepth,
-                        action.Payload.SummonOccupancyMode,
-                        action.Payload.SummonPlacementMode));
+                        summon.MaxSummonsPerOwner,
+                        summon.MaxTotalSummonsPerEncounter,
+                        summon.MaxRecursionDepth,
+                        summon.OccupancyMode,
+                        summon.PlacementMode));
                 }
                 catch (Exception exception)
                 {
@@ -184,30 +190,30 @@ namespace FPG.Demo.Unity
                 {
                     FpgEnemyAttackDefinition attack =
                         owner.GetAttackPattern(attackIndex);
-                    for (int payloadIndex = 0;
-                        payloadIndex < attack.PayloadSlots.Count;
-                        payloadIndex++)
+                    if (!attack.TryCompile(
+                            out FpgCompiledEnemySkillDefinition compiledAttack,
+                            out error))
                     {
-                        FpgEnemySkillPayloadSlot payload =
-                            attack.PayloadSlots[payloadIndex];
-                        if (payload == null
-                            || payload.Kind
-                                != FpgEnemySkillPayloadKind.Summon)
-                        {
-                            continue;
-                        }
+                        error = $"Enemy skill '{attack.SkillId}' cannot compile while validating the enemy catalog: {error}";
+                        return false;
+                    }
 
-                        FpgEnemyDefinition[] candidates =
-                            payload.SummonCandidates;
+                    for (int actionIndex = 0;
+                        actionIndex < compiledAttack.SummonActions.Count;
+                        actionIndex++)
+                    {
+                        FpgCompiledEnemySummonPayload summon =
+                            compiledAttack.SummonActions[actionIndex]
+                                .SummonPayload;
                         for (int candidateIndex = 0;
-                            candidateIndex < candidates.Length;
+                            candidateIndex < summon.CandidateCount;
                             candidateIndex++)
                         {
-                            FpgEnemyDefinition candidate =
-                                candidates[candidateIndex];
-                            if (!members.Contains(candidate))
+                            FpgCompiledEnemySummonCandidate candidate =
+                                summon.GetCandidate(candidateIndex);
+                            if (!members.Contains(candidate.Definition))
                             {
-                                error = $"Summon payload '{payload.SlotId}' on '{owner.EnemyDefinitionId}' references "
+                                error = $"Summon action '{summon.ActionId}' on '{owner.EnemyDefinitionId}' references "
                                     + $"'{candidate.EnemyDefinitionId}', which is not in this enemy catalog.";
                                 return false;
                             }
@@ -226,7 +232,7 @@ namespace FPG.Demo.Unity
             for (int index = 0; index < values.Count; index++)
             {
                 if (string.Equals(
-                    values[index].Payload.SlotId,
+                    values[index].Payload.ActionId,
                     actionId,
                     StringComparison.Ordinal))
                 {
@@ -242,24 +248,24 @@ namespace FPG.Demo.Unity
             private readonly List<string> ownerIds = new List<string>();
 
             public SummonProjection(
-                FpgEnemySkillPayloadSlot payload,
+                FpgCompiledEnemySummonPayload payload,
                 string ownerId)
             {
                 Payload = payload;
                 ownerIds.Add(ownerId);
             }
 
-            public FpgEnemySkillPayloadSlot Payload { get; }
+            public FpgCompiledEnemySummonPayload Payload { get; }
             public IReadOnlyList<string> OwnerIds => ownerIds;
 
             public bool TryAddOwner(
-                FpgEnemySkillPayloadSlot payload,
+                FpgCompiledEnemySummonPayload payload,
                 string ownerId,
                 out string error)
             {
                 if (!HasEquivalentSummonContract(Payload, payload))
                 {
-                    error = $"Formal enemy catalog repeats summon payload ID '{payload.SlotId}' with different candidates or policies.";
+                    error = $"Formal enemy catalog repeats summon action ID '{payload.ActionId}' with different candidates or policies.";
                     return false;
                 }
 
@@ -273,35 +279,32 @@ namespace FPG.Demo.Unity
             }
 
             private static bool HasEquivalentSummonContract(
-                FpgEnemySkillPayloadSlot left,
-                FpgEnemySkillPayloadSlot right)
+                FpgCompiledEnemySummonPayload left,
+                FpgCompiledEnemySummonPayload right)
             {
-                if (left.SummonOccupancyMode
-                        != right.SummonOccupancyMode
-                    || left.SummonPlacementMode
-                        != right.SummonPlacementMode
-                    || left.SummonOwnerOutcome
-                        != right.SummonOwnerOutcome
+                if (left.OccupancyMode != right.OccupancyMode
+                    || left.PlacementMode != right.PlacementMode
+                    || left.OwnerOutcome != right.OwnerOutcome
                     || left.MaxSummonsPerOwner
                         != right.MaxSummonsPerOwner
                     || left.MaxTotalSummonsPerEncounter
                         != right.MaxTotalSummonsPerEncounter
-                    || left.MaxSummonRecursionDepth
-                        != right.MaxSummonRecursionDepth
-                    || left.SummonCandidates.Length
-                        != right.SummonCandidates.Length)
+                    || left.MaxRecursionDepth != right.MaxRecursionDepth
+                    || left.CandidateCount != right.CandidateCount)
                 {
                     return false;
                 }
 
                 for (int index = 0;
-                    index < left.SummonCandidates.Length;
+                    index < left.CandidateCount;
                     index++)
                 {
-                    if (left.SummonCandidates[index]
-                            != right.SummonCandidates[index]
-                        || left.GetSummonCandidateWeight(index)
-                            != right.GetSummonCandidateWeight(index))
+                    FpgCompiledEnemySummonCandidate leftCandidate =
+                        left.GetCandidate(index);
+                    FpgCompiledEnemySummonCandidate rightCandidate =
+                        right.GetCandidate(index);
+                    if (leftCandidate.Definition != rightCandidate.Definition
+                        || leftCandidate.Weight != rightCandidate.Weight)
                     {
                         return false;
                     }

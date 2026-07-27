@@ -8,6 +8,9 @@ namespace FPG.Demo.Run
     public sealed class SpatialPortTranscript : ISpatialDigestView
     {
         private const ulong AttackQueryConfigurationExtensionTag = 0x5152595F4D4F4445UL;
+        private const ulong ProjectileTargetingModeExtensionTag =
+            0x50524A5F544D4F44UL;
+
 
         private readonly Operation[] operations;
         private readonly QueryCandidate[] queryCandidates;
@@ -96,6 +99,64 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
+        public DomainResult TryRecordPlayerProjectileAreaQuery(
+            in PlayerProjectileAreaQueryRequest request,
+            DomainResult portResult,
+            in AttackQueryResult queryResult,
+            QueryCandidate[] candidates)
+        {
+            if (!CanAppendOperation())
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            int candidateCount = portResult.IsSuccess ? queryResult.CandidateCount : 0;
+            if (portResult.IsSuccess)
+            {
+                if (candidates == null
+                    || candidateCount < 0
+                    || candidateCount > candidates.Length)
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
+                if (queryCandidateCount + candidateCount > queryCandidates.Length)
+                {
+                    return DomainResult.Rejected(RejectReason.BufferCapacity);
+                }
+
+                for (int index = 0; index < candidateCount; index++)
+                {
+                    if (!candidates[index].IsValid)
+                    {
+                        return DomainResult.Rejected(RejectReason.InvalidState);
+                    }
+                }
+            }
+
+            int candidateOffset = queryCandidateCount;
+            for (int index = 0; index < candidateCount; index++)
+            {
+                queryCandidates[queryCandidateCount++] = candidates[index];
+            }
+
+            Operation operation = new Operation
+            {
+                Kind = SpatialDecisionKind.PlayerProjectileAreaQuery,
+                RequestHash = ComputePlayerProjectileAreaQueryRequestHash(request),
+                ResultIsSuccess = portResult.IsSuccess,
+                RejectReason = portResult.RejectReason,
+                QueryResult = queryResult,
+                QueryCandidateOffset = candidateOffset,
+                QueryCandidateCount = candidateCount
+            };
+            operation.PayloadHash = ComputePlayerProjectileAreaQueryPayloadHash(
+                operation,
+                candidateOffset,
+                candidateCount);
+            Commit(operation);
+            return DomainResult.Success;
+        }
         public DomainResult TryRecordProjectileRegister(
             in ProjectileSpawnRequest request,
             DomainResult portResult,
@@ -237,6 +298,31 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
+        internal DomainResult TryRecordTerminalPlayerProjectileAreaQueryCapacityFailure(
+            in PlayerProjectileAreaQueryRequest request)
+        {
+            if (!CanAppendTerminalCapacityFailure())
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            Operation operation = new Operation
+            {
+                Kind = SpatialDecisionKind.PlayerProjectileAreaQuery,
+                RequestHash = ComputePlayerProjectileAreaQueryRequestHash(request),
+                ResultIsSuccess = false,
+                RejectReason = RejectReason.BufferCapacity,
+                QueryResult = AttackQueryResult.Empty,
+                QueryCandidateOffset = queryCandidateCount,
+                QueryCandidateCount = 0
+            };
+            operation.PayloadHash = ComputePlayerProjectileAreaQueryPayloadHash(
+                operation,
+                queryCandidateCount,
+                0);
+            Commit(operation);
+            return DomainResult.Success;
+        }
         internal DomainResult TryRecordTerminalProjectileRegisterCapacityFailure(
             in ProjectileSpawnRequest request)
         {
@@ -324,6 +410,41 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
+        internal DomainResult ReplayPlayerProjectileAreaQuery(
+            in PlayerProjectileAreaQueryRequest request,
+            QueryCandidate[] output,
+            out AttackQueryResult result)
+        {
+            result = AttackQueryResult.Empty;
+            if (!TryPeekExpected(
+                SpatialDecisionKind.PlayerProjectileAreaQuery,
+                ComputePlayerProjectileAreaQueryRequestHash(request),
+                out Operation operation))
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            if (!operation.ResultIsSuccess)
+            {
+                replayCursor++;
+                result = operation.QueryResult;
+                return DomainResult.Rejected(operation.RejectReason);
+            }
+
+            if (output == null || output.Length < operation.QueryCandidateCount)
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            for (int index = 0; index < operation.QueryCandidateCount; index++)
+            {
+                output[index] = queryCandidates[operation.QueryCandidateOffset + index];
+            }
+
+            replayCursor++;
+            result = operation.QueryResult;
+            return DomainResult.Success;
+        }
         internal DomainResult ReplayProjectileRegister(
             in ProjectileSpawnRequest request,
             out ProjectilePathSnapshot path)
@@ -526,6 +647,57 @@ namespace FPG.Demo.Run
             return hash;
         }
 
+        private ulong ComputePlayerProjectileAreaQueryPayloadHash(
+            Operation operation,
+            int offset,
+            int count)
+        {
+            ulong hash = StableHash.Mix(0x4650475F50514150UL);
+            hash = StableHash.Append(hash, unchecked((ulong)operation.QueryResult.CandidateCount));
+            hash = StableHash.Append(hash, unchecked((ulong)operation.QueryResult.DroppedCandidateCount));
+            for (int index = 0; index < count; index++)
+            {
+                hash = AppendCandidate(hash, queryCandidates[offset + index]);
+            }
+
+            return hash;
+        }
+
+        private static ulong ComputePlayerProjectileAreaQueryRequestHash(
+            in PlayerProjectileAreaQueryRequest request)
+        {
+            ulong hash = StableHash.Mix(0x4650475F50514152UL);
+            hash = StableHash.Append(hash, unchecked((ulong)request.Tick.Value));
+
+            AttackSnapshot attack = request.Attack;
+            hash = StableHash.Append(hash, unchecked((ulong)attack.AttackId.Value));
+            hash = StableHash.Append(hash, unchecked((ulong)attack.ShotId.Value));
+            hash = StableHash.Append(hash, unchecked((ulong)attack.DefinitionId));
+            hash = StableHash.Append(hash, unchecked((ulong)attack.OwnerId.Value));
+            hash = StableHash.Append(hash, (ulong)attack.Team);
+            hash = StableHash.Append(hash, unchecked((ulong)attack.ReleaseTick.Value));
+            hash = AppendDamage(hash, attack.DamageSpec);
+            hash = StableHash.Append(hash, (ulong)attack.QueryPolicy);
+            hash = StableHash.Append(hash, unchecked((ulong)attack.PayloadCount));
+            hash = StableHash.Append(hash, unchecked((ulong)attack.MaxImpactCount));
+            hash = StableHash.Append(hash, unchecked((ulong)attack.AmmoCost));
+            hash = StableHash.Append(hash, unchecked((ulong)attack.RngVersion));
+            if (attack.QueryMode != AttackQueryMode.Legacy
+                || attack.AdditionalPenetrationCount != 0
+                || attack.AreaCombatantLimit != 0
+                || attack.AreaProjectileLimit != 0
+                || attack.AllowedTargetKinds != AttackSnapshot.DefaultAllowedTargetKinds)
+            {
+                hash = StableHash.Append(hash, AttackQueryConfigurationExtensionTag);
+                hash = StableHash.Append(hash, (ulong)attack.QueryMode);
+                hash = StableHash.Append(hash, unchecked((ulong)attack.AdditionalPenetrationCount));
+                hash = StableHash.Append(hash, unchecked((ulong)attack.AreaCombatantLimit));
+                hash = StableHash.Append(hash, unchecked((ulong)attack.AreaProjectileLimit));
+                hash = StableHash.Append(hash, (ulong)attack.AllowedTargetKinds);
+            }
+
+            return AppendVector(hash, request.Center);
+        }
         private static ulong ComputeProjectileSpawnRequestHash(in ProjectileSpawnRequest request)
         {
             ulong hash = StableHash.Mix(0x4650475F5053504EUL);
@@ -539,7 +711,16 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)(int)request.Team));
             hash = StableHash.Append(hash, unchecked((ulong)request.DefinitionId));
             hash = StableHash.Append(hash, unchecked((ulong)request.SweepRadiusKey));
-            hash = StableHash.Append(hash, unchecked((ulong)request.PresentationKey));
+            hash = StableHash.Append(hash, (ulong)request.PresentationKind);
+            if (request.TargetingMode != ProjectileTargetingMode.LockedTarget)
+            {
+                hash = StableHash.Append(
+                    hash,
+                    ProjectileTargetingModeExtensionTag);
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)(int)request.TargetingMode));
+            }
             hash = StableHash.Append(hash, request.Interceptable ? 1UL : 0UL);
             if (request.HasExplicitPath)
             {
@@ -696,6 +877,53 @@ namespace FPG.Demo.Run
         }
     }
 
+    public sealed class RecordingPlayerProjectileAreaQueryPort :
+        IPlayerProjectileAreaQueryPort
+    {
+        private readonly IPlayerProjectileAreaQueryPort inner;
+        private readonly SpatialPortTranscript transcript;
+
+        public RecordingPlayerProjectileAreaQueryPort(
+            IPlayerProjectileAreaQueryPort inner,
+            SpatialPortTranscript transcript)
+        {
+            this.inner = inner ?? throw new ArgumentNullException(nameof(inner));
+            this.transcript = transcript ?? throw new ArgumentNullException(nameof(transcript));
+        }
+
+        public DomainResult QueryAreaAtPoint(
+            in PlayerProjectileAreaQueryRequest request,
+            QueryCandidate[] output,
+            out AttackQueryResult result)
+        {
+            DomainResult capacity = transcript.ValidateCanRecordOperation();
+            if (!capacity.IsSuccess)
+            {
+                result = AttackQueryResult.Empty;
+                DomainResult recordedFailure =
+                    transcript.TryRecordTerminalPlayerProjectileAreaQueryCapacityFailure(
+                        request);
+                return recordedFailure.IsSuccess ? capacity : recordedFailure;
+            }
+
+            DomainResult portResult = inner.QueryAreaAtPoint(request, output, out result);
+            DomainResult recorded = transcript.TryRecordPlayerProjectileAreaQuery(
+                request,
+                portResult,
+                result,
+                output);
+            if (!recorded.IsSuccess && recorded.RejectReason == RejectReason.BufferCapacity)
+            {
+                result = AttackQueryResult.Empty;
+                DomainResult recordedFailure =
+                    transcript.TryRecordTerminalPlayerProjectileAreaQueryCapacityFailure(
+                        request);
+                return recordedFailure.IsSuccess ? recorded : recordedFailure;
+            }
+
+            return recorded.IsSuccess ? portResult : recorded;
+        }
+    }
     public sealed class RecordingProjectileWorldPort : IProjectileWorldPort
     {
         private readonly IProjectileWorldPort inner;
@@ -867,6 +1095,24 @@ namespace FPG.Demo.Run
         }
     }
 
+    public sealed class ReplayPlayerProjectileAreaQueryPort :
+        IPlayerProjectileAreaQueryPort
+    {
+        private readonly SpatialPortTranscript transcript;
+
+        public ReplayPlayerProjectileAreaQueryPort(SpatialPortTranscript transcript)
+        {
+            this.transcript = transcript ?? throw new ArgumentNullException(nameof(transcript));
+        }
+
+        public DomainResult QueryAreaAtPoint(
+            in PlayerProjectileAreaQueryRequest request,
+            QueryCandidate[] output,
+            out AttackQueryResult result)
+        {
+            return transcript.ReplayPlayerProjectileAreaQuery(request, output, out result);
+        }
+    }
     public sealed class ReplayProjectileWorldPort : IProjectileWorldPort
     {
         private readonly SpatialPortTranscript transcript;

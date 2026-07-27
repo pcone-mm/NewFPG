@@ -5,7 +5,73 @@ namespace FPG.Demo.Skills
     public static class FpgSkillRuntimeConstants
     {
         public const int TickRate = 60;
-        public const int GameplayHashVersion = 1;
+        public const int GameplayHashVersion = 4;
+        public const int PresentationHashVersion = 1;
+    }
+
+    public readonly struct FpgPresentationHandle :
+        IEquatable<FpgPresentationHandle>,
+        IComparable<FpgPresentationHandle>
+    {
+        public FpgPresentationHandle(int value)
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value));
+            }
+
+            Value = value;
+        }
+
+        public int Value { get; }
+        public bool IsValid => Value > 0;
+
+        public int CompareTo(FpgPresentationHandle other)
+        {
+            return Value.CompareTo(other.Value);
+        }
+
+        public bool Equals(FpgPresentationHandle other)
+        {
+            return Value == other.Value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is FpgPresentationHandle other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return Value;
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
+
+        public static bool operator ==(
+            FpgPresentationHandle left,
+            FpgPresentationHandle right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(
+            FpgPresentationHandle left,
+            FpgPresentationHandle right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
+    public enum FpgActivePresentationKind
+    {
+        None = 0,
+        Vfx = 1,
+        Audio = 2,
+        CameraShake = 3
     }
 
     public enum FpgSkillAnimationPlaybackMode
@@ -114,10 +180,19 @@ namespace FPG.Demo.Skills
     public enum FpgSkillEventKind
     {
         None = 0,
-        GameplayPayload = 1,
-        PresentationCue = 2,
+        GameplayAction = 1,
         WarningStarted = 3,
-        WarningEnded = 4
+        WarningEnded = 4,
+        ActivePresentation = 5
+    }
+
+    public enum FpgSkillActionKind
+    {
+        None = 0,
+        Attack = 1,
+        LaunchProjectile = 2,
+        CommitReload = 3,
+        SummonActors = 4
     }
 
     public enum FpgSkillSequenceKind
@@ -129,15 +204,6 @@ namespace FPG.Demo.Skills
         Release = 4,
         Cancel = 5
     }
-
-    public enum FpgSkillPhaseKind
-    {
-        None = 0,
-        Startup = 1,
-        Active = 2,
-        Recovery = 3
-    }
-
 
     public enum FpgSkillValidationError
     {
@@ -151,26 +217,23 @@ namespace FPG.Demo.Skills
         MissingExecuteSequence,
         InvalidDurationTicks,
         InvalidMainAnimation,
-        InvalidPhaseId,
-        DuplicatePhaseId,
-        InvalidPhaseKind,
-        DuplicatePhaseKind,
-        PhaseTickOutOfRange,
-        InvalidPhaseOrder,
-        NullEvents,
+        NullEvents = 16,
         InvalidEventId,
         DuplicateEventId,
         EventTickOutOfRange,
         InvalidEventKind,
         DuplicateEventSortOrder,
-        InvalidPayloadSlotId,
-        InvalidCueId,
         InvalidWarningId,
         InvalidSortOrder,
         InvalidSocketId,
         InvalidBoundGameplayEventId,
         InvalidTargetSource,
-        InvalidAnimationPlayback
+        InvalidAnimationPlayback,
+        InvalidActionKind,
+        InvalidActionIndex,
+        InvalidActivePresentationKind,
+        InvalidPresentationHandle,
+        InvalidPresentationTrackId
     }
 
     public readonly struct FpgSkillValidationResult

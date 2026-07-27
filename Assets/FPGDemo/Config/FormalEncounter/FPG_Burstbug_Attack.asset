@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
   m_Name: FPG_Burstbug_Attack
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
+  authoringSchemaVersion: 3
   skillId: burstbug-fast
   displayName: Burstbug Fast Attack
   designerNotes: Migrated to the unified 60Hz skill timeline. Legacy attack tick
@@ -26,64 +27,81 @@ MonoBehaviour:
     animationStartTick: 0
     animationEndTick: 66
     sourceAnimationDurationTicks: 0
-    phases:
-    - phaseId: startup
-      kind: 1
-      startTick: 0
-      endTick: 36
-    - phaseId: active
-      kind: 2
-      startTick: 36
-      endTick: 36
-    - phaseId: recovery
-      kind: 3
-      startTick: 36
-      endTick: 66
-    logicEvents:
+    attackEvents: []
+    projectileEvents:
     - eventId: event.burstbug-fast.attack.0
       tick: 36
-      payloadSlotId: payload.burstbug-fast
       authoredOrdinal: 0
       socketId: 
       targetSource: 2
       targetOffset: {x: 0, y: 0, z: 0}
-    presentationCues: []
+      impactMode: 2
+      ammoCost: 0
+      baseDamage: 28
+      breakDamage: 0
+      weakpointDamageMultiplierBasisPoints: 10000
+      weakpointBreakMultiplierBasisPoints: 10000
+      threatDefinitionId: 201
+      projectileDefinitionId: 301
+      projectileCount: 1
+      projectileFlightTicks: 36
+      projectileLifetimeTicks: 51
+      projectileMaxHitPoints: 0
+      projectileInterceptable: 0
+      projectileBudgetUnits: 1
+      projectileSweepRadiusKey: 250
+      threatPresentationKind: 0
+      areaCombatantLimit: 0
+      areaProjectileLimit: 0
+      allowedTargetKinds: 0
+      flightVfx:
+        rid: 1908295348123337097
+      collisionPresentation:
+        rid: 1908295348123337098
+    reloadEvents: []
+    summonEvents: []
+    activePresentationTracks: []
     warnings:
     - eventId: warning.burstbug-fast
       warningId: enemy-source-fast
       startTick: 0
       endTick: 36
-      authoredOrdinal: 0
+      authoredOrdinal: 1
       socketId: 
   priority: 0
   firstReadyOffsetTicks: 120
   sequenceCooldownTicks: 660
-  payloadSlots:
-  - slotId: payload.burstbug-fast
-    displayName: Burstbug Projectile
-    kind: 1
-    threatDefinitionId: 201
-    baseDamage: 28
-    breakDamage: 0
-    weakpointDamageMultiplierBasisPoints: 10000
-    weakpointBreakMultiplierBasisPoints: 10000
-    projectileDefinitionId: 301
-    projectileCount: 1
-    projectileFlightTicks: 36
-    projectileLifetimeTicks: 51
-    projectileMaxHitPoints: 0
-    projectileInterceptable: 0
-    projectileBudgetUnits: 1
-    projectilePresentationKey: 1
-    projectileSweepRadiusKey: 250
-    timedImpactTargetPolicy: 0
-    timedImpactDelayTicks: 0
-    timedImpactPresentationKey: 1
-    summonCandidates: []
-    summonCandidateWeights: 
-    summonOccupancyMode: 0
-    summonPlacementMode: 0
-    summonOwnerOutcome: 0
-    maxSummonsPerOwner: 0
-    maxTotalSummonsPerEncounter: 0
-    maxSummonRecursionDepth: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 1908295348123337097
+      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        prefab: {fileID: 3932298295165595242, guid: f141a155979731941a6301177ed6a274, type: 3}
+        durationSeconds: 3
+        scale: {x: 1, y: 1, z: 1}
+        rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 1908295348123337098
+      type: {class: FpgImpactPresentationBundleDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        baseVfx:
+          rid: 1908295348123337099
+        baseAudio:
+          rid: -2
+        baseCameraShake:
+          rid: -2
+        weakpointVfxOverride:
+          rid: -2
+        weakpointAudioOverride:
+          rid: -2
+        weakpointCameraShakeOverride:
+          rid: -2
+    - rid: 1908295348123337099
+      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        prefab: {fileID: 913033182220537677, guid: 230b092e9fe73c34abcc405d573af03b, type: 3}
+        durationSeconds: 1
+        scale: {x: 1, y: 1, z: 1}
+        rotationOffsetEuler: {x: 0, y: 0, z: 0}

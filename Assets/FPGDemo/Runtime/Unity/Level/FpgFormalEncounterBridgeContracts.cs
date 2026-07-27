@@ -148,9 +148,6 @@ namespace FPG.Demo.Unity
         bool TrySetSkillSequenceFrame(
             in FpgFormalEnemySkillSequenceFrame frame);
 
-        bool TryPresentSkillCue(
-            in FpgFormalEnemySkillCuePresentationEvent cueEvent);
-
         bool TrySetSkillWarning(
             in FpgFormalEnemySkillWarningPresentationEvent warningEvent);
 
@@ -159,9 +156,6 @@ namespace FPG.Demo.Unity
 
     public interface IFpgFormalEnemySkillPresentationConsumer
     {
-        bool TryPresentEnemySkillCue(
-            in FpgFormalEnemySkillCuePresentationEvent cueEvent);
-
         bool TrySetEnemySkillWarning(
             in FpgFormalEnemySkillWarningPresentationEvent warningEvent);
 

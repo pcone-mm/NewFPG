@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
   m_Name: FPG_Luan_Attack_Summon
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
+  authoringSchemaVersion: 3
   skillId: luan-summon
   displayName: Luan Summon
   designerNotes: Migrated to the unified 60Hz skill timeline. Legacy attack tick
@@ -26,61 +27,36 @@ MonoBehaviour:
     animationStartTick: 0
     animationEndTick: 44
     sourceAnimationDurationTicks: 0
-    phases:
-    - phaseId: startup
-      kind: 1
-      startTick: 0
-      endTick: 44
-    - phaseId: active
-      kind: 2
-      startTick: 44
-      endTick: 44
-    logicEvents:
+    attackEvents: []
+    projectileEvents: []
+    reloadEvents: []
+    summonEvents:
     - eventId: event.luan-summon.attack.0
       tick: 44
-      payloadSlotId: payload.luan-summon
       authoredOrdinal: 0
       socketId: 
       targetSource: 2
       targetOffset: {x: 0, y: 0, z: 0}
-    presentationCues: []
+      summonCandidates:
+      - {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}
+      summonCandidateWeights: 01000000
+      summonOccupancyMode: 1
+      summonPlacementMode: 1
+      summonOwnerOutcome: 1
+      maxSummonsPerOwner: 0
+      maxTotalSummonsPerEncounter: 0
+      maxSummonRecursionDepth: 1
+    activePresentationTracks: []
     warnings:
     - eventId: warning.luan-summon
       warningId: enemy-summon-warning
       startTick: 0
       endTick: 44
-      authoredOrdinal: 0
+      authoredOrdinal: 1
       socketId: 
   priority: 0
   firstReadyOffsetTicks: 240
   sequenceCooldownTicks: 240
-  payloadSlots:
-  - slotId: payload.luan-summon
-    displayName: Summon Hudie
-    kind: 3
-    threatDefinitionId: 1003
-    baseDamage: 0
-    breakDamage: 0
-    weakpointDamageMultiplierBasisPoints: 10000
-    weakpointBreakMultiplierBasisPoints: 10000
-    projectileDefinitionId: 1
-    projectileCount: 1
-    projectileFlightTicks: 30
-    projectileLifetimeTicks: 45
-    projectileMaxHitPoints: 0
-    projectileInterceptable: 0
-    projectileBudgetUnits: 1
-    projectilePresentationKey: 103
-    projectileSweepRadiusKey: 103
-    timedImpactTargetPolicy: 0
-    timedImpactDelayTicks: 0
-    timedImpactPresentationKey: 103
-    summonCandidates:
-    - {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}
-    summonCandidateWeights: 01000000
-    summonOccupancyMode: 1
-    summonPlacementMode: 1
-    summonOwnerOutcome: 1
-    maxSummonsPerOwner: 0
-    maxTotalSummonsPerEncounter: 0
-    maxSummonRecursionDepth: 1
+  references:
+    version: 2
+    RefIds: []

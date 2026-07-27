@@ -9,24 +9,52 @@ namespace FPG.Demo.Skills
         public FpgCompiledSkillEvent(
             int eventId,
             int tick,
-            FpgSkillEventKind kind,
-            int payloadSlotId,
-            int cueId,
+            FpgSkillEventKind warningKind,
             int warningId,
+            int sortOrder = 0,
+            int socketId = 0)
+        {
+            if (warningKind != FpgSkillEventKind.WarningStarted
+                && warningKind != FpgSkillEventKind.WarningEnded)
+            {
+                throw new ArgumentOutOfRangeException(nameof(warningKind));
+            }
+
+            EventId = eventId;
+            Tick = tick;
+            Kind = warningKind;
+            ActionKind = FpgSkillActionKind.None;
+            ActionIndex = -1;
+            WarningId = warningId;
+            SortOrder = sortOrder;
+            SocketId = socketId;
+            TargetSource = FpgSkillTargetSource.None;
+            Offset = default(FpgSkillOffset);
+            BoundGameplayEventId = 0;
+            ActivePresentationKind = FpgActivePresentationKind.None;
+            PresentationHandle = default(FpgPresentationHandle);
+            PresentationTrackId = 0;
+            PresentationContentHash = 0UL;
+        }
+
+        public FpgCompiledSkillEvent(
+            int eventId,
+            int tick,
+            FpgSkillActionKind actionKind,
+            int actionIndex,
             int sortOrder = 0,
             int socketId = 0,
             FpgSkillTargetSource targetSource = FpgSkillTargetSource.CurrentAim,
             int offsetXMillimeters = 0,
             int offsetYMillimeters = 0,
-            int offsetZMillimeters = 0,
-            int boundGameplayEventId = 0)
+            int offsetZMillimeters = 0)
         {
             EventId = eventId;
             Tick = tick;
-            Kind = kind;
-            PayloadSlotId = payloadSlotId;
-            CueId = cueId;
-            WarningId = warningId;
+            Kind = FpgSkillEventKind.GameplayAction;
+            ActionKind = actionKind;
+            ActionIndex = actionIndex;
+            WarningId = 0;
             SortOrder = sortOrder;
             SocketId = socketId;
             TargetSource = targetSource;
@@ -34,7 +62,39 @@ namespace FPG.Demo.Skills
                 offsetXMillimeters,
                 offsetYMillimeters,
                 offsetZMillimeters);
+            BoundGameplayEventId = 0;
+            ActivePresentationKind = FpgActivePresentationKind.None;
+            PresentationHandle = default(FpgPresentationHandle);
+            PresentationTrackId = 0;
+            PresentationContentHash = 0UL;
+        }
+
+        public FpgCompiledSkillEvent(
+            int eventId,
+            int tick,
+            FpgActivePresentationKind activePresentationKind,
+            FpgPresentationHandle presentationHandle,
+            int presentationTrackId,
+            ulong presentationContentHash,
+            int sortOrder = 0,
+            int socketId = 0,
+            int boundGameplayEventId = 0)
+        {
+            EventId = eventId;
+            Tick = tick;
+            Kind = FpgSkillEventKind.ActivePresentation;
+            ActionKind = FpgSkillActionKind.None;
+            ActionIndex = -1;
+            WarningId = 0;
+            SortOrder = sortOrder;
+            SocketId = socketId;
+            TargetSource = FpgSkillTargetSource.None;
+            Offset = default(FpgSkillOffset);
             BoundGameplayEventId = boundGameplayEventId;
+            ActivePresentationKind = activePresentationKind;
+            PresentationHandle = presentationHandle;
+            PresentationTrackId = presentationTrackId;
+            PresentationContentHash = presentationContentHash;
         }
 
         public int EventId { get; }
@@ -43,9 +103,9 @@ namespace FPG.Demo.Skills
 
         public FpgSkillEventKind Kind { get; }
 
-        public int PayloadSlotId { get; }
+        public FpgSkillActionKind ActionKind { get; }
 
-        public int CueId { get; }
+        public int ActionIndex { get; }
 
         public int WarningId { get; }
 
@@ -59,6 +119,14 @@ namespace FPG.Demo.Skills
 
         public int BoundGameplayEventId { get; }
 
+        public FpgActivePresentationKind ActivePresentationKind { get; }
+
+        public FpgPresentationHandle PresentationHandle { get; }
+
+        public int PresentationTrackId { get; }
+
+        public ulong PresentationContentHash { get; }
+
         public bool IsValid => FpgSkillCompiler.ValidateEvent(this, int.MaxValue, -1).IsValid;
 
         public bool Equals(FpgCompiledSkillEvent other)
@@ -66,14 +134,18 @@ namespace FPG.Demo.Skills
             return EventId == other.EventId
                 && Tick == other.Tick
                 && Kind == other.Kind
-                && PayloadSlotId == other.PayloadSlotId
-                && CueId == other.CueId
+                && ActionKind == other.ActionKind
+                && ActionIndex == other.ActionIndex
                 && WarningId == other.WarningId
                 && SortOrder == other.SortOrder
                 && SocketId == other.SocketId
                 && TargetSource == other.TargetSource
                 && Offset.Equals(other.Offset)
-                && BoundGameplayEventId == other.BoundGameplayEventId;
+                && BoundGameplayEventId == other.BoundGameplayEventId
+                && ActivePresentationKind == other.ActivePresentationKind
+                && PresentationHandle == other.PresentationHandle
+                && PresentationTrackId == other.PresentationTrackId
+                && PresentationContentHash == other.PresentationContentHash;
         }
 
         public override bool Equals(object obj)
@@ -88,14 +160,18 @@ namespace FPG.Demo.Skills
                 int hash = EventId;
                 hash = (hash * 397) ^ Tick;
                 hash = (hash * 397) ^ (int)Kind;
-                hash = (hash * 397) ^ PayloadSlotId;
-                hash = (hash * 397) ^ CueId;
+                hash = (hash * 397) ^ (int)ActionKind;
+                hash = (hash * 397) ^ ActionIndex;
                 hash = (hash * 397) ^ WarningId;
                 hash = (hash * 397) ^ SortOrder;
                 hash = (hash * 397) ^ SocketId;
                 hash = (hash * 397) ^ (int)TargetSource;
                 hash = (hash * 397) ^ Offset.GetHashCode();
-                return (hash * 397) ^ BoundGameplayEventId;
+                hash = (hash * 397) ^ BoundGameplayEventId;
+                hash = (hash * 397) ^ (int)ActivePresentationKind;
+                hash = (hash * 397) ^ PresentationHandle.GetHashCode();
+                hash = (hash * 397) ^ PresentationTrackId;
+                return (hash * 397) ^ PresentationContentHash.GetHashCode();
             }
         }
 
@@ -110,67 +186,124 @@ namespace FPG.Demo.Skills
         }
     }
 
-    public readonly struct FpgCompiledSkillPhase : IEquatable<FpgCompiledSkillPhase>
+    public readonly struct FpgCompiledImpactPresentation
     {
-        public FpgCompiledSkillPhase(
-            int phaseId,
-            FpgSkillPhaseKind kind,
-            int startTick,
-            int endTick)
+        public FpgCompiledImpactPresentation(
+            FpgPresentationHandle baseVfx,
+            FpgPresentationHandle baseAudio,
+            FpgPresentationHandle baseCameraShake,
+            FpgPresentationHandle weakpointVfxOverride,
+            FpgPresentationHandle weakpointAudioOverride,
+            FpgPresentationHandle weakpointCameraShakeOverride,
+            ulong presentationContentHash)
         {
-            PhaseId = phaseId;
-            Kind = kind;
-            StartTick = startTick;
-            EndTick = endTick;
+            BaseVfx = baseVfx;
+            BaseAudio = baseAudio;
+            BaseCameraShake = baseCameraShake;
+            WeakpointVfxOverride = weakpointVfxOverride;
+            WeakpointAudioOverride = weakpointAudioOverride;
+            WeakpointCameraShakeOverride = weakpointCameraShakeOverride;
+            PresentationContentHash = presentationContentHash;
         }
 
-        public int PhaseId { get; }
+        public FpgPresentationHandle BaseVfx { get; }
+        public FpgPresentationHandle BaseAudio { get; }
+        public FpgPresentationHandle BaseCameraShake { get; }
+        public FpgPresentationHandle WeakpointVfxOverride { get; }
+        public FpgPresentationHandle WeakpointAudioOverride { get; }
+        public FpgPresentationHandle WeakpointCameraShakeOverride { get; }
+        public ulong PresentationContentHash { get; }
 
-        public FpgSkillPhaseKind Kind { get; }
+        public bool HasAny => BaseVfx.IsValid
+            || BaseAudio.IsValid
+            || BaseCameraShake.IsValid
+            || WeakpointVfxOverride.IsValid
+            || WeakpointAudioOverride.IsValid
+            || WeakpointCameraShakeOverride.IsValid;
+    }
 
-        public int StartTick { get; }
-
-        public int EndTick { get; }
-
-        public bool IsValid =>
-            FpgSkillCompiler.ValidatePhase(this, int.MaxValue, -1).IsValid;
-
-        public bool Equals(FpgCompiledSkillPhase other)
+    public readonly struct FpgCompiledSkillActionPresentation
+    {
+        public FpgCompiledSkillActionPresentation(
+            FpgSkillActionKind actionKind,
+            int actionIndex,
+            FpgPresentationHandle trajectoryVfx,
+            FpgCompiledImpactPresentation impact,
+            FpgPresentationHandle flightVfx,
+            FpgCompiledImpactPresentation collision,
+            int successAnimation,
+            ulong presentationContentHash)
         {
-            return PhaseId == other.PhaseId
-                && Kind == other.Kind
-                && StartTick == other.StartTick
-                && EndTick == other.EndTick;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is FpgCompiledSkillPhase other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
+            if (!Enum.IsDefined(typeof(FpgSkillActionKind), actionKind)
+                || actionKind == FpgSkillActionKind.None
+                || actionIndex < 0
+                || successAnimation < 0)
             {
-                int hash = PhaseId;
-                hash = (hash * 397) ^ (int)Kind;
-                hash = (hash * 397) ^ StartTick;
-                return (hash * 397) ^ EndTick;
+                throw new ArgumentOutOfRangeException(nameof(actionKind));
+            }
+
+            ActionKind = actionKind;
+            ActionIndex = actionIndex;
+            TrajectoryVfx = trajectoryVfx;
+            Impact = impact;
+            FlightVfx = flightVfx;
+            Collision = collision;
+            SuccessAnimation = successAnimation;
+            PresentationContentHash = presentationContentHash;
+
+            if (!HasAny || !HasValidShape())
+            {
+                throw new ArgumentException(
+                    "Compiled action presentation does not match its action kind.",
+                    nameof(actionKind));
             }
         }
 
-        public static bool operator ==(
-            FpgCompiledSkillPhase left,
-            FpgCompiledSkillPhase right)
-        {
-            return left.Equals(right);
-        }
+        public FpgSkillActionKind ActionKind { get; }
+        public int ActionIndex { get; }
+        public FpgPresentationHandle TrajectoryVfx { get; }
+        public FpgCompiledImpactPresentation Impact { get; }
+        public FpgPresentationHandle FlightVfx { get; }
+        public FpgCompiledImpactPresentation Collision { get; }
+        public int SuccessAnimation { get; }
+        public ulong PresentationContentHash { get; }
 
-        public static bool operator !=(
-            FpgCompiledSkillPhase left,
-            FpgCompiledSkillPhase right)
+        public bool HasAny => TrajectoryVfx.IsValid
+            || Impact.HasAny
+            || FlightVfx.IsValid
+            || Collision.HasAny
+            || SuccessAnimation > 0;
+
+        public bool IsValid => ActionIndex >= 0
+            && Enum.IsDefined(typeof(FpgSkillActionKind), ActionKind)
+            && ActionKind != FpgSkillActionKind.None
+            && HasAny
+            && HasValidShape();
+
+        private bool HasValidShape()
         {
-            return !left.Equals(right);
+            switch (ActionKind)
+            {
+                case FpgSkillActionKind.Attack:
+                    return !FlightVfx.IsValid
+                        && !Collision.HasAny
+                        && SuccessAnimation == 0;
+
+                case FpgSkillActionKind.LaunchProjectile:
+                    return !TrajectoryVfx.IsValid
+                        && !Impact.HasAny
+                        && SuccessAnimation == 0;
+
+                case FpgSkillActionKind.CommitReload:
+                    return !TrajectoryVfx.IsValid
+                        && !Impact.HasAny
+                        && !FlightVfx.IsValid
+                        && !Collision.HasAny
+                        && SuccessAnimation > 0;
+
+                default:
+                    return false;
+            }
         }
     }
 
@@ -178,11 +311,13 @@ namespace FPG.Demo.Skills
     {
         private static readonly FpgCompiledSkillEvent[] EmptyEvents =
             Array.Empty<FpgCompiledSkillEvent>();
-        private static readonly FpgCompiledSkillPhase[] EmptyPhases =
-            Array.Empty<FpgCompiledSkillPhase>();
+        private static readonly FpgCompiledSkillActionPresentation[]
+            EmptyActionPresentations =
+                Array.Empty<FpgCompiledSkillActionPresentation>();
         private static readonly int[] EmptyAnimations = Array.Empty<int>();
         private readonly FpgCompiledSkillEvent[] events;
-        private readonly FpgCompiledSkillPhase[] phases;
+        private readonly FpgCompiledSkillActionPresentation[]
+            actionPresentations;
         private readonly int[] animationVariants;
 
         public FpgCompiledSkillSequence(
@@ -231,27 +366,6 @@ namespace FPG.Demo.Skills
             int durationTicks,
             int mainAnimation,
             bool loop,
-            FpgCompiledSkillPhase[] phases,
-            FpgCompiledSkillEvent[] events)
-            : this(
-                kind,
-                durationTicks,
-                mainAnimation,
-                loop,
-                FpgSkillAnimationPlaybackMode.NaturalSpeed,
-                0,
-                durationTicks,
-                null,
-                phases,
-                events)
-        {
-        }
-
-        public FpgCompiledSkillSequence(
-            FpgSkillSequenceKind kind,
-            int durationTicks,
-            int mainAnimation,
-            bool loop,
             FpgSkillAnimationPlaybackMode animationPlaybackMode,
             int animationStartTick,
             int animationEndTick,
@@ -266,8 +380,8 @@ namespace FPG.Demo.Skills
                 animationStartTick,
                 animationEndTick,
                 alternateAnimations,
-                null,
-                events)
+                events,
+                null)
         {
         }
 
@@ -280,15 +394,13 @@ namespace FPG.Demo.Skills
             int animationStartTick,
             int animationEndTick,
             int[] alternateAnimations,
-            FpgCompiledSkillPhase[] phases,
-            FpgCompiledSkillEvent[] events)
+            FpgCompiledSkillEvent[] events,
+            FpgCompiledSkillActionPresentation[] actionPresentations)
         {
-            FpgCompiledSkillPhase[] phaseValues = phases ?? EmptyPhases;
             FpgSkillValidationResult validation = FpgSkillCompiler.ValidateSequence(
                 kind,
                 durationTicks,
                 mainAnimation,
-                phaseValues,
                 events,
                 -1);
             if (!validation.IsValid)
@@ -317,19 +429,26 @@ namespace FPG.Demo.Skills
             animationVariants = CopyAnimationVariants(
                 mainAnimation,
                 alternateAnimations);
-            this.phases = FpgSkillCompiler.CopyPhases(phaseValues);
             this.events = FpgSkillCompiler.CopyAndSortEvents(events);
+            this.actionPresentations =
+                FpgSkillCompiler.CopyAndSortActionPresentations(
+                    actionPresentations
+                        ?? EmptyActionPresentations);
             GameplayHash = FpgSkillCompiler.ComputeSequenceHash(
                 kind,
                 durationTicks,
-                mainAnimation,
                 loop,
-                animationPlaybackMode,
-                animationStartTick,
-                animationEndTick,
-                animationVariants,
-                this.phases,
                 this.events);
+            PresentationHash =
+                FpgSkillCompiler.ComputeSequencePresentationHash(
+                    kind,
+                    mainAnimation,
+                    animationPlaybackMode,
+                    animationStartTick,
+                    animationEndTick,
+                    animationVariants,
+                    this.events,
+                    this.actionPresentations);
         }
 
         public FpgSkillSequenceKind Kind { get; }
@@ -352,16 +471,21 @@ namespace FPG.Demo.Skills
         public int AnimationVariantCount =>
             animationVariants == null ? 0 : animationVariants.Length;
 
-        public IReadOnlyList<FpgCompiledSkillPhase> Phases =>
-            phases ?? EmptyPhases;
-
-        public int PhaseCount => phases == null ? 0 : phases.Length;
-
         public IReadOnlyList<FpgCompiledSkillEvent> Events => events ?? EmptyEvents;
 
         public int EventCount => events == null ? 0 : events.Length;
 
+        public IReadOnlyList<FpgCompiledSkillActionPresentation>
+            ActionPresentations =>
+                actionPresentations ?? EmptyActionPresentations;
+
+        public int ActionPresentationCount => actionPresentations == null
+            ? 0
+            : actionPresentations.Length;
+
         public ulong GameplayHash { get; }
+
+        public ulong PresentationHash { get; }
 
         public bool IsValid => Kind != FpgSkillSequenceKind.None
             && DurationTicks >= 0
@@ -374,8 +498,8 @@ namespace FPG.Demo.Skills
             && AnimationEndTick <= DurationTicks
             && animationVariants != null
             && animationVariants.Length > 0
-            && phases != null
-            && events != null;
+            && events != null
+            && actionPresentations != null;
 
         public int GetAnimationVariant(int index)
         {
@@ -403,16 +527,6 @@ namespace FPG.Demo.Skills
             return animationVariants[index];
         }
 
-        public FpgCompiledSkillPhase GetPhase(int index)
-        {
-            if (phases == null || index < 0 || index >= phases.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-
-            return phases[index];
-        }
-
         public FpgCompiledSkillEvent GetEvent(int index)
         {
             if (events == null || index < 0 || index >= events.Length)
@@ -423,24 +537,17 @@ namespace FPG.Demo.Skills
             return events[index];
         }
 
-        public static bool TryCreate(
-            FpgSkillSequenceKind kind,
-            int durationTicks,
-            int mainAnimation,
-            bool loop,
-            FpgCompiledSkillEvent[] events,
-            out FpgCompiledSkillSequence sequence,
-            out FpgSkillValidationResult validation)
+        public FpgCompiledSkillActionPresentation GetActionPresentation(
+            int index)
         {
-            return TryCreate(
-                kind,
-                durationTicks,
-                mainAnimation,
-                loop,
-                null,
-                events,
-                out sequence,
-                out validation);
+            if (actionPresentations == null
+                || index < 0
+                || index >= actionPresentations.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return actionPresentations[index];
         }
 
         public static bool TryCreate(
@@ -448,17 +555,14 @@ namespace FPG.Demo.Skills
             int durationTicks,
             int mainAnimation,
             bool loop,
-            FpgCompiledSkillPhase[] phases,
             FpgCompiledSkillEvent[] events,
             out FpgCompiledSkillSequence sequence,
             out FpgSkillValidationResult validation)
         {
-            FpgCompiledSkillPhase[] phaseValues = phases ?? EmptyPhases;
             validation = FpgSkillCompiler.ValidateSequence(
                 kind,
                 durationTicks,
                 mainAnimation,
-                phaseValues,
                 events,
                 -1);
             if (!validation.IsValid)
@@ -472,7 +576,6 @@ namespace FPG.Demo.Skills
                 durationTicks,
                 mainAnimation,
                 loop,
-                phaseValues,
                 events);
             return true;
         }
@@ -530,7 +633,13 @@ namespace FPG.Demo.Skills
 
             SkillId = skillId;
             this.sequences = FpgSkillCompiler.CopyAndSortSequences(sequences);
+            FpgSkillCompiler.ValidatePresentationHandleConflicts(
+                this.sequences);
             GameplayHash = FpgSkillCompiler.ComputeDefinitionHash(skillId, this.sequences);
+            PresentationHash =
+                FpgSkillCompiler.ComputeDefinitionPresentationHash(
+                    skillId,
+                    this.sequences);
         }
 
         public int SkillId { get; }
@@ -540,6 +649,8 @@ namespace FPG.Demo.Skills
         public int SequenceCount => sequences == null ? 0 : sequences.Length;
 
         public ulong GameplayHash { get; }
+
+        public ulong PresentationHash { get; }
 
         public bool IsValid => SkillId > 0 && sequences != null && sequences.Length > 0;
 
@@ -593,6 +704,10 @@ namespace FPG.Demo.Skills
     {
         private const ulong SequenceHashSeed = 0x4650475F53455131UL;
         private const ulong DefinitionHashSeed = 0x4650475F534B4C31UL;
+        private const ulong SequencePresentationHashSeed =
+            0x4650475F50534531UL;
+        private const ulong DefinitionPresentationHashSeed =
+            0x4650475F50534B31UL;
 
         public static bool TryCompileSequence(
             FpgSkillSequenceKind kind,
@@ -608,27 +723,6 @@ namespace FPG.Demo.Skills
                 durationTicks,
                 mainAnimation,
                 loop,
-                events,
-                out sequence,
-                out validation);
-        }
-
-        public static bool TryCompileSequence(
-            FpgSkillSequenceKind kind,
-            int durationTicks,
-            int mainAnimation,
-            bool loop,
-            FpgCompiledSkillPhase[] phases,
-            FpgCompiledSkillEvent[] events,
-            out FpgCompiledSkillSequence sequence,
-            out FpgSkillValidationResult validation)
-        {
-            return FpgCompiledSkillSequence.TryCreate(
-                kind,
-                durationTicks,
-                mainAnimation,
-                loop,
-                phases,
                 events,
                 out sequence,
                 out validation);
@@ -710,23 +804,6 @@ namespace FPG.Demo.Skills
             FpgCompiledSkillEvent[] events,
             int sequenceIndex)
         {
-            return ValidateSequence(
-                kind,
-                durationTicks,
-                mainAnimation,
-                Array.Empty<FpgCompiledSkillPhase>(),
-                events,
-                sequenceIndex);
-        }
-
-        internal static FpgSkillValidationResult ValidateSequence(
-            FpgSkillSequenceKind kind,
-            int durationTicks,
-            int mainAnimation,
-            FpgCompiledSkillPhase[] phases,
-            FpgCompiledSkillEvent[] events,
-            int sequenceIndex)
-        {
             if (!Enum.IsDefined(typeof(FpgSkillSequenceKind), kind)
                 || kind == FpgSkillSequenceKind.None)
             {
@@ -753,63 +830,6 @@ namespace FPG.Demo.Skills
                     sequenceIndex,
                     -1,
                     mainAnimation);
-            }
-
-            FpgCompiledSkillPhase[] phaseValues =
-                phases ?? Array.Empty<FpgCompiledSkillPhase>();
-            for (int phaseIndex = 0;
-                phaseIndex < phaseValues.Length;
-                phaseIndex++)
-            {
-                FpgCompiledSkillPhase phase = phaseValues[phaseIndex];
-                FpgSkillValidationResult phaseValidation = ValidatePhase(
-                    phase,
-                    durationTicks,
-                    phaseIndex,
-                    sequenceIndex);
-                if (!phaseValidation.IsValid)
-                {
-                    return phaseValidation;
-                }
-
-                for (int otherIndex = 0;
-                    otherIndex < phaseIndex;
-                    otherIndex++)
-                {
-                    FpgCompiledSkillPhase other = phaseValues[otherIndex];
-                    if (other.PhaseId == phase.PhaseId)
-                    {
-                        return Invalid(
-                            FpgSkillValidationError.DuplicatePhaseId,
-                            sequenceIndex,
-                            phaseIndex,
-                            phase.PhaseId);
-                    }
-
-                    if (other.Kind == phase.Kind)
-                    {
-                        return Invalid(
-                            FpgSkillValidationError.DuplicatePhaseKind,
-                            sequenceIndex,
-                            phaseIndex,
-                            (int)phase.Kind);
-                    }
-                }
-
-                if (phaseIndex > 0)
-                {
-                    FpgCompiledSkillPhase previous =
-                        phaseValues[phaseIndex - 1];
-                    if (phase.StartTick < previous.EndTick
-                        || phase.Kind <= previous.Kind)
-                    {
-                        return Invalid(
-                            FpgSkillValidationError.InvalidPhaseOrder,
-                            sequenceIndex,
-                            phaseIndex,
-                            phase.PhaseId);
-                    }
-                }
             }
 
             if (events == null)
@@ -868,23 +888,23 @@ namespace FPG.Demo.Skills
                     continue;
                 }
 
-                bool foundSameTickGameplayEvent = false;
+                bool foundBoundGameplayEvent = false;
                 for (int otherIndex = 0;
                     otherIndex < events.Length;
                     otherIndex++)
                 {
                     FpgCompiledSkillEvent candidate = events[otherIndex];
-                    if (candidate.Kind == FpgSkillEventKind.GameplayPayload
+                    if (candidate.Kind == FpgSkillEventKind.GameplayAction
                         && candidate.EventId
                             == skillEvent.BoundGameplayEventId
-                        && candidate.Tick == skillEvent.Tick)
+                        && candidate.Tick <= skillEvent.Tick)
                     {
-                        foundSameTickGameplayEvent = true;
+                        foundBoundGameplayEvent = true;
                         break;
                     }
                 }
 
-                if (!foundSameTickGameplayEvent)
+                if (!foundBoundGameplayEvent)
                 {
                     return Invalid(
                         FpgSkillValidationError.InvalidBoundGameplayEventId,
@@ -892,48 +912,6 @@ namespace FPG.Demo.Skills
                         eventIndex,
                         skillEvent.BoundGameplayEventId);
                 }
-            }
-
-            return FpgSkillValidationResult.Valid;
-        }
-
-        internal static FpgSkillValidationResult ValidatePhase(
-            FpgCompiledSkillPhase phase,
-            int durationTicks,
-            int phaseIndex,
-            int sequenceIndex = -1)
-        {
-            if (phase.PhaseId <= 0)
-            {
-                return Invalid(
-                    FpgSkillValidationError.InvalidPhaseId,
-                    sequenceIndex,
-                    phaseIndex,
-                    phase.PhaseId);
-            }
-
-            if (!Enum.IsDefined(typeof(FpgSkillPhaseKind), phase.Kind)
-                || phase.Kind == FpgSkillPhaseKind.None)
-            {
-                return Invalid(
-                    FpgSkillValidationError.InvalidPhaseKind,
-                    sequenceIndex,
-                    phaseIndex,
-                    (int)phase.Kind);
-            }
-
-            if (phase.StartTick < 0
-                || phase.EndTick < phase.StartTick
-                || phase.EndTick > durationTicks)
-            {
-                int invalidTick = phase.StartTick < 0
-                    ? phase.StartTick
-                    : phase.EndTick;
-                return Invalid(
-                    FpgSkillValidationError.PhaseTickOutOfRange,
-                    sequenceIndex,
-                    phaseIndex,
-                    invalidTick);
             }
 
             return FpgSkillValidationResult.Valid;
@@ -969,18 +947,75 @@ namespace FPG.Demo.Skills
                     (int)skillEvent.Kind);
             }
 
-            if (skillEvent.Kind == FpgSkillEventKind.GameplayPayload && skillEvent.PayloadSlotId <= 0)
+            if (skillEvent.Kind == FpgSkillEventKind.GameplayAction)
             {
-                return Invalid(
-                    FpgSkillValidationError.InvalidPayloadSlotId,
-                    sequenceIndex,
-                    eventIndex,
-                    skillEvent.PayloadSlotId);
+                if (!Enum.IsDefined(
+                        typeof(FpgSkillActionKind),
+                        skillEvent.ActionKind)
+                    || skillEvent.ActionKind == FpgSkillActionKind.None)
+                {
+                    return Invalid(
+                        FpgSkillValidationError.InvalidActionKind,
+                        sequenceIndex,
+                        eventIndex,
+                        (int)skillEvent.ActionKind);
+                }
+
+                if (skillEvent.ActionIndex < 0)
+                {
+                    return Invalid(
+                        FpgSkillValidationError.InvalidActionIndex,
+                        sequenceIndex,
+                        eventIndex,
+                        skillEvent.ActionIndex);
+                }
             }
 
-            if (skillEvent.Kind == FpgSkillEventKind.PresentationCue && skillEvent.CueId <= 0)
+            if (skillEvent.Kind == FpgSkillEventKind.ActivePresentation)
             {
-                return Invalid(FpgSkillValidationError.InvalidCueId, sequenceIndex, eventIndex, skillEvent.CueId);
+                if (!Enum.IsDefined(
+                        typeof(FpgActivePresentationKind),
+                        skillEvent.ActivePresentationKind)
+                    || skillEvent.ActivePresentationKind
+                        == FpgActivePresentationKind.None)
+                {
+                    return Invalid(
+                        FpgSkillValidationError
+                            .InvalidActivePresentationKind,
+                        sequenceIndex,
+                        eventIndex,
+                        (int)skillEvent.ActivePresentationKind);
+                }
+
+                if (!skillEvent.PresentationHandle.IsValid)
+                {
+                    return Invalid(
+                        FpgSkillValidationError.InvalidPresentationHandle,
+                        sequenceIndex,
+                        eventIndex,
+                        skillEvent.PresentationHandle.Value);
+                }
+
+                if (skillEvent.PresentationTrackId <= 0)
+                {
+                    return Invalid(
+                        FpgSkillValidationError.InvalidPresentationTrackId,
+                        sequenceIndex,
+                        eventIndex,
+                        skillEvent.PresentationTrackId);
+                }
+            }
+            else if (skillEvent.ActivePresentationKind
+                    != FpgActivePresentationKind.None
+                || skillEvent.PresentationHandle.IsValid
+                || skillEvent.PresentationTrackId != 0
+                || skillEvent.PresentationContentHash != 0UL)
+            {
+                return Invalid(
+                    FpgSkillValidationError.InvalidPresentationHandle,
+                    sequenceIndex,
+                    eventIndex,
+                    skillEvent.PresentationHandle.Value);
             }
 
             if ((skillEvent.Kind == FpgSkillEventKind.WarningStarted
@@ -1013,7 +1048,8 @@ namespace FPG.Demo.Skills
             }
 
             if (skillEvent.BoundGameplayEventId < 0
-                || (skillEvent.Kind != FpgSkillEventKind.PresentationCue
+                || (skillEvent.Kind
+                        != FpgSkillEventKind.ActivePresentation
                     && skillEvent.BoundGameplayEventId != 0))
             {
                 return Invalid(
@@ -1026,7 +1062,7 @@ namespace FPG.Demo.Skills
             if (!Enum.IsDefined(
                     typeof(FpgSkillTargetSource),
                     skillEvent.TargetSource)
-                || (skillEvent.Kind == FpgSkillEventKind.GameplayPayload
+                || (skillEvent.Kind == FpgSkillEventKind.GameplayAction
                     && skillEvent.TargetSource == FpgSkillTargetSource.None))
             {
                 return Invalid(
@@ -1039,15 +1075,6 @@ namespace FPG.Demo.Skills
             return FpgSkillValidationResult.Valid;
         }
 
-        internal static FpgCompiledSkillPhase[] CopyPhases(
-            FpgCompiledSkillPhase[] source)
-        {
-            FpgCompiledSkillPhase[] copy =
-                new FpgCompiledSkillPhase[source.Length];
-            Array.Copy(source, copy, source.Length);
-            return copy;
-        }
-
         internal static FpgCompiledSkillEvent[] CopyAndSortEvents(FpgCompiledSkillEvent[] source)
         {
             FpgCompiledSkillEvent[] copy = new FpgCompiledSkillEvent[source.Length];
@@ -1058,6 +1085,57 @@ namespace FPG.Demo.Skills
                 FpgCompiledSkillEvent value = copy[index];
                 int insertionIndex = index - 1;
                 while (insertionIndex >= 0 && CompareEvents(copy[insertionIndex], value) > 0)
+                {
+                    copy[insertionIndex + 1] = copy[insertionIndex];
+                    insertionIndex--;
+                }
+
+                copy[insertionIndex + 1] = value;
+            }
+
+            return copy;
+        }
+
+        internal static FpgCompiledSkillActionPresentation[]
+            CopyAndSortActionPresentations(
+                FpgCompiledSkillActionPresentation[] source)
+        {
+            FpgCompiledSkillActionPresentation[] copy =
+                new FpgCompiledSkillActionPresentation[source.Length];
+            Array.Copy(source, copy, source.Length);
+
+            for (int index = 0; index < copy.Length; index++)
+            {
+                if (!copy[index].IsValid)
+                {
+                    throw new ArgumentException(
+                        "Compiled skill action presentation is invalid.",
+                        nameof(source));
+                }
+
+                for (int otherIndex = 0;
+                    otherIndex < index;
+                    otherIndex++)
+                {
+                    if (copy[otherIndex].ActionKind == copy[index].ActionKind
+                        && copy[otherIndex].ActionIndex
+                            == copy[index].ActionIndex)
+                    {
+                        throw new ArgumentException(
+                            "Compiled skill action presentation is duplicated.",
+                            nameof(source));
+                    }
+                }
+            }
+
+            for (int index = 1; index < copy.Length; index++)
+            {
+                FpgCompiledSkillActionPresentation value = copy[index];
+                int insertionIndex = index - 1;
+                while (insertionIndex >= 0
+                    && CompareActionPresentations(
+                        copy[insertionIndex],
+                        value) > 0)
                 {
                     copy[insertionIndex + 1] = copy[insertionIndex];
                     insertionIndex--;
@@ -1090,16 +1168,74 @@ namespace FPG.Demo.Skills
             return copy;
         }
 
+        internal static void ValidatePresentationHandleConflicts(
+            FpgCompiledSkillSequence[] sequences)
+        {
+            HashSet<int> handles = new HashSet<int>();
+            for (int sequenceIndex = 0;
+                sequenceIndex < sequences.Length;
+                sequenceIndex++)
+            {
+                FpgCompiledSkillSequence sequence = sequences[sequenceIndex];
+                for (int eventIndex = 0;
+                    eventIndex < sequence.EventCount;
+                    eventIndex++)
+                {
+                    FpgCompiledSkillEvent skillEvent =
+                        sequence.GetEvent(eventIndex);
+                    if (skillEvent.PresentationHandle.IsValid
+                        && !handles.Add(skillEvent.PresentationHandle.Value))
+                    {
+                        throw new ArgumentException(
+                            "Compiled presentation handle collision.",
+                            nameof(sequences));
+                    }
+                }
+
+                for (int actionIndex = 0;
+                    actionIndex < sequence.ActionPresentationCount;
+                    actionIndex++)
+                {
+                    FpgCompiledSkillActionPresentation action =
+                        sequence.GetActionPresentation(actionIndex);
+                    AddPresentationHandle(handles, action.TrajectoryVfx);
+                    AddImpactHandles(handles, action.Impact);
+                    AddPresentationHandle(handles, action.FlightVfx);
+                    AddImpactHandles(handles, action.Collision);
+                }
+            }
+        }
+
+        private static void AddImpactHandles(
+            HashSet<int> handles,
+            in FpgCompiledImpactPresentation value)
+        {
+            AddPresentationHandle(handles, value.BaseVfx);
+            AddPresentationHandle(handles, value.BaseAudio);
+            AddPresentationHandle(handles, value.BaseCameraShake);
+            AddPresentationHandle(handles, value.WeakpointVfxOverride);
+            AddPresentationHandle(handles, value.WeakpointAudioOverride);
+            AddPresentationHandle(
+                handles,
+                value.WeakpointCameraShakeOverride);
+        }
+
+        private static void AddPresentationHandle(
+            HashSet<int> handles,
+            FpgPresentationHandle handle)
+        {
+            if (handle.IsValid && !handles.Add(handle.Value))
+            {
+                throw new ArgumentException(
+                    "Compiled presentation handle collision.",
+                    nameof(handle));
+            }
+        }
+
         internal static ulong ComputeSequenceHash(
             FpgSkillSequenceKind kind,
             int durationTicks,
-            int mainAnimation,
             bool loop,
-            FpgSkillAnimationPlaybackMode animationPlaybackMode,
-            int animationStartTick,
-            int animationEndTick,
-            int[] animationVariants,
-            FpgCompiledSkillPhase[] phases,
             FpgCompiledSkillEvent[] events)
         {
             ulong hash = StableHash.Append(
@@ -1107,61 +1243,38 @@ namespace FPG.Demo.Skills
                 unchecked((ulong)FpgSkillRuntimeConstants.GameplayHashVersion));
             hash = StableHash.Append(hash, unchecked((ulong)(int)kind));
             hash = StableHash.Append(hash, unchecked((ulong)durationTicks));
-            hash = StableHash.Append(hash, unchecked((ulong)mainAnimation));
             hash = StableHash.Append(hash, loop ? 1UL : 0UL);
-            hash = StableHash.Append(
-                hash,
-                unchecked((ulong)(int)animationPlaybackMode));
-            hash = StableHash.Append(
-                hash,
-                unchecked((ulong)animationStartTick));
 
-            hash = StableHash.Append(
-                hash,
-                unchecked((ulong)(animationVariants == null
-                    ? 0
-                    : animationVariants.Length)));
-            if (animationVariants != null)
+            int gameplayEventCount = 0;
+            for (int index = 0; index < events.Length; index++)
             {
-                for (int index = 0; index < animationVariants.Length; index++)
+                if (!IsPresentationEvent(events[index].Kind))
                 {
-                    hash = StableHash.Append(
-                        hash,
-                        unchecked((ulong)animationVariants[index]));
+                    gameplayEventCount++;
                 }
             }
 
             hash = StableHash.Append(
                 hash,
-                unchecked((ulong)animationEndTick));
-            hash = StableHash.Append(hash, unchecked((ulong)phases.Length));
-            for (int index = 0; index < phases.Length; index++)
-            {
-                FpgCompiledSkillPhase phase = phases[index];
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)phase.PhaseId));
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)(int)phase.Kind));
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)phase.StartTick));
-                hash = StableHash.Append(
-                    hash,
-                    unchecked((ulong)phase.EndTick));
-            }
-
-            hash = StableHash.Append(hash, unchecked((ulong)events.Length));
+                unchecked((ulong)gameplayEventCount));
 
             for (int index = 0; index < events.Length; index++)
             {
                 FpgCompiledSkillEvent skillEvent = events[index];
+                if (IsPresentationEvent(skillEvent.Kind))
+                {
+                    continue;
+                }
+
                 hash = StableHash.Append(hash, unchecked((ulong)skillEvent.EventId));
                 hash = StableHash.Append(hash, unchecked((ulong)skillEvent.Tick));
                 hash = StableHash.Append(hash, unchecked((ulong)(int)skillEvent.Kind));
-                hash = StableHash.Append(hash, unchecked((ulong)skillEvent.PayloadSlotId));
-                hash = StableHash.Append(hash, unchecked((ulong)skillEvent.CueId));
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)(int)skillEvent.ActionKind));
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)skillEvent.ActionIndex));
                 hash = StableHash.Append(hash, unchecked((ulong)skillEvent.WarningId));
                 hash = StableHash.Append(hash, unchecked((ulong)skillEvent.SortOrder));
                 hash = StableHash.Append(hash, unchecked((ulong)skillEvent.SocketId));
@@ -1185,6 +1298,96 @@ namespace FPG.Demo.Skills
             return hash;
         }
 
+        internal static ulong ComputeSequencePresentationHash(
+            FpgSkillSequenceKind kind,
+            int mainAnimation,
+            FpgSkillAnimationPlaybackMode animationPlaybackMode,
+            int animationStartTick,
+            int animationEndTick,
+            int[] animationVariants,
+            FpgCompiledSkillEvent[] events,
+            FpgCompiledSkillActionPresentation[] actionPresentations)
+        {
+            ulong hash = StableHash.Append(
+                StableHash.Mix(SequencePresentationHashSeed),
+                unchecked((ulong)FpgSkillRuntimeConstants
+                    .PresentationHashVersion));
+            hash = StableHash.Append(hash, unchecked((ulong)(int)kind));
+            hash = StableHash.Append(hash, unchecked((ulong)mainAnimation));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)(int)animationPlaybackMode));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)animationStartTick));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)animationEndTick));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)animationVariants.Length));
+            for (int index = 0; index < animationVariants.Length; index++)
+            {
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)animationVariants[index]));
+            }
+
+            int presentationEventCount = 0;
+            for (int index = 0; index < events.Length; index++)
+            {
+                if (IsPresentationEvent(events[index].Kind))
+                {
+                    presentationEventCount++;
+                }
+            }
+
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)presentationEventCount));
+            for (int index = 0; index < events.Length; index++)
+            {
+                FpgCompiledSkillEvent skillEvent = events[index];
+                if (!IsPresentationEvent(skillEvent.Kind))
+                {
+                    continue;
+                }
+
+                hash = AppendPresentationEventHash(hash, skillEvent);
+            }
+
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)actionPresentations.Length));
+            for (int index = 0;
+                index < actionPresentations.Length;
+                index++)
+            {
+                FpgCompiledSkillActionPresentation value =
+                    actionPresentations[index];
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)(int)value.ActionKind));
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)value.ActionIndex));
+                hash = AppendPresentationHandleHash(
+                    hash,
+                    value.TrajectoryVfx);
+                hash = AppendImpactPresentationHash(hash, value.Impact);
+                hash = AppendPresentationHandleHash(hash, value.FlightVfx);
+                hash = AppendImpactPresentationHash(hash, value.Collision);
+                hash = StableHash.Append(
+                    hash,
+                    unchecked((ulong)value.SuccessAnimation));
+                hash = StableHash.Append(
+                    hash,
+                    value.PresentationContentHash);
+            }
+
+            return hash;
+        }
+
         internal static ulong ComputeDefinitionHash(int skillId, FpgCompiledSkillSequence[] sequences)
         {
             ulong hash = StableHash.Append(
@@ -1200,6 +1403,101 @@ namespace FPG.Demo.Skills
             return hash;
         }
 
+        internal static ulong ComputeDefinitionPresentationHash(
+            int skillId,
+            FpgCompiledSkillSequence[] sequences)
+        {
+            ulong hash = StableHash.Append(
+                StableHash.Mix(DefinitionPresentationHashSeed),
+                unchecked((ulong)FpgSkillRuntimeConstants
+                    .PresentationHashVersion));
+            hash = StableHash.Append(hash, unchecked((ulong)skillId));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)sequences.Length));
+            for (int index = 0; index < sequences.Length; index++)
+            {
+                hash = StableHash.Append(
+                    hash,
+                    sequences[index].PresentationHash);
+            }
+
+            return hash;
+        }
+
+        private static ulong AppendPresentationEventHash(
+            ulong hash,
+            in FpgCompiledSkillEvent skillEvent)
+        {
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)skillEvent.EventId));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)skillEvent.Tick));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)(int)skillEvent.Kind));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)skillEvent.SortOrder));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)skillEvent.SocketId));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)skillEvent.BoundGameplayEventId));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)(int)skillEvent.ActivePresentationKind));
+            hash = AppendPresentationHandleHash(
+                hash,
+                skillEvent.PresentationHandle);
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)skillEvent.PresentationTrackId));
+            return StableHash.Append(
+                hash,
+                skillEvent.PresentationContentHash);
+        }
+
+        private static ulong AppendImpactPresentationHash(
+            ulong hash,
+            in FpgCompiledImpactPresentation impact)
+        {
+            hash = AppendPresentationHandleHash(hash, impact.BaseVfx);
+            hash = AppendPresentationHandleHash(hash, impact.BaseAudio);
+            hash = AppendPresentationHandleHash(
+                hash,
+                impact.BaseCameraShake);
+            hash = AppendPresentationHandleHash(
+                hash,
+                impact.WeakpointVfxOverride);
+            hash = AppendPresentationHandleHash(
+                hash,
+                impact.WeakpointAudioOverride);
+            hash = AppendPresentationHandleHash(
+                hash,
+                impact.WeakpointCameraShakeOverride);
+            return StableHash.Append(
+                hash,
+                impact.PresentationContentHash);
+        }
+
+        private static ulong AppendPresentationHandleHash(
+            ulong hash,
+            FpgPresentationHandle handle)
+        {
+            return StableHash.Append(
+                hash,
+                unchecked((ulong)handle.Value));
+        }
+
+        private static bool IsPresentationEvent(FpgSkillEventKind kind)
+        {
+            return kind == FpgSkillEventKind.ActivePresentation;
+        }
+
         private static int CompareEvents(FpgCompiledSkillEvent left, FpgCompiledSkillEvent right)
         {
             int tick = left.Tick.CompareTo(right.Tick);
@@ -1209,6 +1507,17 @@ namespace FPG.Demo.Skills
             }
 
             return left.SortOrder.CompareTo(right.SortOrder);
+        }
+
+        private static int CompareActionPresentations(
+            FpgCompiledSkillActionPresentation left,
+            FpgCompiledSkillActionPresentation right)
+        {
+            int kind = ((int)left.ActionKind).CompareTo(
+                (int)right.ActionKind);
+            return kind != 0
+                ? kind
+                : left.ActionIndex.CompareTo(right.ActionIndex);
         }
 
         private static FpgSkillValidationResult Invalid(

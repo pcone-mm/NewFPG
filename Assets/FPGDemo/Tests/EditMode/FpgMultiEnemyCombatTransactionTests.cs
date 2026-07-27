@@ -101,6 +101,112 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void PlayerHitCompensationRemovesOnlyTailAndAllowsSequenceReuse()
+        {
+            PortFixture fixture = new PortFixture(
+                playerHitCapacity: 3,
+                impactHistoryCapacity: 4,
+                impactQueueCapacity: 3);
+            RuntimeId first = fixture.RegisterEnemy(100);
+            RuntimeId second = fixture.RegisterEnemy(100);
+            FpgPlayerHitCommand[] committed =
+            {
+                fixture.CreateCommand(0L, 1L, first, new TickIndex(0L))
+            };
+            FpgPlayerHitCommand[] compensated =
+            {
+                fixture.CreateCommand(1L, 2L, second, new TickIndex(0L))
+            };
+
+            Assert.That(
+                fixture.Port.TrySubmitPlayerHits(committed, 1).IsSuccess,
+                Is.True);
+            Assert.That(
+                fixture.Port.TrySubmitPlayerHits(compensated, 1).IsSuccess,
+                Is.True);
+            Assert.That(
+                fixture.Port.TryCompensatePlayerHitBatch(compensated, 1)
+                    .IsSuccess,
+                Is.True);
+            Assert.That(fixture.Port.PendingPlayerHitCount, Is.EqualTo(1));
+            Assert.That(
+                fixture.Port.TrySubmitPlayerHits(compensated, 1).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Port.PendingPlayerHitCount, Is.EqualTo(2));
+            Assert.That(
+                fixture.Port.TryCompensatePlayerHitBatch(committed, 1)
+                    .RejectReason,
+                Is.EqualTo(RejectReason.InvalidState));
+        }
+
+        [Test]
+        public void EnemyAttackCompensationRemovesScheduleAndInlinePayload()
+        {
+            RetryThenQueueSummonSink summonSink =
+                new RetryThenQueueSummonSink();
+            PortFixture fixture = new PortFixture(
+                playerHitCapacity: 1,
+                impactHistoryCapacity: 2,
+                impactQueueCapacity: 1,
+                summonRequestSink: summonSink);
+            RuntimeId ownerId = fixture.RegisterEnemy(100);
+            FpgSummonRequest request = new FpgSummonRequest(
+                ownerId,
+                "compensated-child",
+                recursionDepth: 1,
+                requestSequence: 0L,
+                summonActionId: "compensated-action",
+                maxSummonsPerOwner: 1,
+                occupancyMode: FpgSummonOccupancyMode.AdditionalEntity,
+                placementMode: FpgSummonPlacementMode.EncounterSpawnPoint);
+            FpgEnemyAttackPayload payload = FpgEnemyAttackPayload.ForSummon(
+                new FpgFormalSummonPayload(request, maxSummonsPerOwner: 1));
+            FpgAttackScheduleRequest schedule =
+                new FpgAttackScheduleRequest(
+                    ownerId,
+                    new TickIndex(0L),
+                    priority: 0,
+                    scheduleSequence: 0L,
+                    attackPatternId: "compensated-summon",
+                    skillExecutionId: new SkillExecutionId(1L),
+                    gameplayEventId: 1);
+            FpgEnemyAttackSpatialContext spatial =
+                new FpgEnemyAttackSpatialContext(
+                    new TickIndex(0L),
+                    FpgSkillTargetSource.CurrentTarget,
+                    0,
+                    new FpgSkillOffset(0, 0, 0),
+                    fixture.PlayerId,
+                    SpatialVectorKey.Zero,
+                    SpatialVectorKey.Zero);
+            FpgEnemyAttackCommand command = new FpgEnemyAttackCommand(
+                schedule,
+                spawnSequence: 0,
+                payload,
+                FpgEnemySkillCapacityReservation.Invalid,
+                default(ReservationToken),
+                spatial);
+
+            Assert.That(fixture.Port.TrySubmitEnemyAttack(command).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Port.PendingAttackCount, Is.EqualTo(1));
+            Assert.That(
+                fixture.Port.TryCompensateSummonAttack(0L).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Port.PendingAttackCount, Is.Zero);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.EnemyAttackDirector,
+                    new TickIndex(0L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+            Assert.That(summonSink.CallCount, Is.Zero);
+            Assert.That(
+                fixture.Port.TryCompensateSummonAttack(0L).RejectReason,
+                Is.EqualTo(RejectReason.InvalidTarget));
+        }
+
+        [Test]
         public void EncounterCompletionReopensImpactLedgerForLongSessions()
         {
             PortFixture fixture = new PortFixture(

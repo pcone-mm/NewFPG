@@ -243,6 +243,27 @@ namespace FPG.Demo.Run
             return canceled;
         }
 
+        public bool TryCancel(long scheduleSequence)
+        {
+            if (scheduleSequence < 0L)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < count; index++)
+            {
+                if (requests[index].ScheduleSequence != scheduleSequence)
+                {
+                    continue;
+                }
+
+                RemoveAt(index);
+                return true;
+            }
+
+            return false;
+        }
+
         public void Clear()
         {
             Array.Clear(requests, 0, requests.Length);

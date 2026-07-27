@@ -337,6 +337,39 @@ namespace FPG.Demo.Unity
         public int HealthBarCallbackFaultCount { get; private set; }
         public int EnemyPresentationFailureCount { get; private set; }
 
+        public bool TryResolvePresentationSource(
+            RuntimeId runtimeId,
+            int spawnSequence,
+            string socketId,
+            out Transform source)
+        {
+            source = null;
+            int index = FindBinding(runtimeId);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated
+                || binding.SpawnSequence != spawnSequence
+                || binding.Binder == null)
+            {
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(socketId))
+            {
+                source = binding.Binder.GameplayAnchor;
+                return source != null;
+            }
+
+            D0ActorSocketRegistry sockets = binding.Binder.SocketRegistry;
+            return sockets != null
+                && sockets.TryResolve(socketId, out source)
+                && source != null;
+        }
+
         public DomainResult Prepare(
             FpgSpawnEntry entry,
             RuntimeId runtimeId,
@@ -562,36 +595,6 @@ namespace FPG.Demo.Unity
             IncrementEnemyPresentationFailureCount();
             return false;
         }
-        public bool TryPresentEnemySkillCue(
-            in FpgFormalEnemySkillCuePresentationEvent cueEvent)
-        {
-            FpgFormalEnemySkillTimelineEvent timelineEvent =
-                cueEvent.TimelineEvent;
-            if (!TryGetActivePresentationView(
-                    timelineEvent.OwnerRuntimeId,
-                    timelineEvent.SpawnSequence,
-                    out IFpgFormalEnemyPresentationView view))
-            {
-                IncrementEnemyPresentationFailureCount();
-                return false;
-            }
-
-            try
-            {
-                if (view.TryPresentSkillCue(cueEvent))
-                {
-                    return true;
-                }
-            }
-            catch (Exception)
-            {
-                // Presentation callbacks cannot affect encounter simulation.
-            }
-
-            IncrementEnemyPresentationFailureCount();
-            return false;
-        }
-
         public bool TrySetEnemySkillWarning(
             in FpgFormalEnemySkillWarningPresentationEvent warningEvent)
         {

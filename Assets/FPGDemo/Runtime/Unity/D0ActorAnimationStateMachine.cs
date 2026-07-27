@@ -36,6 +36,7 @@ namespace FPG.Demo.Unity
         EnemyEnter,
         EnemyFastThreat,
         EnemyVolleyThreat,
+        EnemyHeavyThreat,
         PlayerVictory,
         PlayerDefeat,
         EnemyDeath
@@ -205,6 +206,7 @@ namespace FPG.Demo.Unity
                 case D0ActorAnimationCommand.EnemyEnter:
                 case D0ActorAnimationCommand.EnemyFastThreat:
                 case D0ActorAnimationCommand.EnemyVolleyThreat:
+                case D0ActorAnimationCommand.EnemyHeavyThreat:
                     return !playerActor && State != D0ActorAnimationState.EnemyGroggy;
 
                 case D0ActorAnimationCommand.PlayerVictory:

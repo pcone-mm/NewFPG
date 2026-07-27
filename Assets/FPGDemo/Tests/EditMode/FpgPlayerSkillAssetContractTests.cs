@@ -44,13 +44,16 @@ namespace FPG.Demo.Tests.EditMode
 
             FpgSkillSequenceDefinition primaryExecute =
                 FindSequence(primary, FpgSkillSequenceKind.Execute);
-            Assert.That(primaryExecute.DurationTicks, Is.EqualTo(11));
+            Assert.That(
+                primary.AuthoringSchemaVersion,
+                Is.EqualTo(FpgSkillTimelineDefinition.CurrentAuthoringSchemaVersion));
+            Assert.That(primaryExecute.DurationTicks, Is.EqualTo(40));
             Assert.That(primaryExecute.MainAnimation, Is.EqualTo("attack_play1"));
             Assert.That(
                 primaryExecute.AlternateAnimations,
                 Is.EqualTo(new[] { "attack_play2" }));
-            Assert.That(primaryExecute.LogicEvents.Count, Is.EqualTo(1));
-            Assert.That(primaryExecute.LogicEvents[0].Tick, Is.Zero);
+            Assert.That(primaryExecute.AttackEvents.Count, Is.EqualTo(1));
+            Assert.That(primaryExecute.AttackEvents[0].Tick, Is.Zero);
             Assert.That(primary.SequenceCooldownTicks, Is.EqualTo(12));
 
             Assert.That(
@@ -68,20 +71,20 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
             FpgSkillSequenceDefinition release =
                 FindSequence(secondary, FpgSkillSequenceKind.Release);
-            Assert.That(release.DurationTicks, Is.EqualTo(29));
-            Assert.That(release.LogicEvents.Count, Is.EqualTo(1));
-            Assert.That(release.LogicEvents[0].Tick, Is.Zero);
+            Assert.That(release.DurationTicks, Is.EqualTo(60));
+            Assert.That(release.ProjectileEvents.Count, Is.EqualTo(1));
+            Assert.That(release.ProjectileEvents[0].Tick, Is.Zero);
             Assert.That(secondary.SequenceCooldownTicks, Is.EqualTo(30));
 
             FpgSkillSequenceDefinition reloadExecute =
                 FindSequence(reload, FpgSkillSequenceKind.Execute);
             Assert.That(reloadExecute.DurationTicks, Is.EqualTo(84));
-            Assert.That(reloadExecute.LogicEvents.Count, Is.EqualTo(1));
-            Assert.That(reloadExecute.LogicEvents[0].Tick, Is.EqualTo(84));
+            Assert.That(reloadExecute.ReloadEvents.Count, Is.EqualTo(1));
+            Assert.That(reloadExecute.ReloadEvents[0].Tick, Is.EqualTo(40));
         }
 
         [Test]
-        public void FeiCommitDependentPresentationCuesUseExplicitBindings()
+        public void FeiActivePresentationBindingsAndReloadSuccessLiveOnV3Nodes()
         {
             FpgPlayerSkillDefinition primary =
                 LoadRequired<FpgPlayerSkillDefinition>(PrimaryPath);
@@ -93,33 +96,44 @@ namespace FPG.Demo.Tests.EditMode
             FpgSkillSequenceDefinition primaryExecute =
                 FindSequence(primary, FpgSkillSequenceKind.Execute);
             Assert.That(
-                primaryExecute.PresentationCues
-                    .Select(value => value.BindGameplayEventId),
-                Is.All.EqualTo("event.fei.primary.attack.0"));
+                primaryExecute.ActivePresentationTracks.Count,
+                Is.EqualTo(1));
+            Assert.That(
+                primaryExecute.ActivePresentationTracks[0].VfxEvents.Count,
+                Is.EqualTo(1));
+            Assert.That(
+                primaryExecute.ActivePresentationTracks[0].VfxEvents[0]
+                    .BoundGameplayEventId,
+                Is.EqualTo("event.fei.primary.attack.0"));
 
             FpgSkillSequenceDefinition chargeEnter =
                 FindSequence(secondary, FpgSkillSequenceKind.ChargeEnter);
-            Assert.That(chargeEnter.PresentationCues.Count, Is.EqualTo(1));
             Assert.That(
-                chargeEnter.PresentationCues[0].BindGameplayEventId,
+                chargeEnter.ActivePresentationTracks.Count,
+                Is.EqualTo(1));
+            Assert.That(
+                chargeEnter.ActivePresentationTracks[0].VfxEvents[0]
+                    .BoundGameplayEventId,
                 Is.Empty);
 
             FpgSkillSequenceDefinition release =
                 FindSequence(secondary, FpgSkillSequenceKind.Release);
             Assert.That(
-                release.PresentationCues
-                    .Select(value => value.BindGameplayEventId),
-                Is.All.EqualTo(
-                    "event.fei.secondary.release.attack.0"));
+                release.ActivePresentationTracks.Count,
+                Is.EqualTo(1));
+            Assert.That(
+                release.ActivePresentationTracks[0].VfxEvents[0]
+                    .BoundGameplayEventId,
+                Is.EqualTo("event.fei.secondary.release.attack.0"));
 
             FpgSkillSequenceDefinition reloadExecute =
                 FindSequence(reload, FpgSkillSequenceKind.Execute);
             Assert.That(
-                reloadExecute.PresentationCues.Count,
+                reloadExecute.ReloadEvents.Count,
                 Is.EqualTo(1));
             Assert.That(
-                reloadExecute.PresentationCues[0].BindGameplayEventId,
-                Is.EqualTo("event.fei.reload.commit.0"));
+                reloadExecute.ReloadEvents[0].SuccessAnimationName,
+                Is.EqualTo("u1_buff_ready"));
         }
 
         [Test]
@@ -151,6 +165,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True);
             Assert.That(secondarySummary.TotalAmmoCost, Is.EqualTo(2));
             Assert.That(secondarySummary.LastAttackTick, Is.Zero);
+            Assert.That(secondary.ProjectileActionCount, Is.EqualTo(1));
 
             Assert.That(
                 reload.TryGetSequenceSummary(
@@ -169,6 +184,72 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
             Assert.That(weapon.PrimaryIntervalTicks, Is.EqualTo(12));
             Assert.That(weapon.ReloadDurationTicks, Is.EqualTo(84));
+        }
+
+        [Test]
+        public void FeiSecondaryProjectilePresentationKeepsOffsetsEditableAndImpactAlive()
+        {
+            const string projectilePath =
+                "Assets/FPGDemo/Presentation/Characters/Fei/VFX/PF_FPG_Fei_Secondary_Projectile.prefab";
+            const string impactPath =
+                "Assets/FPGDemo/Presentation/Characters/Fei/VFX/PF_FPG_Fei_Secondary_Hit.prefab";
+            FpgPlayerSkillDefinition secondary =
+                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath);
+            FpgSkillSequenceDefinition release =
+                FindSequence(secondary, FpgSkillSequenceKind.Release);
+            FpgSkillProjectileEventDefinition projectile =
+                release.ProjectileEvents[0];
+            FpgVfxPresentationDefinition flight = projectile.FlightVfx;
+            FpgVfxPresentationDefinition impact =
+                projectile.CollisionPresentation.BaseVfx;
+
+            Assert.That(flight, Is.Not.Null);
+            Assert.That(projectile.CollisionPresentation, Is.Not.Null);
+            Assert.That(impact, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(flight.Prefab),
+                Is.EqualTo(projectilePath));
+            Assert.That(
+                AssetDatabase.GetAssetPath(impact.Prefab),
+                Is.EqualTo(impactPath));
+            Assert.That(
+                impact.DurationSeconds,
+                Is.EqualTo(1.8f).Within(0.0001f));
+
+            AssertFinite(flight.RotationOffsetEuler);
+            AssertFinite(impact.RotationOffsetEuler);
+
+            SerializedObject serialized = new SerializedObject(secondary);
+            int releaseIndex = secondary.Sequences
+                .Select((sequence, index) => new { sequence, index })
+                .Single(value => value.sequence.Kind == FpgSkillSequenceKind.Release)
+                .index;
+            SerializedProperty serializedProjectile = serialized.FindProperty(
+                $"sequences.Array.data[{releaseIndex}].projectileEvents.Array.data[0]");
+            Assert.That(serializedProjectile, Is.Not.Null);
+            SerializedProperty serializedFlight =
+                serializedProjectile.FindPropertyRelative("flightVfx");
+            SerializedProperty serializedCollision =
+                serializedProjectile.FindPropertyRelative("collisionPresentation");
+            Assert.That(
+                serializedFlight.propertyType,
+                Is.EqualTo(SerializedPropertyType.ManagedReference));
+            Assert.That(
+                serializedCollision.propertyType,
+                Is.EqualTo(SerializedPropertyType.ManagedReference));
+            Assert.That(
+                serializedFlight.FindPropertyRelative("rotationOffsetEuler")
+                    .propertyType,
+                Is.EqualTo(SerializedPropertyType.Vector3));
+            SerializedProperty serializedImpact =
+                serializedCollision.FindPropertyRelative("baseVfx");
+            Assert.That(
+                serializedImpact.propertyType,
+                Is.EqualTo(SerializedPropertyType.ManagedReference));
+            Assert.That(
+                serializedImpact.FindPropertyRelative("rotationOffsetEuler")
+                    .propertyType,
+                Is.EqualTo(SerializedPropertyType.Vector3));
         }
 
         [Test]
@@ -280,6 +361,13 @@ namespace FPG.Demo.Tests.EditMode
                 StringComparison.Ordinal);
             Assert.That(firstIndex, Is.GreaterThanOrEqualTo(start), first);
             Assert.That(secondIndex, Is.GreaterThan(firstIndex), second);
+        }
+
+        private static void AssertFinite(UnityEngine.Vector3 value)
+        {
+            Assert.That(float.IsNaN(value.x) || float.IsInfinity(value.x), Is.False);
+            Assert.That(float.IsNaN(value.y) || float.IsInfinity(value.y), Is.False);
+            Assert.That(float.IsNaN(value.z) || float.IsInfinity(value.z), Is.False);
         }
 
         private static string SliceSource(

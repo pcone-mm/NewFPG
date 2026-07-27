@@ -68,11 +68,11 @@
 .preview-header,
 .transport-bar,
 .timeline-actions,
+.presentation-track-tools,
 .section-header,
 .compact-actions,
 .bottom-pane,
 .asset-row,
-.payload-row,
 .validation-row,
 .log-row {
     flex-direction: row;
@@ -159,13 +159,6 @@
     font-size: 10px;
 }
 
-.payload-list {
-    flex-grow: 1;
-    min-height: 130px;
-    border-width: 1px;
-    border-color: var(--line);
-}
-
 .compact-actions {
     margin-top: 5px;
 }
@@ -247,6 +240,41 @@
     margin-left: 4px;
 }
 
+.presentation-track-tools {
+    flex-shrink: 0;
+    min-height: 31px;
+    flex-direction: row;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line);
+}
+
+.presentation-track-tools--hidden {
+    display: none;
+}
+
+.presentation-track-dropdown {
+    width: 165px;
+    margin-left: 7px;
+}
+
+.presentation-track-name-field {
+    min-width: 130px;
+    flex-grow: 1;
+    margin-left: 5px;
+}
+
+.presentation-track-tools .icon-button {
+    width: 27px;
+    min-width: 27px;
+    height: 22px;
+    margin-left: 3px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .timeline-host {
     flex-grow: 1;
     flex-shrink: 0;
@@ -293,7 +321,6 @@
 }
 
 .asset-row,
-.payload-row,
 .validation-row,
 .log-row {
     min-height: 30px;
@@ -302,22 +329,19 @@
 }
 
 .asset-copy,
-.payload-copy,
 .validation-message,
 .log-message {
     flex-grow: 1;
     min-width: 0;
 }
 
-.asset-name,
-.payload-name {
+.asset-name {
     -unity-font-style: bold;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.asset-meta,
-.payload-meta {
+.asset-meta {
     color: var(--muted);
     font-size: 10px;
     white-space: nowrap;
@@ -330,14 +354,6 @@
     margin-left: 5px;
     -unity-text-align: middle-center;
     font-size: 10px;
-}
-
-.payload-swatch {
-    width: 7px;
-    height: 22px;
-    min-width: 7px;
-    margin-right: 7px;
-    border-radius: 2px;
 }
 
 .severity-error { color: var(--danger); }
@@ -642,10 +658,6 @@
 
 .timeline-block--animation {
     border-color: #83bde4;
-}
-
-.timeline-block--phase {
-    border-color: #aeb6bf;
 }
 
 .timeline-block--selected {

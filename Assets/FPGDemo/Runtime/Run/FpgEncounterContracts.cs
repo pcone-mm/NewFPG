@@ -29,7 +29,8 @@ namespace FPG.Demo.Run
         Failed,
         Paused,
         Faulted,
-        Disposed
+        Disposed,
+        Defeated
     }
 
     public enum FpgEncounterFailureReason
@@ -70,7 +71,8 @@ namespace FPG.Demo.Run
         Restarted,
         Failed,
         Faulted,
-        Disposed
+        Disposed,
+        Defeated
     }
 
     public enum FpgSpawnEntryState

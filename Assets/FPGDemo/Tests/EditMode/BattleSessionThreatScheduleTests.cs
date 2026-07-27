@@ -237,11 +237,15 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(snapshots[1].DefinitionId, Is.EqualTo(810));
                 Assert.That(snapshots[0].PayloadKind,
                     Is.EqualTo(ThreatPayloadKind.SweptProjectile));
+                Assert.That(snapshots[0].PresentationKind,
+                    Is.EqualTo(FpgThreatPresentationKind.InterceptableVolley));
                 Assert.That(snapshots[0].PresentationKey, Is.EqualTo(17));
                 Assert.That(snapshots[0].TargetPolicy,
                     Is.EqualTo(ThreatTargetPolicy.PlayerCombatant));
                 Assert.That(snapshots[1].PayloadKind,
                     Is.EqualTo(ThreatPayloadKind.TimedImpact));
+                Assert.That(snapshots[1].PresentationKind,
+                    Is.EqualTo(FpgThreatPresentationKind.HeavyWeakpoint));
                 Assert.That(snapshots[1].PresentationKey, Is.EqualTo(23));
                 Assert.That(snapshots[1].TargetPolicy,
                     Is.EqualTo(ThreatTargetPolicy.PlayerCombatant));
@@ -454,7 +458,10 @@ namespace FPG.Demo.Tests.EditMode
                 new TickDuration(0),
                 new TickDuration(0),
                 new TickDuration(1),
-                ThreatPayloadDefinition.SweptProjectile(projectile, 1),
+                ThreatPayloadDefinition.SweptProjectile(
+                    projectile,
+                    1,
+                    FpgThreatPresentationKind.InterceptableVolley),
                 ThreatRetryPolicy.HoldPendingNextTick);
         }
 
@@ -476,7 +483,8 @@ namespace FPG.Demo.Tests.EditMode
                     new DamageSpec(damage, 0),
                     ThreatTargetPolicy.PlayerCombatant,
                     new TickDuration(delayTicks),
-                    1),
+                    1,
+                    FpgThreatPresentationKind.HeavyWeakpoint),
                 ThreatRetryPolicy.HoldPendingNextTick);
         }
 
@@ -489,14 +497,17 @@ namespace FPG.Demo.Tests.EditMode
                 new DamageSpec(10, 0),
                 10,
                 true,
-                1,
-                presentationKey: 17);
+                1);
             return new ThreatDefinition(
                 820,
                 new TickDuration(2),
                 new TickDuration(1),
                 new TickDuration(1),
-                ThreatPayloadDefinition.SweptProjectile(projectile, 1));
+                ThreatPayloadDefinition.SweptProjectile(
+                    projectile,
+                    1,
+                    FpgThreatPresentationKind.InterceptableVolley,
+                    17));
         }
 
         private static ThreatDefinition CreateSnapshotTimedImpactThreat()
@@ -510,7 +521,8 @@ namespace FPG.Demo.Tests.EditMode
                     new DamageSpec(6, 0),
                     ThreatTargetPolicy.PlayerCombatant,
                     new TickDuration(1),
-                    23));
+                    23,
+                    FpgThreatPresentationKind.HeavyWeakpoint));
         }
 
         private static void Start(BattleSession session)

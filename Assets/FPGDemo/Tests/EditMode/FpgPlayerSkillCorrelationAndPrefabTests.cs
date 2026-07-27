@@ -183,12 +183,12 @@ namespace FPG.Demo.Tests.EditMode
                     "missing.formal.animation",
                     animationError);
 
-                SerializedProperty logicEvents = GetFirstSequence(
+                SerializedProperty attackEvents = GetFirstSequence(
                         new SerializedObject(missingSocket))
-                    .FindPropertyRelative("logicEvents");
-                Assert.That(logicEvents, Is.Not.Null);
-                Assert.That(logicEvents.arraySize, Is.GreaterThan(0));
-                SerializedProperty socket = logicEvents
+                    .FindPropertyRelative("attackEvents");
+                Assert.That(attackEvents, Is.Not.Null);
+                Assert.That(attackEvents.arraySize, Is.GreaterThan(0));
+                SerializedProperty socket = attackEvents
                     .GetArrayElementAtIndex(0)
                     .FindPropertyRelative("socketId");
                 socket.stringValue = "missing.formal.socket";
@@ -217,7 +217,7 @@ namespace FPG.Demo.Tests.EditMode
             FpgPlayerEntityView entity = LoadCharacter().EntityPrefab;
 
             Assert.That(
-                FpgPlayerSkillPresentationResolver.TryResolveCueSource(
+                FpgPlayerSkillPresentationResolver.TryResolvePresentationSource(
                     entity,
                     "missing.formal.socket",
                     out Transform missingSource),
@@ -225,7 +225,7 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(missingSource, Is.Null);
 
             Assert.That(
-                FpgPlayerSkillPresentationResolver.TryResolveCueSource(
+                FpgPlayerSkillPresentationResolver.TryResolvePresentationSource(
                     entity,
                     string.Empty,
                     out Transform defaultSource),

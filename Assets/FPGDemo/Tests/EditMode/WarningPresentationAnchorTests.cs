@@ -11,22 +11,34 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class WarningPresentationAnchorTests
     {
+        private const int WeakpointResourceKey = 73;
+
         [Test]
-        public void CatalogRejectsKeyThreeWithoutEnemyWeakpointAnchorKind()
+        public void CatalogUsesThreatKindRatherThanResourceKeyForWeakpointAnchor()
         {
             GameObject prefabObject = CreateWarningPrefab();
             BattlePresentationCatalog catalog = CreateCatalog(
                 prefabObject.GetComponent<WarningView>(),
                 new WarningEntrySpec(
-                    BattlePresentationCatalog.WeakpointWarningPresentationKey,
+                    WeakpointResourceKey,
                     WarningAnchorKind.PlayerGround,
                     1));
             try
             {
                 Assert.That(
-                    catalog.TryValidateWarningCoverage(CreateWeakpointScenario(1), out string error),
+                    catalog.TryValidateWarningCoverage(
+                        CreateWeakpointScenario(
+                            1,
+                            FpgThreatPresentationKind.FastUninterceptable),
+                        out string error),
+                    Is.True,
+                    error);
+                Assert.That(
+                    catalog.TryValidateWarningCoverage(
+                        CreateWeakpointScenario(1),
+                        out error),
                     Is.False);
-                Assert.That(error, Does.Contain("must use the EnemyWeakpoint anchor kind"));
+                Assert.That(error, Does.Contain("HeavyWeakpoint"));
             }
             finally
             {
@@ -46,7 +58,7 @@ namespace FPG.Demo.Tests.EditMode
                 prefabObject.GetComponent<WarningView>(),
                 new WarningEntrySpec(1, WarningAnchorKind.PlayerGround, 1),
                 new WarningEntrySpec(
-                    BattlePresentationCatalog.WeakpointWarningPresentationKey,
+                    WeakpointResourceKey,
                     WarningAnchorKind.EnemyWeakpoint,
                     2));
             WarningViewPool pool = new WarningViewPool();
@@ -68,7 +80,7 @@ namespace FPG.Demo.Tests.EditMode
                     CreateSnapshot(101, 1),
                     CreateSnapshot(
                         102,
-                        BattlePresentationCatalog.WeakpointWarningPresentationKey)
+                        WeakpointResourceKey)
                 };
                 Vector3 playerGroundPosition = new Vector3(-2f, 0f, 1f);
                 Vector3 enemyWeakpointPosition = new Vector3(4f, 2.4f, 7f);
@@ -123,7 +135,7 @@ namespace FPG.Demo.Tests.EditMode
             BattlePresentationCatalog catalog = CreateCatalog(
                 prefabObject.GetComponent<WarningView>(),
                 new WarningEntrySpec(
-                    BattlePresentationCatalog.WeakpointWarningPresentationKey,
+                    WeakpointResourceKey,
                     WarningAnchorKind.EnemyWeakpoint,
                     1));
             WarningViewPool pool = new WarningViewPool();
@@ -173,13 +185,41 @@ namespace FPG.Demo.Tests.EditMode
             return catalog;
         }
 
-        private static ScenarioDefinition CreateWeakpointScenario(int threatCapacity)
+        private static ScenarioDefinition CreateWeakpointScenario(
+            int threatCapacity,
+            FpgThreatPresentationKind presentationKind =
+                FpgThreatPresentationKind.HeavyWeakpoint)
         {
-            ThreatPayloadDefinition payload = ThreatPayloadDefinition.TimedImpact(
-                new DamageSpec(10, 0),
-                ThreatTargetPolicy.PlayerCombatant,
-                TickDuration.Zero,
-                BattlePresentationCatalog.WeakpointWarningPresentationKey);
+            ThreatPayloadDefinition payload;
+            if (presentationKind == FpgThreatPresentationKind.HeavyWeakpoint)
+            {
+                payload = ThreatPayloadDefinition.TimedImpact(
+                    new DamageSpec(10, 0),
+                    ThreatTargetPolicy.PlayerCombatant,
+                    TickDuration.Zero,
+                    WeakpointResourceKey,
+                    presentationKind);
+            }
+            else
+            {
+                bool interceptable = presentationKind
+                    == FpgThreatPresentationKind.InterceptableVolley;
+                ProjectileDefinition projectile = new ProjectileDefinition(
+                    902,
+                    new TickDuration(3),
+                    new TickDuration(5),
+                    new DamageSpec(10, 0),
+                    interceptable ? 1 : 0,
+                    interceptable,
+                    1,
+                    1);
+                payload = ThreatPayloadDefinition.SweptProjectile(
+                    projectile,
+                    1,
+                    presentationKind,
+                    WeakpointResourceKey);
+            }
+
             ThreatScheduleEntry scheduleEntry = new ThreatScheduleEntry(
                 1,
                 new TickIndex(10),
@@ -205,6 +245,7 @@ namespace FPG.Demo.Tests.EditMode
                 false,
                 false,
                 ThreatPayloadKind.TimedImpact,
+                FpgThreatPresentationKind.HeavyWeakpoint,
                 presentationKey,
                 ThreatTargetPolicy.PlayerCombatant);
         }

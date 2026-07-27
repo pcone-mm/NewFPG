@@ -77,6 +77,7 @@ namespace FPG.Demo.Unity
         public TickIndex CurrentTick => currentTick;
         public FpgEncounterSession Session => session;
         public FpgFormalCombatRuntimeBundle CombatRuntime => combatRuntime;
+        public FpgEnemyDefinitionCatalog EnemyCatalog => enemyCatalog;
         public IFpgFormalPlayerRunResourceImportPort PlayerRunResourceImportPort =>
             (configuredFactory ?? formalCombatPortFactoryComponent
                 as IFpgFormalCombatPortFactory)
@@ -101,6 +102,7 @@ namespace FPG.Demo.Unity
         public int ActiveCapWeight => session == null ? 0 : session.Roster.ActiveCapWeight;
         public int PendingEntryCount => session == null ? 0 : session.Runtime.PendingSpawnCount;
         public bool IsTerminal => Phase == FpgEncounterPhase.Cleared
+            || Phase == FpgEncounterPhase.Defeated
             || Phase == FpgEncounterPhase.Failed
             || Phase == FpgEncounterPhase.Faulted
             || Phase == FpgEncounterPhase.Disposed;
@@ -109,6 +111,21 @@ namespace FPG.Demo.Unity
         public FpgExitAttackRegistry ExitAttackRegistry => exitAttackRegistry;
         public bool HasAvailableExits => exitAttackRegistry.Count > 0;
 
+        public bool TryResolveEnemyPresentationSource(
+            RuntimeId runtimeId,
+            int spawnSequence,
+            string socketId,
+            out Transform source)
+        {
+            source = null;
+            return entityPort != null
+                && entityPort.TryResolvePresentationSource(
+                    runtimeId,
+                    spawnSequence,
+                    socketId,
+                    out source);
+        }
+
         public event Action<FpgEncounterLifecycleEvent> LifecycleEvent;
         public event Action<FpgFormalEnemySkillTimelineEvent>
             EnemySkillTimelineEvent;
@@ -116,6 +133,7 @@ namespace FPG.Demo.Unity
         public event Action<string> ExitSelected;
         public event Action<FpgExitSelectionEvent> ExitOfferSelected;
         public event Action<FpgEncounterFailureReason, string> Failed;
+        public event Action RestartSucceeded;
 
         public bool TryConfigurePlayer(
             FpgPlayerEntityView entity,
@@ -546,6 +564,11 @@ namespace FPG.Demo.Unity
                 return true;
             }
 
+            if (session.State == FpgEncounterSessionState.Defeated)
+            {
+                return true;
+            }
+
             if (!tick.IsValid || currentTick.IsValid && tick <= currentTick)
             {
                 return FailRuntime(
@@ -647,6 +670,8 @@ namespace FPG.Demo.Unity
             if (result.IsSuccess)
             {
                 Phase = FpgEncounterPhase.Paused;
+                combatRuntime?.AttackScheduler
+                    .ClearPresentationCommitState();
                 TrySetOverheadHealthBarsPaused(true);
             }
             error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
@@ -705,7 +730,9 @@ namespace FPG.Demo.Unity
 
             currentTick = new TickIndex(0L);
             Phase = session.Runtime.Phase;
+            combatStarted = true;
             ConsumeEnemyVitalsPresentation();
+            RestartSucceeded?.Invoke();
             error = string.Empty;
             return true;
         }
@@ -743,6 +770,13 @@ namespace FPG.Demo.Unity
             {
                 LockExits(true);
                 RaiseRoomCleared(lifecycle.Tick);
+            }
+            else if (lifecycle.Type == FpgEncounterLifecycleEventType.Defeated)
+            {
+                exitAttackRegistry.Clear();
+                LockExits(true);
+                combatRuntime?.ClearForDefeat();
+                TryClearOverheadHealthBars();
             }
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.Failed
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Faulted)
@@ -809,13 +843,6 @@ namespace FPG.Demo.Unity
                     PresentationFaultCount++;
                 }
             }
-        }
-
-        public bool TryPresentEnemySkillCue(
-            in FpgFormalEnemySkillCuePresentationEvent cueEvent)
-        {
-            return entityPort != null
-                && entityPort.TryPresentEnemySkillCue(cueEvent);
         }
 
         public bool TrySetEnemySkillWarning(
@@ -1437,6 +1464,9 @@ namespace FPG.Demo.Unity
             string message,
             out string error)
         {
+            bool lifecycleAlreadyPublished = session != null
+                && (session.Runtime.Phase == FpgEncounterPhase.Failed
+                    || session.Runtime.Phase == FpgEncounterPhase.Faulted);
             Phase = FpgEncounterPhase.Faulted;
             DeactivateAndClearExits();
 
@@ -1449,6 +1479,10 @@ namespace FPG.Demo.Unity
             combatantAnchorMap?.Clear();
             enemyEntityPool?.ClearActive();
             combatStarted = false;
+            if (!lifecycleAlreadyPublished)
+            {
+                EmitLocal(FpgEncounterLifecycleEventType.Faulted);
+            }
 
             Failed?.Invoke(reason, message ?? string.Empty);
             error = string.IsNullOrWhiteSpace(message)

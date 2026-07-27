@@ -1,17 +1,18 @@
-# Materials 使用指南
+# Materials 指南
 
-## 目录地图
+本目录是遗留原型材质库，不是正式 FPG 表现入口。
 
-- `Prototype/` 放原型场景使用的材质。
-- `Dongfu/` 放 `Dongfu_Home.unity` 使用的洞府材质，例如石地、洞壁、暗木、炉火和战斗传送门。
+## 目录边界
+
+- `Prototype/` 保存旧原型和 ProBuilder 材质。
+- `Dongfu/` 保存已删除洞府场景留下的洞壁、地面、木材、炉火和传送门材质。
 
 ## 工作规则
 
-- 原型专用材质先放在 `Prototype/`，直到它们升级为可复用美术方向资源。
-- 洞府材质先保持在 `Dongfu/`，除非已经有跨场景复用证据，再迁到更通用的美术/材质目录。
-- 只做材质改动时，不要顺手调整渲染管线资源或全局光照设置，除非任务明确要求。
+- 不以已删除的 `Dongfu_Home.unity` 或旧 Prototype 场景作为验证入口。
+- 正式采用前先做 GUID 反向引用审计；需要项目自有派生材质时放入 `Assets/FPGDemo/Presentation/Materials/` 或对应正式表现子目录。
+- 移动或派生材质时保留源材质与 `.meta`，并检查 shader、texture、render queue 和 URP surface 设置；不要顺手改全局渲染管线。
 
-## 验证方式
+## 验证
 
-- 视觉材质改动需要检查受影响场景，或截一张截图确认。
-- 改 `Dongfu/` 材质后优先打开 `Dongfu_Home.unity` 检查炼器房、洞壁和战斗入口的读图效果。
+- 视觉改动只在当前真实引用该材质的 prefab/scene 中检查；没有正式引用时明确标为候选素材，不宣称已接入。

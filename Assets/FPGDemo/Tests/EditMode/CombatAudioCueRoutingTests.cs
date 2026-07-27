@@ -19,22 +19,6 @@ namespace FPG.Demo.Tests.EditMode
         {
             AssertCue(
                 CreateTrace(
-                    CombatEventType.InputAccepted,
-                    PlayerRuntimeId,
-                    RuntimeId.Invalid,
-                    (int)WeaponState.Ready,
-                    (int)WeaponState.AltCharging),
-                CombatAudioCue.PlayerSecondaryCharge);
-            AssertCue(
-                CreateTrace(
-                    CombatEventType.ReloadStarted,
-                    PlayerRuntimeId,
-                    RuntimeId.Invalid,
-                    0,
-                    0),
-                CombatAudioCue.PlayerReload);
-            AssertCue(
-                CreateTrace(
                     CombatEventType.DamageApplied,
                     EnemyRuntimeId,
                     PlayerRuntimeId,
@@ -66,69 +50,116 @@ namespace FPG.Demo.Tests.EditMode
                     (int)BattleCompletionReason.Victory),
                 CombatAudioCue.Victory);
 
-            CombatEvent otherActorReload = CreateTrace(
+            CombatEvent skillReload = CreateTrace(
                 CombatEventType.ReloadStarted,
-                EnemyRuntimeId,
+                PlayerRuntimeId,
                 RuntimeId.Invalid,
                 0,
                 0);
             Assert.That(
                 CombatAudioCueRouting.TryGetTraceCue(
-                    otherActorReload,
+                    skillReload,
                     PlayerRuntimeId,
                     EnemyRuntimeId,
                     out _),
-                Is.False);
+                Is.False,
+                "Skill reload audio is owned by the ReloadCommit node.");
         }
 
         [Test]
-        public void ThreatTransitionsMapOnlyTelegraphAndCommittedReleaseForTheThreeD0Keys()
+        public void ThreatTransitionsMapOnlyTelegraphAndCommittedReleaseForTheThreeThreatKinds()
         {
             AssertThreatCue(
-                CombatPresentationProfile.FastThreatPresentationKey,
+                FpgThreatPresentationKind.FastUninterceptable,
                 ThreatState.Scheduled,
                 ThreatState.Telegraph,
                 CombatAudioCue.EnemyFastThreatTelegraph);
             AssertThreatCue(
-                CombatPresentationProfile.FastThreatPresentationKey,
+                FpgThreatPresentationKind.FastUninterceptable,
                 ThreatState.Windup,
                 ThreatState.ReleaseCommitted,
                 CombatAudioCue.EnemyFastThreatRelease);
             AssertThreatCue(
-                CombatPresentationProfile.InterceptableVolleyThreatPresentationKey,
+                FpgThreatPresentationKind.InterceptableVolley,
                 ThreatState.Scheduled,
                 ThreatState.Telegraph,
                 CombatAudioCue.EnemyInterceptableThreatTelegraph);
             AssertThreatCue(
-                CombatPresentationProfile.InterceptableVolleyThreatPresentationKey,
+                FpgThreatPresentationKind.InterceptableVolley,
                 ThreatState.Windup,
                 ThreatState.ReleaseCommitted,
                 CombatAudioCue.EnemyInterceptableThreatRelease);
             AssertThreatCue(
-                CombatPresentationProfile.HeavyWeakpointThreatPresentationKey,
+                FpgThreatPresentationKind.HeavyWeakpoint,
                 ThreatState.Scheduled,
                 ThreatState.Telegraph,
                 CombatAudioCue.EnemyHeavyThreatTelegraph);
             AssertThreatCue(
-                CombatPresentationProfile.HeavyWeakpointThreatPresentationKey,
+                FpgThreatPresentationKind.HeavyWeakpoint,
                 ThreatState.Windup,
                 ThreatState.ReleaseCommitted,
                 CombatAudioCue.EnemyHeavyThreatRelease);
 
             Assert.That(
                 CombatAudioCueRouting.TryGetThreatTransitionCue(
-                    CombatPresentationProfile.FastThreatPresentationKey,
+                    FpgThreatPresentationKind.FastUninterceptable,
                     ThreatState.ReleaseCommitted,
                     ThreatState.Recovery,
                     out _),
                 Is.False);
             Assert.That(
                 CombatAudioCueRouting.TryGetThreatTransitionCue(
-                    99,
+                    (FpgThreatPresentationKind)99,
                     ThreatState.Scheduled,
                     ThreatState.Telegraph,
                     out _),
                 Is.False);
+        }
+
+        [Test]
+        public void ThreatRoutingUsesSemanticKindWhenResourceKeysAreIdentical()
+        {
+            RuntimeId threatRuntimeId = new RuntimeId(17L);
+            CombatEvent release = CreateTrace(
+                CombatEventType.ThreatStateChanged,
+                EnemyRuntimeId,
+                threatRuntimeId,
+                (int)ThreatState.Windup,
+                (int)ThreatState.ReleaseCommitted);
+
+            Assert.That(
+                D0ThreatPresentationRouting.TryResolve(
+                    release,
+                    EnemyRuntimeId,
+                    threatRuntimeId,
+                    FpgThreatPresentationKind.FastUninterceptable,
+                    77,
+                    out D0ThreatPresentationSignal fast),
+                Is.True);
+            Assert.That(
+                D0ThreatPresentationRouting.TryResolve(
+                    release,
+                    EnemyRuntimeId,
+                    threatRuntimeId,
+                    FpgThreatPresentationKind.HeavyWeakpoint,
+                    77,
+                    out D0ThreatPresentationSignal heavy),
+                Is.True);
+
+            Assert.That(fast.PresentationKey, Is.EqualTo(77));
+            Assert.That(heavy.PresentationKey, Is.EqualTo(77));
+            Assert.That(
+                fast.Command,
+                Is.EqualTo(D0ThreatPresentationCommand.ReleaseFast));
+            Assert.That(
+                heavy.Command,
+                Is.EqualTo(D0ThreatPresentationCommand.ReleaseHeavy));
+            Assert.That(
+                fast.AudioCue,
+                Is.EqualTo(CombatAudioCue.EnemyFastThreatRelease));
+            Assert.That(
+                heavy.AudioCue,
+                Is.EqualTo(CombatAudioCue.EnemyHeavyThreatRelease));
         }
 
         [Test]
@@ -196,14 +227,14 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         private static void AssertThreatCue(
-            int presentationKey,
+            FpgThreatPresentationKind presentationKind,
             ThreatState previousState,
             ThreatState currentState,
             CombatAudioCue expectedCue)
         {
             Assert.That(
                 CombatAudioCueRouting.TryGetThreatTransitionCue(
-                    presentationKey,
+                    presentationKind,
                     previousState,
                     currentState,
                     out CombatAudioCue cue),

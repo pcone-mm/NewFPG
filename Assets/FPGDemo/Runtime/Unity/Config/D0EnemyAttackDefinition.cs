@@ -39,9 +39,8 @@ namespace FPG.Demo.Unity
     }
 
     /// <summary>
-    /// Reusable enemy move definition. A single attack asset owns its animation,
-    /// warning, timing, payload, hit/break outcome and presentation slots; an
-    /// encounter only decides when that asset is scheduled.
+    /// Reusable D0 threat definition. Presentation is resolved globally from the
+    /// explicit threat kind and resource key; formal skill presentation is V3-only.
     /// </summary>
     [CreateAssetMenu(
         fileName = "D0EnemyAttackDefinition",
@@ -145,7 +144,7 @@ namespace FPG.Demo.Unity
         private D0AnimationMotionStartPhase animationMotionStartPhase =
             D0AnimationMotionStartPhase.Windup;
 
-        [D0PlannerField("攻击表现键", "当前 D0 威胁路由只识别 1（快速不可拦截）、2（可拦截弹幕）、3（重型弱点攻击）。必须与载荷类型和可拦截性一起校验；其他值会被配置验证拒绝。")]
+        [D0PlannerField("攻击表现资源键", "仅用于查找攻击表现资源，不承载快攻、可拦截齐射或重击弱点语义；威胁语言由攻击语义标签单独决定。该值必须大于 0。")]
         [SerializeField, Min(1)]
         private int presentationKey = 1;
 
@@ -174,12 +173,6 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private ThreatRetryPolicy retryPolicy = ThreatRetryPolicy.HoldPendingNextTick;
 
-        [D0PlannerSection("攻击专属表现")]
-        [D0PlannerField("攻击表现契约", "动画、视觉 Socket、VFX 池和释放时序均归属当前攻击资产，遭遇配置只负责调度。")]
-        [SerializeField]
-        private D0EnemyAttackPresentationDefinition presentation =
-            D0EnemyAttackPresentationDefinition.CreateDefaults();
-
         public string AttackId => attackId;
         public string DisplayName => displayName;
         public string DesignerNotes => designerNotes;
@@ -194,56 +187,10 @@ namespace FPG.Demo.Unity
         public D0AnimationMotionStartPhase AnimationMotionStartPhase => animationMotionStartPhase;
         public ThreatPayloadKind PayloadKind => payloadKind;
         public int PayloadCount => payloadCount;
+        public FpgThreatPresentationKind ThreatPresentationKind =>
+            ResolveThreatPresentationKind(attackLanguage);
         public int PresentationKey => presentationKey;
         public bool ProjectileInterceptable => projectileInterceptable;
-        public D0EnemyAttackPresentationDefinition Presentation => presentation;
-        public string SocketId => presentation == null ? string.Empty : presentation.SocketId;
-        public string AttackSocketId => SocketId;
-        public string AttackAnimation => presentation == null ? string.Empty : presentation.AnimationName;
-        public string AnimationName => AttackAnimation;
-        public string ReleaseAnimationName => presentation == null
-            ? string.Empty
-            : presentation.ReleaseAnimationName;
-        public string EffectiveVisualEffectKey => presentation == null
-            ? string.Empty
-            : presentation.VisualEffectKey;
-        public GameObject VisualEffectPrefab => presentation == null
-            ? null
-            : presentation.VisualEffectPrefab;
-        public int VfxPrewarmCapacity => presentation == null
-            ? 0
-            : presentation.PrewarmCapacity;
-        public float VfxDuration => presentation == null
-            ? 0f
-            : presentation.EffectDuration;
-        public int VfxSortingOrderOffset => presentation == null
-            ? 0
-            : presentation.SortingOrderOffset;
-        public CombatAudioCue AudioCue => presentation == null
-            ? CombatAudioCue.None
-            : presentation.AudioCue;
-        public string VisualEffectKey => EffectiveVisualEffectKey;
-        public int ReleaseMarkerTicks => presentation == null
-            ? 0
-            : presentation.ReleaseMarkerTicks;
-
-        public bool TryValidatePresentation(out string error)
-        {
-            if (presentation == null)
-            {
-                error = "Enemy attack requires an explicit presentation definition.";
-                return false;
-            }
-
-            if (!presentation.TryValidate(out error))
-            {
-                error = "Enemy attack presentation is invalid: " + error;
-                return false;
-            }
-
-            error = string.Empty;
-            return true;
-        }
 
         public bool TryCreateScheduleEntry(
             long scheduleSequence,
@@ -278,9 +225,12 @@ namespace FPG.Demo.Unity
                             projectileHitPoints,
                             projectileInterceptable,
                             projectileBudgetUnits,
-                            presentationKey,
                             sweepRadiusKey);
-                        payload = ThreatPayloadDefinition.SweptProjectile(projectile, payloadCount);
+                        payload = ThreatPayloadDefinition.SweptProjectile(
+                            projectile,
+                            payloadCount,
+                            ThreatPresentationKind,
+                            presentationKey);
                         break;
                     }
 
@@ -295,7 +245,8 @@ namespace FPG.Demo.Unity
                             new DamageSpec(timedImpactDamage, timedImpactBreakDamage),
                             timedImpactTargetPolicy,
                             new TickDuration(timedImpactDelayTicks),
-                            presentationKey);
+                            presentationKey,
+                            ThreatPresentationKind);
                         break;
 
                     default:
@@ -333,12 +284,7 @@ namespace FPG.Demo.Unity
                 || windupTicks < 0
                 || recoveryTicks < 0)
             {
-                error = "D0 enemy attack requires identity, presentation slots and non-negative timing values.";
-                return false;
-            }
-
-            if (!TryValidatePresentation(out error))
-            {
+                error = "D0 enemy attack requires identity, a warning slot and non-negative timing values.";
                 return false;
             }
 
@@ -351,12 +297,6 @@ namespace FPG.Demo.Unity
             if (!animationMotion.TryValidate(out error))
             {
                 error = "D0 enemy attack animation motion is invalid: " + error;
-                return false;
-            }
-
-            if (!D0ThreatPresentationRouting.TryGetKind(presentationKey, out _))
-            {
-                error = "D0 attack presentation key must be 1 (fast), 2 (interceptable volley), or 3 (heavy weakpoint).";
                 return false;
             }
 
@@ -395,6 +335,15 @@ namespace FPG.Demo.Unity
                         return false;
                     }
 
+                    if (!FpgThreatPresentationRules.IsValidForSweptProjectile(
+                            ThreatPresentationKind,
+                            projectileInterceptable))
+                    {
+                        error =
+                            "D0 swept-projectile threat presentation kind does not match projectile interceptability.";
+                        return false;
+                    }
+
                     break;
 
                 case ThreatPayloadKind.TimedImpact:
@@ -408,6 +357,14 @@ namespace FPG.Demo.Unity
                         return false;
                     }
 
+                    if (!FpgThreatPresentationRules.IsValidForTimedImpact(
+                            ThreatPresentationKind))
+                    {
+                        error =
+                            "D0 timed-impact threats require the heavy-weakpoint presentation kind.";
+                        return false;
+                    }
+
                     break;
 
                 default:
@@ -417,6 +374,25 @@ namespace FPG.Demo.Unity
 
             error = string.Empty;
             return true;
+        }
+
+        private static FpgThreatPresentationKind ResolveThreatPresentationKind(
+            D0EnemyAttackLanguage language)
+        {
+            switch (language)
+            {
+                case D0EnemyAttackLanguage.FastAttack:
+                    return FpgThreatPresentationKind.FastUninterceptable;
+
+                case D0EnemyAttackLanguage.InterceptableVolley:
+                    return FpgThreatPresentationKind.InterceptableVolley;
+
+                case D0EnemyAttackLanguage.HeavyWeakpointBreak:
+                    return FpgThreatPresentationKind.HeavyWeakpoint;
+
+                default:
+                    return (FpgThreatPresentationKind)(-1);
+            }
         }
     }
 

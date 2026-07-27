@@ -1,127 +1,253 @@
+using System;
 using System.Collections.Generic;
+using FPG.Demo.Skills;
 using UnityEngine;
 
 namespace FPG.Demo.Editor.SkillAuthoring
 {
+    internal readonly struct FpgSkillEventKey :
+        IEquatable<FpgSkillEventKey>,
+        IComparable<FpgSkillEventKey>
+    {
+        private readonly int storedLocalIndex;
+        private readonly int storedPresentationTrackIndex;
+
+        public FpgSkillEventKey(
+            FpgSkillEventTrackKind track,
+            FpgSkillActionKind actionKind,
+            int localIndex)
+            : this(track, actionKind, -1, localIndex)
+        {
+        }
+
+        public FpgSkillEventKey(
+            FpgSkillEventTrackKind track,
+            FpgSkillActionKind actionKind,
+            int presentationTrackIndex,
+            int localIndex)
+        {
+            if (localIndex < 0
+                || localIndex == int.MaxValue
+                || presentationTrackIndex == int.MaxValue)
+            {
+                Track = default;
+                ActionKind = default;
+                storedLocalIndex = 0;
+                storedPresentationTrackIndex = 0;
+                return;
+            }
+
+            Track = track;
+            ActionKind = actionKind;
+            storedLocalIndex = localIndex + 1;
+            storedPresentationTrackIndex = presentationTrackIndex + 1;
+        }
+
+        public static FpgSkillEventKey Invalid => default;
+        public FpgSkillEventTrackKind Track { get; }
+        public FpgSkillActionKind ActionKind { get; }
+        public int PresentationTrackIndex =>
+            storedPresentationTrackIndex - 1;
+        public int LocalIndex => storedLocalIndex - 1;
+        public bool IsValid => storedLocalIndex > 0;
+
+        public int CompareTo(FpgSkillEventKey other)
+        {
+            if (!IsValid || !other.IsValid)
+            {
+                return IsValid.CompareTo(other.IsValid);
+            }
+
+            int trackComparison = Track.CompareTo(other.Track);
+            if (trackComparison != 0)
+            {
+                return trackComparison;
+            }
+
+            int actionComparison = ActionKind.CompareTo(other.ActionKind);
+            if (actionComparison != 0)
+            {
+                return actionComparison;
+            }
+
+            int presentationTrackComparison = PresentationTrackIndex.CompareTo(
+                other.PresentationTrackIndex);
+            return presentationTrackComparison != 0
+                ? presentationTrackComparison
+                : LocalIndex.CompareTo(other.LocalIndex);
+        }
+
+        public bool Equals(FpgSkillEventKey other)
+        {
+            return Track == other.Track
+                && ActionKind == other.ActionKind
+                && storedPresentationTrackIndex
+                    == other.storedPresentationTrackIndex
+                && storedLocalIndex == other.storedLocalIndex;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is FpgSkillEventKey other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = (int)Track;
+                hash = (hash * 397) ^ (int)ActionKind;
+                hash = (hash * 397) ^ storedPresentationTrackIndex;
+                return (hash * 397) ^ storedLocalIndex;
+            }
+        }
+
+        public override string ToString()
+        {
+            return IsValid
+                ? Track + "/" + ActionKind + "/"
+                    + PresentationTrackIndex + "/" + LocalIndex
+                : "Invalid";
+        }
+
+        public static bool operator ==(
+            FpgSkillEventKey left,
+            FpgSkillEventKey right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(
+            FpgSkillEventKey left,
+            FpgSkillEventKey right)
+        {
+            return !left.Equals(right);
+        }
+    }
+
     internal readonly struct FpgSkillEditorLocation
     {
-        public FpgSkillEditorLocation(int eventIndex, int payloadIndex, int tick)
+        public FpgSkillEditorLocation(
+            FpgSkillEventKey eventKey,
+            int tick)
         {
-            EventIndex = eventIndex;
-            PayloadIndex = payloadIndex;
+            EventKey = eventKey;
             Tick = tick;
         }
 
-        public int EventIndex { get; }
-        public int PayloadIndex { get; }
+        public FpgSkillEventKey EventKey { get; }
         public int Tick { get; }
     }
 
     internal sealed class FpgSkillEventSelection
     {
-        private readonly List<int> ordered = new List<int>();
-        private readonly HashSet<int> selected = new HashSet<int>();
+        private readonly List<FpgSkillEventKey> ordered =
+            new List<FpgSkillEventKey>();
+        private readonly HashSet<FpgSkillEventKey> selected =
+            new HashSet<FpgSkillEventKey>();
 
-        public IReadOnlyList<int> Items => ordered;
+        public IReadOnlyList<FpgSkillEventKey> Items => ordered;
         public int Count => ordered.Count;
-        public int PrimaryEventIndex { get; private set; } = -1;
+        public FpgSkillEventKey PrimaryEventKey { get; private set; }
 
-        public bool Contains(int eventIndex)
+        public bool Contains(FpgSkillEventKey eventKey)
         {
-            return selected.Contains(eventIndex);
+            return selected.Contains(eventKey);
         }
 
         public void Clear()
         {
             ordered.Clear();
             selected.Clear();
-            PrimaryEventIndex = -1;
+            PrimaryEventKey = FpgSkillEventKey.Invalid;
         }
 
-        public void SetSingle(int eventIndex)
+        public void SetSingle(FpgSkillEventKey eventKey)
         {
             Clear();
-            if (eventIndex < 0)
+            if (!eventKey.IsValid)
             {
                 return;
             }
 
-            selected.Add(eventIndex);
-            ordered.Add(eventIndex);
-            PrimaryEventIndex = eventIndex;
+            selected.Add(eventKey);
+            ordered.Add(eventKey);
+            PrimaryEventKey = eventKey;
         }
 
-        public void Set(IEnumerable<int> eventIndices, int primaryEventIndex = -1)
+        public void Set(
+            IEnumerable<FpgSkillEventKey> eventKeys,
+            FpgSkillEventKey primaryEventKey = default)
         {
             Clear();
-            if (eventIndices != null)
+            if (eventKeys != null)
             {
-                foreach (int eventIndex in eventIndices)
+                foreach (FpgSkillEventKey eventKey in eventKeys)
                 {
-                    if (eventIndex >= 0 && selected.Add(eventIndex))
+                    if (eventKey.IsValid && selected.Add(eventKey))
                     {
-                        ordered.Add(eventIndex);
+                        ordered.Add(eventKey);
                     }
                 }
             }
 
-            if (selected.Contains(primaryEventIndex))
+            if (selected.Contains(primaryEventKey))
             {
-                PrimaryEventIndex = primaryEventIndex;
+                PrimaryEventKey = primaryEventKey;
             }
             else if (ordered.Count > 0)
             {
-                PrimaryEventIndex = ordered[ordered.Count - 1];
+                PrimaryEventKey = ordered[ordered.Count - 1];
             }
         }
 
-        public void Add(int eventIndex)
+        public void Add(FpgSkillEventKey eventKey)
         {
-            if (eventIndex < 0)
+            if (!eventKey.IsValid)
             {
                 return;
             }
 
-            if (selected.Add(eventIndex))
+            if (selected.Add(eventKey))
             {
-                ordered.Add(eventIndex);
+                ordered.Add(eventKey);
             }
 
-            PrimaryEventIndex = eventIndex;
+            PrimaryEventKey = eventKey;
         }
 
-        public void MakePrimary(int eventIndex)
+        public void MakePrimary(FpgSkillEventKey eventKey)
         {
-            if (selected.Contains(eventIndex))
+            if (selected.Contains(eventKey))
             {
-                PrimaryEventIndex = eventIndex;
+                PrimaryEventKey = eventKey;
             }
         }
 
-        public void Toggle(int eventIndex)
+        public void Toggle(FpgSkillEventKey eventKey)
         {
-            if (eventIndex < 0)
+            if (!eventKey.IsValid)
             {
                 return;
             }
 
-            if (selected.Remove(eventIndex))
+            if (selected.Remove(eventKey))
             {
-                ordered.Remove(eventIndex);
-                PrimaryEventIndex = ordered.Count == 0
-                    ? -1
+                ordered.Remove(eventKey);
+                PrimaryEventKey = ordered.Count == 0
+                    ? FpgSkillEventKey.Invalid
                     : ordered[ordered.Count - 1];
                 return;
             }
 
-            selected.Add(eventIndex);
-            ordered.Add(eventIndex);
-            PrimaryEventIndex = eventIndex;
+            selected.Add(eventKey);
+            ordered.Add(eventKey);
+            PrimaryEventKey = eventKey;
         }
 
-        public void Retain(ISet<int> validEventIndices)
+        public void Retain(ISet<FpgSkillEventKey> validEventKeys)
         {
-            if (validEventIndices == null)
+            if (validEventKeys == null)
             {
                 Clear();
                 return;
@@ -129,20 +255,20 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             for (int index = ordered.Count - 1; index >= 0; index--)
             {
-                int eventIndex = ordered[index];
-                if (validEventIndices.Contains(eventIndex))
+                FpgSkillEventKey eventKey = ordered[index];
+                if (validEventKeys.Contains(eventKey))
                 {
                     continue;
                 }
 
                 ordered.RemoveAt(index);
-                selected.Remove(eventIndex);
+                selected.Remove(eventKey);
             }
 
-            if (!selected.Contains(PrimaryEventIndex))
+            if (!selected.Contains(PrimaryEventKey))
             {
-                PrimaryEventIndex = ordered.Count == 0
-                    ? -1
+                PrimaryEventKey = ordered.Count == 0
+                    ? FpgSkillEventKey.Invalid
                     : ordered[ordered.Count - 1];
             }
         }
@@ -182,7 +308,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             if (item == null)
             {
-                return new FpgSkillEditorLocation(-1, -1, CurrentTick);
+                return new FpgSkillEditorLocation(
+                    FpgSkillEventKey.Invalid,
+                    CurrentTick);
             }
 
             if (item.Tick >= 0)
@@ -191,8 +319,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             return new FpgSkillEditorLocation(
-                item.EventIndex,
-                item.PayloadIndex,
+                item.EventKey,
                 CurrentTick);
         }
     }

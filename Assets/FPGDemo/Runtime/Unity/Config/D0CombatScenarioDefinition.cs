@@ -357,18 +357,10 @@ namespace FPG.Demo.Unity
                 {
                     D0EncounterAttackScheduleEntry scheduledAttack =
                         encounter.GetAttackScheduleEntry(index);
-                    if (scheduledAttack.Attack == null
-                        || !TryValidateEntityAnimations(
-                            hudieEnemy,
-                            out error,
-                            scheduledAttack.Attack.AnimationName))
+                    if (scheduledAttack.Attack == null)
                     {
-                        if (string.IsNullOrEmpty(error))
-                        {
-                            error =
-                                "Luan/Hudie combat scenario requires concrete Hudie attack definitions.";
-                        }
-
+                        error =
+                            "Luan/Hudie combat scenario requires concrete Hudie attack definitions.";
                         return false;
                     }
                 }

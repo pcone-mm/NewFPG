@@ -139,7 +139,10 @@ namespace FPG.Demo.Tests.EditMode
                 new TickDuration(windupTicks),
                 new TickDuration(recoveryTicks),
                 projectile,
-                payloadCount);
+                payloadCount,
+                interceptable
+                    ? FpgThreatPresentationKind.InterceptableVolley
+                    : FpgThreatPresentationKind.FastUninterceptable);
         }
 
         private static long DivideRoundUp(long numerator, long denominator)

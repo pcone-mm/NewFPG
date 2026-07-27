@@ -828,8 +828,7 @@ namespace FPG.Demo.Unity
                  && Enum.IsDefined(typeof(Team), request.Team)
                  && (!request.Interceptable || request.Team == Team.Enemy)
                  && request.DefinitionId > 0
-                && request.SweepRadiusKey > 0
-                && request.PresentationKey > 0;
+                && request.SweepRadiusKey > 0;
         }
 
         private static bool IsSweepRequestValid(in ProjectileSweepRequest request)

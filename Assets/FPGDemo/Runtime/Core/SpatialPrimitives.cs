@@ -4,7 +4,7 @@ namespace FPG.Demo.Core
 {
     public static class SpatialContract
     {
-        public const int Version = 2;
+        public const int Version = 3;
         public const int PositionUnitsPerMeter = 1000;
         public const int DirectionUnits = 1000000;
         public const int DistanceUnitsPerMeter = 1000;

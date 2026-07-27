@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4818c1a910e12794fa92127eee4d9fb4, type: 3}
   m_Name: FPG_Fei_Reload
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgPlayerSkillDefinition
+  authoringSchemaVersion: 3
   skillId: fei.reload
   displayName: Fei Reload
   designerNotes: Migrated reload. The magazine commit is an endpoint event at Tick
@@ -26,97 +27,22 @@ MonoBehaviour:
     animationStartTick: 0
     animationEndTick: 84
     sourceAnimationDurationTicks: 0
-    phases:
-    - phaseId: startup
-      kind: 1
-      startTick: 0
-      endTick: 39
-    - phaseId: active
-      kind: 2
-      startTick: 40
-      endTick: 40
-    logicEvents:
+    attackEvents: []
+    projectileEvents: []
+    reloadEvents:
     - eventId: event.fei.reload.commit.0
       tick: 40
-      payloadSlotId: payload.fei.reload
       authoredOrdinal: 0
       socketId: 
       targetSource: 3
       targetOffset: {x: 0, y: 0, z: 0}
-    presentationCues:
-    - eventId: cue.fei.reload.ready.0
-      tick: 40
-      cueId: animation.u1_buff_ready
-      authoredOrdinal: 1
-      socketId: 
-      bindGameplayEventId: event.fei.reload.commit.0
+      successAnimationName: u1_buff_ready
+    summonEvents: []
+    activePresentationTracks: []
     warnings: []
   secondaryTriggerMode: 0
   minimumChargeTicks: 0
-  shotPresentation:
-    socketId: weapon.primary.muzzle
-    muzzleVfxKey: player.weapon.primary.muzzle
-    tracerVfxKey: player.weapon.primary.tracer
-    animationName: attack_play1
-    alternateAnimationName: attack_play2
-    effectColor: {r: 0.42, g: 0.9, b: 1, a: 0.96}
-    muzzleDuration: 0.07
-    muzzleLength: 0.34
-    muzzleWidth: 0.12
-    muzzleLightIntensity: 1.25
-    tracerDuration: 0.13
-    tracerWidth: 0.052
-    tracerEndpointLightIntensity: 0.8
-    muzzlePrewarmCapacity: 2
-    tracerPrewarmCapacity: 8
-  secondaryPresentation:
-    shot:
-      socketId: weapon.secondary.muzzle
-      muzzleVfxKey: player.weapon.secondary.muzzle
-      tracerVfxKey: player.weapon.secondary.tracer
-      animationName: defense_play
-      alternateAnimationName: 
-      effectColor: {r: 1, g: 0.98, b: 0.72, a: 1}
-      muzzleDuration: 0.13
-      muzzleLength: 0.62
-      muzzleWidth: 0.18
-      muzzleLightIntensity: 2.1
-      tracerDuration: 0.36
-      tracerWidth: 0.12
-      tracerEndpointLightIntensity: 1.55
-      muzzlePrewarmCapacity: 1
-      tracerPrewarmCapacity: 4
-    chargeVfxKey: player.weapon.secondary.charge
-    targetBurstVfxKey: player.weapon.secondary.target-burst
-    targetDepthAnchor: 0
-    fallbackCameraDistance: 8
-    chargePulseDuration: 0.18
-    targetBurstRadiusScale: 0.32
-    targetBurstMinRadius: 0.42
-    targetBurstMaxRadius: 1.4
-    chargeAnimation: u4_attack_ready
-    releaseAnimation: defense_play
-    endAnimation: u4_attack_end
-    hitMarkerTime: 0.033
-    stopMarkerTime: 1
-    chargePrewarmCapacity: 1
-    targetBurstPrewarmCapacity: 4
-  reloadPresentation:
-    playAnimation: u1_buff_play
-    readyAnimation: u1_buff_ready
   sequenceCooldownTicks: 0
-  payloadSlots:
-  - slotId: payload.fei.reload
-    displayName: Reload Commit
-    kind: 3
-    ammoCost: 0
-    baseDamage: 0
-    breakDamage: 0
-    weakpointDamageMultiplierBasisPoints: 10000
-    weakpointBreakMultiplierBasisPoints: 10000
-    queryMode: 0
-    pelletCount: 1
-    additionalPenetrationCount: 0
-    areaCombatantLimit: 1
-    areaProjectileLimit: 0
-    allowedTargetKinds: 0
+  references:
+    version: 2
+    RefIds: []

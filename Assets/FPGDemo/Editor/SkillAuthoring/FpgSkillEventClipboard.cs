@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FPG.Demo.Skills;
 using UnityEditor;
 using UnityEngine;
 
@@ -38,6 +39,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
     internal sealed class FpgSkillEventClipboardItem
     {
         public FpgSkillEventTrackKind Track;
+        public FpgSkillActionKind ActionKind;
+        public string PresentationTrackId;
         public int RelativeTick;
         public int DurationTicks;
         public int RelativeAuthoredOrdinal;
@@ -183,7 +186,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     value = property.objectReferenceValue;
                     return true;
                 case SerializedPropertyType.Enum:
-                    value = property.enumValueIndex;
+                    value = property.intValue;
                     return true;
                 case SerializedPropertyType.Vector2:
                     value = property.vector2Value;
@@ -266,7 +269,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     property.objectReferenceValue = value as UnityEngine.Object;
                     break;
                 case SerializedPropertyType.Enum:
-                    property.enumValueIndex = Convert.ToInt32(value);
+                    property.intValue = Convert.ToInt32(value);
                     break;
                 case SerializedPropertyType.Vector2:
                     property.vector2Value = (Vector2)value;

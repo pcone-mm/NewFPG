@@ -323,59 +323,6 @@ public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out stri
                 return false;
             }
 
-            return TryValidateScheduledAttackSockets(out error);
-        }
-
-        private bool TryValidateScheduledAttackSockets(out string error)
-        {
-            error = string.Empty;
-            if (!UsesReusableAttackDefinitions)
-            {
-                error = string.Empty;
-                return true;
-            }
-
-            for (int index = 0; index < attackSchedule.Length; index++)
-            {
-                D0EncounterAttackScheduleEntry schedule =
-                    attackSchedule[index];
-                D0EnemyAttackDefinition attack = schedule.Attack;
-                D0EncounterSpawnSlot activeSpawn = spawnSlots[0];
-                for (int spawnIndex = 1;
-                     spawnIndex < spawnSlots.Length;
-                     spawnIndex++)
-                {
-                    D0EncounterSpawnSlot candidate = spawnSlots[spawnIndex];
-                    if (candidate.SpawnTick > schedule.DueTick)
-                    {
-                        break;
-                    }
-
-                    activeSpawn = candidate;
-                }
-
-                D0EnemyEntityView entity =
-                    activeSpawn.Enemy == null
-                        ? null
-                        : activeSpawn.Enemy.EntityPrefab;
-                D0ActorSocketRegistry registry =
-                    entity == null ? null : entity.SocketRegistry;
-                if (attack == null
-                    || !attack.TryValidatePresentation(out error)
-                    || registry == null
-                    || !registry.TryValidate(out error)
-                    || !registry.TryResolve(attack.SocketId, out _))
-                {
-                    if (string.IsNullOrEmpty(error))
-                    {
-                        error =
-                            $"Encounter attack '{attack?.name ?? "<missing>"}' cannot resolve socket '{attack?.SocketId ?? "<missing>"}' on the active Entity Prefab.";
-                    }
-
-                    return false;
-                }
-            }
-
             error = string.Empty;
             return true;
         }
@@ -527,10 +474,10 @@ public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out stri
                     case D0EnemyAttackLanguage.FastAttack:
                         if (attack.PayloadKind != ThreatPayloadKind.SweptProjectile
                             || attack.ProjectileInterceptable
-                            || attack.PresentationKey != CombatPresentationProfile.FastThreatPresentationKey
-)
+                            || attack.ThreatPresentationKind !=
+                                FpgThreatPresentationKind.FastUninterceptable)
                         {
-                            error = "D0 fast attack must use Burstbug's fast animation, fast presentation key and an uninterceptable projectile.";
+                            error = "D0 fast attack must use the fast threat language and an uninterceptable projectile.";
                             return false;
                         }
 
@@ -540,10 +487,10 @@ public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out stri
                     case D0EnemyAttackLanguage.InterceptableVolley:
                         if (attack.PayloadKind != ThreatPayloadKind.SweptProjectile
                             || !attack.ProjectileInterceptable
-                            || attack.PresentationKey != CombatPresentationProfile.InterceptableVolleyThreatPresentationKey
-)
+                            || attack.ThreatPresentationKind !=
+                                FpgThreatPresentationKind.InterceptableVolley)
                         {
-                            error = "D0 interceptable volley must use Burstbug's volley animation, volley presentation key and interceptable projectiles.";
+                            error = "D0 interceptable volley must use the volley threat language and interceptable projectiles.";
                             return false;
                         }
 
@@ -552,9 +499,10 @@ public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out stri
 
                     case D0EnemyAttackLanguage.HeavyWeakpointBreak:
                         if (attack.PayloadKind != ThreatPayloadKind.TimedImpact
-                            || attack.PresentationKey != CombatPresentationProfile.HeavyWeakpointThreatPresentationKey)
+                            || attack.ThreatPresentationKind !=
+                                FpgThreatPresentationKind.HeavyWeakpoint)
                         {
-                            error = "D0 heavy weakpoint attack must use Burstbug's heavy animation, heavy presentation key and timed-impact payload.";
+                            error = "D0 heavy weakpoint attack must use the heavy threat language and a timed-impact payload.";
                             return false;
                         }
 
@@ -670,9 +618,10 @@ public bool TryCreateThreatSchedule(out ThreatScheduleEntry[] schedule, out stri
                     || attack.PayloadCount != 1
                     || attack.ProjectileInterceptable
                     || attack.RecoveryRule != D0AttackRecoveryRule.HoldAtAttackPosition
-                    || attack.PresentationKey != CombatPresentationProfile.FastThreatPresentationKey)
+                    || attack.ThreatPresentationKind !=
+                        FpgThreatPresentationKind.FastUninterceptable)
                 {
-                    error = $"{contractDisplayName} attacks must be a non-interceptable FastAttack with one swept-projectile payload, hold-position recovery and the fast presentation key.";
+                    error = $"{contractDisplayName} attacks must be a non-interceptable FastAttack with one swept-projectile payload and hold-position recovery.";
                     return false;
                 }
 

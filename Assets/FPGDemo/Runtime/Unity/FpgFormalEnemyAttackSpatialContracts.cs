@@ -17,74 +17,6 @@ namespace FPG.Demo.Unity
             out FpgEnemyAttackSpatialContext context);
     }
 
-    public static class FpgEnemySkillSpatialPolicy
-    {
-        public static bool TryValidate(
-            FpgEnemySkillPayloadKind payloadKind,
-            FpgSkillLogicEventDefinition skillEvent,
-            out string error)
-        {
-            if (skillEvent == null)
-            {
-                error = "Enemy skill spatial validation requires a gameplay event.";
-                return false;
-            }
-
-            bool hasOffset = skillEvent.TargetOffset != Vector3.zero;
-            bool hasSocket = !string.IsNullOrEmpty(skillEvent.SocketId);
-            switch (payloadKind)
-            {
-                case FpgEnemySkillPayloadKind.Projectile:
-                    if (skillEvent.TargetSource == FpgSkillTargetSource.CurrentAim
-                        || skillEvent.TargetSource == FpgSkillTargetSource.CurrentTarget)
-                    {
-                        error = string.Empty;
-                        return true;
-                    }
-
-                    if (skillEvent.TargetSource == FpgSkillTargetSource.SocketForward
-                        && hasSocket)
-                    {
-                        error = string.Empty;
-                        return true;
-                    }
-
-                    error = "Enemy projectile events support CurrentAim, CurrentTarget, or SocketForward with an owner socket.";
-                    return false;
-
-                case FpgEnemySkillPayloadKind.TimedImpact:
-                    if ((skillEvent.TargetSource == FpgSkillTargetSource.CurrentAim
-                            || skillEvent.TargetSource == FpgSkillTargetSource.CurrentTarget)
-                        && !hasSocket
-                        && !hasOffset)
-                    {
-                        error = string.Empty;
-                        return true;
-                    }
-
-                    error = "Enemy timed impacts map to the current player RuntimeId and therefore require CurrentAim/CurrentTarget with no socket or offset.";
-                    return false;
-
-                case FpgEnemySkillPayloadKind.Summon:
-                    if ((skillEvent.TargetSource == FpgSkillTargetSource.CurrentAim
-                            || skillEvent.TargetSource == FpgSkillTargetSource.CurrentTarget)
-                        && !hasSocket
-                        && !hasOffset)
-                    {
-                        error = string.Empty;
-                        return true;
-                    }
-
-                    error = "Enemy summon placement is owned by its summon payload and requires neutral CurrentAim/CurrentTarget metadata with no socket or offset.";
-                    return false;
-
-                default:
-                    error = "Enemy gameplay event has an unsupported payload kind.";
-                    return false;
-            }
-        }
-    }
-
     public static class FpgEnemySkillGameplayEventResolver
     {
         public static bool TryResolveSocketName(
@@ -94,56 +26,119 @@ namespace FPG.Demo.Unity
         {
             socketName = string.Empty;
             if (definition == null
-                || compiledEvent.Kind != FpgSkillEventKind.GameplayPayload)
+                || compiledEvent.Kind != FpgSkillEventKind.GameplayAction)
             {
                 return false;
             }
 
+            return TryResolveActionSocketName(
+                definition,
+                compiledEvent,
+                out socketName);
+        }
+
+        private static bool TryResolveActionSocketName(
+            FpgEnemyAttackDefinition definition,
+            in FpgCompiledSkillEvent compiledEvent,
+            out string socketName)
+        {
+            socketName = string.Empty;
+            int actionOffset = 0;
             for (int sequenceIndex = 0;
                 sequenceIndex < definition.Sequences.Count;
                 sequenceIndex++)
             {
                 FpgSkillSequenceDefinition sequence =
                     definition.Sequences[sequenceIndex];
-                if (sequence == null
-                    || sequence.Kind != FpgSkillSequenceKind.Execute)
+                if (sequence == null)
                 {
                     continue;
                 }
 
-                for (int eventIndex = 0;
-                    eventIndex < sequence.LogicEvents.Count;
-                    eventIndex++)
+                switch (compiledEvent.ActionKind)
                 {
-                    FpgSkillLogicEventDefinition candidate =
-                        sequence.LogicEvents[eventIndex];
-                    if (candidate != null
-                        && candidate.Tick == compiledEvent.Tick
-                        && candidate.AuthoredOrdinal == compiledEvent.SortOrder
-                        && FpgSkillStableId.CompileEvent(candidate.EventId)
-                            == compiledEvent.EventId
-                        && FpgSkillStableId.CompilePayloadSlot(
-                            candidate.PayloadSlotId)
-                            == compiledEvent.PayloadSlotId
-                        && FpgSkillStableId.CompileOptionalSocket(
-                            candidate.SocketId)
-                            == compiledEvent.SocketId
-                        && candidate.TargetSource == compiledEvent.TargetSource
-                        && candidate.OffsetXMillimeters
-                            == compiledEvent.Offset.XMillimeters
-                        && candidate.OffsetYMillimeters
-                            == compiledEvent.Offset.YMillimeters
-                        && candidate.OffsetZMillimeters
-                            == compiledEvent.Offset.ZMillimeters)
-                    {
-                        socketName = candidate.SocketId;
-                        return true;
-                    }
-                }
+                    case FpgSkillActionKind.Attack:
+                        if (TryResolveAction(
+                                sequence.AttackEvents,
+                                actionOffset,
+                                compiledEvent,
+                                out socketName))
+                        {
+                            return true;
+                        }
 
+                        actionOffset += sequence.AttackEvents.Count;
+                        break;
+
+                    case FpgSkillActionKind.LaunchProjectile:
+                        if (TryResolveAction(
+                                sequence.ProjectileEvents,
+                                actionOffset,
+                                compiledEvent,
+                                out socketName))
+                        {
+                            return true;
+                        }
+
+                        actionOffset += sequence.ProjectileEvents.Count;
+                        break;
+
+                    case FpgSkillActionKind.SummonActors:
+                        if (TryResolveAction(
+                                sequence.SummonEvents,
+                                actionOffset,
+                                compiledEvent,
+                                out socketName))
+                        {
+                            return true;
+                        }
+
+                        actionOffset += sequence.SummonEvents.Count;
+                        break;
+
+                    default:
+                        return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveAction<TAction>(
+            System.Collections.Generic.IReadOnlyList<TAction> actions,
+            int actionOffset,
+            in FpgCompiledSkillEvent compiledEvent,
+            out string socketName)
+            where TAction : FpgSkillGameplayActionDefinition
+        {
+            int localIndex = compiledEvent.ActionIndex - actionOffset;
+            if (localIndex < 0 || localIndex >= actions.Count)
+            {
+                socketName = string.Empty;
                 return false;
             }
 
+            TAction candidate = actions[localIndex];
+            if (candidate != null
+                && candidate.Tick == compiledEvent.Tick
+                && candidate.AuthoredOrdinal == compiledEvent.SortOrder
+                && FpgSkillStableId.CompileEvent(candidate.EventId)
+                    == compiledEvent.EventId
+                && FpgSkillStableId.CompileOptionalSocket(candidate.SocketId)
+                    == compiledEvent.SocketId
+                && candidate.TargetSource == compiledEvent.TargetSource
+                && candidate.OffsetXMillimeters
+                    == compiledEvent.Offset.XMillimeters
+                && candidate.OffsetYMillimeters
+                    == compiledEvent.Offset.YMillimeters
+                && candidate.OffsetZMillimeters
+                    == compiledEvent.Offset.ZMillimeters)
+            {
+                socketName = candidate.SocketId;
+                return true;
+            }
+
+            socketName = string.Empty;
             return false;
         }
     }
@@ -174,7 +169,7 @@ namespace FPG.Demo.Unity
             if (!tick.IsValid
                 || !ownerRuntimeId.IsValid
                 || !currentTargetRuntimeId.IsValid
-                || skillEvent.Kind != FpgSkillEventKind.GameplayPayload
+                || skillEvent.Kind != FpgSkillEventKind.GameplayAction
                 || !anchorMap.TryGet(
                     ownerRuntimeId,
                     out FpgCombatantAnchorSnapshot owner)

@@ -2165,8 +2165,8 @@ namespace FPG.Demo.Run
                     projectile.Team,
                     projectile.Definition.DefinitionId,
                     projectile.Definition.SweepRadiusKey,
-                    projectile.Definition.PresentationKey,
-                    projectile.Definition.Interceptable);
+                    projectile.Definition.Interceptable,
+                    release.Definition.Payload.PresentationKind);
                 DomainResult registered = projectileWorldPort.Register(request, out ProjectilePathSnapshot path);
                 if (registered.IsSuccess)
                 {

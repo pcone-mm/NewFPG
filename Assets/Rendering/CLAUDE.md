@@ -1,27 +1,21 @@
-# Rendering 使用指南
+# Rendering 指南
 
-这个目录放项目自有渲染扩展和 URP 后处理代码。当前稳定模块是 `DodgeSpeedLines/`，命名空间是 `NewFPG.Rendering`。
+本目录保留项目自有 URP 扩展。当前只有 `DodgeSpeedLines/`，命名空间为 `NewFPG.Rendering`；正式 FPG gameplay 目前没有对应驱动器。
 
 ## 目录边界
 
-- `DodgeSpeedLines.shader` 绘制屏幕空间速度线。
+- `DodgeSpeedLines.shader` 实现屏幕空间速度线。
 - `DodgeSpeedLinesRendererFeature.cs` 是 URP `ScriptableRendererFeature`，从 Volume stack 读取参数。
 - `DodgeSpeedLinesVolume.cs` 定义 `NewFPG/Dodge Speed Lines` Volume override。
-- `DodgeSpeedLinesController.cs` 挂在场景 Global Volume 附近，通过动画事件或脚本开关效果。
-- `Assets/Scripts/Combat/CombatDodgePresentationController.cs` 可以在闪避时驱动同一个 Volume override 或创建运行时 Global Volume；渲染目录只维护效果实现，不读取战斗输入。
-- 对应 Inspector 在 `Assets/Editor/DodgeSpeedLinesControllerEditor.cs`，只放编辑器辅助，不放运行时逻辑。
+- 已删除的 `DodgeSpeedLinesController`、旧 Combat 驱动器和 Editor Inspector 不属于当前模块，不得从指南恢复。
 
 ## 工作规则
 
-- 不要把速度线做成角色材质或逐对象特效；它是屏幕空间后处理，开关应走 Volume override。
-- 修改 RendererFeature 时确认目标 URP 版本和 RenderGraph/兼容模式路径，避免只改其中一条渲染路径。
-- shader、RendererFeature、Volume 参数要保持字段名和 shader property 一致。
-- 场景接入时先确认 Renderer Data 已添加对应 RendererFeature，再确认 Global Volume profile 里有 `Dodge Speed Lines` override。
-- 闪避表现调参优先改 `Assets/Settings/Combat/SO_CombatDodgePresentation_Default.asset`；这里不要写战斗冷却、输入或相机状态规则。
+- 修改 RendererFeature 时同时检查目标 URP 版本的 RenderGraph/兼容路径；shader property、RendererFeature 与 Volume 字段名保持一致。
+- 当前序列化绑定位于 `Assets/Settings/PC_Renderer.asset`、`Mobile_Renderer.asset` 和 `DefaultVolumeProfile.asset`；不要把共享渲染扩展当成正式战斗入口。
+- 若重新接入 gameplay，先在 `FPG.Unity` 建立明确适配边界和验证合同，不直接读取旧 `NewFPG.Combat` 状态。
 
-## 验证方式
+## 验证
 
-- 改渲染代码后打开 Unity，等待编译并检查 Console。
-- 在使用该效果的场景里用 `DodgeSpeedLinesController` 播放开关，确认 Game 视图有速度线且 Scene View 不被意外影响。
-- 闪避触发路径还要在 `Shulin_L0.unity` 里通过 `CombatDodgePresentationController` 验证。
-- 改 URP RendererFeature 或 Volume 默认值后，检查相关 URP Renderer Data 和 Volume Profile 的序列化引用。
+- 修改渲染代码后检查 Unity 编译/Console，以及 PC/Mobile Renderer Data 和 Default Volume Profile 是否仍能解析该 feature/override。
+- 视觉启用效果必须在实际引用它的当前场景中验证；不要使用已删除的 Shulin/CombatLab 场景作为固定入口。

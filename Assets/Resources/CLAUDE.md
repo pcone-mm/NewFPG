@@ -1,19 +1,19 @@
-# Resources 使用指南
+# Resources 指南
 
-这个目录只放运行时必须通过 `Resources.Load` 查找的资产。普通美术、配置或临时输出不要顺手放进来。
+本目录只保留必须位于 Unity `Resources/` 下的插件配置或遗留运行时资产；正式 FPG 配置和表现不在这里建立新入口。
 
 ## 目录边界
 
-- `HitTips/` 放战斗跳字运行时默认资源。`SO_HTC_Default.asset` 是 `HitTipCatalog`，`SO_HTA_Default.asset` 是默认动画配置。
+- `DOTweenSettings.asset` 是 DOTween 插件配置，不能作为普通 gameplay 配置移动或改名。
+- `HitTips/` 中两个资产仍序列化为已删除的 `NewFPG.Combat` 类型；当前 `FPG.Demo` 主线没有对应 consumer 或合同测试，只把它们视为遗留资源。
 
 ## 工作规则
 
-- `HitTips/` 的默认 catalog 和动画配置已落盘；其源图层位于 `Assets/Art/HUD/Hit_tip/`，修改时直接维护对应资产与导入设置。
-- 改 `HitTips/` 文件名、路径或 catalog 类型时，同步检查 `MonsterCombatHud` 中的 `Resources.Load("HitTips/SO_HTC_Default")`。
-- 保留并同步 `.meta` 文件，避免 runtime load 资产或 sprite 引用断开。
-- 不要把 `Resources/` 当作临时缓存、截图输出或大型第三方资源仓库。
+- 新的正式配置放入 `Assets/FPGDemo/Config/`，正式表现资源放入 `Assets/FPGDemo/Presentation/`；没有现存 `Resources.Load` 调用证据时不要继续扩张本目录。
+- 移动、改名或删除资产前先反查加载路径、序列化类型和 GUID，并让 `.meta` 始终跟随资源。
+- 资产能够被 Unity 导入不等于仍能被正式主线加载；不得恢复已删除的 `MonsterCombatHud` 或旧测试入口来证明可用。
 
-## 验证方式
+## 验证
 
-- 改战斗跳字资源后，检查 `SO_HTC_Default.asset` 和 `SO_HTA_Default.asset` 的引用是否仍能解析。
-- 运行 `Assets/Tests/Editor/MonsterCombatHudEditorTests.cs`，确认默认 `HitTipCatalog` 三种样式都能加载完整背景和数字图层。
+- 变更 `HitTips/` 前搜索当前 `Resources.Load` consumer，并检查资产是否出现 missing script/reference。
+- 修改插件配置或遗留资源后检查 Unity 编译/Console；只改本指南时运行 `git diff --check`。

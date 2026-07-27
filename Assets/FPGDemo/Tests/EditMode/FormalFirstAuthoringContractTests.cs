@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FPG.Demo.Run;
+using FPG.Demo.Skills;
 using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
@@ -21,6 +22,17 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Editor/LevelAuthoring/FpgRoomEditor.uxml";
         private const string FormalRoomScenePath =
             "Assets/FPGDemo/Scenes/FormalRoom.unity";
+        private static readonly string[] FormalSkillPaths =
+        {
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack_HeavyBreak.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack_Volley.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_Hudie_Attack.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_Attack_Summon.asset"
+        };
 
         [Test]
         public void PlayableCharacterCatalogContainsOneCompleteDefaultFei()
@@ -124,6 +136,52 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void FormalSkillAssetsAreV3OnlyAndCompileWithoutRemovedFields()
+        {
+            Assert.That(FormalSkillPaths, Has.Length.EqualTo(8));
+            for (int pathIndex = 0;
+                pathIndex < FormalSkillPaths.Length;
+                pathIndex++)
+            {
+                string path = FormalSkillPaths[pathIndex];
+                FpgSkillTimelineDefinition definition =
+                    AssetDatabase.LoadAssetAtPath<FpgSkillTimelineDefinition>(path);
+                Assert.That(definition, Is.Not.Null, path);
+                Assert.That(
+                    definition.AuthoringSchemaVersion,
+                    Is.EqualTo(
+                        FpgSkillTimelineDefinition.CurrentAuthoringSchemaVersion),
+                    path);
+                Assert.That(
+                    definition.AuthoringSchemaState,
+                    Is.EqualTo(FpgSkillAuthoringSchemaState.V3Only),
+                    path);
+
+                SerializedObject serialized = new SerializedObject(definition);
+                Assert.That(
+                    serialized.FindProperty("payloadSlots"),
+                    Is.Null,
+                    path);
+                for (int sequenceIndex = 0;
+                    sequenceIndex < definition.Sequences.Count;
+                    sequenceIndex++)
+                {
+                    Assert.That(
+                        definition.Sequences[sequenceIndex],
+                        Is.Not.Null,
+                        path);
+                }
+
+                Assert.That(
+                    definition.TryCompile(
+                        out FpgCompiledSkillDefinition _,
+                        out string compileError),
+                    Is.True,
+                    path + ": " + compileError);
+            }
+        }
+
+        [Test]
         public void FormalLuanSummonChainTargetsHudie()
         {
             const string attackPath =
@@ -140,24 +198,30 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(hudie, Is.Not.Null, hudiePath);
             Assert.That(attack.TryValidate(out string attackError), Is.True, attackError);
             Assert.That(hudie.TryValidate(out string hudieError), Is.True, hudieError);
-            Assert.That(attack.PayloadSlots.Count, Is.EqualTo(1));
-            FpgEnemySkillPayloadSlot summon = attack.PayloadSlots[0];
-            Assert.That(summon.Kind, Is.EqualTo(FpgEnemySkillPayloadKind.Summon));
             Assert.That(
-                summon.SummonOwnerOutcome,
+                attack.TryCompile(
+                    out FpgCompiledEnemySkillDefinition compiled,
+                    out string compileError),
+                Is.True,
+                compileError);
+            Assert.That(compiled.SummonActions.Count, Is.EqualTo(1));
+            FpgCompiledEnemySummonPayload summon =
+                compiled.SummonActions[0].SummonPayload;
+            Assert.That(
+                summon.OwnerOutcome,
                 Is.EqualTo(FpgSummonOwnerOutcome.DieAfterSuccessfulSummon));
             Assert.That(
-                summon.SummonOccupancyMode,
+                summon.OccupancyMode,
                 Is.EqualTo(FpgSummonOccupancyMode.ReplaceOwner));
             Assert.That(
-                summon.SummonPlacementMode,
+                summon.PlacementMode,
                 Is.EqualTo(FpgSummonPlacementMode.OwnerPosition));
             Assert.That(summon.MaxSummonsPerOwner, Is.Zero);
             Assert.That(summon.MaxTotalSummonsPerEncounter, Is.Zero);
-            Assert.That(summon.MaxSummonRecursionDepth, Is.EqualTo(1));
-            Assert.That(summon.SummonCandidates, Has.Length.EqualTo(1));
-            Assert.That(summon.SummonCandidates[0], Is.SameAs(hudie));
-            Assert.That(summon.GetSummonCandidateWeight(0), Is.EqualTo(1));
+            Assert.That(summon.MaxRecursionDepth, Is.EqualTo(1));
+            Assert.That(summon.CandidateCount, Is.EqualTo(1));
+            Assert.That(summon.GetCandidate(0).Definition, Is.SameAs(hudie));
+            Assert.That(summon.GetCandidate(0).Weight, Is.EqualTo(1));
             Assert.That(hudie.EnemyDefinitionId, Is.EqualTo("hudie"));
         }
 

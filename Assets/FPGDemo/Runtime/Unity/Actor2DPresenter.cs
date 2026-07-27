@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using FPG.Demo.Enemy;
 using FPG.Demo.Skills;
 using Spine;
 using Spine.Unity;
@@ -419,7 +421,7 @@ namespace FPG.Demo.Unity
             }
         }
 
-        public bool TryPlaySkillCueAnimation(
+        public bool TryPlaySkillOneShotAnimation(
             string animationName,
             bool loop,
             out string error)
@@ -434,7 +436,7 @@ namespace FPG.Demo.Unity
                 if (string.IsNullOrEmpty(error))
                 {
                     error =
-                        "Player skill animation cue requires an available Spine animation.";
+                        "Player skill one-shot animation requires an available Spine animation.";
                 }
 
                 return false;
@@ -594,71 +596,6 @@ namespace FPG.Demo.Unity
             }
 
             PlayOneShotThenIdle(ActiveEnemyPresentation.EnterAnimation);
-        }
-
-        public bool PlayEnemyAttack(
-            D0EnemyAttackDefinition attackDefinition)
-        {
-            if (!EnsureInitialized() || playerActor || IsTerminal
-                || !TryValidateEnemyAttack(attackDefinition, out _))
-            {
-                return false;
-            }
-
-            D0ActorAnimationCommand command =
-                attackDefinition.PresentationKey
-                    == CombatPresentationProfile.FastThreatPresentationKey
-                ? D0ActorAnimationCommand.EnemyFastThreat
-                : D0ActorAnimationCommand.EnemyVolleyThreat;
-            if (!TryApplyAnimationCommand(command))
-            {
-                return false;
-            }
-
-            PlayOneShotThenIdle(attackDefinition.ReleaseAnimationName);
-            return true;
-        }
-
-        public bool TryValidateEnemyAttack(
-            D0EnemyAttackDefinition attackDefinition,
-            out string error)
-        {
-            error = string.Empty;
-            if (playerActor)
-            {
-                error =
-                    "A player Actor2DPresenter cannot play enemy attacks.";
-                return false;
-            }
-
-            if (attackDefinition == null
-                || !attackDefinition.TryValidatePresentation(out error))
-            {
-                if (string.IsNullOrEmpty(error))
-                {
-                    error =
-                        "Enemy Actor2DPresenter requires an attack definition.";
-                }
-
-                return false;
-            }
-
-            SkeletonData data = skeletonAnimation == null
-                || skeletonAnimation.SkeletonDataAsset == null
-                ? null
-                : skeletonAnimation.SkeletonDataAsset.GetSkeletonData(true);
-            if (data == null)
-            {
-                error =
-                    "Enemy Actor2DPresenter requires loaded skeleton data.";
-                return false;
-            }
-
-            return TryValidateAnimations(
-                data,
-                out error,
-                attackDefinition.AttackAnimation,
-                attackDefinition.ReleaseAnimationName);
         }
 
         public void PlayVictory()
@@ -905,31 +842,88 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            D0WeaponShotPresentationDefinition primary =
-                weaponDefinition.PrimaryPresentation;
-            D0WeaponSecondaryPresentationDefinition secondary =
-                weaponDefinition.SecondaryPresentation;
-            D0WeaponReloadPresentationDefinition reload =
-                weaponDefinition.ReloadPresentation;
-            if (!TryValidateAnimations(
+            return TryValidateSkillAnimations(
                     data,
-                    out error,
-                    primary.AnimationName,
-                    secondary.Shot.AnimationName,
-                    secondary.ChargeAnimation,
-                    secondary.ReleaseAnimation,
-                    secondary.EndAnimation,
-                    reload.PlayAnimation,
-                    reload.ReadyAnimation))
+                    weaponDefinition.PrimarySkill,
+                    out error)
+                && TryValidateSkillAnimations(
+                    data,
+                    weaponDefinition.SecondarySkill,
+                    out error)
+                && TryValidateSkillAnimations(
+                    data,
+                    weaponDefinition.ReloadSkill,
+                    out error);
+        }
+
+        private static bool TryValidateSkillAnimations(
+            SkeletonData data,
+            FpgPlayerSkillDefinition skill,
+            out string error)
+        {
+            if (skill == null)
             {
+                error = "Player actor requires all formal weapon skills.";
                 return false;
             }
 
-            return string.IsNullOrWhiteSpace(primary.AlternateAnimationName)
-                || TryValidateAnimation(
-                    data,
-                    primary.AlternateAnimationName,
-                    out error);
+            IReadOnlyList<FpgSkillSequenceDefinition> sequences =
+                skill.Sequences;
+            for (int sequenceIndex = 0;
+                sequenceIndex < sequences.Count;
+                sequenceIndex++)
+            {
+                FpgSkillSequenceDefinition sequence = sequences[sequenceIndex];
+                if (sequence == null)
+                {
+                    error = "Player skill contains a missing sequence.";
+                    return false;
+                }
+
+                if (!TryValidateAnimation(
+                        data,
+                        sequence.MainAnimation,
+                        out error))
+                {
+                    return false;
+                }
+
+                IReadOnlyList<string> alternates =
+                    sequence.AlternateAnimations;
+                for (int animationIndex = 0;
+                    animationIndex < alternates.Count;
+                    animationIndex++)
+                {
+                    if (!TryValidateAnimation(
+                            data,
+                            alternates[animationIndex],
+                            out error))
+                    {
+                        return false;
+                    }
+                }
+
+                IReadOnlyList<FpgSkillReloadEventDefinition> reloads =
+                    sequence.ReloadEvents;
+                for (int reloadIndex = 0;
+                    reloadIndex < reloads.Count;
+                    reloadIndex++)
+                {
+                    string successAnimation =
+                        reloads[reloadIndex].SuccessAnimationName;
+                    if (!string.IsNullOrEmpty(successAnimation)
+                        && !TryValidateAnimation(
+                            data,
+                            successAnimation,
+                            out error))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         private static bool TryValidateAnimations(

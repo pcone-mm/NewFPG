@@ -4,11 +4,30 @@ using FPG.Demo.Core;
 namespace FPG.Demo.Combat
 {
     /// <summary>
-    /// Optional, deterministic geometry carried by an impact. Unity adapters
-    /// translate the fixed-point key at the presentation boundary.
+    /// Optional deterministic contact data carried by an impact. Query-backed
+    /// contacts also carry geometry; authored targeted impacts carry the
+    /// sampled fixed-point contact without inventing a geometry identifier.
     /// </summary>
     public readonly struct ImpactSpatialContext
     {
+        public ImpactSpatialContext(
+            SpatialVectorKey impactPointKey,
+            QueryTargetKind targetKind,
+            HitPart hitPart)
+        {
+            if (!IsValidTarget(targetKind, hitPart))
+            {
+                throw new ArgumentException(
+                    "Impact spatial context requires a valid damage target.");
+            }
+
+            HasValue = true;
+            ImpactPointKey = impactPointKey;
+            GeometryId = GeometryId.Invalid;
+            TargetKind = targetKind;
+            HitPart = hitPart;
+        }
+
         public ImpactSpatialContext(
             SpatialVectorKey impactPointKey,
             GeometryId geometryId,
@@ -16,12 +35,7 @@ namespace FPG.Demo.Combat
             HitPart hitPart)
         {
             if (!geometryId.IsValid
-                || !Enum.IsDefined(typeof(QueryTargetKind), targetKind)
-                || !Enum.IsDefined(typeof(HitPart), hitPart)
-                || targetKind == QueryTargetKind.EnvironmentBlocker
-                || (targetKind == QueryTargetKind.Projectile
-                    ? hitPart != HitPart.Projectile
-                    : hitPart == HitPart.Projectile))
+                || !IsValidTarget(targetKind, hitPart))
             {
                 throw new ArgumentException(
                     "Impact spatial context requires a valid damage target and geometry.");
@@ -39,12 +53,22 @@ namespace FPG.Demo.Combat
         public GeometryId GeometryId { get; }
         public QueryTargetKind TargetKind { get; }
         public HitPart HitPart { get; }
+        public bool HasGeometry => GeometryId.IsValid;
 
         public bool IsValid => !HasValue
-            || (GeometryId.IsValid
-                && TargetKind != QueryTargetKind.EnvironmentBlocker
-                && (TargetKind == QueryTargetKind.Projectile
-                    ? HitPart == HitPart.Projectile
-                    : HitPart != HitPart.Projectile));
+            || IsValidTarget(TargetKind, HitPart);
+
+        private static bool IsValidTarget(
+            QueryTargetKind targetKind,
+            HitPart hitPart)
+        {
+            return Enum.IsDefined(typeof(QueryTargetKind), targetKind)
+                && Enum.IsDefined(typeof(HitPart), hitPart)
+                && (targetKind == QueryTargetKind.Combatant
+                    || targetKind == QueryTargetKind.Projectile)
+                && (targetKind == QueryTargetKind.Projectile
+                    ? hitPart == HitPart.Projectile
+                    : hitPart != HitPart.Projectile);
+        }
     }
 }

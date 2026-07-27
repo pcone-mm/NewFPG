@@ -15,7 +15,7 @@ MonoBehaviour:
   profileId: l1-01-fixed-three-wave-v1
   displayName: L1_01 Fixed Three-Wave v1
   designerNotes: Shared by the four L1_01 fixed-wave presets. Two simultaneous enemies
-    match the current CombatLab marker capacity.
+    match the current FormalRoom marker capacity.
   baseBudget: 12
   depthRamp: 0
   minBudget: 12

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
   m_Name: FPG_Burstbug_Attack_HeavyBreak
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
+  authoringSchemaVersion: 3
   skillId: burstbug-heavy-weakpoint-break
   displayName: Burstbug Heavy Weakpoint / Break
   designerNotes: Migrated to the unified 60Hz skill timeline. Legacy attack tick
@@ -26,64 +27,70 @@ MonoBehaviour:
     animationStartTick: 0
     animationEndTick: 165
     sourceAnimationDurationTicks: 0
-    phases:
-    - phaseId: startup
-      kind: 1
-      startTick: 0
-      endTick: 135
-    - phaseId: active
-      kind: 2
-      startTick: 135
-      endTick: 135
-    - phaseId: recovery
-      kind: 3
-      startTick: 135
-      endTick: 165
-    logicEvents:
+    attackEvents:
     - eventId: event.burstbug-heavy-weakpoint-break.attack.0
       tick: 135
-      payloadSlotId: payload.burstbug-heavy-weakpoint-break
       authoredOrdinal: 0
       socketId: 
       targetSource: 2
       targetOffset: {x: 0, y: 0, z: 0}
-    presentationCues: []
+      mode: 3
+      ammoCost: 0
+      baseDamage: 120
+      breakDamage: 0
+      weakpointDamageMultiplierBasisPoints: 10000
+      weakpointBreakMultiplierBasisPoints: 10000
+      pelletCount: 0
+      additionalPenetrationCount: 0
+      areaCombatantLimit: 0
+      areaProjectileLimit: 0
+      allowedTargetKinds: 0
+      threatDefinitionId: 203
+      boundTargetPolicy: 0
+      delayTicks: 0
+      threatPresentationKind: 2
+      trajectoryPresentation:
+        rid: -2
+      impactPresentation:
+        rid: 1908295348123337106
+    projectileEvents: []
+    reloadEvents: []
+    summonEvents: []
+    activePresentationTracks: []
     warnings:
     - eventId: warning.burstbug-heavy-weakpoint-break
       warningId: enemy-weakpoint-heavy
       startTick: 0
       endTick: 135
-      authoredOrdinal: 0
+      authoredOrdinal: 1
       socketId: 
   priority: 0
   firstReadyOffsetTicks: 540
   sequenceCooldownTicks: 660
-  payloadSlots:
-  - slotId: payload.burstbug-heavy-weakpoint-break
-    displayName: Heavy Break Impact
-    kind: 2
-    threatDefinitionId: 203
-    baseDamage: 120
-    breakDamage: 0
-    weakpointDamageMultiplierBasisPoints: 10000
-    weakpointBreakMultiplierBasisPoints: 10000
-    projectileDefinitionId: 303
-    projectileCount: 1
-    projectileFlightTicks: 60
-    projectileLifetimeTicks: 75
-    projectileMaxHitPoints: 0
-    projectileInterceptable: 0
-    projectileBudgetUnits: 1
-    projectilePresentationKey: 3
-    projectileSweepRadiusKey: 250
-    timedImpactTargetPolicy: 0
-    timedImpactDelayTicks: 0
-    timedImpactPresentationKey: 3
-    summonCandidates: []
-    summonCandidateWeights: 
-    summonOccupancyMode: 0
-    summonPlacementMode: 0
-    summonOwnerOutcome: 0
-    maxSummonsPerOwner: 0
-    maxTotalSummonsPerEncounter: 0
-    maxSummonRecursionDepth: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 1908295348123337106
+      type: {class: FpgImpactPresentationBundleDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        baseVfx:
+          rid: 1908295348123337107
+        baseAudio:
+          rid: -2
+        baseCameraShake:
+          rid: -2
+        weakpointVfxOverride:
+          rid: -2
+        weakpointAudioOverride:
+          rid: -2
+        weakpointCameraShakeOverride:
+          rid: -2
+    - rid: 1908295348123337107
+      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        prefab: {fileID: 6845791643628858721, guid: 4f35de190a2dcc3499719406b78524b7, type: 3}
+        durationSeconds: 1
+        scale: {x: 1, y: 1, z: 1}
+        rotationOffsetEuler: {x: 0, y: 0, z: 0}

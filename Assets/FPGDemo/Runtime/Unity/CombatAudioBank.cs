@@ -11,28 +11,20 @@ namespace FPG.Demo.Unity
     public enum CombatAudioCue
     {
         None = 0,
-        PlayerPrimaryShot = 1,
-        PlayerSecondaryCharge,
-        PlayerSecondaryRelease,
-        PlayerBodyHit,
-        PlayerWeakpointHit,
-        ProjectileIntercept,
-        PlayerReload,
-        EnemyFastThreatTelegraph,
-        EnemyFastThreatRelease,
-        EnemyInterceptableThreatTelegraph,
-        EnemyInterceptableThreatRelease,
-        EnemyHeavyThreatTelegraph,
-        EnemyHeavyThreatRelease,
-        PlayerDamaged,
-        PlayerBarrierBroken,
-        EnemyBreak,
-        Victory,
-        Defeat,
-        ReticleTargetLock,
-        EnemyDangerTick,
-        PlayerConfirmRelease,
-        Count
+        EnemyFastThreatTelegraph = 8,
+        EnemyFastThreatRelease = 9,
+        EnemyInterceptableThreatTelegraph = 10,
+        EnemyInterceptableThreatRelease = 11,
+        EnemyHeavyThreatTelegraph = 12,
+        EnemyHeavyThreatRelease = 13,
+        PlayerDamaged = 14,
+        PlayerBarrierBroken = 15,
+        EnemyBreak = 16,
+        Victory = 17,
+        Defeat = 18,
+        ReticleTargetLock = 19,
+        EnemyDangerTick = 20,
+        Count = 22
     }
 
     /// <summary>
@@ -81,7 +73,7 @@ namespace FPG.Demo.Unity
     public sealed class CombatAudioCueEntry
     {
         [SerializeField]
-        private CombatAudioCue cue = CombatAudioCue.PlayerPrimaryShot;
+        private CombatAudioCue cue = CombatAudioCue.PlayerDamaged;
 
         [SerializeField]
         private AudioClip clip;
@@ -175,13 +167,6 @@ namespace FPG.Demo.Unity
 
         private static readonly CombatAudioCuePolicy[] RequiredCuePolicies =
         {
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerPrimaryShot, 130, 0.04f, 4),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerSecondaryCharge, 85, 0.10f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerSecondaryRelease, 55, 0.08f, 2),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerBodyHit, 110, 0.03f, 3),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerWeakpointHit, 50, 0.04f, 2),
-            new CombatAudioCuePolicy(CombatAudioCue.ProjectileIntercept, 45, 0.04f, 2),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerReload, 100, 0.10f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.EnemyFastThreatTelegraph, 60, 0.20f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.EnemyFastThreatRelease, 50, 0.10f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.EnemyInterceptableThreatTelegraph, 75, 0.20f, 1),
@@ -194,8 +179,7 @@ namespace FPG.Demo.Unity
             new CombatAudioCuePolicy(CombatAudioCue.Victory, 10, 0.50f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.Defeat, 5, 0.50f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.ReticleTargetLock, 130, 0.08f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyDangerTick, 65, 0.18f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerConfirmRelease, 70, 0.10f, 1)
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyDangerTick, 65, 0.18f, 1)
         };
 
         [Header("Fixed presentation capacity")]
@@ -347,7 +331,9 @@ namespace FPG.Demo.Unity
 
         internal static bool IsPlayableCue(CombatAudioCue cue)
         {
-            return cue > CombatAudioCue.None && cue < CombatAudioCue.Count;
+            return cue > CombatAudioCue.None
+                && cue < CombatAudioCue.Count
+                && Enum.IsDefined(typeof(CombatAudioCue), cue);
         }
     }
 }

@@ -8,7 +8,8 @@ namespace FPG.Demo.Unity
         Running = 0,
         AwaitingExit = 1,
         Transitioning = 2,
-        Faulted = 3
+        Faulted = 3,
+        RecoverableFault = 4
     }
 
     public sealed class FpgRunFlowController : IDisposable
@@ -41,6 +42,7 @@ namespace FPG.Demo.Unity
             formalHost.RoomCleared += HandleRoomCleared;
             director.ExitOfferSelected += HandleExitOfferSelected;
             director.Failed += HandleDirectorFailed;
+            director.RestartSucceeded += HandleDirectorRestartSucceeded;
             State = FpgRunFlowState.Running;
             LastError = string.Empty;
             error = string.Empty;
@@ -83,6 +85,14 @@ namespace FPG.Demo.Unity
             Unsubscribe();
         }
 
+        public void SetRecoverableFault(string error)
+        {
+            LastError = string.IsNullOrWhiteSpace(error)
+                ? "Run flow encountered a recoverable runtime fault."
+                : error;
+            State = FpgRunFlowState.RecoverableFault;
+        }
+
         public void Dispose()
         {
             Unsubscribe();
@@ -93,6 +103,13 @@ namespace FPG.Demo.Unity
         private void HandleRoomCleared(FpgRoomClearedEvent clearedEvent)
         {
             owner?.HandleRunFlowRoomCleared(this, clearedEvent);
+        }
+
+        private void HandleDirectorRestartSucceeded()
+        {
+            State = FpgRunFlowState.Running;
+            LastError = string.Empty;
+            owner?.HandleRunFlowRestarted(this);
         }
 
         private void HandleExitOfferSelected(FpgExitSelectionEvent selectionEvent)
@@ -118,6 +135,7 @@ namespace FPG.Demo.Unity
             {
                 director.ExitOfferSelected -= HandleExitOfferSelected;
                 director.Failed -= HandleDirectorFailed;
+                director.RestartSucceeded -= HandleDirectorRestartSucceeded;
             }
 
             formalHost = null;

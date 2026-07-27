@@ -20,18 +20,6 @@
                 <ui:ListView name="action-asset-list" class="action-list" selection-type="Single" virtualization-method="DynamicHeight" />
                 <ui:DropdownField name="sequence-dropdown" label="序列" class="sequence-field" />
 
-                <ui:VisualElement class="pane-divider" />
-                <ui:VisualElement class="section-header">
-                    <ui:Label text="载荷槽" class="section-title" />
-                    <ui:Label name="payload-count-label" text="0" class="count-label" />
-                </ui:VisualElement>
-                <ui:ListView name="payload-list" class="payload-list" selection-type="Single" virtualization-method="DynamicHeight" />
-                <ui:VisualElement class="compact-actions">
-                    <ui:Button name="add-payload-button" text="添加" tooltip="添加载荷槽" />
-                    <ui:Button name="duplicate-payload-button" text="复制" tooltip="复制选中的载荷槽" />
-                    <ui:Button name="replace-payload-button" text="替换引用" tooltip="把当前载荷槽的全部事件引用替换到其他槽" />
-                    <ui:Button name="delete-payload-button" text="删除" tooltip="删除选中的载荷槽" class="danger-button" />
-                </ui:VisualElement>
             </ui:VisualElement>
 
             <ui:ScrollView name="center-scroll" mode="Vertical" class="center-pane center-scroll">
@@ -42,7 +30,7 @@
                         <ui:DropdownField name="target-count-dropdown" label="目标" class="target-count-field" />
                         <ui:Toggle name="show-geometry-toggle" label="显示几何" value="true" />
                         <ui:Label name="animation-length-label" text="源长：未测量" class="animation-length-status" />
-                        <ui:Button name="capture-animation-length-button" text="记录源长" tooltip="把当前 Spine 动画实测长度记录为 60Hz Tick 基准；不会移动逻辑事件" />
+                        <ui:Button name="capture-animation-length-button" text="记录源长" tooltip="把当前 Spine 动画实测长度记录为 60Hz Tick 基准；不会移动玩法动作" />
                         <ui:VisualElement class="toolbar-spacer" />
                         <ui:Label name="preview-tick-label" text="Tick 0 / 0.000 秒" class="tick-readout" />
                     </ui:VisualElement>
@@ -68,6 +56,15 @@
                         <ui:Button name="copy-events-button" text="复制" tooltip="复制当前多选事件" />
                         <ui:Button name="paste-events-button" text="粘贴" tooltip="从当前 Tick 粘贴并生成新的内部引用" />
                         <ui:Button name="delete-event-button" text="删除事件" class="danger-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="presentation-track-tools" class="presentation-track-tools presentation-track-tools--hidden">
+                        <ui:Label text="表现轨道" class="muted-label" />
+                        <ui:DropdownField name="presentation-track-dropdown" class="presentation-track-dropdown" />
+                        <ui:TextField name="presentation-track-name-field" is-delayed="true" class="presentation-track-name-field" />
+                        <ui:Button name="add-presentation-track-button" text="+" tooltip="添加表现轨道" class="icon-button" />
+                        <ui:Button name="move-presentation-track-up-button" text="↑" tooltip="上移表现轨道；轨道顺序不影响运行时顺序" class="icon-button" />
+                        <ui:Button name="move-presentation-track-down-button" text="↓" tooltip="下移表现轨道；轨道顺序不影响运行时顺序" class="icon-button" />
+                        <ui:Button name="delete-presentation-track-button" text="×" tooltip="删除空表现轨道" class="icon-button danger-button" />
                     </ui:VisualElement>
                     <ui:VisualElement name="timeline-host" class="timeline-host" />
                 </ui:VisualElement>

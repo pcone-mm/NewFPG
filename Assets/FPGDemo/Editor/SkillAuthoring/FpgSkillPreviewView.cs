@@ -18,10 +18,16 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private readonly VisualElement beam;
         private readonly VisualElement impact;
         private readonly Label overlayLabel;
+        private readonly List<PreviewVfxInstance> presentationVfx =
+            new List<PreviewVfxInstance>();
+        private readonly List<PreviewShakeImpulse> presentationShakes =
+            new List<PreviewShakeImpulse>();
 
         private PreviewRenderUtility previewUtility;
         private GameObject previewPrefab;
         private GameObject previewInstance;
+        private GameObject previewAudioObject;
+        private AudioSource previewAudioSource;
         private FpgSkillPreviewSceneContent sceneContent;
         private FpgSkillPreviewSimulationFrame lastSimulationFrame;
         private Component spineComponent;
@@ -33,6 +39,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private string animationName = "未指定动作";
         private FpgCompiledSkillSequence animationSequence;
         private int lastSampledTick;
+        private Vector3 previewCameraBasePosition;
+        private Quaternion previewCameraBaseRotation = Quaternion.identity;
+        private bool hasPreviewCameraBaseline;
         private string previewStatus = "未选择预览 Prefab";
 
         public FpgSkillPreviewView()
@@ -104,6 +113,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public int MeasuredAnimationDurationTicks { get; private set; } = -1;
         public double MeasuredAnimationDurationSeconds => spineAnimationDuration;
         public double LastSampledAnimationSeconds { get; private set; }
+        internal int ActivePresentationVfxCount => presentationVfx.Count;
+        internal int ActivePresentationShakeCount =>
+            presentationShakes.Count;
+        internal AudioSource PreviewAudioSource => previewAudioSource;
 
         public event Action<int> AnimationDurationMeasured;
 
@@ -172,6 +185,400 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             previewPrefab = null;
             SetPreviewPrefab(prefab);
+        }
+
+        public bool TryPlayActivePresentation(
+            SerializedProperty eventProperty,
+            FpgSkillEventTrackKind track,
+            bool allowAudio,
+            out string error)
+        {
+            error = string.Empty;
+            if (eventProperty == null)
+            {
+                error = "Active presentation preview requires an event.";
+                return false;
+            }
+
+            SerializedProperty presentation =
+                eventProperty.FindPropertyRelative("presentation");
+            if (presentation == null)
+            {
+                error = "Active presentation preview has no typed data.";
+                return false;
+            }
+
+            switch (track)
+            {
+                case FpgSkillEventTrackKind.PresentationVfx:
+                    return TryPlayVfx(
+                        presentation,
+                        eventProperty,
+                        out error);
+
+                case FpgSkillEventTrackKind.PresentationAudio:
+                    return !allowAudio
+                        || TryPlayAudio(presentation, out error);
+
+                case FpgSkillEventTrackKind.PresentationCameraShake:
+                    return TryPlayCameraShake(presentation, out error);
+
+                default:
+                    error =
+                        "Only active VFX, Audio and CameraShake can be previewed.";
+                    return false;
+            }
+        }
+
+        public void UpdatePresentationPreview()
+        {
+            double now = EditorApplication.timeSinceStartup;
+            bool changed = UpdatePreviewVfx(now);
+            changed |= UpdatePreviewShakes(now);
+            if (changed)
+            {
+                renderedPreview.MarkDirtyRepaint();
+            }
+        }
+
+        public void ClearPresentationPreview()
+        {
+            for (int index = presentationVfx.Count - 1; index >= 0; index--)
+            {
+                DestroyPreviewObject(presentationVfx[index].Instance);
+            }
+
+            presentationVfx.Clear();
+            presentationShakes.Clear();
+            RestorePreviewCamera();
+            if (previewAudioSource != null)
+            {
+                previewAudioSource.Stop();
+            }
+
+            DestroyPreviewObject(previewAudioObject);
+            previewAudioObject = null;
+            previewAudioSource = null;
+            renderedPreview.MarkDirtyRepaint();
+        }
+
+        private bool TryPlayVfx(
+            SerializedProperty presentation,
+            SerializedProperty eventProperty,
+            out string error)
+        {
+            error = string.Empty;
+            SerializedProperty prefabProperty =
+                presentation.FindPropertyRelative("prefab");
+            GameObject prefab = prefabProperty == null
+                ? null
+                : prefabProperty.objectReferenceValue as GameObject;
+            if (prefab == null || previewUtility == null)
+            {
+                error =
+                    "VFX preview requires a prefab and an isolated preview scene.";
+                return false;
+            }
+
+            float duration = ReadFloat(
+                presentation,
+                "durationSeconds",
+                1f);
+            Vector3 scale = ReadVector3(
+                presentation,
+                "scale",
+                Vector3.one);
+            Vector3 rotationOffset = ReadVector3(
+                presentation,
+                "rotationOffsetEuler",
+                Vector3.zero);
+            SerializedProperty anchorProperty =
+                eventProperty.FindPropertyRelative("anchor");
+            bool ownerSocket = anchorProperty != null
+                && anchorProperty.enumValueIndex == 1;
+            string socketId = eventProperty
+                .FindPropertyRelative("socketId")?.stringValue
+                ?? string.Empty;
+
+            Vector3 position = previewInstance == null
+                ? Vector3.zero
+                : previewInstance.transform.position;
+            Vector3 forward = previewInstance == null
+                ? Vector3.right
+                : previewInstance.transform.right;
+            if (ownerSocket
+                && !TryResolvePreviewOrigin(
+                    socketId,
+                    out position,
+                    out forward))
+            {
+                error = "VFX preview cannot resolve socket '" + socketId + "'.";
+                return false;
+            }
+
+            GameObject instance;
+            try
+            {
+                instance = UnityEngine.Object.Instantiate(prefab);
+                instance.name = prefab.name + " (Active Presentation Preview)";
+                instance.hideFlags = HideFlags.HideAndDontSave;
+                Quaternion sourceRotation = forward.sqrMagnitude <= 0.000001f
+                    ? Quaternion.identity
+                    : Quaternion.FromToRotation(
+                        Vector3.right,
+                        forward.normalized);
+                instance.transform.SetPositionAndRotation(
+                    position,
+                    sourceRotation * Quaternion.Euler(rotationOffset));
+                Vector3 sourceScale = previewInstance == null
+                    ? Vector3.one
+                    : previewInstance.transform.lossyScale;
+                instance.transform.localScale =
+                    Vector3.Scale(sourceScale, scale);
+                previewUtility.AddSingleGO(instance);
+            }
+            catch (Exception exception)
+            {
+                error = "VFX preview failed: "
+                    + exception.GetBaseException().Message;
+                return false;
+            }
+
+            ParticleSystem[] particles =
+                instance.GetComponentsInChildren<ParticleSystem>(true);
+            for (int index = 0; index < particles.Length; index++)
+            {
+                particles[index].Stop(
+                    true,
+                    ParticleSystemStopBehavior.StopEmittingAndClear);
+                particles[index].Play(true);
+            }
+
+            presentationVfx.Add(new PreviewVfxInstance(
+                instance,
+                particles,
+                EditorApplication.timeSinceStartup,
+                Mathf.Max(0.01f, duration)));
+            renderedPreview.MarkDirtyRepaint();
+            return true;
+        }
+
+        private bool TryPlayAudio(
+            SerializedProperty presentation,
+            out string error)
+        {
+            error = string.Empty;
+            AudioClip clip = presentation.FindPropertyRelative("clip")
+                ?.objectReferenceValue as AudioClip;
+            float volume = Mathf.Clamp01(ReadFloat(
+                presentation,
+                "volume",
+                1f));
+            if (clip == null)
+            {
+                error = "Audio preview requires an AudioClip.";
+                return false;
+            }
+
+            if (previewAudioSource == null)
+            {
+                previewAudioObject = new GameObject(
+                    "Skill Active Audio Preview")
+                {
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+                previewAudioSource =
+                    previewAudioObject.AddComponent<AudioSource>();
+                previewAudioSource.playOnAwake = false;
+                previewAudioSource.loop = false;
+                previewAudioSource.spatialBlend = 0f;
+                previewAudioSource.dopplerLevel = 0f;
+                previewAudioSource.volume = 1f;
+            }
+
+            previewAudioSource.PlayOneShot(clip, volume);
+            return true;
+        }
+
+        private bool TryPlayCameraShake(
+            SerializedProperty presentation,
+            out string error)
+        {
+            error = string.Empty;
+            float strength = ReadFloat(presentation, "strength", 0f);
+            float duration = ReadFloat(
+                presentation,
+                "durationSeconds",
+                0.1f);
+            if (float.IsNaN(strength)
+                || float.IsInfinity(strength)
+                || strength < 0f
+                || float.IsNaN(duration)
+                || float.IsInfinity(duration)
+                || duration <= 0f)
+            {
+                error =
+                    "CameraShake preview requires finite strength and duration.";
+                return false;
+            }
+
+            if (strength <= 0f)
+            {
+                return true;
+            }
+
+            CapturePreviewCameraBaseline();
+            presentationShakes.Add(new PreviewShakeImpulse(
+                EditorApplication.timeSinceStartup,
+                duration,
+                strength));
+            return true;
+        }
+
+        private bool UpdatePreviewVfx(double now)
+        {
+            bool changed = false;
+            for (int index = presentationVfx.Count - 1; index >= 0; index--)
+            {
+                PreviewVfxInstance item = presentationVfx[index];
+                double elapsed = Math.Max(0d, now - item.StartedAt);
+                if (elapsed >= item.DurationSeconds || item.Instance == null)
+                {
+                    DestroyPreviewObject(item.Instance);
+                    presentationVfx.RemoveAt(index);
+                    changed = true;
+                    continue;
+                }
+
+                float sampleTime = (float)Math.Min(
+                    elapsed,
+                    item.DurationSeconds);
+                for (int particleIndex = 0;
+                    particleIndex < item.Particles.Length;
+                    particleIndex++)
+                {
+                    ParticleSystem particle = item.Particles[particleIndex];
+                    if (particle != null)
+                    {
+                        particle.Simulate(
+                            sampleTime,
+                            true,
+                            true,
+                            false);
+                    }
+                }
+
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private bool UpdatePreviewShakes(double now)
+        {
+            if (previewUtility == null)
+            {
+                presentationShakes.Clear();
+                hasPreviewCameraBaseline = false;
+                return false;
+            }
+
+            float combined = 0f;
+            for (int index = presentationShakes.Count - 1;
+                index >= 0;
+                index--)
+            {
+                PreviewShakeImpulse item = presentationShakes[index];
+                double elapsed = Math.Max(0d, now - item.StartedAt);
+                if (elapsed >= item.DurationSeconds)
+                {
+                    presentationShakes.RemoveAt(index);
+                    continue;
+                }
+
+                float remaining = 1f
+                    - (float)(elapsed / item.DurationSeconds);
+                combined += item.Strength * remaining;
+            }
+
+            if (presentationShakes.Count == 0)
+            {
+                bool changed = hasPreviewCameraBaseline;
+                RestorePreviewCamera();
+                return changed;
+            }
+
+            CapturePreviewCameraBaseline();
+            float normalized = Mathf.Min(1f, combined);
+            float phase = (float)(now * 32d);
+            Transform cameraTransform = previewUtility.camera.transform;
+            cameraTransform.position = previewCameraBasePosition
+                + previewCameraBaseRotation * new Vector3(
+                    Mathf.Sin(phase) * 0.035f * normalized,
+                    Mathf.Cos(phase * 0.83f) * 0.025f * normalized,
+                    0f);
+            cameraTransform.rotation = previewCameraBaseRotation
+                * Quaternion.Euler(
+                    0f,
+                    0f,
+                    Mathf.Sin(phase * 1.17f) * 0.65f * normalized);
+            return true;
+        }
+
+        private void CapturePreviewCameraBaseline()
+        {
+            if (hasPreviewCameraBaseline || previewUtility == null)
+            {
+                return;
+            }
+
+            previewCameraBasePosition =
+                previewUtility.camera.transform.position;
+            previewCameraBaseRotation =
+                previewUtility.camera.transform.rotation;
+            hasPreviewCameraBaseline = true;
+        }
+
+        private void RestorePreviewCamera()
+        {
+            if (!hasPreviewCameraBaseline || previewUtility == null)
+            {
+                hasPreviewCameraBaseline = false;
+                return;
+            }
+
+            previewUtility.camera.transform.SetPositionAndRotation(
+                previewCameraBasePosition,
+                previewCameraBaseRotation);
+            hasPreviewCameraBaseline = false;
+        }
+
+        private static float ReadFloat(
+            SerializedProperty parent,
+            string name,
+            float fallback)
+        {
+            SerializedProperty property =
+                parent?.FindPropertyRelative(name);
+            return property == null ? fallback : property.floatValue;
+        }
+
+        private static Vector3 ReadVector3(
+            SerializedProperty parent,
+            string name,
+            Vector3 fallback)
+        {
+            SerializedProperty property =
+                parent?.FindPropertyRelative(name);
+            return property == null ? fallback : property.vector3Value;
+        }
+
+        private static void DestroyPreviewObject(GameObject value)
+        {
+            if (value != null)
+            {
+                UnityEngine.Object.DestroyImmediate(value);
+            }
         }
 
         public void SetTargetCount(int count)
@@ -290,20 +697,20 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     + " · " + previewStatus
                 : "Tick " + tick + " · " + animationName + " · "
                     + activeCount + " 个技能事件 · " + previewStatus;
-            string payloadPreview = string.Empty;
+            string actionPreview = string.Empty;
             for (int index = 0; index < activeEvents.Count; index++)
             {
                 if (!string.IsNullOrWhiteSpace(
-                        activeEvents[index].PayloadPreview))
+                        activeEvents[index].PreviewSummary))
                 {
-                    payloadPreview = activeEvents[index].PayloadPreview;
+                    actionPreview = activeEvents[index].PreviewSummary;
                     break;
                 }
             }
 
             string detail = !string.IsNullOrWhiteSpace(simulationSummary)
                 ? simulationSummary
-                : payloadPreview;
+                : actionPreview;
             overlayLabel.text = string.IsNullOrWhiteSpace(detail)
                 ? headline
                 : headline + "\n" + detail;
@@ -615,6 +1022,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
+            RestorePreviewCamera();
             Bounds bounds = sceneContent == null
                 ? CalculateBounds(previewInstance)
                 : sceneContent.GetCombinedBounds();
@@ -660,6 +1068,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void DisposePreview()
         {
+            ClearPresentationPreview();
             spineComponent = null;
             spineAnimationState = null;
             spineTrackEntry = null;
@@ -677,6 +1086,43 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             UpdateFallbackVisibility();
+        }
+
+        private sealed class PreviewVfxInstance
+        {
+            public PreviewVfxInstance(
+                GameObject instance,
+                ParticleSystem[] particles,
+                double startedAt,
+                float durationSeconds)
+            {
+                Instance = instance;
+                Particles = particles ?? Array.Empty<ParticleSystem>();
+                StartedAt = startedAt;
+                DurationSeconds = durationSeconds;
+            }
+
+            public GameObject Instance { get; }
+            public ParticleSystem[] Particles { get; }
+            public double StartedAt { get; }
+            public float DurationSeconds { get; }
+        }
+
+        private readonly struct PreviewShakeImpulse
+        {
+            public PreviewShakeImpulse(
+                double startedAt,
+                float durationSeconds,
+                float strength)
+            {
+                StartedAt = startedAt;
+                DurationSeconds = durationSeconds;
+                Strength = strength;
+            }
+
+            public double StartedAt { get; }
+            public float DurationSeconds { get; }
+            public float Strength { get; }
         }
     }
 }

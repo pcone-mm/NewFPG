@@ -8,7 +8,8 @@ namespace FPG.Demo.Run
         AttackQuery = 0,
         ProjectileRegister,
         ProjectileSweep,
-        ProjectileRelease
+        ProjectileRelease,
+        PlayerProjectileAreaQuery
     }
 
     public readonly struct SpatialDecisionRecord

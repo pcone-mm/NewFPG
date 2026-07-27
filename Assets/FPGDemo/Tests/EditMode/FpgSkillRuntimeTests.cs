@@ -136,176 +136,244 @@ namespace FPG.Demo.Tests.EditMode
             FpgCompiledSkillSequence changed = Sequence(
                 2,
                 PayloadEvent(1, 0),
-                new FpgCompiledSkillEvent(2, 2, FpgSkillEventKind.GameplayPayload, 99, 0, 0));
+                new FpgCompiledSkillEvent(
+                    2,
+                    2,
+                    FpgSkillActionKind.Attack,
+                    99));
 
             FpgCompiledSkillDefinition definition = new FpgCompiledSkillDefinition(77, new[] { first });
             FpgCompiledSkillDefinition reorderedDefinition = new FpgCompiledSkillDefinition(77, new[] { reordered });
             FpgCompiledSkillDefinition changedDefinition = new FpgCompiledSkillDefinition(77, new[] { changed });
 
             Assert.That(FpgSkillRuntimeConstants.TickRate, Is.EqualTo(60));
-            Assert.That(FpgSkillRuntimeConstants.GameplayHashVersion, Is.EqualTo(1));
+            Assert.That(FpgSkillRuntimeConstants.GameplayHashVersion, Is.EqualTo(4));
+            Assert.That(FpgSkillRuntimeConstants.PresentationHashVersion, Is.EqualTo(1));
             Assert.That(first.GameplayHash, Is.EqualTo(reordered.GameplayHash));
             Assert.That(definition.GameplayHash, Is.EqualTo(reorderedDefinition.GameplayHash));
             Assert.That(changed.GameplayHash, Is.Not.EqualTo(first.GameplayHash));
             Assert.That(changedDefinition.GameplayHash, Is.Not.EqualTo(definition.GameplayHash));
         }
 
-        [Test]
-        public void CompilerCopiesAndExposesAuthoredPhases()
+        [TestCase(FpgSkillActionKind.Attack)]
+        [TestCase(FpgSkillActionKind.LaunchProjectile)]
+        [TestCase(FpgSkillActionKind.CommitReload)]
+        [TestCase(FpgSkillActionKind.SummonActors)]
+        public void GameplayActionAcceptsEveryTypedActionKind(
+            FpgSkillActionKind actionKind)
         {
-            FpgCompiledSkillPhase[] phases =
-            {
-                Phase(101, FpgSkillPhaseKind.Startup, 0, 2),
-                Phase(202, FpgSkillPhaseKind.Active, 2, 4),
-                Phase(303, FpgSkillPhaseKind.Recovery, 4, 6)
-            };
+            FpgCompiledSkillEvent action = new FpgCompiledSkillEvent(
+                1,
+                0,
+                actionKind,
+                2);
+
+            Assert.That(
+                action.Kind,
+                Is.EqualTo(FpgSkillEventKind.GameplayAction));
+            Assert.That(action.ActionKind, Is.EqualTo(actionKind));
+            Assert.That(action.ActionIndex, Is.EqualTo(2));
+            Assert.That(action.IsValid, Is.True);
+        }
+
+        [Test]
+        public void GameplayActionRejectsInvalidActionKind()
+        {
+            FpgCompiledSkillEvent action = new FpgCompiledSkillEvent(
+                1,
+                0,
+                (FpgSkillActionKind)99,
+                0);
 
             bool compiled = FpgSkillCompiler.TryCompileSequence(
                 FpgSkillSequenceKind.Execute,
-                6,
+                0,
                 1001,
                 false,
-                phases,
-                new FpgCompiledSkillEvent[0],
-                out FpgCompiledSkillSequence sequence,
+                new[] { action },
+                out FpgCompiledSkillSequence ignored,
                 out FpgSkillValidationResult validation);
 
-            Assert.That(compiled, Is.True, validation.ToString());
-            Assert.That((int)FpgSkillPhaseKind.Startup, Is.EqualTo(1));
-            Assert.That((int)FpgSkillPhaseKind.Active, Is.EqualTo(2));
-            Assert.That((int)FpgSkillPhaseKind.Recovery, Is.EqualTo(3));
-            Assert.That(sequence.PhaseCount, Is.EqualTo(3));
-            Assert.That(sequence.Phases.Count, Is.EqualTo(3));
+            Assert.That(compiled, Is.False);
             Assert.That(
-                sequence.GetPhase(1),
-                Is.EqualTo(Phase(202, FpgSkillPhaseKind.Active, 2, 4)));
-
-            phases[1] = Phase(999, FpgSkillPhaseKind.Active, 2, 4);
-            Assert.That(sequence.GetPhase(1).PhaseId, Is.EqualTo(202));
-            Assert.Throws<System.ArgumentOutOfRangeException>(
-                () => sequence.GetPhase(3));
+                validation.Error,
+                Is.EqualTo(FpgSkillValidationError.InvalidActionKind));
+            Assert.That(validation.Value, Is.EqualTo(99));
         }
 
         [Test]
-        public void CompilerRejectsDuplicatePhaseIdsAndKinds()
+        public void GameplayActionRejectsNoneActionKind()
         {
-            bool duplicateIdCompiled = FpgSkillCompiler.TryCompileSequence(
+            FpgCompiledSkillEvent action = new FpgCompiledSkillEvent(
+                1,
+                0,
+                FpgSkillActionKind.None,
+                0);
+
+            bool compiled = FpgSkillCompiler.TryCompileSequence(
                 FpgSkillSequenceKind.Execute,
-                4,
+                0,
                 1001,
                 false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Startup, 0, 2),
-                    Phase(101, FpgSkillPhaseKind.Active, 2, 4)
-                },
-                new FpgCompiledSkillEvent[0],
-                out _,
-                out FpgSkillValidationResult duplicateIdValidation);
+                new[] { action },
+                out FpgCompiledSkillSequence ignored,
+                out FpgSkillValidationResult validation);
 
-            Assert.That(duplicateIdCompiled, Is.False);
+            Assert.That(compiled, Is.False);
             Assert.That(
-                duplicateIdValidation.Error,
-                Is.EqualTo(FpgSkillValidationError.DuplicatePhaseId));
-            Assert.That(duplicateIdValidation.EventIndex, Is.EqualTo(1));
-
-            bool duplicateKindCompiled = FpgSkillCompiler.TryCompileSequence(
-                FpgSkillSequenceKind.Execute,
-                4,
-                1001,
-                false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Active, 0, 2),
-                    Phase(202, FpgSkillPhaseKind.Active, 2, 4)
-                },
-                new FpgCompiledSkillEvent[0],
-                out _,
-                out FpgSkillValidationResult duplicateKindValidation);
-
-            Assert.That(duplicateKindCompiled, Is.False);
-            Assert.That(
-                duplicateKindValidation.Error,
-                Is.EqualTo(FpgSkillValidationError.DuplicatePhaseKind));
+                validation.Error,
+                Is.EqualTo(FpgSkillValidationError.InvalidActionKind));
+            Assert.That(validation.Value, Is.Zero);
         }
 
         [Test]
-        public void CompilerRejectsInvalidPhaseRangesAndOrdering()
+        public void GameplayActionRejectsNegativeActionIndex()
         {
-            bool rangeCompiled = FpgSkillCompiler.TryCompileSequence(
+            FpgCompiledSkillEvent action = new FpgCompiledSkillEvent(
+                1,
+                0,
+                FpgSkillActionKind.Attack,
+                -1);
+
+            bool compiled = FpgSkillCompiler.TryCompileSequence(
                 FpgSkillSequenceKind.Execute,
-                4,
+                0,
                 1001,
                 false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Active, 0, 5)
-                },
-                new FpgCompiledSkillEvent[0],
-                out _,
-                out FpgSkillValidationResult rangeValidation);
+                new[] { action },
+                out FpgCompiledSkillSequence ignored,
+                out FpgSkillValidationResult validation);
 
-            Assert.That(rangeCompiled, Is.False);
+            Assert.That(compiled, Is.False);
             Assert.That(
-                rangeValidation.Error,
-                Is.EqualTo(FpgSkillValidationError.PhaseTickOutOfRange));
-
-            bool orderCompiled = FpgSkillCompiler.TryCompileSequence(
-                FpgSkillSequenceKind.Execute,
-                4,
-                1001,
-                false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Startup, 0, 3),
-                    Phase(202, FpgSkillPhaseKind.Active, 2, 4)
-                },
-                new FpgCompiledSkillEvent[0],
-                out _,
-                out FpgSkillValidationResult orderValidation);
-
-            Assert.That(orderCompiled, Is.False);
-            Assert.That(
-                orderValidation.Error,
-                Is.EqualTo(FpgSkillValidationError.InvalidPhaseOrder));
+                validation.Error,
+                Is.EqualTo(FpgSkillValidationError.InvalidActionIndex));
+            Assert.That(validation.Value, Is.EqualTo(-1));
         }
 
         [Test]
-        public void GameplayHashIsSensitiveToPhaseData()
+        public void GameplayHashIncludesActionKindAndIndex()
         {
-            FpgCompiledSkillSequence first = new FpgCompiledSkillSequence(
-                FpgSkillSequenceKind.Execute,
-                4,
-                1001,
-                false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Active, 1, 3)
-                },
-                new FpgCompiledSkillEvent[0]);
-            FpgCompiledSkillSequence identical = new FpgCompiledSkillSequence(
-                FpgSkillSequenceKind.Execute,
-                4,
-                1001,
-                false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Active, 1, 3)
-                },
-                new FpgCompiledSkillEvent[0]);
-            FpgCompiledSkillSequence changed = new FpgCompiledSkillSequence(
-                FpgSkillSequenceKind.Execute,
-                4,
-                1001,
-                false,
-                new[]
-                {
-                    Phase(101, FpgSkillPhaseKind.Active, 1, 4)
-                },
-                new FpgCompiledSkillEvent[0]);
+            FpgCompiledSkillSequence baseline = Sequence(
+                0,
+                new FpgCompiledSkillEvent(
+                    1,
+                    0,
+                    FpgSkillActionKind.Attack,
+                    0));
+            FpgCompiledSkillSequence changedKind = Sequence(
+                0,
+                new FpgCompiledSkillEvent(
+                    1,
+                    0,
+                    FpgSkillActionKind.LaunchProjectile,
+                    0));
+            FpgCompiledSkillSequence changedIndex = Sequence(
+                0,
+                new FpgCompiledSkillEvent(
+                    1,
+                    0,
+                    FpgSkillActionKind.Attack,
+                    1));
 
-            Assert.That(identical.GameplayHash, Is.EqualTo(first.GameplayHash));
-            Assert.That(changed.GameplayHash, Is.Not.EqualTo(first.GameplayHash));
+            Assert.That(
+                changedKind.GameplayHash,
+                Is.Not.EqualTo(baseline.GameplayHash));
+            Assert.That(
+                changedIndex.GameplayHash,
+                Is.Not.EqualTo(baseline.GameplayHash));
+        }
+
+        [Test]
+        public void GameplayActionEqualityIncludesActionKindAndIndex()
+        {
+            FpgCompiledSkillEvent baseline = new FpgCompiledSkillEvent(
+                1,
+                0,
+                FpgSkillActionKind.Attack,
+                0);
+            FpgCompiledSkillEvent changedKind = new FpgCompiledSkillEvent(
+                1,
+                0,
+                FpgSkillActionKind.LaunchProjectile,
+                0);
+            FpgCompiledSkillEvent changedIndex = new FpgCompiledSkillEvent(
+                1,
+                0,
+                FpgSkillActionKind.Attack,
+                1);
+
+            Assert.That(changedKind, Is.Not.EqualTo(baseline));
+            Assert.That(changedIndex, Is.Not.EqualTo(baseline));
+            Assert.That(
+                changedKind.GetHashCode(),
+                Is.Not.EqualTo(baseline.GetHashCode()));
+            Assert.That(
+                changedIndex.GetHashCode(),
+                Is.Not.EqualTo(baseline.GetHashCode()));
+        }
+
+        [Test]
+        public void ActivePresentationChangesOnlyPresentationHash()
+        {
+            FpgCompiledSkillEvent gameplay = new FpgCompiledSkillEvent(
+                10,
+                1,
+                FpgSkillActionKind.Attack,
+                0);
+            FpgCompiledSkillSequence first = Sequence(
+                3,
+                gameplay,
+                ActivePresentationEvent(20, 2, 30, 40, 100UL, 10));
+            FpgCompiledSkillSequence changed = Sequence(
+                3,
+                gameplay,
+                ActivePresentationEvent(20, 2, 31, 40, 101UL, 10));
+
+            Assert.That(changed.GameplayHash, Is.EqualTo(first.GameplayHash));
+            Assert.That(
+                changed.PresentationHash,
+                Is.Not.EqualTo(first.PresentationHash));
+        }
+
+        [Test]
+        public void ActivePresentationBindingAllowsLaterTickAndRejectsEarlierTick()
+        {
+            FpgCompiledSkillEvent gameplay = new FpgCompiledSkillEvent(
+                10,
+                2,
+                FpgSkillActionKind.Attack,
+                0);
+            FpgCompiledSkillEvent later = ActivePresentationEvent(
+                20,
+                3,
+                30,
+                40,
+                100UL,
+                10);
+            FpgCompiledSkillEvent earlier = ActivePresentationEvent(
+                20,
+                1,
+                30,
+                40,
+                100UL,
+                10);
+
+            Assert.DoesNotThrow(() => Sequence(3, gameplay, later));
+            Assert.Throws<ArgumentException>(
+                () => Sequence(3, gameplay, earlier));
+        }
+
+        [Test]
+        public void DefinitionRejectsPresentationHandleCollision()
+        {
+            FpgCompiledSkillSequence sequence = Sequence(
+                2,
+                ActivePresentationEvent(20, 0, 30, 40, 100UL, 0),
+                ActivePresentationEvent(21, 1, 30, 40, 101UL, 0));
+
+            Assert.Throws<ArgumentException>(
+                () => new FpgCompiledSkillDefinition(77, new[] { sequence }));
         }
 
         [Test]
@@ -339,19 +407,6 @@ namespace FPG.Demo.Tests.EditMode
                 events);
         }
 
-        private static FpgCompiledSkillPhase Phase(
-            int phaseId,
-            FpgSkillPhaseKind kind,
-            int startTick,
-            int endTick)
-        {
-            return new FpgCompiledSkillPhase(
-                phaseId,
-                kind,
-                startTick,
-                endTick);
-        }
-
         private static FpgCompiledSkillEvent PayloadEvent(
             int eventId,
             int tick,
@@ -360,11 +415,27 @@ namespace FPG.Demo.Tests.EditMode
             return new FpgCompiledSkillEvent(
                 eventId,
                 tick,
-                FpgSkillEventKind.GameplayPayload,
+                FpgSkillActionKind.Attack,
                 eventId,
-                0,
-                0,
                 sortOrder);
+        }
+
+        private static FpgCompiledSkillEvent ActivePresentationEvent(
+            int eventId,
+            int tick,
+            int handle,
+            int trackId,
+            ulong contentHash,
+            int boundGameplayEventId)
+        {
+            return new FpgCompiledSkillEvent(
+                eventId,
+                tick,
+                FpgActivePresentationKind.Vfx,
+                new FpgPresentationHandle(handle),
+                trackId,
+                contentHash,
+                boundGameplayEventId: boundGameplayEventId);
         }
 
 

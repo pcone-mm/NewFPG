@@ -101,7 +101,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
     {
         internal const string RoomTypeName = "FPG.Demo.Unity.FpgRoomDefinition, FPG.Unity";
         internal const string ScenarioTypeName = "FPG.Demo.Unity.D0CombatScenarioDefinition, FPG.Unity";
-        internal const string CombatLabScenePath = "Assets/FPGDemo/Scenes/CombatLab.unity";
         internal const string DefaultRoomAssetFolder = "Assets/FPGDemo/Config/Level/Rooms";
 
         private static readonly Dictionary<FpgRoomMarkerKind, string> MarkerArrayNames =

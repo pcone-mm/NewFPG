@@ -72,6 +72,8 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(StateName(stateMachine), Is.EqualTo("EnemyGroggy"));
             Assert.That(Apply(stateMachine, "Hit"), Is.False);
             Assert.That(Apply(stateMachine, "EnemyFastThreat"), Is.False);
+            Assert.That(Apply(stateMachine, "EnemyVolleyThreat"), Is.False);
+            Assert.That(Apply(stateMachine, "EnemyHeavyThreat"), Is.False);
             Assert.That(Apply(stateMachine, "EnemyGroggyEnded"), Is.True);
             Assert.That(StateName(stateMachine), Is.EqualTo("Idle"));
 

@@ -38,30 +38,33 @@ namespace FPG.Demo.Unity
                     continue;
                 }
 
-                for (int payloadIndex = 0;
-                    payloadIndex < attack.PayloadSlots.Count;
-                    payloadIndex++)
+                if (!attack.TryCompile(
+                        out FpgCompiledEnemySkillDefinition compiledAttack,
+                        out error))
                 {
-                    FpgEnemySkillPayloadSlot payload =
-                        attack.PayloadSlots[payloadIndex];
-                    if (payload == null
-                        || payload.Kind != FpgEnemySkillPayloadKind.Summon)
-                    {
-                        continue;
-                    }
+                    error = $"Enemy skill '{attack.SkillId}' cannot compile while building formal enemy data: {error}";
+                    return false;
+                }
 
+                for (int actionIndex = 0;
+                    actionIndex < compiledAttack.SummonActions.Count;
+                    actionIndex++)
+                {
+                    FpgCompiledEnemySummonPayload summon =
+                        compiledAttack.SummonActions[actionIndex]
+                            .SummonPayload;
                     hasSummonAction = true;
-                    if (payload.SummonOccupancyMode
+                    if (summon.OccupancyMode
                         == FpgSummonOccupancyMode.AdditionalEntity)
                     {
                         maxSummons = Math.Max(
                             maxSummons,
-                            payload.MaxTotalSummonsPerEncounter);
+                            summon.MaxTotalSummonsPerEncounter);
                     }
 
                     maxSummonDepth = Math.Max(
                         maxSummonDepth,
-                        payload.MaxSummonRecursionDepth);
+                        summon.MaxRecursionDepth);
                 }
             }
 

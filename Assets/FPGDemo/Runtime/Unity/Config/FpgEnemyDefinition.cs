@@ -191,38 +191,28 @@ namespace FPG.Demo.Unity
                 {
                     FpgSkillSequenceDefinition sequence =
                         attack.Sequences[sequenceIndex];
-                    for (int eventIndex = 0;
-                        eventIndex < sequence.LogicEvents.Count;
-                        eventIndex++)
+                    if (!TryValidateActionSockets(
+                            attack.SkillId,
+                            sequence.AttackEvents,
+                            socketRegistry,
+                            out error)
+                        || !TryValidateActionSockets(
+                            attack.SkillId,
+                            sequence.ProjectileEvents,
+                            socketRegistry,
+                            out error)
+                        || !TryValidateActionSockets(
+                            attack.SkillId,
+                            sequence.ReloadEvents,
+                            socketRegistry,
+                            out error)
+                        || !TryValidateActionSockets(
+                            attack.SkillId,
+                            sequence.SummonEvents,
+                            socketRegistry,
+                            out error))
                     {
-                        FpgSkillLogicEventDefinition skillEvent =
-                            sequence.LogicEvents[eventIndex];
-                        if (!TryValidateSocket(
-                                attack.SkillId,
-                                skillEvent.EventId,
-                                skillEvent.SocketId,
-                                socketRegistry,
-                                out error))
-                        {
-                            return false;
-                        }
-                    }
-
-                    for (int cueIndex = 0;
-                        cueIndex < sequence.PresentationCues.Count;
-                        cueIndex++)
-                    {
-                        FpgSkillPresentationCueDefinition cue =
-                            sequence.PresentationCues[cueIndex];
-                        if (!TryValidateSocket(
-                                attack.SkillId,
-                                cue.EventId,
-                                cue.SocketId,
-                                socketRegistry,
-                                out error))
-                        {
-                            return false;
-                        }
+                        return false;
                     }
 
                     for (int warningIndex = 0;
@@ -241,6 +231,31 @@ namespace FPG.Demo.Unity
                             return false;
                         }
                     }
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryValidateActionSockets<TAction>(
+            string skillId,
+            IReadOnlyList<TAction> actions,
+            D0ActorSocketRegistry socketRegistry,
+            out string error)
+            where TAction : FpgSkillGameplayActionDefinition
+        {
+            for (int index = 0; index < actions.Count; index++)
+            {
+                TAction action = actions[index];
+                if (!TryValidateSocket(
+                        skillId,
+                        action.EventId,
+                        action.SocketId,
+                        socketRegistry,
+                        out error))
+                {
+                    return false;
                 }
             }
 
@@ -305,35 +320,40 @@ namespace FPG.Demo.Unity
             {
                 FpgEnemyAttackDefinition attack =
                     enemy.GetAttackPattern(index);
-                for (int payloadIndex = 0;
-                    payloadIndex < attack.PayloadSlots.Count;
-                    payloadIndex++)
+                if (!attack.TryCompile(
+                        out FpgCompiledEnemySkillDefinition compiledAttack,
+                        out error))
                 {
-                    FpgEnemySkillPayloadSlot payload =
-                        attack.PayloadSlots[payloadIndex];
-                    if (payload == null
-                        || payload.Kind != FpgEnemySkillPayloadKind.Summon)
-                    {
-                        continue;
-                    }
+                    error = $"Enemy skill '{attack.SkillId}' cannot compile while validating its summon graph: {error}";
+                    visiting.Remove(enemy);
+                    return false;
+                }
 
-                    FpgEnemyDefinition[] candidates = payload.SummonCandidates;
+                for (int actionIndex = 0;
+                    actionIndex < compiledAttack.SummonActions.Count;
+                    actionIndex++)
+                {
+                    FpgCompiledEnemySummonPayload summon =
+                        compiledAttack.SummonActions[actionIndex]
+                            .SummonPayload;
                     for (int candidateIndex = 0;
-                        candidateIndex < candidates.Length;
+                        candidateIndex < summon.CandidateCount;
                         candidateIndex++)
                     {
+                        FpgCompiledEnemySummonCandidate candidate =
+                            summon.GetCandidate(candidateIndex);
                         if (!TryValidateEnemyGraph(
-                            candidates[candidateIndex],
+                            candidate.Definition,
                             visiting,
                             depth + 1,
                             out error))
                         {
-                            error = $"Summon payload '{payload.SlotId}' on '{enemy.EnemyDefinitionId}' is invalid: {error}";
+                            error = $"Summon action '{summon.ActionId}' on '{enemy.EnemyDefinitionId}' is invalid: {error}";
                             visiting.Remove(enemy);
                             return false;
                         }
 
-                        visiting.Remove(candidates[candidateIndex]);
+                        visiting.Remove(candidate.Definition);
                     }
                 }
             }

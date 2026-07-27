@@ -296,6 +296,7 @@ namespace FPG.Demo.Run
         public event Action<FpgEncounterLifecycleEvent> LifecycleEvent;
 
         public bool IsTerminal => phase == FpgEncounterPhase.Cleared
+            || phase == FpgEncounterPhase.Defeated
             || phase == FpgEncounterPhase.Failed
             || phase == FpgEncounterPhase.Faulted
             || phase == FpgEncounterPhase.Disposed;
@@ -398,6 +399,29 @@ namespace FPG.Demo.Run
             if (phase == FpgEncounterPhase.WaveDelay && tick >= waveDelayUntilTick)
             {
                 StartNextWave(tick);
+            }
+
+            return phase == FpgEncounterPhase.Failed
+                ? DomainResult.Rejected(RejectReason.InvariantFault)
+                : DomainResult.Success;
+        }
+
+        internal DomainResult CompleteTick(TickIndex tick)
+        {
+            if (disposed || phase == FpgEncounterPhase.Disposed)
+            {
+                return DomainResult.Rejected(RejectReason.Disposed);
+            }
+
+            if (IsTerminal)
+            {
+                return DomainResult.Rejected(RejectReason.AlreadyTerminal);
+            }
+
+            if (!tick.IsValid || !currentTick.IsValid
+                || currentTick.Value != tick.Value)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
             }
 
             TryCompleteWaveOrRoom(tick);
@@ -562,9 +586,42 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
+        internal DomainResult CompleteDefeat(TickIndex tick)
+        {
+            if (disposed || phase == FpgEncounterPhase.Disposed)
+            {
+                return DomainResult.Rejected(RejectReason.Disposed);
+            }
+
+            if (phase == FpgEncounterPhase.Defeated)
+            {
+                return DomainResult.Success;
+            }
+
+            if (IsTerminal)
+            {
+                return DomainResult.Rejected(RejectReason.AlreadyTerminal);
+            }
+
+            if (!tick.IsValid || (currentTick.IsValid && tick < currentTick))
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            currentTick = tick;
+            ClearLiveEntities();
+            failureReason = FpgEncounterFailureReason.None;
+            phase = FpgEncounterPhase.Defeated;
+            Emit(new FpgEncounterLifecycleEvent(
+                FpgEncounterLifecycleEventType.Defeated,
+                currentTick,
+                phase));
+            return DomainResult.Success;
+        }
+
         public DomainResult Fail(FpgEncounterFailureReason reason, RejectReason rejectReason = RejectReason.InvariantFault)
         {
-            if (phase == FpgEncounterPhase.Cleared || phase == FpgEncounterPhase.Disposed)
+            if (IsTerminal)
             {
                 return DomainResult.Rejected(RejectReason.AlreadyTerminal);
             }

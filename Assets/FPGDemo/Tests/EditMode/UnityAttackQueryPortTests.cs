@@ -437,7 +437,6 @@ namespace FPG.Demo.Tests.EditMode
                     Team.Enemy,
                     301,
                     250,
-                    1,
                     true);
                 ProjectilePathSnapshot path = new ProjectilePathSnapshot(
                     request.ProjectileId,

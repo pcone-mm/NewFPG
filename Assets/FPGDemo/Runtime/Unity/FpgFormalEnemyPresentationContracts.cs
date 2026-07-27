@@ -3,23 +3,6 @@ using FPG.Demo.Skills;
 
 namespace FPG.Demo.Unity
 {
-    public readonly struct FpgResolvedEnemySkillCue
-    {
-        public FpgResolvedEnemySkillCue(
-            string eventName,
-            string cueName,
-            string socketName)
-        {
-            EventName = eventName ?? string.Empty;
-            CueName = cueName ?? string.Empty;
-            SocketName = socketName ?? string.Empty;
-        }
-
-        public string EventName { get; }
-        public string CueName { get; }
-        public string SocketName { get; }
-    }
-
     public readonly struct FpgResolvedEnemySkillWarning
     {
         public FpgResolvedEnemySkillWarning(
@@ -85,54 +68,6 @@ namespace FPG.Demo.Unity
                 }
 
                 return false;
-            }
-
-            return false;
-        }
-
-        public static bool TryResolveCue(
-            FpgEnemyAttackDefinition definition,
-            FpgSkillSequenceKind sequenceKind,
-            in FpgCompiledSkillEvent compiledCue,
-            out FpgResolvedEnemySkillCue resolved)
-        {
-            resolved = default(FpgResolvedEnemySkillCue);
-            if (definition == null
-                || compiledCue.Kind != FpgSkillEventKind.PresentationCue)
-            {
-                return false;
-            }
-
-            if (!TryGetSequence(
-                    definition,
-                    sequenceKind,
-                    out FpgSkillSequenceDefinition sequence))
-            {
-                return false;
-            }
-
-            for (int index = 0;
-                index < sequence.PresentationCues.Count;
-                index++)
-            {
-                FpgSkillPresentationCueDefinition cue =
-                    sequence.PresentationCues[index];
-                if (cue != null
-                    && cue.Tick == compiledCue.Tick
-                    && FpgSkillStableId.CompileEvent(cue.EventId)
-                        == compiledCue.EventId
-                    && FpgSkillStableId.CompileCue(cue.CueId)
-                        == compiledCue.CueId
-                    && FpgSkillStableId.CompileOptionalSocket(
-                        cue.SocketId)
-                        == compiledCue.SocketId)
-                {
-                    resolved = new FpgResolvedEnemySkillCue(
-                        cue.EventId,
-                        cue.CueId,
-                        cue.SocketId);
-                    return true;
-                }
             }
 
             return false;
@@ -224,20 +159,6 @@ namespace FPG.Demo.Unity
             return false;
         }
     }
-    public readonly struct FpgFormalEnemySkillCuePresentationEvent
-    {
-        internal FpgFormalEnemySkillCuePresentationEvent(
-            in FpgFormalEnemySkillTimelineEvent timelineEvent,
-            in FpgResolvedEnemySkillCue resolved)
-        {
-            TimelineEvent = timelineEvent;
-            Resolved = resolved;
-        }
-
-        public FpgFormalEnemySkillTimelineEvent TimelineEvent { get; }
-        public FpgResolvedEnemySkillCue Resolved { get; }
-    }
-
     public readonly struct FpgFormalEnemySkillWarningPresentationEvent
     {
         internal FpgFormalEnemySkillWarningPresentationEvent(

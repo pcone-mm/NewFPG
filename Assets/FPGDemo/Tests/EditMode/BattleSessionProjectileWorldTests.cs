@@ -446,7 +446,6 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 1,
-                1,
                 false);
         }
 

@@ -41,6 +41,7 @@ namespace FPG.Demo.Enemy
                 hasReleased,
                 isTerminal,
                 ThreatPayloadKind.SweptProjectile,
+                FpgThreatPresentationKind.FastUninterceptable,
                 1,
                 ThreatTargetPolicy.PlayerCombatant)
         {
@@ -55,6 +56,7 @@ namespace FPG.Demo.Enemy
             bool hasReleased,
             bool isTerminal,
             ThreatPayloadKind payloadKind,
+            FpgThreatPresentationKind presentationKind,
             int presentationKey,
             ThreatTargetPolicy targetPolicy)
         {
@@ -66,6 +68,7 @@ namespace FPG.Demo.Enemy
             HasReleased = hasReleased;
             IsTerminal = isTerminal;
             PayloadKind = payloadKind;
+            PresentationKind = presentationKind;
             PresentationKey = presentationKey;
             TargetPolicy = targetPolicy;
         }
@@ -78,6 +81,7 @@ namespace FPG.Demo.Enemy
         public bool HasReleased { get; }
         public bool IsTerminal { get; }
         public ThreatPayloadKind PayloadKind { get; }
+        public FpgThreatPresentationKind PresentationKind { get; }
         public int PresentationKey { get; }
         public ThreatTargetPolicy TargetPolicy { get; }
     }
@@ -90,13 +94,17 @@ namespace FPG.Demo.Enemy
             TickDuration windupDuration,
             TickDuration recoveryDuration,
             ProjectileDefinition projectileDefinition,
-            int payloadCount)
+            int payloadCount,
+            FpgThreatPresentationKind presentationKind)
             : this(
                 definitionId,
                 telegraphDuration,
                 windupDuration,
                 recoveryDuration,
-                ThreatPayloadDefinition.SweptProjectile(projectileDefinition, payloadCount))
+                ThreatPayloadDefinition.SweptProjectile(
+                    projectileDefinition,
+                    payloadCount,
+                    presentationKind))
         {
         }
 
@@ -199,6 +207,7 @@ namespace FPG.Demo.Enemy
                 HasReleased,
                 IsTerminal,
                 payload.Kind,
+                payload.PresentationKind,
                 payload.PresentationKey,
                 payload.TargetPolicy);
         }

@@ -1,19 +1,19 @@
-# ThirdParty 使用指南
+# ThirdParty 指南
 
-这个目录放导入的插件和 vendored 资源；Unity samples 和第三方 demo 内容默认不纳入项目上下文，只有明确集成或迁移任务才恢复或编辑。
+本目录保存仍在项目内的插件和 vendored 资源；第三方 sample/demo 默认不纳入项目上下文。
 
 ## 目录边界
 
-- `JMO Assets/`、`VFX_Klaus/`、`VolumetricLights/`、`VolumetricFog2/`、`TextMesh Pro/` 等优先视为外部资产。
-- 项目自有玩法脚本、场景安装器和配置同步工具不要放在这里。
+- 当前顶层只有 `TextMesh Pro/`、`VolumetricFog2/` 和 `VolumetricLights/`。
+- Klaus 特效包已经迁到 `Assets/VFX_Klaus/`，按其局部指南处理；不要再使用旧 `Assets/ThirdParty/VFX_Klaus/` 路径。
+- 项目自有玩法脚本、正式场景安装器和配置同步工具不要放在这里。
 
 ## 工作规则
 
-- 除非任务明确是插件集成、资源迁移或修复导入问题，否则不要编辑第三方源码、shader、sample scene 或 demo 资源，也不要重新导入已清理的 samples 目录。
-- 移动第三方资源时必须同步 `.meta`，并在场景、prefab、material 引用验证完成前不要删除原位置。
-- 从第三方资源中挑选可用特效或材质时，优先复制或包装到项目自有目录，再让 gameplay 代码依赖项目自有路径。
+- 除非任务明确是插件集成、资源迁移或导入修复，不编辑第三方源码、shader、sample scene 或 demo 资源。
+- 移动第三方资源时必须同步 `.meta`，并在所有正式 wrapper、prefab、material 和 scene 引用验证完成前保留原位置。
+- 正式主线依赖第三方资源时优先建立项目自有 wrapper；保留直接依赖时必须显式记录并做 GUID 反查。
 
-## 验证方式
+## 验证
 
-- 改第三方资源位置后，打开引用它们的场景或 prefab 检查 missing references。
-- 改第三方 shader、renderer feature 或 package 相关资源后，检查 URP 场景视觉和 Console。
+- 修改位置或依赖后检查实际消费者的 missing references、URP 视觉和 Console；不要用已删除的 sample 路径作为验证入口。

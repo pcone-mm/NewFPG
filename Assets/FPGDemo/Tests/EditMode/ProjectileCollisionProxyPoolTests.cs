@@ -175,7 +175,6 @@ namespace FPG.Demo.Tests.EditMode
                 team,
                 301,
                 250,
-                9,
                 true);
         }
 

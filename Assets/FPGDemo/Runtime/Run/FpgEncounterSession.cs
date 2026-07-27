@@ -332,9 +332,22 @@ namespace FPG.Demo.Run
         {
             if (!combatPort.IsPlayerAlive)
             {
+                DomainResult defeated = runtime.CompleteDefeat(tick);
+                if (!defeated.IsSuccess)
+                {
+                    State = FpgEncounterSessionState.Faulted;
+                    return defeated;
+                }
+
                 State = FpgEncounterSessionState.Defeated;
-                runtime.Fail(FpgEncounterFailureReason.External, RejectReason.AlreadyTerminal);
-                return DomainResult.Rejected(RejectReason.AlreadyTerminal);
+                return DomainResult.Success;
+            }
+
+            DomainResult completed = runtime.CompleteTick(tick);
+            if (!completed.IsSuccess)
+            {
+                State = FpgEncounterSessionState.Faulted;
+                return completed;
             }
 
             if (runtime.Phase == FpgEncounterPhase.Cleared)

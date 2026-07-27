@@ -25,6 +25,12 @@ namespace FPG.Demo.Unity
         private float authoredNearClipPlane;
         private float authoredFarClipPlane;
         private float currentKick;
+        private Quaternion baselineLocalRotation;
+        private CombatCameraShakePresentation shakePresentation;
+        private ShakeImpulse[] shakeImpulses = System.Array.Empty<ShakeImpulse>();
+        private float shakeClock;
+        private Vector3 currentShakePosition;
+        private float currentShakeRotation;
         private bool hasBaseline;
         private bool hasAuthoredPose;
         private bool rigApplied;
@@ -34,6 +40,8 @@ namespace FPG.Demo.Unity
         public Camera TargetCamera => targetCamera;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
         public float CurrentKick => currentKick;
+        public float CurrentShakeStrength { get; private set; }
+        public int ShakeRejectCount { get; private set; }
         public bool IsPrepared => threeCProfile != null && hasBaseline;
         public bool IsRigApplied => rigApplied;
 
@@ -67,6 +75,7 @@ namespace FPG.Demo.Unity
         {
             RestoreBaseline();
             currentKick = 0f;
+            ClearShakes();
             paused = false;
         }
 
@@ -92,6 +101,8 @@ namespace FPG.Demo.Unity
                         0f,
                         maximumKick * Time.unscaledDeltaTime / recovery);
                 }
+
+                AdvanceShakes(Time.unscaledDeltaTime);
             }
 
             ApplyCameraLocalOffset();
@@ -101,6 +112,8 @@ namespace FPG.Demo.Unity
             D0ThreeCProfile profile,
             Camera nextTargetCamera,
             Transform nextCameraRig,
+            CombatCameraShakePresentation nextShakePresentation,
+            int shakeCapacity,
             out string error)
         {
             if (profile == null)
@@ -120,6 +133,12 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (nextShakePresentation == null || shakeCapacity <= 0)
+            {
+                error = "Formal camera feedback requires camera shake settings and a positive fixed capacity.";
+                return false;
+            }
+
             if (nextTargetCamera.transform.parent != nextCameraRig)
             {
                 error = "Formal camera must be a direct child of the scene-owned camera rig.";
@@ -129,12 +148,21 @@ namespace FPG.Demo.Unity
             threeCProfile = profile;
             targetCamera = nextTargetCamera;
             cameraRig = nextCameraRig;
+            shakePresentation = nextShakePresentation;
+            shakeImpulses = new ShakeImpulse[shakeCapacity];
             rigApplied = false;
             currentKick = 0f;
+            shakeClock = 0f;
+            currentShakePosition = Vector3.zero;
+            currentShakeRotation = 0f;
+            CurrentShakeStrength = 0f;
+            ShakeRejectCount = 0;
             paused = false;
             hasAuthoredPose = false;
             CaptureAuthoringPose();
             baselineLocalPosition = profile.CameraLocalPosition;
+            baselineLocalRotation = Quaternion.Euler(
+                profile.CameraLocalEulerAngles);
             hasBaseline = true;
             error = string.Empty;
             return true;
@@ -175,10 +203,12 @@ namespace FPG.Demo.Unity
             targetCamera.transform.localPosition = baselineLocalPosition;
             targetCamera.transform.localRotation =
                 Quaternion.Euler(threeCProfile.CameraLocalEulerAngles);
+            baselineLocalRotation = targetCamera.transform.localRotation;
             targetCamera.fieldOfView = threeCProfile.CameraFieldOfView;
             targetCamera.nearClipPlane = threeCProfile.CameraNearClipPlane;
             targetCamera.farClipPlane = threeCProfile.CameraFarClipPlane;
             currentKick = 0f;
+            ClearShakes();
             rigApplied = true;
             ApplyCameraLocalOffset();
             error = string.Empty;
@@ -212,6 +242,7 @@ namespace FPG.Demo.Unity
         public void ResetRuntimeFeedback()
         {
             currentKick = 0f;
+            ClearShakes();
             paused = false;
             if (rigApplied)
             {
@@ -221,7 +252,46 @@ namespace FPG.Demo.Unity
 
         public void SetPaused(bool nextPaused)
         {
+            if (nextPaused && !paused)
+            {
+                ClearPresentationShake();
+            }
+
             paused = nextPaused;
+        }
+
+        public bool TryAddShake(float strength, float duration)
+        {
+            if (!IsPrepared || shakePresentation == null
+                || float.IsNaN(strength) || float.IsInfinity(strength)
+                || float.IsNaN(duration) || float.IsInfinity(duration)
+                || strength <= 0f || duration <= 0f)
+            {
+                ShakeRejectCount++;
+                return false;
+            }
+
+            for (int index = 0; index < shakeImpulses.Length; index++)
+            {
+                if (shakeImpulses[index].Remaining > 0f)
+                {
+                    continue;
+                }
+
+                shakeImpulses[index] = new ShakeImpulse(
+                    Mathf.Min(strength, shakePresentation.MaxCombinedStrength),
+                    duration);
+                return true;
+            }
+
+            ShakeRejectCount++;
+            return false;
+        }
+
+        public void ClearPresentationShake()
+        {
+            ClearShakes();
+            ApplyCameraLocalOffset();
         }
 
         public bool TryValidate(out string error)
@@ -251,9 +321,12 @@ namespace FPG.Demo.Unity
         {
             RestoreAuthoringPose();
             currentKick = 0f;
+            ClearShakes();
             rigApplied = false;
             paused = false;
             threeCProfile = null;
+            shakePresentation = null;
+            shakeImpulses = System.Array.Empty<ShakeImpulse>();
             hasBaseline = false;
         }
 
@@ -294,6 +367,7 @@ namespace FPG.Demo.Unity
             if (targetCamera != null && hasBaseline)
             {
                 targetCamera.transform.localPosition = baselineLocalPosition;
+                targetCamera.transform.localRotation = baselineLocalRotation;
             }
         }
 
@@ -305,7 +379,90 @@ namespace FPG.Demo.Unity
             }
 
             targetCamera.transform.localPosition = baselineLocalPosition
-                + Vector3.back * currentKick;
+                + Vector3.back * currentKick
+                + currentShakePosition;
+            targetCamera.transform.localRotation = baselineLocalRotation
+                * Quaternion.Euler(0f, 0f, currentShakeRotation);
+        }
+
+        private void AdvanceShakes(float deltaTime)
+        {
+            if (shakePresentation == null || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            shakeClock += deltaTime;
+            float combinedStrength = 0f;
+            for (int index = 0; index < shakeImpulses.Length; index++)
+            {
+                ShakeImpulse impulse = shakeImpulses[index];
+                if (impulse.Remaining <= 0f)
+                {
+                    continue;
+                }
+
+                combinedStrength += impulse.Strength
+                    * Mathf.Clamp01(impulse.Remaining / impulse.Duration);
+                impulse.Remaining = Mathf.Max(0f, impulse.Remaining - deltaTime);
+                shakeImpulses[index] = impulse;
+            }
+
+            CurrentShakeStrength = Mathf.Min(
+                combinedStrength,
+                shakePresentation.MaxCombinedStrength);
+            if (CurrentShakeStrength <= 0f)
+            {
+                currentShakePosition = Vector3.zero;
+                currentShakeRotation = 0f;
+                return;
+            }
+
+            float phase = shakeClock * shakePresentation.FrequencyHz
+                * Mathf.PI * 2f;
+            float normalized = CurrentShakeStrength
+                / shakePresentation.MaxCombinedStrength;
+            Vector3 shakeDirection = new Vector3(
+                Mathf.Sin(phase),
+                Mathf.Cos(phase * 1.173f),
+                0f);
+            if (shakeDirection.sqrMagnitude > 1f)
+            {
+                shakeDirection.Normalize();
+            }
+
+            currentShakePosition = shakeDirection
+                * (shakePresentation.MaximumPositionOffset * normalized);
+            currentShakeRotation = Mathf.Sin(phase * 0.917f)
+                * shakePresentation.MaximumRotationDegrees
+                * normalized;
+        }
+
+        private void ClearShakes()
+        {
+            if (shakeImpulses.Length > 0)
+            {
+                System.Array.Clear(shakeImpulses, 0, shakeImpulses.Length);
+            }
+
+            shakeClock = 0f;
+            currentShakePosition = Vector3.zero;
+            currentShakeRotation = 0f;
+            CurrentShakeStrength = 0f;
+        }
+
+        private struct ShakeImpulse
+        {
+            public ShakeImpulse(float strength, float duration)
+            {
+                Strength = strength;
+                Duration = duration;
+                Remaining = duration;
+            }
+
+            public float Strength;
+            public float Duration;
+            public float Remaining;
         }
     }
 }

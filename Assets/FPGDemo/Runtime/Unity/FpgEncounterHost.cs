@@ -388,6 +388,7 @@ namespace FPG.Demo.Unity
             if (lifecycleEvent.Type == FpgEncounterLifecycleEventType.Restarted)
             {
                 nextTick = 1L;
+                LastError = string.Empty;
             }
         }
 }

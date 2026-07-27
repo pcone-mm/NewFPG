@@ -544,7 +544,6 @@ namespace FPG.Demo.Tests.EditMode
                 Team.Enemy,
                 301,
                 SweepRadiusKey,
-                9,
                 interceptable);
         }
 

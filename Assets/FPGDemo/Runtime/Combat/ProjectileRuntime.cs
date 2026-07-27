@@ -39,7 +39,6 @@ namespace FPG.Demo.Combat
             TickIndex expireTick,
             TickIndex spawnTick,
             int definitionId,
-            int presentationKey,
             ProjectileTerminalReason terminalReason,
             TickIndex terminalTick)
         {
@@ -54,7 +53,6 @@ namespace FPG.Demo.Combat
             ExpireTick = expireTick;
             SpawnTick = spawnTick;
             DefinitionId = definitionId;
-            PresentationKey = presentationKey;
             TerminalReason = terminalReason;
             TerminalTick = terminalTick;
         }
@@ -70,7 +68,6 @@ namespace FPG.Demo.Combat
         public TickIndex ExpireTick { get; }
         public TickIndex SpawnTick { get; }
         public int DefinitionId { get; }
-        public int PresentationKey { get; }
         public ProjectileTerminalReason TerminalReason { get; }
         public TickIndex TerminalTick { get; }
         public bool IsTerminal => State == ProjectileState.Hit
@@ -89,7 +86,6 @@ namespace FPG.Demo.Combat
             int maxHitPoints,
             bool interceptable,
             int budgetUnits,
-            int presentationKey = 1,
             int sweepRadiusKey = 1)
         {
             if (definitionId <= 0)
@@ -122,11 +118,6 @@ namespace FPG.Demo.Combat
                 throw new ArgumentOutOfRangeException(nameof(budgetUnits));
             }
 
-            if (presentationKey <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(presentationKey));
-            }
-
             if (sweepRadiusKey <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(sweepRadiusKey));
@@ -139,7 +130,6 @@ namespace FPG.Demo.Combat
             MaxHitPoints = maxHitPoints;
             Interceptable = interceptable;
             BudgetUnits = budgetUnits;
-            PresentationKey = presentationKey;
             SweepRadiusKey = sweepRadiusKey;
         }
 
@@ -150,7 +140,6 @@ namespace FPG.Demo.Combat
         public int MaxHitPoints { get; }
         public bool Interceptable { get; }
         public int BudgetUnits { get; }
-        public int PresentationKey { get; }
         public int SweepRadiusKey { get; }
     }
 
@@ -235,7 +224,6 @@ namespace FPG.Demo.Combat
                 ExpireTick,
                 SpawnTick,
                 Definition.DefinitionId,
-                Definition.PresentationKey,
                 TerminalReason,
                 TerminalTick);
         }

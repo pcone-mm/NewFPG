@@ -626,10 +626,41 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            BeginRunFlowFault(
-                string.IsNullOrWhiteSpace(message)
-                    ? reason.ToString()
-                    : message);
+            string error = string.IsNullOrWhiteSpace(message)
+                ? reason.ToString()
+                : message;
+            bool canRetainForRestart = State == BootstrapState.Running
+                && ActiveFormalSceneHost != null
+                && ActiveEncounterDirector != null
+                && roomTransitionCoroutine == null
+                && (runFlowController.State == FpgRunFlowState.Running
+                    || runFlowController.State == FpgRunFlowState.AwaitingExit);
+            if (canRetainForRestart)
+            {
+                LastError = error;
+                runFlowController.SetRecoverableFault(LastError);
+                ActiveEncounterDirector.DeactivateAndClearExits();
+                Debug.LogError(
+                    "[" + nameof(GameBootstrap) + "] " + LastError
+                    + " Formal room retained for restart.",
+                    this);
+                return;
+            }
+
+            BeginRunFlowFault(error);
+        }
+
+        internal void HandleRunFlowRestarted(FpgRunFlowController sender)
+        {
+            if (!ReferenceEquals(sender, runFlowController)
+                || State != BootstrapState.Running
+                || ActiveFormalSceneHost == null
+                || ActiveEncounterDirector == null)
+            {
+                return;
+            }
+
+            LastError = string.Empty;
         }
 
         private IEnumerator TransitionToRoom(

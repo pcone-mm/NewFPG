@@ -41,5 +41,32 @@ namespace FPG.Demo.Tests.EditMode
                 FpgPlayerBarrierPresentationController.ShouldShowBarrier(snapshot),
                 Is.EqualTo(expected));
         }
+
+        [Test]
+        public void DefeatedSnapshotStopsCombatAndUsesDefeatPresentation()
+        {
+            FpgFormalPlayerPresentationSnapshot snapshot =
+                new FpgFormalPlayerPresentationSnapshot(
+                    new TickIndex(20L),
+                    new RuntimeId(1L),
+                    FpgEncounterPhase.Defeated,
+                    false,
+                    0,
+                    100,
+                    0,
+                    100,
+                    0,
+                    6,
+                    PlayerExposureState.Withdrawn,
+                    WeaponState.Disabled);
+
+            Assert.That(snapshot.IsCombatActive, Is.False);
+            Assert.That(
+                snapshot.PresentationState,
+                Is.EqualTo(FpgFormalPlayerPresentationState.Defeat));
+            Assert.That(
+                FpgPlayerBarrierPresentationController.ShouldShowBarrier(snapshot),
+                Is.False);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Enemy;
@@ -23,16 +24,16 @@ namespace FPG.Demo.Unity
 
     /// <summary>
     /// Immutable hand-off from the trace router to the Unity presentation
-    /// bridge. The supplied runtime id and presentation key originate from a
-    /// copied <see cref="ThreatSnapshot"/>; this value never becomes part of
-    /// the combat transcript.
+    /// bridge. The supplied runtime id, semantic kind and resource key
+    /// originate from a copied <see cref="ThreatSnapshot"/>; this value never
+    /// becomes part of the combat transcript.
     /// </summary>
     public readonly struct D0ThreatPresentationSignal
     {
         public D0ThreatPresentationSignal(
             RuntimeId threatRuntimeId,
             int presentationKey,
-            CombatThreatPresentationKind kind,
+            FpgThreatPresentationKind kind,
             D0ThreatPresentationCommand command,
             CombatAudioCue audioCue)
         {
@@ -45,11 +46,12 @@ namespace FPG.Demo.Unity
 
         public RuntimeId ThreatRuntimeId { get; }
         public int PresentationKey { get; }
-        public CombatThreatPresentationKind Kind { get; }
+        public FpgThreatPresentationKind Kind { get; }
         public D0ThreatPresentationCommand Command { get; }
         public CombatAudioCue AudioCue { get; }
         public bool IsValid => ThreatRuntimeId.IsValid
             && PresentationKey > 0
+            && Enum.IsDefined(typeof(FpgThreatPresentationKind), Kind)
             && Command != D0ThreatPresentationCommand.None;
     }
 
@@ -65,43 +67,22 @@ namespace FPG.Demo.Unity
             return !snapshot.IsTerminal
                 && (snapshot.State == ThreatState.Telegraph
                     || snapshot.State == ThreatState.Windup)
-                && TryGetKind(snapshot.PresentationKey, out _);
-        }
-
-        public static bool TryGetKind(
-            int presentationKey,
-            out CombatThreatPresentationKind kind)
-        {
-            switch (presentationKey)
-            {
-                case CombatPresentationProfile.FastThreatPresentationKey:
-                    kind = CombatThreatPresentationKind.FastUninterceptable;
-                    return true;
-
-                case CombatPresentationProfile.InterceptableVolleyThreatPresentationKey:
-                    kind = CombatThreatPresentationKind.InterceptableVolley;
-                    return true;
-
-                case CombatPresentationProfile.HeavyWeakpointThreatPresentationKey:
-                    kind = CombatThreatPresentationKind.HeavyWeakpoint;
-                    return true;
-
-                default:
-                    kind = default(CombatThreatPresentationKind);
-                    return false;
-            }
+                && Enum.IsDefined(
+                    typeof(FpgThreatPresentationKind),
+                    snapshot.PresentationKind);
         }
 
         /// <summary>
         /// Resolves a single <see cref="CombatEventType.ThreatStateChanged"/>
         /// record. The trace itself carries only the threat runtime id, so the
-        /// caller must supply the matching snapshot-cached presentation key.
-        /// This is deliberate: no new domain trace payload is required.
+        /// caller supplies the matching snapshot-cached semantic kind and
+        /// resource key. This is deliberate: no new trace payload is required.
         /// </summary>
         public static bool TryResolve(
             in CombatEvent combatEvent,
             RuntimeId enemyRuntimeId,
             RuntimeId threatRuntimeId,
+            FpgThreatPresentationKind presentationKind,
             int presentationKey,
             out D0ThreatPresentationSignal signal)
         {
@@ -111,7 +92,10 @@ namespace FPG.Demo.Unity
                 || !threatRuntimeId.IsValid
                 || combatEvent.SourceId != enemyRuntimeId
                 || combatEvent.TargetId != threatRuntimeId
-                || !TryGetKind(presentationKey, out CombatThreatPresentationKind kind)
+                || !Enum.IsDefined(
+                    typeof(FpgThreatPresentationKind),
+                    presentationKind)
+                || presentationKey <= 0
                 || !TryReadThreatState(combatEvent.ValueAfter, out ThreatState nextState))
             {
                 return false;
@@ -129,7 +113,7 @@ namespace FPG.Demo.Unity
                     break;
 
                 case ThreatState.ReleaseCommitted:
-                    command = ResolveReleaseCommand(kind);
+                    command = ResolveReleaseCommand(presentationKind);
                     break;
 
                 case ThreatState.Canceled:
@@ -152,24 +136,24 @@ namespace FPG.Demo.Unity
             signal = new D0ThreatPresentationSignal(
                 threatRuntimeId,
                 presentationKey,
-                kind,
+                presentationKind,
                 command,
-                ResolveAudioCue(kind, command));
+                ResolveAudioCue(presentationKind, command));
             return true;
         }
 
         private static D0ThreatPresentationCommand ResolveReleaseCommand(
-            CombatThreatPresentationKind kind)
+            FpgThreatPresentationKind kind)
         {
             switch (kind)
             {
-                case CombatThreatPresentationKind.FastUninterceptable:
+                case FpgThreatPresentationKind.FastUninterceptable:
                     return D0ThreatPresentationCommand.ReleaseFast;
 
-                case CombatThreatPresentationKind.InterceptableVolley:
+                case FpgThreatPresentationKind.InterceptableVolley:
                     return D0ThreatPresentationCommand.ReleaseVolley;
 
-                case CombatThreatPresentationKind.HeavyWeakpoint:
+                case FpgThreatPresentationKind.HeavyWeakpoint:
                     return D0ThreatPresentationCommand.ReleaseHeavy;
 
                 default:
@@ -178,7 +162,7 @@ namespace FPG.Demo.Unity
         }
 
         private static CombatAudioCue ResolveAudioCue(
-            CombatThreatPresentationKind kind,
+            FpgThreatPresentationKind kind,
             D0ThreatPresentationCommand command)
         {
             bool telegraph = command == D0ThreatPresentationCommand.BeginTelegraph;
@@ -192,17 +176,17 @@ namespace FPG.Demo.Unity
 
             switch (kind)
             {
-                case CombatThreatPresentationKind.FastUninterceptable:
+                case FpgThreatPresentationKind.FastUninterceptable:
                     return telegraph
                         ? CombatAudioCue.EnemyFastThreatTelegraph
                         : CombatAudioCue.EnemyFastThreatRelease;
 
-                case CombatThreatPresentationKind.InterceptableVolley:
+                case FpgThreatPresentationKind.InterceptableVolley:
                     return telegraph
                         ? CombatAudioCue.EnemyInterceptableThreatTelegraph
                         : CombatAudioCue.EnemyInterceptableThreatRelease;
 
-                case CombatThreatPresentationKind.HeavyWeakpoint:
+                case FpgThreatPresentationKind.HeavyWeakpoint:
                     return telegraph
                         ? CombatAudioCue.EnemyHeavyThreatTelegraph
                         : CombatAudioCue.EnemyHeavyThreatRelease;

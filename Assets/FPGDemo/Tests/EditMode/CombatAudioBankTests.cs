@@ -14,13 +14,6 @@ namespace FPG.Demo.Tests.EditMode
         {
             CombatAudioCue[] expected =
             {
-                CombatAudioCue.PlayerPrimaryShot,
-                CombatAudioCue.PlayerSecondaryCharge,
-                CombatAudioCue.PlayerSecondaryRelease,
-                CombatAudioCue.PlayerBodyHit,
-                CombatAudioCue.PlayerWeakpointHit,
-                CombatAudioCue.ProjectileIntercept,
-                CombatAudioCue.PlayerReload,
                 CombatAudioCue.EnemyFastThreatTelegraph,
                 CombatAudioCue.EnemyFastThreatRelease,
                 CombatAudioCue.EnemyInterceptableThreatTelegraph,
@@ -33,8 +26,7 @@ namespace FPG.Demo.Tests.EditMode
                 CombatAudioCue.Victory,
                 CombatAudioCue.Defeat,
                 CombatAudioCue.ReticleTargetLock,
-                CombatAudioCue.EnemyDangerTick,
-                CombatAudioCue.PlayerConfirmRelease
+                CombatAudioCue.EnemyDangerTick
             };
 
             Assert.That(CombatAudioBank.RequiredCueCount, Is.EqualTo(expected.Length));
@@ -224,7 +216,7 @@ namespace FPG.Demo.Tests.EditMode
                 SerializedProperty entries = serialized.FindProperty("cueEntries");
                 entries.GetArrayElementAtIndex(1)
                     .FindPropertyRelative("cue")
-                    .intValue = (int)CombatAudioCue.PlayerPrimaryShot;
+                    .intValue = (int)CombatAudioCue.EnemyFastThreatTelegraph;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 Assert.That(bank.TryValidate(out string error), Is.False);

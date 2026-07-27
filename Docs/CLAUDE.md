@@ -1,22 +1,20 @@
-# Docs 使用指南
+# Docs 指南
 
-这个目录放工程说明、资源盘点、可重跑报告和面向协作的参考材料。不要把一次性探索输出放这里；临时导出继续放 `tmp/` 或 `output/`。
+本目录保存工程说明、可重跑报告和协作参考；一次性探索输出继续放 `tmp/` 或 `output/`。
 
 ## 目录边界
 
-- `EffectInventory/` 是特效资源盘点，覆盖 `Assets/ThirdParty/`、`Assets/Art/`、`Assets/Prefabs/` 和 `Assets/Rendering/` 下的可复用 VFX、材质、shader、贴图、demo scene、sprite sheet 和包归档。
-- `EffectInventory/Generate-EffectInventory.ps1` 是只读生成器；重跑会更新同目录 CSV/Markdown 报告，不修改 `Assets` 里的特效本体。
-- `Workflow/` 是协作流程文档，包含未知数方法论、implementation notes 模板、CZN 角色 Spine/Unity 导入手册、D0 策划配置说明和验收交接文档。它用于指导任务执行，不是一次性任务日志。
+- `EffectInventory/` 是生成式特效资源盘点；实际覆盖范围以 `Generate-EffectInventory.ps1` 当前输入根为准，不以旧 README/CSV 中残留的路径为准。
+- `EffectInventory/Generate-EffectInventory.ps1` 是只读生成器；重跑会更新同目录 CSV/Markdown 报告，不修改 `Assets` 资源本体。
+- `Workflow/` 保存协作规则和模板；正式 FPG 配置与运行合同说明位于 `Assets/FPGDemo/Docs/Workflow/`。
 
 ## 工作规则
 
-- 大型清单先读同目录 `README_CN.md` 或 `README.md`，再按需要打开 CSV/Markdown 明细。
-- 更新盘点时保持生成器、README、CSV 和 Markdown 报告彼此一致。
-- 不要把长日报、临时任务记录或未确认的设计猜测沉淀到这里；稳定流程优先写成可重跑脚本或局部 CLAUDE 指南。
-- 更新 `Workflow/` 时写成可复用规则或模板，避免记录只服务于单次对话的临时决策。
-- D0 配置说明文档必须保持工程入口、策划字段、验证方式和`待主管试玩/确认`状态一致；不要把 Agent 未执行的试玩项写成已通过。
+- 重跑 EffectInventory 前先对照当前 `Assets/VFX_Klaus/`、`Assets/ThirdParty/`、`Assets/Art/` 与 `Assets/Rendering/` 审计脚本输入根；生成器、README、CSV 和 Markdown 必须一起更新。
+- 大型清单先读同目录 README，再按需打开明细；报告可能落后于资源迁移，不能单独证明当前引用或授权。
+- `Workflow/UnknownsMethodology.md` 只提供问题拆解框架；其中旧目录、场景和测试示例必须由当前根及 FPGDemo 局部指南复核。
+- 不把日报、临时任务记录或未确认设计写进这里；重复专家流程优先沉淀为脚本、hook 或 skill。
 
-## 验证方式
+## 验证
 
-- 改 `EffectInventory` 生成器后，在项目根目录运行 `pwsh -File Docs/EffectInventory/Generate-EffectInventory.ps1`，再抽查 README 和 CSV 是否同步更新。
-- 只改文档时运行 `git diff --check`。
+- 改 EffectInventory 生成器后重跑并抽查 README/CSV/Markdown 与当前输入根一致；只改指南时运行 `git diff --check`。

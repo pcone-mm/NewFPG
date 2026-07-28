@@ -522,6 +522,31 @@ namespace FPG.Demo.Player
             long lastInputSequence,
             RejectReason lastRejectReason,
             int rejectedCommandCount)
+            : this(
+                ammo,
+                state,
+                stateUntilTick,
+                secondaryChargeStartedTick,
+                lastProcessedTick,
+                lastInputSequence,
+                lastRejectReason,
+                rejectedCommandCount,
+                TickIndex.Invalid,
+                TickIndex.Invalid)
+        {
+        }
+
+        public WeaponRuntimeSnapshot(
+            int ammo,
+            WeaponState state,
+            TickIndex stateUntilTick,
+            TickIndex secondaryChargeStartedTick,
+            TickIndex lastProcessedTick,
+            long lastInputSequence,
+            RejectReason lastRejectReason,
+            int rejectedCommandCount,
+            TickIndex primaryRecastLockedUntilTick,
+            TickIndex secondaryRecastLockedUntilTick)
         {
             Ammo = ammo;
             State = state;
@@ -531,6 +556,8 @@ namespace FPG.Demo.Player
             LastInputSequence = lastInputSequence;
             LastRejectReason = lastRejectReason;
             RejectedCommandCount = rejectedCommandCount;
+            PrimaryRecastLockedUntilTick = primaryRecastLockedUntilTick;
+            SecondaryRecastLockedUntilTick = secondaryRecastLockedUntilTick;
         }
 
         public int Ammo { get; }
@@ -541,6 +568,8 @@ namespace FPG.Demo.Player
         public long LastInputSequence { get; }
         public RejectReason LastRejectReason { get; }
         public int RejectedCommandCount { get; }
+        public TickIndex PrimaryRecastLockedUntilTick { get; }
+        public TickIndex SecondaryRecastLockedUntilTick { get; }
     }
 
     public sealed class WeaponRuntime
@@ -549,6 +578,8 @@ namespace FPG.Demo.Player
         private TickIndex stateUntilTick = TickIndex.Invalid;
         private TickIndex secondaryChargeStartedTick = TickIndex.Invalid;
         private TickIndex lastProcessedTick = TickIndex.Invalid;
+        private TickIndex primaryRecastLockedUntilTick = TickIndex.Invalid;
+        private TickIndex secondaryRecastLockedUntilTick = TickIndex.Invalid;
         private long lastInputSequence;
 
         public WeaponRuntime(WeaponDefinition definition)
@@ -563,6 +594,10 @@ namespace FPG.Demo.Player
         public WeaponState State { get; private set; }
         public TickIndex StateUntilTick => stateUntilTick;
         public TickIndex SecondaryChargeStartedTick => secondaryChargeStartedTick;
+        public TickIndex PrimaryRecastLockedUntilTick =>
+            primaryRecastLockedUntilTick;
+        public TickIndex SecondaryRecastLockedUntilTick =>
+            secondaryRecastLockedUntilTick;
         public TickIndex LastProcessedTick => lastProcessedTick;
         public InputSequence LastInputSequence => new InputSequence(lastInputSequence);
         public RejectReason LastRejectReason { get; private set; }
@@ -578,7 +613,9 @@ namespace FPG.Demo.Player
                 lastProcessedTick,
                 lastInputSequence,
                 LastRejectReason,
-                RejectedCommandCount);
+                RejectedCommandCount,
+                primaryRecastLockedUntilTick,
+                secondaryRecastLockedUntilTick);
         }
 
         public DomainResult RestoreRoomSnapshot(in WeaponRuntimeSnapshot snapshot)
@@ -600,6 +637,10 @@ namespace FPG.Demo.Player
             State = snapshot.State;
             stateUntilTick = snapshot.StateUntilTick;
             secondaryChargeStartedTick = snapshot.SecondaryChargeStartedTick;
+            primaryRecastLockedUntilTick =
+                snapshot.PrimaryRecastLockedUntilTick;
+            secondaryRecastLockedUntilTick =
+                snapshot.SecondaryRecastLockedUntilTick;
             lastProcessedTick = snapshot.LastProcessedTick;
             lastInputSequence = snapshot.LastInputSequence;
             LastRejectReason = snapshot.LastRejectReason;
@@ -650,7 +691,8 @@ namespace FPG.Demo.Player
             TickIndex currentTick,
             TickIndex lockedUntilTick,
             int requiredAmmo,
-            ExposureRuntime exposure)
+            ExposureRuntime exposure,
+            bool allowRecoveryInterrupt = false)
         {
             if (exposure == null)
             {
@@ -667,7 +709,11 @@ namespace FPG.Demo.Player
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
-            if (State != WeaponState.Ready)
+            bool recoveryInterruptAllowed = allowRecoveryInterrupt
+                && actionKind != WeaponSkillActionKind.Reload
+                && (State == WeaponState.PrimaryRecovery
+                    || State == WeaponState.AltRecovery);
+            if (State != WeaponState.Ready && !recoveryInterruptAllowed)
             {
                 RejectReason reason = actionKind == WeaponSkillActionKind.Reload
                     ? RejectReason.ActionLocked
@@ -699,6 +745,15 @@ namespace FPG.Demo.Player
             }
             else
             {
+                TickIndex recastLock = actionKind == WeaponSkillActionKind.Primary
+                    ? primaryRecastLockedUntilTick
+                    : secondaryRecastLockedUntilTick;
+                if (recastLock.IsValid && currentTick < recastLock)
+                {
+                    RegisterReject(RejectReason.Cooldown);
+                    return DomainResult.Rejected(RejectReason.Cooldown);
+                }
+
                 if (!exposure.IsExposed)
                 {
                     RegisterReject(RejectReason.NotExposed);
@@ -723,7 +778,8 @@ namespace FPG.Demo.Player
 
         public DomainResult TryBeginSkillSecondaryCharge(
             TickIndex currentTick,
-            ExposureRuntime exposure)
+            ExposureRuntime exposure,
+            bool allowRecoveryInterrupt = false)
         {
             if (exposure == null)
             {
@@ -736,10 +792,20 @@ namespace FPG.Demo.Player
                 return DomainResult.Rejected(RejectReason.NotExposed);
             }
 
-            if (State != WeaponState.Ready)
+            bool recoveryInterruptAllowed = allowRecoveryInterrupt
+                && (State == WeaponState.PrimaryRecovery
+                    || State == WeaponState.AltRecovery);
+            if (State != WeaponState.Ready && !recoveryInterruptAllowed)
             {
                 RegisterReject(RejectReason.ActionLocked);
                 return DomainResult.Rejected(RejectReason.ActionLocked);
+            }
+
+            if (secondaryRecastLockedUntilTick.IsValid
+                && currentTick < secondaryRecastLockedUntilTick)
+            {
+                RegisterReject(RejectReason.Cooldown);
+                return DomainResult.Rejected(RejectReason.Cooldown);
             }
 
             if (!Magazine.CanConsume(definition.SecondaryAmmoCost))
@@ -900,6 +966,18 @@ namespace FPG.Demo.Player
 
             Magazine.ConsumeValidated(output.Attack.AmmoCost);
             output.MarkCommitted();
+            TickIndex recastUntil = output.Attack.ReleaseTick
+                + (output.Kind == WeaponReleaseKind.Primary
+                    ? definition.PrimaryInterval
+                    : definition.SecondaryRecovery);
+            if (output.Kind == WeaponReleaseKind.Primary)
+            {
+                primaryRecastLockedUntilTick = recastUntil;
+            }
+            else
+            {
+                secondaryRecastLockedUntilTick = recastUntil;
+            }
             return DomainResult.Success;
         }
 
@@ -938,16 +1016,32 @@ namespace FPG.Demo.Player
             }
 
             secondaryChargeStartedTick = TickIndex.Invalid;
+            TickIndex effectiveRecastLock = recastLockedUntilTick;
+            if (actionKind == WeaponSkillActionKind.Primary
+                && primaryRecastLockedUntilTick.IsValid
+                && (!effectiveRecastLock.IsValid
+                    || primaryRecastLockedUntilTick > effectiveRecastLock))
+            {
+                effectiveRecastLock = primaryRecastLockedUntilTick;
+            }
+            else if (actionKind == WeaponSkillActionKind.Secondary
+                && secondaryRecastLockedUntilTick.IsValid
+                && (!effectiveRecastLock.IsValid
+                    || secondaryRecastLockedUntilTick > effectiveRecastLock))
+            {
+                effectiveRecastLock = secondaryRecastLockedUntilTick;
+            }
+
             if (interruptTick.IsValid
-                && recastLockedUntilTick.IsValid
-                && recastLockedUntilTick > interruptTick
+                && effectiveRecastLock.IsValid
+                && effectiveRecastLock > interruptTick
                 && (actionKind == WeaponSkillActionKind.Primary
                     || actionKind == WeaponSkillActionKind.Secondary))
             {
                 State = actionKind == WeaponSkillActionKind.Primary
                     ? WeaponState.PrimaryRecovery
                     : WeaponState.AltRecovery;
-                stateUntilTick = recastLockedUntilTick;
+                stateUntilTick = effectiveRecastLock;
                 return;
             }
 
@@ -1178,6 +1272,14 @@ namespace FPG.Demo.Player
 
             State = recoveryState;
             stateUntilTick = output.Attack.ReleaseTick + recovery;
+            if (output.Kind == WeaponReleaseKind.Primary)
+            {
+                primaryRecastLockedUntilTick = stateUntilTick;
+            }
+            else
+            {
+                secondaryRecastLockedUntilTick = stateUntilTick;
+            }
             output.MarkCommitted();
             return DomainResult.Success;
         }

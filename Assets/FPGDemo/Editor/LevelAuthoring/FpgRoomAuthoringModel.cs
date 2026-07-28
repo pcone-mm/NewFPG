@@ -149,7 +149,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case "roomId": return "房间 ID";
                 case "displayName": return "显示名";
                 case "designerNotes": return "策划备注";
-                case "environmentPrefab": return "环境 Prefab";
+                case "artScene": return "关卡美术场景";
                 case "mainGroup": return "主分组";
                 case "tags": return "标签";
                 case "markerId": return "标记 ID";
@@ -514,10 +514,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return "roomId";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingDisplayName:
                     return "displayName";
-                case FPG.Demo.Unity.FpgRoomValidationCode.MissingEnvironmentPrefab:
-                    return "environmentPrefab";
-                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidEnvironmentTransform:
-                    return "environmentPrefab";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingArtScene:
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidArtSceneReference:
+                    return "artScene";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingMainGroup:
                 case FPG.Demo.Unity.FpgRoomValidationCode.InvalidMainGroup:
                     return "mainGroup";
@@ -547,10 +546,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return "缺少全局唯一房间 ID。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingDisplayName:
                     return "缺少房间显示名。";
-                case FPG.Demo.Unity.FpgRoomValidationCode.MissingEnvironmentPrefab:
-                    return "缺少环境 Prefab。";
-                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidEnvironmentTransform:
-                    return "环境 Prefab 根节点的局部位置和旋转必须保持身份变换。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingArtScene:
+                    return "缺少关卡美术场景。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidArtSceneReference:
+                    return "关卡美术场景的 GUID 与路径不一致或场景资产缺失。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingMainGroup:
                     return "缺少主分组。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.InvalidMainGroup:

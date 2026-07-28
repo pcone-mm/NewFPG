@@ -29,6 +29,8 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_Attack_Summon.asset";
         private const string FeiVfxRoot =
             "Assets/FPGDemo/Presentation/Characters/Fei/VFX/";
+        private const string FeiSecondaryChargePrefabPath =
+            FeiVfxRoot + "PF_FPG_Fei_Secondary_Charge.prefab";
         private const string EnemyVfxRoot =
             "Assets/FPGDemo/Presentation/Characters/EnemyShared/VFX/";
 
@@ -127,6 +129,22 @@ namespace FPG.Demo.Tests.EditMode
                 chargeEnter.ActivePresentationTracks[0].VfxEvents[0]
                     .Presentation.Prefab,
                 FeiVfxRoot + "PF_FPG_Fei_Secondary_Charge.prefab");
+            Assert.That(
+                chargeEnter.ActivePresentationTracks[0].VfxEvents[0]
+                    .Presentation.Prefab
+                    .GetComponent<ChargeProgressVfxDriver>(),
+                Is.Not.Null);
+
+            FpgSkillSequenceDefinition secondaryExecute =
+                FindSequence(secondary, FpgSkillSequenceKind.Execute);
+            Assert.That(
+                secondaryExecute.ActivePresentationTracks[0].VfxEvents[0]
+                    .BoundGameplayEventId,
+                Is.EqualTo("event.fei.secondary.execute.attack.0"));
+            AssertAssetPath(
+                secondaryExecute.ActivePresentationTracks[0].VfxEvents[0]
+                    .Presentation.Prefab,
+                FeiVfxRoot + "PF_FPG_Fei_Secondary_Muzzle.prefab");
 
             FpgSkillSequenceDefinition release =
                 FindSequence(secondary, FpgSkillSequenceKind.Release);
@@ -159,6 +177,35 @@ namespace FPG.Demo.Tests.EditMode
                     .ReloadEvents[0];
             Assert.That(reloadCommit.SuccessAnimationName,
                 Is.EqualTo("u1_buff_ready"));
+        }
+
+        [Test]
+        public void FeiSecondaryChargePrefabLoopsUntilExplicitRelease()
+        {
+            UnityEngine.GameObject prefab =
+                LoadRequired<UnityEngine.GameObject>(FeiSecondaryChargePrefabPath);
+            Assert.That(
+                prefab.GetComponent<ChargeProgressVfxDriver>(),
+                Is.Not.Null,
+                FeiSecondaryChargePrefabPath);
+
+            UnityEngine.ParticleSystem[] particleSystems =
+                prefab.GetComponentsInChildren<UnityEngine.ParticleSystem>(true);
+            Assert.That(
+                particleSystems,
+                Is.Not.Empty,
+                FeiSecondaryChargePrefabPath);
+
+            for (int index = 0; index < particleSystems.Length; index++)
+            {
+                UnityEngine.ParticleSystem particleSystem = particleSystems[index];
+                Assert.That(
+                    particleSystem.main.loop,
+                    Is.True,
+                    $"{FeiSecondaryChargePrefabPath}: ParticleSystem " +
+                    $"'{GetHierarchyPath(particleSystem.transform, prefab.transform)}' " +
+                    "must loop until the held presentation is released.");
+            }
         }
 
         [Test]
@@ -217,6 +264,20 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 AssetDatabase.GetAssetPath(asset),
                 Is.EqualTo(expectedPath));
+        }
+
+        private static string GetHierarchyPath(
+            UnityEngine.Transform transform,
+            UnityEngine.Transform root)
+        {
+            string path = transform.name;
+            while (transform != root && transform.parent != null)
+            {
+                transform = transform.parent;
+                path = transform.name + "/" + path;
+            }
+
+            return path;
         }
 
         private static void AssertPureV3Authoring(

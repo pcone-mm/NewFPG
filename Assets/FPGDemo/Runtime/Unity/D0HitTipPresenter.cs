@@ -101,9 +101,9 @@ namespace FPG.Demo.Unity
 
         private void Awake()
         {
-            // Installers bind the references explicitly. A missing binding is
-            // intentionally silent here so an installer can configure a newly
-            // added component before it asks it to prepare.
+            // Scene authoring binds the references explicitly. A missing binding
+            // is intentionally silent so a newly added component can be fully
+            // configured before it is asked to prepare.
             TryPrepare(out _);
         }
 
@@ -114,8 +114,8 @@ namespace FPG.Demo.Unity
 
         /// <summary>
         /// Checks only serialized D0 authoring bindings. It deliberately does
-        /// not prewarm the pool: scene installers run in edit mode and must not
-        /// serialize runtime-only pooled children into CombatLab.
+        /// not prewarm the pool in edit mode, which would serialize runtime-only
+        /// pooled children into the authored scene.
         /// </summary>
         public bool TryValidate(out string error)
         {
@@ -149,7 +149,7 @@ namespace FPG.Demo.Unity
 
         /// <summary>
         /// Uses the inspector-bound UI root, normal/critical backgrounds and
-        /// fixed capacity. This is the normal D0 installer/runtime entry point.
+        /// fixed capacity. This is the normal D0 runtime entry point.
         /// </summary>
         public bool TryPrepare(out string error)
         {
@@ -163,8 +163,8 @@ namespace FPG.Demo.Unity
         }
 
         /// <summary>
-        /// Explicit setup overload intended for the D0 installer and isolated
-        /// tests. A null font resolves to Unity's built-in legacy UI font; the
+        /// Explicit setup overload intended for scene binding and isolated tests.
+        /// A null font resolves to Unity's built-in legacy UI font; the
         /// two background sprites must always be bound deliberately.
         /// </summary>
         public bool TryPrepare(

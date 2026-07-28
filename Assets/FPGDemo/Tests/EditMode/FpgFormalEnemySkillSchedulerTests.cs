@@ -373,6 +373,125 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void MotionAuthorityReceivesCompletedFrameSynchronously()
+        {
+            RecordingMotionAuthority motionAuthority =
+                new RecordingMotionAuthority();
+            RecordingPhysicsBackend physics =
+                new RecordingPhysicsBackend();
+            SchedulerFixture fixture = new SchedulerFixture(
+                projectileCapacity: 2,
+                impactCapacity: 8,
+                projectileBudgetCapacity: 2,
+                projectileReservationCapacity: 2,
+                motionAuthority: motionAuthority,
+                physics: physics);
+            FpgEnemyAttackDefinition skill = CreateTimedImpactSkill(
+                "enemy.motion.completed",
+                durationTicks: 1,
+                cooldownTicks: 4,
+                new AuthoredEvent(0, 0));
+            FpgEnemyDefinition enemy = CreateEnemy(skill);
+            try
+            {
+                fixture.Register(enemy);
+                TickIndex startTick = new TickIndex(0L);
+                Assert.That(
+                    fixture.Scheduler.Tick(startTick).IsSuccess,
+                    Is.True);
+                Assert.That(motionAuthority.StartFrames, Has.Count.EqualTo(1));
+                Assert.That(motionAuthority.TerminalFrames, Is.Empty);
+                Assert.That(physics.SyncCount, Is.EqualTo(1));
+                Assert.That(
+                    fixture.Port.Process(
+                        FpgBattleTickPhase.EnemyAttackDirector,
+                        startTick,
+                        fixture.Roster).IsSuccess,
+                    Is.True);
+
+                TickIndex terminalTick = new TickIndex(1L);
+                Assert.That(
+                    fixture.Scheduler.Tick(terminalTick).IsSuccess,
+                    Is.True);
+                Assert.That(
+                    motionAuthority.TerminalFrames,
+                    Has.Count.EqualTo(1));
+                FpgFormalEnemySkillSequenceFrame terminal =
+                    motionAuthority.TerminalFrames[0];
+                Assert.That(
+                    terminal.State,
+                    Is.EqualTo(FpgSkillExecutionState.Completed));
+                Assert.That(terminal.Tick, Is.EqualTo(terminalTick));
+                Assert.That(terminal.RelativeTick, Is.EqualTo(1));
+                Assert.That(
+                    fixture.Scheduler.GetSequenceFrame(0).State,
+                    Is.EqualTo(FpgSkillExecutionState.Completed));
+            }
+            finally
+            {
+                fixture.Dispose();
+                UnityEngine.Object.DestroyImmediate(enemy);
+                UnityEngine.Object.DestroyImmediate(skill);
+            }
+        }
+
+        [Test]
+        public void MotionAuthorityReceivesCanceledFrameSynchronously()
+        {
+            RecordingMotionAuthority motionAuthority =
+                new RecordingMotionAuthority();
+            RecordingPhysicsBackend physics =
+                new RecordingPhysicsBackend();
+            SchedulerFixture fixture = new SchedulerFixture(
+                projectileCapacity: 2,
+                impactCapacity: 8,
+                projectileBudgetCapacity: 2,
+                projectileReservationCapacity: 2,
+                motionAuthority: motionAuthority,
+                physics: physics);
+            FpgEnemyAttackDefinition skill = CreateTimedImpactSkill(
+                "enemy.motion.canceled",
+                durationTicks: 3,
+                cooldownTicks: 4,
+                new AuthoredEvent(0, 0));
+            FpgEnemyDefinition enemy = CreateEnemy(skill);
+            try
+            {
+                fixture.Register(enemy);
+                AssertTickAndProcess(fixture, 0L);
+                Assert.That(
+                    fixture.EnemyRuntime.EnterGroggy(
+                        new TickIndex(1L),
+                        fixture.Kernel.ProjectileBudget),
+                    Is.GreaterThanOrEqualTo(0));
+
+                TickIndex cancelTick = new TickIndex(1L);
+                Assert.That(
+                    fixture.Scheduler.Tick(cancelTick).IsSuccess,
+                    Is.True);
+                Assert.That(
+                    motionAuthority.TerminalFrames,
+                    Has.Count.EqualTo(1));
+                FpgFormalEnemySkillSequenceFrame terminal =
+                    motionAuthority.TerminalFrames[0];
+                Assert.That(
+                    terminal.State,
+                    Is.EqualTo(FpgSkillExecutionState.Canceled));
+                Assert.That(terminal.Tick, Is.EqualTo(cancelTick));
+                Assert.That(terminal.RelativeTick, Is.EqualTo(1));
+                Assert.That(
+                    fixture.Scheduler.GetSequenceFrame(0).State,
+                    Is.EqualTo(FpgSkillExecutionState.Canceled));
+            }
+            finally
+            {
+                fixture.Dispose();
+                UnityEngine.Object.DestroyImmediate(enemy);
+                UnityEngine.Object.DestroyImmediate(skill);
+            }
+        }
+
+        [Test]
         public void PreparedRegistrationAndRunningTickAllocateNoManagedMemory()
         {
             SchedulerFixture fixture = new SchedulerFixture(
@@ -1034,7 +1153,9 @@ namespace FPG.Demo.Tests.EditMode
                 int attackScheduleCapacity = 4,
                 IFpgSummonRequestSink summonSink = null,
                 IProjectileWorldPort projectileWorldPort = null,
-                FpgSkillExecutionIdAllocator executionIds = null)
+                FpgSkillExecutionIdAllocator executionIds = null,
+                IFpgFormalEnemyMotionAuthority motionAuthority = null,
+                IUnityPhysicsQueryBackend physics = null)
             {
                 Kernel = new CombatKernel(
                     projectileBudgetCapacity,
@@ -1104,7 +1225,9 @@ namespace FPG.Demo.Tests.EditMode
                     SpatialSampler,
                     ownerCapacity: 2,
                     patternCapacity: 4,
-                    executionIds: executionIds);
+                    executionIds: executionIds,
+                    motionAuthority: motionAuthority,
+                    physics: physics);
             }
 
             public CombatKernel Kernel { get; }
@@ -1172,6 +1295,86 @@ namespace FPG.Demo.Tests.EditMode
                     new DamageSpec(2, 0),
                     new TickDuration(2),
                     4);
+            }
+        }
+
+        private sealed class RecordingMotionAuthority :
+            IFpgFormalEnemyMotionAuthority
+        {
+            public List<FpgFormalEnemySkillSequenceFrame> StartFrames
+            {
+                get;
+            } = new List<FpgFormalEnemySkillSequenceFrame>();
+
+            public List<FpgFormalEnemySkillSequenceFrame> TerminalFrames
+            {
+                get;
+            } = new List<FpgFormalEnemySkillSequenceFrame>();
+
+            public DomainResult AdvanceMotion(TickIndex tick)
+            {
+                return tick.IsValid
+                    ? DomainResult.Success
+                    : DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            public DomainResult StartSkillMotion(
+                in FpgFormalEnemySkillSequenceFrame frame)
+            {
+                StartFrames.Add(frame);
+                return DomainResult.Success;
+            }
+
+            public DomainResult ApplySkillMotionFrame(
+                in FpgFormalEnemySkillSequenceFrame frame)
+            {
+                TerminalFrames.Add(frame);
+                return DomainResult.Success;
+            }
+        }
+
+        private sealed class RecordingPhysicsBackend :
+            IUnityPhysicsQueryBackend
+        {
+            public int Capacity => 1;
+            public int SyncCount { get; private set; }
+
+            public void SyncTransforms()
+            {
+                SyncCount++;
+            }
+
+            public NonAllocPhysicsQueryResult RaycastNonAlloc(
+                Vector3 origin,
+                Vector3 direction,
+                UnityPhysicsHit[] output,
+                float maxDistance,
+                int layerMask,
+                QueryTriggerInteraction triggerInteraction)
+            {
+                return new NonAllocPhysicsQueryResult(0, false);
+            }
+
+            public NonAllocPhysicsQueryResult SphereCastNonAlloc(
+                Vector3 origin,
+                float radius,
+                Vector3 direction,
+                UnityPhysicsHit[] output,
+                float maxDistance,
+                int layerMask,
+                QueryTriggerInteraction triggerInteraction)
+            {
+                return new NonAllocPhysicsQueryResult(0, false);
+            }
+
+            public NonAllocPhysicsQueryResult OverlapSphereNonAlloc(
+                Vector3 position,
+                float radius,
+                Collider[] output,
+                int layerMask,
+                QueryTriggerInteraction triggerInteraction)
+            {
+                return new NonAllocPhysicsQueryResult(0, false);
             }
         }
 

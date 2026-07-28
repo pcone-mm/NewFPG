@@ -1,10 +1,13 @@
 using System;
+using System.Reflection;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Enemy;
 using FPG.Demo.Run;
 using FPG.Demo.Skills;
+using FPG.Demo.Unity;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace FPG.Demo.Tests.EditMode
 {
@@ -249,6 +252,82 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(states[0].Request.GameplayEventId, Is.EqualTo(65));
         }
 
+        [Test]
+        public void BridgeRemapsPlayerProjectileProgressWithoutMutatingAuthority()
+        {
+            MethodInfo remap = typeof(FpgFormalPlayerPresentationBridge)
+                .GetMethod(
+                    "RemapProjectilePresentationPoint",
+                    BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(remap, Is.Not.Null);
+
+            SpatialVectorKey authoritativeStart =
+                new SpatialVectorKey(1000, 0, 0);
+            SpatialVectorKey authoritativeEnd =
+                new SpatialVectorKey(5000, 0, 0);
+            ProjectileSpawnRequest request = new ProjectileSpawnRequest(
+                new TickIndex(0),
+                new TickIndex(4),
+                new ProjectileId(91),
+                new RuntimeId(191),
+                new AttackId(291),
+                new RuntimeId(2),
+                new RuntimeId(1),
+                Team.Player,
+                301,
+                1,
+                false,
+                authoritativeStart,
+                authoritativeEnd);
+            ProjectilePathSnapshot path = new ProjectilePathSnapshot(
+                request.ProjectileId,
+                request.RuntimeId,
+                request.Tick,
+                request.ArrivalTick,
+                authoritativeStart,
+                authoritativeEnd);
+            Vector3 presentationStart = new Vector3(-2f, 1f, 0f);
+
+            AssertRemappedPoint(
+                remap,
+                request,
+                path,
+                authoritativeStart,
+                presentationStart,
+                new Vector3(-2f, 1f, 0f),
+                "path start");
+            AssertRemappedPoint(
+                remap,
+                request,
+                path,
+                new SpatialVectorKey(3000, 0, 0),
+                presentationStart,
+                new Vector3(1.5f, 0.5f, 0f),
+                "path midpoint");
+            AssertRemappedPoint(
+                remap,
+                request,
+                path,
+                authoritativeEnd,
+                presentationStart,
+                new Vector3(5f, 0f, 0f),
+                "path end");
+            AssertRemappedPoint(
+                remap,
+                request,
+                path,
+                new SpatialVectorKey(2000, 0, 0),
+                presentationStart,
+                new Vector3(-0.25f, 0.75f, 0f),
+                "early collision");
+
+            Assert.That(path.Start, Is.EqualTo(authoritativeStart));
+            Assert.That(path.End, Is.EqualTo(authoritativeEnd));
+            Assert.That(path.Matches(request), Is.True);
+            Assert.That(request.ExplicitStart, Is.EqualTo(authoritativeStart));
+            Assert.That(request.ExplicitEnd, Is.EqualTo(authoritativeEnd));
+        }
+
         private static ReplaySummary RunProjectileSequence(bool useObserver)
         {
             ScenarioDefinition scenario = CombatLabHarness.CreateScenario(
@@ -310,6 +389,44 @@ namespace FPG.Demo.Tests.EditMode
                 request.ArrivalTick,
                 SpatialVectorKey.Zero,
                 new SpatialVectorKey(0, 0, 3000));
+        }
+
+        private static void AssertRemappedPoint(
+            MethodInfo remap,
+            in ProjectileSpawnRequest request,
+            in ProjectilePathSnapshot path,
+            SpatialVectorKey authoritativePoint,
+            Vector3 presentationStart,
+            Vector3 expected,
+            string label)
+        {
+            ProjectilePresentationState state =
+                new ProjectilePresentationState(
+                    request,
+                    path,
+                    authoritativePoint);
+            object[] arguments = { state, presentationStart };
+            Vector3 actual = (Vector3)remap.Invoke(null, arguments);
+
+            Assert.That(actual.x, Is.EqualTo(expected.x).Within(0.0001f), label);
+            Assert.That(actual.y, Is.EqualTo(expected.y).Within(0.0001f), label);
+            Assert.That(actual.z, Is.EqualTo(expected.z).Within(0.0001f), label);
+            Assert.That(state.Path, Is.EqualTo(path), $"{label} source path");
+            Assert.That(
+                state.LastPoint,
+                Is.EqualTo(authoritativePoint),
+                $"{label} source point");
+
+            ProjectilePresentationState reflectedState =
+                (ProjectilePresentationState)arguments[0];
+            Assert.That(
+                reflectedState.Path,
+                Is.EqualTo(path),
+                $"{label} reflected path");
+            Assert.That(
+                reflectedState.LastPoint,
+                Is.EqualTo(authoritativePoint),
+                $"{label} reflected point");
         }
 
         private sealed class ThrowingPresentationFeed : IProjectilePresentationFeedWriter

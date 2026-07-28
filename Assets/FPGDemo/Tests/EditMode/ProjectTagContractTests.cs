@@ -6,9 +6,9 @@ using UnityEditorInternal;
 namespace FPG.Demo.Tests.EditMode
 {
     /// <summary>
-    /// Keeps the global tag setup compatible with both the independent FPG demo
-    /// and the legacy combat installer. Player is a Unity built-in tag and must
-    /// never be added to the custom TagManager list.
+    /// Keeps the global tag setup compatible with the independent FPG demo.
+    /// Player is a Unity built-in tag and must never be added to the custom
+    /// TagManager list.
     /// </summary>
     public sealed class ProjectTagContractTests
     {

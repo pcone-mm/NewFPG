@@ -1,11 +1,14 @@
 using System;
+using System.Reflection;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Player;
+using FPG.Demo.Run;
 using FPG.Demo.Skills;
 using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 
 namespace FPG.Demo.Tests.EditMode
 {
@@ -119,6 +122,268 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void ExposureRequirementEndsAfterTheLastAuthoredAttackTick()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 5,
+                    cooldownTicks: 0,
+                    ammoCost: 1,
+                    Event(10, 0, 101),
+                    Event(20, 2, 101)));
+            PlayerRuntime player = CreatePlayer(magazineCapacity: 4);
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(100L), true, true),
+                player).IsSuccess, Is.True);
+
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(
+                controller.RequiresExposureAt(new TickIndex(99L)),
+                Is.False);
+            Assert.That(
+                controller.RequiresExposureAt(new TickIndex(100L)),
+                Is.True);
+            Assert.That(
+                controller.RequiresExposureAt(new TickIndex(102L)),
+                Is.True);
+            Assert.That(
+                controller.RequiresExposureAt(new TickIndex(103L)),
+                Is.False);
+        }
+
+        [Test]
+        public void ReloadSequenceNeverRequiresCombatExposure()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 0,
+                    ammoCost: 1,
+                    Event(10, 0, 101)));
+            PlayerRuntime player = CreatePlayer(magazineCapacity: 4);
+            player.Weapon.Magazine.ConsumeValidated(1);
+            InputEdgeCommand[] edges =
+            {
+                new InputEdgeCommand(
+                    new InputSequence(1L),
+                    InputEdgeType.ReloadPressed)
+            };
+
+            Assert.That(controller.ProcessFrame(
+                new PlayerInputFrame(
+                    new TickIndex(0L),
+                    false,
+                    false,
+                    edges,
+                    edges.Length),
+                player).IsSuccess, Is.True);
+
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSlot,
+                Is.EqualTo(FpgPlayerSkillSlot.Reload));
+            Assert.That(
+                controller.RequiresExposureAt(new TickIndex(0L)),
+                Is.False);
+            Assert.That(
+                controller.RequiresExposureAt(new TickIndex(1L)),
+                Is.False);
+        }
+
+        [Test]
+        public void CoverGateDelaysPrimaryUntilTheFifthTick()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                for (long tick = 0L; tick < 5L; tick++)
+                {
+                    CoverGateResult gated = GateCoverInput(
+                        fixture,
+                        tick,
+                        aimHeld: false,
+                        primaryHeld: true,
+                        aimOriginX: checked((int)tick));
+                    Assert.That(gated.Frame.PrimaryHeld, Is.False);
+                    ProcessGatedFrame(fixture, gated);
+                    Assert.That(fixture.Controller.ResultCount, Is.Zero);
+                }
+
+                CoverGateResult ready = GateCoverInput(
+                    fixture,
+                    5L,
+                    aimHeld: false,
+                    primaryHeld: true,
+                    aimOriginX: 5);
+                Assert.That(ready.Frame.PrimaryHeld, Is.True);
+                ProcessGatedFrame(fixture, ready);
+
+                Assert.That(fixture.Controller.ResultCount, Is.EqualTo(1));
+                Assert.That(fixture.Controller.GetResult(0).Slot,
+                    Is.EqualTo(FpgPlayerSkillSlot.Primary));
+                Assert.That(fixture.Driver.CoverPeekStartedTick,
+                    Is.EqualTo(new TickIndex(0L)));
+            }
+        }
+
+        [Test]
+        public void CoverGateAllowsPrimaryOnTheSameTickWhenPeekIsComplete()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                for (long tick = 0L; tick < 5L; tick++)
+                {
+                    CoverGateResult aiming = GateCoverInput(
+                        fixture,
+                        tick,
+                        aimHeld: true,
+                        primaryHeld: false,
+                        aimOriginX: checked((int)tick));
+                    ProcessGatedFrame(fixture, aiming);
+                }
+
+                CoverGateResult readyAttack = GateCoverInput(
+                    fixture,
+                    5L,
+                    aimHeld: true,
+                    primaryHeld: true,
+                    aimOriginX: 50);
+                Assert.That(readyAttack.Frame.PrimaryHeld, Is.True);
+                ProcessGatedFrame(fixture, readyAttack);
+
+                Assert.That(fixture.Controller.ResultCount, Is.EqualTo(1));
+                Assert.That(fixture.Controller.GetResult(0).RuntimeEvent.Tick,
+                    Is.EqualTo(new TickIndex(5L)));
+            }
+        }
+
+        [Test]
+        public void CoverGateQuickReleaseFiresOnceWithReleaseTickAim()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                int totalPrimaryEvents = 0;
+                CoverGateResult pressed = GateCoverInput(
+                    fixture,
+                    0L,
+                    aimHeld: true,
+                    primaryHeld: true,
+                    aimOriginX: 100);
+                ProcessGatedFrame(fixture, pressed);
+                totalPrimaryEvents += CountResults(
+                    fixture.Controller,
+                    FpgPlayerSkillSlot.Primary);
+
+                const int ReleaseAimOriginX = 250;
+                CoverGateResult released = GateCoverInput(
+                    fixture,
+                    1L,
+                    aimHeld: true,
+                    primaryHeld: false,
+                    aimOriginX: ReleaseAimOriginX);
+                ProcessGatedFrame(fixture, released);
+                totalPrimaryEvents += CountResults(
+                    fixture.Controller,
+                    FpgPlayerSkillSlot.Primary);
+
+                for (long tick = 2L; tick < 5L; tick++)
+                {
+                    CoverGateResult waiting = GateCoverInput(
+                        fixture,
+                        tick,
+                        aimHeld: true,
+                        primaryHeld: false,
+                        aimOriginX: checked(1000 + (int)tick));
+                    ProcessGatedFrame(fixture, waiting);
+                    totalPrimaryEvents += CountResults(
+                        fixture.Controller,
+                        FpgPlayerSkillSlot.Primary);
+                }
+
+                CoverGateResult fired = GateCoverInput(
+                    fixture,
+                    5L,
+                    aimHeld: true,
+                    primaryHeld: false,
+                    aimOriginX: 2000);
+                Assert.That(fired.Frame.PrimaryHeld, Is.True);
+                Assert.That(fired.TickInput.AimPose.Tick,
+                    Is.EqualTo(new TickIndex(5L)));
+                Assert.That(fired.TickInput.AimPose.Origin,
+                    Is.EqualTo(new SpatialVectorKey(
+                        ReleaseAimOriginX,
+                        0,
+                        0)));
+                Assert.That(fired.TickInput.AimPose.PoseVersion,
+                    Is.EqualTo(2L));
+                ProcessGatedFrame(fixture, fired);
+                totalPrimaryEvents += CountResults(
+                    fixture.Controller,
+                    FpgPlayerSkillSlot.Primary);
+
+                CoverGateResult following = GateCoverInput(
+                    fixture,
+                    6L,
+                    aimHeld: true,
+                    primaryHeld: false,
+                    aimOriginX: 3000);
+                Assert.That(following.Frame.PrimaryHeld, Is.False);
+                ProcessGatedFrame(fixture, following);
+                totalPrimaryEvents += CountResults(
+                    fixture.Controller,
+                    FpgPlayerSkillSlot.Primary);
+
+                Assert.That(totalPrimaryEvents, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void CoverGateReloadClearsPendingPrimary()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                CoverGateResult pressed = GateCoverInput(
+                    fixture,
+                    0L,
+                    aimHeld: false,
+                    primaryHeld: true,
+                    aimOriginX: 0);
+                ProcessGatedFrame(fixture, pressed);
+                Assert.That(fixture.Controller.ResultCount, Is.Zero);
+
+                InputEdgeCommand[] reloadEdges =
+                {
+                    new InputEdgeCommand(
+                        new InputSequence(1L),
+                        InputEdgeType.ReloadPressed)
+                };
+                CoverGateResult reload = GateCoverInput(
+                    fixture,
+                    1L,
+                    aimHeld: false,
+                    primaryHeld: false,
+                    aimOriginX: 1,
+                    edgeCommands: reloadEdges);
+                ProcessGatedFrame(fixture, reload);
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+                Assert.That(fixture.Driver.CoverPeekStartedTick.IsValid,
+                    Is.False);
+
+                for (long tick = 2L; tick <= 5L; tick++)
+                {
+                    CoverGateResult following = GateCoverInput(
+                        fixture,
+                        tick,
+                        aimHeld: false,
+                        primaryHeld: false,
+                        aimOriginX: checked((int)tick));
+                    Assert.That(following.Frame.PrimaryHeld, Is.False);
+                    ProcessGatedFrame(fixture, following);
+                    Assert.That(fixture.Controller.ResultCount, Is.Zero);
+                }
+            }
+        }
+
+        [Test]
         public void TypedActionIndexResolvesActionDuringExecution()
         {
             FpgCompiledSkillEvent actionEvent = new FpgCompiledSkillEvent(
@@ -180,7 +445,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void CooldownIsAnchoredToLastAttackAndNeverShorterThanSequence()
+        public void ActionLockUsesSequenceDurationAndRecastStartsOnlyOnCommit()
         {
             FpgCompiledPlayerSkillDefinition primary = CreatePrimary(
                 durationTicks: 5,
@@ -189,7 +454,9 @@ namespace FPG.Demo.Tests.EditMode
                 Event(10, 2, 101));
             FpgPlayerSkillExecutionController controller = CreateController(
                 primary);
-            PlayerRuntime player = CreatePlayer(magazineCapacity: 4);
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                primaryRecastTicks: 10);
 
             Assert.That(controller.ProcessFrame(
                 PlayerInputFrame.Empty(new TickIndex(100L), true, true),
@@ -198,13 +465,64 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(controller.PlannedLastAttackTick,
                 Is.EqualTo(new TickIndex(102L)));
             Assert.That(controller.ActionLockedUntilTick,
-                Is.EqualTo(new TickIndex(112L)));
+                Is.EqualTo(new TickIndex(106L)));
             Assert.That(player.Weapon.StateUntilTick,
+                Is.EqualTo(new TickIndex(106L)));
+            Assert.That(
+                player.Weapon.PrimaryRecastLockedUntilTick.IsValid,
+                Is.False);
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(101L), true, true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(102L), true, true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ResultCount, Is.EqualTo(1));
+
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+            CommitPrimaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                102L);
+            Assert.That(
+                player.Weapon.PrimaryRecastLockedUntilTick,
                 Is.EqualTo(new TickIndex(112L)));
+            Assert.That(
+                player.Weapon.StateUntilTick,
+                Is.EqualTo(new TickIndex(106L)));
+
+            for (long tick = 103L; tick <= 105L; tick++)
+            {
+                Assert.That(controller.ProcessFrame(
+                    PlayerInputFrame.Empty(new TickIndex(tick), true, true),
+                    player).IsSuccess, Is.True);
+            }
+
+            for (long tick = 106L; tick < 112L; tick++)
+            {
+                Assert.That(controller.ProcessFrame(
+                    PlayerInputFrame.Empty(new TickIndex(tick), true, true),
+                    player).IsSuccess, Is.True);
+                Assert.That(controller.IsExecuting, Is.False);
+                Assert.That(player.Weapon.State, Is.EqualTo(WeaponState.Ready));
+                Assert.That(player.Weapon.LastRejectReason,
+                    Is.EqualTo(RejectReason.Cooldown));
+            }
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(112L), true, true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSlot,
+                Is.EqualTo(FpgPlayerSkillSlot.Primary));
         }
 
         [Test]
-        public void HardInterruptPreservesCooldownFromPlannedLastAttack()
+        public void HardInterruptWithoutCommitDoesNotInventRecastCooldown()
         {
             FpgCompiledPlayerSkillDefinition primary = CreatePrimary(
                 durationTicks: 3,
@@ -235,29 +553,18 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(controller.IsExecuting, Is.False);
             Assert.That(
                 player.Weapon.State,
-                Is.EqualTo(WeaponState.PrimaryRecovery));
+                Is.EqualTo(WeaponState.Ready));
             Assert.That(
-                controller.RecastLockedUntilTick,
-                Is.EqualTo(new TickIndex(7L)));
-            Assert.That(
-                player.Weapon.StateUntilTick,
-                Is.EqualTo(new TickIndex(7L)));
+                player.Weapon.PrimaryRecastLockedUntilTick.IsValid,
+                Is.False);
             Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(4));
             Assert.That(controller.SequenceFrameCount, Is.EqualTo(1));
             Assert.That(
                 controller.GetSequenceFrame(0).State,
                 Is.EqualTo(FpgSkillExecutionState.Canceled));
 
-            for (long tick = 1L; tick < 7L; tick++)
-            {
-                Assert.That(controller.ProcessFrame(
-                    PlayerInputFrame.Empty(new TickIndex(tick), true, true),
-                    player).IsSuccess, Is.True);
-                Assert.That(controller.IsExecuting, Is.False);
-            }
-
             Assert.That(controller.ProcessFrame(
-                PlayerInputFrame.Empty(new TickIndex(7L), true, true),
+                PlayerInputFrame.Empty(new TickIndex(1L), true, true),
                 player).IsSuccess, Is.True);
             Assert.That(controller.IsExecuting, Is.True);
             Assert.That(controller.ResultCount, Is.EqualTo(1));
@@ -266,7 +573,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void FailedGameplayAbortPreservesPlannedRecastCooldown()
+        public void FailedGameplayAbortWithoutCommitDoesNotInventRecastCooldown()
         {
             FpgCompiledPlayerSkillDefinition primary = CreatePrimary(
                 durationTicks: 3,
@@ -301,10 +608,10 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(controller.IsExecuting, Is.False);
             Assert.That(
                 player.Weapon.State,
-                Is.EqualTo(WeaponState.PrimaryRecovery));
+                Is.EqualTo(WeaponState.Ready));
             Assert.That(
-                player.Weapon.StateUntilTick,
-                Is.EqualTo(new TickIndex(7L)));
+                player.Weapon.PrimaryRecastLockedUntilTick.IsValid,
+                Is.False);
             Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(4));
             Assert.That(next.AttackId, Is.EqualTo(new AttackId(1L)));
             Assert.That(next.ShotId, Is.EqualTo(new ShotId(1L)));
@@ -313,7 +620,57 @@ namespace FPG.Demo.Tests.EditMode
                 controller.GetSequenceFrame(0).State,
                 Is.EqualTo(FpgSkillExecutionState.Canceled));
 
-            for (long tick = 1L; tick < 7L; tick++)
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(1L), true, true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ResultCount, Is.EqualTo(1));
+            Assert.That(controller.GetResult(0).Event.EventId, Is.EqualTo(10));
+            Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void HardInterruptPreservesRecastFromCommittedAttackOnly()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 3,
+                    cooldownTicks: 4,
+                    ammoCost: 1,
+                    Event(10, 0, 101),
+                    Event(20, 3, 101)));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                primaryRecastTicks: 4);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(0L), true, true),
+                player).IsSuccess, Is.True);
+            CommitPrimaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                0L);
+
+            Assert.That(controller.HardInterrupt(
+                new TickIndex(1L),
+                player.Weapon).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.False);
+            Assert.That(controller.ResultCount, Is.EqualTo(1));
+            Assert.That(controller.GetResult(0).Event.EventId, Is.EqualTo(20));
+            Assert.That(controller.GetResult(0).Outcome,
+                Is.EqualTo(FpgSkillEventOutcome.Canceled));
+            Assert.That(player.Weapon.State,
+                Is.EqualTo(WeaponState.PrimaryRecovery));
+            Assert.That(player.Weapon.StateUntilTick,
+                Is.EqualTo(new TickIndex(4L)));
+            Assert.That(player.Weapon.PrimaryRecastLockedUntilTick,
+                Is.EqualTo(new TickIndex(4L)));
+
+            for (long tick = 1L; tick < 4L; tick++)
             {
                 Assert.That(controller.ProcessFrame(
                     PlayerInputFrame.Empty(new TickIndex(tick), true, true),
@@ -322,12 +679,682 @@ namespace FPG.Demo.Tests.EditMode
             }
 
             Assert.That(controller.ProcessFrame(
-                PlayerInputFrame.Empty(new TickIndex(7L), true, true),
+                PlayerInputFrame.Empty(new TickIndex(4L), true, true),
                 player).IsSuccess, Is.True);
             Assert.That(controller.IsExecuting, Is.True);
+        }
+
+        [Test]
+        public void ImmediateSecondaryHeldRepeatsAtCommittedRecastBoundary()
+        {
+            FpgCompiledPlayerSkillDefinition secondary =
+                CreateImmediateSecondary(
+                    durationTicks: 60,
+                    cooldownTicks: 30,
+                    ammoCost: 1);
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                secondary,
+                SecondaryTriggerMode.ImmediateRepeatWhileHeld);
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                secondaryTriggerMode:
+                    SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                secondaryRecastTicks: 30);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
             Assert.That(controller.ResultCount, Is.EqualTo(1));
-            Assert.That(controller.GetResult(0).Event.EventId, Is.EqualTo(10));
+            Assert.That(controller.GetResult(0).Slot,
+                Is.EqualTo(FpgPlayerSkillSlot.Secondary));
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                0L);
+            Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(3));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(1));
+            SkillExecutionId firstExecution =
+                controller.GetSequenceFrame(0).ExecutionId;
+
+            for (long tick = 1L; tick < 30L; tick++)
+            {
+                Assert.That(controller.ProcessFrame(
+                    PlayerInputFrame.Empty(
+                        new TickIndex(tick),
+                        aimHeld: true,
+                        secondaryHeld: true),
+                    player).IsSuccess, Is.True);
+                Assert.That(controller.ResultCount, Is.Zero);
+                Assert.That(controller.IsExecuting, Is.True);
+                Assert.That(controller.SequenceFrameCount, Is.EqualTo(1));
+                Assert.That(
+                    controller.GetSequenceFrame(0).ExecutionId,
+                    Is.EqualTo(firstExecution));
+                Assert.That(
+                    controller.GetSequenceFrame(0).State,
+                    Is.EqualTo(FpgSkillExecutionState.Running));
+            }
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.Cooldown));
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(
+                    new TickIndex(30L),
+                    aimHeld: true,
+                    secondaryHeld: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ResultCount, Is.EqualTo(1));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(
+                controller.GetSequenceFrame(0).ExecutionId,
+                Is.EqualTo(firstExecution));
+            Assert.That(
+                controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Canceled));
+            Assert.That(
+                controller.GetSequenceFrame(1).ExecutionId,
+                Is.Not.EqualTo(firstExecution));
+            Assert.That(
+                controller.GetSequenceFrame(1).StartTick,
+                Is.EqualTo(new TickIndex(30L)));
+            Assert.That(
+                controller.GetSequenceFrame(1).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                30L);
+            Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(2));
+            Assert.That(
+                player.Weapon.SecondaryRecastLockedUntilTick,
+                Is.EqualTo(new TickIndex(60L)));
+        }
+
+        [Test]
+        public void ImmediateSecondaryFailedBoundaryCheckKeepsExecuteRunning()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateImmediateSecondary(
+                    durationTicks: 60,
+                    cooldownTicks: 30,
+                    ammoCost: 1),
+                SecondaryTriggerMode.ImmediateRepeatWhileHeld);
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 1,
+                secondaryTriggerMode:
+                    SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                secondaryRecastTicks: 30);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                0L);
+            SkillExecutionId firstExecution =
+                controller.GetSequenceFrame(0).ExecutionId;
+            Assert.That(player.Weapon.Magazine.Ammo, Is.Zero);
+
+            for (long tick = 1L; tick <= 30L; tick++)
+            {
+                Assert.That(controller.ProcessFrame(
+                    PlayerInputFrame.Empty(
+                        new TickIndex(tick),
+                        aimHeld: true,
+                        secondaryHeld: true),
+                    player).IsSuccess, Is.True);
+            }
+
+            Assert.That(controller.ResultCount, Is.Zero);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Execute));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(1));
+            Assert.That(
+                controller.GetSequenceFrame(0).ExecutionId,
+                Is.EqualTo(firstExecution));
+            Assert.That(
+                controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.NotEnoughAmmo));
+        }
+
+        [Test]
+        public void ChargeLoopHoldsSingleExecutionUntilReleaseOrInterrupt()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(minimumChargeTicks: 4));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 4);
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.None));
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(
+                    new TickIndex(1L),
+                    aimHeld: true,
+                    secondaryHeld: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.ChargeLoop));
+            SkillExecutionId loopExecutionId =
+                controller.GetSequenceFrame(0).ExecutionId;
+
+            for (long tick = 2L; tick <= 6L; tick++)
+            {
+                Assert.That(controller.ProcessFrame(
+                    PlayerInputFrame.Empty(
+                        new TickIndex(tick),
+                        aimHeld: true,
+                        secondaryHeld: true),
+                    player).IsSuccess, Is.True);
+                Assert.That(controller.IsExecuting, Is.True);
+                Assert.That(controller.ActiveSequenceKind,
+                    Is.EqualTo(FpgSkillSequenceKind.ChargeLoop));
+                Assert.That(
+                    controller.GetSequenceFrame(0).ExecutionId,
+                    Is.EqualTo(loopExecutionId));
+                Assert.That(
+                    controller.GetSequenceFrame(0).State,
+                    Is.EqualTo(FpgSkillExecutionState.Running));
+            }
+        }
+
+        [Test]
+        public void EarlyChargeReleaseStartsCancelWithoutAmmoOrRecast()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 3,
+                    cancelDurationTicks: 3));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 3);
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(1L, 2L, InputEdgeType.SecondaryReleased),
+                player).IsSuccess, Is.True);
+
+            Assert.That(controller.ResultCount, Is.Zero);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Cancel));
+            Assert.That(player.Weapon.State, Is.EqualTo(WeaponState.Ready));
             Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(4));
+            Assert.That(
+                player.Weapon.SecondaryRecastLockedUntilTick.IsValid,
+                Is.False);
+            Assert.That(
+                controller.GetSecondaryChargeProgress(
+                    player.Weapon,
+                    new TickIndex(1L)),
+                Is.Zero);
+        }
+
+        [Test]
+        public void FullChargeReleaseCommitsAttackAndRecastAtReleaseTick()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 2,
+                    releaseDurationTicks: 2,
+                    cancelDurationTicks: 2,
+                    cooldownTicks: 4));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 2,
+                secondaryRecastTicks: 4);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(
+                    new TickIndex(1L),
+                    aimHeld: true,
+                    secondaryHeld: true),
+                player).IsSuccess, Is.True);
+            Assert.That(
+                controller.GetSecondaryChargeProgress(
+                    player.Weapon,
+                    new TickIndex(1L)),
+                Is.EqualTo(0.5f));
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(2L, 2L, InputEdgeType.SecondaryReleased),
+                player).IsSuccess, Is.True);
+
+            Assert.That(controller.ResultCount, Is.EqualTo(1));
+            Assert.That(controller.GetResult(0).Slot,
+                Is.EqualTo(FpgPlayerSkillSlot.Secondary));
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Release));
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                2L);
+            Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(3));
+            Assert.That(player.Weapon.SecondaryRecastLockedUntilTick,
+                Is.EqualTo(new TickIndex(6L)));
+            Assert.That(player.Weapon.StateUntilTick,
+                Is.EqualTo(new TickIndex(5L)));
+        }
+
+        [Test]
+        public void CompletedReleaseAutomaticallyStartsAuthoredCancelPostDelay()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 1,
+                    releaseDurationTicks: 1,
+                    cancelDurationTicks: 3,
+                    cooldownTicks: 1));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 1,
+                secondaryRecastTicks: 1);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(1L, 2L, InputEdgeType.SecondaryReleased),
+                player).IsSuccess, Is.True);
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                1L);
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(2L), aimHeld: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.False);
+            Assert.That(controller.IsSecondaryEndPending, Is.True);
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(3L), aimHeld: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.IsSecondaryEndPending, Is.False);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Cancel));
+            Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
+        }
+
+        [Test]
+        public void PrimaryInterruptsCancelAfterItsOwnEligibilityChecksPass()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 2,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 1,
+                    cancelDurationTicks: 5,
+                    cooldownTicks: 1));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 1,
+                secondaryRecastTicks: 1);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(1L, 2L, InputEdgeType.SecondaryReleased),
+                player).IsSuccess, Is.True);
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                1L);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(2L), aimHeld: true),
+                player).IsSuccess, Is.True);
+            SkillExecutionId cancelExecution =
+                controller.GetSequenceFrame(0).ExecutionId;
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(3L), true, true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSlot,
+                Is.EqualTo(FpgPlayerSkillSlot.Primary));
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Execute));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.GetSequenceFrame(0).ExecutionId,
+                Is.EqualTo(cancelExecution));
+            Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Canceled));
+            Assert.That(controller.GetSequenceFrame(1).Slot,
+                Is.EqualTo(FpgPlayerSkillSlot.Primary));
+        }
+
+        [Test]
+        public void PrimaryCooldownFailureLeavesCancelTimelineRunning()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 6,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 1,
+                    cancelDurationTicks: 10,
+                    cooldownTicks: 1));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 1,
+                primaryRecastTicks: 6,
+                secondaryRecastTicks: 1);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(0L), true, true),
+                player).IsSuccess, Is.True);
+            CommitPrimaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                0L);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    1L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(2L, 2L, InputEdgeType.SecondaryReleased),
+                player).IsSuccess, Is.True);
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                2L);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(3L), aimHeld: true),
+                player).IsSuccess, Is.True);
+            SkillExecutionId cancelExecution =
+                controller.GetSequenceFrame(0).ExecutionId;
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(4L), true, true),
+                player).IsSuccess, Is.True);
+            AssertCancelContinues(controller, cancelExecution);
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.Cooldown));
+
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(5L), aimHeld: true),
+                player).IsSuccess, Is.True);
+            AssertCancelContinues(controller, cancelExecution);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(6L), true, true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ActiveSlot,
+                Is.EqualTo(FpgPlayerSkillSlot.None));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.GetSequenceFrame(0).ExecutionId,
+                Is.EqualTo(cancelExecution));
+            Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Canceled));
+            Assert.That(controller.GetSequenceFrame(1).Slot,
+                Is.EqualTo(FpgPlayerSkillSlot.Primary));
+        }
+
+        [Test]
+        public void SecondaryCannotInterruptCancelUntilCooldownAmmoAndExposurePass()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 1,
+                    cancelDurationTicks: 12,
+                    cooldownTicks: 6));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 2,
+                minimumChargeTicks: 1,
+                secondaryRecastTicks: 6);
+            SessionIdAllocator ids = new SessionIdAllocator();
+            WeaponReleaseBuffer release = new WeaponReleaseBuffer();
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(1L, 2L, InputEdgeType.SecondaryReleased),
+                player).IsSuccess, Is.True);
+            CommitSecondaryEvent(
+                controller.GetResult(0),
+                player,
+                ids,
+                release,
+                1L);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(new TickIndex(2L), aimHeld: true),
+                player).IsSuccess, Is.True);
+            SkillExecutionId cancelExecution =
+                controller.GetSequenceFrame(0).ExecutionId;
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    3L,
+                    3L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            AssertCancelContinues(controller, cancelExecution);
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.Cooldown));
+
+            for (long tick = 4L; tick < 7L; tick++)
+            {
+                Assert.That(controller.ProcessFrame(
+                    PlayerInputFrame.Empty(new TickIndex(tick), aimHeld: true),
+                    player).IsSuccess, Is.True);
+            }
+
+            Assert.That(player.Weapon.Magazine.RestoreAmmo(0).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    7L,
+                    4L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            AssertCancelContinues(controller, cancelExecution);
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.NotEnoughAmmo));
+
+            Assert.That(player.Weapon.Magazine.RestoreAmmo(1).IsSuccess, Is.True);
+            Assert.That(player.Exposure.ApplyCombatPosture(
+                false,
+                new TickIndex(7L),
+                false,
+                out _).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    8L,
+                    5L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            AssertCancelContinues(controller, cancelExecution);
+            Assert.That(player.Weapon.LastRejectReason,
+                Is.EqualTo(RejectReason.NotExposed));
+
+            player.Exposure.ForceExposed(new TickIndex(8L), out _);
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    9L,
+                    6L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(player.Weapon.State,
+                Is.EqualTo(WeaponState.AltCharging));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.GetSequenceFrame(0).ExecutionId,
+                Is.EqualTo(cancelExecution));
+            Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Canceled));
+            Assert.That(controller.GetSequenceFrame(1).Sequence.Kind,
+                Is.EqualTo(FpgSkillSequenceKind.ChargeEnter));
+        }
+
+        [Test]
+        public void HardInterruptClearsHeldChargeAndPendingPostDelay()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 2,
+                    ammoCost: 1,
+                    Event(10, 0, 101)),
+                CreateChargeSecondary(
+                    minimumChargeTicks: 4,
+                    cancelDurationTicks: 3));
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                minimumChargeTicks: 4);
+
+            Assert.That(controller.ProcessFrame(
+                SecondaryEdge(
+                    0L,
+                    1L,
+                    InputEdgeType.SecondaryPressed,
+                    held: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ProcessFrame(
+                PlayerInputFrame.Empty(
+                    new TickIndex(1L),
+                    aimHeld: true,
+                    secondaryHeld: true),
+                player).IsSuccess, Is.True);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.ChargeLoop));
+
+            Assert.That(controller.HardInterrupt(
+                new TickIndex(2L),
+                player.Weapon).IsSuccess, Is.True);
+            Assert.That(controller.IsExecuting, Is.False);
+            Assert.That(controller.IsSecondaryEndPending, Is.False);
+            Assert.That(player.Weapon.State, Is.EqualTo(WeaponState.Ready));
+            Assert.That(player.Weapon.SecondaryChargeStartedTick.IsValid,
+                Is.False);
+            Assert.That(
+                player.Weapon.SecondaryRecastLockedUntilTick.IsValid,
+                Is.False);
+            Assert.That(player.Weapon.Magazine.Ammo, Is.EqualTo(4));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(1));
+            Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Canceled));
         }
 
         [Test]
@@ -443,7 +1470,9 @@ namespace FPG.Demo.Tests.EditMode
                 PelletPayload(101, 1));
             FpgPlayerSkillExecutionController controller = CreateController(
                 primary);
-            PlayerRuntime player = CreatePlayer(magazineCapacity: 4);
+            PlayerRuntime player = CreatePlayer(
+                magazineCapacity: 4,
+                primaryRecastTicks: 1);
             SessionIdAllocator ids = new SessionIdAllocator();
             WeaponReleaseBuffer release = new WeaponReleaseBuffer();
 
@@ -470,21 +1499,200 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(sequence.ResolveAnimation(second.ExecutionId)));
         }
 
-                        private static FpgPlayerSkillExecutionController CreateController(
+        private static CoverGateFixture CreateCoverGateFixture()
+        {
+            FpgPlayerSkillExecutionController controller = CreateController(
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 0,
+                    ammoCost: 1,
+                    Event(10, 0, 101)));
+            PlayerRuntime player = CreatePlayer(magazineCapacity: 8);
+            GameObject owner = new GameObject("CoverPeekGateTest");
+            try
+            {
+                FpgFormalPlayerTickDriver driver =
+                    owner.AddComponent<FpgFormalPlayerTickDriver>();
+                SetPrivateField(
+                    driver,
+                    "playerSecondaryTriggerMode",
+                    SecondaryTriggerMode.ChargeRelease);
+                SetPrivateField(
+                    driver,
+                    "skillExecutionController",
+                    controller);
+                return new CoverGateFixture(
+                    owner,
+                    driver,
+                    controller,
+                    player);
+            }
+            catch
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+                throw;
+            }
+        }
+
+        private static CoverGateResult GateCoverInput(
+            CoverGateFixture fixture,
+            long tickValue,
+            bool aimHeld,
+            bool primaryHeld,
+            int aimOriginX,
+            InputEdgeCommand[] edgeCommands = null)
+        {
+            TickIndex tick = new TickIndex(tickValue);
+            PlayerInputFrame frame = new PlayerInputFrame(
+                tick,
+                aimHeld,
+                primaryHeld,
+                edgeCommands,
+                edgeCommands == null ? 0 : edgeCommands.Length);
+            AimPoseSnapshot aimPose = new AimPoseSnapshot(
+                tick,
+                new SpatialVectorKey(aimOriginX, 0, 0),
+                new SpatialVectorKey(0, 0, SpatialContract.DirectionUnits),
+                new SpatialVectorKey(SpatialContract.DirectionUnits, 0, 0),
+                new SpatialVectorKey(0, SpatialContract.DirectionUnits, 0),
+                checked(tickValue + 1L));
+            BattleTickInput tickInput = new BattleTickInput(frame, aimPose);
+            MethodInfo gateMethod = typeof(FpgFormalPlayerTickDriver).GetMethod(
+                "TryBuildCoverGatedInput",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(gateMethod, Is.Not.Null);
+            object[] arguments =
+            {
+                tickInput,
+                frame,
+                fixture.Player,
+                tick,
+                default(BattleTickInput),
+                default(PlayerInputFrame)
+            };
+
+            DomainResult result = (DomainResult)gateMethod.Invoke(
+                fixture.Driver,
+                arguments);
+            Assert.That(result.IsSuccess, Is.True);
+            return new CoverGateResult(
+                result,
+                (BattleTickInput)arguments[4],
+                (PlayerInputFrame)arguments[5]);
+        }
+
+        private static void ProcessGatedFrame(
+            CoverGateFixture fixture,
+            CoverGateResult gated)
+        {
+            Assert.That(gated.Result.IsSuccess, Is.True);
+            Assert.That(fixture.Controller.ProcessFrame(
+                gated.Frame,
+                fixture.Player).IsSuccess, Is.True);
+        }
+
+        private static int CountResults(
+            FpgPlayerSkillExecutionController controller,
+            FpgPlayerSkillSlot slot)
+        {
+            int count = 0;
+            for (int index = 0; index < controller.ResultCount; index++)
+            {
+                if (controller.GetResult(index).Slot == slot)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static void SetPrivateField(
+            object target,
+            string fieldName,
+            object value)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, "Could not find field " + fieldName + ".");
+            field.SetValue(target, value);
+        }
+
+        private sealed class CoverGateFixture : IDisposable
+        {
+            public CoverGateFixture(
+                GameObject owner,
+                FpgFormalPlayerTickDriver driver,
+                FpgPlayerSkillExecutionController controller,
+                PlayerRuntime player)
+            {
+                Owner = owner;
+                Driver = driver;
+                Controller = controller;
+                Player = player;
+            }
+
+            public GameObject Owner { get; }
+            public FpgFormalPlayerTickDriver Driver { get; }
+            public FpgPlayerSkillExecutionController Controller { get; }
+            public PlayerRuntime Player { get; }
+
+            public void Dispose()
+            {
+                if (Owner != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(Owner);
+                }
+            }
+        }
+
+        private readonly struct CoverGateResult
+        {
+            public CoverGateResult(
+                DomainResult result,
+                BattleTickInput tickInput,
+                PlayerInputFrame frame)
+            {
+                Result = result;
+                TickInput = tickInput;
+                Frame = frame;
+            }
+
+            public DomainResult Result { get; }
+            public BattleTickInput TickInput { get; }
+            public PlayerInputFrame Frame { get; }
+        }
+
+        private static FpgPlayerSkillExecutionController CreateController(
             FpgCompiledPlayerSkillDefinition primary)
         {
-            return CreateController(primary, CreateSecondary());
+            return CreateController(
+                primary,
+                CreateSecondary(),
+                SecondaryTriggerMode.ChargeRelease);
         }
 
         private static FpgPlayerSkillExecutionController CreateController(
             FpgCompiledPlayerSkillDefinition primary,
             FpgCompiledPlayerSkillDefinition secondary)
         {
+            return CreateController(
+                primary,
+                secondary,
+                SecondaryTriggerMode.ChargeRelease);
+        }
+
+        private static FpgPlayerSkillExecutionController CreateController(
+            FpgCompiledPlayerSkillDefinition primary,
+            FpgCompiledPlayerSkillDefinition secondary,
+            SecondaryTriggerMode secondaryTriggerMode)
+        {
             bool created = FpgPlayerSkillExecutionController.TryCreate(
                 primary,
                 secondary,
                 CreateReload(),
-                SecondaryTriggerMode.ChargeRelease,
+                secondaryTriggerMode,
                 out FpgPlayerSkillExecutionController controller,
                 out string error);
             Assert.That(created, Is.True, error);
@@ -511,18 +1719,29 @@ namespace FPG.Demo.Tests.EditMode
 
         private static FpgCompiledPlayerSkillDefinition CreateSecondary()
         {
+            return CreateImmediateSecondary(
+                durationTicks: 0,
+                cooldownTicks: 2,
+                ammoCost: 1);
+        }
+
+        private static FpgCompiledPlayerSkillDefinition CreateImmediateSecondary(
+            int durationTicks,
+            int cooldownTicks,
+            int ammoCost)
+        {
             return Definition(
                 2,
-                2,
+                cooldownTicks,
                 new FpgCompiledSkillSequence(
                     FpgSkillSequenceKind.Execute,
-                    0,
+                    durationTicks,
                     1002,
                     false,
                     new[] { Event(40, 0, 201) }),
                 new FpgCompiledPlayerSkillAction(
                     FpgPlayerSkillActionKind.AreaAtFirstSurface,
-                    1,
+                    ammoCost,
                     new DamageSpec(8, 2),
                     QueryPolicy.DirectThenArea,
                     AttackQueryMode.AreaAtFirstSurface,
@@ -534,7 +1753,12 @@ namespace FPG.Demo.Tests.EditMode
                     WeaponDefinition.PlayerAttackTargetKinds));
         }
 
-        private static FpgCompiledPlayerSkillDefinition CreateChargeSecondary()
+        private static FpgCompiledPlayerSkillDefinition CreateChargeSecondary(
+            int minimumChargeTicks = 2,
+            int releaseDurationTicks = 0,
+            int cancelDurationTicks = 0,
+            int cooldownTicks = 2,
+            int ammoCost = 1)
         {
             return new FpgCompiledPlayerSkillDefinition(
                 new FpgCompiledSkillDefinition(
@@ -558,28 +1782,29 @@ namespace FPG.Demo.Tests.EditMode
                             0,
                             2002,
                             true,
-                            Array.Empty<FpgCompiledSkillEvent>()),
+                            Array.Empty<FpgCompiledSkillEvent>(),
+                            holdUntilCanceled: true),
                         new FpgCompiledSkillSequence(
                             FpgSkillSequenceKind.Release,
-                            0,
+                            releaseDurationTicks,
                             2003,
                             false,
                             new[] { Event(40, 0, 201) }),
                         new FpgCompiledSkillSequence(
                             FpgSkillSequenceKind.Cancel,
-                            0,
+                            cancelDurationTicks,
                             2004,
                             false,
                             Array.Empty<FpgCompiledSkillEvent>())
                     }),
-                2,
+                cooldownTicks,
                 new[]
                 {
                     new FpgCompiledPlayerAttackAction(
                         FpgSkillAttackMode.AreaAtFirstSurface,
                         new FpgCompiledPlayerSkillAction(
                             FpgPlayerSkillActionKind.AreaAtFirstSurface,
-                            1,
+                            ammoCost,
                             new DamageSpec(8, 2),
                             QueryPolicy.DirectThenArea,
                             AttackQueryMode.AreaAtFirstSurface,
@@ -591,7 +1816,8 @@ namespace FPG.Demo.Tests.EditMode
                             WeaponDefinition.PlayerAttackTargetKinds))
                 },
                 Array.Empty<FpgCompiledPlayerProjectileAction>(),
-                Array.Empty<FpgCompiledPlayerReloadAction>());
+                Array.Empty<FpgCompiledPlayerReloadAction>(),
+                minimumChargeTicks);
         }
 
         private static FpgCompiledPlayerSkillDefinition CreateReload()
@@ -695,21 +1921,28 @@ namespace FPG.Demo.Tests.EditMode
                 targetSource: FpgSkillTargetSource.CurrentAim);
         }
 
-        private static PlayerRuntime CreatePlayer(int magazineCapacity)
+        private static PlayerRuntime CreatePlayer(
+            int magazineCapacity,
+            SecondaryTriggerMode secondaryTriggerMode =
+                SecondaryTriggerMode.ChargeRelease,
+            int minimumChargeTicks = 2,
+            int primaryRecastTicks = 2,
+            int secondaryRecastTicks = 2,
+            int secondaryAmmoCost = 1)
         {
             WeaponDefinition weapon = new WeaponDefinition(
                 900,
                 magazineCapacity,
                 1,
-                new TickDuration(2),
+                new TickDuration(primaryRecastTicks),
                 new DamageSpec(4, 1),
-                1,
-                TickDuration.Zero,
-                new TickDuration(2),
+                secondaryAmmoCost,
+                new TickDuration(minimumChargeTicks),
+                new TickDuration(secondaryRecastTicks),
                 new DamageSpec(8, 2),
                 new TickDuration(2),
                 1,
-                SecondaryTriggerMode.ChargeRelease,
+                secondaryTriggerMode,
                 primaryPayloadCount: 1);
             return new PlayerRuntime(
                 new CombatantState(
@@ -729,7 +1962,46 @@ namespace FPG.Demo.Tests.EditMode
             WeaponReleaseBuffer release,
             long tick)
         {
-            PreparePrimaryEvent(skillEvent, player, ids, release, tick);
+            CommitSkillEvent(
+                skillEvent,
+                WeaponReleaseKind.Primary,
+                player,
+                ids,
+                release,
+                tick);
+        }
+
+        private static void CommitSecondaryEvent(
+            FpgPlayerSkillExecutionEvent skillEvent,
+            PlayerRuntime player,
+            SessionIdAllocator ids,
+            WeaponReleaseBuffer release,
+            long tick)
+        {
+            CommitSkillEvent(
+                skillEvent,
+                WeaponReleaseKind.Secondary,
+                player,
+                ids,
+                release,
+                tick);
+        }
+
+        private static void CommitSkillEvent(
+            FpgPlayerSkillExecutionEvent skillEvent,
+            WeaponReleaseKind releaseKind,
+            PlayerRuntime player,
+            SessionIdAllocator ids,
+            WeaponReleaseBuffer release,
+            long tick)
+        {
+            PrepareSkillEvent(
+                skillEvent,
+                releaseKind,
+                player,
+                ids,
+                release,
+                tick);
             Assert.That(player.Weapon.CommitPreparedSkillRelease(
                 release,
                 ids).IsSuccess, Is.True);
@@ -742,9 +2014,26 @@ namespace FPG.Demo.Tests.EditMode
             WeaponReleaseBuffer release,
             long tick)
         {
+            PrepareSkillEvent(
+                skillEvent,
+                WeaponReleaseKind.Primary,
+                player,
+                ids,
+                release,
+                tick);
+        }
+
+        private static void PrepareSkillEvent(
+            FpgPlayerSkillExecutionEvent skillEvent,
+            WeaponReleaseKind releaseKind,
+            PlayerRuntime player,
+            SessionIdAllocator ids,
+            WeaponReleaseBuffer release,
+            long tick)
+        {
             FpgCompiledPlayerSkillAction payload = skillEvent.Action;
             WeaponSkillReleaseSpec spec = new WeaponSkillReleaseSpec(
-                WeaponReleaseKind.Primary,
+                releaseKind,
                 payload.Damage,
                 payload.QueryPolicy,
                 payload.QueryMode,
@@ -762,6 +2051,39 @@ namespace FPG.Demo.Tests.EditMode
                 123UL,
                 spec,
                 release).IsSuccess, Is.True);
+        }
+
+        private static PlayerInputFrame SecondaryEdge(
+            long tick,
+            long sequence,
+            InputEdgeType type,
+            bool held = false)
+        {
+            InputEdgeCommand[] edges =
+            {
+                new InputEdgeCommand(new InputSequence(sequence), type)
+            };
+            return new PlayerInputFrame(
+                new TickIndex(tick),
+                true,
+                false,
+                edges,
+                edges.Length,
+                secondaryHeld: held);
+        }
+
+        private static void AssertCancelContinues(
+            FpgPlayerSkillExecutionController controller,
+            SkillExecutionId expectedExecutionId)
+        {
+            Assert.That(controller.IsExecuting, Is.True);
+            Assert.That(controller.ActiveSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Cancel));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(1));
+            Assert.That(controller.GetSequenceFrame(0).ExecutionId,
+                Is.EqualTo(expectedExecutionId));
+            Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
         }
     }
 }

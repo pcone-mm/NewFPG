@@ -312,16 +312,8 @@ namespace FPG.Demo.Run
             out bool hasGap);
     }
 
-    public interface IFpgSkillImpactPresentationWriter :
-        IFpgSkillImpactPresentationView
-    {
-        bool TryRecordContact(in FpgSkillImpactContact contact);
-        bool TryRecordGroupCompletion(
-            in FpgSkillImpactGroupCompletion completion);
-    }
-
     public sealed class FixedFpgSkillImpactPresentationStream :
-        IFpgSkillImpactPresentationWriter
+        IFpgSkillImpactPresentationView
     {
         private readonly FpgSkillImpactPresentationEvent[] entries;
         private int start;

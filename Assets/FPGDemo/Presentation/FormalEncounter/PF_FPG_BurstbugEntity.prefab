@@ -320,6 +320,7 @@ GameObject:
   - component: {fileID: 6150894673153630835}
   - component: {fileID: 7261547477023771250}
   - component: {fileID: 6320505818313734373}
+  - component: {fileID: 8436559170132364042}
   m_Layer: 0
   m_Name: VisualRoot
   m_TagString: Untagged
@@ -436,3 +437,25 @@ MonoBehaviour:
   _animationName: normal_idle
   loop: 1
   timeScale: 1
+--- !u!114 &8436559170132364042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3961183479060182660}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9148a19a62d4d1299381f4f94b3de31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEntitySkeletonRootMotionBridge
+  rootMotionBoneName: root
+  transformPositionX: 1
+  transformPositionY: 1
+  rootMotionScaleX: 1
+  rootMotionScaleY: 1
+  rootMotionTranslateXPerY: 0
+  rootMotionTranslateYPerX: 0
+  rigidBody2D: {fileID: 0}
+  rigidBody: {fileID: 0}
+  animationTrackFlags: 1

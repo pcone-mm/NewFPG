@@ -21,3 +21,6 @@ MonoBehaviour:
   entryAnimation: appear
   idleAnimation: idle
   deathAnimation: die
+  animationRootMotionRules:
+  - animationName: appear
+    enabled: 1

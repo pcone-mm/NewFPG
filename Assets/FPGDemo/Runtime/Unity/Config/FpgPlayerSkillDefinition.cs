@@ -233,12 +233,18 @@ namespace FPG.Demo.Unity
             int sequenceCooldownTicks,
             FpgCompiledPlayerAttackAction[] attackActions,
             FpgCompiledPlayerProjectileAction[] projectileActions,
-            FpgCompiledPlayerReloadAction[] reloadActions)
+            FpgCompiledPlayerReloadAction[] reloadActions,
+            int chargeProgressTicks = 30)
         {
             Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             if (sequenceCooldownTicks < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(sequenceCooldownTicks));
+            }
+
+            if (chargeProgressTicks < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(chargeProgressTicks));
             }
 
             if (attackActions == null
@@ -262,6 +268,7 @@ namespace FPG.Demo.Unity
                 this.projectileActions,
                 this.reloadActions);
             SequenceCooldownTicks = sequenceCooldownTicks;
+            ChargeProgressTicks = chargeProgressTicks;
             sequenceSummaries = BuildSequenceSummaries(timeline);
             MaximumImpactCount = ComputeMaximumImpactCount(
                 this.attackActions,
@@ -271,6 +278,7 @@ namespace FPG.Demo.Unity
             GameplayHash = ComputeGameplayHash(
                 timeline,
                 sequenceCooldownTicks,
+                chargeProgressTicks,
                 this.attackActions,
                 this.projectileActions,
                 this.reloadActions);
@@ -279,6 +287,7 @@ namespace FPG.Demo.Unity
 
         public FpgCompiledSkillDefinition Timeline { get; }
         public int SequenceCooldownTicks { get; }
+        public int ChargeProgressTicks { get; }
         public IReadOnlyList<FpgCompiledPlayerAttackAction> AttackActions =>
             attackActions;
         public int AttackActionCount => attackActions.Length;
@@ -537,6 +546,7 @@ namespace FPG.Demo.Unity
         private static ulong ComputeGameplayHash(
             FpgCompiledSkillDefinition timeline,
             int sequenceCooldownTicks,
+            int chargeProgressTicks,
             FpgCompiledPlayerAttackAction[] attacks,
             FpgCompiledPlayerProjectileAction[] projectiles,
             FpgCompiledPlayerReloadAction[] reloads)
@@ -546,6 +556,9 @@ namespace FPG.Demo.Unity
             hash = StableHash.Append(
                 hash,
                 unchecked((ulong)sequenceCooldownTicks));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)chargeProgressTicks));
 
             hash = StableHash.Append(hash, unchecked((ulong)attacks.Length));
             for (int index = 0; index < attacks.Length; index++)
@@ -667,10 +680,14 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)]
         private int sequenceCooldownTicks;
 
+        [SerializeField, Min(0)]
+        private int chargeProgressTicks = 30;
+
         public SecondaryTriggerMode SecondaryTriggerMode =>
             secondaryTriggerMode;
         public int MinimumChargeTicks => minimumChargeTicks;
         public int SequenceCooldownTicks => sequenceCooldownTicks;
+        public int ChargeProgressTicks => chargeProgressTicks;
 
         public bool TryCompile(
             out FpgCompiledPlayerSkillDefinition definition,
@@ -695,7 +712,8 @@ namespace FPG.Demo.Unity
                     sequenceCooldownTicks,
                     attacks,
                     projectiles,
-                    reloads);
+                    reloads,
+                    chargeProgressTicks);
 
                 error = string.Empty;
                 return true;
@@ -854,7 +872,10 @@ namespace FPG.Demo.Unity
             if (!Enum.IsDefined(
                     typeof(SecondaryTriggerMode),
                     secondaryTriggerMode)
-                || minimumChargeTicks < 0)
+                || minimumChargeTicks < 0
+                || chargeProgressTicks < 0
+                || (secondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+                    && chargeProgressTicks <= 0))
             {
                 error = $"Player skill '{SkillId}' has invalid activation metadata.";
                 return false;
@@ -884,9 +905,10 @@ namespace FPG.Demo.Unity
                 && secondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
                 && (!HasSequence(FpgSkillSequenceKind.ChargeEnter)
                     || !HasSequence(FpgSkillSequenceKind.ChargeLoop)
-                    || !HasSequence(FpgSkillSequenceKind.Release)))
+                    || !HasSequence(FpgSkillSequenceKind.Release)
+                    || !HasSequence(FpgSkillSequenceKind.Cancel)))
             {
-                error = $"Charged player skill '{SkillId}' requires ChargeEnter, ChargeLoop and Release sequences.";
+                error = $"Charged player skill '{SkillId}' requires ChargeEnter, ChargeLoop, Release and Cancel sequences.";
                 return false;
             }
 
@@ -909,6 +931,12 @@ namespace FPG.Demo.Unity
                 if (sequence.SummonEvents.Count > 0)
                 {
                     error = $"Player skill '{SkillId}' cannot contain summon actions.";
+                    return false;
+                }
+
+                if (sequence.SelfDestructOwnerEvents.Count > 0)
+                {
+                    error = $"Player skill '{SkillId}' cannot contain self-destruct actions.";
                     return false;
                 }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FPG.Demo.Core;
+using FPG.Demo.Run;
 using FPG.Demo.Skills;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -89,6 +90,9 @@ namespace FPG.Demo.Unity
         private bool loop;
 
         [SerializeField]
+        private bool holdUntilCanceled;
+
+        [SerializeField]
         private FpgSkillAnimationPlaybackMode animationPlaybackMode =
             FpgSkillAnimationPlaybackMode.NaturalSpeed;
 
@@ -118,6 +122,10 @@ namespace FPG.Demo.Unity
             Array.Empty<FpgSkillSummonEventDefinition>();
 
         [SerializeField]
+        private FpgSkillSelfDestructOwnerEventDefinition[] selfDestructOwnerEvents =
+            Array.Empty<FpgSkillSelfDestructOwnerEventDefinition>();
+
+        [SerializeField]
         private FpgSkillActivePresentationTrackDefinition[]
             activePresentationTracks =
                 Array.Empty<FpgSkillActivePresentationTrackDefinition>();
@@ -132,6 +140,7 @@ namespace FPG.Demo.Unity
             alternateAnimations ?? Array.Empty<string>();
         public string MainAnimation => mainAnimation;
         public bool Loop => loop;
+        public bool HoldUntilCanceled => holdUntilCanceled;
         public FpgSkillAnimationPlaybackMode AnimationPlaybackMode =>
             animationPlaybackMode;
         public int AnimationStartTick => animationStartTick;
@@ -153,6 +162,10 @@ namespace FPG.Demo.Unity
             reloadEvents ?? Array.Empty<FpgSkillReloadEventDefinition>();
         public IReadOnlyList<FpgSkillSummonEventDefinition> SummonEvents =>
             summonEvents ?? Array.Empty<FpgSkillSummonEventDefinition>();
+        public IReadOnlyList<FpgSkillSelfDestructOwnerEventDefinition>
+            SelfDestructOwnerEvents =>
+                selfDestructOwnerEvents
+                ?? Array.Empty<FpgSkillSelfDestructOwnerEventDefinition>();
         public IReadOnlyList<FpgSkillActivePresentationTrackDefinition>
             ActivePresentationTracks =>
                 activePresentationTracks
@@ -163,12 +176,14 @@ namespace FPG.Demo.Unity
         public bool HasGameplayActions => AttackEvents.Count > 0
             || ProjectileEvents.Count > 0
             || ReloadEvents.Count > 0
-            || SummonEvents.Count > 0;
+            || SummonEvents.Count > 0
+            || SelfDestructOwnerEvents.Count > 0;
         public int GameplayActionCount => checked(
             AttackEvents.Count
             + ProjectileEvents.Count
             + ReloadEvents.Count
-            + SummonEvents.Count);
+            + SummonEvents.Count
+            + SelfDestructOwnerEvents.Count);
 
         internal bool TryValidate(
             HashSet<string> eventIds,
@@ -181,6 +196,12 @@ namespace FPG.Demo.Unity
                 || string.IsNullOrWhiteSpace(mainAnimation))
             {
                 error = "Skill sequence requires a valid kind, duration and main animation.";
+                return false;
+            }
+
+            if (holdUntilCanceled && HasGameplayActions)
+            {
+                error = $"Skill sequence '{kind}' cannot hold until canceled while containing gameplay actions.";
                 return false;
             }
 
@@ -256,7 +277,21 @@ namespace FPG.Demo.Unity
                     eventIds,
                     compiledEventIds,
                     authoredPositions,
+                    out error)
+                || !TryValidateActions(
+                    selfDestructOwnerEvents
+                        ?? Array.Empty<FpgSkillSelfDestructOwnerEventDefinition>(),
+                    "self-destruct owner",
+                    gameplayEventTicks,
+                    eventIds,
+                    compiledEventIds,
+                    authoredPositions,
                     out error))
+            {
+                return false;
+            }
+
+            if (!TryValidateSelfDestructBindings(out error))
             {
                 return false;
             }
@@ -393,6 +428,9 @@ namespace FPG.Demo.Unity
                 reloadEvents ?? Array.Empty<FpgSkillReloadEventDefinition>();
             FpgSkillSummonEventDefinition[] summons =
                 summonEvents ?? Array.Empty<FpgSkillSummonEventDefinition>();
+            FpgSkillSelfDestructOwnerEventDefinition[] selfDestructs =
+                selfDestructOwnerEvents
+                ?? Array.Empty<FpgSkillSelfDestructOwnerEventDefinition>();
             FpgSkillActivePresentationTrackDefinition[] activeTracks =
                 activePresentationTracks
                 ?? Array.Empty<FpgSkillActivePresentationTrackDefinition>();
@@ -402,7 +440,8 @@ namespace FPG.Demo.Unity
                 attacks.Length
                 + projectiles.Length
                 + reloads.Length
-                + summons.Length);
+                + summons.Length
+                + selfDestructs.Length);
             int activePresentationEventCount = 0;
             for (int index = 0; index < activeTracks.Length; index++)
             {
@@ -442,6 +481,12 @@ namespace FPG.Demo.Unity
                 summons,
                 FpgSkillActionKind.SummonActors,
                 actionOffsets.SummonActors,
+                compiled,
+                writeIndex);
+            writeIndex = CompileActions(
+                selfDestructs,
+                FpgSkillActionKind.SelfDestructOwner,
+                actionOffsets.SelfDestructOwner,
                 compiled,
                 writeIndex);
 
@@ -542,7 +587,8 @@ namespace FPG.Demo.Unity
                 ResolvedAnimationEndTick,
                 compiledVariants,
                 compiled,
-                actionPresentations);
+                actionPresentations,
+                holdUntilCanceled);
         }
 
         private static int CountActionPresentations<TAction>(TAction[] values)
@@ -703,6 +749,77 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        private bool TryValidateSelfDestructBindings(out string error)
+        {
+            IReadOnlyList<FpgSkillSelfDestructOwnerEventDefinition>
+                selfDestructs = SelfDestructOwnerEvents;
+            IReadOnlyList<FpgSkillSummonEventDefinition> summons =
+                SummonEvents;
+            HashSet<string> boundSummonEventIds =
+                new HashSet<string>(StringComparer.Ordinal);
+            for (int index = 0; index < selfDestructs.Count; index++)
+            {
+                FpgSkillSelfDestructOwnerEventDefinition selfDestruct =
+                    selfDestructs[index];
+                string boundEventId = selfDestruct.BoundGameplayEventId;
+                if (string.IsNullOrEmpty(boundEventId))
+                {
+                    continue;
+                }
+
+                bool foundValidSource = false;
+                for (int summonIndex = 0;
+                    summonIndex < summons.Count;
+                    summonIndex++)
+                {
+                    FpgSkillSummonEventDefinition summon =
+                        summons[summonIndex];
+                    if (!string.Equals(
+                            summon.EventId,
+                            boundEventId,
+                            StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    foundValidSource = summon.Tick == selfDestruct.Tick
+                        && summon.AuthoredOrdinal
+                            < selfDestruct.AuthoredOrdinal;
+                    break;
+                }
+
+                if (!foundValidSource)
+                {
+                    error =
+                        $"Self-destruct action '{selfDestruct.EventId}' must bind to a same-tick, earlier summon action.";
+                    return false;
+                }
+
+                if (!boundSummonEventIds.Add(boundEventId))
+                {
+                    error =
+                        $"Summon action '{boundEventId}' cannot drive more than one self-destruct action.";
+                    return false;
+                }
+            }
+
+            for (int index = 0; index < summons.Count; index++)
+            {
+                FpgSkillSummonEventDefinition summon = summons[index];
+                if (summon.SummonOccupancyMode
+                        == FpgSummonOccupancyMode.ReplaceOwner
+                    && !boundSummonEventIds.Contains(summon.EventId))
+                {
+                    error =
+                        $"Replace-owner summon action '{summon.EventId}' requires one same-tick self-destruct action bound to it.";
+                    return false;
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
         private static int CompileActions<TAction>(
             TAction[] values,
             FpgSkillActionKind actionKind,
@@ -724,7 +841,9 @@ namespace FPG.Demo.Unity
                     value.TargetSource,
                     value.OffsetXMillimeters,
                     value.OffsetYMillimeters,
-                    value.OffsetZMillimeters);
+                    value.OffsetZMillimeters,
+                    FpgSkillStableId.CompileOptionalEvent(
+                        value.BoundGameplayEventId));
             }
 
             return writeIndex;
@@ -785,18 +904,21 @@ namespace FPG.Demo.Unity
             int attack,
             int launchProjectile,
             int commitReload,
-            int summonActors)
+            int summonActors,
+            int selfDestructOwner)
         {
             Attack = attack;
             LaunchProjectile = launchProjectile;
             CommitReload = commitReload;
             SummonActors = summonActors;
+            SelfDestructOwner = selfDestructOwner;
         }
 
         public int Attack { get; }
         public int LaunchProjectile { get; }
         public int CommitReload { get; }
         public int SummonActors { get; }
+        public int SelfDestructOwner { get; }
 
         public FpgSkillActionIndexOffsets Advance(
             FpgSkillSequenceDefinition sequence)
@@ -811,7 +933,8 @@ namespace FPG.Demo.Unity
                 checked(
                     LaunchProjectile + sequence.ProjectileEvents.Count),
                 checked(CommitReload + sequence.ReloadEvents.Count),
-                checked(SummonActors + sequence.SummonEvents.Count));
+                checked(SummonActors + sequence.SummonEvents.Count),
+                checked(SelfDestructOwner + sequence.SelfDestructOwnerEvents.Count));
         }
     }
 

@@ -13,6 +13,7 @@
 
 - event 顺序由 tick 与 authored ordinal 固定；stable ID、`GameplayHashVersion`、`PresentationHashVersion`、hash 输入或排序规则变化都属于跨资产兼容变更。
 - active presentation 事件只携带 handle、track、content hash 与可选 gameplay-event 绑定；不得把 Prefab、AudioClip、Camera 或 Unity 生命周期泄漏到领域层。
+- `SelfDestructOwner` 是类型化 gameplay action；若设置绑定，只能指向同一 sequence、同 tick、排序更早的 `SummonActors` 事件，绑定 ID 或顺序不合法时编译 fail-closed；Unity authoring 层另将其 target 固定为 Self。
 - result buffer、event count 和 tick 范围必须在开始执行前校验；容量不足、跳 tick、重复开始、终态重入和溢出一律 fail-closed。
 - Cancel 必须为尚未触发的事件产生确定的 canceled result，不能静默丢失关联关系。
 - 不在这里执行伤害、召唤、投射物、动画或 VFX；类型化动作在 `Runtime/Unity/Config` 编译，实际提交由 Player/Enemy/Run/Unity 层负责。

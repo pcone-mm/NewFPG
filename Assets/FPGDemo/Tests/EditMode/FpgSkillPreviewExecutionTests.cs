@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using FPG.Demo.Editor.SkillAuthoring;
 using FPG.Demo.Skills;
 using FPG.Demo.Unity;
@@ -75,6 +76,191 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 () => execution.GetResult(0),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void ChargedLifecycleUsesRuntimeStagesInControllerOrder()
+        {
+            FpgSkillPreviewExecution execution =
+                new FpgSkillPreviewExecution();
+            FpgCompiledSkillSequence enter = Sequence(
+                FpgSkillSequenceKind.ChargeEnter,
+                1);
+            FpgCompiledSkillSequence loop = Sequence(
+                FpgSkillSequenceKind.ChargeLoop,
+                0,
+                holdUntilCanceled: true);
+            FpgCompiledSkillSequence release = Sequence(
+                FpgSkillSequenceKind.Release,
+                1);
+            FpgCompiledSkillSequence cancel = Sequence(
+                FpgSkillSequenceKind.Cancel,
+                1);
+
+            Assert.That(
+                execution.BindChargedLifecycle(
+                    enter,
+                    loop,
+                    release,
+                    cancel,
+                    fullChargeTick: 3,
+                    out string error),
+                Is.True,
+                error);
+            Assert.That(execution.DurationTicks, Is.EqualTo(6));
+
+            Assert.That(execution.AdvanceTo(1, out error), Is.True, error);
+            Assert.That(
+                execution.CurrentSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.ChargeEnter));
+            Assert.That(execution.AdvanceTo(2, out error), Is.True, error);
+            Assert.That(
+                execution.CurrentSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.ChargeLoop));
+            Assert.That(execution.AdvanceTo(3, out error), Is.True, error);
+            Assert.That(
+                execution.CurrentSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Release));
+            Assert.That(execution.AdvanceTo(5, out error), Is.True, error);
+            Assert.That(
+                execution.CurrentSequenceKind,
+                Is.EqualTo(FpgSkillSequenceKind.Cancel));
+            Assert.That(execution.AdvanceTo(6, out error), Is.True, error);
+            Assert.That(
+                Enumerable.Range(0, execution.StartedStageCount)
+                    .Select(execution.GetStartedStage),
+                Is.EqualTo(new[]
+                {
+                    FpgSkillSequenceKind.ChargeEnter,
+                    FpgSkillSequenceKind.ChargeLoop,
+                    FpgSkillSequenceKind.Release,
+                    FpgSkillSequenceKind.Cancel
+                }));
+        }
+
+        [Test]
+        public void BoundPresentationRequiresCommittedGameplayAndScrubRebuildsGate()
+        {
+            FpgCompiledSkillEvent boundAtCommit = ActivePresentationEvent(
+                201,
+                0,
+                FpgActivePresentationKind.Vfx,
+                1,
+                sortOrder: 1,
+                boundGameplayEventId: 101);
+            FpgCompiledSkillSequence sequence = new FpgCompiledSkillSequence(
+                FpgSkillSequenceKind.Execute,
+                1,
+                1,
+                false,
+                new[]
+                {
+                    new FpgCompiledSkillEvent(
+                        101,
+                        0,
+                        FpgSkillActionKind.Attack,
+                        0,
+                        sortOrder: 0),
+                    boundAtCommit,
+                    ActivePresentationEvent(
+                        202,
+                        1,
+                        FpgActivePresentationKind.Vfx,
+                        2,
+                        sortOrder: 2,
+                        boundGameplayEventId: 101)
+                });
+            FpgSkillPreviewExecution execution =
+                new FpgSkillPreviewExecution();
+            Assert.That(execution.Bind(sequence, out string error), Is.True, error);
+
+            Assert.That(execution.CanPresent(boundAtCommit), Is.False);
+            Assert.That(execution.AdvanceTo(0, out error), Is.True, error);
+            Assert.That(ResultIds(execution), Is.EqualTo(new[] { 101, 201 }));
+            Assert.That(execution.WasGameplayEventCommitted(101), Is.True);
+            Assert.That(execution.CanPresent(boundAtCommit), Is.True);
+            execution.ClearPendingResults();
+            Assert.That(execution.AdvanceTo(1, out error), Is.True, error);
+            Assert.That(ResultIds(execution), Is.EqualTo(new[] { 202 }));
+
+            Assert.That(execution.AdvanceTo(0, out error), Is.True, error);
+            Assert.That(execution.ResultCount, Is.Zero);
+            Assert.That(execution.WasGameplayEventCommitted(101), Is.True);
+            Assert.That(execution.CanPresent(boundAtCommit), Is.True);
+
+            execution.Reset();
+            Assert.That(execution.CanPresent(boundAtCommit), Is.False);
+        }
+
+        [Test]
+        public void FailedGameplayCommitSuppressesBoundPresentation()
+        {
+            FpgCompiledSkillEvent boundAtCommit = ActivePresentationEvent(
+                201,
+                0,
+                FpgActivePresentationKind.Vfx,
+                1,
+                sortOrder: 1,
+                boundGameplayEventId: 101);
+            FpgCompiledSkillSequence sequence = new FpgCompiledSkillSequence(
+                FpgSkillSequenceKind.Execute,
+                1,
+                1,
+                false,
+                new[]
+                {
+                    new FpgCompiledSkillEvent(
+                        101,
+                        0,
+                        FpgSkillActionKind.Attack,
+                        0,
+                        sortOrder: 0),
+                    boundAtCommit,
+                    ActivePresentationEvent(
+                        202,
+                        1,
+                        FpgActivePresentationKind.Vfx,
+                        2,
+                        sortOrder: 2,
+                        boundGameplayEventId: 101)
+                });
+            FpgSkillPreviewExecution execution =
+                new FpgSkillPreviewExecution();
+            Assert.That(
+                execution.Bind(sequence, _ => false, out string error),
+                Is.True,
+                error);
+
+            Assert.That(execution.AdvanceTo(0, out error), Is.True, error);
+            Assert.That(ResultIds(execution), Is.EqualTo(new[] { 101 }));
+            Assert.That(execution.WasGameplayEventCommitted(101), Is.False);
+            Assert.That(execution.CanPresent(boundAtCommit), Is.False);
+
+            execution.ClearPendingResults();
+            Assert.That(execution.AdvanceTo(1, out error), Is.True, error);
+            Assert.That(execution.ResultCount, Is.Zero);
+        }
+
+        [Test]
+        public void RestorePreviewPrefabIsSafeBeforeVisualTreeIsCreated()
+        {
+            FpgSkillEditorWindow window =
+                ScriptableObject.CreateInstance<FpgSkillEditorWindow>();
+            try
+            {
+                MethodInfo restore = typeof(FpgSkillEditorWindow).GetMethod(
+                    "RestorePreviewPrefab",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+
+                Assert.That(restore, Is.Not.Null);
+                Assert.That(
+                    () => restore.Invoke(window, null),
+                    Throws.Nothing);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(window);
+            }
         }
 
         [Test]
@@ -318,6 +504,20 @@ namespace FPG.Demo.Tests.EditMode
                 presentationContentHash: (ulong)(1000 + eventId),
                 sortOrder: sortOrder,
                 boundGameplayEventId: boundGameplayEventId);
+        }
+
+        private static FpgCompiledSkillSequence Sequence(
+            FpgSkillSequenceKind kind,
+            int durationTicks,
+            bool holdUntilCanceled = false)
+        {
+            return new FpgCompiledSkillSequence(
+                kind,
+                durationTicks,
+                1,
+                loop: holdUntilCanceled,
+                events: Array.Empty<FpgCompiledSkillEvent>(),
+                holdUntilCanceled: holdUntilCanceled);
         }
 
         private static int[] ResultIds(FpgSkillPreviewExecution execution)

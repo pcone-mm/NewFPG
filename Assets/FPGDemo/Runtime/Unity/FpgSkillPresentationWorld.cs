@@ -210,6 +210,115 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        public bool TryBorrowHeldVfx(
+            FpgPresentationHandle handle,
+            Transform source,
+            out GameObject instance)
+        {
+            instance = null;
+            if (source == null)
+            {
+                return Reject();
+            }
+
+            return TryBorrowHeldVfx(
+                handle,
+                source.position,
+                source.rotation,
+                source.lossyScale,
+                out instance);
+        }
+
+        public bool TryBorrowHeldVfx(
+            FpgPresentationHandle handle,
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 sourceScale,
+            out GameObject instance)
+        {
+            instance = null;
+            if (!TryResolveVfx(handle, out FpgRegisteredPresentation entry))
+            {
+                return Reject();
+            }
+
+            Vector3 scale = Vector3.Scale(sourceScale, entry.Vfx.Scale);
+            if (!vfxWorld.TryAcquireHeld(
+                    FpgSkillPresentationRegistry.GetPoolKey(handle),
+                    position,
+                    rotation * Quaternion.Euler(
+                        entry.Vfx.RotationOffsetEuler),
+                    scale,
+                    out instance))
+            {
+                return Reject();
+            }
+
+            ChargeProgressVfxDriver progressDriver = instance == null
+                ? null
+                : instance.GetComponent<ChargeProgressVfxDriver>();
+            progressDriver?.SetProgress(0f);
+            return true;
+        }
+
+        public bool TryUpdateHeldVfx(
+            FpgPresentationHandle handle,
+            GameObject instance,
+            Transform source,
+            float normalizedProgress)
+        {
+            if (source == null)
+            {
+                return Reject();
+            }
+
+            return TryUpdateHeldVfx(
+                handle,
+                instance,
+                source.position,
+                source.rotation,
+                source.lossyScale,
+                normalizedProgress);
+        }
+
+        public bool TryUpdateHeldVfx(
+            FpgPresentationHandle handle,
+            GameObject instance,
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 sourceScale,
+            float normalizedProgress)
+        {
+            if (instance == null
+                || !TryResolveVfx(
+                    handle,
+                    out FpgRegisteredPresentation entry))
+            {
+                return Reject();
+            }
+
+            Transform visual = instance.transform;
+            visual.SetPositionAndRotation(
+                position,
+                rotation * Quaternion.Euler(
+                    entry.Vfx.RotationOffsetEuler));
+            visual.localScale = Vector3.Scale(sourceScale, entry.Vfx.Scale);
+            instance.GetComponent<ChargeProgressVfxDriver>()
+                ?.SetProgress(normalizedProgress);
+            return true;
+        }
+
+        public bool TryReleaseHeldVfx(GameObject instance)
+        {
+            if (instance == null || vfxWorld == null)
+            {
+                return Reject();
+            }
+
+            instance.GetComponent<ChargeProgressVfxDriver>()?.ResetForPool();
+            return AcceptOrReject(vfxWorld.TryRelease(instance));
+        }
+
         public bool TryBorrowFlightVfx(
             FpgPresentationHandle handle,
             Vector3 position,

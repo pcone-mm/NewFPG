@@ -1,5 +1,7 @@
 # D0 G6 Windows Release 证据运行手册
 
+> 已归档：D0 G6、CombatLab 和对应构建入口已经退役。本文件只保留历史证据格式，不得执行其中的旧命令。当前 Windows Release 使用 `FPG.Demo.Editor.FpgWindowsReleaseBuild` 与 `FpgProductionSceneList`。
+
 本手册将当前已有的 D0 自动播放、截图和性能采样路径整理为可交接的人工执行步骤。它不替代 Unity 编译、Release 实机验证或主管试玩，也不授权 Agent 自行启动 Unity、运行测试、构建 Player 或代做体验判断。
 
 ## 当前前置条件
@@ -10,20 +12,20 @@
 | Spine | `Packages/manifest.json` 的 `file:../External/CZN/SpineRuntime-3.8`（相对 `Packages/` 解析）指向项目内 `External/CZN/SpineRuntime-3.8`，且包元数据为 `com.esotericsoftware.spine.spine-unity` 3.8.0 | 本地副本存在；许可归属、Unity 重新解析、编译和兼容性验证均待负责人确认 |
 | D0 视觉资源 | `Assets/FPGDemo/Presentation/D0Slice/Spine/` 的来源、授权范围和可分发性 | 待负责人确认；在确认或替换为原创/获授权资产前，不得构建或发布候选 Player |
 | Git 基线 | `Assets/FPGDemo` 与 D0 文档的基线归属已由负责人确认 | 待确认；不得用 reset/clean 处理现有工作区 |
-| D0 场景合同 | Stage 只安装环境与具名 SpawnPoint；Context 显式绑定 SpawnPoint、`D0EnemyEntityWorld`、敌人行为控制器、准星、射击视图、玩家 Prefab Socket provider、瞄准锚点、主相机和同 Host 的表现协调器 | 候选构建前必须以本版安装器回写、Unity 编译和定向合同测试为准；历史证据不覆盖本次所有权迁移 |
+| D0 场景合同 | 历史 Stage/Context 组合 | 仅作历史证据；当前候选不得复用，也不得通过安装器回写 |
 | 场景 | Windows Release 只显式使用 `Assets/FPGDemo/Scenes/Boot.unity` 与 `Assets/FPGDemo/Scenes/CombatLab.unity` | 由 G6 构建执行者确认 |
 | 分辨率与图形 API | Windows `1920×1080`、D3D11 Release | 执行时记录实际 Build Profile 与启动参数 |
 
-恢复前置条件后，先打开 Unity 并等待脚本编译完成；记录 Console 中的项目错误。构建前还必须确认：Scenario 的 `playerSpawnPointId` 和 Encounter 每个 SpawnSlot 的 `spawnPointId` 均能在 Stage 解析；每个 SpawnSlot 的 `D0EnemyDefinition.EntityPrefab` 通过视觉/gameplay 分支、投射锚点、弱点与命中体校验；玩家主射/副射 Socket 和瞬时表现来自角色技能表现配置。只有在负责人授权自动化验证时，才运行对应的 EditMode/PlayMode 用例并归档 Test Runner XML。
+恢复前置条件后，先打开 Unity 并等待脚本编译完成；记录 Console 中的项目错误。构建前还必须确认：Scenario 的 `playerSpawnPointId` 和 Encounter 每个 SpawnSlot 的 `spawnPointId` 均能在 Stage 解析；每个 SpawnSlot 的 `D0EnemyDefinition.EntityPrefab` 通过视觉/gameplay 分支、投射锚点、弱点与命中体校验；玩家技能 Socket 和瞬时表现来自角色技能表现配置。只有在负责人授权自动化验证时，才运行对应的 EditMode/PlayMode 用例并归档 Test Runner XML。
 
 ## 仅构建 G6 场景的 Release Player
 
-`Assets/FPGDemo/Editor/D0G6WindowsReleaseBuild.cs` 提供唯一的 G6 Windows x64 Release 构建入口。它显式将 `Boot.unity` 与 `CombatLab.unity` 传入 `BuildPipeline.BuildPlayer`，使用 `BuildTarget.StandaloneWindows64` 与 `BuildOptions.None`，不读取或修改项目全局场景列表，也不切换全局 Build Target。默认输出为 `Builds/FPGDemoD0/G6WindowsRelease/NewFPGD0.exe`。
+旧 `D0G6WindowsReleaseBuild` 已删除。当前 Windows x64 Release 入口是 `Assets/FPGDemo/Editor/FpgWindowsReleaseBuild.cs`，场景列表由 `FpgProductionSceneList` 生成，构建前只进行合同校验。
 
-获授权的构建执行者可在恢复依赖、确认编译通过后使用下面的 batch-mode 入口；构建日志路径须落在候选版本的证据目录中。
+获授权的构建执行者可在确认编译通过后使用当前 batch-mode 入口；构建日志路径须落在候选版本的证据目录中。
 
 ```text
-<UnityEditor.exe> -batchmode -quit -projectPath D:\Unity\NewFPG -executeMethod FPG.Demo.Editor.D0G6WindowsReleaseBuild.BuildWindows64ReleaseFromBatch -logFile <evidence-directory>\unity-build.log
+<UnityEditor.exe> -batchmode -quit -projectPath D:\Unity\NewFPG -executeMethod FPG.Demo.Editor.FpgWindowsReleaseBuild.BuildWindows64ReleaseFromBatch -logFile <evidence-directory>\unity-build.log
 ```
 
 该入口仅完成构建，不代替后续 Player 运行、性能采样或人工试玩。Editor 当前未运行，且本次 manifest/lock 变更后的 Package Manager 解析与 Unity 编译尚未执行，因此该入口尚未在 Unity 中编译或执行。
@@ -84,7 +86,7 @@ G6 的主观验收由主管组织 5 名试玩者各完成 3 次，不由 Agent �
 | --- | --- | --- | --- | --- | --- | --- |
 | H-G6-01 | 首次上手：准星与主射 | 正常 Release Player、默认 Fei 配置 | 瞄准并持续主射 | 操作与反馈可理解，无阻断问题 | 试玩者、日期、问题 | 待主管试玩/确认 |
 | H-G6-02 | 三类 Threat 识别 | 正常遭遇流程 | 识别快攻、可拦截弹幕、重型弱点/Break，并采用预期应对 | 第二次体验后至少 4/5 通过 | 5×3 表与录像时间点 | 待主管试玩/确认 |
-| H-G6-03 | 3C 循环 | 正常遭遇流程 | 完成瞄准→主射→副射 Break→缩回 | 第三次体验后至少 4/5 可独立完成 | 5×3 表与录像时间点 | 待主管试玩/确认 |
+| H-G6-03 | 3C 循环 | 正常遭遇流程 | 完成瞄准→射击→Break→缩回 | 第三次体验后至少 4/5 可独立完成 | 5×3 表与录像时间点 | 待主管试玩/确认 |
 | H-G6-04 | 暂停与 F5 重开 | 正常 Release Player | 触发暂停、恢复和 F5 重开 | 状态恢复、准星重置与池清理符合场景合同 | 试玩记录与 Player.log | 待主管试玩/确认 |
 
 ## 已知边界
@@ -92,6 +94,6 @@ G6 的主观验收由主管组织 5 名试玩者各完成 3 次，不由 Agent �
 - 已实现项目级 `Battle/Pause.performed` 的早期控制路径：仅当 Input System 运行在 `ProcessEventsInDynamicUpdate` 时，回调才在常规 `MonoBehaviour.Update` 前提交 Pause/Resume，并立即同步 Actor2DPresenter 与 CZN 手动 Spine 视图；Host 随后跳过该控制帧的普通输入采样和模拟，避免同帧二次切换或恢复即开火。若同帧发现 F5，Host 仍优先执行重开。固定/手动 Input Update 或原始设备回退继续使用既有轮询路径，不声称输入帧零推进。
 - 该路径尚无 Unity 编译、InputSystem device injection 或 Windows Player 实证；验收时必须在 Dynamic Input Update 下记录 Escape 输入帧的 Actor Skeleton `timeScale`/track time，并覆盖暂停、恢复、Esc+F5、输入 override、失焦和 F5 清理。
 - 已提供 `D0G6WindowsReleaseBuild.BuildWindows64ReleaseFromBatch`，默认显式构建 Boot 与 CombatLab；它尚待当前 manifest/lock 的 Package Manager 解析、Unity 编译与一次真实构建验证，不得在此之前描述为已验证交付包。
-- D0 authored scenario 的所有权合同为：Stage 只提供环境和 SpawnPoint；Scenario 用 `playerSpawnPointId` 选择玩家 gameplay 出生点；Encounter SpawnSlot 决定敌人、SpawnPoint、生成 Tick 与姿态策略；`D0EnemyDefinition.EntityPrefab` 拥有视觉根、gameplay 根、投射锚点、弱点与命中体；玩家枪口 Socket 和主射/副射瞬时表现属于角色技能表现。Host 在创建 Session 前必须检查这些引用以及 `D0EnemyEntityWorld`、行为控制器、准星、射击视图、主相机和表现协调器的同 Host 合同。场景不得保留临时枪口、副射目标代理或角色/怪物硬编码摆位；缺少绑定必须阻止初始化。本迁移必须由当前候选版本重新取得 Unity 安装、编译和定向测试证据，不能沿用旧 SceneContract 通过记录。
+- D0 authored scenario 的所有权合同为：Stage 只提供环境和 SpawnPoint；Scenario 用 `playerSpawnPointId` 选择玩家 gameplay 出生点；Encounter SpawnSlot 决定敌人、SpawnPoint、生成 Tick 与姿态策略；`D0EnemyDefinition.EntityPrefab` 拥有视觉根、gameplay 根、投射锚点、弱点与命中体；玩家技能 Socket 和瞬时表现属于角色技能表现。Host 在创建 Session 前必须检查这些引用以及 `D0EnemyEntityWorld`、行为控制器、准星、射击视图、主相机和表现协调器的同 Host 合同。场景不得保留临时枪口、技能目标代理或角色/怪物硬编码摆位；缺少绑定必须阻止初始化。本迁移必须由当前候选版本重新取得 Unity 安装、编译和定向测试证据，不能沿用旧 SceneContract 通过记录。
 - D0 视觉资产来源/发布隔离审计见 [D0 资源来源与发布隔离审计](D0_Asset_Provenance_Audit.zh-CN.md)。这项门禁与 Spine Runtime 许可、Git 基线并列为构建前置条件；未确认前，G6 状态保持“待执行”。
 - 本手册仅描述项目内的原创 D0 程序实现和证据路径，不涉及解包、绕过保护、提取或复用第三方游戏的代码、资源或数据；来源待确认的视觉资源不构成可发布交付物。

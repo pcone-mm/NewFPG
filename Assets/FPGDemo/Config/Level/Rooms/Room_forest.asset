@@ -16,7 +16,9 @@ MonoBehaviour:
   displayName: Forest
   designerNotes: Formal forest combat room authored for the Boot to FormalRoom run
     flow.
-  environmentPrefab: {fileID: 7290967159694160968, guid: 0558a611c7ab9c94b92b722347fbd409, type: 3}
+  artScene:
+    sceneGuid: 7de16d1db687374429ee606861571e00
+    scenePath: Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest.unity
   mainGroup: {fileID: 11400000, guid: d814bbfb2d3a02f48a22d86a71c75a59, type: 2}
   tags:
   - {fileID: 11400000, guid: 0eab32ab239bbc149b531942e59c03a6, type: 2}

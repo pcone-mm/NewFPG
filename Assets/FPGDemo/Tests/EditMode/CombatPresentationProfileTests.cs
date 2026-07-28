@@ -80,11 +80,25 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 primary.ActivePresentationTracks[0].VfxEvents[0].OwnerSocketId,
                 Is.EqualTo(D0ActorSocketRegistry.PrimaryMuzzleId));
-            FpgSkillSequenceDefinition secondary = weapon.SecondarySkill.Sequences
-                .Single(item => item.Kind == FpgSkillSequenceKind.Release);
-            Assert.That(secondary.MainAnimation, Is.EqualTo("defense_play"));
+            FpgSkillSequenceDefinition secondaryExecute =
+                weapon.SecondarySkill.Sequences
+                    .Single(item => item.Kind == FpgSkillSequenceKind.Execute);
             Assert.That(
-                secondary.ActivePresentationTracks[0].VfxEvents[0].OwnerSocketId,
+                secondaryExecute.MainAnimation,
+                Is.EqualTo("defense_play"));
+            Assert.That(
+                secondaryExecute.ActivePresentationTracks[0]
+                    .VfxEvents[0].OwnerSocketId,
+                Is.EqualTo(D0ActorSocketRegistry.SecondaryMuzzleId));
+            FpgSkillSequenceDefinition secondaryRelease =
+                weapon.SecondarySkill.Sequences
+                    .Single(item => item.Kind == FpgSkillSequenceKind.Release);
+            Assert.That(
+                secondaryRelease.MainAnimation,
+                Is.EqualTo("u4_attack_play"));
+            Assert.That(
+                secondaryRelease.ActivePresentationTracks[0]
+                    .VfxEvents[0].OwnerSocketId,
                 Is.EqualTo(D0ActorSocketRegistry.SecondaryMuzzleId));
             FpgSkillSequenceDefinition reload = weapon.ReloadSkill.Sequences
                 .Single(item => item.Kind == FpgSkillSequenceKind.Execute);

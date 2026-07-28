@@ -239,17 +239,8 @@ namespace FPG.Demo.Run
     public enum FpgEnemyAttackPayloadKind
     {
         Threat = 0,
-        Summon
-    }
-
-    /// <summary>
-    /// Authoritative owner result applied only after the encounter Spawn Queue
-    /// acknowledges a summon. Retry and rejection never consume the owner.
-    /// </summary>
-    public enum FpgSummonOwnerOutcome
-    {
-        RemainAlive = 0,
-        DieAfterSuccessfulSummon = 1
+        Summon,
+        SelfDestructOwner
     }
 
     /// <summary>
@@ -298,17 +289,13 @@ namespace FPG.Demo.Run
         public FpgFormalSummonPayload(
             FpgSummonRequest request,
             int maxSummonsPerOwner,
-            int releaseDelayTicks = 0,
-            FpgSummonOwnerOutcome ownerOutcome = FpgSummonOwnerOutcome.RemainAlive)
+            int releaseDelayTicks = 0)
         {
             if (!request.IsValid
                 || maxSummonsPerOwner < 0
                 || (request.OccupancyMode == FpgSummonOccupancyMode.AdditionalEntity
                     && maxSummonsPerOwner <= 0)
-                || releaseDelayTicks < 0
-                || !Enum.IsDefined(typeof(FpgSummonOwnerOutcome), ownerOutcome)
-                || (request.OccupancyMode == FpgSummonOccupancyMode.ReplaceOwner)
-                    != (ownerOutcome == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon))
+                || releaseDelayTicks < 0)
             {
                 throw new ArgumentException("Formal summon payload is invalid.", nameof(request));
             }
@@ -326,48 +313,70 @@ namespace FPG.Demo.Run
                     request.PlacementMode);
             MaxSummonsPerOwner = maxSummonsPerOwner;
             ReleaseDelayTicks = releaseDelayTicks;
-            OwnerOutcome = ownerOutcome;
         }
 
         public FpgSummonRequest Request { get; }
         public int MaxSummonsPerOwner { get; }
         public int ReleaseDelayTicks { get; }
-        public FpgSummonOwnerOutcome OwnerOutcome { get; }
         public bool IsValid => Request.IsValid
             && Request.MaxSummonsPerOwner == MaxSummonsPerOwner
             && MaxSummonsPerOwner >= 0
             && (Request.OccupancyMode != FpgSummonOccupancyMode.AdditionalEntity
                 || MaxSummonsPerOwner > 0)
-            && ReleaseDelayTicks >= 0
-            && Enum.IsDefined(typeof(FpgSummonOwnerOutcome), OwnerOutcome)
-            && (Request.OccupancyMode == FpgSummonOccupancyMode.ReplaceOwner)
-                == (OwnerOutcome == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon);
+            && ReleaseDelayTicks >= 0;
     }
 
     /// <summary>
     /// Immutable attack payload submitted by the Unity definition adapter.
     /// Threat payloads reuse the existing ThreatRuntime state machine; summon
-    /// payloads use the same generic FpgSummonRequest for every enemy identity.
+    /// payloads use the same generic FpgSummonRequest for every enemy identity,
+    /// while owner self-destruct optionally binds to a summon schedule.
     /// </summary>
     public readonly struct FpgEnemyAttackPayload
     {
         private FpgEnemyAttackPayload(
             FpgEnemyAttackPayloadKind kind,
             ThreatDefinition threat,
-            FpgFormalSummonPayload summon)
+            FpgFormalSummonPayload summon,
+            long selfDestructDependencyScheduleSequence)
         {
             Kind = kind;
             Threat = threat;
             Summon = summon;
+            SelfDestructDependencyScheduleSequence =
+                selfDestructDependencyScheduleSequence;
         }
 
         public FpgEnemyAttackPayloadKind Kind { get; }
         public ThreatDefinition Threat { get; }
         public FpgFormalSummonPayload Summon { get; }
+        public long SelfDestructDependencyScheduleSequence { get; }
+        public bool HasSelfDestructDependency =>
+            Kind == FpgEnemyAttackPayloadKind.SelfDestructOwner
+            && SelfDestructDependencyScheduleSequence >= 0L;
 
-        public bool IsValid => Kind == FpgEnemyAttackPayloadKind.Threat
-            ? Threat.DefinitionId > 0 && Threat.Payload.IsValid
-            : Kind == FpgEnemyAttackPayloadKind.Summon && Summon.IsValid;
+        public bool IsValid
+        {
+            get
+            {
+                switch (Kind)
+                {
+                    case FpgEnemyAttackPayloadKind.Threat:
+                        return Threat.DefinitionId > 0
+                            && Threat.Payload.IsValid;
+
+                    case FpgEnemyAttackPayloadKind.Summon:
+                        return Summon.IsValid;
+
+                    case FpgEnemyAttackPayloadKind.SelfDestructOwner:
+                        return SelfDestructDependencyScheduleSequence
+                            >= -1L;
+
+                    default:
+                        return false;
+                }
+            }
+        }
 
         public static FpgEnemyAttackPayload ForThreat(ThreatDefinition threat)
         {
@@ -379,7 +388,8 @@ namespace FPG.Demo.Run
             return new FpgEnemyAttackPayload(
                 FpgEnemyAttackPayloadKind.Threat,
                 threat,
-                default(FpgFormalSummonPayload));
+                default(FpgFormalSummonPayload),
+                -1L);
         }
 
         public static FpgEnemyAttackPayload ForSummon(FpgFormalSummonPayload summon)
@@ -392,7 +402,25 @@ namespace FPG.Demo.Run
             return new FpgEnemyAttackPayload(
                 FpgEnemyAttackPayloadKind.Summon,
                 default(ThreatDefinition),
-                summon);
+                summon,
+                -1L);
+        }
+
+        public static FpgEnemyAttackPayload ForSelfDestructOwner(
+            long dependencyScheduleSequence)
+        {
+            if (dependencyScheduleSequence < -1L)
+            {
+                throw new ArgumentException(
+                    "Formal self-destruct dependency is invalid.",
+                    nameof(dependencyScheduleSequence));
+            }
+
+            return new FpgEnemyAttackPayload(
+                FpgEnemyAttackPayloadKind.SelfDestructOwner,
+                default(ThreatDefinition),
+                default(FpgFormalSummonPayload),
+                dependencyScheduleSequence);
         }
     }
 
@@ -513,7 +541,8 @@ namespace FPG.Demo.Run
                 || schedule.ScheduleSequence < 0
                 || spawnSequence < 0
                 || !payload.IsValid
-                || !spatialContext.IsValid
+                || (payload.Kind != FpgEnemyAttackPayloadKind.SelfDestructOwner
+                    && !spatialContext.IsValid)
                 || (payload.Kind == FpgEnemyAttackPayloadKind.Summon
                     && payload.Summon.Request.OwnerRuntimeId != schedule.OwnerRuntimeId))
             {

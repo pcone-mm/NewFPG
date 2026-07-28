@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using FPG.Demo.Combat;
@@ -8,6 +9,7 @@ using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace FPG.Demo.Tests.EditMode
 {
@@ -283,6 +285,276 @@ namespace FPG.Demo.Tests.EditMode
             {
                 Object.DestroyImmediate(owner);
             }
+        }
+
+        [Test]
+        public void PostActionAnimationCancelKeepsCommittedFlightAndImpactAlive()
+        {
+            const string secondaryPath =
+                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset";
+            const string profilePath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
+            GameObject worldOwner = new GameObject("CommittedProjectileVfxWorld");
+            GameObject bridgeOwner = new GameObject("CommittedProjectileBridge");
+            GameObject actorOwner = new GameObject("CommittedProjectileActor");
+            try
+            {
+                FpgPlayerSkillDefinition secondary =
+                    AssetDatabase.LoadAssetAtPath<FpgPlayerSkillDefinition>(
+                        secondaryPath);
+                CombatPresentationProfile profile =
+                    AssetDatabase.LoadAssetAtPath<CombatPresentationProfile>(
+                        profilePath);
+                Assert.That(secondary, Is.Not.Null, secondaryPath);
+                Assert.That(profile, Is.Not.Null, profilePath);
+                Assert.That(
+                    secondary.TryCompile(
+                        out FpgCompiledPlayerSkillDefinition compiled,
+                        out string compileError),
+                    Is.True,
+                    compileError);
+                Assert.That(
+                    compiled.Timeline.TryGetSequence(
+                        FpgSkillSequenceKind.Release,
+                        out FpgCompiledSkillSequence release),
+                    Is.True);
+                Assert.That(
+                    compiled.Timeline.TryGetSequence(
+                        FpgSkillSequenceKind.Cancel,
+                        out FpgCompiledSkillSequence cancel),
+                    Is.True);
+
+                FpgCompiledSkillActionPresentation projectilePresentation =
+                    default(FpgCompiledSkillActionPresentation);
+                FpgCompiledSkillEvent projectileEvent =
+                    default(FpgCompiledSkillEvent);
+                for (int index = 0; index < release.ActionPresentations.Count;
+                    index++)
+                {
+                    FpgCompiledSkillActionPresentation candidate =
+                        release.ActionPresentations[index];
+                    if (candidate.ActionKind
+                        == FpgSkillActionKind.LaunchProjectile)
+                    {
+                        projectilePresentation = candidate;
+                        break;
+                    }
+                }
+                for (int index = 0; index < release.Events.Count; index++)
+                {
+                    FpgCompiledSkillEvent candidate = release.Events[index];
+                    if (candidate.Kind == FpgSkillEventKind.GameplayAction
+                        && candidate.ActionKind
+                            == FpgSkillActionKind.LaunchProjectile)
+                    {
+                        projectileEvent = candidate;
+                        break;
+                    }
+                }
+                Assert.That(projectilePresentation.IsValid, Is.True);
+                Assert.That(projectilePresentation.FlightVfx.IsValid, Is.True);
+                Assert.That(projectilePresentation.Collision.HasAny, Is.True);
+                Assert.That(projectileEvent.EventId, Is.GreaterThan(0));
+
+                D0CombatVfxWorld vfxWorld =
+                    worldOwner.AddComponent<D0CombatVfxWorld>();
+                FpgSkillPresentationWorld presentationWorld =
+                    worldOwner.AddComponent<FpgSkillPresentationWorld>();
+                Assert.That(
+                    presentationWorld.TryConfigure(
+                        vfxWorld,
+                        null,
+                        out string configureError),
+                    Is.True,
+                    configureError);
+                Assert.That(
+                    presentationWorld.TryPrepare(
+                        new FpgSkillTimelineDefinition[] { secondary },
+                        profile,
+                        out string prepareError),
+                    Is.True,
+                    prepareError);
+                Assert.That(
+                    presentationWorld.TryBorrowFlightVfx(
+                        projectilePresentation.FlightVfx,
+                        Vector3.zero,
+                        Quaternion.identity,
+                        out GameObject flightInstance),
+                    Is.True);
+                Assert.That(flightInstance, Is.Not.Null);
+                Assert.That(flightInstance.activeSelf, Is.True);
+                Assert.That(vfxWorld.ActiveInstanceCount, Is.EqualTo(1));
+
+                FpgFormalPlayerPresentationBridge bridge =
+                    bridgeOwner.AddComponent<FpgFormalPlayerPresentationBridge>();
+                Actor2DPresenter actor =
+                    actorOwner.AddComponent<Actor2DPresenter>();
+                SetPrivateField(bridge, "actorPresenter", actor);
+                SetPrivateField(bridge, "active", true);
+                FieldInfo visualsField = typeof(FpgFormalPlayerPresentationBridge)
+                    .GetField(
+                        "playerProjectileVisuals",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(visualsField, Is.Not.Null);
+                Type slotType = visualsField.FieldType.GetElementType();
+                Assert.That(slotType, Is.Not.Null);
+                Array visuals = Array.CreateInstance(slotType, 1);
+                object slot = Activator.CreateInstance(slotType);
+                SetField(slot, "IsUsed", true);
+                SetField(slot, "Handle", projectilePresentation.FlightVfx);
+                SetField(slot, "Instance", flightInstance);
+                visuals.SetValue(slot, 0);
+                visualsField.SetValue(bridge, visuals);
+
+                FpgFormalPlayerSkillSequenceEvent canceledEnd =
+                    CreateCanceledEndEvent(cancel);
+                InvokePrivate(
+                    bridge,
+                    "HandleSkillSequenceAdvanced",
+                    canceledEnd);
+                InvokePrivate(bridge, "ConsumeSkillSequenceEvents");
+
+                Array retainedVisuals = (Array)visualsField.GetValue(bridge);
+                object retainedSlot = retainedVisuals.GetValue(0);
+                Assert.That((bool)GetField(retainedSlot, "IsUsed"), Is.True);
+                Assert.That(
+                    GetField(retainedSlot, "Instance"),
+                    Is.SameAs(flightInstance));
+                Assert.That(flightInstance.activeSelf, Is.True);
+                Assert.That(vfxWorld.ActiveInstanceCount, Is.EqualTo(1));
+
+                FixedFpgSkillImpactPresentationStream impactStream =
+                    new FixedFpgSkillImpactPresentationStream(4);
+                FpgSkillImpactPresentationConsumer impactConsumer =
+                    new FpgSkillImpactPresentationConsumer();
+                Assert.That(
+                    impactConsumer.TryPrepare(
+                        impactStream,
+                        presentationWorld,
+                        1,
+                        out string consumerError),
+                    Is.True,
+                    consumerError);
+                FpgSkillImpactCorrelation correlation =
+                    new FpgSkillImpactCorrelation(
+                        new RuntimeId(1L),
+                        new SkillExecutionId(42L),
+                        projectileEvent.EventId);
+                Assert.That(
+                    impactConsumer.TryRegister(
+                        correlation,
+                        FpgSkillImpactPresentationGroupKind.Projectile,
+                        projectilePresentation.Collision),
+                    Is.True);
+                Assert.That(
+                    impactStream.TryRecordContact(
+                        new FpgSkillImpactContact(
+                            correlation,
+                            FpgSkillImpactPresentationGroupKind.Projectile,
+                            new TickIndex(60L),
+                            new AttackId(700L),
+                            new ProjectileId(701L),
+                            new ImpactId(702L),
+                            new RuntimeId(703L),
+                            FpgSkillImpactContactKind.TargetImpact,
+                            new SpatialVectorKey(1000, 2000, 0),
+                            HitPart.Body,
+                            0)),
+                    Is.True);
+
+                impactConsumer.Consume();
+
+                Assert.That(impactConsumer.FaultCount, Is.Zero);
+                Assert.That(vfxWorld.ActiveInstanceCount, Is.EqualTo(2));
+                Assert.That(flightInstance.activeSelf, Is.True);
+                Assert.That(
+                    impactStream.TryRecordGroupCompletion(
+                        new FpgSkillImpactGroupCompletion(
+                            correlation,
+                            FpgSkillImpactPresentationGroupKind.Projectile,
+                            new TickIndex(60L),
+                            new AttackId(700L))),
+                    Is.True);
+                impactConsumer.Consume();
+                Assert.That(impactConsumer.FaultCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(bridgeOwner);
+                Object.DestroyImmediate(actorOwner);
+                Object.DestroyImmediate(worldOwner);
+            }
+        }
+
+        private static FpgFormalPlayerSkillSequenceEvent
+            CreateCanceledEndEvent(FpgCompiledSkillSequence cancel)
+        {
+            ConstructorInfo constructor = typeof(FpgPlayerSkillSequenceFrame)
+                .GetConstructor(
+                    BindingFlags.Instance | BindingFlags.NonPublic,
+                    null,
+                    new[]
+                    {
+                        typeof(FpgPlayerSkillSlot),
+                        typeof(FpgCompiledSkillSequence),
+                        typeof(SkillExecutionId),
+                        typeof(TickIndex),
+                        typeof(TickIndex),
+                        typeof(FpgSkillExecutionState)
+                    },
+                    null);
+            Assert.That(constructor, Is.Not.Null);
+            FpgPlayerSkillSequenceFrame frame =
+                (FpgPlayerSkillSequenceFrame)constructor.Invoke(
+                    new object[]
+                    {
+                        FpgPlayerSkillSlot.Secondary,
+                        cancel,
+                        new SkillExecutionId(99L),
+                        new TickIndex(53L),
+                        new TickIndex(54L),
+                        FpgSkillExecutionState.Canceled
+                    });
+            FpgFormalPlayerSkillSequenceEvent result =
+                default(FpgFormalPlayerSkillSequenceEvent);
+            FpgFormalPlayerPresentationSource source =
+                new FpgFormalPlayerPresentationSource();
+            source.SkillSequenceAdvanced += value => result = value;
+            source.PublishSkillSequence(frame, "u4_attack_end");
+            Assert.That(result.State, Is.EqualTo(FpgSkillExecutionState.Canceled));
+            return result;
+        }
+
+        private static object InvokePrivate(
+            object target,
+            string methodName,
+            params object[] arguments)
+        {
+            MethodInfo method = target.GetType().GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, methodName);
+            return method.Invoke(target, arguments);
+        }
+
+        private static void SetField(object target, string name, object value)
+        {
+            FieldInfo field = target.GetType().GetField(
+                name,
+                BindingFlags.Instance | BindingFlags.Public
+                    | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, name);
+            field.SetValue(target, value);
+        }
+
+        private static object GetField(object target, string name)
+        {
+            FieldInfo field = target.GetType().GetField(
+                name,
+                BindingFlags.Instance | BindingFlags.Public
+                    | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, name);
+            return field.GetValue(target);
         }
 
         private static void SetPrivateField(

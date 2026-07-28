@@ -2,11 +2,11 @@
 
 ## 目标与适用范围
 
-本配置控制 Fei 在 D0 CombatLab 中的角色专属瞄准指示器视觉：
+本配置控制 Fei 在 FormalRoom 中的角色专属瞄准指示器视觉；类型名中的 D0 前缀仅为序列化兼容：
 
 - 常态显示淡青色圆环。
 - 玩家进入权威探身／战斗瞄准姿态时，圆环提亮并出现低透明光晕。
-- 主射或副射成功提交后，圆环短暂放大并回落。
+- 任一射击成功提交后，圆环短暂放大并回落。
 - 攻击有效命中战斗目标或可拦截投射物后，圆环外围出现红色四段命中弧并向外淡出。
 
 它只控制 UI 表现，不改变虚拟光标位置、输入、灵敏度、散布、攻击射线、命中盒、伤害、弹药或战斗状态。
@@ -15,44 +15,43 @@
 
 主要配置资产：
 
-- Fei 表现资产：`Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_Presentation.asset`
-- Fei 角色资产：`Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei.asset`
-- CombatLab 遭遇：`Assets/FPGDemo/Config/D0Slice/Definitions/CombatLab/D0_CombatLab_FeiVsBurstbug.asset`
-- D0 场景总入口：`Assets/FPGDemo/Config/BattleScenarioConfig.asset`
-- 兼容回退资产：`Assets/FPGDemo/Config/D0Slice/CombatPresentationProfile.asset`
-- 目标场景：`Assets/FPGDemo/Scenes/CombatLab.unity`
+- Fei 表现资产：`Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Presentation.asset`
+- Fei 角色目录：`Assets/FPGDemo/Config/FormalEncounter/Characters/`
+- 正式 HUD 配置：`Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset`
+- 正式场景：`Assets/FPGDemo/Scenes/FormalRoom.unity`
 
-在 Inspector 中打开 `D0_Fei_Presentation.asset`，展开“玩家表现 → 玩家动画与资源 → 角色瞄准指示器”。当前 authored D0 场景以 Fei 表现资产为准；只修改兼容回退资产不会覆盖 Fei 的角色专属样式。
+在 Inspector 中打开 `FPG_Fei_Presentation.asset`，展开“玩家表现 → 玩家动画与资源 → 角色瞄准指示器”。该 committed 资产是角色专属样式的权威来源。
 
 ## 引用关系与运行时数据流
 
 ```text
-BattleScenarioConfig
-  → D0_CombatLab_FeiVsBurstbug
-  → D0_Fei
-  → D0_Fei_Presentation
+FPG_PlayableCharacterCatalog
+  → FPG_Fei
+  → FPG_Fei_Presentation
   → player.aimIndicator
 ```
 
-安装器通过 `D0ScenarioPresentationResolver` 解析当前玩家表现资产，并把它绑定到 `D0AimReticle` 上的 `PlayerAimIndicatorPresenter`。没有 authored scenario 的兼容场景才回退到 `CombatPresentationProfile.Player`。
+FormalRoom 运行时从 `FPG_PlayableCharacterCatalog` 解析当前玩家表现资产，并绑定到正式准星表现组件；场景和 Prefab 绑定均为 authored 数据，不由生成器补齐。
+
+本文件只定义通用准星样式。技能专属状态和反馈条件不在此重复定义；正式运行规范统一见 [FPG Formal Encounter 运行合同](../../Assets/FPGDemo/Docs/Workflow/FPG_Formal_Encounter_Runtime_Contract.zh-CN.md#fei-副射唯一规范)。
 
 状态来源固定如下：
 
-- 瞄准层：`BattleSession.PlayerExposureState == Exposed`。它代表权威探身／战斗姿态，包含按住瞄准、主射、有效副射输入或副射蓄力，不是 Presenter 回读的裸输入。
+- 瞄准层：来自 Formal 玩家表现快照的权威探身／战斗姿态，不由 Presenter 回读裸输入。
 - 射击层：`BattleSessionHost.PlayerShotPresentationFeed`。只有空间事务成功提交的射击才触发；被拒绝的射击不触发。
 - 命中层：`BattleSession.SelectedAttackHits`。按 `AttackId` 聚合，一发多 pellet 或同一攻击命中多个目标时只提示一次。
 - 暂停：保留暂停前的瞄准层，并冻结射击／命中反馈计时。
 
-## 制作与安装步骤
+## 制作与验证步骤
 
-1. 选择 `D0_Fei_Presentation.asset`，确认“表现角色类型”为“玩家”。
+1. 选择 `FPG_Fei_Presentation.asset`，确认“表现角色类型”为“玩家”。
 2. 展开“角色瞄准指示器”，按“基础圆环 / 射击反馈 / 命中反馈”调整字段。
 3. 保存资产。
-4. 执行菜单 `FPG Demo/D0 2.5D/Validate Planner Configuration`。
-5. 首次加入组件、改变场景绑定或安装器逻辑后，执行 `FPG Demo/D0 2.5D/Install or Update Combat Slice`。
-6. 仅修改已绑定资产中的颜色、尺寸或时长时，不需要重建场景；重新进入运行即可读取配置。
+4. 检查 Unity 编译、Console、Formal HUD 与玩家表现合同测试。
+5. 首次加入组件或改变场景绑定时，在目标 Prefab/Scene Inspector 中显式修改并保存；不运行场景生成器。
+6. 仅修改已绑定资产中的颜色、尺寸或时长时，重新进入运行即可读取配置。
 
-不要手改 `CombatLab.unity` YAML。场景组件、排序和旧十字节点的启停由 D0 安装器维护。
+不要手改 `FormalRoom.unity` YAML。场景组件、排序和旧十字节点必须在 Unity Editor 中显式维护。
 
 ## 字段说明
 
@@ -81,7 +80,7 @@ hitMarkerRadius - hitMarkerThickness / 2
 shotRadius + ringThickness / 2
 ```
 
-Fei 默认最大外缘约为 `27 + 4 + 2.6 / 2 = 32.3 px`，位于当前 `72 × 72 px` 指示器根范围内。若要显著放大未来角色的样式，需要同时评估场景安装器维护的根尺寸。
+Fei 默认最大外缘约为 `27 + 4 + 2.6 / 2 = 32.3 px`，位于当前 `72 × 72 px` 指示器根范围内。若要显著放大未来角色的样式，需要同时评估 authored HUD 根尺寸。
 
 ## Fei 标准示例与预期表现
 
@@ -102,15 +101,15 @@ Fei 默认最大外缘约为 `27 + 4 + 2.6 / 2 = 32.3 px`，位于当前 `72 × 
 - `D0AimReticle` 的 Canvas、排序层、场景组件引用和执行顺序。
 - 虚拟光标安全区、位置、输入灵敏度、攻击查询距离和命中盒。
 - 射击／命中触发来源及 `AttackId` 聚合规则。
-- 旧 `Horizontal` / `Vertical` 十字节点由安装器禁用，不作为样式选项。
+- 旧 `Horizontal` / `Vertical` 十字节点在 authored HUD 中保持禁用，不作为样式选项。
 
 ## 验收与交接
 
-最小技术检查包括：Fei 表现资产 `TryValidate` 通过、Unity 编译无错误、D0 安装器成功、`BattleSceneContext` 场景契约通过。视觉、节奏和手感由主管在 CombatLab 中确认。
+最小技术检查包括：Fei 表现资产 `TryValidate` 通过、Unity 编译无错误、正式场景合同通过。视觉、节奏和手感由主管在 FormalRoom 中确认。
 
 | 编号 | 测试项 | 前置条件 | 主管操作 | 通过标准 | 证据／记录栏 | 状态 |
 |---|---|---|---|---|---|---|
 | H-01 | 常态圆环 | 进入 CombatLab，未探身 | 观察并移动虚拟光标 | 指示器是淡青圆环，无旧十字残留 | 试玩人、日期、备注 | 待主管试玩／确认 |
 | H-02 | 瞄准层 | 玩家可正常探身 | 按住瞄准或进入主射探身姿态 | 圆环提亮并出现低透明光晕；暂停后样式不跳变 | 试玩人、日期、备注 | 待主管试玩／确认 |
-| H-03 | 射击层 | 武器可成功释放 | 主射与副射各成功释放一次 | 每次成功射击圆环明显放大后回落；被拒绝射击不闪 | 试玩人、日期、备注 | 待主管试玩／确认 |
+| H-03 | 射击层 | 武器可成功释放 | 完成两次成功射击，并触发一次被拒绝射击 | 每次成功射击圆环明显放大后回落；被拒绝射击不闪 | 试玩人、日期、备注 | 待主管试玩／确认 |
 | H-04 | 命中层 | 敌人或可拦截投射物可命中 | 分别制造命中与落空 | 命中时外围出现红色四段弧；落空时没有红弧 | 试玩人、日期、备注 | 待主管试玩／确认 |

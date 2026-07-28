@@ -7,9 +7,21 @@
             <ui:VisualElement class="toolbar-spacer" />
             <uie:ToolbarButton name="create-room-button" text="新建" tooltip="创建房间资产" />
             <uie:ToolbarButton name="duplicate-room-button" text="复制" tooltip="复制房间并生成新房间 ID" />
-            <uie:ToolbarButton name="save-room-button" text="保存" tooltip="保存当前房间资产" />
+            <uie:ToolbarButton name="save-room-button" text="保存关卡" tooltip="保存 RoomDefinition 与当前关卡美术场景" />
             <uie:ToolbarButton name="frame-room-button" text="聚焦" tooltip="在 SceneView 中聚焦所选标记或房间" />
         </uie:Toolbar>
+        <ui:VisualElement class="camera-preview-toolbar">
+            <ui:Label text="&#x6B63;&#x5F0F;&#x955C;&#x5934;" class="toolbar-label" />
+            <uie:ObjectField name="camera-template-field" label="&#x6A21;&#x677F;" class="camera-template-field" />
+            <ui:Button name="apply-camera-preview-button" text="&#x5E94;&#x7528;&#x9884;&#x89C8;" tooltip="&#x5728; 16:9 Game View &#x9884;&#x89C8;&#x5F53;&#x524D;&#x623F;&#x95F4;" />
+            <ui:Button name="stop-camera-preview-button" text="&#x5173;&#x95ED;&#x9884;&#x89C8;" tooltip="&#x79FB;&#x9664;&#x4E34;&#x65F6;&#x955C;&#x5934;&#x5E76;&#x6062;&#x590D; Game View &#x753B;&#x5E45;" />
+            <ui:Label name="camera-preview-state-label" text="&#x672A;&#x542F;&#x7528;" class="camera-preview-state" />
+        </ui:VisualElement>
+        <ui:VisualElement class="cover-position-toolbar">
+            <ui:Label text="&#x89D2;&#x8272;&#x63A9;&#x4F53;" class="toolbar-label" />
+            <uie:Vector3Field name="cover-position-field" label="&#x5C40;&#x90E8;&#x4F4D;&#x7F6E;" class="cover-position-field" tooltip="X &#x63A7;&#x5236;&#x6A2A;&#x5411;&#xFF0C;Y &#x63A7;&#x5236;&#x9AD8;&#x5EA6;&#xFF0C;Z &#x63A7;&#x5236;&#x753B;&#x9762;&#x6DF1;&#x5EA6;&#x3002;&#x5F53;&#x524D;&#x955C;&#x5934;&#x5728;&#x8D1F; Z &#x65B9;&#x5411;&#xFF0C;&#x589E;&#x5927; Z &#x53EF;&#x907F;&#x514D;&#x63A9;&#x4F53;&#x906E;&#x6321;&#x89D2;&#x8272;&#x3002;" />
+            <ui:Button name="reset-cover-position-button" text="&#x91CD;&#x7F6E;" tooltip="&#x6062;&#x590D;&#x9ED8;&#x8BA4;&#x63A9;&#x4F53;&#x4F4D;&#x7F6E;" />
+        </ui:VisualElement>
 
         <ui:VisualElement class="content-split">
             <ui:VisualElement class="browser-pane">

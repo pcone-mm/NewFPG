@@ -286,7 +286,8 @@ namespace FPG.Demo.Unity
     /// </summary>
     public sealed class FpgUnityEncounterEntityPort :
         IFpgEncounterEntityPort,
-        IFpgFormalEnemyPresentationPort
+        IFpgFormalEnemyPresentationPort,
+        IFpgFormalEnemyMotionAuthority
     {
         private const int DefaultPresentationLeaseTicks = 12;
 
@@ -595,6 +596,122 @@ namespace FPG.Demo.Unity
             IncrementEnemyPresentationFailureCount();
             return false;
         }
+        public DomainResult AdvanceMotion(TickIndex tick)
+        {
+            if (!tick.IsValid)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            for (int index = 0; index < bindings.Length; index++)
+            {
+                RuntimeBinding binding = bindings[index];
+                if (!binding.RuntimeId.IsValid)
+                {
+                    continue;
+                }
+
+                if (!(binding.Binder is IFpgFormalEnemyMotionView view))
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.InvalidDefinition);
+                }
+
+                DomainResult advanced;
+                try
+                {
+                    advanced = view.AdvanceFormalMotion(tick);
+                }
+                catch (Exception)
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.InvariantFault);
+                }
+
+                if (!advanced.IsSuccess)
+                {
+                    return advanced;
+                }
+            }
+
+            return DomainResult.Success;
+        }
+
+        public DomainResult StartSkillMotion(
+            in FpgFormalEnemySkillSequenceFrame frame)
+        {
+            if (!frame.OwnerRuntimeId.IsValid
+                || frame.SpawnSequence < 0
+                || frame.Definition == null
+                || !frame.StartTick.IsValid
+                || frame.Tick != frame.StartTick
+                || frame.RelativeTick != 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            int index = FindBinding(frame.OwnerRuntimeId);
+            if (index < 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated
+                || binding.SpawnSequence != frame.SpawnSequence
+                || !(binding.Binder is IFpgFormalEnemyMotionView view))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            try
+            {
+                return view.StartFormalSkillMotion(frame);
+            }
+            catch (Exception)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+        }
+
+        public DomainResult ApplySkillMotionFrame(
+            in FpgFormalEnemySkillSequenceFrame frame)
+        {
+            if (!frame.OwnerRuntimeId.IsValid
+                || frame.SpawnSequence < 0
+                || frame.Definition == null
+                || !frame.StartTick.IsValid
+                || !frame.Tick.IsValid
+                || frame.RelativeTick < 0
+                || !frame.IsTerminal)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            int index = FindBinding(frame.OwnerRuntimeId);
+            if (index < 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated
+                || binding.SpawnSequence != frame.SpawnSequence
+                || !(binding.Binder is IFpgFormalEnemyMotionView view))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            try
+            {
+                return view.ApplyFormalSkillMotionFrame(frame);
+            }
+            catch (Exception)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+        }
+
         public bool TrySetEnemySkillWarning(
             in FpgFormalEnemySkillWarningPresentationEvent warningEvent)
         {

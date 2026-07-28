@@ -5,8 +5,10 @@ using System.Linq;
 using FPG.Demo.Run;
 using FPG.Demo.Unity;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace FPG.Demo.Editor.LevelAuthoring
@@ -15,16 +17,23 @@ namespace FPG.Demo.Editor.LevelAuthoring
     {
         private const string LayoutPath = "Assets/FPGDemo/Editor/LevelAuthoring/FpgRoomEditor.uxml";
         private const string SelectedRoomSessionKey = "FPGDemo.RoomAuthoring.SelectedRoomGuid";
+        private const string CameraTemplateSessionKey =
+            "FPGDemo.RoomAuthoring.CameraTemplateGuid";
+        private const string CoverLocalPositionPropertyName =
+            "coverLocalPosition";
 
         private readonly List<FpgRoomRecord> allRooms = new List<FpgRoomRecord>();
         private readonly List<FpgRoomRecord> filteredRooms = new List<FpgRoomRecord>();
         private readonly List<FpgRoomMarkerHandle> markers = new List<FpgRoomMarkerHandle>();
         private readonly List<FpgRoomValidationItem> validation = new List<FpgRoomValidationItem>();
 
+        private FpgGameViewAspectSession gameViewAspectSession;
+        private D0ThreeCProfile selectedCameraTemplate;
         private FpgRoomSceneTool sceneTool;
         private ScriptableObject selectedRoom;
         private SerializedObject serializedRoom;
         private bool refreshQueued;
+        private bool suppressRoomSelectionChanged;
 
         private FpgEncounterProfile formalPreviewProfile;
         private FpgEncounterOverrideDefinition formalPreviewOverride;
@@ -34,6 +43,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgEncounterRunContext.BasisPointsOne;
         private int formalPreviewRoomVisitOrdinal;
 
+        private ObjectField cameraTemplateField;
+        private Button applyCameraPreviewButton;
+        private Button stopCameraPreviewButton;
+        private Vector3Field coverPositionField;
+        private Button resetCoverPositionButton;
+        private Label cameraPreviewStateLabel;
         private ToolbarSearchField searchField;
         private DropdownField groupFilter;
         private DropdownField tagFilter;
@@ -61,24 +76,98 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void OnEnable()
         {
-            sceneTool?.Dispose();
+            DisposeSceneTool();
             sceneTool = new FpgRoomSceneTool();
             sceneTool.SelectionChanged += OnSceneMarkerSelectionChanged;
             sceneTool.RoomChanged += QueueCurrentRoomRefresh;
+            sceneTool.CameraPreviewStateChanged += OnCameraPreviewStateChanged;
             EditorApplication.projectChanged += OnProjectChanged;
+            Undo.undoRedoPerformed += OnUndoRedo;
+            EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
+            EditorApplication.quitting += OnEditorQuitting;
+            EditorSceneManager.sceneDirtied += OnSceneDirtied;
+            EditorSceneManager.sceneSaved += OnSceneSaved;
+            AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+            EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
+            EditorApplication.delayCall += RebuildScenePreviewAfterReload;
+
         }
 
         private void OnDisable()
         {
+            EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
+            EditorApplication.quitting -= OnEditorQuitting;
             EditorApplication.projectChanged -= OnProjectChanged;
-            if (sceneTool != null)
+            Undo.undoRedoPerformed -= OnUndoRedo;
+            EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
+            EditorSceneManager.sceneDirtied -= OnSceneDirtied;
+            EditorSceneManager.sceneSaved -= OnSceneSaved;
+            RestoreGameViewAspect(true);
+            DisposeSceneTool();
+        }
+
+        private void OnBeforeAssemblyReload()
+        {
+            EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
+
+            RestoreGameViewAspect(true);
+            DisposeSceneTool();
+        }
+
+        private void OnEditorQuitting()
+        {
+            EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
+
+            RestoreGameViewAspect(true);
+            DisposeSceneTool();
+        }
+
+        private void RebuildScenePreviewAfterReload()
+        {
+            if (sceneTool == null ||
+                EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                sceneTool.SelectionChanged -= OnSceneMarkerSelectionChanged;
-                sceneTool.RoomChanged -= QueueCurrentRoomRefresh;
-                sceneTool.Dispose();
-                sceneTool = null;
+                return;
+            }
+
+            if (selectedRoom != null && sceneTool.Room != selectedRoom)
+            {
+                sceneTool.SetRoom(selectedRoom);
+            }
+            else
+            {
+                sceneTool.RebuildPreview();
             }
         }
+
+        private void DisposeSceneTool()
+        {
+            if (sceneTool == null)
+            {
+                return;
+            }
+
+            sceneTool.SelectionChanged -= OnSceneMarkerSelectionChanged;
+            sceneTool.RoomChanged -= QueueCurrentRoomRefresh;
+            sceneTool.CameraPreviewStateChanged -= OnCameraPreviewStateChanged;
+            sceneTool.Dispose();
+            sceneTool = null;
+        }
+
+
+        private void OnEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            UpdateCameraPreviewControls();
+        }
+
+        private void OnUndoRedo()
+        {
+            RefreshCoverPositionField();
+            RefreshCoverPreview();
+        }
+
 
         public void CreateGUI()
         {
@@ -94,6 +183,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             QueryElements();
             ConfigureLists();
             RegisterCallbacks();
+            RestoreCameraTemplateSelection();
             RefreshRoomAssets();
             RestoreRoomSelection();
         }
@@ -112,6 +202,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
             validationList = rootVisualElement.Q<ListView>("validation-list");
             validationSummaryLabel = rootVisualElement.Q<Label>("validation-summary-label");
             statusLabel = rootVisualElement.Q<Label>("status-label");
+            cameraTemplateField = rootVisualElement.Q<ObjectField>("camera-template-field");
+            applyCameraPreviewButton = rootVisualElement.Q<Button>("apply-camera-preview-button");
+            stopCameraPreviewButton = rootVisualElement.Q<Button>("stop-camera-preview-button");
+            coverPositionField = rootVisualElement.Q<Vector3Field>("cover-position-field");
+            resetCoverPositionButton = rootVisualElement.Q<Button>("reset-cover-position-button");
+            cameraPreviewStateLabel = rootVisualElement.Q<Label>("camera-preview-state-label");
 
             markerToolButtons.Clear();
             markerToolButtons[FpgRoomMarkerKind.Exit] = rootVisualElement.Q<Button>("place-exit-button");
@@ -123,6 +219,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void ConfigureLists()
         {
+            cameraTemplateField.objectType = typeof(D0ThreeCProfile);
+            cameraTemplateField.allowSceneObjects = false;
+            UpdateCameraPreviewControls();
+
             statusFilter.choices = new List<string> { "All", "Valid", "Warning", "Error" };
             statusFilter.SetValueWithoutNotify("All");
 
@@ -152,6 +252,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
             roomList.selectionChanged += OnRoomSelectionChanged;
             markerList.selectionChanged += OnMarkerSelectionChanged;
             validationList.selectionChanged += OnValidationSelectionChanged;
+            cameraTemplateField.RegisterValueChangedCallback(OnCameraTemplateChanged);
+            applyCameraPreviewButton.clicked += ApplyCameraPreview;
+            stopCameraPreviewButton.clicked += StopCameraPreview;
+            coverPositionField.RegisterValueChangedCallback(OnCoverPositionChanged);
+            resetCoverPositionButton.clicked += ResetCoverPosition;
+
 
             rootVisualElement.Q<Button>("create-room-button").clicked += CreateRoom;
             rootVisualElement.Q<Button>("duplicate-room-button").clicked += DuplicateRoom;
@@ -189,6 +295,386 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
             });
 
+        }
+
+        private void RestoreCameraTemplateSelection()
+        {
+            string guid = SessionState.GetString(CameraTemplateSessionKey, string.Empty);
+            string path = string.IsNullOrEmpty(guid)
+                ? string.Empty
+                : AssetDatabase.GUIDToAssetPath(guid);
+            selectedCameraTemplate = string.IsNullOrEmpty(path)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<D0ThreeCProfile>(path);
+            cameraTemplateField.SetValueWithoutNotify(selectedCameraTemplate);
+            RefreshCoverPositionField();
+            UpdateCameraPreviewControls();
+        }
+
+        private void OnCameraTemplateChanged(ChangeEvent<UnityEngine.Object> evt)
+        {
+            selectedCameraTemplate = evt.newValue as D0ThreeCProfile;
+            string path = selectedCameraTemplate == null
+                ? string.Empty
+                : AssetDatabase.GetAssetPath(selectedCameraTemplate);
+            SessionState.SetString(
+                CameraTemplateSessionKey,
+                string.IsNullOrEmpty(path)
+                    ? string.Empty
+                    : AssetDatabase.AssetPathToGUID(path));
+            RefreshCoverPositionField();
+            UpdateCameraPreviewControls();
+
+            if (sceneTool?.IsCameraPreviewActive != true)
+            {
+                return;
+            }
+
+            if (selectedCameraTemplate == null)
+            {
+                StopCameraPreview();
+            }
+            else
+            {
+                ApplyCameraPreview();
+            }
+        }
+
+        private void OnCoverPositionChanged(ChangeEvent<Vector3> evt)
+        {
+            if (selectedCameraTemplate == null)
+            {
+                RefreshCoverPositionField();
+                return;
+            }
+
+            if (!IsFinite(evt.newValue))
+            {
+                coverPositionField.SetValueWithoutNotify(
+                    selectedCameraTemplate.CoverLocalPosition);
+                UpdateLevelStatus("掩体位置必须是有限数值。");
+                return;
+            }
+
+            ApplyCoverPosition(evt.newValue, "调整掩体位置");
+        }
+
+        private void ResetCoverPosition()
+        {
+            ApplyCoverPosition(
+                D0ThreeCProfile.DefaultCoverLocalPosition,
+                "重置掩体位置");
+        }
+
+        private void ApplyCoverPosition(Vector3 localPosition, string undoName)
+        {
+            if (selectedCameraTemplate == null)
+            {
+                return;
+            }
+
+            SerializedObject profile = new SerializedObject(selectedCameraTemplate);
+            profile.Update();
+            SerializedProperty position = profile.FindProperty(
+                CoverLocalPositionPropertyName);
+            if (position == null)
+            {
+                UpdateLevelStatus("所选 3C 配置缺少掩体位置字段。");
+                return;
+            }
+
+            Undo.RecordObject(selectedCameraTemplate, undoName);
+            position.vector3Value = localPosition;
+            profile.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(selectedCameraTemplate);
+            coverPositionField.SetValueWithoutNotify(localPosition);
+
+            RefreshCoverPreview();
+
+            UpdateLevelStatus($"掩体局部位置：{localPosition}");
+        }
+
+        private void RefreshCoverPreview()
+        {
+            if (selectedCameraTemplate == null
+                || sceneTool?.IsCameraPreviewActive != true)
+            {
+                return;
+            }
+
+            if (!sceneTool.TryRefreshCoverPreview(
+                    selectedCameraTemplate,
+                    out string error))
+            {
+                UpdateLevelStatus("掩体预览更新失败：" + error);
+            }
+        }
+
+        private void RefreshCoverPositionField()
+        {
+            if (coverPositionField == null)
+            {
+                return;
+            }
+
+            coverPositionField.SetValueWithoutNotify(
+                selectedCameraTemplate == null
+                    ? D0ThreeCProfile.DefaultCoverLocalPosition
+                    : selectedCameraTemplate.CoverLocalPosition);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x)
+                && IsFinite(value.y)
+                && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private void ApplyCameraPreview()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                SetCameraPreviewStatus(
+                    false,
+                    "\u6b63\u5f0f\u955c\u5934\u9884\u89c8\u4ec5\u5728\u7f16\u8f91\u6a21\u5f0f\u53ef\u7528\u3002");
+                return;
+            }
+
+            if (selectedCameraTemplate == null)
+            {
+                SetCameraPreviewStatus(
+                    false,
+                    "\u8bf7\u5148\u9009\u62e9\u955c\u5934\u6a21\u677f\u3002");
+                return;
+            }
+
+            if (selectedRoom == null || sceneTool == null)
+            {
+                SetCameraPreviewStatus(
+                    false,
+                    "\u8bf7\u5148\u9009\u62e9\u623f\u95f4\u3002");
+                return;
+            }
+
+            if (gameViewAspectSession == null)
+            {
+                if (!FpgGameViewAspectSession.TryBegin16By9(
+                        out gameViewAspectSession,
+                        out string aspectError))
+                {
+                    SetCameraPreviewStatus(false, aspectError);
+                    return;
+                }
+            }
+
+            try
+            {
+                if (!sceneTool.TryStartCameraPreview(
+                        selectedCameraTemplate,
+                        out string error))
+                {
+                    string restoreError = RestoreGameViewAspect(false);
+                    if (!string.IsNullOrEmpty(restoreError))
+                    {
+                        error += " " + restoreError;
+                    }
+
+                    SetCameraPreviewStatus(false, error);
+                    return;
+                }
+            }
+            catch (Exception exception)
+            {
+                sceneTool.StopCameraPreview();
+                string error = exception.GetBaseException().Message;
+                string restoreError = RestoreGameViewAspect(false);
+                if (!string.IsNullOrEmpty(restoreError))
+                {
+                    error += " " + restoreError;
+                }
+
+                SetCameraPreviewStatus(false, error);
+                return;
+            }
+
+            SetCameraPreviewStatus(
+                true,
+                $"16:9 Game View | {selectedCameraTemplate.DisplayName}");
+        }
+
+        private void StopCameraPreview()
+        {
+            if (sceneTool?.IsCameraPreviewActive == true)
+            {
+                sceneTool.StopCameraPreview();
+                return;
+            }
+
+            string restoreError = RestoreGameViewAspect(false);
+            SetCameraPreviewStatus(
+                false,
+                string.IsNullOrEmpty(restoreError)
+                    ? "\u6b63\u5f0f\u955c\u5934\u9884\u89c8\u5df2\u5173\u95ed\u3002"
+                    : restoreError);
+        }
+
+        private void OnCameraPreviewStateChanged(bool active, string message)
+        {
+            if (!active)
+            {
+                string restoreError = RestoreGameViewAspect(false);
+                if (!string.IsNullOrEmpty(restoreError))
+                {
+                    SetCameraPreviewStatus(false, restoreError);
+                    return;
+                }
+            }
+
+            SetCameraPreviewStatus(active, message);
+        }
+
+        private void SetCameraPreviewStatus(bool active, string message)
+        {
+            if (cameraPreviewStateLabel != null)
+            {
+                cameraPreviewStateLabel.text = active
+                    ? "\u9884\u89c8\u4e2d (16:9)"
+                    : "\u672a\u542f\u7528";
+            }
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                UpdateLevelStatus(message);
+            }
+
+            UpdateCameraPreviewControls();
+        }
+
+        private void UpdateLevelStatus(string message = null)
+        {
+            if (statusLabel == null)
+            {
+                return;
+            }
+
+            if (selectedRoom == null)
+            {
+                statusLabel.text = string.IsNullOrWhiteSpace(message)
+                    ? "未选择房间。"
+                    : message;
+                return;
+            }
+
+            string roomState = EditorUtility.IsDirty(selectedRoom)
+                ? "RoomDefinition：未保存"
+                : "RoomDefinition：已保存";
+            string sceneState;
+            FpgRoomDefinition definition =
+                selectedRoom as FpgRoomDefinition;
+            string referenceError = string.Empty;
+            if (definition == null
+                || !FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    definition,
+                    out referenceError))
+            {
+                sceneState = "Art Scene：错误（" + referenceError + "）";
+            }
+            else
+            {
+                Scene artScene =
+                    SceneManager.GetSceneByPath(definition.ArtScenePath);
+                sceneState = !artScene.IsValid() || !artScene.isLoaded
+                    ? "Art Scene：未打开"
+                    : artScene.isDirty
+                        ? "Art Scene：未保存"
+                        : "Art Scene：已保存";
+            }
+
+            string cameraState = sceneTool?.IsCameraPreviewActive == true
+                ? $" | 镜头：16:9 {selectedCameraTemplate?.DisplayName}"
+                : string.Empty;
+            string threeCState = selectedCameraTemplate == null
+                ? string.Empty
+                : EditorUtility.IsDirty(selectedCameraTemplate)
+                    ? " | 3C：未保存"
+                    : " | 3C：已保存";
+            string prefix = string.IsNullOrWhiteSpace(message)
+                ? string.Empty
+                : message + " | ";
+            statusLabel.text =
+                prefix + roomState + " | " + sceneState + cameraState
+                + threeCState;
+        }
+
+        private void OnSceneDirtied(Scene scene)
+        {
+            if (IsSelectedArtScene(scene))
+            {
+                UpdateLevelStatus();
+            }
+        }
+
+        private void OnSceneSaved(Scene scene)
+        {
+            if (IsSelectedArtScene(scene))
+            {
+                UpdateLevelStatus();
+            }
+        }
+
+        private bool IsSelectedArtScene(Scene scene)
+        {
+            return selectedRoom is FpgRoomDefinition definition
+                && scene.IsValid()
+                && string.Equals(
+                    scene.path,
+                    definition.ArtScenePath,
+                    StringComparison.Ordinal);
+        }
+
+        private void UpdateCameraPreviewControls()
+        {
+            bool isPlaying = EditorApplication.isPlayingOrWillChangePlaymode;
+            cameraTemplateField?.SetEnabled(!isPlaying);
+            coverPositionField?.SetEnabled(
+                !isPlaying && selectedCameraTemplate != null);
+            resetCoverPositionButton?.SetEnabled(
+                !isPlaying && selectedCameraTemplate != null);
+            applyCameraPreviewButton?.SetEnabled(
+                !isPlaying
+                && selectedRoom != null
+                && selectedCameraTemplate != null);
+            stopCameraPreviewButton?.SetEnabled(
+                !isPlaying
+                && (sceneTool?.IsCameraPreviewActive == true
+                    || gameViewAspectSession != null));
+        }
+
+        private string RestoreGameViewAspect(bool logFailure)
+        {
+            FpgGameViewAspectSession session = gameViewAspectSession;
+            if (session == null)
+            {
+                return string.Empty;
+            }
+
+            if (session.TryRestore(out string error))
+            {
+                gameViewAspectSession = null;
+                return string.Empty;
+            }
+
+            if (logFailure)
+            {
+                Debug.LogWarning(error);
+            }
+
+            return error;
         }
 
         private void BindVisibility(string toggleName, FpgRoomMarkerKind kind)
@@ -392,36 +878,214 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void OnRoomSelectionChanged(IEnumerable<object> selection)
         {
-            FpgRoomRecord record = selection.OfType<FpgRoomRecord>().FirstOrDefault();
-            if (record != null)
+            if (suppressRoomSelectionChanged)
             {
-                SelectRoom(record.Asset);
+                return;
+            }
+
+            FpgRoomRecord record = selection.OfType<FpgRoomRecord>().FirstOrDefault();
+            if (record != null && !SelectRoom(record.Asset))
+            {
+                RestoreRoomListSelection(selectedRoom);
             }
         }
 
-        private void SelectRoom(ScriptableObject room)
+        private bool SelectRoom(ScriptableObject room)
         {
+            if (ReferenceEquals(selectedRoom, room))
+            {
+                serializedRoom?.Update();
+                if (sceneTool?.Room != room)
+                {
+                    sceneTool?.SetRoom(room);
+                }
+                else
+                {
+                    sceneTool?.RebuildPreview();
+                }
+
+                UpdateLevelStatus();
+                return true;
+            }
+
+            string selectionMessage = string.Empty;
+            if (room is FpgRoomDefinition definition
+                && !TryOpenArtSceneForRoom(
+                    definition,
+                    out selectionMessage))
+            {
+                if (!string.IsNullOrWhiteSpace(selectionMessage))
+                {
+                    statusLabel.text = selectionMessage;
+                }
+
+                return false;
+            }
+
             selectedRoom = room;
             serializedRoom = room == null ? null : new SerializedObject(room);
             SessionState.SetString(
                 SelectedRoomSessionKey,
                 AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(room)));
+            bool cameraPreviewWasActive = sceneTool?.IsCameraPreviewActive == true;
             sceneTool?.SetRoom(room);
             RebuildRoomDetails();
             RefreshMarkers();
             RefreshValidation();
 
-            int roomIndex = filteredRooms.FindIndex(record => record.Asset == room);
-            if (roomIndex >= 0)
+            RestoreRoomListSelection(room);
+
+            bool cameraPreviewIsActive = sceneTool?.IsCameraPreviewActive == true;
+            if (!cameraPreviewWasActive || cameraPreviewIsActive)
             {
-                roomList.SetSelectionWithoutNotify(new[] { roomIndex });
-                roomList.ScrollToItem(roomIndex);
+                UpdateLevelStatus(selectionMessage);
             }
 
-            statusLabel.text = room == null
-                ? "No room selected."
-                : $"Editing: {FpgRoomAuthoringSchema.GetString(room, "displayName")}"
-                  + " (changes are written to the selected room asset).";
+            UpdateCameraPreviewControls();
+            return true;
+        }
+
+        private bool TryOpenArtSceneForRoom(
+            FpgRoomDefinition room,
+            out string message)
+        {
+            message = string.Empty;
+            if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    room,
+                    out string referenceError))
+            {
+                sceneTool?.PrepareForSceneSaveOrSwitch();
+                message =
+                    $"Room '{room.RoomId}' Art Scene is unavailable: {referenceError}";
+                return true;
+            }
+
+            Scene currentScene = SceneManager.GetActiveScene();
+            if (currentScene.IsValid()
+                && currentScene.isLoaded
+                && string.Equals(
+                    currentScene.path,
+                    room.ArtScenePath,
+                    StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            bool roomDirty = selectedRoom != null
+                && EditorUtility.IsDirty(selectedRoom);
+            bool sceneDirty = currentScene.IsValid()
+                && currentScene.isLoaded
+                && currentScene.isDirty;
+            if (roomDirty || sceneDirty)
+            {
+                string currentRoomName = selectedRoom == null
+                    ? "<none>"
+                    : selectedRoom.name;
+                string currentSceneName = currentScene.IsValid()
+                    ? currentScene.name
+                    : "<none>";
+                int choice = EditorUtility.DisplayDialogComplex(
+                    "切换关卡美术场景",
+                    $"当前 RoomDefinition '{currentRoomName}' 或场景 '{currentSceneName}' 有未保存修改。",
+                    "保存",
+                    "放弃",
+                    "取消");
+                if (choice == 2)
+                {
+                    message = "已取消切换关卡美术场景。";
+                    return false;
+                }
+
+                sceneTool?.PrepareForSceneSaveOrSwitch();
+                if (choice == 0)
+                {
+                    if (selectedRoom != null)
+                    {
+                        AssetDatabase.SaveAssetIfDirty(selectedRoom);
+                    }
+
+                    if (sceneDirty
+                        && !EditorSceneManager.SaveScene(currentScene))
+                    {
+                        message =
+                            $"无法保存场景 '{currentScene.path}'，已取消切换。";
+                        sceneTool?.RebuildPreview();
+                        return false;
+                    }
+
+                    if (selectedRoom != null
+                        && EditorUtility.IsDirty(selectedRoom))
+                    {
+                        message =
+                            $"无法保存 RoomDefinition '{selectedRoom.name}'，已取消切换。";
+                        sceneTool?.RebuildPreview();
+                        return false;
+                    }
+                }
+                else if (selectedRoom != null)
+                {
+                    string roomPath =
+                        AssetDatabase.GetAssetPath(selectedRoom);
+                    AssetDatabase.ImportAsset(
+                        roomPath,
+                        ImportAssetOptions.ForceUpdate);
+                }
+            }
+            else
+            {
+                sceneTool?.PrepareForSceneSaveOrSwitch();
+            }
+
+            try
+            {
+                Scene artScene = EditorSceneManager.OpenScene(
+                    room.ArtScenePath,
+                    OpenSceneMode.Single);
+                if (!SceneManager.SetActiveScene(artScene))
+                {
+                    message =
+                        $"无法将关卡美术场景 '{room.ArtScenePath}' 设为 Active。";
+                    return false;
+                }
+            }
+            catch (Exception exception)
+            {
+                message =
+                    $"打开关卡美术场景 '{room.ArtScenePath}' 失败："
+                    + exception.GetBaseException().Message;
+                return false;
+            }
+
+            message = $"已打开关卡美术场景：{room.ArtScenePath}";
+            return true;
+        }
+
+        private void RestoreRoomListSelection(ScriptableObject room)
+        {
+            if (roomList == null)
+            {
+                return;
+            }
+
+            int roomIndex =
+                filteredRooms.FindIndex(record => record.Asset == room);
+            suppressRoomSelectionChanged = true;
+            try
+            {
+                if (roomIndex >= 0)
+                {
+                    roomList.SetSelectionWithoutNotify(new[] { roomIndex });
+                    roomList.ScrollToItem(roomIndex);
+                }
+                else
+                {
+                    roomList.ClearSelection();
+                }
+            }
+            finally
+            {
+                suppressRoomSelectionChanged = false;
+            }
         }
 
         private void RebuildRoomDetails()
@@ -438,7 +1102,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             string[] properties =
             {
-                "roomId", "displayName", "designerNotes", "environmentPrefab", "mainGroup", "tags"
+                "roomId", "displayName", "designerNotes", "artScene", "mainGroup", "tags"
             };
             foreach (string propertyName in properties)
             {
@@ -892,12 +1556,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
             }
 
-            if (propertyName == "environmentPrefab")
+            string statusMessage = string.Empty;
+            if (propertyName == "artScene"
+                && selectedRoom is FpgRoomDefinition definition)
             {
+                TryOpenArtSceneForRoom(
+                    definition,
+                    out statusMessage);
                 sceneTool?.RebuildPreview();
             }
 
             QueueCurrentRoomRefresh();
+            UpdateLevelStatus(statusMessage);
         }
 
         private void RefreshMarkers()
@@ -983,7 +1653,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 SerializedProperty child = iterator.Copy();
                 PropertyField field = new PropertyField(child, FpgRoomAuthoringSchema.ChinesePropertyName(child.name));
                 field.BindProperty(child);
-                field.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
+                field.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
                 {
                     if (serializedRoom != null && serializedRoom.hasModifiedProperties)
                     {
@@ -992,6 +1662,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     if (handle.Kind == FpgRoomMarkerKind.Destructible)
                     {
                         sceneTool?.RebuildPreview();
+                    }
+                    else if (handle.Kind == FpgRoomMarkerKind.PlayerEntry)
+                    {
+                        sceneTool?.TryRefreshCameraPreview(out _);
                     }
                     QueueCurrentRoomRefresh();
                     SceneView.RepaintAll();
@@ -1065,6 +1739,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 RefreshMarkers();
                 RefreshRoomAssets();
                 RefreshValidation();
+                UpdateLevelStatus();
                 Repaint();
             };
         }
@@ -1145,6 +1820,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
             displayName.stringValue = string.IsNullOrWhiteSpace(displayName.stringValue)
                 ? copy.name
                 : displayName.stringValue + " Copy";
+            SerializedProperty artScene = serialized.FindProperty("artScene");
+            artScene.FindPropertyRelative("sceneGuid").stringValue =
+                string.Empty;
+            artScene.FindPropertyRelative("scenePath").stringValue =
+                string.Empty;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             AssetDatabase.CreateAsset(copy, AssetDatabase.GenerateUniqueAssetPath(path));
             AssetDatabase.SaveAssetIfDirty(copy);
@@ -1155,13 +1835,58 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void SaveRoom()
         {
-            if (selectedRoom == null)
+            if (!(selectedRoom is FpgRoomDefinition definition))
             {
                 return;
             }
 
+            if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    definition,
+                    out string referenceError))
+            {
+                UpdateLevelStatus("保存关卡失败：" + referenceError);
+                return;
+            }
+
+            Scene artScene =
+                SceneManager.GetSceneByPath(definition.ArtScenePath);
+            if (!artScene.IsValid() || !artScene.isLoaded
+                || SceneManager.GetActiveScene() != artScene)
+            {
+                UpdateLevelStatus(
+                    $"保存关卡失败：当前 Active Scene 必须是 '{definition.ArtScenePath}'。");
+                return;
+            }
+
+            sceneTool?.PrepareForSceneSaveOrSwitch();
             AssetDatabase.SaveAssetIfDirty(selectedRoom);
-            statusLabel.text = $"Saved: {AssetDatabase.GetAssetPath(selectedRoom)}";
+            if (selectedCameraTemplate != null)
+            {
+                AssetDatabase.SaveAssetIfDirty(selectedCameraTemplate);
+            }
+            bool sceneSaved = !artScene.isDirty
+                || EditorSceneManager.SaveScene(artScene);
+            if (EditorUtility.IsDirty(selectedRoom)
+                || (selectedCameraTemplate != null
+                    && EditorUtility.IsDirty(selectedCameraTemplate))
+                || !sceneSaved)
+            {
+                sceneTool?.RebuildPreview();
+                UpdateLevelStatus("保存关卡失败，请检查 Console。");
+                return;
+            }
+
+            if (!FpgRoomArtSceneContractValidator.TryValidateScene(
+                    definition,
+                    out string contractError))
+            {
+                sceneTool?.RebuildPreview();
+                UpdateLevelStatus("关卡已保存，但 Art Scene 契约无效：" + contractError);
+                return;
+            }
+
+            sceneTool?.RebuildPreview();
+            UpdateLevelStatus("关卡已保存");
         }
 
 
@@ -1215,6 +1940,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 current = next;
             }
         }
-    }
+}
 }
 

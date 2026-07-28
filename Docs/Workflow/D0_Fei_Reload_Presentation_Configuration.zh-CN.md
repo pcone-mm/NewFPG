@@ -2,13 +2,13 @@
 
 ## 目标与范围
 
-本配置控制 Fei 在 D0 CombatLab 中收到已提交换弹事件后的 Spine 表现。换弹不检查剩余护盾值：Fei 在暴露或掩体内都能发起换弹；发起时战斗姿态会先自动切到 `Withdrawn`（回到掩体内），再进入 `Reloading`。表现字段本身不改变弹匣容量、换弹耗时或弹药结算。
+本配置控制 Fei 在 FormalRoom 中收到已提交换弹事件后的 Spine 表现。类型名中的 D0 前缀仅为序列化兼容。换弹不检查剩余护盾值：Fei 在暴露或掩体内都能发起换弹；发起时战斗姿态会先自动切到 `Withdrawn`（回到掩体内），再进入 `Reloading`。表现字段本身不改变弹匣容量、换弹耗时或弹药结算。
 
 ## 配置入口与引用关系
 
-- 主入口：`Assets/FPGDemo/Config/D0Slice/Definitions/Fei/D0_Fei_Presentation.asset`
-- 兼容回退：`Assets/FPGDemo/Config/D0Slice/CombatPresentationProfile.asset`
-- 引用链：`BattleScenarioConfig → D0CharacterDefinition → D0ActorPresentationDefinition → Actor2DPresenter`
+- 主入口：`Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Presentation.asset`
+- 正式 HUD 配置：`Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset`
+- 引用链：`FPG_PlayableCharacterCatalog → D0CharacterDefinition → D0ActorPresentationDefinition → Actor2DPresenter`
 - 运行时事件：`ReloadStarted` 开始动作，`ReloadCompleted` 返回待机；玩家 `DamageApplied` 通过 `DamageChannel` 区分护盾与生命受击，生命伤害取消换弹时还会记录 `AttackCanceled (Reloading → Ready)`。
 
 ## 字段说明
@@ -20,12 +20,12 @@
 
 两个字段必须非空，并且必须存在于所绑定 Fei `SkeletonDataAsset`。换弹期间的护盾伤害不会替换当前换弹动画，护盾被打破的那一下也不会触发 Fei 的踉跄动作；只有 `DamageChannel.Life` 的直接扣血会取消实际换弹（保留当前弹量并清除换弹计时），同时播放受击并回待机。取消由战斗逻辑执行，Spine 表现只跟随已提交事件。
 
-## 制作与安装步骤
+## 制作与验证步骤
 
-1. 在 Project 窗口打开 `D0_Fei_Presentation.asset`。
+1. 在 Project 窗口打开 `FPG_Fei_Presentation.asset`。
 2. 在玩家表现的“换弹动画”分组填写两个 Spine 动画名。
-3. 确认该资产仍绑定 Fei 的 D0 派生视觉 Prefab。
-4. 若更换了 Prefab 或重新生成 D0 表现资源，执行 `FPG Demo/D0 2.5D/Install or Update Combat Slice`；只修改动画名时无需改战斗配置。
+3. 确认该资产仍绑定正式 Fei Entity Prefab。
+4. 若更换 Prefab，在目标资产 Inspector 中显式更新引用并保存；只修改动画名时无需改战斗配置。
 
 ## 示例与预期表现
 

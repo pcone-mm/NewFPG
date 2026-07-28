@@ -220,6 +220,14 @@ namespace FPG.Demo.Tests.EditMode
                 false,
                 false);
             AssertPreviewActionOptions(
+                FpgSkillPreviewActionKind.EnemySelfDestruct,
+                true,
+                true,
+                FpgSkillTargetSource.Self,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertPreviewActionOptions(
                 FpgSkillPreviewActionKind.Unknown,
                 false,
                 false,
@@ -261,6 +269,15 @@ namespace FPG.Demo.Tests.EditMode
                 false);
             AssertActionOptions(
                 FpgSkillActionKind.SummonActors,
+                false,
+                false,
+                false,
+                FpgSkillTargetSource.None,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+            AssertActionOptions(
+                FpgSkillActionKind.SelfDestructOwner,
                 false,
                 false,
                 false,
@@ -317,6 +334,93 @@ namespace FPG.Demo.Tests.EditMode
                 Array.Empty<FpgSkillTargetSource>(),
                 false,
                 false);
+            AssertActionOptions(
+                FpgSkillActionKind.SelfDestructOwner,
+                true,
+                true,
+                true,
+                FpgSkillTargetSource.Self,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+        }
+
+        [Test]
+        public void GameplayEventChoicesCanFilterToPriorSameTickSummons()
+        {
+            FpgSkillEventRecord current =
+                CreateActionRecord(
+                    "event.self-destruct",
+                    FpgSkillActionKind.SelfDestructOwner,
+                    20,
+                    2,
+                    3);
+            List<FpgSkillEventRecord> authored =
+                new List<FpgSkillEventRecord>
+                {
+                    CreateActionRecord(
+                        "attack",
+                        FpgSkillActionKind.Attack,
+                        5,
+                        0,
+                        0),
+                    CreateActionRecord(
+                        "summon.earlier",
+                        FpgSkillActionKind.SummonActors,
+                        10,
+                        0,
+                        1),
+                    CreateActionRecord(
+                        "summon.same-tick-earlier",
+                        FpgSkillActionKind.SummonActors,
+                        20,
+                        1,
+                        2),
+                    current,
+                    CreateActionRecord(
+                        "summon.same-tick-later",
+                        FpgSkillActionKind.SummonActors,
+                        20,
+                        3,
+                        4),
+                    CreateActionRecord(
+                        "summon.later",
+                        FpgSkillActionKind.SummonActors,
+                        21,
+                        0,
+                        5)
+                };
+            List<FpgSkillAuthoringChoice> choices =
+                FpgSkillAuthoringChoices.BuildGameplayEventChoices(
+                    authored,
+                    string.Empty,
+                    FpgSkillActionKind.SummonActors,
+                    current);
+
+            CollectionAssert.AreEqual(
+                new[] { string.Empty, "summon.same-tick-earlier" },
+                choices.Select(choice => choice.Value).ToArray());
+        }
+
+        private static FpgSkillEventRecord CreateActionRecord(
+            string eventId,
+            FpgSkillActionKind actionKind,
+            int tick,
+            int authoredOrdinal,
+            int localIndex)
+        {
+            return new FpgSkillEventRecord
+            {
+                Key = new FpgSkillEventKey(
+                    FpgSkillEventTrackKind.GameplayAction,
+                    actionKind,
+                    localIndex),
+                EventId = eventId,
+                Name = eventId,
+                Tick = tick,
+                AuthoredOrdinal = authoredOrdinal,
+                Track = FpgSkillEventTrackKind.GameplayAction
+            };
         }
 
         private static void AssertPreviewActionOptions(

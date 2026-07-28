@@ -174,6 +174,55 @@ namespace FPG.Demo.Run
             }
         }
 
+        /// <summary>
+        /// Publishes a presentation-only environment contact for an immediate
+        /// attack. It never enters the player hit queue or changes combat state.
+        /// </summary>
+        public bool TryPublishImmediateEnvironmentContact(
+            RuntimeId sourceRuntimeId,
+            SkillExecutionId skillExecutionId,
+            int gameplayEventId,
+            TickIndex tick,
+            AttackId attackId,
+            SpatialVectorKey contactPoint,
+            int contactOrdinal)
+        {
+            if (!sourceRuntimeId.IsValid
+                || !skillExecutionId.IsValid
+                || gameplayEventId <= 0
+                || !tick.IsValid
+                || !attackId.IsValid
+                || contactOrdinal < 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                return skillImpactPresentationStream.TryRecordContact(
+                    new FpgSkillImpactContact(
+                        new FpgSkillImpactCorrelation(
+                            sourceRuntimeId,
+                            skillExecutionId,
+                            gameplayEventId),
+                        FpgSkillImpactPresentationGroupKind.ImmediateAttack,
+                        tick,
+                        attackId,
+                        ProjectileId.Invalid,
+                        ImpactId.Invalid,
+                        RuntimeId.Invalid,
+                        FpgSkillImpactContactKind.EnvironmentBlocked,
+                        contactPoint,
+                        HitPart.Body,
+                        contactOrdinal));
+            }
+            catch (Exception)
+            {
+                IncrementPresentationCallbackFaultCount();
+                return false;
+            }
+        }
+
         public event Action<FpgEnemyDiedEvent> EnemyDied;
         public event Action<FpgEnemyAttackStartedEvent> EnemyAttackStarted;
         public event Action<FpgCombatHealthChangedEvent> HealthChanged;
@@ -530,6 +579,14 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(RejectReason.DuplicateSequence);
             }
 
+            if (command.Payload.Kind
+                    == FpgEnemyAttackPayloadKind.SelfDestructOwner
+                && command.Payload.HasSelfDestructDependency
+                && !IsValidSelfDestructDependency(command))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
             int reservationIndex = -1;
             if (command.CapacityReservation.IsValid)
             {
@@ -701,6 +758,9 @@ namespace FPG.Demo.Run
                 enemySkillCapacityReservations[reservationIndex] = entry;
             }
 
+            ResolveSelfDestructDependencies(
+                scheduled,
+                SelfDestructDependencyState.Skipped);
             scheduledPayloads[payloadIndex] = default(ScheduledPayload);
             return DomainResult.Success;
         }
@@ -1018,7 +1078,7 @@ namespace FPG.Demo.Run
             ScheduledPayload scheduled = scheduledPayloads[payloadIndex];
             return scheduled.OwnerRuntimeId == request.OwnerRuntimeId
                 && scheduled.SpawnSequence == spawnSequence
-                && scheduled.IsCommittedSummon;
+                && scheduled.BypassesOwnerControlEligibility;
         }
 
         public void ClearAll()
@@ -1333,15 +1393,45 @@ namespace FPG.Demo.Run
                     : enemies[ownerIndex].Runtime;
                 if (owner == null
                     || owner.Combatant.IsDead
-                    || (!scheduled.IsCommittedSummon
+                    || (!scheduled.BypassesOwnerControlEligibility
                         && !CanAttack(request.OwnerRuntimeId)))
                 {
                     return DomainResult.Rejected(RejectReason.InvalidTarget);
                 }
 
-                DomainResult handled = scheduled.Payload.Kind == FpgEnemyAttackPayloadKind.Threat
-                    ? StartScheduledThreat(ownerIndex, request, scheduled, payloadIndex, tick)
-                    : DispatchScheduledSummon(request, scheduled, payloadIndex, tick);
+                DomainResult handled;
+                switch (scheduled.Payload.Kind)
+                {
+                    case FpgEnemyAttackPayloadKind.Threat:
+                        handled = StartScheduledThreat(
+                            ownerIndex,
+                            request,
+                            scheduled,
+                            payloadIndex,
+                            tick);
+                        break;
+
+                    case FpgEnemyAttackPayloadKind.Summon:
+                        handled = DispatchScheduledSummon(
+                            request,
+                            scheduled,
+                            payloadIndex,
+                            tick);
+                        break;
+
+                    case FpgEnemyAttackPayloadKind.SelfDestructOwner:
+                        handled = DispatchScheduledSelfDestruct(
+                            request,
+                            scheduled,
+                            payloadIndex,
+                            tick);
+                        break;
+
+                    default:
+                        return DomainResult.Rejected(
+                            RejectReason.InvalidDefinition);
+                }
+
                 if (!handled.IsSuccess)
                 {
                     return handled;
@@ -1497,6 +1587,9 @@ namespace FPG.Demo.Run
             switch (acknowledgement.Disposition)
             {
                 case FpgSummonQueueDisposition.Queued:
+                    ResolveSelfDestructDependencies(
+                        scheduled,
+                        SelfDestructDependencyState.Queued);
                     scheduledPayloads[payloadIndex] = default(ScheduledPayload);
                     if (!scheduled.PresentationStarted)
                     {
@@ -1508,19 +1601,23 @@ namespace FPG.Demo.Run
                     }
 
                     PublishSummonRequested(summonRequest);
-                    return ApplySummonOwnerOutcome(
-                        summonRequest.OwnerRuntimeId,
-                        summon.OwnerOutcome,
-                        tick);
+                    return DomainResult.Success;
 
                 case FpgSummonQueueDisposition.RetryNextTick:
                     return RescheduleForNextTick(request, scheduled.SpawnSequence, tick);
 
                 case FpgSummonQueueDisposition.StaticLimitReached:
+                    ResolveSelfDestructDependencies(
+                        scheduled,
+                        SelfDestructDependencyState.Skipped);
                     scheduledPayloads[payloadIndex] = default(ScheduledPayload);
                     return DomainResult.Success;
 
                 case FpgSummonQueueDisposition.Rejected:
+                    ResolveSelfDestructDependencies(
+                        scheduled,
+                        SelfDestructDependencyState.Skipped);
+                    scheduledPayloads[payloadIndex] = default(ScheduledPayload);
                     return acknowledgement.Result.IsSuccess
                         ? DomainResult.Rejected(RejectReason.InvariantFault)
                         : acknowledgement.Result;
@@ -1530,21 +1627,98 @@ namespace FPG.Demo.Run
             }
         }
 
-        private DomainResult ApplySummonOwnerOutcome(
-            RuntimeId ownerRuntimeId,
-            FpgSummonOwnerOutcome outcome,
+        private void ResolveSelfDestructDependencies(
+            ScheduledPayload summon,
+            SelfDestructDependencyState resolution)
+        {
+            if (resolution != SelfDestructDependencyState.Queued
+                && resolution != SelfDestructDependencyState.Skipped)
+            {
+                return;
+            }
+
+            for (int index = 0; index < scheduledPayloads.Length; index++)
+            {
+                ScheduledPayload dependency = scheduledPayloads[index];
+                if (!dependency.IsUsed
+                    || dependency.Payload.Kind
+                        != FpgEnemyAttackPayloadKind.SelfDestructOwner)
+                {
+                    continue;
+                }
+
+                if (!dependency.Payload.HasSelfDestructDependency
+                    || dependency.Payload.SelfDestructDependencyScheduleSequence
+                        != summon.ScheduleSequence)
+                {
+                    continue;
+                }
+
+                bool correlationMatches =
+                    dependency.OwnerRuntimeId == summon.OwnerRuntimeId
+                    && dependency.SpawnSequence == summon.SpawnSequence
+                    && dependency.SkillExecutionId
+                        == summon.SkillExecutionId;
+                scheduledPayloads[index] =
+                    dependency.WithSelfDestructDependencyState(
+                        correlationMatches
+                            ? resolution
+                            : SelfDestructDependencyState.Skipped);
+            }
+        }
+
+        private DomainResult DispatchScheduledSelfDestruct(
+            FpgAttackScheduleRequest request,
+            ScheduledPayload scheduled,
+            int payloadIndex,
             TickIndex tick)
         {
-            if (outcome == FpgSummonOwnerOutcome.RemainAlive)
+            SelfDestructDependencyState dependencyState =
+                scheduled.DependencyState;
+            bool hasUnexpectedState = scheduled.Payload.HasSelfDestructDependency
+                ? dependencyState == SelfDestructDependencyState.None
+                : dependencyState != SelfDestructDependencyState.None;
+            if (hasUnexpectedState)
             {
-                return DomainResult.Success;
+                return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
-            if (outcome != FpgSummonOwnerOutcome.DieAfterSuccessfulSummon)
+            switch (dependencyState)
             {
-                return DomainResult.Rejected(RejectReason.InvalidDefinition);
-            }
+                case SelfDestructDependencyState.Waiting:
+                    return RescheduleForNextTick(
+                        request,
+                        scheduled.SpawnSequence,
+                        tick);
 
+                case SelfDestructDependencyState.Skipped:
+                    scheduledPayloads[payloadIndex] =
+                        default(ScheduledPayload);
+                    return DomainResult.Success;
+
+                case SelfDestructDependencyState.None:
+                case SelfDestructDependencyState.Queued:
+                    scheduledPayloads[payloadIndex] =
+                        default(ScheduledPayload);
+                    PublishEnemyAttackStarted(
+                        request,
+                        scheduled.SpawnSequence,
+                        scheduled.Payload.Kind,
+                        tick);
+                    return CommitOwnerSelfDestruct(
+                        scheduled.OwnerRuntimeId,
+                        tick);
+
+                default:
+                    return DomainResult.Rejected(
+                        RejectReason.InvariantFault);
+            }
+        }
+
+        private DomainResult CommitOwnerSelfDestruct(
+            RuntimeId ownerRuntimeId,
+            TickIndex tick)
+        {
             int ownerIndex = FindEnemy(ownerRuntimeId);
             if (ownerIndex < 0)
             {
@@ -3592,6 +3766,34 @@ namespace FPG.Demo.Run
                 }
             }
         }
+
+        private bool IsValidSelfDestructDependency(
+            FpgEnemyAttackCommand command)
+        {
+            long dependencySequence =
+                command.Payload.SelfDestructDependencyScheduleSequence;
+            if (!command.HasSkillCorrelation
+                || dependencySequence >= command.Schedule.ScheduleSequence)
+            {
+                return false;
+            }
+
+            int dependencyIndex = FindScheduledPayload(dependencySequence);
+            if (dependencyIndex < 0)
+            {
+                return false;
+            }
+
+            ScheduledPayload dependency =
+                scheduledPayloads[dependencyIndex];
+            return dependency.OwnerRuntimeId == command.Schedule.OwnerRuntimeId
+                && dependency.SpawnSequence == command.SpawnSequence
+                && dependency.Payload.Kind
+                    == FpgEnemyAttackPayloadKind.Summon
+                && dependency.SkillExecutionId
+                    == command.SkillExecutionId;
+        }
+
         private int FindScheduledPayload(long scheduleSequence)
         {
             for (int index = 0; index < scheduledPayloads.Length; index++)
@@ -4156,6 +4358,14 @@ namespace FPG.Demo.Run
             public RuntimeId RuntimeId => Runtime == null ? RuntimeId.Invalid : Runtime.RuntimeId;
         }
 
+        private enum SelfDestructDependencyState
+        {
+            None = 0,
+            Waiting,
+            Queued,
+            Skipped
+        }
+
         private readonly struct ScheduledPayload
         {
             public ScheduledPayload(FpgEnemyAttackCommand command)
@@ -4169,6 +4379,11 @@ namespace FPG.Demo.Run
                     command.SpatialContext,
                     command.SkillExecutionId,
                     command.GameplayEventId,
+                    command.Payload.Kind
+                            == FpgEnemyAttackPayloadKind.SelfDestructOwner
+                        && command.Payload.HasSelfDestructDependency
+                        ? SelfDestructDependencyState.Waiting
+                        : SelfDestructDependencyState.None,
                     false)
             {
             }
@@ -4183,6 +4398,7 @@ namespace FPG.Demo.Run
                 FpgEnemyAttackSpatialContext spatialContext,
                 SkillExecutionId skillExecutionId,
                 int gameplayEventId,
+                SelfDestructDependencyState selfDestructDependencyState,
                 bool presentationStarted)
             {
                 OwnerRuntimeId = ownerRuntimeId;
@@ -4194,6 +4410,7 @@ namespace FPG.Demo.Run
                 SpatialContext = spatialContext;
                 SkillExecutionId = skillExecutionId;
                 GameplayEventId = gameplayEventId;
+                DependencyState = selfDestructDependencyState;
                 PresentationStarted = presentationStarted;
                 IsUsed = true;
             }
@@ -4207,6 +4424,7 @@ namespace FPG.Demo.Run
             public FpgEnemyAttackSpatialContext SpatialContext { get; }
             public SkillExecutionId SkillExecutionId { get; }
             public int GameplayEventId { get; }
+            public SelfDestructDependencyState DependencyState { get; }
             public bool PresentationStarted { get; }
             public bool IsUsed { get; }
 
@@ -4215,6 +4433,16 @@ namespace FPG.Demo.Run
                 && PresentationStarted
                 && Payload.Kind == FpgEnemyAttackPayloadKind.Summon
                 && Payload.Summon.ReleaseDelayTicks > 0;
+
+            public bool BypassesOwnerControlEligibility =>
+                IsCommittedSummon
+                || (IsUsed
+                    && Payload.Kind
+                        == FpgEnemyAttackPayloadKind.SelfDestructOwner
+                    && (DependencyState
+                            == SelfDestructDependencyState.Queued
+                        || DependencyState
+                            == SelfDestructDependencyState.Skipped));
 
             public ScheduledPayload WithPresentationStarted()
             {
@@ -4228,9 +4456,28 @@ namespace FPG.Demo.Run
                     SpatialContext,
                     SkillExecutionId,
                     GameplayEventId,
+                    DependencyState,
                     true);
             }
+
+            public ScheduledPayload WithSelfDestructDependencyState(
+                SelfDestructDependencyState state)
+            {
+                return new ScheduledPayload(
+                    OwnerRuntimeId,
+                    ScheduleSequence,
+                    SpawnSequence,
+                    Payload,
+                    CapacityReservation,
+                    ProjectileBudgetReservation,
+                    SpatialContext,
+                    SkillExecutionId,
+                    GameplayEventId,
+                    state,
+                    PresentationStarted);
+            }
         }
+
         private struct EnemySkillCapacityReservationEntry
         {
             public EnemySkillCapacityReservationEntry(

@@ -55,6 +55,8 @@
 .content-split,
 .authoring-split,
 .marker-toolbar,
+.camera-preview-toolbar,
+.cover-position-toolbar,
 .visibility-toolbar,
 .marker-actions,
 .validation-header,
@@ -162,6 +164,49 @@
 
 .snap-field {
     width: 116px;
+}
+.camera-preview-toolbar {
+    min-height: 34px;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line);
+    background-color: var(--panel);
+}
+
+.cover-position-toolbar {
+    min-height: 34px;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line);
+    background-color: var(--panel-strong);
+}
+
+.camera-template-field {
+    width: 330px;
+    margin-right: 6px;
+}
+
+.camera-preview-toolbar Button {
+    min-width: 76px;
+    margin-right: 4px;
+}
+
+.cover-position-field {
+    width: 390px;
+    margin-right: 6px;
+}
+
+.cover-position-toolbar Button {
+    min-width: 58px;
+}
+
+.camera-preview-state {
+    color: var(--muted);
+    margin-left: 5px;
 }
 
 .visibility-toolbar Toggle {

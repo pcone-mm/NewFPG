@@ -1,5 +1,7 @@
 # D0 验证与证据索引
 
+> 历史证据索引：D0Slice、CombatLab 和安装器已经退役，以下记录不能作为当前 Formal 主线的发布证据。
+
 本文件是 D0 交付物的索引模板。每次正式候选版本必须替换方括号内容，避免“已验证”没有可回放证据。
 
 ## 构建信息
@@ -36,12 +38,12 @@
 - 已新增 Dynamic Input Update 下的 Pause 回调与同帧控制帧门：`ProjectWideBattleInputAdapter` 仅在动态模式订阅 `Battle/Pause.performed`，`BattleSessionHost` 立即同步 D0 Spine 表现并跳过该帧普通采样/模拟；`BattlePresentationCoordinator` 的同步方法只写 Actor/CZN 暂停状态，不推进 feed、HUD、音频或战斗。静态路径核对已完成，Unity/Player 的严格零推进证据仍为 `待执行`。
 - 2026-07-16 历史静态收口：当时以场景 `EnemyAnchor` 与显式 `D0EnemyBehaviorController` 为合同，并要求准星、射击表现与场景锚点绑定。该结构已被 2026-07-19 的 SpawnPoint/EntityPrefab 所有权迁移取代；其历史 Test Runner 记录不得用于证明新合同。
 - 2026-07-16 历史测试合同同步：当时的 `SceneContractTests` 核对控制器挂在 `EnemyAnchor`；此断言已被“Stage SpawnPoint + EntityWorld + prefab-owned visual/gameplay roots”替代，不能继续作为当前合同。
-- 2026-07-19 所有权迁移已落盘：Stage 只定义环境与 SpawnPoint；Scenario 用 `playerSpawnPointId` 选玩家点；Encounter SpawnSlot 编排敌人、点、Tick 和姿态策略；`D0EnemyDefinition.EntityPrefab` 自包含视觉根、gameplay 根、投射锚点、弱点和命中体；玩家枪口 Socket 与主射/副射瞬时表现归角色技能表现。文档与静态配置合同已同步，但正式证据仍须由当前候选执行 Unity 安装器回写、编译、上述定向 EditMode/PlayMode 用例和 Windows Release 验证后再更新结果列。
+- 2026-07-19 的所有权迁移记录属于已退役 D0 主线，不要求也不允许再由安装器回写；当前候选必须以 Formal authored 资产、现行 EditMode/PlayMode 合同和 Windows Release 构建重新建立证据。
 - 2026-07-16 资源风险：`Assets/FPGDemo/Presentation/D0Slice/Spine/` 的来源与可分发许可尚未确认，且当前不受 `.gitignore` 排除。详见 [D0 资源来源与发布隔离审计](D0_Asset_Provenance_Audit.zh-CN.md)；在负责人确认前，不得把它作为 G6 构建/发布放行依据。
 
 ## 人体试玩记录（5 人 × 3 次）
 
-| 试玩者 | 第 1 次 | 第 2 次：识别三类攻击 | 第 3 次：瞄准→主射→副射 Break→缩回 | 问题与调整 |
+| 试玩者 | 第 1 次 | 第 2 次：识别三类攻击 | 第 3 次：瞄准→射击→Break→缩回 | 问题与调整 |
 | --- | --- | --- | --- | --- |
 | P1 | `[记录]` | `[是/否]` | `[是/否]` | `[记录]` |
 | P2 | `[记录]` | `[是/否]` | `[是/否]` | `[记录]` |

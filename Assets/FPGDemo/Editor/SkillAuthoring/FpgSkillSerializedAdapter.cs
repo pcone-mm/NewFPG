@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FPG.Demo.Core;
 using FPG.Demo.Skills;
 using UnityEditor;
@@ -15,7 +16,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         PlayerReload,
         EnemyProjectile,
         EnemyTimedImpact,
-        EnemySummon
+        EnemySummon,
+        EnemySelfDestruct
     }
     internal enum FpgSkillIssueSeverity
     {
@@ -211,6 +213,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             { "reloadEvents" };
         private static readonly string[] SummonEventArrayNames =
             { "summonEvents" };
+        private static readonly string[] SelfDestructEventArrayNames =
+            { "selfDestructOwnerEvents", "selfDestructEvents" };
         private static readonly string[] DurationNames =
             { "durationTicks", "totalTicks", "lengthTicks", "endTick" };
         private static readonly string[] TickNames =
@@ -517,6 +521,24 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return ReadInt(property, 120, 0);
         }
 
+        public static int GetChargeProgressTicks(
+            SerializedObject serializedObject)
+        {
+            return ReadInt(
+                serializedObject?.FindProperty("chargeProgressTicks"),
+                30,
+                0);
+        }
+
+        public static bool GetHoldUntilCanceled(SerializedProperty sequence)
+        {
+            SerializedProperty property = sequence?.FindPropertyRelative(
+                "holdUntilCanceled");
+            return property != null
+                && property.propertyType == SerializedPropertyType.Boolean
+                && property.boolValue;
+        }
+
         public static string GetMainAnimation(SerializedProperty sequence)
         {
             string value = ReadFirstString(
@@ -789,6 +811,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 FpgSkillEventTrackKind.GameplayAction,
                 durationTicks,
                 FpgSkillActionKind.SummonActors);
+            AppendEventRecords(
+                result,
+                FindFirstRelative(sequence, SelfDestructEventArrayNames),
+                FpgSkillEventTrackKind.GameplayAction,
+                durationTicks,
+                FpgSkillActionKind.SelfDestructOwner);
 
             SerializedProperty tracks = GetActivePresentationTracks(sequence);
             if (tracks != null)
@@ -944,6 +972,16 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         : 0;
                 record.MaxHitCount = record.SummonCandidateCount;
             }
+            else if (ContainsAny(
+                         discriminator,
+                         "SelfDestruct",
+                         "Self Destruct"))
+            {
+                record.PreviewKind =
+                    FpgSkillPreviewActionKind.EnemySelfDestruct;
+                record.HitShape = "召唤者自毁";
+                record.MaxHitCount = 1;
+            }
             else if (ContainsAny(discriminator, "Reload", "装填"))
             {
                 record.PreviewKind = FpgSkillPreviewActionKind.PlayerReload;
@@ -1041,6 +1079,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     break;
                 case FpgSkillActionKind.SummonActors:
                     kind = "Summon";
+                    break;
+                case FpgSkillActionKind.SelfDestructOwner:
+                    kind = "SelfDestructOwner";
                     break;
                 default:
                     kind = string.Empty;
@@ -1252,6 +1293,16 @@ namespace FPG.Demo.Editor.SkillAuthoring
             if (durationTicks < 0)
             {
                 result.Add(Error("序列时长不能小于 0 Tick。"));
+            }
+
+            if (GetHoldUntilCanceled(sequence)
+                && events != null
+                && events.Any(item =>
+                    item != null
+                    && item.Track == FpgSkillEventTrackKind.GameplayAction))
+            {
+                result.Add(Error(
+                    "A sequence held until canceled cannot contain gameplay actions."));
             }
 
             if (!HasAnyEventArray(sequence))
@@ -2780,6 +2831,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     return FindFirstRelative(sequence, ReloadEventArrayNames);
                 case FpgSkillActionKind.SummonActors:
                     return FindFirstRelative(sequence, SummonEventArrayNames);
+                case FpgSkillActionKind.SelfDestructOwner:
+                    return FindFirstRelative(
+                        sequence,
+                        SelfDestructEventArrayNames);
                 default:
                     return null;
             }
@@ -2899,6 +2954,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 || FindFirstRelative(sequence, ProjectileEventArrayNames) != null
                 || FindFirstRelative(sequence, ReloadEventArrayNames) != null
                 || FindFirstRelative(sequence, SummonEventArrayNames) != null
+                || FindFirstRelative(sequence, SelfDestructEventArrayNames)
+                    != null
                 || GetActivePresentationTracks(sequence) != null
                 || GetEventArray(sequence, FpgSkillEventTrackKind.Warning) != null;
         }
@@ -3702,6 +3759,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     FpgSkillEventTrackKind.GameplayAction,
                     FpgSkillActionKind.SummonActors,
                     0),
+                MakeEventKey(
+                    FpgSkillEventTrackKind.GameplayAction,
+                    FpgSkillActionKind.SelfDestructOwner,
+                    0),
                 MakeEventKey(FpgSkillEventTrackKind.Warning, 0)
             };
 
@@ -3945,6 +4006,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     WriteInt(action, 8, "maxTotalSummonsPerEncounter");
                     WriteInt(action, 2, "maxSummonRecursionDepth");
                     break;
+
+                case FpgSkillActionKind.SelfDestructOwner:
+                    SetEnumRawValue(
+                        action,
+                        (int)FpgSkillTargetSource.Self,
+                        "targetSource");
+                    WriteString(
+                        action,
+                        string.Empty,
+                        "boundGameplayEventId");
+                    break;
             }
         }
 
@@ -4021,6 +4093,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     return "完成换弹";
                 case FpgSkillActionKind.SummonActors:
                     return "召唤单位";
+                case FpgSkillActionKind.SelfDestructOwner:
+                    return "召唤者自毁";
                 default:
                     return "未知";
             }

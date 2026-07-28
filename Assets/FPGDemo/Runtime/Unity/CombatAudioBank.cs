@@ -29,8 +29,8 @@ namespace FPG.Demo.Unity
 
     /// <summary>
     /// Stable authored defaults for one D0 audio cue. The bank asset owns the
-    /// serialized mapping; this value only gives the installer a deterministic
-    /// policy to write before G3 generates replaceable clips.
+    /// serialized mapping; this value provides a deterministic policy while the
+    /// clips remain independently replaceable.
     /// </summary>
     public readonly struct CombatAudioCuePolicy
     {

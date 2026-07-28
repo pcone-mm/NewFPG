@@ -83,6 +83,28 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void SerializedAdapterReadsHoldAndChargeProgressFields()
+        {
+            WithSkill((skill, serialized) =>
+            {
+                serialized.FindProperty("chargeProgressTicks").intValue = 42;
+                SerializedProperty sequence =
+                    FpgSkillSerializedAdapter.GetSequence(serialized, 0);
+                sequence.FindPropertyRelative("holdUntilCanceled").boolValue =
+                    true;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                serialized.UpdateIfRequiredOrScript();
+
+                Assert.That(
+                    FpgSkillSerializedAdapter.GetChargeProgressTicks(serialized),
+                    Is.EqualTo(42));
+                Assert.That(
+                    FpgSkillSerializedAdapter.GetHoldUntilCanceled(sequence),
+                    Is.True);
+            });
+        }
+
+        [Test]
         public void PresentationTrackCrudPreservesStableIdentityAndOrder()
         {
             WithSkill((skill, serialized) =>
@@ -650,6 +672,8 @@ namespace FPG.Demo.Tests.EditMode
             sequence.FindPropertyRelative("mainAnimation").stringValue =
                 "skill_test";
             sequence.FindPropertyRelative("loop").boolValue = false;
+            sequence.FindPropertyRelative("holdUntilCanceled").boolValue =
+                false;
             sequence.FindPropertyRelative("attackEvents").arraySize = 0;
             sequence.FindPropertyRelative("projectileEvents").arraySize = 0;
             sequence.FindPropertyRelative("reloadEvents").arraySize = 0;

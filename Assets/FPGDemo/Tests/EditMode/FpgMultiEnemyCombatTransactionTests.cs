@@ -286,7 +286,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void DieAfterSuccessfulSummonRetriesBeforeKillingOwnerAndNotifiesOnce()
+        public void BoundSelfDestructRetriesWithSummonAndNotifiesOnceAfterQueue()
         {
             RetryThenQueueSummonSink summonSink = new RetryThenQueueSummonSink();
             PortFixture fixture = new PortFixture(
@@ -295,46 +295,11 @@ namespace FPG.Demo.Tests.EditMode
                 impactQueueCapacity: 1,
                 summonRequestSink: summonSink);
             RuntimeId ownerId = fixture.RegisterEnemy(100);
-            FpgSummonRequest summonRequest = new FpgSummonRequest(
+            CreateBoundSelfDestructCommands(
+                fixture,
                 ownerId,
-                "generic-child",
-                recursionDepth: 1,
-                requestSequence: 0L,
-                summonActionId: "generic-replacement",
-                maxSummonsPerOwner: 0,
-                occupancyMode: FpgSummonOccupancyMode.ReplaceOwner,
-                placementMode: FpgSummonPlacementMode.OwnerPosition);
-            FpgEnemyAttackPayload payload = FpgEnemyAttackPayload.ForSummon(
-                new FpgFormalSummonPayload(
-                    summonRequest,
-                    maxSummonsPerOwner: 0,
-                    releaseDelayTicks: 0,
-                    ownerOutcome: FpgSummonOwnerOutcome.DieAfterSuccessfulSummon));
-            FpgAttackScheduleRequest schedule =
-                new FpgAttackScheduleRequest(
-                    ownerId,
-                    new TickIndex(0L),
-                    priority: 0,
-                    scheduleSequence: 0L,
-                    attackPatternId: "generic-summon",
-                    skillExecutionId: new SkillExecutionId(1L),
-                    gameplayEventId: 1);
-            FpgEnemyAttackSpatialContext spatialContext =
-                new FpgEnemyAttackSpatialContext(
-                    new TickIndex(0L),
-                    FpgSkillTargetSource.CurrentTarget,
-                    socketId: 0,
-                    new FpgSkillOffset(0, 0, 0),
-                    fixture.PlayerId,
-                    SpatialVectorKey.Zero,
-                    SpatialVectorKey.Zero);
-            FpgEnemyAttackCommand command = new FpgEnemyAttackCommand(
-                schedule,
-                spawnSequence: 0,
-                payload,
-                FpgEnemySkillCapacityReservation.Invalid,
-                default(ReservationToken),
-                spatialContext);
+                out FpgEnemyAttackCommand summonCommand,
+                out FpgEnemyAttackCommand selfDestructCommand);
             FpgEnemyRoster roster = new FpgEnemyRoster(1);
             int enemyDiedCount = 0;
             int summonRequestedCount = 0;
@@ -347,7 +312,13 @@ namespace FPG.Demo.Tests.EditMode
             fixture.Port.SummonRequested += _ => throw new InvalidOperationException("test");
             fixture.Port.SummonRequested += _ => summonRequestedCount++;
 
-            Assert.That(fixture.Port.TrySubmitEnemyAttack(command).IsSuccess, Is.True);
+            Assert.That(
+                fixture.Port.TrySubmitEnemyAttack(summonCommand).IsSuccess,
+                Is.True);
+            Assert.That(
+                fixture.Port.TrySubmitEnemyAttack(selfDestructCommand)
+                    .IsSuccess,
+                Is.True);
 
             DomainResult retry = fixture.Port.Process(
                 FpgBattleTickPhase.EnemyAttackDirector,
@@ -361,7 +332,7 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(summonSink.CallCount, Is.EqualTo(1));
                 Assert.That(ownerAfterRetry.Combatant.IsDead, Is.False);
                 Assert.That(fixture.Port.CanAttack(ownerId), Is.True);
-                Assert.That(fixture.Port.PendingAttackCount, Is.EqualTo(1));
+                Assert.That(fixture.Port.PendingAttackCount, Is.EqualTo(2));
                 Assert.That(enemyDiedCount, Is.Zero);
                 Assert.That(summonRequestedCount, Is.Zero);
             });
@@ -408,6 +379,100 @@ namespace FPG.Demo.Tests.EditMode
         }
 
 
+        [Test]
+        public void BoundSelfDestructSkipsWhenSummonHitsStaticLimit()
+        {
+            PortFixture fixture = new PortFixture(
+                playerHitCapacity: 1,
+                impactHistoryCapacity: 2,
+                impactQueueCapacity: 1,
+                summonRequestSink: new LimitReachedSummonSink());
+            RuntimeId ownerId = fixture.RegisterEnemy(100);
+            CreateBoundSelfDestructCommands(
+                fixture,
+                ownerId,
+                out FpgEnemyAttackCommand summonCommand,
+                out FpgEnemyAttackCommand selfDestructCommand);
+            int enemyDiedCount = 0;
+            int summonRequestedCount = 0;
+            fixture.Port.EnemyDied += _ => enemyDiedCount++;
+            fixture.Port.SummonRequested += _ => summonRequestedCount++;
+
+            Assert.That(
+                fixture.Port.TrySubmitEnemyAttack(summonCommand).IsSuccess,
+                Is.True);
+            Assert.That(
+                fixture.Port.TrySubmitEnemyAttack(selfDestructCommand)
+                    .IsSuccess,
+                Is.True);
+
+            DomainResult processed = fixture.Port.Process(
+                FpgBattleTickPhase.EnemyAttackDirector,
+                new TickIndex(0L),
+                new FpgEnemyRoster(1));
+
+            Assert.That(
+                fixture.Port.TryGetEnemyRuntime(ownerId, out var owner),
+                Is.True);
+            AssertAll(() =>
+            {
+                Assert.That(processed.IsSuccess, Is.True);
+                Assert.That(owner.Combatant.IsDead, Is.False);
+                Assert.That(fixture.Port.CanAttack(ownerId), Is.True);
+                Assert.That(fixture.Port.PendingAttackCount, Is.Zero);
+                Assert.That(enemyDiedCount, Is.Zero);
+                Assert.That(summonRequestedCount, Is.Zero);
+            });
+        }
+
+        [Test]
+        public void UnboundSelfDestructKillsOwnerWithoutSummon()
+        {
+            PortFixture fixture = new PortFixture(
+                playerHitCapacity: 1,
+                impactHistoryCapacity: 2,
+                impactQueueCapacity: 1);
+            RuntimeId ownerId = fixture.RegisterEnemy(100);
+            FpgEnemyAttackPayload payload =
+                FpgEnemyAttackPayload.ForSelfDestructOwner(-1L);
+            FpgAttackScheduleRequest schedule =
+                new FpgAttackScheduleRequest(
+                    ownerId,
+                    new TickIndex(0L),
+                    priority: 0,
+                    scheduleSequence: 0L,
+                    attackPatternId: "self-destruct",
+                    skillExecutionId: new SkillExecutionId(1L),
+                    gameplayEventId: 1);
+            FpgEnemyAttackCommand command = new FpgEnemyAttackCommand(
+                schedule,
+                spawnSequence: 0,
+                payload,
+                FpgEnemySkillCapacityReservation.Invalid,
+                default(ReservationToken));
+            int enemyDiedCount = 0;
+            fixture.Port.EnemyDied += _ => enemyDiedCount++;
+
+            Assert.That(
+                fixture.Port.TrySubmitEnemyAttack(command).IsSuccess,
+                Is.True);
+            DomainResult processed = fixture.Port.Process(
+                FpgBattleTickPhase.EnemyAttackDirector,
+                new TickIndex(0L),
+                new FpgEnemyRoster(1));
+
+            Assert.That(
+                fixture.Port.TryGetEnemyRuntime(ownerId, out var owner),
+                Is.True);
+            AssertAll(() =>
+            {
+                Assert.That(processed.IsSuccess, Is.True);
+                Assert.That(owner.Combatant.IsDead, Is.True);
+                Assert.That(fixture.Port.PendingAttackCount, Is.Zero);
+                Assert.That(enemyDiedCount, Is.EqualTo(1));
+            });
+        }
+
         [TestCase(8, 8, 136, 128, 128, true)]
         [TestCase(8, 7, 136, 128, 128, false)]
         [TestCase(8, 8, 136, 7, 128, false)]
@@ -441,6 +506,72 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 string.IsNullOrEmpty((string)arguments[5]),
                 Is.EqualTo(expected));
+        }
+
+        private static void CreateBoundSelfDestructCommands(
+            PortFixture fixture,
+            RuntimeId ownerId,
+            out FpgEnemyAttackCommand summonCommand,
+            out FpgEnemyAttackCommand selfDestructCommand)
+        {
+            FpgSummonRequest summonRequest = new FpgSummonRequest(
+                ownerId,
+                "generic-child",
+                recursionDepth: 1,
+                requestSequence: 0L,
+                summonActionId: "generic-replacement",
+                maxSummonsPerOwner: 0,
+                occupancyMode: FpgSummonOccupancyMode.ReplaceOwner,
+                placementMode: FpgSummonPlacementMode.OwnerPosition);
+            FpgEnemyAttackPayload summonPayload =
+                FpgEnemyAttackPayload.ForSummon(
+                    new FpgFormalSummonPayload(
+                        summonRequest,
+                        maxSummonsPerOwner: 0,
+                        releaseDelayTicks: 0));
+            FpgAttackScheduleRequest summonSchedule =
+                new FpgAttackScheduleRequest(
+                    ownerId,
+                    new TickIndex(0L),
+                    priority: 0,
+                    scheduleSequence: 0L,
+                    attackPatternId: "generic-summon",
+                    skillExecutionId: new SkillExecutionId(1L),
+                    gameplayEventId: 1);
+            FpgEnemyAttackSpatialContext spatialContext =
+                new FpgEnemyAttackSpatialContext(
+                    new TickIndex(0L),
+                    FpgSkillTargetSource.CurrentTarget,
+                    socketId: 0,
+                    new FpgSkillOffset(0, 0, 0),
+                    fixture.PlayerId,
+                    SpatialVectorKey.Zero,
+                    SpatialVectorKey.Zero);
+            summonCommand = new FpgEnemyAttackCommand(
+                summonSchedule,
+                spawnSequence: 0,
+                summonPayload,
+                FpgEnemySkillCapacityReservation.Invalid,
+                default(ReservationToken),
+                spatialContext);
+
+            FpgEnemyAttackPayload selfDestructPayload =
+                FpgEnemyAttackPayload.ForSelfDestructOwner(0L);
+            FpgAttackScheduleRequest selfDestructSchedule =
+                new FpgAttackScheduleRequest(
+                    ownerId,
+                    new TickIndex(0L),
+                    priority: 0,
+                    scheduleSequence: 1L,
+                    attackPatternId: "generic-summon",
+                    skillExecutionId: new SkillExecutionId(1L),
+                    gameplayEventId: 2);
+            selfDestructCommand = new FpgEnemyAttackCommand(
+                selfDestructSchedule,
+                spawnSequence: 0,
+                selfDestructPayload,
+                FpgEnemySkillCapacityReservation.Invalid,
+                default(ReservationToken));
         }
 
         private static QueryCandidate CreateCandidate(
@@ -585,6 +716,16 @@ namespace FPG.Demo.Tests.EditMode
                 return CallCount == 1
                     ? FpgSummonQueueAck.Retry(RejectReason.BudgetExceeded)
                     : FpgSummonQueueAck.Queued;
+            }
+        }
+
+        private sealed class LimitReachedSummonSink : IFpgSummonRequestSink
+        {
+            public FpgSummonQueueAck TryQueueSummon(
+                FpgSummonRequest request,
+                TickIndex tick)
+            {
+                return FpgSummonQueueAck.LimitReached;
             }
         }
 

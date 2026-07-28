@@ -5,7 +5,7 @@ namespace FPG.Demo.Skills
     public static class FpgSkillRuntimeConstants
     {
         public const int TickRate = 60;
-        public const int GameplayHashVersion = 4;
+        public const int GameplayHashVersion = 5;
         public const int PresentationHashVersion = 1;
     }
 
@@ -192,7 +192,8 @@ namespace FPG.Demo.Skills
         Attack = 1,
         LaunchProjectile = 2,
         CommitReload = 3,
-        SummonActors = 4
+        SummonActors = 4,
+        SelfDestructOwner = 5
     }
 
     public enum FpgSkillSequenceKind
@@ -203,6 +204,52 @@ namespace FPG.Demo.Skills
         ChargeLoop = 3,
         Release = 4,
         Cancel = 5
+    }
+
+    public static class FpgSecondarySkillLifecycleRules
+    {
+        public static bool IsChargeStage(FpgSkillSequenceKind kind)
+        {
+            return kind == FpgSkillSequenceKind.ChargeEnter
+                || kind == FpgSkillSequenceKind.ChargeLoop;
+        }
+
+        public static bool TryGetContinuationAfterCompletion(
+            FpgSkillSequenceKind completed,
+            out FpgSkillSequenceKind continuation)
+        {
+            switch (completed)
+            {
+                case FpgSkillSequenceKind.ChargeEnter:
+                    continuation = FpgSkillSequenceKind.ChargeLoop;
+                    return true;
+                case FpgSkillSequenceKind.Release:
+                    continuation = FpgSkillSequenceKind.Cancel;
+                    return true;
+                default:
+                    continuation = FpgSkillSequenceKind.None;
+                    return false;
+            }
+        }
+    }
+
+    public static class FpgSkillPresentationCommitRules
+    {
+        public static bool RequiresSuccessfulGameplayCommit(
+            in FpgCompiledSkillEvent skillEvent)
+        {
+            return skillEvent.Kind == FpgSkillEventKind.ActivePresentation
+                && skillEvent.BoundGameplayEventId > 0;
+        }
+
+        public static bool CanPresent(
+            in FpgCompiledSkillEvent skillEvent,
+            bool boundGameplayCommitSucceeded)
+        {
+            return skillEvent.Kind == FpgSkillEventKind.ActivePresentation
+                && (!RequiresSuccessfulGameplayCommit(skillEvent)
+                    || boundGameplayCommitSucceeded);
+        }
     }
 
     public enum FpgSkillValidationError
@@ -233,7 +280,8 @@ namespace FPG.Demo.Skills
         InvalidActionIndex,
         InvalidActivePresentationKind,
         InvalidPresentationHandle,
-        InvalidPresentationTrackId
+        InvalidPresentationTrackId,
+        HoldSequenceHasGameplayActions
     }
 
     public readonly struct FpgSkillValidationResult

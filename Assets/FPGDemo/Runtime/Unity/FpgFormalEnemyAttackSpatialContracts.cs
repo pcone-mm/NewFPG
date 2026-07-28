@@ -96,6 +96,19 @@ namespace FPG.Demo.Unity
                         actionOffset += sequence.SummonEvents.Count;
                         break;
 
+                    case FpgSkillActionKind.SelfDestructOwner:
+                        if (TryResolveAction(
+                                sequence.SelfDestructOwnerEvents,
+                                actionOffset,
+                                compiledEvent,
+                                out socketName))
+                        {
+                            return true;
+                        }
+
+                        actionOffset += sequence.SelfDestructOwnerEvents.Count;
+                        break;
+
                     default:
                         return false;
                 }

@@ -10,6 +10,34 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class FpgSkillDefinitionTests
     {
+        private const string LegacyPlayerSkillWithoutNewFieldsJson =
+            "{\"MonoBehaviour\":{"
+            + "\"authoringSchemaVersion\":3,"
+            + "\"skillId\":\"player.v3.legacy-new-fields\","
+            + "\"displayName\":\"Legacy Player Skill\","
+            + "\"sequences\":[{"
+            + "\"kind\":1,"
+            + "\"durationTicks\":0,"
+            + "\"alternateAnimations\":[],"
+            + "\"mainAnimation\":\"legacy_execute\","
+            + "\"loop\":true,"
+            + "\"animationPlaybackMode\":0,"
+            + "\"animationStartTick\":0,"
+            + "\"animationEndTick\":0,"
+            + "\"sourceAnimationDurationTicks\":0,"
+            + "\"attackEvents\":[],"
+            + "\"projectileEvents\":[],"
+            + "\"reloadEvents\":[],"
+            + "\"summonEvents\":[],"
+            + "\"selfDestructOwnerEvents\":[],"
+            + "\"activePresentationTracks\":[],"
+            + "\"warnings\":[]"
+            + "}],"
+            + "\"secondaryTriggerMode\":0,"
+            + "\"minimumChargeTicks\":12,"
+            + "\"sequenceCooldownTicks\":7"
+            + "}}";
+
         [Test]
         public void PlayerV3CompilesTypedActionsAndHashesInlineGameplay()
         {
@@ -38,8 +66,23 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(compiled.ReloadActionCount, Is.EqualTo(1));
                 Assert.That(compiled.MaximumPelletCount, Is.EqualTo(8));
                 Assert.That(compiled.MaximumImpactCount, Is.EqualTo(16));
+                Assert.That(compiled.ChargeProgressTicks, Is.EqualTo(30));
 
                 ulong gameplayHash = compiled.GameplayHash;
+                serialized.FindProperty("chargeProgressTicks").intValue = 45;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                Assert.That(
+                    skill.TryCompile(
+                        out FpgCompiledPlayerSkillDefinition progressed,
+                        out string progressError),
+                    Is.True,
+                    progressError);
+                Assert.That(progressed.ChargeProgressTicks, Is.EqualTo(45));
+                Assert.That(
+                    progressed.GameplayHash,
+                    Is.Not.EqualTo(gameplayHash));
+
+                gameplayHash = progressed.GameplayHash;
                 SerializedProperty projectile = sequence
                     .FindPropertyRelative("projectileEvents")
                     .GetArrayElementAtIndex(0);
@@ -54,6 +97,119 @@ namespace FPG.Demo.Tests.EditMode
                     Is.True,
                     changedError);
                 Assert.That(changed.GameplayHash, Is.Not.EqualTo(gameplayHash));
+            }
+            finally
+            {
+                Object.DestroyImmediate(skill);
+            }
+        }
+
+        [Test]
+        public void ChargeReleaseRequiresPositiveChargeProgressTicks()
+        {
+            FpgPlayerSkillDefinition skill =
+                ScriptableObject.CreateInstance<FpgPlayerSkillDefinition>();
+            try
+            {
+                SerializedObject serialized = new SerializedObject(skill);
+                ConfigureIdentity(serialized, "player.v3.charge-progress");
+                Assert.That(
+                    serialized.FindProperty("chargeProgressTicks").intValue,
+                    Is.EqualTo(30));
+                SerializedProperty sequence = ConfigureExecute(serialized, 0);
+                ConfigurePlayerAttack(sequence, 0, 0);
+                serialized.FindProperty("chargeProgressTicks").intValue = 0;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                Assert.That(skill.TryCompile(out _, out string error), Is.False);
+                Assert.That(error, Does.Contain("invalid activation metadata"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(skill);
+            }
+        }
+
+        [Test]
+        public void LegacyJsonWithoutHoldUntilCanceledDefaultsToNonHolding()
+        {
+            FpgPlayerSkillDefinition skill =
+                ScriptableObject.CreateInstance<FpgPlayerSkillDefinition>();
+            try
+            {
+                LoadLegacyPlayerSkillWithoutNewFields(skill);
+
+                Assert.That(skill.Sequences.Count, Is.EqualTo(1));
+                Assert.That(skill.Sequences[0].Loop, Is.True);
+                Assert.That(skill.Sequences[0].HoldUntilCanceled, Is.False);
+                Assert.That(
+                    skill.TryCompile(
+                        out FpgCompiledPlayerSkillDefinition compiled,
+                        out string error),
+                    Is.True,
+                    error);
+                Assert.That(
+                    compiled.Timeline.TryGetSequence(
+                        FpgSkillSequenceKind.Execute,
+                        out FpgCompiledSkillSequence sequence),
+                    Is.True);
+                Assert.That(sequence.Loop, Is.True);
+                Assert.That(sequence.HoldUntilCanceled, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(skill);
+            }
+        }
+
+        [Test]
+        public void LegacyJsonWithoutChargeProgressTicksKeepsThirtyTickDefault()
+        {
+            FpgPlayerSkillDefinition skill =
+                ScriptableObject.CreateInstance<FpgPlayerSkillDefinition>();
+            try
+            {
+                LoadLegacyPlayerSkillWithoutNewFields(skill);
+
+                Assert.That(
+                    skill.SecondaryTriggerMode,
+                    Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
+                Assert.That(skill.MinimumChargeTicks, Is.EqualTo(12));
+                Assert.That(skill.SequenceCooldownTicks, Is.EqualTo(7));
+                Assert.That(skill.ChargeProgressTicks, Is.EqualTo(30));
+                Assert.That(
+                    skill.TryCompile(
+                        out FpgCompiledPlayerSkillDefinition compiled,
+                        out string error),
+                    Is.True,
+                    error);
+                Assert.That(compiled.ChargeProgressTicks, Is.EqualTo(30));
+            }
+            finally
+            {
+                Object.DestroyImmediate(skill);
+            }
+        }
+
+        [Test]
+        public void HoldSequenceRejectsAuthoredGameplayActions()
+        {
+            FpgPlayerSkillDefinition skill =
+                ScriptableObject.CreateInstance<FpgPlayerSkillDefinition>();
+            try
+            {
+                SerializedObject serialized = new SerializedObject(skill);
+                ConfigureIdentity(serialized, "player.v3.hold-actions");
+                serialized.FindProperty("secondaryTriggerMode").enumValueIndex =
+                    (int)SecondaryTriggerMode.ImmediateRepeatWhileHeld;
+                SerializedProperty sequence = ConfigureExecute(serialized, 0);
+                sequence.FindPropertyRelative("holdUntilCanceled").boolValue =
+                    true;
+                ConfigurePlayerAttack(sequence, 0, 0);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                Assert.That(skill.TryCompile(out _, out string error), Is.False);
+                Assert.That(error, Does.Contain("cannot hold until canceled"));
             }
             finally
             {
@@ -180,6 +336,29 @@ namespace FPG.Demo.Tests.EditMode
                 FpgSkillTimelineDefinition.CurrentAuthoringSchemaVersion;
         }
 
+        private static void LoadLegacyPlayerSkillWithoutNewFields(
+            FpgPlayerSkillDefinition skill)
+        {
+            Assert.That(
+                LegacyPlayerSkillWithoutNewFieldsJson,
+                Does.Not.Contain("holdUntilCanceled"));
+            Assert.That(
+                LegacyPlayerSkillWithoutNewFieldsJson,
+                Does.Not.Contain("chargeProgressTicks"));
+            EditorJsonUtility.FromJsonOverwrite(
+                LegacyPlayerSkillWithoutNewFieldsJson,
+                skill);
+
+            SerializedObject serialized = new SerializedObject(skill);
+            SerializedProperty sequences = serialized.FindProperty("sequences");
+            Assert.That(sequences.arraySize, Is.EqualTo(1));
+            ConfigurePlayerAttack(
+                sequences.GetArrayElementAtIndex(0),
+                0,
+                0);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static SerializedProperty ConfigureExecute(
             SerializedObject serialized,
             int durationTicks)
@@ -194,10 +373,14 @@ namespace FPG.Demo.Tests.EditMode
             sequence.FindPropertyRelative("mainAnimation").stringValue =
                 "skill_test";
             sequence.FindPropertyRelative("loop").boolValue = false;
+            sequence.FindPropertyRelative("holdUntilCanceled").boolValue =
+                false;
             sequence.FindPropertyRelative("attackEvents").arraySize = 0;
             sequence.FindPropertyRelative("projectileEvents").arraySize = 0;
             sequence.FindPropertyRelative("reloadEvents").arraySize = 0;
             sequence.FindPropertyRelative("summonEvents").arraySize = 0;
+            sequence.FindPropertyRelative("selfDestructOwnerEvents")
+                .arraySize = 0;
             sequence.FindPropertyRelative("activePresentationTracks")
                 .arraySize = 0;
             sequence.FindPropertyRelative("warnings").arraySize = 0;

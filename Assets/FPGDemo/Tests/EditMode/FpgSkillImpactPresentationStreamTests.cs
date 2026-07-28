@@ -202,6 +202,85 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void ImmediateEnvironmentContactPublishesBeforeOneGroupCompletion()
+        {
+            PortFixture fixture = new PortFixture();
+            TickIndex tick = new TickIndex(0L);
+            AttackId attackId = new AttackId(45L);
+            SkillExecutionId executionId = new SkillExecutionId(46L);
+            SpatialVectorKey contactPoint =
+                new SpatialVectorKey(100, 200, 300);
+
+            Assert.That(
+                fixture.Port.TryPublishImmediateEnvironmentContact(
+                    fixture.PlayerId,
+                    executionId,
+                    47,
+                    tick,
+                    attackId,
+                    contactPoint,
+                    0),
+                Is.True);
+            Assert.That(
+                fixture.Port.TryCompleteImmediateSkillPresentationGroup(
+                    fixture.PlayerId,
+                    executionId,
+                    47,
+                    tick,
+                    attackId),
+                Is.True);
+
+            FpgSkillImpactPresentationEvent[] output =
+                new FpgSkillImpactPresentationEvent[2];
+            int count = fixture.Port.SkillImpactPresentation.CopyAfter(
+                0L,
+                output,
+                out bool hasGap);
+            FpgSkillImpactCorrelation correlation =
+                new FpgSkillImpactCorrelation(
+                    fixture.PlayerId,
+                    executionId,
+                    47);
+
+            Assert.That(hasGap, Is.False);
+            Assert.That(count, Is.EqualTo(2));
+            Assert.That(
+                output[0].Type,
+                Is.EqualTo(FpgSkillImpactPresentationEventType.Contact));
+            Assert.That(
+                output[1].Type,
+                Is.EqualTo(FpgSkillImpactPresentationEventType.GroupCompleted));
+            Assert.That(output[0].Correlation, Is.EqualTo(correlation));
+            Assert.That(output[1].Correlation, Is.EqualTo(correlation));
+            Assert.That(
+                output[0].Contact.GroupKind,
+                Is.EqualTo(FpgSkillImpactPresentationGroupKind.ImmediateAttack));
+            Assert.That(
+                output[0].Contact.ContactKind,
+                Is.EqualTo(FpgSkillImpactContactKind.EnvironmentBlocked));
+            Assert.That(output[0].Contact.ContactPoint, Is.EqualTo(contactPoint));
+            Assert.That(output[0].Contact.HitPart, Is.EqualTo(HitPart.Body));
+            Assert.That(output[0].Contact.ContactOrdinal, Is.Zero);
+            Assert.That(
+                output[0].Contact.TargetRuntimeId,
+                Is.EqualTo(RuntimeId.Invalid));
+            Assert.That(
+                output[0].Contact.ProjectileId,
+                Is.EqualTo(ProjectileId.Invalid));
+            Assert.That(
+                output[0].Contact.ImpactId,
+                Is.EqualTo(ImpactId.Invalid));
+            Assert.That(output[0].Contact.AttackId, Is.EqualTo(attackId));
+            Assert.That(output[1].Completion.AttackId, Is.EqualTo(attackId));
+            Assert.That(
+                output[1].Completion.GroupKind,
+                Is.EqualTo(FpgSkillImpactPresentationGroupKind.ImmediateAttack));
+            Assert.That(
+                fixture.Port.SkillImpactPresentation.LastSequence,
+                Is.EqualTo(2L));
+        }
+
+        [Test]
         public void CommittedEnemyTimedImpactPublishesExactTargetPointAndCompletion()
         {
             PortFixture fixture = new PortFixture();

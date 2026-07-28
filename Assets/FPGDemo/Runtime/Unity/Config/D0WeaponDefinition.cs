@@ -154,10 +154,30 @@ namespace FPG.Demo.Unity
 
         public bool TryCreate(out WeaponDefinition definition, out string error)
         {
+            return TryCreate(
+                SecondaryTriggerMode,
+                out definition,
+                out error);
+        }
+
+        public bool TryCreate(
+            SecondaryTriggerMode secondaryTriggerModeOverride,
+            out WeaponDefinition definition,
+            out string error)
+        {
             definition = default(WeaponDefinition);
             if (string.IsNullOrWhiteSpace(weaponId) || string.IsNullOrWhiteSpace(displayName))
             {
                 error = "Weapon definition requires stable ID and display name values.";
+                return false;
+            }
+
+            if (!Enum.IsDefined(
+                    typeof(SecondaryTriggerMode),
+                    secondaryTriggerModeOverride))
+            {
+                error =
+                    $"Weapon definition has invalid secondary trigger mode '{secondaryTriggerModeOverride}'.";
                 return false;
             }
 
@@ -179,6 +199,7 @@ namespace FPG.Demo.Unity
                     compiledPrimary,
                     compiledSecondary,
                     compiledReload,
+                    secondaryTriggerModeOverride,
                     out WeaponProjection projection,
                     out error))
             {
@@ -199,7 +220,7 @@ namespace FPG.Demo.Unity
                     projection.SecondaryPayload.Damage,
                     new TickDuration(projection.ReloadLockTicks),
                     projection.SecondaryPayload.AreaCombatantLimit,
-                    SecondaryTriggerMode,
+                    secondaryTriggerModeOverride,
                     projection.PrimaryPayload.QueryMode,
                     projection.PrimaryPayload.AdditionalPenetrationCount,
                     projection.SecondaryPayload.QueryMode,
@@ -260,6 +281,7 @@ namespace FPG.Demo.Unity
             FpgCompiledPlayerSkillDefinition compiledPrimary,
             FpgCompiledPlayerSkillDefinition compiledSecondary,
             FpgCompiledPlayerSkillDefinition compiledReload,
+            SecondaryTriggerMode secondaryTriggerModeOverride,
             out WeaponProjection projection,
             out string error)
         {
@@ -276,7 +298,7 @@ namespace FPG.Demo.Unity
             }
 
             FpgSkillSequenceKind secondarySequenceKind =
-                SecondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+                secondaryTriggerModeOverride == SecondaryTriggerMode.ChargeRelease
                     && compiledSecondary.Timeline.TryGetSequence(
                         FpgSkillSequenceKind.Release,
                         out _)
@@ -289,7 +311,7 @@ namespace FPG.Demo.Unity
                     secondarySequenceKind,
                     out FpgCompiledPlayerSkillSequenceSummary secondarySummary))
             {
-                error = "Secondary skill has no executable release sequence.";
+                error = "Secondary skill has no executable sequence for the selected trigger mode.";
                 return false;
             }
 
@@ -351,13 +373,11 @@ namespace FPG.Demo.Unity
 
             try
             {
-                int primaryLockTicks = ComputeProjectedLockTicks(
-                    primarySequence,
-                    primarySummary,
+                int primaryLockTicks = Math.Max(
+                    1,
                     compiledPrimary.SequenceCooldownTicks);
-                int secondaryLockTicks = ComputeProjectedLockTicks(
-                    secondarySequence,
-                    secondarySummary,
+                int secondaryLockTicks = Math.Max(
+                    1,
                     compiledSecondary.SequenceCooldownTicks);
                 int reloadLockTicks = checked(reloadSequence.DurationTicks + 1);
                 int maximumImpactCount = Math.Max(
@@ -434,18 +454,6 @@ namespace FPG.Demo.Unity
                 ? string.Empty
                 : label + " sequence has no gameplay payload.";
             return found;
-        }
-
-        private static int ComputeProjectedLockTicks(
-            FpgCompiledSkillSequence sequence,
-            FpgCompiledPlayerSkillSequenceSummary summary,
-            int cooldownTicks)
-        {
-            int sequenceUnlock = checked(sequence.DurationTicks + 1);
-            int cooldownUnlock = summary.LastAttackTick < 0
-                ? 0
-                : checked(summary.LastAttackTick + cooldownTicks);
-            return Math.Max(1, Math.Max(sequenceUnlock, cooldownUnlock));
         }
 
         private readonly struct WeaponProjection

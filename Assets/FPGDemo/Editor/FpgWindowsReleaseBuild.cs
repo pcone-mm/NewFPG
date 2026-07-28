@@ -3,21 +3,22 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using FPG.Demo.Editor.LevelAuthoring;
 using FPG.Demo.Unity;
 using UnityEngine;
 
 namespace FPG.Demo.Editor
 {
     /// <summary>
-    /// Builds the formal FPG demo Player with an explicit, isolated scene list. This
-    /// command intentionally does not read or mutate the project's global
-    /// scene list, so unrelated scenes cannot enter the delivery by accident.
+    /// Builds the formal FPG demo Player with the shared production scene list.
     /// </summary>
     public static class FpgWindowsReleaseBuild
     {
-        public const string BootScenePath = "Assets/FPGDemo/Scenes/Boot.unity";
+        public const string BootScenePath =
+            FpgProductionSceneList.BootScenePath;
         private const string BootstrapConfigPath = "Assets/FPGDemo/Config/GameBootstrapConfig.asset";
-        public const string FormalRoomScenePath = "Assets/FPGDemo/Scenes/FormalRoom.unity";
+        public const string FormalRoomScenePath =
+            FpgProductionSceneList.FormalRoomScenePath;
         public const string DefaultOutputRelativePath =
             "Builds/FPGDemo/WindowsRelease/FPGDemo.exe";
 
@@ -52,9 +53,16 @@ namespace FPG.Demo.Editor
 
             Directory.CreateDirectory(outputDirectory);
 
+            if (!FpgProductionSceneList.TryBuild(
+                    out string[] productionScenes,
+                    out string sceneListError))
+            {
+                throw new InvalidOperationException(sceneListError);
+            }
+
             BuildPlayerOptions options = new BuildPlayerOptions
             {
-                scenes = new[] { BootScenePath, FormalRoomScenePath },
+                scenes = productionScenes,
                 locationPathName = locationPathName,
                 targetGroup = BuildTargetGroup.Standalone,
                 target = BuildTarget.StandaloneWindows64,
@@ -73,7 +81,7 @@ namespace FPG.Demo.Editor
             Debug.Log(
                 "[FPG_BUILD] success "
                 + $"output={locationPathName} size={report.summary.totalSize} "
-                + $"scenes={BootScenePath},{FormalRoomScenePath}");
+                + $"scenes={string.Join(",", productionScenes)}");
             return report;
         }
 
@@ -116,7 +124,13 @@ namespace FPG.Demo.Editor
 
             string configuredRoomScenePath =
                 "Assets/FPGDemo/Scenes/" + bootstrapConfig.RoomSceneName + ".unity";
-            string[] productionScenes = { BootScenePath, FormalRoomScenePath };
+            if (!FpgProductionSceneList.TryBuild(
+                    out string[] productionScenes,
+                    out string sceneListError))
+            {
+                error = sceneListError;
+                return false;
+            }
             if (!string.Equals(
                     configuredRoomScenePath,
                     FormalRoomScenePath,

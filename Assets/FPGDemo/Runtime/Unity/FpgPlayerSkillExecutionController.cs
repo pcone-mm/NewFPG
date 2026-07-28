@@ -89,6 +89,7 @@ namespace FPG.Demo.Unity
         private FpgSkillSequenceKind activeSequenceKind;
         private FpgSkillExecutionIdAllocator executionIds;
         private bool ownsExecutionIds;
+        private bool secondaryEndPending;
         private int resultCount;
         private int sequenceFrameCount;
 
@@ -123,6 +124,56 @@ namespace FPG.Demo.Unity
             TickIndex.Invalid;
         public TickIndex RecastLockedUntilTick { get; private set; } =
             TickIndex.Invalid;
+        public bool IsSecondaryEndPending => secondaryEndPending;
+        public int ChargeProgressTicks => secondary.ChargeProgressTicks;
+
+        public bool RequiresExposureAt(TickIndex tick)
+        {
+            if (!tick.IsValid
+                || !runtime.IsRunning
+                || !runtime.StartTick.IsValid
+                || tick < runtime.StartTick
+                || !PlannedLastAttackTick.IsValid
+                || tick > PlannedLastAttackTick)
+            {
+                return false;
+            }
+
+            if (activeSlot == FpgPlayerSkillSlot.Primary)
+            {
+                return activeSequenceKind == FpgSkillSequenceKind.Execute;
+            }
+
+            return activeSlot == FpgPlayerSkillSlot.Secondary
+                && (activeSequenceKind == FpgSkillSequenceKind.Execute
+                    || activeSequenceKind == FpgSkillSequenceKind.Release);
+        }
+
+        public float GetSecondaryChargeProgress(
+            WeaponRuntime weapon,
+            TickIndex tick)
+        {
+            if (weapon == null
+                || secondaryTriggerMode != SecondaryTriggerMode.ChargeRelease
+                || weapon.State != WeaponState.AltCharging
+                || !weapon.SecondaryChargeStartedTick.IsValid
+                || !tick.IsValid
+                || secondary.ChargeProgressTicks <= 0)
+            {
+                return 0f;
+            }
+
+            long elapsed = tick.Value
+                - weapon.SecondaryChargeStartedTick.Value;
+            if (elapsed <= 0L)
+            {
+                return 0f;
+            }
+
+            return Math.Min(
+                1f,
+                (float)elapsed / secondary.ChargeProgressTicks);
+        }
 
         public static bool TryCreate(
             FpgCompiledPlayerSkillDefinition primary,
@@ -365,7 +416,9 @@ namespace FPG.Demo.Unity
             if (secondaryTriggerMode
                     == SecondaryTriggerMode.ImmediateRepeatWhileHeld
                 && (frame.SecondaryHeld || immediateSecondaryRequested)
-                && !runtime.IsRunning)
+                && (!runtime.IsRunning
+                    || IsInterruptibleSecondaryEndTimeline()
+                    || IsInterruptibleImmediateSecondaryExecuteTimeline()))
             {
                 DomainResult started = TryStartAction(
                     FpgPlayerSkillSlot.Secondary,
@@ -379,7 +432,9 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            if (frame.PrimaryHeld && !runtime.IsRunning)
+            if (frame.PrimaryHeld
+                && (!runtime.IsRunning
+                    || IsInterruptibleSecondaryEndTimeline()))
             {
                 DomainResult started = TryStartAction(
                     FpgPlayerSkillSlot.Primary,
@@ -400,6 +455,16 @@ namespace FPG.Demo.Unity
                 if (!continued.IsSuccess)
                 {
                     return continued;
+                }
+            }
+
+            if (!runtime.IsRunning && secondaryEndPending)
+            {
+                DomainResult end = TryStartSecondaryCancelTimeline(
+                    frame.Tick);
+                if (!end.IsSuccess)
+                {
+                    return end;
                 }
             }
 
@@ -428,6 +493,24 @@ namespace FPG.Demo.Unity
 
             if (runtime.IsTerminal)
             {
+                FpgSkillSequenceKind continuation =
+                    FpgSkillSequenceKind.None;
+                bool hasSecondaryContinuation =
+                    activeSlot == FpgPlayerSkillSlot.Secondary
+                    && runtime.State == FpgSkillExecutionState.Completed
+                    && FpgSecondarySkillLifecycleRules
+                        .TryGetContinuationAfterCompletion(
+                            activeSequenceKind,
+                            out continuation);
+                if (hasSecondaryContinuation
+                    && continuation == FpgSkillSequenceKind.Cancel)
+                {
+                    secondaryEndPending = true;
+                }
+                else if (activeSequenceKind == FpgSkillSequenceKind.Cancel)
+                {
+                    secondaryEndPending = false;
+                }
                 ClearActive();
             }
 
@@ -470,6 +553,7 @@ namespace FPG.Demo.Unity
             }
 
             ClearActive();
+            secondaryEndPending = false;
             if (wasRunning)
             {
                 ApplyInterruptedWeaponState(
@@ -512,6 +596,7 @@ namespace FPG.Demo.Unity
 
             runtime.Reset();
             ClearActive();
+            secondaryEndPending = false;
             ClearEventResults();
             if (weapon != null)
             {
@@ -527,6 +612,7 @@ namespace FPG.Demo.Unity
         {
             runtime.Reset();
             ClearActive();
+            secondaryEndPending = false;
             ClearFrameResults();
             if (ownsExecutionIds)
             {
@@ -541,14 +627,6 @@ namespace FPG.Demo.Unity
             TickIndex tick,
             PlayerRuntime player)
         {
-            DomainResult begin = player.Weapon.TryBeginSkillSecondaryCharge(
-                tick,
-                player.Exposure);
-            if (!begin.IsSuccess)
-            {
-                return DomainResult.Success;
-            }
-
             FpgSkillSequenceKind kind = secondary.Timeline.TryGetSequence(
                 FpgSkillSequenceKind.ChargeEnter,
                 out _)
@@ -556,7 +634,29 @@ namespace FPG.Demo.Unity
                     : FpgSkillSequenceKind.ChargeLoop;
             if (!secondary.Timeline.TryGetSequence(kind, out _))
             {
+                return DomainResult.Rejected(
+                    RejectReason.InvalidDefinition);
+            }
+
+            bool canInterruptSecondaryEnd =
+                IsInterruptibleSecondaryEndTimeline()
+                || secondaryEndPending;
+            WeaponRuntimeSnapshot weaponSnapshot =
+                player.Weapon.CaptureRoomSnapshot();
+            DomainResult begin = player.Weapon.TryBeginSkillSecondaryCharge(
+                tick,
+                player.Exposure,
+                canInterruptSecondaryEnd);
+            if (!begin.IsSuccess)
+            {
                 return DomainResult.Success;
+            }
+
+            DomainResult interrupted = InterruptSecondaryEndTimeline(tick);
+            if (!interrupted.IsSuccess)
+            {
+                player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
+                return interrupted;
             }
 
             DomainResult started = StartTimeline(
@@ -566,7 +666,7 @@ namespace FPG.Demo.Unity
                 tick);
             if (!started.IsSuccess)
             {
-                player.Weapon.CancelSkillSecondaryCharge();
+                player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
             }
 
             return started;
@@ -617,14 +717,21 @@ namespace FPG.Demo.Unity
                     FpgSkillSequenceKind.Cancel,
                     out _))
             {
+                secondaryEndPending = false;
                 return DomainResult.Success;
             }
 
-            return StartTimeline(
+            DomainResult started = StartTimeline(
                 FpgPlayerSkillSlot.Secondary,
                 secondary,
                 FpgSkillSequenceKind.Cancel,
                 tick);
+            if (started.IsSuccess)
+            {
+                secondaryEndPending = false;
+            }
+
+            return started;
         }
 
         private DomainResult TryStartChargeContinuation(TickIndex tick)
@@ -650,7 +757,25 @@ namespace FPG.Demo.Unity
             TickIndex tick,
             PlayerRuntime player)
         {
-            if (runtime.IsRunning)
+            bool canInterruptSecondaryEnd =
+                slot != FpgPlayerSkillSlot.Reload
+                && (IsInterruptibleSecondaryEndTimeline()
+                    || secondaryEndPending);
+            bool canRestartImmediateSecondary =
+                slot == FpgPlayerSkillSlot.Secondary
+                && sequenceKind == FpgSkillSequenceKind.Execute
+                && IsInterruptibleImmediateSecondaryExecuteTimeline();
+            bool canInterruptActiveTimeline = canInterruptSecondaryEnd
+                || canRestartImmediateSecondary;
+            if (runtime.IsRunning && !canInterruptActiveTimeline)
+            {
+                return DomainResult.Success;
+            }
+
+            // A live Execute can only repeat after a successful gameplay commit
+            // has established the authoritative secondary recast boundary.
+            if (canRestartImmediateSecondary
+                && !player.Weapon.SecondaryRecastLockedUntilTick.IsValid)
             {
                 return DomainResult.Success;
             }
@@ -680,9 +805,7 @@ namespace FPG.Demo.Unity
                     : checked(
                         summary.LastAttackTick
                         + definition.SequenceCooldownTicks);
-                int lockOffset = Math.Max(
-                    1,
-                    Math.Max(sequenceLock, cooldownLock));
+                int lockOffset = Math.Max(1, sequenceLock);
                 lockedUntil = new TickIndex(checked(tick.Value + lockOffset));
                 recastLockedUntil = summary.LastAttackTick < 0
                     ? TickIndex.Invalid
@@ -693,15 +816,27 @@ namespace FPG.Demo.Unity
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
+            WeaponRuntimeSnapshot weaponSnapshot =
+                player.Weapon.CaptureRoomSnapshot();
             DomainResult begin = player.Weapon.TryBeginSkillAction(
                 actionKind,
                 tick,
                 lockedUntil,
                 summary.TotalAmmoCost,
-                player.Exposure);
+                player.Exposure,
+                canInterruptActiveTimeline);
             if (!begin.IsSuccess)
             {
                 return DomainResult.Success;
+            }
+
+            DomainResult interrupted = canRestartImmediateSecondary
+                ? InterruptImmediateSecondaryExecuteTimeline(tick)
+                : InterruptSecondaryEndTimeline(tick);
+            if (!interrupted.IsSuccess)
+            {
+                player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
+                return interrupted;
             }
 
             DomainResult started = StartTimeline(
@@ -711,7 +846,7 @@ namespace FPG.Demo.Unity
                 tick);
             if (!started.IsSuccess)
             {
-                player.Weapon.CancelSkillAction();
+                player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
                 return started;
             }
 
@@ -721,6 +856,67 @@ namespace FPG.Demo.Unity
                 ? TickIndex.Invalid
                 : new TickIndex(tick.Value + summary.LastAttackTick);
             return DomainResult.Success;
+        }
+
+        private bool IsInterruptibleSecondaryEndTimeline()
+        {
+            return runtime.IsRunning
+                && activeSlot == FpgPlayerSkillSlot.Secondary
+                && activeSequenceKind == FpgSkillSequenceKind.Cancel;
+        }
+
+        private bool IsInterruptibleImmediateSecondaryExecuteTimeline()
+        {
+            return secondaryTriggerMode
+                    == SecondaryTriggerMode.ImmediateRepeatWhileHeld
+                && runtime.IsRunning
+                && activeSlot == FpgPlayerSkillSlot.Secondary
+                && activeSequenceKind == FpgSkillSequenceKind.Execute;
+        }
+
+        private DomainResult InterruptSecondaryEndTimeline(TickIndex tick)
+        {
+            secondaryEndPending = false;
+            return InterruptActiveTimeline(
+                tick,
+                IsInterruptibleSecondaryEndTimeline());
+        }
+
+        private DomainResult InterruptImmediateSecondaryExecuteTimeline(
+            TickIndex tick)
+        {
+            return InterruptActiveTimeline(
+                tick,
+                IsInterruptibleImmediateSecondaryExecuteTimeline());
+        }
+
+        private DomainResult InterruptActiveTimeline(
+            TickIndex tick,
+            bool canInterrupt)
+        {
+            if (!canInterrupt)
+            {
+                return DomainResult.Success;
+            }
+
+            FpgSkillRuntimeResult canceled = runtime.CancelRemaining(tick);
+            if (!canceled.IsSuccess)
+            {
+                return MapRuntimeFailure(canceled.Error);
+            }
+
+            DomainResult appended = AppendRuntimeResults();
+            if (appended.IsSuccess)
+            {
+                appended = AppendSequenceFrame(tick);
+            }
+
+            if (appended.IsSuccess)
+            {
+                ClearActive();
+            }
+
+            return appended;
         }
 
         private void ApplyInterruptedWeaponState(
@@ -745,7 +941,7 @@ namespace FPG.Demo.Unity
             weapon.InterruptSkillAction(
                 actionKind,
                 interruptTick,
-                RecastLockedUntilTick);
+                TickIndex.Invalid);
         }
 
         private DomainResult StartTimeline(
@@ -801,8 +997,8 @@ namespace FPG.Demo.Unity
         {
             if (!runtime.IsRunning
                 || activeSlot != FpgPlayerSkillSlot.Secondary
-                || (activeSequenceKind != FpgSkillSequenceKind.ChargeEnter
-                    && activeSequenceKind != FpgSkillSequenceKind.ChargeLoop))
+                || !FpgSecondarySkillLifecycleRules.IsChargeStage(
+                    activeSequenceKind))
             {
                 return DomainResult.Success;
             }

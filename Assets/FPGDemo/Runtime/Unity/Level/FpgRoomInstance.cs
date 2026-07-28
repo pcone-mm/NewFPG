@@ -13,12 +13,9 @@ namespace FPG.Demo.Unity
             new Dictionary<string, GameObject>(StringComparer.Ordinal);
 
         private FpgRoomDefinition roomDefinition;
-        private GameObject environmentInstance;
-
         public FpgRoomDefinition RoomDefinition => roomDefinition;
         public bool IsInitialized => roomDefinition != null;
         public bool Initialized => IsInitialized;
-        public GameObject EnvironmentInstance => environmentInstance;
         public IReadOnlyList<GameObject> DestructibleInstances => destructibleInstances;
 
         public void Initialize(FpgRoomDefinition definition)
@@ -50,13 +47,6 @@ namespace FPG.Demo.Unity
             try
             {
                 roomDefinition = definition;
-                environmentInstance = InstantiateOwned(
-                    definition.EnvironmentPrefab,
-                    definition.EnvironmentPrefab.name,
-                    Vector3.zero,
-                    Quaternion.identity,
-                    preservePrefabScale: true);
-
                 IReadOnlyList<FpgRoomDestructibleSlot> slots = definition.DestructibleSlots;
                 for (int index = 0; index < slots.Count; index++)
                 {
@@ -85,7 +75,6 @@ namespace FPG.Demo.Unity
         public void Clear()
         {
             roomDefinition = null;
-            environmentInstance = null;
             destructibleInstances.Clear();
             destructiblesBySlotId.Clear();
 

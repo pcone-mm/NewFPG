@@ -14,6 +14,7 @@ namespace FPG.Demo.Unity
         private readonly FpgCompiledEnemySkillAction[] attackActions;
         private readonly FpgCompiledEnemySkillAction[] projectileActions;
         private readonly FpgCompiledEnemySkillAction[] summonActions;
+        private readonly FpgCompiledEnemySkillAction[] selfDestructOwnerActions;
 
         internal FpgCompiledEnemySkillDefinition(
             FpgCompiledSkillDefinition timeline,
@@ -23,6 +24,7 @@ namespace FPG.Demo.Unity
             FpgCompiledEnemySkillAction[] attackActions,
             FpgCompiledEnemySkillAction[] projectileActions,
             FpgCompiledEnemySkillAction[] summonActions,
+            FpgCompiledEnemySkillAction[] selfDestructOwnerActions,
             int totalProjectileCapacity,
             int totalImpactCapacity,
             int totalSummonCapacity,
@@ -35,10 +37,12 @@ namespace FPG.Demo.Unity
                 || attackActions == null
                 || projectileActions == null
                 || summonActions == null
+                || selfDestructOwnerActions == null
                 || checked(
                     attackActions.Length
                     + projectileActions.Length
-                    + summonActions.Length) == 0
+                    + summonActions.Length
+                    + selfDestructOwnerActions.Length) == 0
                 || totalProjectileCapacity < 0
                 || totalImpactCapacity < 0
                 || totalSummonCapacity < 0
@@ -57,6 +61,9 @@ namespace FPG.Demo.Unity
             this.summonActions = CopyActions(
                 summonActions,
                 FpgEnemySkillActionKind.Summon);
+            this.selfDestructOwnerActions = CopyActions(
+                selfDestructOwnerActions,
+                FpgEnemySkillActionKind.SelfDestructOwner);
             Priority = priority;
             FirstReadyOffsetTicks = firstReadyOffsetTicks;
             SequenceCooldownTicks = sequenceCooldownTicks;
@@ -72,7 +79,8 @@ namespace FPG.Demo.Unity
                 SequenceCooldownTicks,
                 this.attackActions,
                 this.projectileActions,
-                this.summonActions);
+                this.summonActions,
+                this.selfDestructOwnerActions);
             PresentationHash = timeline.PresentationHash;
         }
 
@@ -93,10 +101,13 @@ namespace FPG.Demo.Unity
             projectileActions;
         public IReadOnlyList<FpgCompiledEnemySkillAction> SummonActions =>
             summonActions;
+        public IReadOnlyList<FpgCompiledEnemySkillAction> SelfDestructOwnerActions =>
+            selfDestructOwnerActions;
         public int GameplayActionCount => checked(
             attackActions.Length
             + projectileActions.Length
-            + summonActions.Length);
+            + summonActions.Length
+            + selfDestructOwnerActions.Length);
         public int TotalProjectileCapacity { get; }
         public int TotalImpactCapacity { get; }
         public int TotalSummonCapacity { get; }
@@ -121,7 +132,13 @@ namespace FPG.Demo.Unity
                 return projectileActions[index];
             }
 
-            return summonActions[index - projectileActions.Length];
+            index -= projectileActions.Length;
+            if (index < summonActions.Length)
+            {
+                return summonActions[index];
+            }
+
+            return selfDestructOwnerActions[index - summonActions.Length];
         }
 
         public bool TryResolveAction(
@@ -158,6 +175,12 @@ namespace FPG.Demo.Unity
                         skillEvent.ActionIndex,
                         out action);
 
+                case FpgSkillActionKind.SelfDestructOwner:
+                    return TryGetAction(
+                        selfDestructOwnerActions,
+                        skillEvent.ActionIndex,
+                        out action);
+
                 default:
                     action = default(FpgCompiledEnemySkillAction);
                     return false;
@@ -186,7 +209,8 @@ namespace FPG.Demo.Unity
             int sequenceCooldownTicks,
             FpgCompiledEnemySkillAction[] attacks,
             FpgCompiledEnemySkillAction[] projectiles,
-            FpgCompiledEnemySkillAction[] summons)
+            FpgCompiledEnemySkillAction[] summons,
+            FpgCompiledEnemySkillAction[] selfDestructs)
         {
             ulong hash = StableHash.Mix(0x4650475F45534B31UL);
             hash = StableHash.Append(hash, timeline.GameplayHash);
@@ -209,6 +233,10 @@ namespace FPG.Demo.Unity
                 hash,
                 FpgSkillActionKind.SummonActors,
                 summons);
+            hash = AppendActionBufferHash(
+                hash,
+                FpgSkillActionKind.SelfDestructOwner,
+                selfDestructs);
 
             return hash;
         }
@@ -240,6 +268,13 @@ namespace FPG.Demo.Unity
             hash = StableHash.Append(
                 hash,
                 unchecked((ulong)action.ThreatDefinitionId));
+
+            if (action.Kind == FpgEnemySkillActionKind.SelfDestructOwner)
+            {
+                return StableHash.Append(
+                    hash,
+                    unchecked((ulong)action.BoundGameplayEventId));
+            }
 
             if (action.Kind != FpgEnemySkillActionKind.Summon)
             {
@@ -273,9 +308,6 @@ namespace FPG.Demo.Unity
             hash = StableHash.Append(
                 hash,
                 unchecked((ulong)(int)summon.PlacementMode));
-            hash = StableHash.Append(
-                hash,
-                unchecked((ulong)(int)summon.OwnerOutcome));
             hash = StableHash.Append(
                 hash,
                 unchecked((ulong)summon.MaxSummonsPerOwner));
@@ -444,10 +476,12 @@ namespace FPG.Demo.Unity
                 FpgCompiledEnemySkillAction[] attackActions;
                 FpgCompiledEnemySkillAction[] projectileActions;
                 FpgCompiledEnemySkillAction[] summonActions;
+                FpgCompiledEnemySkillAction[] selfDestructOwnerActions;
                 CompileTypedActions(
                     out attackActions,
                     out projectileActions,
-                    out summonActions);
+                    out summonActions,
+                    out selfDestructOwnerActions);
 
                 if (!timeline.TryGetSequence(
                         FpgSkillSequenceKind.Execute,
@@ -478,6 +512,7 @@ namespace FPG.Demo.Unity
                             attackActions,
                             projectileActions,
                             summonActions,
+                            selfDestructOwnerActions,
                             out FpgCompiledEnemySkillAction action))
                     {
                         throw new InvalidOperationException(
@@ -502,6 +537,7 @@ namespace FPG.Demo.Unity
                     attackActions,
                     projectileActions,
                     summonActions,
+                    selfDestructOwnerActions,
                     totalProjectileCapacity,
                     totalImpactCapacity,
                     totalSummonCapacity,
@@ -635,6 +671,23 @@ namespace FPG.Demo.Unity
 
                     hasGameplayAction = true;
                 }
+
+                for (int index = 0;
+                    index < sequence.SelfDestructOwnerEvents.Count;
+                    index++)
+                {
+                    FpgSkillSelfDestructOwnerEventDefinition action =
+                        sequence.SelfDestructOwnerEvents[index];
+                    if (!TryValidateTypedSpatial(
+                            FpgEnemySkillActionKind.SelfDestructOwner,
+                            action,
+                            out error))
+                    {
+                        return false;
+                    }
+
+                    hasGameplayAction = true;
+                }
             }
 
             if (hasGameplayAction)
@@ -651,11 +704,13 @@ namespace FPG.Demo.Unity
         private void CompileTypedActions(
             out FpgCompiledEnemySkillAction[] attackActions,
             out FpgCompiledEnemySkillAction[] projectileActions,
-            out FpgCompiledEnemySkillAction[] summonActions)
+            out FpgCompiledEnemySkillAction[] summonActions,
+            out FpgCompiledEnemySkillAction[] selfDestructOwnerActions)
         {
             int attackCount = 0;
             int projectileCount = 0;
             int summonCount = 0;
+            int selfDestructOwnerCount = 0;
             for (int sequenceIndex = 0;
                 sequenceIndex < Sequences.Count;
                 sequenceIndex++)
@@ -667,6 +722,8 @@ namespace FPG.Demo.Unity
                     projectileCount + sequence.ProjectileEvents.Count);
                 summonCount = checked(
                     summonCount + sequence.SummonEvents.Count);
+                selfDestructOwnerCount = checked(
+                    selfDestructOwnerCount + sequence.SelfDestructOwnerEvents.Count);
             }
 
             attackActions =
@@ -675,9 +732,12 @@ namespace FPG.Demo.Unity
                 new FpgCompiledEnemySkillAction[projectileCount];
             summonActions =
                 new FpgCompiledEnemySkillAction[summonCount];
+            selfDestructOwnerActions =
+                new FpgCompiledEnemySkillAction[selfDestructOwnerCount];
             int attackIndex = 0;
             int projectileIndex = 0;
             int summonIndex = 0;
+            int selfDestructOwnerIndex = 0;
             for (int sequenceIndex = 0;
                 sequenceIndex < Sequences.Count;
                 sequenceIndex++)
@@ -706,6 +766,15 @@ namespace FPG.Demo.Unity
                 {
                     summonActions[summonIndex++] = CompileSummonAction(
                         sequence.SummonEvents[index]);
+                }
+
+                for (int index = 0;
+                    index < sequence.SelfDestructOwnerEvents.Count;
+                    index++)
+                {
+                    selfDestructOwnerActions[selfDestructOwnerIndex++] =
+                        CompileSelfDestructOwnerAction(
+                            sequence.SelfDestructOwnerEvents[index]);
                 }
             }
         }
@@ -775,10 +844,20 @@ namespace FPG.Demo.Unity
                     compiledCandidates,
                     action.SummonOccupancyMode,
                     action.SummonPlacementMode,
-                    action.SummonOwnerOutcome,
                     action.MaxSummonsPerOwner,
                     action.MaxTotalSummonsPerEncounter,
                     action.MaxSummonRecursionDepth));
+        }
+
+        private static FpgCompiledEnemySkillAction
+            CompileSelfDestructOwnerAction(
+                FpgSkillSelfDestructOwnerEventDefinition action)
+        {
+            int actionId = FpgSkillStableId.CompileEvent(action.EventId);
+            return FpgCompiledEnemySkillAction.ForSelfDestructOwner(
+                actionId,
+                FpgSkillStableId.CompileOptionalEvent(
+                    action.BoundGameplayEventId));
         }
 
         private static bool TryValidateTypedSpatial(
@@ -833,6 +912,19 @@ namespace FPG.Demo.Unity
                         : "Enemy summon placement owns its position and requires CurrentAim/CurrentTarget with no socket or offset.";
                     return false;
 
+                case FpgEnemySkillActionKind.SelfDestructOwner:
+                    if (action.TargetSource == FpgSkillTargetSource.Self
+                        && !hasSocket
+                        && !hasOffset)
+                    {
+                        error = string.Empty;
+                        return true;
+                    }
+
+                    error =
+                        "Enemy self-destruct actions require Self with no socket or offset.";
+                    return false;
+
                 default:
                     error =
                         "Enemy gameplay action has an unsupported action kind.";
@@ -845,6 +937,7 @@ namespace FPG.Demo.Unity
             FpgCompiledEnemySkillAction[] attacks,
             FpgCompiledEnemySkillAction[] projectiles,
             FpgCompiledEnemySkillAction[] summons,
+            FpgCompiledEnemySkillAction[] selfDestructs,
             out FpgCompiledEnemySkillAction action)
         {
             switch (skillEvent.ActionKind)
@@ -865,6 +958,11 @@ namespace FPG.Demo.Unity
                 case FpgSkillActionKind.SummonActors:
                     return TryGetAction(
                         summons,
+                        skillEvent.ActionIndex,
+                        out action);
+                case FpgSkillActionKind.SelfDestructOwner:
+                    return TryGetAction(
+                        selfDestructs,
                         skillEvent.ActionIndex,
                         out action);
                 default:

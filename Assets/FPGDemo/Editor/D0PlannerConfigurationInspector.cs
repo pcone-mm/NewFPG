@@ -432,8 +432,8 @@ private static void DrawField(SerializedProperty property, FieldInfo field)
         public override void OnInspectorGUI()
         {
             EditorGUILayout.HelpBox(
-                "舞台资产只维护环境与出生点，并由 D0 安装器写入场景。角色视觉、技能 Socket 和射击特效请在角色表现资产中配置；修改森林图层或出生点后再执行安装器。"
-                + "相机参数统一在 2.5D 3C 配置中编辑；敌人视觉根、投射物锚点、弱点与命中体由敌人定义引用的 Entity Prefab 完整拥有。",
+                "D0 舞台资产仅为历史序列化兼容，不再写入或重建场景。正式环境与出生点请使用 Room Editor 和对应 Art Scene；"
+                + "角色视觉、技能 Socket、射击特效和相机参数请在 FormalEncounter 权威资产中显式配置。",
                 MessageType.Info);
             base.OnInspectorGUI();
         }

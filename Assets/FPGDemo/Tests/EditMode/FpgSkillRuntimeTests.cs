@@ -77,6 +77,108 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void HoldSequenceEmitsEventsOnceAndRunsUntilCanceled()
+        {
+            FpgCompiledSkillSequence sequence = HoldSequence(
+                2,
+                WarningEvent(10, 0),
+                WarningEvent(20, 2));
+            FpgSkillExecutionRuntime runtime =
+                new FpgSkillExecutionRuntime(sequence.EventCount);
+
+            Assert.That(
+                runtime.Start(
+                    sequence,
+                    new SkillExecutionId(51L),
+                    new TickIndex(100L)).IsSuccess,
+                Is.True);
+
+            Assert.That(runtime.Tick(new TickIndex(100L)).EventResultCount,
+                Is.EqualTo(1));
+            Assert.That(runtime.GetResult(0).EventId, Is.EqualTo(10));
+            Assert.That(runtime.Tick(new TickIndex(101L)).EventResultCount,
+                Is.Zero);
+
+            FpgSkillRuntimeResult endpoint =
+                runtime.Tick(new TickIndex(102L));
+            Assert.That(endpoint.EventResultCount, Is.EqualTo(1));
+            Assert.That(endpoint.State, Is.EqualTo(FpgSkillExecutionState.Running));
+            Assert.That(runtime.GetResult(0).EventId, Is.EqualTo(20));
+            Assert.That(runtime.RemainingEventCount, Is.Zero);
+
+            FpgSkillRuntimeResult held = runtime.Tick(new TickIndex(103L));
+            Assert.That(held.EventResultCount, Is.Zero);
+            Assert.That(held.State, Is.EqualTo(FpgSkillExecutionState.Running));
+
+            FpgSkillRuntimeResult canceled =
+                runtime.CancelRemaining(new TickIndex(104L));
+            Assert.That(canceled.EventResultCount, Is.Zero);
+            Assert.That(canceled.State, Is.EqualTo(FpgSkillExecutionState.Canceled));
+        }
+
+        [Test]
+        public void AnimationLoopDoesNotHoldExecutionOpen()
+        {
+            FpgCompiledSkillSequence sequence = new FpgCompiledSkillSequence(
+                FpgSkillSequenceKind.Execute,
+                0,
+                1001,
+                true,
+                Array.Empty<FpgCompiledSkillEvent>());
+            FpgSkillExecutionRuntime runtime = new FpgSkillExecutionRuntime(0);
+
+            runtime.Start(
+                sequence,
+                new SkillExecutionId(52L),
+                new TickIndex(10L));
+            FpgSkillRuntimeResult result = runtime.Tick(new TickIndex(10L));
+
+            Assert.That(result.State, Is.EqualTo(FpgSkillExecutionState.Completed));
+        }
+
+        [Test]
+        public void CompilerRejectsGameplayActionsInHoldSequence()
+        {
+            bool compiled = FpgSkillCompiler.TryCompileSequence(
+                FpgSkillSequenceKind.Execute,
+                1,
+                1001,
+                false,
+                new[] { PayloadEvent(1, 0) },
+                true,
+                out FpgCompiledSkillSequence ignored,
+                out FpgSkillValidationResult validation);
+
+            Assert.That(compiled, Is.False);
+            Assert.That(
+                validation.Error,
+                Is.EqualTo(
+                    FpgSkillValidationError.HoldSequenceHasGameplayActions));
+        }
+
+        [Test]
+        public void GameplayHashIncludesHoldUntilCanceled()
+        {
+            FpgCompiledSkillEvent[] events = { WarningEvent(1, 0) };
+            FpgCompiledSkillSequence completed = new FpgCompiledSkillSequence(
+                FpgSkillSequenceKind.Execute,
+                0,
+                1001,
+                false,
+                events);
+            FpgCompiledSkillSequence held = new FpgCompiledSkillSequence(
+                FpgSkillSequenceKind.Execute,
+                0,
+                1001,
+                false,
+                events,
+                holdUntilCanceled: true);
+
+            Assert.That(held.HoldUntilCanceled, Is.True);
+            Assert.That(held.GameplayHash, Is.Not.EqualTo(completed.GameplayHash));
+        }
+
+        [Test]
         public void SameTickEventsUseAuthoredSortOrder()
         {
             FpgCompiledSkillSequence sequence = Sequence(
@@ -147,7 +249,7 @@ namespace FPG.Demo.Tests.EditMode
             FpgCompiledSkillDefinition changedDefinition = new FpgCompiledSkillDefinition(77, new[] { changed });
 
             Assert.That(FpgSkillRuntimeConstants.TickRate, Is.EqualTo(60));
-            Assert.That(FpgSkillRuntimeConstants.GameplayHashVersion, Is.EqualTo(4));
+            Assert.That(FpgSkillRuntimeConstants.GameplayHashVersion, Is.EqualTo(5));
             Assert.That(FpgSkillRuntimeConstants.PresentationHashVersion, Is.EqualTo(1));
             Assert.That(first.GameplayHash, Is.EqualTo(reordered.GameplayHash));
             Assert.That(definition.GameplayHash, Is.EqualTo(reorderedDefinition.GameplayHash));
@@ -159,6 +261,7 @@ namespace FPG.Demo.Tests.EditMode
         [TestCase(FpgSkillActionKind.LaunchProjectile)]
         [TestCase(FpgSkillActionKind.CommitReload)]
         [TestCase(FpgSkillActionKind.SummonActors)]
+        [TestCase(FpgSkillActionKind.SelfDestructOwner)]
         public void GameplayActionAcceptsEveryTypedActionKind(
             FpgSkillActionKind actionKind)
         {
@@ -174,6 +277,45 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(action.ActionKind, Is.EqualTo(actionKind));
             Assert.That(action.ActionIndex, Is.EqualTo(2));
             Assert.That(action.IsValid, Is.True);
+        }
+
+        [Test]
+        public void BoundSelfDestructRequiresEarlierSameTickSummon()
+        {
+            FpgCompiledSkillEvent summon = new FpgCompiledSkillEvent(
+                10,
+                2,
+                FpgSkillActionKind.SummonActors,
+                0,
+                sortOrder: 0);
+            FpgCompiledSkillEvent selfDestruct =
+                new FpgCompiledSkillEvent(
+                    20,
+                    2,
+                    FpgSkillActionKind.SelfDestructOwner,
+                    0,
+                    sortOrder: 1,
+                    boundGameplayEventId: 10);
+            FpgCompiledSkillEvent wrongKind = new FpgCompiledSkillEvent(
+                10,
+                2,
+                FpgSkillActionKind.Attack,
+                0,
+                sortOrder: 0);
+            FpgCompiledSkillEvent laterTick = new FpgCompiledSkillEvent(
+                20,
+                3,
+                FpgSkillActionKind.SelfDestructOwner,
+                0,
+                sortOrder: 1,
+                boundGameplayEventId: 10);
+
+            Assert.DoesNotThrow(
+                () => Sequence(2, summon, selfDestruct));
+            Assert.Throws<ArgumentException>(
+                () => Sequence(2, wrongKind, selfDestruct));
+            Assert.Throws<ArgumentException>(
+                () => Sequence(3, summon, laterTick));
         }
 
         [Test]
@@ -405,6 +547,30 @@ namespace FPG.Demo.Tests.EditMode
                 1001,
                 false,
                 events);
+        }
+
+        private static FpgCompiledSkillSequence HoldSequence(
+            int durationTicks,
+            params FpgCompiledSkillEvent[] events)
+        {
+            return new FpgCompiledSkillSequence(
+                FpgSkillSequenceKind.Execute,
+                durationTicks,
+                1001,
+                false,
+                events,
+                holdUntilCanceled: true);
+        }
+
+        private static FpgCompiledSkillEvent WarningEvent(
+            int eventId,
+            int tick)
+        {
+            return new FpgCompiledSkillEvent(
+                eventId,
+                tick,
+                FpgSkillEventKind.WarningStarted,
+                eventId);
         }
 
         private static FpgCompiledSkillEvent PayloadEvent(

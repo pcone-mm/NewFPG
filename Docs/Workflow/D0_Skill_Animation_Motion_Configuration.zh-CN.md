@@ -21,7 +21,7 @@
 | 蝴蝶 Spine 源数据 | 美术源文件 | `Assets/Art/Monster/hudie/hudie.json` |
 | D0 蝴蝶表现 | 派生 SkeletonData 与 Prefab | `Assets/FPGDemo/Presentation/Hudie/Spine/`、`Assets/FPGDemo/Presentation/Hudie/Prefabs/` |
 
-脚本编译完成后，先运行菜单 `FPG Demo/D0 2.5D/Install or Update Luan Hudie Configurations`。安装器会为出生技能写入 `appear + gameplay_motion`，为蝴蝶攻击写入 `attack + gameplay_motion + 前摇开始`，但不会替策划开启 `enabled`，因此不会在美术资产尚未满足合同时误启用。
+动画名、标记骨名和开始阶段必须直接 authored 在正式 Behavior/Skill 资产中；脚本编译、导入或构建过程不得替策划写入这些字段，也不得自动开启根运动。
 
 ## 引用关系与运行时所有权
 
@@ -92,10 +92,10 @@ D0EnemyBehaviorController
 
 1. 美术按上面的合同修改 `Assets/Art/Monster/hudie/hudie.json` 对应的 Spine 工程并重新导出。
 2. 等待 Unity 重新导入 SkeletonData，确认 `gameplay_motion` 存在且目标动画上有 TranslateTimeline。
-3. 运行 `FPG Demo/D0 2.5D/Install or Update Luan Hudie Configurations`，补齐配置中的动画名、标记骨名和开始阶段。
+3. 在正式 Behavior/Skill 资产中显式填写动画名、标记骨名和开始阶段。
 4. 在目标技能资产中展开“动画位移”，确认动画名与实际播放动画完全一致。
 5. 开启“启用动画位移”；出生飞行通常同时开启“结束后保留位移”。
-6. 若本版 SpawnPoint/EntityWorld 场景基础设施尚未安装，运行一次 `FPG Demo/D0 2.5D/Install or Update Combat Slice`；随后运行 `FPG Demo/D0 2.5D/Validate Planner Configuration`。切换 Scenario 本身不要求重装 Combat Slice。
+6. 检查正式 Entity Prefab、Behavior/Skill 合同和 RoomDefinition 出生点引用；缺失时在对应权威资产中显式修复，不运行场景安装器。
 7. 由主管在 CombatLab 试玩确认轨迹、切动画连续性和命中体对齐。
 
 ## 字段说明
@@ -103,7 +103,7 @@ D0EnemyBehaviorController
 | 配置组 | 中文名称 | 字段名 | 类型/单位 | 默认值与范围 | 生效条件与实际效果 | 常见误配 |
 |---|---|---|---|---|---|---|
 | 动画位移 | 启用动画位移 | `enabled` | bool | `false` | 开启后才采样标记骨；关闭时该技能贡献零动画位移，动画仍正常播放 | 美术未提供 marker 就开启会被配置验证拒绝 |
-| 动画位移 | 动画名称 | `animationName` | string | 出生为 `appear`；攻击由安装器填写 | 必须与实际表现动画一致 | 写成另一动画会出现画面与实体轨迹不一致 |
+| 动画位移 | 动画名称 | `animationName` | string | 出生为 `appear`；攻击由策划显式填写 | 必须与实际表现动画一致 | 写成另一动画会出现画面与实体轨迹不一致 |
 | 动画位移 | 位移标记骨 | `motionBoneName` | string | `gameplay_motion` | 必须是无父骨、无 Slot/可见后代的顶层 marker | 指向可见 `root` 会被拒绝，防止双重移动 |
 | 动画位移 | 结束后保留位移 | `persistEndOffset` | bool | `true` | 正常结束时锁存末端偏移；战斗结束/组件停用中断时锁存当前偏移。关闭则结束或中断时移除本次偏移 | 非零末帧且关闭时会按设计回到技能前位置 |
 | 攻击动画位移 | 动画位移开始阶段 | `animationMotionStartPhase` | enum | `Windup` | `Windup` 从前摇开始；`Release` 从攻击释放 Tick 开始 | 与可见动画启动阶段不同会产生时序错位 |

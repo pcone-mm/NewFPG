@@ -30,6 +30,82 @@ namespace FPG.Demo.Unity
             int magazineCapacity,
             PlayerExposureState exposureState,
             WeaponState weaponState)
+            : this(
+                tick,
+                playerRuntimeId,
+                encounterPhase,
+                paused,
+                life,
+                maxLife,
+                barrier,
+                maxBarrier,
+                ammo,
+                magazineCapacity,
+                exposureState,
+                weaponState,
+                false,
+                0f,
+                TickIndex.Invalid)
+        {
+        }
+
+        public FpgFormalPlayerPresentationSnapshot(
+            TickIndex tick,
+            RuntimeId playerRuntimeId,
+            FpgEncounterPhase encounterPhase,
+            bool paused,
+            int life,
+            int maxLife,
+            int barrier,
+            int maxBarrier,
+            int ammo,
+            int magazineCapacity,
+            PlayerExposureState exposureState,
+            WeaponState weaponState,
+            bool isSecondaryCharging,
+            float secondaryChargeProgress,
+            TickIndex secondaryChargeStartedTick)
+            : this(
+                tick,
+                playerRuntimeId,
+                encounterPhase,
+                paused,
+                life,
+                maxLife,
+                barrier,
+                maxBarrier,
+                ammo,
+                magazineCapacity,
+                exposureState,
+                weaponState,
+                isSecondaryCharging,
+                secondaryChargeProgress,
+                secondaryChargeStartedTick,
+                false,
+                TickIndex.Invalid,
+                false)
+        {
+        }
+
+        public FpgFormalPlayerPresentationSnapshot(
+            TickIndex tick,
+            RuntimeId playerRuntimeId,
+            FpgEncounterPhase encounterPhase,
+            bool paused,
+            int life,
+            int maxLife,
+            int barrier,
+            int maxBarrier,
+            int ammo,
+            int magazineCapacity,
+            PlayerExposureState exposureState,
+            WeaponState weaponState,
+            bool isSecondaryCharging,
+            float secondaryChargeProgress,
+            TickIndex secondaryChargeStartedTick,
+            bool isCoverPeekRequested,
+            TickIndex coverPeekStartedTick,
+            bool isBarrierLocked)
         {
             Tick = tick;
             PlayerRuntimeId = playerRuntimeId;
@@ -43,6 +119,20 @@ namespace FPG.Demo.Unity
             MagazineCapacity = magazineCapacity;
             ExposureState = exposureState;
             WeaponState = weaponState;
+            IsSecondaryCharging = isSecondaryCharging;
+            SecondaryChargeProgress = isSecondaryCharging
+                && !float.IsNaN(secondaryChargeProgress)
+                && !float.IsInfinity(secondaryChargeProgress)
+                ? Mathf.Clamp01(secondaryChargeProgress)
+                : 0f;
+            SecondaryChargeStartedTick = isSecondaryCharging
+                ? secondaryChargeStartedTick
+                : TickIndex.Invalid;
+            IsCoverPeekRequested = isCoverPeekRequested;
+            CoverPeekStartedTick = isCoverPeekRequested
+                ? coverPeekStartedTick
+                : TickIndex.Invalid;
+            IsBarrierLocked = isBarrierLocked;
         }
 
         public static FpgFormalPlayerPresentationSnapshot Unavailable =>
@@ -72,6 +162,12 @@ namespace FPG.Demo.Unity
         public int MagazineCapacity { get; }
         public PlayerExposureState ExposureState { get; }
         public WeaponState WeaponState { get; }
+        public bool IsSecondaryCharging { get; }
+        public float SecondaryChargeProgress { get; }
+        public TickIndex SecondaryChargeStartedTick { get; }
+        public bool IsCoverPeekRequested { get; }
+        public TickIndex CoverPeekStartedTick { get; }
+        public bool IsBarrierLocked { get; }
 
         public bool IsValid => PlayerRuntimeId.IsValid
             && MaxLife > 0

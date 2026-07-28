@@ -154,6 +154,37 @@ namespace FPG.Demo.Unity
         void ClearSkillWarnings();
     }
 
+    /// <summary>
+    /// Gameplay-authoritative animation motion exposed by a bound formal
+    /// enemy view. Unlike presentation callbacks, failures stop the battle
+    /// tick because gameplay anchors and colliders share the moved entity.
+    /// </summary>
+    public interface IFpgFormalEnemyMotionView
+    {
+        DomainResult AdvanceFormalMotion(TickIndex tick);
+
+        DomainResult StartFormalSkillMotion(
+            in FpgFormalEnemySkillSequenceFrame frame);
+
+        DomainResult ApplyFormalSkillMotionFrame(
+            in FpgFormalEnemySkillSequenceFrame frame);
+    }
+
+    /// <summary>
+    /// Fixed-tick authority used by the formal battle synchronizer and enemy
+    /// skill scheduler. Implementations cover both Prepared and Active views.
+    /// </summary>
+    public interface IFpgFormalEnemyMotionAuthority
+    {
+        DomainResult AdvanceMotion(TickIndex tick);
+
+        DomainResult StartSkillMotion(
+            in FpgFormalEnemySkillSequenceFrame frame);
+
+        DomainResult ApplySkillMotionFrame(
+            in FpgFormalEnemySkillSequenceFrame frame);
+    }
+
     public interface IFpgFormalEnemySkillPresentationConsumer
     {
         bool TrySetEnemySkillWarning(

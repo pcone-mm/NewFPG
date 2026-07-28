@@ -26,6 +26,7 @@
                 <ui:VisualElement class="center-content">
                     <ui:VisualElement class="preview-header">
                         <ui:Label text="预览" class="section-title" />
+                        <ui:DropdownField name="preview-mode-dropdown" label="预览模式" class="preview-mode-field" />
                         <uie:ObjectField name="preview-prefab-field" label="预览 Prefab" type="UnityEngine.GameObject, UnityEngine.CoreModule" allow-scene-objects="false" class="preview-prefab-field" />
                         <ui:DropdownField name="target-count-dropdown" label="目标" class="target-count-field" />
                         <ui:Toggle name="show-geometry-toggle" label="显示几何" value="true" />

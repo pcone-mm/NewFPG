@@ -111,7 +111,13 @@ namespace FPG.Demo.Skills
                 return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.InvalidTick, State);
             }
 
-            if (newStartTick.Value > long.MaxValue - compiledSequence.DurationTicks)
+            long requiredEndOffset = compiledSequence.DurationTicks;
+            if (compiledSequence.HoldUntilCanceled)
+            {
+                requiredEndOffset = checked(requiredEndOffset + 1L);
+            }
+
+            if (newStartTick.Value > long.MaxValue - requiredEndOffset)
             {
                 return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.TickRangeOverflow, State);
             }
@@ -139,26 +145,40 @@ namespace FPG.Demo.Skills
                 return readiness;
             }
 
-            int relativeTick = checked((int)(tick.Value - startTick.Value));
-            while (nextEventIndex < sequence.EventCount)
+            long relativeTick = tick.Value - startTick.Value;
+            if (sequence.HoldUntilCanceled
+                && relativeTick >= sequence.DurationTicks
+                && tick.Value == long.MaxValue)
             {
-                FpgCompiledSkillEvent skillEvent = sequence.GetEvent(nextEventIndex);
-                if (skillEvent.Tick != relativeTick)
-                {
-                    break;
-                }
-
-                resultBuffer[resultCount++] = new FpgSkillEventResult(
-                    executionId,
-                    sequence.Kind,
-                    skillEvent,
-                    tick,
-                    tick,
-                    FpgSkillEventOutcome.Triggered);
-                nextEventIndex++;
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.TickRangeOverflow,
+                    State);
             }
 
-            if (relativeTick == sequence.DurationTicks)
+            if (relativeTick <= sequence.DurationTicks)
+            {
+                int authoredTick = checked((int)relativeTick);
+                while (nextEventIndex < sequence.EventCount)
+                {
+                    FpgCompiledSkillEvent skillEvent = sequence.GetEvent(nextEventIndex);
+                    if (skillEvent.Tick != authoredTick)
+                    {
+                        break;
+                    }
+
+                    resultBuffer[resultCount++] = new FpgSkillEventResult(
+                        executionId,
+                        sequence.Kind,
+                        skillEvent,
+                        tick,
+                        tick,
+                        FpgSkillEventOutcome.Triggered);
+                    nextEventIndex++;
+                }
+            }
+
+            if (relativeTick == sequence.DurationTicks
+                && !sequence.HoldUntilCanceled)
             {
                 State = FpgSkillExecutionState.Completed;
                 nextTick = TickIndex.Invalid;

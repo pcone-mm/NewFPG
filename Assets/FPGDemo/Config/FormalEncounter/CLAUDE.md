@@ -8,7 +8,9 @@
 - `FPG_PlayableCharacterCatalog.asset` 是 Boot 与 FormalRoom 共用的角色入口。
 - `FPG_CombatPresentationProfile.asset` 是正式 HUD、反馈几何和容量入口。
 - 玩家与敌人攻击统一使用 schema V3 技能时间轴：gameplay action 节点内联 trajectory/impact/collision 表现，独立 active presentation track 承载 muzzle/charge/audio/shake；不要恢复旧 payload/cue 字段或平行 attack runtime catalog。
+- Luan 的 Summon 与 `SelfDestructOwner` 是同 tick 的两个显式动作；自毁必须绑定排序更早的 Summon event，不使用已删除的 `summonOwnerOutcome`。
+- Enemy Behavior 的根运动默认关闭，只通过 `animationRootMotionRules` 为具体 Spine 动画启用；当前正式 prefab 的 VisualRoot/bridge 与 60Hz 动画时长合同必须成套维护。
 - skill、sequence、event、track、warning、socket ID、authored ordinal 与 gameplay/presentation hash 是稳定合同；缺引用或校验失败时不得生成部分可用的 compiled skill。
-- `FpgFormalRoomLoopInstaller` 只维护 Boot/FormalRoom 组合、HUD、出口和 Build Settings，不把旧 D0 资产写回正式配置。
+- Boot/FormalRoom、HUD、出口和 Build Settings 都是显式维护的 authored 资产，不得由生成器或旧 D0 数据回写。
 - 稳定 ID、引用、容量和动画键必须通过各自 `TryValidate`，失败时不得构造部分有效遭遇。
-- 验证以 Unity 编译/Console、`FormalFirstAuthoringContractTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgSkillDefinitionTests.cs` 和对应 Formal EditMode 合同为准；纯 V3 资产与 wrapper 路径另检查 `FpgFormalSkillPresentationV3AssetTests.cs`。
+- 验证以 Unity 编译/Console、`FormalFirstAuthoringContractTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgSkillDefinitionTests.cs` 和对应 Formal EditMode 合同为准；纯 V3 资产与 wrapper 路径检查 `FpgFormalSkillPresentationV3AssetTests.cs`，根运动检查 `FpgFormalEnemyRootMotionAssetTests.cs`。

@@ -198,6 +198,11 @@
     margin-left: 10px;
 }
 
+.preview-mode-field {
+    width: 190px;
+    margin-left: 10px;
+}
+
 .preview-prefab-field {
     width: 220px;
     margin-left: 10px;

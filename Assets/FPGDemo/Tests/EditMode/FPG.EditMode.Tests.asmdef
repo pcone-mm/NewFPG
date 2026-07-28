@@ -9,6 +9,7 @@
         "FPG.Run",
         "FPG.Unity",
         "FPG.Skills",
+        "FPG.LevelAuthoring.Editor",
         "FPG.SkillAuthoring.Editor",
         "spine-unity",
         "Unity.InputSystem"

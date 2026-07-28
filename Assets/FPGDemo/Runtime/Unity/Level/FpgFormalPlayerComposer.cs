@@ -116,6 +116,10 @@ namespace FPG.Demo.Unity
 
             if (combatPortFactory.PlayerDefinition != activeDefinition
                 || combatPortFactory.PlayerEntity != activeEntity
+                || combatPortFactory.PlayerSecondaryTriggerMode
+                    != activeSelection.SelectedSecondaryTriggerMode
+                || playerTickDriver.PlayerSecondaryTriggerMode
+                    != activeSelection.SelectedSecondaryTriggerMode
                 || encounterDirector.ConfiguredPlayerEntity != activeEntity)
             {
                 error = "Formal player runtime ports do not share the composed player binding.";
@@ -224,6 +228,7 @@ namespace FPG.Demo.Unity
                         stagedEntity,
                         selection.ThreeCProfile,
                         selection.CombatFeelProfile,
+                        selection.SelectedSecondaryTriggerMode,
                         out error))
                 {
                     return FailComposition(
@@ -242,6 +247,7 @@ namespace FPG.Demo.Unity
                         stagedEntity,
                         selection.ThreeCProfile,
                         combatPortFactory.EffectiveAttackQuerySettings,
+                        selection.SelectedSecondaryTriggerMode,
                         out error))
                 {
                     return FailComposition(

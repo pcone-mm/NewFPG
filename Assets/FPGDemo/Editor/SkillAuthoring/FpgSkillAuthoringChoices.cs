@@ -116,6 +116,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 false,
                 false);
 
+        private static readonly FpgSkillActionAuthoringOptions EnemySelf =
+            new FpgSkillActionAuthoringOptions(
+                true,
+                FpgSkillTargetSource.Self,
+                true,
+                Array.Empty<FpgSkillTargetSource>(),
+                false,
+                false);
+
         private static readonly FpgSkillActionAuthoringOptions
             EnemyActionTargeted =
                 new FpgSkillActionAuthoringOptions(
@@ -144,6 +153,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 case FpgSkillPreviewActionKind.EnemyTimedImpact:
                 case FpgSkillPreviewActionKind.EnemySummon:
                     return EnemyTargeted;
+                case FpgSkillPreviewActionKind.EnemySelfDestruct:
+                    return EnemySelf;
 
                 default:
                     return Unknown;
@@ -169,6 +180,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 case "TimedImpact":
                 case "Summon":
                     return EnemyTargeted;
+                case "SelfDestructOwner":
+                    return EnemySelf;
 
                 default:
                     return Unknown;
@@ -203,6 +216,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
                 case FpgSkillActionKind.LaunchProjectile:
                     return EnemyProjectile;
+                case FpgSkillActionKind.SelfDestructOwner:
+                    return EnemySelf;
 
                 default:
                     return Unknown;
@@ -367,7 +382,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         public static List<FpgSkillAuthoringChoice> BuildGameplayEventChoices(
             IList<FpgSkillEventRecord> events,
-            string currentValue)
+            string currentValue,
+            FpgSkillActionKind requiredActionKind = FpgSkillActionKind.None,
+            FpgSkillEventRecord beforeEvent = null)
         {
             List<FpgSkillAuthoringChoice> choices =
                 new List<FpgSkillAuthoringChoice>();
@@ -381,7 +398,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     FpgSkillEventRecord record = events[index];
                     if (record == null
                         || record.Track != FpgSkillEventTrackKind.GameplayAction
-                        || string.IsNullOrWhiteSpace(record.EventId))
+                        || string.IsNullOrWhiteSpace(record.EventId)
+                        || (requiredActionKind != FpgSkillActionKind.None
+                            && record.Key.ActionKind != requiredActionKind)
+                        || (beforeEvent != null
+                            && !IsPriorSameTickGameplayEvent(record, beforeEvent)))
                     {
                         continue;
                     }
@@ -400,6 +421,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 currentValue,
                 "当前绑定（未找到）");
             return choices;
+        }
+
+        private static bool IsPriorSameTickGameplayEvent(
+            FpgSkillEventRecord candidate,
+            FpgSkillEventRecord reference)
+        {
+            return candidate.Tick == reference.Tick
+                && candidate.AuthoredOrdinal < reference.AuthoredOrdinal;
         }
 
         public static string FindLabel(

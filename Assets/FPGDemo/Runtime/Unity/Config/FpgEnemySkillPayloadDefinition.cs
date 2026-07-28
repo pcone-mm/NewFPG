@@ -10,7 +10,8 @@ namespace FPG.Demo.Unity
         None = 0,
         Projectile,
         TimedImpact,
-        Summon
+        Summon,
+        SelfDestructOwner
     }
 
     public readonly struct FpgCompiledEnemySummonCandidate
@@ -47,7 +48,6 @@ namespace FPG.Demo.Unity
             FpgCompiledEnemySummonCandidate[] candidates,
             FpgSummonOccupancyMode occupancyMode,
             FpgSummonPlacementMode placementMode,
-            FpgSummonOwnerOutcome ownerOutcome,
             int maxSummonsPerOwner,
             int maxTotalSummonsPerEncounter,
             int maxRecursionDepth)
@@ -58,7 +58,6 @@ namespace FPG.Demo.Unity
                 || candidates.Length == 0
                 || !Enum.IsDefined(typeof(FpgSummonOccupancyMode), occupancyMode)
                 || !Enum.IsDefined(typeof(FpgSummonPlacementMode), placementMode)
-                || !Enum.IsDefined(typeof(FpgSummonOwnerOutcome), ownerOutcome)
                 || maxSummonsPerOwner < 0
                 || maxTotalSummonsPerEncounter < 0
                 || maxRecursionDepth < 0
@@ -69,10 +68,7 @@ namespace FPG.Demo.Unity
                         || maxTotalSummonsPerEncounter <= 0))
                 || (occupancyMode == FpgSummonOccupancyMode.ReplaceOwner
                     && (maxSummonsPerOwner != 0
-                        || maxTotalSummonsPerEncounter != 0))
-                || (occupancyMode == FpgSummonOccupancyMode.ReplaceOwner)
-                    != (ownerOutcome
-                        == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon))
+                        || maxTotalSummonsPerEncounter != 0)))
             {
                 throw new ArgumentException("Compiled enemy summon payload is invalid.");
             }
@@ -84,7 +80,6 @@ namespace FPG.Demo.Unity
             ActionId = actionId;
             OccupancyMode = occupancyMode;
             PlacementMode = placementMode;
-            OwnerOutcome = ownerOutcome;
             MaxSummonsPerOwner = maxSummonsPerOwner;
             MaxTotalSummonsPerEncounter = maxTotalSummonsPerEncounter;
             MaxRecursionDepth = maxRecursionDepth;
@@ -107,7 +102,6 @@ namespace FPG.Demo.Unity
         public ulong TotalCandidateWeight { get; }
         public FpgSummonOccupancyMode OccupancyMode { get; }
         public FpgSummonPlacementMode PlacementMode { get; }
-        public FpgSummonOwnerOutcome OwnerOutcome { get; }
         public int MaxSummonsPerOwner { get; }
         public int MaxTotalSummonsPerEncounter { get; }
         public int MaxRecursionDepth { get; }
@@ -131,13 +125,15 @@ namespace FPG.Demo.Unity
             FpgEnemySkillActionKind kind,
             int threatDefinitionId,
             ThreatPayloadDefinition threatPayload,
-            FpgCompiledEnemySummonPayload summonPayload)
+            FpgCompiledEnemySummonPayload summonPayload,
+            int boundGameplayEventId)
         {
             ActionId = actionId;
             Kind = kind;
             ThreatDefinitionId = threatDefinitionId;
             ThreatPayload = threatPayload;
             SummonPayload = summonPayload;
+            BoundGameplayEventId = boundGameplayEventId;
         }
 
         public int ActionId { get; }
@@ -145,6 +141,7 @@ namespace FPG.Demo.Unity
         public int ThreatDefinitionId { get; }
         public ThreatPayloadDefinition ThreatPayload { get; }
         public FpgCompiledEnemySummonPayload SummonPayload { get; }
+        public int BoundGameplayEventId { get; }
         public int ProjectileCapacity =>
             Kind == FpgEnemySkillActionKind.Projectile
                 ? ThreatPayload.PayloadCount
@@ -181,7 +178,8 @@ namespace FPG.Demo.Unity
                 kind,
                 threatDefinitionId,
                 threatPayload,
-                null);
+                null,
+                0);
         }
 
         internal static FpgCompiledEnemySkillAction ForSummon(
@@ -198,7 +196,28 @@ namespace FPG.Demo.Unity
                 FpgEnemySkillActionKind.Summon,
                 0,
                 default(ThreatPayloadDefinition),
-                summonPayload);
+                summonPayload,
+                0);
+        }
+
+        internal static FpgCompiledEnemySkillAction
+            ForSelfDestructOwner(
+                int actionId,
+                int boundGameplayEventId)
+        {
+            if (actionId <= 0 || boundGameplayEventId < 0)
+            {
+                throw new ArgumentException(
+                    "Compiled enemy self-destruct action is invalid.");
+            }
+
+            return new FpgCompiledEnemySkillAction(
+                actionId,
+                FpgEnemySkillActionKind.SelfDestructOwner,
+                0,
+                default(ThreatPayloadDefinition),
+                null,
+                boundGameplayEventId);
         }
     }
 }

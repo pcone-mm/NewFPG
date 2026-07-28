@@ -9,21 +9,29 @@ namespace FPG.Demo.Unity
     /// </summary>
     [DefaultExecutionOrder(-450)]
     [DisallowMultipleComponent]
-    public sealed class D0ForestParallax : MonoBehaviour
+    public sealed class D0ForestParallax : MonoBehaviour,
+        IFpgRoomArtPresentationBinding
     {
-        [SerializeField]
-        private CombatAimReticle aimReticle;
-
         [SerializeField]
         private D0ForestParallaxLayer[] layers = System.Array.Empty<D0ForestParallaxLayer>();
 
-        public CombatAimReticle AimReticle => aimReticle;
+        private ICombatAimViewportSource aimViewportSource;
+
+        public ICombatAimViewportSource AimViewportSource => aimViewportSource;
+        public CombatAimReticle AimReticle => aimViewportSource as CombatAimReticle;
 
         public int LayerCount => layers == null ? 0 : layers.Length;
 
         public void Configure(CombatAimReticle source, D0ForestParallaxLayer[] configuredLayers)
         {
-            aimReticle = source;
+            Configure((ICombatAimViewportSource)source, configuredLayers);
+        }
+
+        public void Configure(
+            ICombatAimViewportSource source,
+            D0ForestParallaxLayer[] configuredLayers)
+        {
+            aimViewportSource = source;
             layers = configuredLayers ?? System.Array.Empty<D0ForestParallaxLayer>();
             ResetVisualState();
         }
@@ -35,8 +43,8 @@ namespace FPG.Demo.Unity
 
         private void LateUpdate()
         {
-            if (aimReticle == null
-                || !aimReticle.TryGetViewport(out Vector2 viewport)
+            if (aimViewportSource == null
+                || !aimViewportSource.TryGetViewport(out Vector2 viewport)
                 || layers == null)
             {
                 return;
@@ -50,6 +58,33 @@ namespace FPG.Demo.Unity
                     layer.ApplyViewport(viewport);
                 }
             }
+        }
+
+        public bool TryBind(
+            FpgRoomArtPresentationContext context,
+            out string error)
+        {
+            if (context == null)
+            {
+                error = "Forest parallax requires a room art presentation context.";
+                return false;
+            }
+
+            if (!TryValidateLayers(out error))
+            {
+                return false;
+            }
+
+            aimViewportSource = context.AimViewportSource;
+            ResetVisualState();
+            error = string.Empty;
+            return true;
+        }
+
+        public void Unbind()
+        {
+            aimViewportSource = null;
+            ResetVisualState();
         }
 
         public void ResetVisualState()
@@ -70,12 +105,11 @@ namespace FPG.Demo.Unity
 
         public bool TryValidate(out string error)
         {
-            if (aimReticle == null)
-            {
-                error = "D0ForestParallax requires CombatAimReticle.";
-                return false;
-            }
+            return TryValidateLayers(out error);
+        }
 
+        private bool TryValidateLayers(out string error)
+        {
             if (layers == null || layers.Length == 0)
             {
                 error = "D0ForestParallax requires at least one layer.";

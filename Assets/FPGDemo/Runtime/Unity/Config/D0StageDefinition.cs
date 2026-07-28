@@ -45,16 +45,16 @@ namespace FPG.Demo.Unity
 
     /// <summary>
     /// One planner-authored visual layer of the D0 single-encounter stage.
-    /// The installer instantiates only presentation components from it.
+    /// Retained for serialized compatibility with the historical D0 stage.
     /// </summary>
     [Serializable]
     public sealed class D0StageForestLayerDefinition
     {
-        [D0PlannerField("图层 ID", "背景图层的稳定唯一节点键。安装器以它更新对应视觉节点；改名会创建新节点并清理旧节点，同一舞台内不能重复。")]
+        [D0PlannerField("图层 ID", "历史 D0 背景图层的稳定唯一节点键；同一舞台内不能重复。正式关卡环境请在对应 Art Scene 中维护。")]
         [SerializeField]
         private string layerId;
 
-        [D0PlannerField("图层精灵资源", "该背景层直接引用的 Sprite 资源。更换后需执行 D0 安装器；不要改为运行时字符串路径加载。")]
+        [D0PlannerField("图层精灵资源", "历史 D0 背景层直接引用的 Sprite 资源。正式关卡环境请在对应 Art Scene 中维护；不要改为运行时字符串路径加载。")]
         [SerializeField]
         private Sprite sprite;
 
@@ -160,7 +160,7 @@ namespace FPG.Demo.Unity
             Array.Empty<D0StageSpawnPointDefinition>();
 
         [D0PlannerSection("森林背景图层")]
-        [D0PlannerField("森林背景图层列表", "单遭遇舞台使用的背景层。每层直接引用 Sprite，并配置构图、排序和视差；修改后需执行 D0 安装器。")]
+        [D0PlannerField("森林背景图层列表", "历史 D0 单遭遇舞台的兼容背景层。正式关卡环境、构图、排序和视差请在对应 Art Scene 中维护。")]
         [SerializeField]
         private D0StageForestLayerDefinition[] forestLayers = EmptyLayers;
 

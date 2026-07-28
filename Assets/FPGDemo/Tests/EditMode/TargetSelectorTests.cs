@@ -177,6 +177,67 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void ReachedBlockerPenetrationOnlyPublishesForALaneWithoutEarlierTarget()
+        {
+            AttackSnapshot attack = CreateAttack(
+                QueryPolicy.PelletRays,
+                2,
+                2,
+                AttackQueryMode.FirstSurfacePenetration,
+                0,
+                0,
+                0);
+            QueryCandidate[] candidates =
+            {
+                Combatant(AttackQueryStage.Pellet, 0, 20, HitPart.Body, 1, 3, 0),
+                Blocker(AttackQueryStage.Pellet, 0, 2, 5, 1),
+                Blocker(AttackQueryStage.Pellet, 1, 3, 4, 2)
+            };
+            QueryCandidate[] selected = new QueryCandidate[2];
+            AttackQueryResult queryResult =
+                new AttackQueryResult(candidates.Length, 0);
+
+            Assert.That(
+                TargetSelector.Select(
+                    attack,
+                    candidates,
+                    queryResult,
+                    selected,
+                    out int selectedCount).IsSuccess,
+                Is.True);
+            Assert.That(selectedCount, Is.EqualTo(1));
+            Assert.That(selected[0].TargetId.Value, Is.EqualTo(20));
+
+            Assert.That(
+                TargetSelector.TryFindReachedEnvironmentBlocker(
+                    attack,
+                    candidates,
+                    queryResult,
+                    selected,
+                    selectedCount,
+                    0,
+                    out QueryCandidate targetLaneBlocker),
+                Is.False);
+            Assert.That(targetLaneBlocker.IsValid, Is.False);
+
+            Assert.That(
+                TargetSelector.TryFindReachedEnvironmentBlocker(
+                    attack,
+                    candidates,
+                    queryResult,
+                    selected,
+                    selectedCount,
+                    1,
+                    out QueryCandidate blockerOnlyLane),
+                Is.True);
+            Assert.That(
+                blockerOnlyLane.TargetKind,
+                Is.EqualTo(QueryTargetKind.EnvironmentBlocker));
+            Assert.That(blockerOnlyLane.GeometryId.Value, Is.EqualTo(3));
+            Assert.That(blockerOnlyLane.DistanceKey, Is.EqualTo(4));
+        }
+
+        [Test]
         public void SecondaryUsesPriorityAndStableDistanceRuntimeGeometryOrder()
         {
             AttackSnapshot attack = CreateAttack(QueryPolicy.DirectThenArea, 1, 8);

@@ -10,7 +10,7 @@ namespace FPG.Demo.Unity
 
     /// <summary>
     /// Planner-authored presentation behavior for D0's one enemy. Positions are
-    /// offsets from the installed visual and gameplay baseline so the same
+    /// offsets from the authored visual and gameplay baseline so the same
     /// profile moves the CZN actor and its query hitboxes together.
     /// </summary>
     [CreateAssetMenu(

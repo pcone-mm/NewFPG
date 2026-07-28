@@ -85,6 +85,9 @@ namespace FPG.Demo.Unity
         private bool skillSequenceGap;
         private bool hasActiveSkillSequence;
         private FpgFormalPlayerSkillSequenceEvent activeSkillSequence;
+        private FpgPresentationHandle secondaryChargeVfxHandle;
+        private GameObject secondaryChargeVfxInstance;
+        private Transform secondaryChargeVfxSource;
         private bool prepared;
         private bool active;
         private bool subscribed;
@@ -103,6 +106,7 @@ namespace FPG.Demo.Unity
         public FpgFormalPlayerPresentationSnapshot Snapshot => snapshot;
         public bool IsPrepared => prepared;
         public bool IsActive => active;
+        public bool HasSecondaryChargeVfx => secondaryChargeVfxInstance != null;
         public int VitalsGapCount { get; private set; }
         public int VitalsReadCapacity => vitalsBuffer.Length;
         public int SkillSequenceGapCount { get; private set; }
@@ -131,6 +135,7 @@ namespace FPG.Demo.Unity
 
             FpgFormalPlayerPresentationSnapshot previous = snapshot;
             snapshot = nextSnapshot;
+            ApplyCoverPresentation(snapshot);
             if (snapshot.IsPaused && !previous.IsPaused)
             {
                 ClearSkillRuntimePresentation();
@@ -147,6 +152,7 @@ namespace FPG.Demo.Unity
             actorPresenter?.SetPaused(snapshot.IsPaused);
             EvaluateActiveSkillAnimation();
             ConsumeActivePresentations();
+            UpdateSecondaryChargeFeedback();
             ConsumePlayerShotPresentation();
             ConsumePlayerProjectilePresentation();
             cameraFeedback?.SetPaused(snapshot.IsPaused);
@@ -417,10 +423,12 @@ namespace FPG.Demo.Unity
             skillVfxWorld?.BeginCombat();
             if (playerTickDriver.TryRefreshPresentationSnapshot(out snapshot))
             {
+                ApplyCoverPresentation(snapshot);
                 ApplyDurableActorState(snapshot);
                 actorPresenter.SetPaused(snapshot.IsPaused);
                 cameraFeedback.SetPaused(snapshot.IsPaused);
                 playerHud.Refresh(snapshot);
+                UpdateSecondaryChargeFeedback();
             }
 
             error = string.Empty;
@@ -463,6 +471,8 @@ namespace FPG.Demo.Unity
         public void Clear()
         {
             Unsubscribe();
+            ResetCoverPresentation();
+            ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.EndCombat();
             if (playerEntity != null && playerEntity.Barrier != null)
@@ -630,7 +640,14 @@ namespace FPG.Demo.Unity
                 {
                     actorPresenter.CancelSkillAnimation(
                         sequenceEvent.ExecutionId);
-                    ClearSkillRuntimePresentation();
+                    if (sequenceEvent.Slot == FpgPlayerSkillSlot.Secondary
+                        && (sequenceEvent.SequenceKind
+                                == FpgSkillSequenceKind.ChargeEnter
+                            || sequenceEvent.SequenceKind
+                                == FpgSkillSequenceKind.ChargeLoop))
+                    {
+                        ReleaseSecondaryChargeVfx();
+                    }
                     if (hasActiveSkillSequence
                         && activeSkillSequence.ExecutionId
                             == sequenceEvent.ExecutionId)
@@ -733,6 +750,14 @@ namespace FPG.Demo.Unity
 
         private void ClearSkillRuntimePresentation()
         {
+            if (snapshot.IsPaused && snapshot.IsSecondaryCharging)
+            {
+                SuspendSecondaryChargeFeedback();
+            }
+            else
+            {
+                ClearSecondaryChargeFeedback();
+            }
             Array.Clear(actionQueue, 0, actionQueue.Length);
             actionHead = 0;
             actionCount = 0;
@@ -767,11 +792,10 @@ namespace FPG.Demo.Unity
             if (registered.Kind == FpgRegisteredPresentationKind.Vfx
                 && registered.Anchor == FpgVfxPresentationAnchor.OwnerSocket)
             {
-                D0ActorSocketRegistry sockets = playerEntity == null
-                    ? null
-                    : playerEntity.SocketRegistry;
-                if (sockets == null
-                    || !sockets.TryResolve(registered.SocketId, out source))
+                if (playerEntity == null
+                    || !playerEntity.TryResolvePresentationSocket(
+                        registered.SocketId,
+                        out source))
                 {
                     SkillPresentationFaultCount++;
                     return;
@@ -779,8 +803,9 @@ namespace FPG.Demo.Unity
             }
 
             if (source == null
-                || !skillPresentationWorld.TryPresent(
-                    presentationEvent.Handle,
+                || !TryPresentActivePresentation(
+                    presentationEvent,
+                    registered,
                     source))
             {
                 SkillPresentationFaultCount++;
@@ -792,6 +817,149 @@ namespace FPG.Demo.Unity
                 ActivePresentationPresented?.Invoke(presentationEvent);
             }
             catch (Exception)
+            {
+                SkillPresentationFaultCount++;
+            }
+        }
+
+        private bool TryPresentActivePresentation(
+            in FpgFormalPlayerActivePresentationEvent presentationEvent,
+            in FpgRegisteredPresentation registered,
+            Transform source)
+        {
+            bool isHeldSecondaryCharge =
+                presentationEvent.Slot == FpgPlayerSkillSlot.Secondary
+                && presentationEvent.SequenceKind
+                    == FpgSkillSequenceKind.ChargeEnter
+                && presentationEvent.Kind == FpgActivePresentationKind.Vfx
+                && registered.Kind == FpgRegisteredPresentationKind.Vfx
+                && !presentationEvent.RequiresGameplayCommit;
+            if (!isHeldSecondaryCharge)
+            {
+                return skillPresentationWorld.TryPresent(
+                    presentationEvent.Handle,
+                    source);
+            }
+
+            if (!ShouldShowSecondaryChargeFeedback())
+            {
+                return true;
+            }
+
+            ReleaseSecondaryChargeVfx();
+            if (!skillPresentationWorld.TryBorrowHeldVfx(
+                    presentationEvent.Handle,
+                    source,
+                    out GameObject instance)
+                || instance == null)
+            {
+                return false;
+            }
+
+            secondaryChargeVfxHandle = presentationEvent.Handle;
+            secondaryChargeVfxInstance = instance;
+            secondaryChargeVfxSource = source;
+            return skillPresentationWorld.TryUpdateHeldVfx(
+                secondaryChargeVfxHandle,
+                secondaryChargeVfxInstance,
+                secondaryChargeVfxSource,
+                snapshot.SecondaryChargeProgress);
+        }
+
+        private void UpdateSecondaryChargeFeedback()
+        {
+            bool visible = ShouldShowSecondaryChargeFeedback();
+            CombatAimReticle reticle = playerTickDriver == null
+                ? null
+                : playerTickDriver.AimViewportSourceComponent
+                    as CombatAimReticle;
+            reticle?.SetChargeProgress(
+                visible,
+                visible ? snapshot.SecondaryChargeProgress : 0f);
+
+            if (!visible)
+            {
+                if (snapshot.IsPaused && snapshot.IsSecondaryCharging)
+                {
+                    SuspendSecondaryChargeFeedback();
+                }
+                else
+                {
+                    ClearSecondaryChargeFeedback();
+                }
+                return;
+            }
+
+            if (secondaryChargeVfxInstance == null)
+            {
+                if (!secondaryChargeVfxHandle.IsValid
+                    || secondaryChargeVfxSource == null
+                    || skillPresentationWorld == null
+                    || !skillPresentationWorld.TryBorrowHeldVfx(
+                        secondaryChargeVfxHandle,
+                        secondaryChargeVfxSource,
+                        out secondaryChargeVfxInstance))
+                {
+                    return;
+                }
+            }
+
+            if (secondaryChargeVfxSource == null
+                || skillPresentationWorld == null
+                || !skillPresentationWorld.TryUpdateHeldVfx(
+                    secondaryChargeVfxHandle,
+                    secondaryChargeVfxInstance,
+                    secondaryChargeVfxSource,
+                    snapshot.SecondaryChargeProgress))
+            {
+                SkillPresentationFaultCount++;
+                ReleaseSecondaryChargeVfx();
+            }
+        }
+
+        private bool ShouldShowSecondaryChargeFeedback()
+        {
+            return snapshot.IsSecondaryCharging
+                && snapshot.IsCombatActive
+                && snapshot.SecondaryChargeStartedTick.IsValid;
+        }
+
+        private void ClearSecondaryChargeFeedback()
+        {
+            CombatAimReticle reticle = playerTickDriver == null
+                ? null
+                : playerTickDriver.AimViewportSourceComponent
+                    as CombatAimReticle;
+            reticle?.SetChargeProgress(false, 0f);
+            ReleaseSecondaryChargeVfx();
+        }
+
+        private void SuspendSecondaryChargeFeedback()
+        {
+            CombatAimReticle reticle = playerTickDriver == null
+                ? null
+                : playerTickDriver.AimViewportSourceComponent
+                    as CombatAimReticle;
+            reticle?.SetChargeProgress(false, 0f);
+            ReleaseSecondaryChargeVfx(clearBinding: false);
+        }
+
+        private void ReleaseSecondaryChargeVfx(bool clearBinding = true)
+        {
+            GameObject instance = secondaryChargeVfxInstance;
+            secondaryChargeVfxInstance = null;
+            if (clearBinding)
+            {
+                secondaryChargeVfxHandle = default(FpgPresentationHandle);
+                secondaryChargeVfxSource = null;
+            }
+            if (instance == null || !instance.activeSelf)
+            {
+                return;
+            }
+
+            if (skillPresentationWorld == null
+                || !skillPresentationWorld.TryReleaseHeldVfx(instance))
             {
                 SkillPresentationFaultCount++;
             }
@@ -980,9 +1148,14 @@ namespace FPG.Demo.Unity
             for (int index = 0; index < snapshot.TrajectoryCount; index++)
             {
                 PlayerShotTrajectory trajectory = snapshot.GetTrajectory(index);
+                Vector3 authoritativeStart =
+                    ToWorldPosition(trajectory.Start);
+                Vector3 presentationStart = ResolvePresentationSocketPosition(
+                    D0ActorSocketRegistry.PrimaryMuzzleId,
+                    authoritativeStart);
                 if (!skillPresentationWorld.TryPresentTrajectory(
                         handle,
-                        ToWorldPosition(trajectory.Start),
+                        presentationStart,
                         ToWorldPosition(trajectory.TerminalPoint)))
                 {
                     SkillPresentationFaultCount++;
@@ -1282,12 +1455,17 @@ namespace FPG.Demo.Unity
             {
                 PlayerProjectileVisualSlot slot =
                     playerProjectileVisuals[slotIndex];
+                Vector3 terminalPosition = ToWorldPosition(state.LastPoint);
                 if (slot.Instance != null
                     && !skillPresentationWorld.TryUpdateFlightVfx(
                         slot.Handle,
                         slot.Instance,
-                        ToWorldPosition(state.LastPoint),
-                        ResolveProjectileRotation(state, slot.LastPoint)))
+                        terminalPosition,
+                        ResolveProjectilePresentationRotation(
+                            terminalPosition,
+                            slot.LastVisualPosition,
+                            ToWorldPosition(state.Path.End)
+                                - slot.PresentationStart)))
                 {
                     SkillPresentationFaultCount++;
                 }
@@ -1322,10 +1500,20 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            Vector3 presentationStart = ResolvePresentationSocketPosition(
+                D0ActorSocketRegistry.SecondaryMuzzleId,
+                ToWorldPosition(state.Path.Start));
+            Vector3 presentationPoint = RemapProjectilePresentationPoint(
+                state,
+                presentationStart);
             if (!skillPresentationWorld.TryBorrowFlightVfx(
                     handle,
-                    ToWorldPosition(state.LastPoint),
-                    ResolveProjectileRotation(state, state.Path.Start),
+                    presentationPoint,
+                    ResolveProjectilePresentationRotation(
+                        presentationPoint,
+                        presentationStart,
+                        ToWorldPosition(state.Path.End)
+                            - presentationStart),
                     out GameObject instance))
             {
                 SkillPresentationFaultCount++;
@@ -1340,7 +1528,8 @@ namespace FPG.Demo.Unity
                     Instance = instance,
                     Handle = handle,
                     State = state,
-                    LastPoint = state.LastPoint
+                    PresentationStart = presentationStart,
+                    LastVisualPosition = presentationPoint
                 };
             return true;
         }
@@ -1369,18 +1558,26 @@ namespace FPG.Demo.Unity
 
             if (slot.Instance != null)
             {
+                Vector3 presentationPoint = RemapProjectilePresentationPoint(
+                    state,
+                    slot.PresentationStart);
                 if (!skillPresentationWorld.TryUpdateFlightVfx(
                     slot.Handle,
                     slot.Instance,
-                    ToWorldPosition(state.LastPoint),
-                    ResolveProjectileRotation(state, slot.LastPoint)))
+                    presentationPoint,
+                    ResolveProjectilePresentationRotation(
+                        presentationPoint,
+                        slot.LastVisualPosition,
+                        ToWorldPosition(state.Path.End)
+                            - slot.PresentationStart)))
                 {
                     SkillPresentationFaultCount++;
                 }
+
+                slot.LastVisualPosition = presentationPoint;
             }
 
             slot.State = state;
-            slot.LastPoint = state.LastPoint;
             playerProjectileVisuals[slotIndex] = slot;
         }
 
@@ -1670,21 +1867,63 @@ namespace FPG.Demo.Unity
                 point.Z * scale);
         }
 
-        private static Quaternion ResolveProjectileRotation(
-            in ProjectilePresentationState state,
-            SpatialVectorKey previousPoint)
+        private Vector3 ResolvePresentationSocketPosition(
+            string socketId,
+            Vector3 authoritativeFallback)
         {
-            Vector3 direction = ToWorldPosition(state.LastPoint)
-                - ToWorldPosition(previousPoint);
+            return playerEntity != null
+                && playerEntity.TryResolvePresentationSocket(
+                    socketId,
+                    out Transform anchor)
+                && anchor != null
+                    ? anchor.position
+                    : authoritativeFallback;
+        }
+
+        private static Vector3 RemapProjectilePresentationPoint(
+            in ProjectilePresentationState state,
+            Vector3 presentationStart)
+        {
+            Vector3 authoritativeStart = ToWorldPosition(state.Path.Start);
+            Vector3 authoritativeEnd = ToWorldPosition(state.Path.End);
+            Vector3 authoritativePoint = ToWorldPosition(state.LastPoint);
+            Vector3 authoritativePath = authoritativeEnd - authoritativeStart;
+            float pathLengthSquared = authoritativePath.sqrMagnitude;
+            float progress = pathLengthSquared <= 0.000001f
+                ? 1f
+                : Mathf.Clamp01(Vector3.Dot(
+                    authoritativePoint - authoritativeStart,
+                    authoritativePath) / pathLengthSquared);
+            return Vector3.Lerp(presentationStart, authoritativeEnd, progress);
+        }
+
+        private static Quaternion ResolveProjectilePresentationRotation(
+            Vector3 currentPoint,
+            Vector3 previousPoint,
+            Vector3 fallbackDirection)
+        {
+            Vector3 direction = currentPoint - previousPoint;
             if (direction.sqrMagnitude <= 0.000001f)
             {
-                direction = ToWorldPosition(state.Path.End)
-                    - ToWorldPosition(state.Path.Start);
+                direction = fallbackDirection;
             }
 
             return direction.sqrMagnitude <= 0.000001f
                 ? Quaternion.identity
                 : Quaternion.LookRotation(direction, Vector3.up);
+        }
+
+        private void ApplyCoverPresentation(
+            in FpgFormalPlayerPresentationSnapshot value)
+        {
+            playerEntity?.Barrier?.ApplyCommittedSnapshot(
+                value,
+                Time.unscaledDeltaTime);
+        }
+
+        private void ResetCoverPresentation()
+        {
+            playerEntity?.Barrier?.ResetPresentation();
         }
 
         private bool ConsumeCommittedActions()
@@ -2072,7 +2311,13 @@ namespace FPG.Demo.Unity
                 fallback.Ammo,
                 fallback.MagazineCapacity,
                 fallback.ExposureState,
-                fallback.WeaponState);
+                fallback.WeaponState,
+                fallback.IsSecondaryCharging,
+                fallback.SecondaryChargeProgress,
+                fallback.SecondaryChargeStartedTick,
+                fallback.IsCoverPeekRequested,
+                fallback.CoverPeekStartedTick,
+                fallback.IsBarrierLocked);
         }
 
         private void ResetEventCursors()
@@ -2125,6 +2370,8 @@ namespace FPG.Demo.Unity
             }
 
             Subscribe();
+            ResetCoverPresentation();
+            ClearSecondaryChargeFeedback();
             skillVfxWorld?.BeginCombat();
             actorPresenter?.ClearAndReturnToIdle();
             cameraFeedback?.ResetRuntimeFeedback();
@@ -2143,6 +2390,8 @@ namespace FPG.Demo.Unity
         private void OnDisable()
         {
             Unsubscribe();
+            ResetCoverPresentation();
+            ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.EndCombat();
             skillPresentationWorld?.ClearRuntimePresentation();
@@ -2158,7 +2407,8 @@ namespace FPG.Demo.Unity
             public bool IsUsed;
             public bool SeenInActiveSnapshot;
             public ProjectilePresentationState State;
-            public SpatialVectorKey LastPoint;
+            public Vector3 PresentationStart;
+            public Vector3 LastVisualPosition;
             public FpgPresentationHandle Handle;
             public GameObject Instance;
         }
@@ -2197,6 +2447,8 @@ namespace FPG.Demo.Unity
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Faulted
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Disposed)
             {
+                ResetCoverPresentation();
+                ClearSecondaryChargeFeedback();
                 ClearPlayerProjectileVisuals();
                 skillVfxWorld?.ClearActive();
                 skillPresentationWorld?.ClearRuntimePresentation();
@@ -2211,6 +2463,8 @@ namespace FPG.Demo.Unity
 
             actorPresenter?.SetPaused(false);
             actorPresenter?.ClearAndReturnToIdle();
+            ResetCoverPresentation();
+            ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.ClearActive();
             skillPresentationWorld?.ClearRuntimePresentation();

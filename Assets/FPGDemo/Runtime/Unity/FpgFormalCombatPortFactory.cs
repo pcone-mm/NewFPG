@@ -41,6 +41,7 @@ namespace FPG.Demo.Unity
             FpgEncounterRunContext runContext,
             FpgCombatantAnchorMap anchorMap,
             FpgFormalHitboxRegistry formalHitboxRegistry,
+            IFpgFormalEnemyMotionAuthority enemyMotionAuthority,
             out FpgFormalCombatRuntimeBundle bundle,
             out string error);
     }
@@ -231,6 +232,7 @@ namespace FPG.Demo.Unity
         [NonSerialized] private bool playerBindingLocked;
         [NonSerialized] private D0ThreeCProfile playerThreeCProfile;
         [NonSerialized] private D0CombatFeelProfile playerCombatFeelProfile;
+        [NonSerialized] private SecondaryTriggerMode playerSecondaryTriggerMode;
         [NonSerialized] private UnityAttackQuerySettings runtimeAttackQuerySettings;
         [NonSerialized] private int playerMaximumAttackImpactCount;
         [NonSerialized] private bool hasNextPlayerRunResources;
@@ -288,6 +290,8 @@ namespace FPG.Demo.Unity
         public HitboxRegistry StaticHitboxRegistry => staticHitboxRegistry;
         public D0ThreeCProfile PlayerThreeCProfile => playerThreeCProfile;
         public D0CombatFeelProfile PlayerCombatFeelProfile => playerCombatFeelProfile;
+        public SecondaryTriggerMode PlayerSecondaryTriggerMode =>
+            playerSecondaryTriggerMode;
         public UnityAttackQueryTechnicalSettings AttackQueryTechnicalSettings =>
             attackQueryTechnicalSettings;
         public UnityAttackQuerySettings EffectiveAttackQuerySettings =>
@@ -305,6 +309,7 @@ namespace FPG.Demo.Unity
             FpgPlayerEntityView entity,
             D0ThreeCProfile threeCProfile,
             D0CombatFeelProfile combatFeelProfile,
+            SecondaryTriggerMode secondaryTriggerMode,
             out string error)
         {
             if (playerBindingLocked)
@@ -320,9 +325,19 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!Enum.IsDefined(
+                    typeof(SecondaryTriggerMode),
+                    secondaryTriggerMode))
+            {
+                error =
+                    $"Formal combat factory received invalid secondary trigger mode '{secondaryTriggerMode}'.";
+                return false;
+            }
+
             if (!definition.TryValidate(out error)
                 || !entity.TryValidate(out error)
                 || !definition.Weapon.TryCreate(
+                    secondaryTriggerMode,
                     out WeaponDefinition configuredWeapon,
                     out error))
             {
@@ -350,6 +365,7 @@ namespace FPG.Demo.Unity
                 if (playerDefinition == definition && playerEntity == entity
                     && playerThreeCProfile == threeCProfile
                     && playerCombatFeelProfile == combatFeelProfile
+                    && playerSecondaryTriggerMode == secondaryTriggerMode
                     && playerMaximumAttackImpactCount
                         == configuredWeapon.MaximumAttackImpactCount)
                 {
@@ -365,6 +381,7 @@ namespace FPG.Demo.Unity
             playerEntity = entity;
             playerThreeCProfile = threeCProfile;
             playerCombatFeelProfile = combatFeelProfile;
+            playerSecondaryTriggerMode = secondaryTriggerMode;
             runtimeAttackQuerySettings = composedQuerySettings;
             playerMaximumAttackImpactCount =
                 configuredWeapon.MaximumAttackImpactCount;
@@ -385,6 +402,7 @@ namespace FPG.Demo.Unity
             playerEntity = null;
             playerThreeCProfile = null;
             playerCombatFeelProfile = null;
+            playerSecondaryTriggerMode = default(SecondaryTriggerMode);
             runtimeAttackQuerySettings = default(UnityAttackQuerySettings);
             playerMaximumAttackImpactCount = 0;
             ClearNextPlayerRunResources();
@@ -597,6 +615,7 @@ namespace FPG.Demo.Unity
             FpgEncounterRunContext runContext,
             FpgCombatantAnchorMap anchorMap,
             FpgFormalHitboxRegistry formalHitboxRegistry,
+            IFpgFormalEnemyMotionAuthority enemyMotionAuthority,
             out FpgFormalCombatRuntimeBundle bundle,
             out string error)
         {
@@ -613,6 +632,7 @@ namespace FPG.Demo.Unity
 
             if (idAllocator == null || encounterRuntime == null || !runContext.IsValid
                 || anchorMap == null || formalHitboxRegistry == null
+                || enemyMotionAuthority == null
                 || !playerBindingConfigured || playerDefinition == null
                 || playerEntity == null || staticHitboxRegistry == null)
             {
@@ -622,13 +642,18 @@ namespace FPG.Demo.Unity
 
             if (!playerDefinition.TryValidate(out error)
                 || !playerEntity.TryValidate(out error)
-                || !playerDefinition.Weapon.TryCreate(out WeaponDefinition weaponDefinition, out error))
+                || !playerDefinition.Weapon.TryCreate(
+                    playerSecondaryTriggerMode,
+                    out WeaponDefinition weaponDefinition,
+                    out error))
             {
                 return false;
             }
 
-            if (weaponDefinition.MaximumAttackImpactCount
-                != playerMaximumAttackImpactCount)
+            if (weaponDefinition.SecondaryTriggerMode
+                    != playerSecondaryTriggerMode
+                || weaponDefinition.MaximumAttackImpactCount
+                    != playerMaximumAttackImpactCount)
             {
                 error = "Formal player weapon changed after its runtime binding was configured.";
                 return false;
@@ -757,13 +782,16 @@ namespace FPG.Demo.Unity
                     new FpgCombatantEnemyAttackSpatialSampler(anchorMap),
                     enemyCapacity,
                     attackPatternCapacity,
-                    skillExecutionIds);
+                    skillExecutionIds,
+                    enemyMotionAuthority,
+                    physics);
                 FpgFormalUnityTickSynchronizer synchronizer =
                     new FpgFormalUnityTickSynchronizer(
                         scheduler,
                         anchorMap,
                         formalHitboxRegistry,
                         staticHitboxRegistry,
+                        enemyMotionAuthority,
                         physics);
                 FpgFormalPlayerRoomSnapshotPort snapshotPort =
                     new FpgFormalPlayerRoomSnapshotPort(player);
@@ -821,6 +849,7 @@ namespace FPG.Demo.Unity
         private readonly FpgCombatantAnchorMap anchorMap;
         private readonly FpgFormalHitboxRegistry formalHitboxes;
         private readonly HitboxRegistry staticHitboxes;
+        private readonly IFpgFormalEnemyMotionAuthority motionAuthority;
         private readonly IUnityPhysicsQueryBackend physics;
 
         private FpgFormalCombatRuntimeBundle runtime;
@@ -834,12 +863,15 @@ namespace FPG.Demo.Unity
             FpgCombatantAnchorMap anchorMap,
             FpgFormalHitboxRegistry formalHitboxes,
             HitboxRegistry staticHitboxes,
+            IFpgFormalEnemyMotionAuthority motionAuthority,
             IUnityPhysicsQueryBackend physics)
         {
             this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             this.anchorMap = anchorMap ?? throw new ArgumentNullException(nameof(anchorMap));
             this.formalHitboxes = formalHitboxes ?? throw new ArgumentNullException(nameof(formalHitboxes));
             this.staticHitboxes = staticHitboxes ?? throw new ArgumentNullException(nameof(staticHitboxes));
+            this.motionAuthority = motionAuthority
+                ?? throw new ArgumentNullException(nameof(motionAuthority));
             this.physics = physics ?? throw new ArgumentNullException(nameof(physics));
         }
 
@@ -912,7 +944,21 @@ namespace FPG.Demo.Unity
                 }
 
                 phaseTick = tick;
-                physics.SyncTransforms();
+                DomainResult motionResult;
+                try
+                {
+                    motionResult = motionAuthority.AdvanceMotion(tick);
+                }
+                catch (Exception)
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.InvariantFault);
+                }
+
+                if (!motionResult.IsSuccess)
+                {
+                    return motionResult;
+                }
             }
             else if (tick != phaseTick)
             {
@@ -922,6 +968,16 @@ namespace FPG.Demo.Unity
             DomainResult result = DomainResult.Success;
             if (phase == FpgBattleTickPhase.PlayerAttackAndHit)
             {
+                try
+                {
+                    physics.SyncTransforms();
+                }
+                catch (Exception)
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.InvariantFault);
+                }
+
                 result = playerDriver.ProcessPlayerTick(tick, runtime);
             }
 

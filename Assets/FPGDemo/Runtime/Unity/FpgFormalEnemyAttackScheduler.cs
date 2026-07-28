@@ -118,6 +118,8 @@ namespace FPG.Demo.Unity
         private readonly FpgMultiEnemyCombatPort combatPort;
         private readonly FpgEncounterRunContext runContext;
         private readonly IFpgFormalEnemyAttackSpatialSampler spatialSampler;
+        private readonly IFpgFormalEnemyMotionAuthority motionAuthority;
+        private readonly IUnityPhysicsQueryBackend physics;
         private readonly OwnerState[] owners;
         private readonly PatternState[] patterns;
         private readonly FpgFormalEnemySkillSequenceFrame[] sequenceFrames;
@@ -145,12 +147,23 @@ namespace FPG.Demo.Unity
             IFpgFormalEnemyAttackSpatialSampler spatialSampler,
             int ownerCapacity,
             int patternCapacity,
-            FpgSkillExecutionIdAllocator executionIds = null)
+            FpgSkillExecutionIdAllocator executionIds = null,
+            IFpgFormalEnemyMotionAuthority motionAuthority = null,
+            IUnityPhysicsQueryBackend physics = null)
         {
             this.combatPort = combatPort
                 ?? throw new ArgumentNullException(nameof(combatPort));
             this.spatialSampler = spatialSampler
                 ?? throw new ArgumentNullException(nameof(spatialSampler));
+            if ((motionAuthority == null) != (physics == null))
+            {
+                throw new ArgumentException(
+                    "Motion authority and physics synchronization must be provided together.",
+                    nameof(motionAuthority));
+            }
+
+            this.motionAuthority = motionAuthority;
+            this.physics = physics;
             if (!runContext.IsValid)
             {
                 throw new ArgumentException(
@@ -702,6 +715,17 @@ namespace FPG.Demo.Unity
                 return StartPatternResult.Fault;
             }
 
+            if (!TryStartSkillMotion(
+                    pattern,
+                    owner,
+                    executionId,
+                    tick))
+            {
+                pattern.Runtime.Reset();
+                ReleasePatternReservations(pattern);
+                return StartPatternResult.Fault;
+            }
+
             try
             {
                 executionIds.Commit(executionId);
@@ -729,6 +753,46 @@ namespace FPG.Demo.Unity
                     plannedEndTick));
             return StartPatternResult.Started;
         }
+        private bool TryStartSkillMotion(
+            PatternState pattern,
+            in OwnerState owner,
+            SkillExecutionId executionId,
+            TickIndex tick)
+        {
+            if (motionAuthority == null)
+            {
+                return true;
+            }
+
+            FpgFormalEnemySkillSequenceFrame initialFrame =
+                new FpgFormalEnemySkillSequenceFrame(
+                    owner.RuntimeId,
+                    owner.SpawnSequence,
+                    pattern.Attack,
+                    pattern.Execute,
+                    executionId,
+                    tick,
+                    tick,
+                    0,
+                    pattern.Runtime.State);
+            try
+            {
+                DomainResult moved =
+                    motionAuthority.StartSkillMotion(initialFrame);
+                if (!moved.IsSuccess)
+                {
+                    return false;
+                }
+
+                physics.SyncTransforms();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         private DomainResult AdvancePattern(
             PatternState pattern,
             TickIndex tick)
@@ -768,13 +832,24 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            if (!TryAppendSequenceFrame(pattern, tick))
+            if (!TryCreateSequenceFrame(
+                    pattern,
+                    tick,
+                    out FpgFormalEnemySkillSequenceFrame sequenceFrame)
+                || !TryAppendSequenceFrame(sequenceFrame))
             {
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
             }
 
             if (pattern.Runtime.IsTerminal)
             {
+                DomainResult appliedMotion =
+                    ApplyTerminalSkillMotionFrame(sequenceFrame);
+                if (!appliedMotion.IsSuccess)
+                {
+                    return appliedMotion;
+                }
+
                 DomainResult completed = combatPort.CompleteEnemySkillCapacity(
                     pattern.CapacityReservation);
                 if (!completed.IsSuccess)
@@ -828,10 +903,21 @@ namespace FPG.Demo.Unity
                         hasPayload));
             }
 
-            if (appendFrame
-                && !TryAppendSequenceFrame(pattern, tick))
+            if (!TryCreateSequenceFrame(
+                    pattern,
+                    tick,
+                    out FpgFormalEnemySkillSequenceFrame terminalFrame)
+                || appendFrame
+                    && !TryAppendSequenceFrame(terminalFrame))
             {
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            DomainResult appliedMotion =
+                ApplyTerminalSkillMotionFrame(terminalFrame);
+            if (!appliedMotion.IsSuccess)
+            {
+                return appliedMotion;
             }
 
             ReleasePatternReservations(pattern);
@@ -1008,6 +1094,9 @@ namespace FPG.Demo.Unity
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
+            pattern.MarkGameplayEventSubmitted(
+                skillEvent.EventId,
+                scheduleSequence);
             nextScheduleSequence++;
             int eventIndex = pattern.FindEventIndex(skillEvent.EventId);
             pattern.EventBudgetReservations[eventIndex] =
@@ -1034,6 +1123,23 @@ namespace FPG.Demo.Unity
                     TickDuration.Zero,
                     action.ThreatPayload);
                 payload = FpgEnemyAttackPayload.ForThreat(threat);
+                return DomainResult.Success;
+            }
+
+            if (action.Kind == FpgEnemySkillActionKind.SelfDestructOwner)
+            {
+                long dependencyScheduleSequence = -1L;
+                if (action.BoundGameplayEventId != 0
+                    && !pattern.TryGetSubmittedScheduleSequence(
+                        action.BoundGameplayEventId,
+                        out dependencyScheduleSequence))
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.InvalidDefinition);
+                }
+
+                payload = FpgEnemyAttackPayload.ForSelfDestructOwner(
+                    dependencyScheduleSequence);
                 return DomainResult.Success;
             }
 
@@ -1097,8 +1203,7 @@ namespace FPG.Demo.Unity
                 new FpgFormalSummonPayload(
                     request,
                     summon.MaxSummonsPerOwner,
-                    0,
-                    summon.OwnerOutcome));
+                    0));
             return DomainResult.Success;
         }
 
@@ -1731,15 +1836,16 @@ namespace FPG.Demo.Unity
                 : left.PatternOrdinal.CompareTo(right.PatternOrdinal);
         }
 
-        private bool TryAppendSequenceFrame(
+        private bool TryCreateSequenceFrame(
             PatternState pattern,
-            TickIndex tick)
+            TickIndex tick,
+            out FpgFormalEnemySkillSequenceFrame frame)
         {
-            if (sequenceFrameCount >= sequenceFrames.Length
-                || !tick.IsValid
+            if (!tick.IsValid
                 || !pattern.Runtime.StartTick.IsValid
                 || tick.Value < pattern.Runtime.StartTick.Value)
             {
+                frame = default(FpgFormalEnemySkillSequenceFrame);
                 return false;
             }
 
@@ -1749,22 +1855,57 @@ namespace FPG.Demo.Unity
                 || relativeValue > pattern.Execute.DurationTicks
                 || relativeValue > int.MaxValue)
             {
+                frame = default(FpgFormalEnemySkillSequenceFrame);
                 return false;
             }
 
             OwnerState owner = owners[pattern.OwnerIndex];
-            sequenceFrames[sequenceFrameCount++] =
-                new FpgFormalEnemySkillSequenceFrame(
-                    owner.RuntimeId,
-                    owner.SpawnSequence,
-                    pattern.Attack,
-                    pattern.Execute,
-                    pattern.Runtime.ExecutionId,
-                    pattern.Runtime.StartTick,
-                    tick,
-                    (int)relativeValue,
-                    pattern.Runtime.State);
+            frame = new FpgFormalEnemySkillSequenceFrame(
+                owner.RuntimeId,
+                owner.SpawnSequence,
+                pattern.Attack,
+                pattern.Execute,
+                pattern.Runtime.ExecutionId,
+                pattern.Runtime.StartTick,
+                tick,
+                (int)relativeValue,
+                pattern.Runtime.State);
             return true;
+        }
+
+        private bool TryAppendSequenceFrame(
+            in FpgFormalEnemySkillSequenceFrame frame)
+        {
+            if (sequenceFrameCount >= sequenceFrames.Length)
+            {
+                return false;
+            }
+
+            sequenceFrames[sequenceFrameCount++] = frame;
+            return true;
+        }
+
+        private DomainResult ApplyTerminalSkillMotionFrame(
+            in FpgFormalEnemySkillSequenceFrame frame)
+        {
+            if (!frame.IsTerminal)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            if (motionAuthority == null)
+            {
+                return DomainResult.Success;
+            }
+
+            try
+            {
+                return motionAuthority.ApplySkillMotionFrame(frame);
+            }
+            catch (Exception)
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
         }
 
         private void ClearOwnerActivePattern(PatternState pattern)
@@ -2081,7 +2222,10 @@ namespace FPG.Demo.Unity
                     if (!compiled.TryResolveAction(
                         skillEvent,
                         out FpgCompiledEnemySkillAction payload)
-                        || payload.Kind == FpgEnemySkillActionKind.Summon)
+                        || (payload.Kind
+                                != FpgEnemySkillActionKind.Projectile
+                            && payload.Kind
+                                != FpgEnemySkillActionKind.TimedImpact))
                     {
                         continue;
                     }
@@ -2115,6 +2259,7 @@ namespace FPG.Demo.Unity
             private SummonQuotaReservation[] summonQuotaReservations =
                 Array.Empty<SummonQuotaReservation>();
             private bool[] gameplayEventSucceeded = Array.Empty<bool>();
+            private long[] gameplayEventScheduleSequences = Array.Empty<long>();
             private FpgEnemyAttackSpatialContext[] gameplayEventSpatialContexts =
                 Array.Empty<FpgEnemyAttackSpatialContext>();
 
@@ -2164,6 +2309,10 @@ namespace FPG.Demo.Unity
                 {
                     gameplayEventSucceeded = new bool[eventCapacity];
                 }
+                if (gameplayEventScheduleSequences.Length < eventCapacity)
+                {
+                    gameplayEventScheduleSequences = new long[eventCapacity];
+                }
 
                 if (gameplayEventSpatialContexts.Length < eventCapacity)
                 {
@@ -2196,6 +2345,8 @@ namespace FPG.Demo.Unity
                         < prepared.Execute.EventCount
                     || gameplayEventSucceeded.Length
                         < prepared.Execute.EventCount
+                    || gameplayEventScheduleSequences.Length
+                        < prepared.Execute.EventCount
                     || gameplayEventSpatialContexts.Length
                         < prepared.Execute.EventCount
                     || actionOccurrences.Length
@@ -2220,6 +2371,7 @@ namespace FPG.Demo.Unity
                     gameplayEventSucceeded,
                     0,
                     gameplayEventSucceeded.Length);
+                ResetGameplayEventScheduleSequences();
                 Array.Clear(
                     gameplayEventSpatialContexts,
                     0,
@@ -2260,6 +2412,7 @@ namespace FPG.Demo.Unity
                     gameplayEventSucceeded,
                     0,
                     gameplayEventSucceeded.Length);
+                ResetGameplayEventScheduleSequences();
                 Array.Clear(
                     gameplayEventSpatialContexts,
                     0,
@@ -2296,10 +2449,21 @@ namespace FPG.Demo.Unity
                     gameplayEventSucceeded,
                     0,
                     gameplayEventSucceeded.Length);
+                ResetGameplayEventScheduleSequences();
                 Array.Clear(
                     gameplayEventSpatialContexts,
                     0,
                     gameplayEventSpatialContexts.Length);
+            }
+
+            private void ResetGameplayEventScheduleSequences()
+            {
+                for (int index = 0;
+                    index < gameplayEventScheduleSequences.Length;
+                    index++)
+                {
+                    gameplayEventScheduleSequences[index] = -1L;
+                }
             }
 
             public void MarkGameplayEventSucceeded(
@@ -2312,6 +2476,33 @@ namespace FPG.Demo.Unity
                     gameplayEventSucceeded[index] = true;
                     gameplayEventSpatialContexts[index] = spatialContext;
                 }
+            }
+
+            public void MarkGameplayEventSubmitted(
+                int eventId,
+                long scheduleSequence)
+            {
+                int index = FindEventIndex(eventId);
+                if (index >= 0 && scheduleSequence >= 0L)
+                {
+                    gameplayEventScheduleSequences[index] = scheduleSequence;
+                }
+            }
+
+            public bool TryGetSubmittedScheduleSequence(
+                int eventId,
+                out long scheduleSequence)
+            {
+                int index = FindEventIndex(eventId);
+                if (index >= 0
+                    && gameplayEventScheduleSequences[index] >= 0L)
+                {
+                    scheduleSequence = gameplayEventScheduleSequences[index];
+                    return true;
+                }
+
+                scheduleSequence = -1L;
+                return false;
             }
 
             public bool HasSuccessfulGameplayEvent(int eventId)

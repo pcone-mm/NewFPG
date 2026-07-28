@@ -1,8 +1,28 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
+    [Serializable]
+    public struct FpgAnimationRootMotionRule
+    {
+        [SerializeField]
+        private string animationName;
+
+        [SerializeField]
+        private bool enabled;
+
+        public FpgAnimationRootMotionRule(string animationName, bool enabled)
+        {
+            this.animationName = animationName ?? string.Empty;
+            this.enabled = enabled;
+        }
+
+        public string AnimationName => animationName ?? string.Empty;
+        public bool Enabled => enabled;
+    }
+
     /// <summary>
     /// Formal behavior data. Navigation is intentionally outside this asset;
     /// the v1 room supplies authored positions and the runtime owns movement queries.
@@ -51,6 +71,14 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private string deathAnimation = "death";
 
+        [D0PlannerSection("Animation Root Motion")]
+        [D0PlannerField(
+            "Animation Rules",
+            "Root motion is disabled when an animation has no rule. Animation names must be unique.")]
+        [SerializeField]
+        private FpgAnimationRootMotionRule[] animationRootMotionRules =
+            Array.Empty<FpgAnimationRootMotionRule>();
+
         public string BehaviorId => behaviorId;
         public string DisplayName => displayName;
         public FpgEnemyBehaviorMode Mode => mode;
@@ -60,6 +88,50 @@ namespace FPG.Demo.Unity
         public string EntryAnimation => entryAnimation;
         public string IdleAnimation => idleAnimation;
         public string DeathAnimation => deathAnimation;
+        public IReadOnlyList<FpgAnimationRootMotionRule>
+            AnimationRootMotionRules =>
+                animationRootMotionRules
+                    ?? Array.Empty<FpgAnimationRootMotionRule>();
+        public int AnimationRootMotionRuleCount =>
+            animationRootMotionRules == null
+                ? 0
+                : animationRootMotionRules.Length;
+
+        public FpgAnimationRootMotionRule GetAnimationRootMotionRule(int index)
+        {
+            if (animationRootMotionRules == null
+                || index < 0
+                || index >= animationRootMotionRules.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return animationRootMotionRules[index];
+        }
+
+        public bool UsesAnimationRootMotion(string animationName)
+        {
+            if (string.IsNullOrWhiteSpace(animationName))
+            {
+                return false;
+            }
+
+            FpgAnimationRootMotionRule[] rules =
+                animationRootMotionRules
+                    ?? Array.Empty<FpgAnimationRootMotionRule>();
+            for (int index = 0; index < rules.Length; index++)
+            {
+                if (string.Equals(
+                        rules[index].AnimationName,
+                        animationName,
+                        StringComparison.Ordinal))
+                {
+                    return rules[index].Enabled;
+                }
+            }
+
+            return false;
+        }
 
         public bool TryValidate(out string error)
         {
@@ -80,6 +152,30 @@ namespace FPG.Demo.Unity
                 error = "Formal behavior '" + behaviorId
                     + "' has invalid movement values.";
                 return false;
+            }
+
+            HashSet<string> animationNames =
+                new HashSet<string>(StringComparer.Ordinal);
+            FpgAnimationRootMotionRule[] rules =
+                animationRootMotionRules
+                    ?? Array.Empty<FpgAnimationRootMotionRule>();
+            for (int index = 0; index < rules.Length; index++)
+            {
+                string animationName = rules[index].AnimationName;
+                if (string.IsNullOrWhiteSpace(animationName))
+                {
+                    error = "Formal behavior '" + behaviorId
+                        + $"' root-motion rule {index} requires an animation name.";
+                    return false;
+                }
+
+                if (!animationNames.Add(animationName))
+                {
+                    error = "Formal behavior '" + behaviorId
+                        + "' repeats root-motion animation '"
+                        + animationName + "'.";
+                    return false;
+                }
             }
 
             error = string.Empty;

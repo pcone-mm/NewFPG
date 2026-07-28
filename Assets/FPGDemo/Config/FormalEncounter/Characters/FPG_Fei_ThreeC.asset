@@ -34,7 +34,8 @@ MonoBehaviour:
   maximumAimDistance: 50
   inputBufferTicks: 4
   peekTransitionSeconds: 0.08
-  retractTransitionSeconds: 0.1
+  retractTransitionSeconds: 0
+  coverLocalPosition: {x: 0.3, y: 1.075, z: 0.25}
   barrierFadeInSeconds: 0.18
   barrierFadeOutSeconds: 0.12
   barrierMaximumOpacity: 0.72

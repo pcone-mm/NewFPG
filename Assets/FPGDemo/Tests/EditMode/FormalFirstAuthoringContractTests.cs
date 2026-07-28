@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using FPG.Demo.Combat;
+using FPG.Demo.Core;
 using FPG.Demo.Run;
 using FPG.Demo.Skills;
 using FPG.Demo.Unity;
@@ -7,6 +9,8 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
@@ -84,6 +88,17 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 defaultSelection.CharacterDefinition,
                 Is.SameAs(catalog.DefaultCharacter));
+            Assert.That(
+                defaultSelection.SupportedSecondaryModes,
+                Is.EquivalentTo(new[]
+                {
+                    FPG.Demo.Player.SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                    FPG.Demo.Player.SecondaryTriggerMode.ChargeRelease
+                }));
+            Assert.That(
+                defaultSelection.SelectedSecondaryTriggerMode,
+                Is.EqualTo(
+                    FPG.Demo.Player.SecondaryTriggerMode.ImmediateRepeatWhileHeld));
         }
 
         [Test]
@@ -103,6 +118,44 @@ namespace FPG.Demo.Tests.EditMode
                     Assert.That(
                         FindComponents<GameBootstrap>(scene),
                         Has.Count.EqualTo(1));
+                    List<FpgRoomTransitionCurtain> curtains =
+                        FindComponents<FpgRoomTransitionCurtain>(scene);
+                    Assert.That(curtains, Has.Count.EqualTo(1));
+                    Assert.That(
+                        curtains[0].FadeDuration,
+                        Is.EqualTo(FpgRoomTransitionCurtain.DefaultFadeDuration));
+                    Assert.That(curtains[0].CanvasGroup, Is.Not.Null);
+                    Assert.That(
+                        curtains[0].TryValidateAuthoring(out string curtainError),
+                        Is.True,
+                        curtainError);
+                    GameBootstrap bootstrap =
+                        FindComponents<GameBootstrap>(scene)[0];
+                    List<FpgBootSecondaryModeSelector> selectors =
+                        FindComponents<FpgBootSecondaryModeSelector>(scene);
+                    Assert.That(selectors, Has.Count.EqualTo(1));
+                    Assert.That(
+                        bootstrap.SecondaryModeSelector,
+                        Is.SameAs(selectors[0]));
+                    Assert.That(
+                        selectors[0].TryValidateAuthoring(
+                            out string selectorError),
+                        Is.True,
+                        selectorError);
+                    Assert.That(
+                        selectors[0].CanvasGroup.blocksRaycasts,
+                        Is.False,
+                        "The modal must block world input only while it is visible.");
+                    List<EventSystem> eventSystems =
+                        FindComponents<EventSystem>(scene);
+                    Assert.That(eventSystems, Has.Count.EqualTo(1));
+                    Assert.That(
+                        eventSystems[0].GetComponent<InputSystemUIInputModule>(),
+                        Is.Not.Null);
+                    Assert.That(
+                        bootstrap.TryValidateConfiguration(out string bootstrapError),
+                        Is.True,
+                        bootstrapError);
                 });
         }
 
@@ -122,16 +175,191 @@ namespace FPG.Demo.Tests.EditMode
                         FindComponents<FpgFormalPlayerComposer>(scene);
                     List<FpgFormalEncounterHost> formalHosts =
                         FindComponents<FpgFormalEncounterHost>(scene);
+                    List<FpgRoomArtSceneLoader> artLoaders =
+                        FindComponents<FpgRoomArtSceneLoader>(scene);
+                    List<Camera> cameras = FindComponents<Camera>(scene);
                     Assert.That(composers, Has.Count.EqualTo(1));
                     Assert.That(formalHosts, Has.Count.EqualTo(1));
+                    Assert.That(artLoaders, Has.Count.EqualTo(1));
+                    Assert.That(cameras, Has.Count.EqualTo(1));
                     Assert.That(
                         formalHosts[0].PlayerComposer,
                         Is.SameAs(composers[0]));
+                    Assert.That(
+                        formalHosts[0].RoomArtSceneLoader,
+                        Is.SameAs(artLoaders[0]));
+                    Assert.That(
+                        formalHosts[0].WorldCamera,
+                        Is.SameAs(cameras[0]));
+                    Assert.That(cameras[0].clearFlags, Is.EqualTo(CameraClearFlags.Skybox));
+                    List<CombatAimReticle> reticles =
+                        FindComponents<CombatAimReticle>(scene);
+                    Assert.That(reticles, Has.Count.EqualTo(1));
+                    UnityEngine.UI.Image chargeImage =
+                        reticles[0].ChargeProgressImage;
+                    Assert.That(chargeImage, Is.Not.Null);
+                    Assert.That(
+                        chargeImage.type,
+                        Is.EqualTo(UnityEngine.UI.Image.Type.Filled));
+                    Assert.That(
+                        chargeImage.fillMethod,
+                        Is.EqualTo(UnityEngine.UI.Image.FillMethod.Radial360));
+                    Assert.That(chargeImage.fillAmount, Is.Zero);
+                    Assert.That(chargeImage.raycastTarget, Is.False);
+                    Assert.That(chargeImage.gameObject.activeSelf, Is.False);
+                    Assert.That(
+                        FindComponents<FpgRoomArtRoot>(scene),
+                        Is.Empty,
+                        "FormalRoom must not own room art or lighting roots.");
+
+                    int directionalLightCount = 0;
+                    List<Light> lights = FindComponents<Light>(scene);
+                    for (int index = 0; index < lights.Count; index++)
+                    {
+                        if (lights[index].type == LightType.Directional)
+                        {
+                            directionalLightCount++;
+                        }
+                    }
+
+                    Assert.That(
+                        directionalLightCount,
+                        Is.Zero,
+                        "FormalRoom must not own the room's main light.");
+
+                    Component additionalCameraData = null;
+                    Component[] cameraComponents =
+                        cameras[0].GetComponents<Component>();
+                    for (int index = 0;
+                        index < cameraComponents.Length;
+                        index++)
+                    {
+                        if (cameraComponents[index] != null
+                            && string.Equals(
+                                cameraComponents[index].GetType().FullName,
+                                "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData",
+                                StringComparison.Ordinal))
+                        {
+                            additionalCameraData = cameraComponents[index];
+                            break;
+                        }
+                    }
+
+                    Assert.That(additionalCameraData, Is.Not.Null);
+                    SerializedObject cameraData =
+                        new SerializedObject(additionalCameraData);
+                    Assert.That(
+                        cameraData.FindProperty("m_RenderPostProcessing").boolValue,
+                        Is.True);
+                    Assert.That(
+                        cameraData.FindProperty("m_VolumeLayerMask").intValue,
+                        Is.EqualTo(1));
                     Assert.That(
                         formalHosts[0].TryValidateAuthoring(
                             out string authoringError),
                         Is.True,
                         authoringError);
+                });
+        }
+
+        [Test]
+        public void FormalRoomUsesOneRuntimeRootWithoutLegacyPlaceholder()
+        {
+            WithPreviewScene(
+                FormalRoomScenePath,
+                scene =>
+                {
+                    GameObject[] roots = scene.GetRootGameObjects();
+
+                    Assert.That(roots, Has.Length.EqualTo(1));
+                    Assert.That(roots[0].name, Is.EqualTo("__FormalRoom"));
+                    Assert.That(
+                        roots[0].GetComponent<FpgFormalEncounterHost>(),
+                        Is.Not.Null);
+                });
+        }
+
+        [Test]
+        public void FormalRoomFloorIsResolvableEnvironmentBlocker()
+        {
+            WithPreviewScene(
+                FormalRoomScenePath,
+                scene =>
+                {
+                    List<BoxCollider> colliders =
+                        FindComponents<BoxCollider>(scene);
+                    BoxCollider floor = null;
+                    for (int index = 0; index < colliders.Count; index++)
+                    {
+                        if (string.Equals(
+                                colliders[index].name,
+                                "FormalFloorBlocker",
+                                StringComparison.Ordinal))
+                        {
+                            floor = colliders[index];
+                            break;
+                        }
+                    }
+
+                    Assert.That(floor, Is.Not.Null);
+                    Assert.That(floor.transform.parent, Is.Not.Null);
+                    Assert.That(floor.transform.parent.name, Is.EqualTo("World"));
+                    Assert.That(floor.isTrigger, Is.False);
+                    Assert.That(floor.gameObject.layer, Is.EqualTo(28));
+
+                    List<FpgFormalCombatPortFactory> factories =
+                        FindComponents<FpgFormalCombatPortFactory>(scene);
+                    Assert.That(factories, Has.Count.EqualTo(1));
+                    FpgFormalCombatPortFactory factory = factories[0];
+                    UnityAttackQueryTechnicalSettings querySettings =
+                        factory.AttackQueryTechnicalSettings;
+                    Assert.That(querySettings.IsValid, Is.True);
+                    Assert.That(
+                        querySettings.BlockerLayerMask
+                            & (1 << floor.gameObject.layer),
+                        Is.Not.Zero);
+
+                    HitboxRegistry registry = factory.StaticHitboxRegistry;
+                    Assert.That(registry, Is.Not.Null);
+                    Assert.That(registry.StaticBindingCount, Is.EqualTo(2));
+                    UnityAttackQuerySettings validationSettings =
+                        new UnityAttackQuerySettings(
+                            50f,
+                            0.04f,
+                            3f,
+                            querySettings.HitboxLayerMask,
+                            querySettings.BlockerLayerMask);
+                    Assert.That(
+                        registry.TryValidateStaticBindings(
+                            validationSettings,
+                            out string validationError),
+                        Is.True,
+                        validationError);
+                    Assert.That(
+                        registry.ResetForSession(
+                            new RuntimeId(1L),
+                            new RuntimeId(2L),
+                            out string registrationError),
+                        Is.True,
+                        registrationError);
+                    Assert.That(
+                        registry.TryResolve(
+                            floor,
+                            out RegisteredHitbox byCollider),
+                        Is.True);
+                    Assert.That(
+                        byCollider.TargetKind,
+                        Is.EqualTo(QueryTargetKind.EnvironmentBlocker));
+                    Assert.That(byCollider.GeometryId, Is.EqualTo(new GeometryId(3002)));
+                    Assert.That(byCollider.Team, Is.EqualTo(Team.Neutral));
+                    Assert.That(byCollider.RuntimeId, Is.EqualTo(RuntimeId.Invalid));
+                    Assert.That(byCollider.HitPart, Is.EqualTo(HitPart.Body));
+                    Assert.That(
+                        registry.TryResolve(
+                            byCollider.GeometryId,
+                            out RegisteredHitbox byGeometry),
+                        Is.True);
+                    Assert.That(byGeometry.Collider, Is.SameAs(floor));
                 });
         }
 
@@ -205,11 +433,19 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True,
                 compileError);
             Assert.That(compiled.SummonActions.Count, Is.EqualTo(1));
+            Assert.That(
+                compiled.SelfDestructOwnerActions.Count,
+                Is.EqualTo(1));
             FpgCompiledEnemySummonPayload summon =
                 compiled.SummonActions[0].SummonPayload;
+            FpgCompiledEnemySkillAction selfDestruct =
+                compiled.SelfDestructOwnerActions[0];
             Assert.That(
-                summon.OwnerOutcome,
-                Is.EqualTo(FpgSummonOwnerOutcome.DieAfterSuccessfulSummon));
+                selfDestruct.Kind,
+                Is.EqualTo(FpgEnemySkillActionKind.SelfDestructOwner));
+            Assert.That(
+                selfDestruct.BoundGameplayEventId,
+                Is.EqualTo(compiled.SummonActions[0].ActionId));
             Assert.That(
                 summon.OccupancyMode,
                 Is.EqualTo(FpgSummonOccupancyMode.ReplaceOwner));
@@ -223,6 +459,21 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(summon.GetCandidate(0).Definition, Is.SameAs(hudie));
             Assert.That(summon.GetCandidate(0).Weight, Is.EqualTo(1));
             Assert.That(hudie.EnemyDefinitionId, Is.EqualTo("hudie"));
+
+            FpgSkillSequenceDefinition sequence = attack.Sequences[0];
+            Assert.That(sequence.SummonEvents[0].Tick, Is.EqualTo(44));
+            Assert.That(
+                sequence.SummonEvents[0].AuthoredOrdinal,
+                Is.EqualTo(0));
+            Assert.That(
+                sequence.SelfDestructOwnerEvents[0].Tick,
+                Is.EqualTo(44));
+            Assert.That(
+                sequence.SelfDestructOwnerEvents[0].AuthoredOrdinal,
+                Is.EqualTo(3));
+            Assert.That(
+                sequence.SelfDestructOwnerEvents[0].BoundGameplayEventId,
+                Is.EqualTo(sequence.SummonEvents[0].EventId));
         }
 
         [Test]
@@ -328,6 +579,8 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(root.Q("scenario-field"), Is.Null);
             Assert.That(root.Q("play-room-button"), Is.Null);
+            Assert.That(root.Q("cover-position-field"), Is.Not.Null);
+            Assert.That(root.Q("reset-cover-position-button"), Is.Not.Null);
         }
 
         private static List<T> FindComponents<T>(Scene scene)

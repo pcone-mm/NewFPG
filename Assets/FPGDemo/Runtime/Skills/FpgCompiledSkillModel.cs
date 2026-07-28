@@ -47,7 +47,8 @@ namespace FPG.Demo.Skills
             FpgSkillTargetSource targetSource = FpgSkillTargetSource.CurrentAim,
             int offsetXMillimeters = 0,
             int offsetYMillimeters = 0,
-            int offsetZMillimeters = 0)
+            int offsetZMillimeters = 0,
+            int boundGameplayEventId = 0)
         {
             EventId = eventId;
             Tick = tick;
@@ -62,7 +63,7 @@ namespace FPG.Demo.Skills
                 offsetXMillimeters,
                 offsetYMillimeters,
                 offsetZMillimeters);
-            BoundGameplayEventId = 0;
+            BoundGameplayEventId = boundGameplayEventId;
             ActivePresentationKind = FpgActivePresentationKind.None;
             PresentationHandle = default(FpgPresentationHandle);
             PresentationTrackId = 0;
@@ -325,7 +326,8 @@ namespace FPG.Demo.Skills
             int durationTicks,
             int mainAnimation,
             bool loop,
-            FpgCompiledSkillEvent[] events)
+            FpgCompiledSkillEvent[] events,
+            bool holdUntilCanceled = false)
             : this(
                 kind,
                 durationTicks,
@@ -335,7 +337,9 @@ namespace FPG.Demo.Skills
                 0,
                 durationTicks,
                 null,
-                events)
+                events,
+                null,
+                holdUntilCanceled)
         {
         }
 
@@ -347,7 +351,8 @@ namespace FPG.Demo.Skills
             FpgSkillAnimationPlaybackMode animationPlaybackMode,
             int animationStartTick,
             int animationEndTick,
-            FpgCompiledSkillEvent[] events)
+            FpgCompiledSkillEvent[] events,
+            bool holdUntilCanceled = false)
             : this(
                 kind,
                 durationTicks,
@@ -357,31 +362,9 @@ namespace FPG.Demo.Skills
                 animationStartTick,
                 animationEndTick,
                 null,
-                events)
-        {
-        }
-
-        public FpgCompiledSkillSequence(
-            FpgSkillSequenceKind kind,
-            int durationTicks,
-            int mainAnimation,
-            bool loop,
-            FpgSkillAnimationPlaybackMode animationPlaybackMode,
-            int animationStartTick,
-            int animationEndTick,
-            int[] alternateAnimations,
-            FpgCompiledSkillEvent[] events)
-            : this(
-                kind,
-                durationTicks,
-                mainAnimation,
-                loop,
-                animationPlaybackMode,
-                animationStartTick,
-                animationEndTick,
-                alternateAnimations,
                 events,
-                null)
+                null,
+                holdUntilCanceled)
         {
         }
 
@@ -395,14 +378,42 @@ namespace FPG.Demo.Skills
             int animationEndTick,
             int[] alternateAnimations,
             FpgCompiledSkillEvent[] events,
-            FpgCompiledSkillActionPresentation[] actionPresentations)
+            bool holdUntilCanceled = false)
+            : this(
+                kind,
+                durationTicks,
+                mainAnimation,
+                loop,
+                animationPlaybackMode,
+                animationStartTick,
+                animationEndTick,
+                alternateAnimations,
+                events,
+                null,
+                holdUntilCanceled)
+        {
+        }
+
+        public FpgCompiledSkillSequence(
+            FpgSkillSequenceKind kind,
+            int durationTicks,
+            int mainAnimation,
+            bool loop,
+            FpgSkillAnimationPlaybackMode animationPlaybackMode,
+            int animationStartTick,
+            int animationEndTick,
+            int[] alternateAnimations,
+            FpgCompiledSkillEvent[] events,
+            FpgCompiledSkillActionPresentation[] actionPresentations,
+            bool holdUntilCanceled = false)
         {
             FpgSkillValidationResult validation = FpgSkillCompiler.ValidateSequence(
                 kind,
                 durationTicks,
                 mainAnimation,
                 events,
-                -1);
+                -1,
+                holdUntilCanceled);
             if (!validation.IsValid)
             {
                 throw new ArgumentException(validation.ToString(), nameof(events));
@@ -423,6 +434,7 @@ namespace FPG.Demo.Skills
             DurationTicks = durationTicks;
             MainAnimation = mainAnimation;
             Loop = loop;
+            HoldUntilCanceled = holdUntilCanceled;
             AnimationPlaybackMode = animationPlaybackMode;
             AnimationStartTick = animationStartTick;
             AnimationEndTick = animationEndTick;
@@ -438,6 +450,7 @@ namespace FPG.Demo.Skills
                 kind,
                 durationTicks,
                 loop,
+                holdUntilCanceled,
                 this.events);
             PresentationHash =
                 FpgSkillCompiler.ComputeSequencePresentationHash(
@@ -458,6 +471,8 @@ namespace FPG.Demo.Skills
         public int MainAnimation { get; }
 
         public bool Loop { get; }
+
+        public bool HoldUntilCanceled { get; }
 
         public FpgSkillAnimationPlaybackMode AnimationPlaybackMode { get; }
 
@@ -559,12 +574,34 @@ namespace FPG.Demo.Skills
             out FpgCompiledSkillSequence sequence,
             out FpgSkillValidationResult validation)
         {
+            return TryCreate(
+                kind,
+                durationTicks,
+                mainAnimation,
+                loop,
+                events,
+                false,
+                out sequence,
+                out validation);
+        }
+
+        public static bool TryCreate(
+            FpgSkillSequenceKind kind,
+            int durationTicks,
+            int mainAnimation,
+            bool loop,
+            FpgCompiledSkillEvent[] events,
+            bool holdUntilCanceled,
+            out FpgCompiledSkillSequence sequence,
+            out FpgSkillValidationResult validation)
+        {
             validation = FpgSkillCompiler.ValidateSequence(
                 kind,
                 durationTicks,
                 mainAnimation,
                 events,
-                -1);
+                -1,
+                holdUntilCanceled);
             if (!validation.IsValid)
             {
                 sequence = default(FpgCompiledSkillSequence);
@@ -576,7 +613,8 @@ namespace FPG.Demo.Skills
                 durationTicks,
                 mainAnimation,
                 loop,
-                events);
+                events,
+                holdUntilCanceled);
             return true;
         }
 
@@ -718,12 +756,34 @@ namespace FPG.Demo.Skills
             out FpgCompiledSkillSequence sequence,
             out FpgSkillValidationResult validation)
         {
+            return TryCompileSequence(
+                kind,
+                durationTicks,
+                mainAnimation,
+                loop,
+                events,
+                false,
+                out sequence,
+                out validation);
+        }
+
+        public static bool TryCompileSequence(
+            FpgSkillSequenceKind kind,
+            int durationTicks,
+            int mainAnimation,
+            bool loop,
+            FpgCompiledSkillEvent[] events,
+            bool holdUntilCanceled,
+            out FpgCompiledSkillSequence sequence,
+            out FpgSkillValidationResult validation)
+        {
             return FpgCompiledSkillSequence.TryCreate(
                 kind,
                 durationTicks,
                 mainAnimation,
                 loop,
                 events,
+                holdUntilCanceled,
                 out sequence,
                 out validation);
         }
@@ -802,7 +862,8 @@ namespace FPG.Demo.Skills
             int durationTicks,
             int mainAnimation,
             FpgCompiledSkillEvent[] events,
-            int sequenceIndex)
+            int sequenceIndex,
+            bool holdUntilCanceled = false)
         {
             if (!Enum.IsDefined(typeof(FpgSkillSequenceKind), kind)
                 || kind == FpgSkillSequenceKind.None)
@@ -839,6 +900,21 @@ namespace FPG.Demo.Skills
                     sequenceIndex,
                     -1,
                     0);
+            }
+
+            if (holdUntilCanceled)
+            {
+                for (int eventIndex = 0; eventIndex < events.Length; eventIndex++)
+                {
+                    if (events[eventIndex].Kind == FpgSkillEventKind.GameplayAction)
+                    {
+                        return Invalid(
+                            FpgSkillValidationError.HoldSequenceHasGameplayActions,
+                            sequenceIndex,
+                            eventIndex,
+                            events[eventIndex].EventId);
+                    }
+                }
             }
 
             for (int eventIndex = 0; eventIndex < events.Length; eventIndex++)
@@ -894,10 +970,21 @@ namespace FPG.Demo.Skills
                     otherIndex++)
                 {
                     FpgCompiledSkillEvent candidate = events[otherIndex];
+                    bool requiresSummon = skillEvent.Kind
+                            == FpgSkillEventKind.GameplayAction
+                        && skillEvent.ActionKind
+                            == FpgSkillActionKind.SelfDestructOwner;
+                    bool hasValidTiming = requiresSummon
+                        ? candidate.Tick == skillEvent.Tick
+                            && candidate.SortOrder < skillEvent.SortOrder
+                        : candidate.Tick <= skillEvent.Tick;
                     if (candidate.Kind == FpgSkillEventKind.GameplayAction
                         && candidate.EventId
                             == skillEvent.BoundGameplayEventId
-                        && candidate.Tick <= skillEvent.Tick)
+                        && hasValidTiming
+                        && (!requiresSummon
+                            || candidate.ActionKind
+                                == FpgSkillActionKind.SummonActors))
                     {
                         foundBoundGameplayEvent = true;
                         break;
@@ -1047,9 +1134,13 @@ namespace FPG.Demo.Skills
                     skillEvent.SocketId);
             }
 
+            bool supportsBoundGameplayEvent = skillEvent.Kind
+                    == FpgSkillEventKind.ActivePresentation
+                || (skillEvent.Kind == FpgSkillEventKind.GameplayAction
+                    && skillEvent.ActionKind
+                        == FpgSkillActionKind.SelfDestructOwner);
             if (skillEvent.BoundGameplayEventId < 0
-                || (skillEvent.Kind
-                        != FpgSkillEventKind.ActivePresentation
+                || (!supportsBoundGameplayEvent
                     && skillEvent.BoundGameplayEventId != 0))
             {
                 return Invalid(
@@ -1236,6 +1327,7 @@ namespace FPG.Demo.Skills
             FpgSkillSequenceKind kind,
             int durationTicks,
             bool loop,
+            bool holdUntilCanceled,
             FpgCompiledSkillEvent[] events)
         {
             ulong hash = StableHash.Append(
@@ -1244,6 +1336,7 @@ namespace FPG.Demo.Skills
             hash = StableHash.Append(hash, unchecked((ulong)(int)kind));
             hash = StableHash.Append(hash, unchecked((ulong)durationTicks));
             hash = StableHash.Append(hash, loop ? 1UL : 0UL);
+            hash = StableHash.Append(hash, holdUntilCanceled ? 1UL : 0UL);
 
             int gameplayEventCount = 0;
             for (int index = 0; index < events.Length; index++)

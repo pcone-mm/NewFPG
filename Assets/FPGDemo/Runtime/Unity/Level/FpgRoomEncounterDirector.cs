@@ -407,6 +407,7 @@ namespace FPG.Demo.Unity
                     nextRequest.RunContext,
                     combatantAnchorMap,
                     formalHitboxRegistry,
+                    entityPort,
                     out combatRuntime,
                     out error))
             {

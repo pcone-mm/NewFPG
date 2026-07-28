@@ -60,6 +60,7 @@ namespace FPG.Demo.Unity
         public string SocketId => socketId;
         public FpgSkillTargetSource TargetSource => targetSource;
         public Vector3 TargetOffset => targetOffset;
+        public virtual string BoundGameplayEventId => string.Empty;
 
         internal abstract bool TryValidate(
             int durationTicks,
@@ -92,6 +93,11 @@ namespace FPG.Demo.Unity
             return value == (AttackTargetKinds)(-1)
                 ? AttackTargetKinds.All
                 : value;
+        }
+
+        protected void SetDefaultTargetSource(FpgSkillTargetSource value)
+        {
+            targetSource = value;
         }
 
         internal bool TryValidateHeader(int durationTicks, out string error)
@@ -761,10 +767,6 @@ namespace FPG.Demo.Unity
         private FpgSummonPlacementMode summonPlacementMode =
             FpgSummonPlacementMode.EncounterSpawnPoint;
 
-        [SerializeField]
-        private FpgSummonOwnerOutcome summonOwnerOutcome =
-            FpgSummonOwnerOutcome.RemainAlive;
-
         [SerializeField, Min(0)]
         private int maxSummonsPerOwner = 2;
 
@@ -782,7 +784,6 @@ namespace FPG.Demo.Unity
             summonOccupancyMode;
         public FpgSummonPlacementMode SummonPlacementMode =>
             summonPlacementMode;
-        public FpgSummonOwnerOutcome SummonOwnerOutcome => summonOwnerOutcome;
         public int MaxSummonsPerOwner => maxSummonsPerOwner;
         public int MaxTotalSummonsPerEncounter => maxTotalSummonsPerEncounter;
         public int MaxSummonRecursionDepth => maxSummonRecursionDepth;
@@ -828,9 +829,6 @@ namespace FPG.Demo.Unity
                 || !Enum.IsDefined(
                     typeof(FpgSummonPlacementMode),
                     summonPlacementMode)
-                || !Enum.IsDefined(
-                    typeof(FpgSummonOwnerOutcome),
-                    summonOwnerOutcome)
                 || maxSummonsPerOwner < 0
                 || maxTotalSummonsPerEncounter < 0
                 || maxSummonRecursionDepth < 0
@@ -861,17 +859,6 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            bool replacesOwner = summonOccupancyMode
-                == FpgSummonOccupancyMode.ReplaceOwner;
-            bool killsOwner = summonOwnerOutcome
-                == FpgSummonOwnerOutcome.DieAfterSuccessfulSummon;
-            if (replacesOwner != killsOwner)
-            {
-                error =
-                    $"Summon action '{EventId}' must pair ReplaceOwner with DieAfterSuccessfulSummon.";
-                return false;
-            }
-
             HashSet<string> candidateIds =
                 new HashSet<string>(StringComparer.Ordinal);
             for (int index = 0; index < candidates.Count; index++)
@@ -892,6 +879,52 @@ namespace FPG.Demo.Unity
                         $"Summon action '{EventId}' candidate weight {index} must be positive.";
                     return false;
                 }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+    }
+
+    [Serializable]
+    public sealed class FpgSkillSelfDestructOwnerEventDefinition :
+        FpgSkillGameplayActionDefinition
+    {
+        [SerializeField]
+        private string boundGameplayEventId = string.Empty;
+
+        public FpgSkillSelfDestructOwnerEventDefinition()
+        {
+            SetDefaultTargetSource(FpgSkillTargetSource.Self);
+        }
+
+        public override string BoundGameplayEventId =>
+            boundGameplayEventId ?? string.Empty;
+
+        internal override bool TryValidate(
+            int durationTicks,
+            out string error)
+        {
+            if (!TryValidateHeader(durationTicks, out error))
+            {
+                return false;
+            }
+
+            if (TargetSource != FpgSkillTargetSource.Self
+                || !string.IsNullOrEmpty(SocketId)
+                || TargetOffset != Vector3.zero)
+            {
+                error =
+                    $"Self-destruct action '{EventId}' must target Self without a socket or offset.";
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(BoundGameplayEventId)
+                && !FpgSkillStableId.IsValid(BoundGameplayEventId))
+            {
+                error =
+                    $"Self-destruct action '{EventId}' has an invalid bound gameplay event ID.";
+                return false;
             }
 
             error = string.Empty;

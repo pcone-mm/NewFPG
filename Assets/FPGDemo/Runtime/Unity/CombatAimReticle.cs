@@ -23,6 +23,10 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private bool resetOnApplicationFocus = true;
 
+        [SerializeField]
+        [Tooltip("Radial360 Image used only for secondary-charge progress.")]
+        private Image chargeProgressImage;
+
         private RectTransform reticleRect;
         private Vector2 viewport = CombatAimViewportMath.Center;
         private Rect safeViewport = new Rect(
@@ -39,6 +43,8 @@ namespace FPG.Demo.Unity
         private FpgReticleTargetState targetState;
         private FpgReticlePulseState pulseState;
         private float pulseTimeRemaining;
+        private bool chargeProgressActive;
+        private float chargeProgress;
         private readonly ProjectWideBattleInputAdapter inputAdapter =
             new ProjectWideBattleInputAdapter();
 
@@ -60,6 +66,12 @@ namespace FPG.Demo.Unity
 
         public float PulseTimeRemaining => pulseTimeRemaining;
 
+        public Image ChargeProgressImage => chargeProgressImage;
+
+        public bool IsChargeProgressActive => chargeProgressActive;
+
+        public float ChargeProgress => chargeProgress;
+
         private void Awake()
         {
             reticleRect = transform as RectTransform;
@@ -68,6 +80,7 @@ namespace FPG.Demo.Unity
             viewport = CombatAimViewportMath.ClampToSafeArea(viewport, safeViewport);
             ApplyViewportToRect();
             ApplyFeedbackVisual();
+            ApplyChargeProgressVisual();
         }
 
         private void OnEnable()
@@ -148,6 +161,7 @@ namespace FPG.Demo.Unity
         {
             aimHeld = false;
             ResetFeedback();
+            SetChargeProgress(false, 0f);
             SetSystemCursorLocked(false);
         }
 
@@ -169,8 +183,8 @@ namespace FPG.Demo.Unity
 
         /// <summary>
         /// Applies the planner-owned 2.5D free-aim settings without touching the
-        /// battle session. This is safe to call from the scene installer and on
-        /// a restart because it only changes cursor presentation input.
+        /// battle session. This is safe to call during scene binding and on a
+        /// restart because it only changes cursor presentation input.
         /// </summary>
         public bool TrySetThreeCProfile(D0ThreeCProfile profile, out string error)
         {
@@ -228,8 +242,19 @@ namespace FPG.Demo.Unity
 
             presentation = profile.FormalReticle;
             ApplyFeedbackVisual();
+            ApplyChargeProgressVisual();
             error = string.Empty;
             return true;
+        }
+
+        public void SetChargeProgress(bool active, float normalized)
+        {
+            chargeProgressActive = active;
+            chargeProgress = active && !float.IsNaN(normalized)
+                && !float.IsInfinity(normalized)
+                    ? Mathf.Clamp01(normalized)
+                    : 0f;
+            ApplyChargeProgressVisual();
         }
 
         public void SetTargetState(FpgReticleTargetState state)
@@ -300,6 +325,7 @@ namespace FPG.Demo.Unity
             pulseState = FpgReticlePulseState.None;
             pulseTimeRemaining = 0f;
             ApplyFeedbackVisual();
+            SetChargeProgress(false, 0f);
         }
 
         public bool TryValidate(out string error)
@@ -321,6 +347,16 @@ namespace FPG.Demo.Unity
                 || !CombatAimViewportMath.IsInsideSafeArea(viewport, safeViewport))
             {
                 error = "CombatAimReticle viewport must stay inside its safe area.";
+                return false;
+            }
+
+            if (chargeProgressImage != null
+                && (!chargeProgressImage.transform.IsChildOf(transform)
+                    || chargeProgressImage.type != Image.Type.Filled
+                    || chargeProgressImage.fillMethod
+                        != Image.FillMethod.Radial360))
+            {
+                error = "CombatAimReticle charge progress Image must be a Radial360 child.";
                 return false;
             }
 
@@ -408,14 +444,57 @@ namespace FPG.Demo.Unity
 
         private void CacheStrokes()
         {
-            strokes = GetComponentsInChildren<Graphic>(true);
-            strokeBaseSizes = new Vector2[strokes.Length];
-            for (int index = 0; index < strokes.Length; index++)
+            Graphic[] graphics = GetComponentsInChildren<Graphic>(true);
+            int strokeCount = 0;
+            for (int index = 0; index < graphics.Length; index++)
             {
-                Graphic stroke = strokes[index];
-                strokeBaseSizes[index] = stroke == null
-                    ? Vector2.zero
-                    : stroke.rectTransform.sizeDelta;
+                if (graphics[index] != null
+                    && graphics[index] != chargeProgressImage)
+                {
+                    strokeCount++;
+                }
+            }
+
+            strokes = new Graphic[strokeCount];
+            strokeBaseSizes = new Vector2[strokeCount];
+            int strokeIndex = 0;
+            for (int index = 0; index < graphics.Length; index++)
+            {
+                Graphic stroke = graphics[index];
+                if (stroke == null || stroke == chargeProgressImage)
+                {
+                    continue;
+                }
+
+                strokes[strokeIndex] = stroke;
+                strokeBaseSizes[strokeIndex] = stroke.rectTransform.sizeDelta;
+                strokeIndex++;
+            }
+        }
+
+        private void ApplyChargeProgressVisual()
+        {
+            if (chargeProgressImage == null)
+            {
+                return;
+            }
+
+            chargeProgressImage.fillAmount = chargeProgress;
+            bool visible = chargeProgressActive && presentation != null;
+            chargeProgressImage.gameObject.SetActive(visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            Color color = presentation.ChargeRingColor;
+            color.a *= presentation.ChargeRingAlpha;
+            chargeProgressImage.color = color;
+            RectTransform chargeRect = chargeProgressImage.rectTransform;
+            if (chargeRect != null)
+            {
+                float size = presentation.ChargeRingSize;
+                chargeRect.sizeDelta = new Vector2(size, size);
             }
         }
 

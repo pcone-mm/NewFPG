@@ -19,13 +19,14 @@ MonoBehaviour:
     was telegraph + windup.
   sequences:
   - kind: 1
-    durationTicks: 44
+    durationTicks: 80
     alternateAnimations: []
     mainAnimation: die&broken
     loop: 0
+    holdUntilCanceled: 0
     animationPlaybackMode: 0
     animationStartTick: 0
-    animationEndTick: 44
+    animationEndTick: 80
     sourceAnimationDurationTicks: 0
     attackEvents: []
     projectileEvents: []
@@ -42,10 +43,17 @@ MonoBehaviour:
       summonCandidateWeights: 01000000
       summonOccupancyMode: 1
       summonPlacementMode: 1
-      summonOwnerOutcome: 1
       maxSummonsPerOwner: 0
       maxTotalSummonsPerEncounter: 0
       maxSummonRecursionDepth: 1
+    selfDestructOwnerEvents:
+    - eventId: event.luan-summon.self-destruct.1
+      tick: 71
+      authoredOrdinal: 3
+      socketId: 
+      targetSource: 3
+      targetOffset: {x: 0, y: 0, z: 0}
+      boundGameplayEventId: 
     activePresentationTracks: []
     warnings:
     - eventId: warning.luan-summon

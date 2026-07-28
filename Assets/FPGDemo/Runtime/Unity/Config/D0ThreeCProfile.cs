@@ -12,6 +12,9 @@ namespace FPG.Demo.Unity
         menuName = "FPG Demo/Config/D0 3C Profile")]
     public sealed class D0ThreeCProfile : ScriptableObject
     {
+        public static readonly Vector3 DefaultCoverLocalPosition =
+            new Vector3(0.30f, 1.075f, 0.25f);
+
         [D0PlannerSection("3C 配置标识与镜头构图")]
         [D0PlannerField("3C 配置 ID", "用于场景关联、校验和日志定位的稳定标识，不是战斗数值。创建后保持非空且稳定。")]
         [SerializeField]
@@ -91,6 +94,11 @@ namespace FPG.Demo.Unity
         private float retractTransitionSeconds = 0.10f;
 
         [D0PlannerSection("护盾显示")]
+        [D0PlannerField("掩体局部位置", "掩体相对玩家实体的位置。X 控制横向，Y 控制高度，Z 控制画面深度；当前正式镜头位于玩家负 Z 方向，增大 Z 会把掩体移到角色画面后方，避免遮挡角色。仅移动表现，不改变命中体或弹道。")]
+        [SerializeField]
+        private Vector3 coverLocalPosition =
+            new Vector3(0.30f, 1.075f, 0.25f);
+
         [D0PlannerField("护盾显示淡入时长（秒）", "护盾视觉从透明到目标不透明度的时长。仅影响显示，不改变护盾数值、承伤通道或完美回撤结算。")]
         [SerializeField, Min(0.01f)]
         private float barrierFadeInSeconds = 0.18f;
@@ -138,6 +146,7 @@ namespace FPG.Demo.Unity
         public int InputBufferTicks => inputBufferTicks;
         public float PeekTransitionSeconds => peekTransitionSeconds;
         public float RetractTransitionSeconds => retractTransitionSeconds;
+        public Vector3 CoverLocalPosition => coverLocalPosition;
         public float BarrierFadeInSeconds => barrierFadeInSeconds;
         public float BarrierFadeOutSeconds => barrierFadeOutSeconds;
         public float BarrierMaximumOpacity => barrierMaximumOpacity;
@@ -183,6 +192,7 @@ namespace FPG.Demo.Unity
                 || inputBufferTicks > 32
                 || !IsFiniteNonNegative(peekTransitionSeconds)
                 || !IsFiniteNonNegative(retractTransitionSeconds)
+                || !IsFinite(coverLocalPosition)
                 || !IsFinitePositive(barrierFadeInSeconds)
                 || !IsFinitePositive(barrierFadeOutSeconds)
                 || !IsFiniteNonNegative(barrierMaximumOpacity)

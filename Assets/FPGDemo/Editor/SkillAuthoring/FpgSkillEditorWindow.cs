@@ -37,6 +37,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 new List<FpgSkillActivePresentationTrackRecord>();
         private readonly List<FpgSkillCompiledTriggerRecord> compiledTriggers =
             new List<FpgSkillCompiledTriggerRecord>();
+        private readonly List<FpgSkillPreviewSequenceContext>
+            previewSequenceContexts =
+                new List<FpgSkillPreviewSequenceContext>(5);
         private readonly FpgSkillPreviewExecution previewExecution =
             new FpgSkillPreviewExecution();
         private FpgSkillPreviewSimulationFrame previewSimulationFrame;
@@ -62,7 +65,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private int measuredAnimationDurationTicks = -1;
         private bool isPlaying;
         private bool hasCompiledSchedule;
+        private bool hasPreviewExecution;
         private FpgCompiledSkillSequence compiledSequence;
+        private FpgSkillPreviewMode previewMode =
+            FpgSkillPreviewMode.CurrentSequence;
+        private FpgSkillSequenceKind displayedPreviewAnimationKind =
+            FpgSkillSequenceKind.None;
+        private bool suppressAnimationDurationRefresh;
         private string previewCompileError;
         private string lastReportedPreviewFailureSignature;
         private bool refreshQueued;
@@ -74,6 +83,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private DropdownField typeFilter;
         private ListView actionAssetList;
         private DropdownField sequenceDropdown;
+        private DropdownField previewModeDropdown;
         private ObjectField previewPrefabField;
         private DropdownField targetCountDropdown;
         private Toggle showGeometryToggle;
@@ -198,6 +208,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             typeFilter = rootVisualElement.Q<DropdownField>("type-filter");
             actionAssetList = rootVisualElement.Q<ListView>("action-asset-list");
             sequenceDropdown = rootVisualElement.Q<DropdownField>("sequence-dropdown");
+            previewModeDropdown = rootVisualElement.Q<DropdownField>(
+                "preview-mode-dropdown");
             previewPrefabField = rootVisualElement.Q<ObjectField>(
                 "preview-prefab-field");
             targetCountDropdown = rootVisualElement.Q<DropdownField>(
@@ -296,6 +308,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 { "0.25x", "0.5x", "1x", "2x" };
             speedDropdown.SetValueWithoutNotify("1x");
 
+            previewModeDropdown.choices = new List<string>
+            {
+                "Current Sequence",
+                "Immediate Secondary",
+                "Charged Lifecycle"
+            };
+            previewModeDropdown.SetValueWithoutNotify(
+                previewModeDropdown.choices[(int)previewMode]);
+
             targetCountDropdown.choices = new List<string>
                 { "1 个目标", "2 个目标", "3 个目标", "4 个目标" };
             targetCountDropdown.SetValueWithoutNotify("1 个目标");
@@ -306,6 +327,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             assetSearchField.RegisterValueChangedCallback(_ => ApplyAssetFilters());
             typeFilter.RegisterValueChangedCallback(_ => ApplyAssetFilters());
             sequenceDropdown.RegisterValueChangedCallback(OnSequenceChanged);
+            previewModeDropdown.RegisterValueChangedCallback(
+                OnPreviewModeChanged);
             previewPrefabField.RegisterValueChangedCallback(OnPreviewPrefabChanged);
             targetCountDropdown.RegisterValueChangedCallback(OnTargetCountChanged);
             showGeometryToggle.RegisterValueChangedCallback(evt =>
@@ -358,10 +381,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             GameObject prefab = string.IsNullOrWhiteSpace(path)
                 ? null
                 : AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            previewPrefabField.SetValueWithoutNotify(prefab);
-            previewView.SetPreviewPrefab(prefab);
-            measuredAnimationDurationTicks =
-                previewView.MeasuredAnimationDurationTicks;
+            previewPrefabField?.SetValueWithoutNotify(prefab);
+            previewView?.SetPreviewPrefab(prefab);
+            measuredAnimationDurationTicks = previewView == null
+                ? -1
+                : previewView.MeasuredAnimationDurationTicks;
         }
 
         private void OnPreviewPrefabChanged(ChangeEvent<UnityEngine.Object> evt)
@@ -658,7 +682,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 serializedAsset,
                 selectedSequenceIndex);
             durationTicks = FpgSkillSerializedAdapter.GetDurationTicks(sequence);
-            currentTick = Mathf.Clamp(currentTick, 0, durationTicks);
+            currentTick = Mathf.Max(0, currentTick);
 
             presentationTracks.Clear();
             presentationTracks.AddRange(
@@ -683,29 +707,43 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 compiledTriggers,
                 out compiledSequence,
                 out string compileError);
+            hasPreviewExecution = false;
+            previewSequenceContexts.Clear();
+            string executionError = string.Empty;
             if (hasCompiledSchedule
-                && (!previewExecution.Bind(
-                        compiledSequence,
-                        out string executionError)
-                    || !previewExecution.AdvanceTo(
-                        currentTick,
-                        out executionError)))
+                && (!TryBuildPreviewSequenceContexts(out executionError)
+                    || !TryBindPreviewExecution(out executionError)))
             {
-                hasCompiledSchedule = false;
                 compileError = executionError;
             }
-            else if (!hasCompiledSchedule)
+            else if (hasCompiledSchedule)
+            {
+                currentTick = Mathf.Clamp(
+                    currentTick,
+                    0,
+                    previewExecution.DurationTicks);
+                hasPreviewExecution = previewExecution.AdvanceTo(
+                    currentTick,
+                    out executionError);
+                if (!hasPreviewExecution)
+                {
+                    compileError = executionError;
+                }
+                else
+                {
+                    previewExecution.ClearPendingResults();
+                }
+            }
+
+            if (!hasPreviewExecution)
             {
                 previewExecution.Reset();
-            }
-            else
-            {
-                previewExecution.ClearPendingResults();
             }
 
             previewView.SetAnimation(
                 FpgSkillSerializedAdapter.GetMainAnimation(sequence),
                 compiledSequence);
+            displayedPreviewAnimationKind = FpgSkillSequenceKind.None;
             measuredAnimationDurationTicks =
                 previewView.MeasuredAnimationDurationTicks;
             validation.Clear();
@@ -717,7 +755,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 measuredAnimationDurationTicks,
                 previewPrefabField.value as GameObject,
                 includeRuntimeValidation: false));
-            previewCompileError = hasCompiledSchedule
+            previewCompileError = hasPreviewExecution
                 ? string.Empty
                 : compileError;
             ReportPreviewFailureToConsole(previewCompileError);
@@ -782,6 +820,212 @@ namespace FPG.Demo.Editor.SkillAuthoring
             sequenceDropdown.SetEnabled(count > 0);
         }
 
+        private bool TryBuildPreviewSequenceContexts(out string error)
+        {
+            previewSequenceContexts.Clear();
+            SerializedProperty sequences = FpgSkillSerializedAdapter.GetSequences(
+                serializedAsset);
+            int count = sequences == null || !sequences.isArray
+                ? 0
+                : sequences.arraySize;
+            for (int index = 0; index < count; index++)
+            {
+                SerializedProperty sequence = sequences.GetArrayElementAtIndex(index);
+                int sequenceDuration =
+                    FpgSkillSerializedAdapter.GetDurationTicks(sequence);
+                List<FpgSkillEventRecord> authoredEvents =
+                    FpgSkillSerializedAdapter.ReadEvents(
+                        sequence,
+                        sequenceDuration);
+                List<FpgSkillCompiledTriggerRecord> triggers =
+                    new List<FpgSkillCompiledTriggerRecord>();
+                if (!FpgSkillSerializedAdapter.TryReadCompiledSchedule(
+                        serializedAsset,
+                        index,
+                        authoredEvents,
+                        triggers,
+                        out FpgCompiledSkillSequence compiled,
+                        out error))
+                {
+                    previewSequenceContexts.Clear();
+                    return false;
+                }
+
+                previewSequenceContexts.Add(
+                    new FpgSkillPreviewSequenceContext(
+                        index,
+                        compiled,
+                        FpgSkillSerializedAdapter.GetMainAnimation(sequence),
+                        authoredEvents,
+                        triggers));
+            }
+
+            error = string.Empty;
+            return previewSequenceContexts.Count > 0;
+        }
+
+        private bool TryBindPreviewExecution(out string error)
+        {
+            switch (previewMode)
+            {
+                case FpgSkillPreviewMode.CurrentSequence:
+                    return previewExecution.Bind(
+                        compiledSequence,
+                        EvaluatePreviewGameplayCommit,
+                        out error);
+
+                case FpgSkillPreviewMode.ImmediateSecondary:
+                    if (!TryGetPreviewContext(
+                            FpgSkillSequenceKind.Execute,
+                            out FpgSkillPreviewSequenceContext execute))
+                    {
+                        error = "Immediate secondary preview requires Execute.";
+                        return false;
+                    }
+
+                    return previewExecution.BindImmediate(
+                        execute.Sequence,
+                        EvaluatePreviewGameplayCommit,
+                        out error);
+
+                case FpgSkillPreviewMode.ChargedSecondaryLifecycle:
+                    if (!TryGetPreviewContext(
+                            FpgSkillSequenceKind.ChargeEnter,
+                            out FpgSkillPreviewSequenceContext chargeEnter)
+                        || !TryGetPreviewContext(
+                            FpgSkillSequenceKind.ChargeLoop,
+                            out FpgSkillPreviewSequenceContext chargeLoop)
+                        || !TryGetPreviewContext(
+                            FpgSkillSequenceKind.Release,
+                            out FpgSkillPreviewSequenceContext release)
+                        || !TryGetPreviewContext(
+                            FpgSkillSequenceKind.Cancel,
+                            out FpgSkillPreviewSequenceContext cancel))
+                    {
+                        error = "Charged preview requires ChargeEnter, ChargeLoop, Release and Cancel.";
+                        return false;
+                    }
+
+                    return previewExecution.BindChargedLifecycle(
+                        chargeEnter.Sequence,
+                        chargeLoop.Sequence,
+                        release.Sequence,
+                        cancel.Sequence,
+                        FpgSkillSerializedAdapter.GetChargeProgressTicks(
+                            serializedAsset),
+                        EvaluatePreviewGameplayCommit,
+                        out error);
+
+                default:
+                    error = "Unknown skill preview mode.";
+                    return false;
+            }
+        }
+
+        private bool TryGetPreviewContext(
+            FpgSkillSequenceKind kind,
+            out FpgSkillPreviewSequenceContext context)
+        {
+            context = previewSequenceContexts.FirstOrDefault(item =>
+                item.Sequence.Kind == kind);
+            return context != null;
+        }
+
+        private FpgSkillPreviewSequenceContext GetPreviewContext(
+            FpgSkillSequenceKind kind)
+        {
+            TryGetPreviewContext(kind, out FpgSkillPreviewSequenceContext context);
+            return context;
+        }
+
+        private bool EvaluatePreviewGameplayCommit(
+            FpgSkillEventResult result)
+        {
+            if (result.Outcome != FpgSkillEventOutcome.Triggered
+                || result.Event.Kind != FpgSkillEventKind.GameplayAction
+                || previewView == null)
+            {
+                return false;
+            }
+
+            FpgSkillPreviewSequenceContext context = GetPreviewContext(
+                result.SequenceKind);
+            if (context == null)
+            {
+                return false;
+            }
+
+            FpgSkillPreviewSimulationFrame commitFrame =
+                FpgSkillPreviewSimulator.Evaluate(
+                    context.Sequence,
+                    result.Event.Tick,
+                    context.Triggers,
+                    context.Events,
+                    previewView);
+            return commitFrame.TryGetEventResult(
+                result.EventId,
+                out _);
+        }
+
+        private FpgSkillPreviewSequenceContext GetCurrentPreviewContext()
+        {
+            return hasPreviewExecution
+                && TryGetPreviewContext(
+                    previewExecution.CurrentSequenceKind,
+                    out FpgSkillPreviewSequenceContext context)
+                    ? context
+                    : previewSequenceContexts.FirstOrDefault(item =>
+                        item.SequenceIndex == selectedSequenceIndex);
+        }
+
+        private int GetPreviewDurationTicks()
+        {
+            return hasPreviewExecution
+                ? previewExecution.DurationTicks
+                : durationTicks;
+        }
+
+        private int GetSelectedSequenceLocalTick()
+        {
+            FpgSkillPreviewSequenceContext selected =
+                previewSequenceContexts.FirstOrDefault(item =>
+                    item.SequenceIndex == selectedSequenceIndex);
+            if (selected != null
+                && hasPreviewExecution
+                && previewExecution.TryGetStageStartTick(
+                    selected.Sequence.Kind,
+                    out int stageStartTick))
+            {
+                return Mathf.Clamp(
+                    currentTick - stageStartTick,
+                    0,
+                    durationTicks);
+            }
+
+            return Mathf.Clamp(currentTick, 0, durationTicks);
+        }
+
+        private int PreviewTickForSelectedSequence(int localTick)
+        {
+            int normalized = Mathf.Clamp(localTick, 0, durationTicks);
+            FpgSkillPreviewSequenceContext selected =
+                previewSequenceContexts.FirstOrDefault(item =>
+                    item.SequenceIndex == selectedSequenceIndex);
+            if (selected != null
+                && hasPreviewExecution
+                && previewExecution.TryGetStageStartTick(
+                    selected.Sequence.Kind,
+                    out int stageStartTick))
+            {
+                return Mathf.Clamp(
+                    stageStartTick + normalized,
+                    0,
+                    previewExecution.DurationTicks);
+            }
+
+            return normalized;
+        }
+
         private void RefreshTimeline()
         {
             List<FpgSkillTimelineEventViewModel> models =
@@ -839,7 +1083,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
             timelineView.SetAvailableTracks(availableTracks);
             timelineView.SetPresentationTracks(presentationTrackModels);
             timelineView.SetModel(durationTicks, models, blocks);
-            timelineView.SetPlayhead(currentTick);
+            timelineView.SetPlayhead(GetSelectedSequenceLocalTick());
             if (selectedAnimationTrack)
             {
                 timelineView.SelectBlock(
@@ -862,13 +1106,37 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void RefreshPreview()
         {
+            FpgSkillPreviewSequenceContext previewContext =
+                GetCurrentPreviewContext();
+            int previewLocalTick = hasPreviewExecution
+                ? Mathf.Max(0, previewExecution.CurrentSequenceTick)
+                : currentTick;
+            if (previewContext != null
+                && displayedPreviewAnimationKind
+                    != previewContext.Sequence.Kind)
+            {
+                suppressAnimationDurationRefresh = true;
+                previewView.SetAnimation(
+                    previewContext.AnimationName,
+                    previewContext.Sequence);
+                suppressAnimationDurationRefresh = false;
+                displayedPreviewAnimationKind = previewContext.Sequence.Kind;
+            }
+
+            IReadOnlyList<FpgSkillEventRecord> previewEvents =
+                previewContext?.Events ?? events;
+            IReadOnlyList<FpgSkillCompiledTriggerRecord> previewTriggers =
+                previewContext?.Triggers ?? compiledTriggers;
+            FpgCompiledSkillSequence previewSequence = previewContext == null
+                ? compiledSequence
+                : previewContext.Sequence;
             List<FpgSkillTimelineEventViewModel> active =
                 new List<FpgSkillTimelineEventViewModel>();
-            for (int index = 0; index < events.Count; index++)
+            for (int index = 0; index < previewEvents.Count; index++)
             {
                 FpgSkillTimelineEventViewModel model =
-                    events[index].ToViewModel();
-                if (model.IsActiveAt(currentTick))
+                    previewEvents[index].ToViewModel();
+                if (model.IsActiveAt(previewLocalTick))
                 {
                     active.Add(model);
                 }
@@ -877,22 +1145,24 @@ namespace FPG.Demo.Editor.SkillAuthoring
             active.Sort((left, right) =>
                 left.AuthoredOrdinal.CompareTo(right.AuthoredOrdinal));
 
-            previewSimulationFrame = hasCompiledSchedule
+            previewSimulationFrame = hasPreviewExecution
                 ? FpgSkillPreviewSimulator.Evaluate(
-                    compiledSequence,
-                    currentTick,
-                    compiledTriggers,
-                    events,
+                    previewSequence,
+                    previewLocalTick,
+                    previewTriggers,
+                    previewEvents,
                     previewView)
-                : new FpgSkillPreviewSimulationFrame(currentTick);
+                : new FpgSkillPreviewSimulationFrame(previewLocalTick);
             previewView.SetTickState(
-                currentTick,
+                previewLocalTick,
                 active,
                 previewSimulationFrame);
             previewTickLabel.text = string.Format(
-                "Tick {0} / {1:0.000} 秒",
+                "Tick {0} / {1:0.000} 秒 · {2} [{3}]",
                 currentTick,
-                currentTick / (float)TickRate);
+                currentTick / (float)TickRate,
+                previewExecution.CurrentSequenceKind,
+                previewLocalTick);
         }
 
         private void RefreshInspector()
@@ -950,6 +1220,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
             AddTypedProperty(
                 currentSequence?.FindPropertyRelative("durationTicks"),
                 "总时长 Tick");
+            AddTypedProperty(
+                currentSequence?.FindPropertyRelative("holdUntilCanceled"),
+                "Hold Until Canceled");
         }
 
         private void AddAdditionalAssetProperties()
@@ -978,6 +1251,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
             if (!string.Equals(
                     propertyName,
                     "minimumChargeTicks",
+                    StringComparison.Ordinal)
+                && !string.Equals(
+                    propertyName,
+                    "chargeProgressTicks",
                     StringComparison.Ordinal))
             {
                 return true;
@@ -1094,7 +1371,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            bool hasErrors = !hasCompiledSchedule || validation.Any(item =>
+            bool hasErrors = !hasPreviewExecution || validation.Any(item =>
                 item.Severity == FpgSkillIssueSeverity.Error);
             bool hasWarnings = validation.Any(item =>
                 item.Severity == FpgSkillIssueSeverity.Warning);
@@ -1292,8 +1569,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             presentationTracks.Clear();
             events.Clear();
             compiledTriggers.Clear();
+            previewSequenceContexts.Clear();
             hasCompiledSchedule = false;
+            hasPreviewExecution = false;
             compiledSequence = default(FpgCompiledSkillSequence);
+            displayedPreviewAnimationKind = FpgSkillSequenceKind.None;
             previewCompileError = string.Empty;
             lastReportedPreviewFailureSignature = null;
             previewExecution.Reset();
@@ -1330,6 +1610,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void OnAnimationDurationMeasured(int duration)
         {
+            if (suppressAnimationDurationRefresh)
+            {
+                return;
+            }
+
             if (measuredAnimationDurationTicks == duration)
             {
                 return;
@@ -1427,6 +1712,24 @@ namespace FPG.Demo.Editor.SkillAuthoring
             RefreshFromSerialized();
         }
 
+        private void OnPreviewModeChanged(ChangeEvent<string> evt)
+        {
+            int index = previewModeDropdown.choices.IndexOf(evt.newValue);
+            if (index < 0
+                || index > (int)FpgSkillPreviewMode.ChargedSecondaryLifecycle
+                || index == (int)previewMode)
+            {
+                return;
+            }
+
+            Pause();
+            previewMode = (FpgSkillPreviewMode)index;
+            displayedPreviewAnimationKind = FpgSkillSequenceKind.None;
+            currentTick = 0;
+            tickAccumulator = 0d;
+            RefreshFromSerialized(false);
+        }
+
         private void OnTargetCountChanged(ChangeEvent<string> evt)
         {
             int index = targetCountDropdown.choices.IndexOf(evt.newValue);
@@ -1479,7 +1782,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
             if (item.Tick >= 0)
             {
-                SetCurrentTick(item.Tick, false, true);
+                SetCurrentTick(
+                    PreviewTickForSelectedSequence(item.Tick),
+                    false,
+                    true);
             }
         }
 
@@ -1491,7 +1797,23 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            SetCurrentTick(item.Tick, false, true);
+            if (item.SequenceIndex >= 0
+                && item.SequenceIndex != selectedSequenceIndex)
+            {
+                Pause();
+                selectedSequenceIndex = item.SequenceIndex;
+                SaveSequenceSelection();
+                selectedPresentationTrackIndex = -1;
+                selectedEventKey = FpgSkillEventKey.Invalid;
+                selectedAnimationTrack = false;
+                eventSelection.Clear();
+                currentTick = item.Tick;
+                RefreshFromSerialized();
+            }
+            else
+            {
+                SetCurrentTick(item.Tick, false, true);
+            }
             if (item.EventKey.IsValid)
             {
                 SelectEvent(item.EventKey, false);
@@ -1501,7 +1823,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void OnTimelinePlayheadChanged(int tick)
         {
             Pause();
-            SetCurrentTick(tick, true, false);
+            SetCurrentTick(
+                PreviewTickForSelectedSequence(tick),
+                true,
+                false);
         }
 
         private void OnTimelineEventSelectionChanged(
@@ -1526,7 +1851,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                             record.PresentationTrackIndex;
                     }
 
-                    SetCurrentTick(record.Tick, false, false);
+                    SetCurrentTick(
+                        PreviewTickForSelectedSequence(record.Tick),
+                        false,
+                        false);
                 }
             }
 
@@ -1550,10 +1878,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            currentTick = Mathf.Clamp(
-                timelineView.PlayheadTick,
-                0,
-                durationTicks);
+            currentTick = PreviewTickForSelectedSequence(
+                Mathf.Clamp(
+                    timelineView.PlayheadTick,
+                    0,
+                    durationTicks));
             eventSelection.Set(
                 eventKeys,
                 timelineView.SelectedEventKey);
@@ -1607,7 +1936,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 : editMode == FpgSkillTimelineBlockEditMode.ResizeEnd
                     ? appliedEndTick
                     : appliedStartTick;
-            currentTick = Mathf.Clamp(focusTick, 0, maximumTick);
+            currentTick = PreviewTickForSelectedSequence(
+                Mathf.Clamp(focusTick, 0, maximumTick));
             selectedAnimationTrack =
                 kind == FpgSkillTimelineBlockKind.Animation;
             selectedEventKey = FpgSkillEventKey.Invalid;
@@ -1662,7 +1992,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            currentTick = request.Tick;
+            currentTick = PreviewTickForSelectedSequence(request.Tick);
             if (request.Track == FpgSkillEventTrackKind.GameplayAction)
             {
                 GenericMenu actionMenu = new GenericMenu();
@@ -1705,7 +2035,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             eventSelection.SetSingle(eventKey);
             selectedEventKey = eventKey;
-            currentTick = request.Tick;
+            currentTick = PreviewTickForSelectedSequence(request.Tick);
             RefreshFromSerialized();
             SelectEvent(eventKey, true);
         }
@@ -1730,7 +2060,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     RefreshPresentationTrackControls();
                 }
 
-                SetCurrentTick(record.Tick, false, frame);
+                SetCurrentTick(
+                    PreviewTickForSelectedSequence(record.Tick),
+                    false,
+                    frame);
             }
 
             RefreshInspector();
@@ -1747,13 +2080,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
             SerializedProperty sequence = FpgSkillSerializedAdapter.GetSequence(
                 serializedAsset,
                 selectedSequenceIndex);
+            int authoringTick = GetSelectedSequenceLocalTick();
             GenericMenu menu = new GenericMenu();
-            BuildActionAddMenu(menu, currentTick);
+            BuildActionAddMenu(menu, authoringTick);
             menu.AddSeparator(string.Empty);
             BuildActivePresentationAddMenu(
                 menu,
                 selectedPresentationTrackIndex,
-                currentTick,
+                authoringTick,
                 "主动表现/");
             AddEventMenuItem(
                 menu,
@@ -1810,6 +2144,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 menu,
                 "玩法动作/召唤单位",
                 FpgSkillActionKind.SummonActors,
+                0,
+                enemy,
+                tick);
+            AddTypedActionMenuItem(
+                menu,
+                "玩法动作/召唤者自毁",
+                FpgSkillActionKind.SelfDestructOwner,
                 0,
                 enemy,
                 tick);
@@ -1893,7 +2234,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            currentTick = tick;
+            currentTick = PreviewTickForSelectedSequence(tick);
             selectedPresentationTrackIndex = presentationTrackIndex;
             selectedEventKey = eventKey;
 
@@ -1929,7 +2270,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
             FpgSkillEventKey eventKey = FpgSkillSerializedAdapter.AddEvent(
                 serializedAsset,
                 selectedSequenceIndex,
-                currentTick,
+                GetSelectedSequenceLocalTick(),
                 track);
             if (!eventKey.IsValid)
             {
@@ -1963,7 +2304,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             selectedEventKey = eventKey;
 
-            currentTick = tick;
+            currentTick = PreviewTickForSelectedSequence(tick);
             RefreshFromSerialized();
             SelectEvent(eventKey, true);
         }
@@ -2020,7 +2361,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            if (!hasCompiledSchedule)
+            if (!hasPreviewExecution)
             {
                 ReportPreviewFailureToConsole(previewCompileError);
                 return;
@@ -2033,7 +2374,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            if (currentTick >= durationTicks)
+            if (currentTick >= GetPreviewDurationTicks())
             {
                 SetCurrentTick(0, false, false);
             }
@@ -2068,9 +2409,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void SetCurrentTick(int tick, bool writeLog, bool frame)
         {
-            int normalizedTick = Mathf.Clamp(tick, 0, durationTicks);
+            int normalizedTick = Mathf.Clamp(
+                tick,
+                0,
+                GetPreviewDurationTicks());
             bool crossedForwardTick = normalizedTick > currentTick;
-            if (hasCompiledSchedule
+            if (hasPreviewExecution
                 && !previewExecution.AdvanceTo(
                     normalizedTick,
                     out string executionError))
@@ -2081,10 +2425,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             currentTick = normalizedTick;
-            timelineView.SetPlayhead(currentTick);
+            timelineView.SetPlayhead(GetSelectedSequenceLocalTick());
             if (frame)
             {
-                timelineView.FrameTick(currentTick);
+                timelineView.FrameTick(GetSelectedSequenceLocalTick());
             }
 
             RefreshPreview();
@@ -2121,7 +2465,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             for (int step = 0; step < steps; step++)
             {
                 int nextTick = currentTick + 1;
-                if (nextTick > durationTicks)
+                int previewDuration = GetPreviewDurationTicks();
+                if (nextTick > previewDuration)
                 {
                     if (loopToggle.value)
                     {
@@ -2137,7 +2482,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     else
                     {
                         Pause();
-                        nextTick = durationTicks;
+                        nextTick = previewDuration;
                     }
                 }
 
@@ -2151,18 +2496,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private bool RestartPreviewExecutionAtZero(bool writeLog)
         {
-            if (!previewExecution.Bind(
-                    compiledSequence,
-                    out string executionError)
+            hasPreviewExecution = false;
+            if (!TryBindPreviewExecution(out string executionError)
                 || !previewExecution.AdvanceTo(
                     0,
                     out executionError))
             {
+                previewCompileError = executionError;
                 ReportPreviewFailureToConsole(executionError);
                 return false;
             }
 
             currentTick = 0;
+            hasPreviewExecution = true;
             timelineView.SetPlayhead(0);
             RefreshPreview();
             if (previewExecution.ResultCount > 0)
@@ -2191,7 +2537,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 index++)
             {
                 FpgSkillEventResult result = previewExecution.GetResult(index);
-                FpgSkillCompiledTriggerRecord trigger = compiledTriggers
+                FpgSkillPreviewSequenceContext context = GetPreviewContext(
+                    result.SequenceKind);
+                FpgSkillCompiledTriggerRecord trigger = context?.Triggers
                     .FirstOrDefault(item =>
                         item.CompiledEventId == result.EventId);
                 if (trigger == null
@@ -2208,7 +2556,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 SerializedProperty eventProperty =
                     FpgSkillSerializedAdapter.GetEventProperty(
                         serializedAsset,
-                        selectedSequenceIndex,
+                        context.SequenceIndex,
                         trigger.EventKey);
                 if (!previewView.TryPlayActivePresentation(
                         eventProperty,
@@ -2223,7 +2571,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void LogExecutionResults()
         {
-            if (!hasCompiledSchedule || !previewExecution.IsBound)
+            if (!hasPreviewExecution || !previewExecution.IsBound)
             {
                 return;
             }
@@ -2233,7 +2581,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 index++)
             {
                 FpgSkillEventResult result = previewExecution.GetResult(index);
-                FpgSkillCompiledTriggerRecord trigger = compiledTriggers
+                FpgSkillPreviewSequenceContext context = GetPreviewContext(
+                    result.SequenceKind);
+                FpgSkillCompiledTriggerRecord trigger = context?.Triggers
                     .FirstOrDefault(item =>
                         item.CompiledEventId == result.EventId);
                 if (trigger == null)
@@ -2258,6 +2608,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 eventLog.Add(new FpgSkillLogEntry
                 {
                     Tick = checked((int)result.Tick.Value),
+                    SequenceIndex = context.SequenceIndex,
                     EventKey = trigger.EventKey,
                     Message = message
                 });
@@ -2459,8 +2810,33 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private sealed class FpgSkillLogEntry
         {
             public int Tick;
+            public int SequenceIndex = -1;
             public FpgSkillEventKey EventKey;
             public string Message;
+        }
+
+        private sealed class FpgSkillPreviewSequenceContext
+        {
+            public FpgSkillPreviewSequenceContext(
+                int sequenceIndex,
+                FpgCompiledSkillSequence sequence,
+                string animationName,
+                IReadOnlyList<FpgSkillEventRecord> events,
+                IReadOnlyList<FpgSkillCompiledTriggerRecord> triggers)
+            {
+                SequenceIndex = sequenceIndex;
+                Sequence = sequence;
+                AnimationName = animationName ?? string.Empty;
+                Events = events ?? Array.Empty<FpgSkillEventRecord>();
+                Triggers = triggers
+                    ?? Array.Empty<FpgSkillCompiledTriggerRecord>();
+            }
+
+            public int SequenceIndex { get; }
+            public FpgCompiledSkillSequence Sequence { get; }
+            public string AnimationName { get; }
+            public IReadOnlyList<FpgSkillEventRecord> Events { get; }
+            public IReadOnlyList<FpgSkillCompiledTriggerRecord> Triggers { get; }
         }
 
     
@@ -2501,7 +2877,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 serializedAsset,
                 selectedSequenceIndex,
                 eventClipboard,
-                currentTick);
+                GetSelectedSequenceLocalTick());
             if (pasted.Count == 0)
             {
                 statusLabel.text = "当前序列无法粘贴这些事件。";
@@ -2515,7 +2891,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 + pasted.Count
                 + " 个事件，并生成新的内部引用。";
             RefreshFromSerialized();
-            timelineView.FrameTick(currentTick);
+            timelineView.FrameTick(GetSelectedSequenceLocalTick());
         }
 
 
@@ -3182,11 +3558,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         "projectileSweepRadiusKey", "碰撞半径 Key");
                     AddTypedProperty(
                         action.FindPropertyRelative("flightVfx"),
-                        "投射物飞行特效");
+                        "运行时飞行特效（完整预览引用）");
                     AddTypedProperty(
                         action.FindPropertyRelative(
                             "collisionPresentation"),
-                        "投射物命中表现");
+                        "运行时碰撞/命中表现（完整预览引用）");
 
 
                     if (GetSerializedEnumName(
@@ -3237,11 +3613,31 @@ namespace FPG.Demo.Editor.SkillAuthoring
                         "summonCandidateWeights", "候选权重",
                         "summonOccupancyMode", "占位方式",
                         "summonPlacementMode", "放置方式",
-                        "summonOwnerOutcome", "召唤者结果",
                         "maxSummonsPerOwner", "每个召唤者上限",
                         "maxTotalSummonsPerEncounter", "遭遇总上限",
                         "maxSummonRecursionDepth", "递归深度上限");
                     break;
+
+                case FpgSkillActionKind.SelfDestructOwner:
+                {
+                    AddReadOnlyInspectorValue(
+                        "目标来源",
+                        "自身",
+                        string.Empty);
+                    SerializedProperty binding =
+                        action.FindPropertyRelative(
+                            "boundGameplayEventId");
+                    AddStringChoiceProperty(
+                        binding,
+                        "绑定召唤事件",
+                        FpgSkillAuthoringChoices.BuildGameplayEventChoices(
+                            events,
+                            binding == null ? string.Empty : binding.stringValue,
+                            FpgSkillActionKind.SummonActors,
+                            record),
+                        "修改绑定召唤事件");
+                    break;
+                }
             }
         }
 
@@ -3363,6 +3759,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     "召唤单位",
                     FpgSkillActionKind.SummonActors,
                     0);
+                AddActionConversionItem(
+                    menu,
+                    sourceKey,
+                    "召唤者自毁",
+                    FpgSkillActionKind.SelfDestructOwner,
+                    0);
             }
             else
             {
@@ -3446,6 +3848,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     return "完成换弹";
                 case FpgSkillActionKind.SummonActors:
                     return "召唤单位";
+                case FpgSkillActionKind.SelfDestructOwner:
+                    return "召唤者自毁";
                 default:
                     return "未知";
             }

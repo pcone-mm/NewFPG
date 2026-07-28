@@ -182,31 +182,19 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (playerRoot == null)
+            if (!FpgFormalCameraPoseUtility.TryApplyFixedPose(
+                    threeCProfile,
+                    playerRoot,
+                    cameraRig,
+                    targetCamera,
+                    out error))
             {
-                error = "Formal camera feedback requires the placed player root.";
                 return false;
             }
 
-            if (cameraRig == playerRoot || cameraRig.IsChildOf(playerRoot))
-            {
-                error = "Formal camera rig must remain scene-owned and cannot be under the player root.";
-                return false;
-            }
-
-            cameraRig.SetPositionAndRotation(
-                playerRoot.TransformPoint(threeCProfile.CameraPivotLocalPosition),
-                playerRoot.rotation
-                    * Quaternion.Euler(threeCProfile.CameraPivotLocalEulerAngles));
             baselineLocalPosition = threeCProfile.CameraLocalPosition;
             hasBaseline = true;
-            targetCamera.transform.localPosition = baselineLocalPosition;
-            targetCamera.transform.localRotation =
-                Quaternion.Euler(threeCProfile.CameraLocalEulerAngles);
             baselineLocalRotation = targetCamera.transform.localRotation;
-            targetCamera.fieldOfView = threeCProfile.CameraFieldOfView;
-            targetCamera.nearClipPlane = threeCProfile.CameraNearClipPlane;
-            targetCamera.farClipPlane = threeCProfile.CameraFarClipPlane;
             currentKick = 0f;
             ClearShakes();
             rigApplied = true;

@@ -14,7 +14,7 @@ namespace FPG.Demo.Unity
     {
         MissingRoomId = 0,
         MissingDisplayName = 1,
-        MissingEnvironmentPrefab = 2,
+        MissingArtScene = 2,
         MissingMainGroup = 3,
         InvalidMainGroup = 4,
         MissingTagReference = 5,
@@ -34,7 +34,7 @@ namespace FPG.Demo.Unity
         MissingRoomReference = 19,
         MissingMarkerDisplayName = 20,
         InvalidEnemySpawnRole = 21,
-        InvalidEnvironmentTransform = 22
+        InvalidArtSceneReference = 22
     }
 
     public sealed class FpgRoomValidationIssue

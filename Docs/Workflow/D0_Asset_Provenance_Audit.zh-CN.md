@@ -12,11 +12,11 @@
 | --- | --- | --- |
 | `Assets/FPGDemo/Presentation/D0Slice/Spine/` | 208 个文件、约 7,093,053 bytes；包含 15 PNG、15 Prefab、30 ScriptableObject asset、29 Material、15 atlas 文本及对应 meta | 来源/许可待负责人确认；在确认前隔离，不进入候选发布物 |
 | `External/CZN/` | `.gitignore` 已排除；本机存在 Spine Runtime 与本地导入源 | 仅本地研究/技术验证；需确认 Spine Runtime 许可 |
-| `Assets/Imported/CZN/Fei_30048/` 与 `Assets/Imported/CZN/Monsters/` | `.gitignore` 已排除；D0 安装器以它们作为输入路径 | 仅本地输入；不得由场景或发布包直接引用 |
-| `Assets/FPGDemo/Presentation/D0Slice/Spine/` | `.gitignore` 没有排除该目录；当前 D0 场景和安装器可引用其中的派生产物 | 在来源未确认前不得建立为可发布 Git 基线；优先替换为原创灰盒/获授权资产 |
-| `Assets/FPGDemo/Runtime/**` 与 `Assets/FPGDemo/Editor/**` | 原创的确定性战斗、威胁状态机、动画路由、输入、对象池和安装器代码 | 可继续作为 clean-room 实现；仍须由负责人确认 Git 基线归属 |
+| `Assets/Imported/CZN/Fei_30048/` 与 `Assets/Imported/CZN/Monsters/` | `.gitignore` 已排除；2026-07-16 的旧 D0 安装器曾把它们作为输入路径 | 仅本地输入；不得由场景或发布包直接引用 |
+| `Assets/FPGDemo/Presentation/D0Slice/Spine/` | `.gitignore` 没有排除该目录；历史 D0 场景曾引用其中的派生产物 | 在来源未确认前不得建立为可发布 Git 基线；优先替换为原创灰盒/获授权资产 |
+| `Assets/FPGDemo/Runtime/**` 与 `Assets/FPGDemo/Editor/**` | 原创的确定性战斗、威胁状态机、动画路由、输入和对象池代码 | 可继续作为 clean-room 实现；仍须由负责人确认 Git 基线归属 |
 
-安装器的静态路径表明，它会从被忽略的 CZN 导入目录读取角色、怪物和特效输入，再在 D0 Presentation 目录创建图集、材质、SkeletonData 和 Prefab。该依赖链本身不证明输出物拥有可发布授权；在书面确认前，派生产物与输入物均按受限资源处理。
+2026-07-16 审计时存在的旧安装器曾从被忽略的 CZN 导入目录读取角色、怪物和特效输入，再在 D0 Presentation 目录创建图集、材质、SkeletonData 和 Prefab；该安装器现已删除。历史依赖链本身不证明输出物拥有可发布授权，在书面确认前，派生产物与输入物仍按受限资源处理。
 
 ## 发布门禁
 
@@ -39,7 +39,7 @@
 | 威胁预警/命中/Break | 原创形状、粒子或 UI 动效，按固定池容量预热 | `ThreatTelegraph2DPresenter`、`D0WeakpointPresentationController`、效果槽与音频 Cue |
 | 音频 | 自制或获授权的短音效 | `CombatAudioBank` 的 Cue ID，不复制外部音频 |
 
-替换只改 `D0ActorPresentationDefinition`、`CombatPresentationProfile` 和安装器所引用的获授权资产；不得改变确定性伤害、威胁时序、命中盒或行为状态机来迁就视觉资源。
+替换只改 `D0ActorPresentationDefinition`、`CombatPresentationProfile` 和正式 authored 资产引用；不得改变确定性伤害、威胁时序、命中盒或行为状态机来迁就视觉资源。
 
 ## 后续记录位置
 

@@ -5,9 +5,9 @@ namespace FPG.Demo.Run
 {
     /// <summary>
     /// Determines whether a summon adds another room-managed combatant or
-    /// replaces its owner. Replacement summons bypass gameplay quotas because
-    /// the owner is consumed after the child is accepted by the Spawn Queue.
-    /// Fixed runtime capacities and stable request validation still apply.
+    /// replaces its owner's occupancy slot. Replacement summons bypass gameplay
+    /// quotas; any owner lifecycle change is committed by an explicit bound
+    /// action after the Spawn Queue accepts the child.
     /// </summary>
     public enum FpgSummonOccupancyMode
     {

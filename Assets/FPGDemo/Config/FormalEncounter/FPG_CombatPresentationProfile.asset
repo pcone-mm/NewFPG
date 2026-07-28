@@ -143,11 +143,14 @@ MonoBehaviour:
     blockedColor: {r: 1, g: 0.45, b: 0.16, a: 1}
     shotColor: {r: 0.4, g: 0.9, b: 1, a: 1}
     hitColor: {r: 1, g: 0.9, b: 0.2, a: 1}
+    chargeRingColor: {r: 0.25, g: 0.9, b: 1, a: 1}
     idleSize: 18
     hittableSize: 20
     blockedSize: 22
     shotPulseSize: 28
     hitPulseSize: 30
+    chargeRingSize: 36
+    chargeRingAlpha: 0.9
     shotPulseDuration: 0.08
     hitPulseDuration: 0.14
   sorting:
@@ -167,3 +170,8 @@ MonoBehaviour:
     enemyProjectileCapacity: 32
     screenEffectCapacity: 16
     audioSourceCapacity: 16
+  cameraShake:
+    maxCombinedStrength: 1
+    maximumPositionOffset: 0.08
+    maximumRotationDegrees: 0.7
+    frequencyHz: 28

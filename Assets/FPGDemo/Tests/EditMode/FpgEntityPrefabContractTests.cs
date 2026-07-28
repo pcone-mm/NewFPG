@@ -51,6 +51,70 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void FormalPlayerCoverUsesAuthoredWallAndPeekBranches()
+        {
+            FpgPlayerEntityView player = LoadEntity<FpgPlayerEntityView>(
+                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab");
+            FpgPlayerBarrierPresentationController cover = player.Barrier;
+
+            Assert.That(cover, Is.Not.Null);
+            Assert.That(cover.transform.parent, Is.SameAs(player.transform));
+            Assert.That(cover.PeekRoot.parent, Is.SameAs(player.transform));
+            Assert.That(player.VisualRoot.parent, Is.SameAs(cover.PeekRoot));
+            Assert.That(
+                cover.CoverVisualRoot.parent,
+                Is.SameAs(cover.transform));
+            Assert.That(
+                cover.CoverVisualRoot.localPosition,
+                Is.EqualTo(new Vector3(0.3f, 1.075f, 0.25f)));
+            Assert.That(
+                cover.CoverVisualRoot.localScale,
+                Is.EqualTo(new Vector3(1.6f, 2.15f, 0.28f)));
+            Assert.That(
+                cover.PeekLocalOffset,
+                Is.EqualTo(new Vector3(1.35f, 0f, 0f)));
+            Assert.That(
+                AssetDatabase.GetAssetPath(cover.CoverRenderer.sharedMaterial),
+                Is.EqualTo(
+                    "Assets/FPGDemo/Presentation/Materials/M_FPG_Cover.mat"));
+
+            LineRenderer outline = cover.GetComponent<LineRenderer>();
+            Assert.That(outline, Is.Not.Null);
+            Assert.That(outline.loop, Is.True);
+            Assert.That(outline.positionCount, Is.EqualTo(4));
+            Assert.That(
+                outline.GetPosition(0).z,
+                Is.EqualTo(0.11f).Within(0.0001f));
+            Assert.That(
+                AssetDatabase.GetAssetPath(outline.sharedMaterial),
+                Is.EqualTo(
+                    "Assets/FPGDemo/Presentation/M_FPG_Feedback.mat"));
+            Assert.That(
+                cover.CoverVisualRoot.GetComponentsInChildren<Collider>(true),
+                Is.Empty);
+            Assert.That(
+                cover.CoverVisualRoot.GetComponentsInChildren<Rigidbody>(true),
+                Is.Empty);
+            Assert.That(
+                cover.PrimaryPresentationMuzzle.IsChildOf(cover.PeekRoot),
+                Is.True);
+            Assert.That(
+                cover.SecondaryPresentationMuzzle.IsChildOf(cover.PeekRoot),
+                Is.True);
+            Assert.That(
+                player.SocketRegistry.transform.IsChildOf(cover.PeekRoot),
+                Is.False);
+
+            D0ThreeCProfile threeC =
+                AssetDatabase.LoadAssetAtPath<D0ThreeCProfile>(
+                    "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_ThreeC.asset");
+            Assert.That(threeC, Is.Not.Null);
+            Assert.That(
+                threeC.CoverLocalPosition,
+                Is.EqualTo(cover.CoverVisualRoot.localPosition));
+        }
+
+        [Test]
         public void SocketRegistryUsesStableIdsAndRejectsDuplicateTransforms()
         {
             GameObject root = CreateObject("SocketRegistryRoot");
@@ -146,6 +210,32 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(player.Bounds, Is.Not.Null);
             Assert.That(player.Barrier, Is.Not.Null);
 
+            Assert.That(
+                player.TryResolvePresentationSocket(
+                    D0ActorSocketRegistry.PrimaryMuzzleId,
+                    out Transform presentationMuzzle),
+                Is.True);
+            Assert.That(
+                player.TryResolveSocket(
+                    D0ActorSocketRegistry.PrimaryMuzzleId,
+                    out Transform authoritativeMuzzle),
+                Is.True);
+            Assert.That(
+                presentationMuzzle,
+                Is.SameAs(player.Barrier.PrimaryPresentationMuzzle));
+            Assert.That(presentationMuzzle, Is.Not.SameAs(authoritativeMuzzle));
+            Assert.That(
+                player.TryResolvePresentationSocket(
+                    D0ActorSocketRegistry.DefaultAttackOriginId,
+                    out Transform fallbackOrigin),
+                Is.True);
+            Assert.That(
+                player.TryResolveSocket(
+                    D0ActorSocketRegistry.DefaultAttackOriginId,
+                    out Transform authoritativeOrigin),
+                Is.True);
+            Assert.That(fallbackOrigin, Is.SameAs(authoritativeOrigin));
+
             SetField(player, "cameraPivot", player.AimAnchor);
             Assert.That(player.TryValidate(out error), Is.False);
             Assert.That(error, Does.Contain("CameraPivot"));
@@ -193,11 +283,30 @@ namespace FPG.Demo.Tests.EditMode
             FpgPlayerEntityView player = root.AddComponent<FpgPlayerEntityView>();
             CharacterController characterController = root.AddComponent<CharacterController>();
             FpgPlayerBounds bounds = root.AddComponent<FpgPlayerBounds>();
-            FpgPlayerBarrierPresentationController barrier = root.AddComponent<FpgPlayerBarrierPresentationController>();
             Transform gameplay = CreateChild(root.transform, "GameplayRoot");
-            Transform visual = CreateChild(root.transform, "VisualRoot");
+            Transform peekRoot = CreateChild(root.transform, "PeekRoot");
+            Transform visual = CreateChild(peekRoot, "VisualRoot");
+            Transform primaryPresentationMuzzle = CreateChild(
+                peekRoot,
+                "PrimaryPresentationMuzzle");
+            Transform secondaryPresentationMuzzle = CreateChild(
+                peekRoot,
+                "SecondaryPresentationMuzzle");
+            Transform coverRoot = CreateChild(root.transform, "CoverRoot");
+            coverRoot.gameObject.AddComponent<LineRenderer>();
+            FpgPlayerBarrierPresentationController barrier =
+                coverRoot.gameObject.AddComponent<
+                    FpgPlayerBarrierPresentationController>();
+            Transform coverVisualRoot = CreateChild(
+                coverRoot,
+                "CoverVisualRoot");
+            MeshRenderer coverRenderer =
+                coverVisualRoot.gameObject.AddComponent<MeshRenderer>();
             Transform socketsRoot = CreateChild(root.transform, "Sockets");
             D0ActorSocketRegistry sockets = socketsRoot.gameObject.AddComponent<D0ActorSocketRegistry>();
+            Transform primaryMuzzle = CreateChild(socketsRoot, "PrimaryMuzzle");
+            Transform secondaryMuzzle = CreateChild(socketsRoot, "SecondaryMuzzle");
+            Transform attackOrigin = CreateChild(socketsRoot, "AttackOrigin");
             Actor2DPresenter presenter = root.AddComponent<Actor2DPresenter>();
             SkeletonAnimation skeleton = visual.gameObject.AddComponent<SkeletonAnimation>();
             Transform aim = CreateChild(root.transform, "AimAnchor");
@@ -205,6 +314,45 @@ namespace FPG.Demo.Tests.EditMode
             Transform camera = CreateChild(root.transform, "CameraPivot");
             Transform bodyTransform = CreateChild(gameplay, "BodyHitbox");
             BoxCollider body = bodyTransform.gameObject.AddComponent<BoxCollider>();
+
+            Assert.That(
+                sockets.TryRegister(
+                    D0ActorSocketRegistry.PrimaryMuzzleId,
+                    primaryMuzzle,
+                    out string socketError),
+                Is.True,
+                socketError);
+            Assert.That(
+                sockets.TryRegister(
+                    D0ActorSocketRegistry.SecondaryMuzzleId,
+                    secondaryMuzzle,
+                    out socketError),
+                Is.True,
+                socketError);
+            Assert.That(
+                sockets.TryRegister(
+                    D0ActorSocketRegistry.DefaultAttackOriginId,
+                    attackOrigin,
+                    out socketError),
+                Is.True,
+                socketError);
+
+            Material lineMaterial = AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/FPGDemo/Presentation/M_FPG_Feedback.mat");
+            Assert.That(lineMaterial, Is.Not.Null);
+            SetField(barrier, "peekRoot", peekRoot);
+            SetField(barrier, "coverVisualRoot", coverVisualRoot);
+            SetField(barrier, "coverRenderer", coverRenderer);
+            SetField(
+                barrier,
+                "primaryPresentationMuzzle",
+                primaryPresentationMuzzle);
+            SetField(
+                barrier,
+                "secondaryPresentationMuzzle",
+                secondaryPresentationMuzzle);
+            SetField(barrier, "lineMaterial", lineMaterial);
+            barrier.ResetPresentation();
 
             SetField(player, "gameplayAnchor", gameplay);
             SetField(player, "visualRoot", visual);

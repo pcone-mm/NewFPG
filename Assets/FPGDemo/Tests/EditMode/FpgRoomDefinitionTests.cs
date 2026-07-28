@@ -19,7 +19,9 @@ namespace FPG.Demo.Tests.EditMode
             {
                 SerializedObject serialized = new SerializedObject(clone);
                 serialized.FindProperty("roomId").stringValue = string.Empty;
-                serialized.FindProperty("environmentPrefab").objectReferenceValue = null;
+                SerializedProperty artScene = serialized.FindProperty("artScene");
+                artScene.FindPropertyRelative("sceneGuid").stringValue = string.Empty;
+                artScene.FindPropertyRelative("scenePath").stringValue = string.Empty;
                 serialized.FindProperty("mainGroup").objectReferenceValue = null;
                 serialized.FindProperty("playerEntryPoints").arraySize = 0;
                 SerializedProperty enemy = serialized.FindProperty("enemySpawnPoints")
@@ -32,7 +34,7 @@ namespace FPG.Demo.Tests.EditMode
                     clone.TryValidate(out FpgRoomValidationResult validation),
                     Is.False);
                 AssertRoomIssue(validation, FpgRoomValidationCode.MissingRoomId);
-                AssertRoomIssue(validation, FpgRoomValidationCode.MissingEnvironmentPrefab);
+                AssertRoomIssue(validation, FpgRoomValidationCode.MissingArtScene);
                 AssertRoomIssue(validation, FpgRoomValidationCode.MissingMainGroup);
                 AssertRoomIssue(validation, FpgRoomValidationCode.MissingPlayerEntryPoint);
                 AssertRoomIssue(validation, FpgRoomValidationCode.InvalidMarkerPose);
@@ -120,6 +122,28 @@ namespace FPG.Demo.Tests.EditMode
                     "Melee 01",
                     new[] { "enemy-melee-01" }),
                 Is.EqualTo("enemy-melee-01-02"));
+        }
+
+        [Test]
+        public void RoomInstanceDoesNotInstantiateTheArtEnvironment()
+        {
+            GameObject host = new GameObject("RoomInstanceTestHost");
+            try
+            {
+                FpgRoomInstance instance = host.AddComponent<FpgRoomInstance>();
+                Assert.That(
+                    instance.TryInitialize(
+                        LoadRequired<FpgRoomDefinition>(RoomPath),
+                        out string error),
+                    Is.True,
+                    error);
+                Assert.That(instance.DestructibleInstances, Is.Empty);
+                Assert.That(host.transform.childCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
         }
 
         private static FpgRoomValidationIssue AssertRoomIssue(

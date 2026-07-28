@@ -16,9 +16,19 @@ namespace FPG.Demo.Unity
     [DefaultExecutionOrder(900)]
     public sealed class FpgEnemyEntityView : MonoBehaviour,
         IFpgFormalEnemyEntityBinder,
-        IFpgFormalEnemyPresentationView
+        IFpgFormalEnemyPresentationView,
+        IFpgFormalEnemyMotionView
     {
         private const int MainAnimationTrack = 0;
+
+        private enum TickDrivenAnimationKind
+        {
+            None = 0,
+            Entry,
+            Idle,
+            Skill,
+            RenderDrivenEntry
+        }
 
         [SerializeField]
         private Transform gameplayAnchor;
@@ -73,6 +83,10 @@ namespace FPG.Demo.Unity
             SkillExecutionId.Invalid;
 
         [NonSerialized]
+        private SkillExecutionId synchronouslyTerminatedSkillExecutionId =
+            SkillExecutionId.Invalid;
+
+        [NonSerialized]
         private FpgFormalEnemySkillSequenceFrame pendingSkillFrame;
 
         [NonSerialized]
@@ -89,6 +103,43 @@ namespace FPG.Demo.Unity
 
         [NonSerialized]
         private D0ActorSocketRegistry resolvedSocketRegistry;
+
+        [NonSerialized]
+        private FpgEntitySkeletonRootMotionBridge rootMotionBridge;
+
+        [NonSerialized]
+        private float authoredSkeletonTimeScale = 1f;
+
+        [NonSerialized]
+        private TickDrivenAnimationKind tickDrivenAnimationKind;
+
+        [NonSerialized]
+        private TrackEntry tickDrivenTrackEntry;
+
+        [NonSerialized]
+        private string tickDrivenAnimationName = string.Empty;
+
+        [NonSerialized]
+        private TickIndex tickDrivenStartTick = TickIndex.Invalid;
+
+        [NonSerialized]
+        private TickIndex lastMotionTick = TickIndex.Invalid;
+
+        [NonSerialized]
+        private float tickDrivenAnimationDuration;
+
+        [NonSerialized]
+        private FpgCompiledSkillSequence tickDrivenSkillSequence;
+
+        [NonSerialized]
+        private SkillExecutionId tickDrivenSkillExecutionId =
+            SkillExecutionId.Invalid;
+
+        [NonSerialized]
+        private bool returnToIdleOnNextMotionTick;
+
+        [NonSerialized]
+        private string lastRootMotionError = string.Empty;
         public Transform GameplayAnchor => gameplayAnchor == null ? transform : gameplayAnchor;
         public Transform ProjectileAnchor => projectileAnchor == null ? GameplayAnchor : projectileAnchor;
         public Transform WeakpointAnchor => weakpointAnchor == null ? GameplayAnchor : weakpointAnchor;
@@ -107,6 +158,7 @@ namespace FPG.Demo.Unity
         public int SpawnSequence => spawnSequence;
         public bool GameplayEnabled => gameplayEnabled;
         public SkeletonAnimation SkeletonAnimation => skeletonAnimation;
+        public string LastRootMotionError => lastRootMotionError ?? string.Empty;
 
         public bool TryGetHitPart(
             int hitPartOrdinal,
@@ -179,7 +231,13 @@ namespace FPG.Demo.Unity
             boundDefinition = definition;
             boundBehavior = definition.Behavior;
             SetFormalGameplayEnabled(false);
-            PlayEntry();
+            if (!TryPlayEntry(out error))
+            {
+                ResetPresentation();
+                ClearRuntimeBinding();
+                return false;
+            }
+
             error = string.Empty;
             return true;
         }
@@ -204,6 +262,209 @@ namespace FPG.Demo.Unity
             ClearRuntimeBinding();
         }
 
+        public DomainResult AdvanceFormalMotion(TickIndex tick)
+        {
+            if (!tick.IsValid || !presentationInitialized)
+            {
+                return RejectRootMotion(
+                    RejectReason.InvalidState,
+                    "Formal root motion requires a valid tick and bound presentation.");
+            }
+
+            if (returnToIdleOnNextMotionTick)
+            {
+                returnToIdleOnNextMotionTick = false;
+                if (!TryStartIdle(tick, out string idleError))
+                {
+                    return RejectRootMotion(
+                        RejectReason.InvariantFault,
+                        idleError);
+                }
+            }
+
+            if (tickDrivenAnimationKind == TickDrivenAnimationKind.None)
+            {
+                lastRootMotionError = string.Empty;
+                return DomainResult.Success;
+            }
+
+            if (!tickDrivenStartTick.IsValid)
+            {
+                tickDrivenStartTick = tick.Value > 0L
+                    ? new TickIndex(tick.Value - 1L)
+                    : tick;
+                lastMotionTick = tickDrivenStartTick;
+            }
+
+            if (lastMotionTick.IsValid && tick.Value < lastMotionTick.Value)
+            {
+                return RejectRootMotion(
+                    RejectReason.WrongTick,
+                    "Formal root motion cannot move backward in tick time.");
+            }
+
+            if (lastMotionTick == tick)
+            {
+                lastRootMotionError = string.Empty;
+                return DomainResult.Success;
+            }
+
+            long nextTick = lastMotionTick.IsValid
+                ? lastMotionTick.Value + 1L
+                : tickDrivenStartTick.Value;
+            while (nextTick <= tick.Value)
+            {
+                if (tickDrivenAnimationKind
+                    == TickDrivenAnimationKind.None)
+                {
+                    break;
+                }
+
+                if (!TryAdvanceTickDrivenAnimation(
+                        new TickIndex(nextTick),
+                        out string error))
+                {
+                    return RejectRootMotion(
+                        RejectReason.InvariantFault,
+                        error);
+                }
+
+                nextTick++;
+            }
+
+            lastRootMotionError = string.Empty;
+            return DomainResult.Success;
+        }
+
+        public DomainResult StartFormalSkillMotion(
+            in FpgFormalEnemySkillSequenceFrame frame)
+        {
+            if (!presentationInitialized
+                || !gameplayEnabled
+                || !frame.OwnerRuntimeId.IsValid
+                || !string.Equals(
+                    frame.OwnerRuntimeId.ToString(),
+                    RuntimeId,
+                    StringComparison.Ordinal)
+                || frame.SpawnSequence != spawnSequence
+                || frame.Definition == null
+                || !OwnsAttack(frame.Definition)
+                || !frame.CompiledSequence.IsValid
+                || !frame.ExecutionId.IsValid
+                || frame.State != FpgSkillExecutionState.Running
+                || frame.RelativeTick != 0
+                || frame.Tick != frame.StartTick)
+            {
+                return RejectRootMotion(
+                    RejectReason.InvalidState,
+                    "Formal skill root motion requires the matching running tick-zero frame.");
+            }
+
+            if (!FpgEnemySkillPresentationResolver.TryResolveAnimationName(
+                    frame.Definition,
+                    frame.CompiledSequence.Kind,
+                    frame.ResolvedAnimationId,
+                    out string animationName)
+                || !HasAnimation(animationName))
+            {
+                return RejectRootMotion(
+                    RejectReason.InvalidDefinition,
+                    "Formal skill root motion cannot resolve its Spine animation variant.");
+            }
+
+            pendingSkillFrame = default(FpgFormalEnemySkillSequenceFrame);
+            hasPendingSkillFrame = false;
+            skillAnimationEvaluator?.Reset();
+            activeSkillExecutionId = frame.ExecutionId;
+            synchronouslyTerminatedSkillExecutionId =
+                SkillExecutionId.Invalid;
+            returnToIdleOnNextMotionTick = false;
+
+            bool usesRootMotion = boundBehavior != null
+                && boundBehavior.UsesAnimationRootMotion(animationName);
+            if (usesRootMotion)
+            {
+                if (!TryStartTickDrivenAnimation(
+                        animationName,
+                        frame.CompiledSequence.Loop,
+                        TickDrivenAnimationKind.Skill,
+                        frame.StartTick,
+                        frame.CompiledSequence,
+                        frame.ExecutionId,
+                        out string error))
+                {
+                    return RejectRootMotion(
+                        RejectReason.InvariantFault,
+                        error);
+                }
+            }
+            else if (!TryStartRenderDrivenSkillAtTickZero(
+                animationName,
+                frame.CompiledSequence,
+                out string error))
+            {
+                return RejectRootMotion(
+                    RejectReason.InvariantFault,
+                    error);
+            }
+
+            lastRootMotionError = string.Empty;
+            return DomainResult.Success;
+        }
+
+        public DomainResult ApplyFormalSkillMotionFrame(
+            in FpgFormalEnemySkillSequenceFrame frame)
+        {
+            if (!presentationInitialized
+                || !frame.OwnerRuntimeId.IsValid
+                || !string.Equals(
+                    frame.OwnerRuntimeId.ToString(),
+                    RuntimeId,
+                    StringComparison.Ordinal)
+                || frame.SpawnSequence != spawnSequence
+                || frame.Definition == null
+                || !OwnsAttack(frame.Definition)
+                || !frame.CompiledSequence.IsValid
+                || !frame.ExecutionId.IsValid
+                || !frame.IsTerminal)
+            {
+                return RejectRootMotion(
+                    RejectReason.InvalidState,
+                    "Formal skill root motion requires the matching terminal frame.");
+            }
+
+            if (!FpgEnemySkillPresentationResolver.TryResolveAnimationName(
+                    frame.Definition,
+                    frame.CompiledSequence.Kind,
+                    frame.ResolvedAnimationId,
+                    out string animationName))
+            {
+                return RejectRootMotion(
+                    RejectReason.InvalidDefinition,
+                    "Formal skill root motion cannot resolve its terminal animation variant.");
+            }
+
+            bool usesRootMotion = boundBehavior != null
+                && boundBehavior.UsesAnimationRootMotion(animationName);
+            if (usesRootMotion
+                && (tickDrivenAnimationKind != TickDrivenAnimationKind.Skill
+                    || tickDrivenSkillExecutionId != frame.ExecutionId
+                    || !string.Equals(
+                        tickDrivenAnimationName,
+                        animationName,
+                        StringComparison.Ordinal)))
+            {
+                return RejectRootMotion(
+                    RejectReason.InvariantFault,
+                    "Terminal root-motion frame does not match the active skill animation.");
+            }
+
+            synchronouslyTerminatedSkillExecutionId = frame.ExecutionId;
+            MarkTickDrivenSkillMotionTerminal();
+            lastRootMotionError = string.Empty;
+            return DomainResult.Success;
+        }
+
         public bool TrySetSkillSequenceFrame(
             in FpgFormalEnemySkillSequenceFrame frame)
         {
@@ -216,6 +477,18 @@ namespace FPG.Demo.Unity
                 || !frame.ExecutionId.IsValid)
             {
                 return false;
+            }
+
+            if (frame.IsTerminal
+                && synchronouslyTerminatedSkillExecutionId
+                    == frame.ExecutionId)
+            {
+                synchronouslyTerminatedSkillExecutionId =
+                    SkillExecutionId.Invalid;
+                pendingSkillFrame =
+                    default(FpgFormalEnemySkillSequenceFrame);
+                hasPendingSkillFrame = false;
+                return true;
             }
 
             pendingSkillFrame = frame;
@@ -277,12 +550,39 @@ namespace FPG.Demo.Unity
             }
 
             FpgEnemyBehaviorDefinition behavior = definition.Behavior;
+            if (!behavior.TryValidate(out error))
+            {
+                error = $"Formal enemy '{definition.EnemyDefinitionId}' "
+                    + "has invalid animation root-motion rules: " + error;
+                return false;
+            }
+
             if (!HasAnimation(data, behavior.EntryAnimation)
                 || !HasAnimation(data, behavior.IdleAnimation)
                 || !HasAnimation(data, behavior.DeathAnimation))
             {
                 error = $"Formal enemy '{definition.EnemyDefinitionId}' "
                     + "behavior references a missing Spine animation.";
+                return false;
+            }
+
+            FpgEntitySkeletonRootMotionBridge bridge =
+                ResolveRootMotionBridge();
+            if (bridge == null
+                || bridge.transform != skeletonAnimation.transform)
+            {
+                error = $"Formal enemy '{definition.EnemyDefinitionId}' "
+                    + "requires FpgEntitySkeletonRootMotionBridge on its SkeletonAnimation node.";
+                return false;
+            }
+
+            if (!bridge.TryValidateConfiguration(
+                    data,
+                    behavior,
+                    out error))
+            {
+                error = $"Formal enemy '{definition.EnemyDefinitionId}' "
+                    + "has invalid Spine root motion: " + error;
                 return false;
             }
 
@@ -387,6 +687,24 @@ namespace FPG.Demo.Unity
                     return false;
                 }
 
+                rootMotionBridge = ResolveRootMotionBridge();
+                if (rootMotionBridge == null)
+                {
+                    error =
+                        "Formal enemy requires an initialized root motion bridge.";
+                    return false;
+                }
+
+                if (!rootMotionBridge.TryInitializeForEntity(
+                        transform,
+                        out error))
+                {
+                    return false;
+                }
+
+                authoredSkeletonTimeScale = skeletonAnimation.timeScale;
+                ResetTickDrivenAnimationState();
+
                 CaptureSkeletonBaseColor();
                 activeSkillWarningCount = 0;
                 boundDefinition = definition;
@@ -421,18 +739,39 @@ namespace FPG.Demo.Unity
 
             FpgFormalEnemySkillSequenceFrame frame =
                 pendingSkillFrame;
-            if (frame.State == FpgSkillExecutionState.Canceled)
-            {
-                ClearPendingSkillFrameAndReturnToIdle();
-                return;
-            }
-
             if (!FpgEnemySkillPresentationResolver
                     .TryResolveAnimationName(
                         frame.Definition,
                         frame.CompiledSequence.Kind,
                         frame.ResolvedAnimationId,
                         out string animationName))
+            {
+                ClearPendingSkillFrameAndReturnToIdle();
+                return;
+            }
+
+            bool isTickDrivenSkill =
+                tickDrivenAnimationKind
+                    == TickDrivenAnimationKind.Skill
+                && tickDrivenSkillExecutionId == frame.ExecutionId
+                && string.Equals(
+                    tickDrivenAnimationName,
+                    animationName,
+                    StringComparison.Ordinal);
+            if (isTickDrivenSkill
+                || (boundBehavior != null
+                    && boundBehavior.UsesAnimationRootMotion(
+                        animationName)))
+            {
+                if (frame.IsTerminal)
+                {
+                    MarkTickDrivenSkillMotionTerminal();
+                }
+
+                return;
+            }
+
+            if (frame.State == FpgSkillExecutionState.Canceled)
             {
                 ClearPendingSkillFrameAndReturnToIdle();
                 return;
@@ -468,6 +807,15 @@ namespace FPG.Demo.Unity
             }
         }
 
+        private void MarkTickDrivenSkillMotionTerminal()
+        {
+            pendingSkillFrame = default(FpgFormalEnemySkillSequenceFrame);
+            hasPendingSkillFrame = false;
+            activeSkillExecutionId = SkillExecutionId.Invalid;
+            skillAnimationEvaluator?.Reset();
+            returnToIdleOnNextMotionTick = true;
+        }
+
         private void ClearPendingSkillFrameAndReturnToIdle()
         {
             pendingSkillFrame =
@@ -479,15 +827,25 @@ namespace FPG.Demo.Unity
                 && boundBehavior != null
                 && HasAnimation(boundBehavior.IdleAnimation))
             {
-                TryPlayLoop(boundBehavior.IdleAnimation);
+                if (boundBehavior.UsesAnimationRootMotion(
+                        boundBehavior.IdleAnimation))
+                {
+                    returnToIdleOnNextMotionTick = true;
+                }
+                else
+                {
+                    StopTickDrivenAnimation();
+                    TryPlayLoop(boundBehavior.IdleAnimation);
+                }
             }
         }
 
-        private void PlayEntry()
+        private bool TryPlayEntry(out string error)
         {
             if (!presentationInitialized || boundBehavior == null)
             {
-                return;
+                error = "Formal entry animation requires a bound presentation.";
+                return false;
             }
 
             if (string.Equals(
@@ -495,40 +853,441 @@ namespace FPG.Demo.Unity
                     boundBehavior.IdleAnimation,
                     StringComparison.Ordinal))
             {
-                TryPlayLoop(boundBehavior.IdleAnimation);
-                return;
+                return TryStartIdle(TickIndex.Invalid, out error);
             }
 
-            TryPlayOneShotThenIdle(boundBehavior.EntryAnimation);
+            if (boundBehavior.UsesAnimationRootMotion(
+                    boundBehavior.EntryAnimation))
+            {
+                return TryStartTickDrivenAnimation(
+                    boundBehavior.EntryAnimation,
+                    false,
+                    TickDrivenAnimationKind.Entry,
+                    TickIndex.Invalid,
+                    default(FpgCompiledSkillSequence),
+                    SkillExecutionId.Invalid,
+                    out error);
+            }
+
+            return TryStartRenderDrivenEntry(
+                boundBehavior.EntryAnimation,
+                out error);
         }
 
-        private bool TryPlayOneShotThenIdle(string animationName)
+        private bool TryAdvanceTickDrivenAnimation(
+            TickIndex tick,
+            out string error)
         {
-            if (!presentationInitialized
-                || boundBehavior == null
-                || skeletonAnimation == null
-                || skeletonAnimation.AnimationState == null)
+            if (tickDrivenAnimationKind
+                == TickDrivenAnimationKind.RenderDrivenEntry)
             {
+                return TryAdvanceRenderDrivenEntry(tick, out error);
+            }
+
+            if (tickDrivenTrackEntry == null
+                || rootMotionBridge == null
+                || !rootMotionBridge.MotionEnabled
+                || skeletonAnimation == null
+                || skeletonAnimation.AnimationState == null
+                || skeletonAnimation.AnimationState.GetCurrent(
+                    MainAnimationTrack) != tickDrivenTrackEntry)
+            {
+                error =
+                    "Tick-driven Spine root motion lost its active track.";
+                return false;
+            }
+
+            long relativeTick = tick.Value - tickDrivenStartTick.Value;
+            if (relativeTick < 0L || relativeTick > int.MaxValue)
+            {
+                error = "Tick-driven Spine root motion tick is out of range.";
+                return false;
+            }
+
+            switch (tickDrivenAnimationKind)
+            {
+                case TickDrivenAnimationKind.Entry:
+                {
+                    double seconds = relativeTick
+                        / (double)FpgSkillRuntimeConstants.TickRate;
+                    float sampleTime = (float)Math.Min(
+                        seconds,
+                        tickDrivenAnimationDuration);
+                    if (!TryEvaluateTickDrivenTime(sampleTime, out error))
+                    {
+                        return false;
+                    }
+
+                    lastMotionTick = tick;
+                    if (seconds >= tickDrivenAnimationDuration)
+                    {
+                        return TryStartIdle(tick, out error);
+                    }
+
+                    return true;
+                }
+
+                case TickDrivenAnimationKind.Idle:
+                {
+                    float sampleTime = (float)(relativeTick
+                        / (double)FpgSkillRuntimeConstants.TickRate);
+                    if (!TryEvaluateTickDrivenTime(sampleTime, out error))
+                    {
+                        return false;
+                    }
+
+                    lastMotionTick = tick;
+                    return true;
+                }
+
+                case TickDrivenAnimationKind.Skill:
+                {
+                    int skillTick = Math.Min(
+                        (int)relativeTick,
+                        tickDrivenSkillSequence.DurationTicks);
+                    double seconds = FpgSkillAnimationTime.EvaluateSeconds(
+                        tickDrivenSkillSequence,
+                        skillTick,
+                        0d,
+                        tickDrivenAnimationDuration);
+                    if (!TryEvaluateTickDrivenTime(
+                            (float)seconds,
+                            out error))
+                    {
+                        return false;
+                    }
+
+                    lastMotionTick = tick;
+                    return true;
+                }
+
+                default:
+                    error =
+                        "Tick-driven Spine root motion has no playback kind.";
+                    return false;
+            }
+        }
+
+        private bool TryAdvanceRenderDrivenEntry(
+            TickIndex tick,
+            out string error)
+        {
+            if (tickDrivenTrackEntry == null
+                || rootMotionBridge == null
+                || rootMotionBridge.MotionEnabled
+                || skeletonAnimation == null
+                || skeletonAnimation.AnimationState == null
+                || skeletonAnimation.AnimationState.GetCurrent(
+                    MainAnimationTrack) != tickDrivenTrackEntry)
+            {
+                error =
+                    "Render-driven Spine entry lost its active track.";
+                return false;
+            }
+
+            long relativeTick = tick.Value - tickDrivenStartTick.Value;
+            if (relativeTick < 0L || relativeTick > int.MaxValue)
+            {
+                error = "Render-driven Spine entry tick is out of range.";
+                return false;
+            }
+
+            double seconds = relativeTick
+                / (double)FpgSkillRuntimeConstants.TickRate;
+            lastMotionTick = tick;
+            if (seconds < tickDrivenAnimationDuration)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            try
+            {
+                tickDrivenTrackEntry.TrackTime =
+                    tickDrivenAnimationDuration;
+                skeletonAnimation.Update(0f);
+            }
+            catch (Exception exception)
+            {
+                error = "Render-driven Spine entry '"
+                    + tickDrivenAnimationName
+                    + "' failed to sample its final frame: "
+                    + exception.Message;
+                return false;
+            }
+
+            return TryStartIdle(tick, out error);
+        }
+
+        private bool TryStartTickDrivenAnimation(
+            string animationName,
+            bool loop,
+            TickDrivenAnimationKind kind,
+            TickIndex startTick,
+            FpgCompiledSkillSequence skillSequence,
+            SkillExecutionId skillExecutionId,
+            out string error)
+        {
+            if (kind == TickDrivenAnimationKind.None
+                || rootMotionBridge == null
+                || skeletonAnimation == null
+                || skeletonAnimation.AnimationState == null
+                || skeletonAnimation.Skeleton == null)
+            {
+                error =
+                    "Tick-driven Spine root motion requires initialized presentation components.";
+                return false;
+            }
+
+            Spine.Animation animation = skeletonAnimation.Skeleton.Data
+                .FindAnimation(animationName);
+            if (animation == null
+                || float.IsNaN(animation.Duration)
+                || float.IsInfinity(animation.Duration)
+                || animation.Duration < 0f)
+            {
+                error = "Tick-driven Spine animation '" + animationName
+                    + "' is unavailable or invalid.";
+                return false;
+            }
+
+            if (kind == TickDrivenAnimationKind.Skill
+                && (!skillSequence.IsValid || !skillExecutionId.IsValid))
+            {
+                error =
+                    "Tick-driven skill animation requires a compiled sequence and execution.";
                 return false;
             }
 
             try
             {
-                skeletonAnimation.AnimationState.SetAnimation(
-                    MainAnimationTrack,
-                    animationName,
-                    false);
-                skeletonAnimation.AnimationState.AddAnimation(
-                    MainAnimationTrack,
-                    boundBehavior.IdleAnimation,
-                    true,
-                    0f);
+                StopTickDrivenAnimation();
+                skeletonAnimation.AnimationState.ClearTrack(
+                    MainAnimationTrack);
+                skeletonAnimation.timeScale = 0f;
+                rootMotionBridge.SetMotionEnabled(true);
+
+                TrackEntry trackEntry =
+                    skeletonAnimation.AnimationState.SetAnimation(
+                        MainAnimationTrack,
+                        animationName,
+                        loop);
+                trackEntry.MixDuration = 0f;
+
+                tickDrivenAnimationKind = kind;
+                tickDrivenTrackEntry = trackEntry;
+                tickDrivenAnimationName = animationName;
+                tickDrivenStartTick = startTick;
+                lastMotionTick = startTick;
+                tickDrivenAnimationDuration = animation.Duration;
+                tickDrivenSkillSequence = skillSequence;
+                tickDrivenSkillExecutionId = skillExecutionId;
+
+                double initialSeconds = kind == TickDrivenAnimationKind.Skill
+                    ? FpgSkillAnimationTime.EvaluateSeconds(
+                        skillSequence,
+                        0,
+                        0d,
+                        animation.Duration)
+                    : 0d;
+                trackEntry.TrackTime = (float)initialSeconds;
+                skeletonAnimation.Update(0f);
+                error = string.Empty;
                 return true;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                StopTickDrivenAnimation();
+                error = "Tick-driven Spine animation '" + animationName
+                    + "' failed to start: " + exception.Message;
                 return false;
             }
+        }
+
+        private bool TryEvaluateTickDrivenTime(
+            float trackTime,
+            out string error)
+        {
+            if (tickDrivenTrackEntry == null
+                || float.IsNaN(trackTime)
+                || float.IsInfinity(trackTime)
+                || trackTime < 0f)
+            {
+                error = "Tick-driven Spine animation time is invalid.";
+                return false;
+            }
+
+            try
+            {
+                tickDrivenTrackEntry.TrackTime = trackTime;
+                skeletonAnimation.Update(0f);
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = "Tick-driven Spine animation '"
+                    + tickDrivenAnimationName + "' failed to evaluate: "
+                    + exception.Message;
+                return false;
+            }
+        }
+
+        private bool TryStartRenderDrivenSkillAtTickZero(
+            string animationName,
+            FpgCompiledSkillSequence sequence,
+            out string error)
+        {
+            Spine.Animation animation = skeletonAnimation.Skeleton.Data
+                .FindAnimation(animationName);
+            if (animation == null)
+            {
+                error = "Render-driven Spine skill animation '"
+                    + animationName + "' is unavailable.";
+                return false;
+            }
+
+            try
+            {
+                StopTickDrivenAnimation();
+                skeletonAnimation.AnimationState.ClearTrack(
+                    MainAnimationTrack);
+                TrackEntry trackEntry =
+                    skeletonAnimation.AnimationState.SetAnimation(
+                        MainAnimationTrack,
+                        animationName,
+                        sequence.Loop);
+                trackEntry.MixDuration = 0f;
+                trackEntry.TrackTime = (float)
+                    FpgSkillAnimationTime.EvaluateSeconds(
+                        sequence,
+                        0,
+                        0d,
+                        animation.Duration);
+                skeletonAnimation.Update(0f);
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = "Render-driven Spine skill animation '"
+                    + animationName + "' failed to start: "
+                    + exception.Message;
+                return false;
+            }
+        }
+
+        private bool TryStartRenderDrivenEntry(
+            string animationName,
+            out string error)
+        {
+            Spine.Animation animation = skeletonAnimation.Skeleton.Data
+                .FindAnimation(animationName);
+            if (animation == null
+                || float.IsNaN(animation.Duration)
+                || float.IsInfinity(animation.Duration)
+                || animation.Duration < 0f)
+            {
+                error = "Render-driven Spine entry animation '"
+                    + animationName + "' is unavailable or invalid.";
+                return false;
+            }
+
+            try
+            {
+                StopTickDrivenAnimation();
+                skeletonAnimation.AnimationState.ClearTrack(
+                    MainAnimationTrack);
+                TrackEntry trackEntry =
+                    skeletonAnimation.AnimationState.SetAnimation(
+                        MainAnimationTrack,
+                        animationName,
+                        false);
+                trackEntry.MixDuration = 0f;
+
+                tickDrivenAnimationKind =
+                    TickDrivenAnimationKind.RenderDrivenEntry;
+                tickDrivenTrackEntry = trackEntry;
+                tickDrivenAnimationName = animationName;
+                tickDrivenStartTick = TickIndex.Invalid;
+                lastMotionTick = TickIndex.Invalid;
+                tickDrivenAnimationDuration = animation.Duration;
+                skeletonAnimation.Update(0f);
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                StopTickDrivenAnimation();
+                error = "Render-driven Spine entry animation '"
+                    + animationName + "' failed to start: "
+                    + exception.Message;
+                return false;
+            }
+        }
+
+        private bool TryStartIdle(TickIndex startTick, out string error)
+        {
+            if (!presentationInitialized
+                || boundBehavior == null
+                || !HasAnimation(boundBehavior.IdleAnimation))
+            {
+                error = "Formal idle animation is unavailable.";
+                return false;
+            }
+
+            if (boundBehavior.UsesAnimationRootMotion(
+                    boundBehavior.IdleAnimation))
+            {
+                return TryStartTickDrivenAnimation(
+                    boundBehavior.IdleAnimation,
+                    true,
+                    TickDrivenAnimationKind.Idle,
+                    startTick,
+                    default(FpgCompiledSkillSequence),
+                    SkillExecutionId.Invalid,
+                    out error);
+            }
+
+            StopTickDrivenAnimation();
+            bool played = TryPlayLoop(boundBehavior.IdleAnimation);
+            error = played
+                ? string.Empty
+                : "Formal idle Spine animation could not start.";
+            return played;
+        }
+
+        private void StopTickDrivenAnimation()
+        {
+            rootMotionBridge?.SetMotionEnabled(false);
+            if (skeletonAnimation != null)
+            {
+                skeletonAnimation.timeScale = authoredSkeletonTimeScale;
+            }
+
+            ResetTickDrivenAnimationState();
+        }
+
+        private void ResetTickDrivenAnimationState()
+        {
+            tickDrivenAnimationKind = TickDrivenAnimationKind.None;
+            tickDrivenTrackEntry = null;
+            tickDrivenAnimationName = string.Empty;
+            tickDrivenStartTick = TickIndex.Invalid;
+            lastMotionTick = TickIndex.Invalid;
+            tickDrivenAnimationDuration = 0f;
+            tickDrivenSkillSequence =
+                default(FpgCompiledSkillSequence);
+            tickDrivenSkillExecutionId = SkillExecutionId.Invalid;
+            returnToIdleOnNextMotionTick = false;
+        }
+
+        private DomainResult RejectRootMotion(
+            RejectReason reason,
+            string error)
+        {
+            lastRootMotionError = error ?? string.Empty;
+            return DomainResult.Rejected(reason);
         }
 
         private bool TryPlayLoop(string animationName)
@@ -542,10 +1301,13 @@ namespace FPG.Demo.Unity
 
             try
             {
-                skeletonAnimation.AnimationState.SetAnimation(
+                TrackEntry trackEntry =
+                    skeletonAnimation.AnimationState.SetAnimation(
                     MainAnimationTrack,
                     animationName,
                     true);
+                trackEntry.MixDuration = 0f;
+                skeletonAnimation.Update(0f);
                 return true;
             }
             catch (Exception)
@@ -557,6 +1319,8 @@ namespace FPG.Demo.Unity
         private void ResetPresentation()
         {
             ClearSkillWarnings();
+            StopTickDrivenAnimation();
+            rootMotionBridge?.ResetForPool();
             if (skeletonAnimation != null && presentationInitialized)
             {
                 try
@@ -578,12 +1342,15 @@ namespace FPG.Demo.Unity
             skillAnimationEvaluator?.Reset();
             skillAnimationEvaluator = null;
             activeSkillExecutionId = SkillExecutionId.Invalid;
+            synchronouslyTerminatedSkillExecutionId =
+                SkillExecutionId.Invalid;
             pendingSkillFrame =
                 default(FpgFormalEnemySkillSequenceFrame);
             hasPendingSkillFrame = false;
             presentationInitialized = false;
             boundDefinition = null;
             boundBehavior = null;
+            lastRootMotionError = string.Empty;
         }
 
         private bool CanPresentSkillEvent(
@@ -727,6 +1494,20 @@ namespace FPG.Demo.Unity
                     ? null
                     : skeletonAnimation.SkeletonDataAsset
                         .GetSkeletonData(true);
+        }
+
+        private FpgEntitySkeletonRootMotionBridge ResolveRootMotionBridge()
+        {
+            if (rootMotionBridge != null)
+            {
+                return rootMotionBridge;
+            }
+
+            rootMotionBridge = skeletonAnimation == null
+                ? null
+                : skeletonAnimation.GetComponent<
+                    FpgEntitySkeletonRootMotionBridge>();
+            return rootMotionBridge;
         }
 
         private bool HasAnimation(string animationName)

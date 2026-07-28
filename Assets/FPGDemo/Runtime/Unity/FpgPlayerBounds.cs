@@ -71,7 +71,7 @@ namespace FPG.Demo.Unity
 
         /// <summary>
         /// Captures the current player root as the safe location used after an
-        /// out-of-area fall. Installers should call this after placing the player.
+        /// out-of-area fall. Room setup should call this after placing the player.
         /// </summary>
         public bool CaptureInitialSafePosition(out string error)
         {

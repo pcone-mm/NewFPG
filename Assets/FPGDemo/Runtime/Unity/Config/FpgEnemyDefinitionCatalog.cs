@@ -284,7 +284,6 @@ namespace FPG.Demo.Unity
             {
                 if (left.OccupancyMode != right.OccupancyMode
                     || left.PlacementMode != right.PlacementMode
-                    || left.OwnerOutcome != right.OwnerOutcome
                     || left.MaxSummonsPerOwner
                         != right.MaxSummonsPerOwner
                     || left.MaxTotalSummonsPerEncounter

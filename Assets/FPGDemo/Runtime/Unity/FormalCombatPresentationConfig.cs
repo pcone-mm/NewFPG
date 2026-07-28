@@ -395,6 +395,10 @@ namespace FPG.Demo.Unity
         [Tooltip("正式伤害 Impact 成功结算后，命中脉冲持续期间覆盖目标状态的准星颜色。")]
         private Color hitColor = new Color(1f, 0.9f, 0.2f, 1f);
 
+        [SerializeField]
+        [Tooltip("Color of the secondary-charge radial progress ring.")]
+        private Color chargeRingColor = new Color(0.25f, 0.9f, 1f, 1f);
+
         [SerializeField, Min(1f)]
         [InspectorName("空闲尺寸（参考像素）")]
         [Tooltip("空闲状态下准星两条 Graphic 笔画的主轴长度，按 HUD Canvas 参考分辨率计算，必须至少为 1。")]
@@ -420,6 +424,14 @@ namespace FPG.Demo.Unity
         [Tooltip("命中脉冲期间准星两条 Graphic 笔画的主轴长度，按 HUD Canvas 参考分辨率计算，必须至少为 1。")]
         private float hitPulseSize = 30f;
 
+        [SerializeField, Min(1f)]
+        [Tooltip("Reference-pixel size of the secondary-charge radial progress ring.")]
+        private float chargeRingSize = 36f;
+
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Opacity multiplier applied only to the secondary-charge ring.")]
+        private float chargeRingAlpha = 0.9f;
+
         [SerializeField, Min(0.01f)]
         [InspectorName("射击脉冲时长（秒）")]
         [Tooltip("成功提交攻击后射击脉冲保持的未缩放秒数，必须大于 0；正式战斗暂停时计时冻结。")]
@@ -435,11 +447,14 @@ namespace FPG.Demo.Unity
         public Color BlockedColor => blockedColor;
         public Color ShotColor => shotColor;
         public Color HitColor => hitColor;
+        public Color ChargeRingColor => chargeRingColor;
         public float IdleSize => idleSize;
         public float HittableSize => hittableSize;
         public float BlockedSize => blockedSize;
         public float ShotPulseSize => shotPulseSize;
         public float HitPulseSize => hitPulseSize;
+        public float ChargeRingSize => chargeRingSize;
+        public float ChargeRingAlpha => chargeRingAlpha;
         public float ShotPulseDuration => shotPulseDuration;
         public float HitPulseDuration => hitPulseDuration;
 
@@ -450,11 +465,15 @@ namespace FPG.Demo.Unity
                 || !FpgHudResourcePresentation.IsVisible(blockedColor)
                 || !FpgHudResourcePresentation.IsVisible(shotColor)
                 || !FpgHudResourcePresentation.IsVisible(hitColor)
+                || !FpgHudResourcePresentation.IsVisible(chargeRingColor)
                 || !FpgHudResourcePresentation.IsFinitePositive(idleSize)
                 || !FpgHudResourcePresentation.IsFinitePositive(hittableSize)
                 || !FpgHudResourcePresentation.IsFinitePositive(blockedSize)
                 || !FpgHudResourcePresentation.IsFinitePositive(shotPulseSize)
                 || !FpgHudResourcePresentation.IsFinitePositive(hitPulseSize)
+                || !FpgHudResourcePresentation.IsFinitePositive(chargeRingSize)
+                || !FpgHudResourcePresentation.IsFinitePositive(chargeRingAlpha)
+                || chargeRingAlpha > 1f
                 || !FpgHudResourcePresentation.IsFinitePositive(shotPulseDuration)
                 || !FpgHudResourcePresentation.IsFinitePositive(hitPulseDuration))
             {

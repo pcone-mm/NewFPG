@@ -24,6 +24,13 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private Transform presentationRoot;
 
+        [Header("Room Art Presentation")]
+        [SerializeField]
+        private Camera worldCamera;
+
+        [SerializeField]
+        private FpgRoomArtSceneLoader roomArtSceneLoader;
+
         [Header("Formal Runtime")]
         [SerializeField]
         private FpgEncounterHost encounterHost;
@@ -63,6 +70,8 @@ namespace FPG.Demo.Unity
         public Transform ActorsRoot => actorsRoot;
         public Transform CameraRoot => cameraRoot;
         public Transform PresentationRoot => presentationRoot;
+        public Camera WorldCamera => worldCamera;
+        public FpgRoomArtSceneLoader RoomArtSceneLoader => roomArtSceneLoader;
         public FpgEncounterHost EncounterHost => encounterHost;
         public FpgRoomDefinition RoomDefinition =>
             encounterHost == null ? null : encounterHost.RoomDefinition;
@@ -87,6 +96,8 @@ namespace FPG.Demo.Unity
         public MonoBehaviour PlayerInputPort => playerInputPort;
         public MonoBehaviour PhysicsQueryPort => physicsQueryPort;
         public MonoBehaviour CombatPortFactory => combatPortFactory;
+        public ICombatAimViewportSource AimViewportSource =>
+            (playerInputPort as FpgFormalPlayerTickDriver)?.AimViewportSource;
         public FpgEncounterSession Session =>
             encounterDirector == null ? null : encounterDirector.Session;
         public FpgFormalCombatRuntimeBundle CombatRuntime =>
@@ -154,6 +165,9 @@ namespace FPG.Demo.Unity
                     selection.ThreeCProfile,
                     catalogSelection.ThreeCProfile)
                 || !ReferenceEquals(
+                    selection.CombatFeelProfile,
+                    catalogSelection.CombatFeelProfile)
+                || !ReferenceEquals(
                     selection.SelectionPreviewPrefab,
                     catalogSelection.SelectionPreviewPrefab))
             {
@@ -162,7 +176,17 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            return playerComposer.TryCompose(catalogSelection, out error);
+            FpgPlayableCharacterSelection canonicalSelection =
+                catalogSelection.WithSecondaryMode(
+                    selection.SelectedSecondaryTriggerMode);
+            if (!canonicalSelection.TryValidate(out error))
+            {
+                error =
+                    $"Playable character selection '{selection.CharacterId}' has an unsupported secondary mode: {error}";
+                return false;
+            }
+
+            return playerComposer.TryCompose(canonicalSelection, out error);
         }
 
         public bool TryComposeDefaultPlayer(out string error)
@@ -315,11 +339,25 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (worldCamera == null || roomArtSceneLoader == null)
+            {
+                error =
+                    "Formal encounter host requires an explicit world Camera and Room Art Scene Loader.";
+                return false;
+            }
+
             if (encounterHost == null || encounterDirector == null
                 || enemyEntityPool == null || combatantAnchorMap == null
                 || playableCharacterCatalog == null || playerComposer == null)
             {
                 error = "Formal encounter host requires explicit encounter host, director, pools, catalog and player composer references.";
+                return false;
+            }
+
+            if (playerInputPort == null || physicsQueryPort == null
+                || combatPortFactory == null)
+            {
+                error = "Formal encounter host requires explicit player driver, physics/query and combat factory ports.";
                 return false;
             }
 
@@ -330,9 +368,26 @@ namespace FPG.Demo.Unity
                 || encounterDirector.gameObject.scene != gameObject.scene
                 || enemyEntityPool.gameObject.scene != gameObject.scene
                 || combatantAnchorMap.gameObject.scene != gameObject.scene
-                || playerComposer.gameObject.scene != gameObject.scene)
+                || playerComposer.gameObject.scene != gameObject.scene
+                || worldCamera.gameObject.scene != gameObject.scene
+                || roomArtSceneLoader.gameObject.scene != gameObject.scene
+                || playerInputPort.gameObject.scene != gameObject.scene
+                || physicsQueryPort.gameObject.scene != gameObject.scene
+                || combatPortFactory.gameObject.scene != gameObject.scene)
             {
                 error = "Formal encounter host references must belong to its scene.";
+                return false;
+            }
+
+            if (worldCamera.transform != cameraRoot
+                && !worldCamera.transform.IsChildOf(cameraRoot))
+            {
+                error = "Formal world Camera must belong to the camera root.";
+                return false;
+            }
+
+            if (!roomArtSceneLoader.TryValidateAuthoring(out error))
+            {
                 return false;
             }
 
@@ -342,9 +397,8 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (playerInputPort == null || physicsQueryPort == null
-                || combatPortFactory == null
-                || !(playerInputPort is IFpgFormalPlayerTickDriver)
+            if (!(playerInputPort is IFpgFormalPlayerTickDriver)
+                || !(physicsQueryPort is IFpgFormalCombatPortFactory)
                 || !(combatPortFactory is IFpgFormalCombatPortFactory))
             {
                 error = "Formal encounter host requires explicit player driver, physics/query and combat factory ports.";
@@ -362,9 +416,16 @@ namespace FPG.Demo.Unity
                 || playerComposer.ActorsRoot != actorsRoot
                 || playerComposer.PlayerTickDriver != concretePlayerDriver
                 || playerComposer.CombatPortFactory != concreteFactory
-                || playerComposer.EncounterDirector != encounterDirector)
+                || playerComposer.EncounterDirector != encounterDirector
+                || physicsQueryPort != combatPortFactory)
             {
                 error = "Formal host ports and player composer must reference the same scene-owned runtime.";
+                return false;
+            }
+
+            if (concretePlayerDriver.AimViewportSource == null)
+            {
+                error = "Formal host requires an explicit combat aim viewport source.";
                 return false;
             }
 

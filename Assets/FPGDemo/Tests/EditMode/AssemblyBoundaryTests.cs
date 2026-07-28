@@ -36,7 +36,7 @@ namespace FPG.Demo.Tests.EditMode
                 // G3 CZN asset and fixed-pool tests inspect Spine types directly.
                 // This remains an Editor-only, non-auto-referenced test edge;
                 // no domain or runtime assembly may acquire this dependency.
-                { "Tests/EditMode/FPG.EditMode.Tests.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Run", "FPG.Unity", "FPG.Skills", "FPG.SkillAuthoring.Editor", "spine-unity", "Unity.InputSystem" } },
+                { "Tests/EditMode/FPG.EditMode.Tests.asmdef", new[] { "FPG.Core", "FPG.Combat", "FPG.Player", "FPG.Enemy", "FPG.Run", "FPG.Unity", "FPG.Skills", "FPG.LevelAuthoring.Editor", "FPG.SkillAuthoring.Editor", "spine-unity", "Unity.InputSystem" } },
                 { "Tests/PlayMode/FPG.PlayMode.Tests.asmdef", new[] { "FPG.Unity", "FPG.Run", "FPG.Core", "FPG.Combat", "FPG.Enemy", "FPG.Player", "Unity.ugui" } }
             };
 

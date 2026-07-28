@@ -18,6 +18,10 @@ namespace FPG.Demo.Unity
     public sealed class FpgFormalPlayerTickDriver : MonoBehaviour, IFpgFormalPlayerTickDriver
     {
         private const ulong PlayerAttackRandomDomain = 0x4650475F504C4159UL;
+        private const int CoverPeekGateTickCount = 5;
+        // Five gated ticks plus the ready tick, drained in InputSequence order.
+        private const int CoverPeekPendingEdgeCapacity =
+            BattleTickInput.MaxEdgeCommandCount * (CoverPeekGateTickCount + 1);
 
         [Header("Formal Runtime")]
         [SerializeField] private FpgRoomEncounterDirector encounterDirector = null;
@@ -44,6 +48,10 @@ namespace FPG.Demo.Unity
         private readonly RaycastHit[] aimRaycastBuffer = new RaycastHit[16];
         private readonly InputEdgeCommand[] edgeBuffer =
             new InputEdgeCommand[BattleTickInput.MaxEdgeCommandCount];
+        private readonly InputEdgeCommand[] coverPeekFrameEdges =
+            new InputEdgeCommand[BattleTickInput.MaxEdgeCommandCount];
+        private readonly InputEdgeCommand[] coverPeekPendingEdges =
+            new InputEdgeCommand[CoverPeekPendingEdgeCapacity];
         private readonly QueryCandidate[] queryCandidates =
             new QueryCandidate[TargetSelector.DefaultCandidateCapacity];
         private readonly QueryCandidate[] selectedCandidates =
@@ -64,6 +72,7 @@ namespace FPG.Demo.Unity
         private D0CharacterDefinition playerDefinition;
         private FpgPlayerEntityView playerEntity;
         private D0ThreeCProfile threeCProfile;
+        private SecondaryTriggerMode playerSecondaryTriggerMode;
         private TickIndex lastProcessedTick = TickIndex.Invalid;
         private long nextCommandSequence;
         private RejectReason captureFault = RejectReason.None;
@@ -73,6 +82,13 @@ namespace FPG.Demo.Unity
         private bool roomInteractionArmed;
         private bool reloadCompletionActionPublishedThisTick;
         private bool presentationPaused;
+        private bool isCoverPeekRequested;
+        private bool coverPeekPrimaryPending;
+        private bool coverPeekAimFrozen;
+        private bool useFrozenAimForActiveAttack;
+        private int coverPeekPendingEdgeCount;
+        private TickIndex coverPeekStartedTick = TickIndex.Invalid;
+        private AimPoseSnapshot coverPeekFrozenAimPose;
 
         public FpgRoomEncounterDirector EncounterDirector => encounterDirector;
         public Transform AimAnchor => aimAnchor;
@@ -83,6 +99,8 @@ namespace FPG.Demo.Unity
         public D0CharacterDefinition PlayerDefinition => playerDefinition;
         public FpgPlayerEntityView PlayerEntity => playerEntity;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
+        public SecondaryTriggerMode PlayerSecondaryTriggerMode =>
+            playerSecondaryTriggerMode;
         public bool IsPlayerConfigured => playerConfigured;
         public bool HasCaptureFault => playerConfigured
             && captureFault != RejectReason.None;
@@ -91,6 +109,8 @@ namespace FPG.Demo.Unity
         public int AimPreviewFaultCount { get; private set; }
         public int AimPresentationFaultCount { get; private set; }
         public int SkillPresentationFaultCount { get; private set; }
+        public bool IsCoverPeekRequested => isCoverPeekRequested;
+        public TickIndex CoverPeekStartedTick => coverPeekStartedTick;
         public FpgFormalPlayerPresentationSource PresentationSource =>
             presentationSource;
 
@@ -130,6 +150,7 @@ namespace FPG.Demo.Unity
             if (isPaused && !presentationPaused)
             {
                 presentationCommitCache.Clear();
+                ClearCoverPeekGate();
             }
 
             presentationPaused = isPaused;
@@ -145,6 +166,7 @@ namespace FPG.Demo.Unity
                 if (!projectWideBattleInputAdapter.TryCapture(inputSource))
                 {
                     inputSource.ClearGameplayInput();
+                    ClearCoverPeekGate();
                     captureFault = RejectReason.InvalidState;
                     return;
                 }
@@ -173,6 +195,7 @@ namespace FPG.Demo.Unity
 
             if (inputSource.ConsumeRestartPressed())
             {
+                ClearCoverPeekGate();
                 if (encounterDirector == null || !encounterDirector.TryRestart(out _))
                 {
                     captureFault = RejectReason.InvalidState;
@@ -194,11 +217,13 @@ namespace FPG.Demo.Unity
                 }
 
                 inputSource.ClearGameplayInput();
+                ClearCoverPeekGate();
                 SetAimViewportFrozen(encounterDirector.IsPaused);
             }
             else if (encounterDirector != null && encounterDirector.IsPaused)
             {
                 inputSource.ClearGameplayInput();
+                ClearCoverPeekGate();
                 SetAimViewportFrozen(true);
             }
         }
@@ -212,6 +237,7 @@ namespace FPG.Demo.Unity
             FpgPlayerEntityView entity,
             D0ThreeCProfile profile,
             UnityAttackQuerySettings querySettings,
+            SecondaryTriggerMode secondaryTriggerMode,
             out string error)
         {
             if (playerConfigured || runtimeObserved)
@@ -224,6 +250,15 @@ namespace FPG.Demo.Unity
                 || !querySettings.IsValid)
             {
                 error = "Formal player tick driver requires a definition, scene entity and 3C profile.";
+                return false;
+            }
+
+            if (!Enum.IsDefined(
+                    typeof(SecondaryTriggerMode),
+                    secondaryTriggerMode))
+            {
+                error =
+                    $"Formal player tick driver received invalid secondary trigger mode '{secondaryTriggerMode}'.";
                 return false;
             }
 
@@ -261,7 +296,7 @@ namespace FPG.Demo.Unity
                     compiledPrimary,
                     compiledSecondary,
                     compiledReload,
-                    definition.Weapon.SecondaryTriggerMode,
+                    secondaryTriggerMode,
                     out FpgPlayerSkillExecutionController controller,
                     out error))
             {
@@ -306,6 +341,7 @@ namespace FPG.Demo.Unity
                 Math.Max(1, presentationCommitCapacity));
             playerEntity = entity;
             threeCProfile = profile;
+            playerSecondaryTriggerMode = secondaryTriggerMode;
             aimAnchor = entity.AimAnchor;
             playerRoot = entity.transform;
             aimDistance = profile.MaximumAimDistance;
@@ -551,6 +587,7 @@ namespace FPG.Demo.Unity
 
         public void BeginRoomInteraction()
         {
+            ClearCoverPeekGate();
             roomInteractionArmed = inputSource == null
                 || !inputSource.PrimaryHeld && !inputSource.SecondaryHeld;
             WeaponRuntime weapon =
@@ -612,6 +649,7 @@ namespace FPG.Demo.Unity
             int ammoAtTickStart = runtime.Player.Weapon.Magazine.Ammo;
             if (runtime.Player.Combatant.IsDead)
             {
+                ClearCoverPeekGate();
                 DomainResult interrupted = skillExecutionController.HardInterrupt(
                     tick,
                     runtime.Player.Weapon);
@@ -634,13 +672,25 @@ namespace FPG.Demo.Unity
             }
 
             PlayerInputFrame frame = tickInput.CopyToPlayerInputFrame(edgeBuffer);
+            DomainResult gated = TryBuildCoverGatedInput(
+                tickInput,
+                frame,
+                runtime.Player,
+                tick,
+                out BattleTickInput gatedTickInput,
+                out PlayerInputFrame gatedFrame);
+            if (!gated.IsSuccess)
+            {
+                ClearCoverPeekGate();
+                return gated;
+            }
+            frame = gatedFrame;
+
             DomainResult posture = ApplyPosture(
                 runtime.Player,
                 frame,
                 tick,
-                skillExecutionController.IsExecuting
-                    && skillExecutionController.ActiveSlot
-                        != FpgPlayerSkillSlot.Reload);
+                skillExecutionController.RequiresExposureAt(tick));
             if (!posture.IsSuccess && posture.RejectReason != RejectReason.BarrierLocked)
             {
                 return posture;
@@ -651,6 +701,7 @@ namespace FPG.Demo.Unity
                 runtime.Player);
             if (!skill.IsSuccess)
             {
+                ClearCoverPeekGate();
                 return skill;
             }
 
@@ -658,11 +709,13 @@ namespace FPG.Demo.Unity
 
             DomainResult events = ProcessSkillEvents(
                 runtime,
-                tickInput,
+                gatedTickInput,
                 tick,
                 roomInteraction: false);
+            FinishCoverPeekTick(tick);
             if (!events.IsSuccess)
             {
+                ClearCoverPeekGate();
                 PublishSkillSequenceFrames();
                 ReleaseTerminalPresentationCommits();
                 PublishSnapshot(runtime, tick);
@@ -698,6 +751,8 @@ namespace FPG.Demo.Unity
             {
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
+
+            ClearCoverPeekGate();
 
             if (lastProcessedTick.IsValid
                 && tick.Value != lastProcessedTick.Value + 1L)
@@ -739,9 +794,7 @@ namespace FPG.Demo.Unity
                 runtime.Player,
                 frame,
                 tick,
-                skillExecutionController.IsExecuting
-                    && skillExecutionController.ActiveSlot
-                        != FpgPlayerSkillSlot.Reload);
+                skillExecutionController.RequiresExposureAt(tick));
             if (!posture.IsSuccess
                 && posture.RejectReason != RejectReason.BarrierLocked)
             {
@@ -818,12 +871,299 @@ namespace FPG.Demo.Unity
             skillExecutionController = null;
             playerEntity = null;
             threeCProfile = null;
+            playerSecondaryTriggerMode = default(SecondaryTriggerMode);
             aimAnchor = null;
             playerRoot = null;
             SetAimSolution(FpgFormalAimSolution.Idle);
             playerConfigured = false;
             inputSource = null;
             presentationSource.Clear();
+        }
+
+        private DomainResult TryBuildCoverGatedInput(
+            BattleTickInput capturedTickInput,
+            PlayerInputFrame capturedFrame,
+            PlayerRuntime player,
+            TickIndex tick,
+            out BattleTickInput gatedTickInput,
+            out PlayerInputFrame gatedFrame)
+        {
+            gatedTickInput = capturedTickInput;
+            gatedFrame = capturedFrame;
+            if (capturedFrame.HasReloadInput || capturedFrame.CancelSecondary)
+            {
+                ClearCoverPeekGate();
+                return DomainResult.Success;
+            }
+
+            bool activeSkillRequiresExposure = skillExecutionController != null
+                && skillExecutionController.RequiresExposureAt(tick);
+            if (useFrozenAimForActiveAttack
+                && !activeSkillRequiresExposure
+                && !HasPendingCoverAttack)
+            {
+                useFrozenAimForActiveAttack = false;
+                coverPeekAimFrozen = false;
+                coverPeekFrozenAimPose = default(AimPoseSnapshot);
+            }
+
+            bool hasLiveAimIntent = capturedFrame.AimHeld
+                || capturedFrame.PrimaryHeld
+                || capturedFrame.SecondaryHeld;
+            bool peekRequested = hasLiveAimIntent
+                || capturedFrame.HasSecondaryInput
+                || activeSkillRequiresExposure
+                || player.Weapon.State == WeaponState.AltCharging
+                || HasPendingCoverAttack
+                || useFrozenAimForActiveAttack;
+            if (!peekRequested)
+            {
+                ClearCoverPeekGate();
+                return DomainResult.Success;
+            }
+
+            if (!coverPeekStartedTick.IsValid)
+            {
+                coverPeekStartedTick = tick;
+            }
+            isCoverPeekRequested = true;
+
+            bool attackReleasedThisTick =
+                (coverPeekPrimaryPending && !capturedFrame.PrimaryHeld)
+                || ContainsInputEdge(
+                    capturedFrame,
+                    InputEdgeType.SecondaryReleased);
+            bool attackStillHeld = capturedFrame.PrimaryHeld
+                || capturedFrame.SecondaryHeld;
+            if (attackReleasedThisTick)
+            {
+                if (!coverPeekAimFrozen)
+                {
+                    FreezeCoverPeekAim(capturedTickInput.AimPose);
+                }
+            }
+            else if (attackStillHeld && !useFrozenAimForActiveAttack)
+            {
+                coverPeekAimFrozen = false;
+                coverPeekFrozenAimPose = default(AimPoseSnapshot);
+            }
+            else if (!attackStillHeld
+                && HasPendingCoverAttack
+                && !coverPeekAimFrozen)
+            {
+                FreezeCoverPeekAim(capturedTickInput.AimPose);
+            }
+
+            bool fullyPeeked = tick.Value - coverPeekStartedTick.Value
+                >= CoverPeekGateTickCount;
+            int frameEdgeCount = 0;
+            bool deliveredPendingAttack = false;
+            if (!fullyPeeked)
+            {
+                coverPeekPrimaryPending |= capturedFrame.PrimaryHeld;
+                bool queueFollowingSecondaryEdge =
+                    coverPeekPendingEdgeCount > 0;
+                for (int index = 0;
+                    index < capturedFrame.EdgeCommandCount;
+                    index++)
+                {
+                    InputEdgeCommand edge = capturedFrame.EdgeCommands[index];
+                    bool queueEdge = playerSecondaryTriggerMode
+                            == SecondaryTriggerMode.ImmediateRepeatWhileHeld
+                        || queueFollowingSecondaryEdge
+                        || edge.Type == InputEdgeType.SecondaryReleased;
+                    if (queueEdge)
+                    {
+                        if (!TryEnqueueCoverPeekEdge(edge))
+                        {
+                            return DomainResult.Rejected(
+                                RejectReason.BufferCapacity);
+                        }
+                        queueFollowingSecondaryEdge = true;
+                    }
+                    else
+                    {
+                        coverPeekFrameEdges[frameEdgeCount++] = edge;
+                    }
+                }
+            }
+            else
+            {
+                int drainedCount = DrainCoverPeekEdges(
+                    coverPeekFrameEdges,
+                    BattleTickInput.MaxEdgeCommandCount);
+                frameEdgeCount = drainedCount;
+                deliveredPendingAttack = drainedCount > 0
+                    || coverPeekPrimaryPending;
+                for (int index = 0;
+                    index < capturedFrame.EdgeCommandCount;
+                    index++)
+                {
+                    InputEdgeCommand edge = capturedFrame.EdgeCommands[index];
+                    if (frameEdgeCount < BattleTickInput.MaxEdgeCommandCount)
+                    {
+                        coverPeekFrameEdges[frameEdgeCount++] = edge;
+                    }
+                    else if (!TryEnqueueCoverPeekEdge(edge))
+                    {
+                        return DomainResult.Rejected(
+                            RejectReason.BufferCapacity);
+                    }
+                }
+            }
+
+            bool gatedPrimaryHeld = fullyPeeked
+                && (capturedFrame.PrimaryHeld || coverPeekPrimaryPending);
+            bool gatedSecondaryHeld = fullyPeeked
+                ? capturedFrame.SecondaryHeld
+                : playerSecondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+                    && capturedFrame.SecondaryHeld;
+            if (fullyPeeked)
+            {
+                coverPeekPrimaryPending = false;
+            }
+
+            if (!attackStillHeld
+                && HasPendingCoverAttack
+                && !coverPeekAimFrozen)
+            {
+                FreezeCoverPeekAim(capturedTickInput.AimPose);
+            }
+
+            gatedFrame = new PlayerInputFrame(
+                tick,
+                aimHeld: true,
+                primaryHeld: gatedPrimaryHeld,
+                edgeCommands: frameEdgeCount == 0
+                    ? null
+                    : coverPeekFrameEdges,
+                edgeCommandCount: frameEdgeCount,
+                cancelSecondary: false,
+                secondaryHeld: gatedSecondaryHeld);
+
+            AimPoseSnapshot gatedAimPose = capturedTickInput.AimPose;
+            if ((useFrozenAimForActiveAttack || deliveredPendingAttack)
+                && coverPeekAimFrozen)
+            {
+                gatedAimPose = RetickAimPose(coverPeekFrozenAimPose, tick);
+                useFrozenAimForActiveAttack = true;
+            }
+            gatedTickInput = new BattleTickInput(gatedFrame, gatedAimPose);
+            return DomainResult.Success;
+        }
+
+        private bool HasPendingCoverAttack => coverPeekPrimaryPending
+            || coverPeekPendingEdgeCount > 0;
+
+        private static bool ContainsInputEdge(
+            PlayerInputFrame frame,
+            InputEdgeType edgeType)
+        {
+            for (int index = 0; index < frame.EdgeCommandCount; index++)
+            {
+                if (frame.EdgeCommands[index].Type == edgeType)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryEnqueueCoverPeekEdge(InputEdgeCommand edge)
+        {
+            if (coverPeekPendingEdgeCount >= coverPeekPendingEdges.Length)
+            {
+                return false;
+            }
+
+            coverPeekPendingEdges[coverPeekPendingEdgeCount++] = edge;
+            return true;
+        }
+
+        private int DrainCoverPeekEdges(
+            InputEdgeCommand[] destination,
+            int destinationCapacity)
+        {
+            int count = Math.Min(coverPeekPendingEdgeCount, destinationCapacity);
+            if (count <= 0)
+            {
+                return 0;
+            }
+
+            Array.Copy(coverPeekPendingEdges, 0, destination, 0, count);
+            int remaining = coverPeekPendingEdgeCount - count;
+            if (remaining > 0)
+            {
+                Array.Copy(
+                    coverPeekPendingEdges,
+                    count,
+                    coverPeekPendingEdges,
+                    0,
+                    remaining);
+            }
+            Array.Clear(coverPeekPendingEdges, remaining, count);
+            coverPeekPendingEdgeCount = remaining;
+            return count;
+        }
+
+        private void FreezeCoverPeekAim(AimPoseSnapshot aimPose)
+        {
+            if (!aimPose.IsValid)
+            {
+                return;
+            }
+
+            coverPeekFrozenAimPose = aimPose;
+            coverPeekAimFrozen = true;
+        }
+
+        private static AimPoseSnapshot RetickAimPose(
+            AimPoseSnapshot aimPose,
+            TickIndex tick)
+        {
+            return new AimPoseSnapshot(
+                tick,
+                aimPose.Origin,
+                aimPose.Forward,
+                aimPose.Right,
+                aimPose.Up,
+                aimPose.PoseVersion);
+        }
+
+        private void FinishCoverPeekTick(TickIndex tick)
+        {
+            if (!useFrozenAimForActiveAttack
+                || skillExecutionController.RequiresExposureAt(tick))
+            {
+                return;
+            }
+
+            useFrozenAimForActiveAttack = false;
+            if (!HasPendingCoverAttack)
+            {
+                coverPeekAimFrozen = false;
+                coverPeekFrozenAimPose = default(AimPoseSnapshot);
+            }
+        }
+
+        private void ClearCoverPeekGate()
+        {
+            Array.Clear(
+                coverPeekFrameEdges,
+                0,
+                coverPeekFrameEdges.Length);
+            Array.Clear(
+                coverPeekPendingEdges,
+                0,
+                coverPeekPendingEdges.Length);
+            isCoverPeekRequested = false;
+            coverPeekPrimaryPending = false;
+            coverPeekAimFrozen = false;
+            useFrozenAimForActiveAttack = false;
+            coverPeekPendingEdgeCount = 0;
+            coverPeekStartedTick = TickIndex.Invalid;
+            coverPeekFrozenAimPose = default(AimPoseSnapshot);
         }
 
         private PlayerInputFrame FilterRoomInteractionFrame(
@@ -1093,16 +1433,21 @@ namespace FPG.Demo.Unity
                     continue;
                 }
 
-                bool isBound = skillEvent.Event.BoundGameplayEventId > 0;
+                bool isBound =
+                    FpgSkillPresentationCommitRules
+                        .RequiresSuccessfulGameplayCommit(skillEvent.Event);
                 if (isBound != requiresGameplayCommit)
                 {
                     continue;
                 }
 
-                if (isBound
-                    && !presentationCommitCache.WasSuccessful(
+                bool commitSucceeded = isBound
+                    && presentationCommitCache.WasSuccessful(
                         skillEvent.RuntimeEvent.ExecutionId,
-                        skillEvent.Event.BoundGameplayEventId))
+                        skillEvent.Event.BoundGameplayEventId);
+                if (!FpgSkillPresentationCommitRules.CanPresent(
+                        skillEvent.Event,
+                        commitSucceeded))
                 {
                     continue;
                 }
@@ -1493,6 +1838,40 @@ namespace FPG.Demo.Unity
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
+            if (weaponRelease.Kind == WeaponReleaseKind.Primary)
+            {
+                int environmentContactOrdinal = selectedCount;
+                for (int sampleIndex = 0;
+                    sampleIndex < weaponRelease.PelletCount;
+                    sampleIndex++)
+                {
+                    if (!TargetSelector.TryFindReachedEnvironmentBlocker(
+                            weaponRelease.Attack,
+                            queryCandidates,
+                            queryResult,
+                            selectedCandidates,
+                            selectedCount,
+                            sampleIndex,
+                            out QueryCandidate blocker))
+                    {
+                        continue;
+                    }
+
+                    if (!runtime.CombatPort
+                        .TryPublishImmediateEnvironmentContact(
+                            runtime.Player.RuntimeId,
+                            skillEvent.RuntimeEvent.ExecutionId,
+                            skillEvent.Event.EventId,
+                            tick,
+                            weaponRelease.Attack.AttackId,
+                            blocker.ImpactPointKey,
+                            environmentContactOrdinal++))
+                    {
+                        SkillPresentationFaultCount++;
+                    }
+                }
+            }
+
             if (selectedCount == 0
                 && !runtime.CombatPort.TryCompleteImmediateSkillPresentationGroup(
                     runtime.Player.RuntimeId,
@@ -1776,6 +2155,14 @@ namespace FPG.Demo.Unity
             TickIndex tick)
         {
             PlayerRuntime player = runtime.Player;
+            bool isSecondaryCharging = skillExecutionController != null
+                && player.Weapon.State == WeaponState.AltCharging
+                && player.Weapon.SecondaryChargeStartedTick.IsValid;
+            float secondaryChargeProgress = isSecondaryCharging
+                ? skillExecutionController.GetSecondaryChargeProgress(
+                    player.Weapon,
+                    tick)
+                : 0f;
             presentationSource.PublishSnapshot(
                 new FpgFormalPlayerPresentationSnapshot(
                     tick,
@@ -1791,12 +2178,24 @@ namespace FPG.Demo.Unity
                     player.Weapon.Magazine.Ammo,
                     player.Weapon.Magazine.Capacity,
                     player.Exposure.State,
-                    player.Weapon.State));
+                    player.Weapon.State,
+                    isSecondaryCharging,
+                    secondaryChargeProgress,
+                    isSecondaryCharging
+                        ? player.Weapon.SecondaryChargeStartedTick
+                        : TickIndex.Invalid,
+                    isCoverPeekRequested,
+                    isCoverPeekRequested
+                        ? coverPeekStartedTick
+                        : TickIndex.Invalid,
+                    tick.IsValid
+                        && player.Combatant.IsBarrierLocked(tick)));
         }
 
         public void ResetRuntimeState()
         {
             Array.Clear(edgeBuffer, 0, edgeBuffer.Length);
+            ClearCoverPeekGate();
             Array.Clear(queryCandidates, 0, queryCandidates.Length);
             Array.Clear(selectedCandidates, 0, selectedCandidates.Length);
             Array.Clear(playerHitBatch, 0, playerHitBatch.Length);
@@ -1820,6 +2219,7 @@ namespace FPG.Demo.Unity
                 reticle.SetInputFrozen(false);
                 reticle.ResetToCenter();
                 reticle.ResetFeedback();
+                reticle.SetChargeProgress(false, 0f);
             }
             ResetInputSource();
         }
@@ -1863,12 +2263,14 @@ namespace FPG.Demo.Unity
             if (!hasFocus)
             {
                 inputSource?.ClearGameplayInput();
+                ClearCoverPeekGate();
             }
         }
 
         private void OnDisable()
         {
             inputSource?.ClearGameplayInput();
+            ClearCoverPeekGate();
             SetAimSolution(FpgFormalAimSolution.Idle);
             SetAimViewportFrozen(false);
         }

@@ -108,6 +108,98 @@ namespace FPG.Demo.Combat
             return DomainResult.Success;
         }
 
+        /// <summary>
+        /// Finds the first environment surface actually reached by one formal
+        /// pellet lane. A blocker is reached only when that lane still has
+        /// penetration capacity after the selected impact targets are removed.
+        /// This is intentionally a query fact separate from the damage-target
+        /// output of <see cref="Select"/>.
+        /// </summary>
+        public static bool TryFindReachedEnvironmentBlocker(
+            in AttackSnapshot attack,
+            QueryCandidate[] candidates,
+            in AttackQueryResult queryResult,
+            QueryCandidate[] selected,
+            int selectedCount,
+            int sampleIndex,
+            out QueryCandidate blocker)
+        {
+            blocker = default(QueryCandidate);
+            if (!IsAttackValid(attack)
+                || attack.QueryPolicy != QueryPolicy.PelletRays
+                || attack.QueryMode != AttackQueryMode.FirstSurfacePenetration
+                || candidates == null
+                || selected == null
+                || ReferenceEquals(candidates, selected)
+                || queryResult.DroppedCandidateCount != 0
+                || queryResult.CandidateCount < 0
+                || queryResult.CandidateCount > candidates.Length
+                || selectedCount < 0
+                || selectedCount > selected.Length
+                || sampleIndex < 0
+                || sampleIndex >= attack.PayloadCount)
+            {
+                return false;
+            }
+
+            int candidateCount = queryResult.CandidateCount;
+            int selectedLaneCount = 0;
+            for (int index = 0; index < selectedCount; index++)
+            {
+                QueryCandidate candidate = selected[index];
+                if (!candidate.IsValid
+                    || candidate.QueryStage != AttackQueryStage.Pellet
+                    || candidate.SampleIndex < 0
+                    || candidate.SampleIndex >= attack.PayloadCount
+                    || candidate.TargetKind
+                        == QueryTargetKind.EnvironmentBlocker)
+                {
+                    return false;
+                }
+
+                if (candidate.SampleIndex == sampleIndex)
+                {
+                    selectedLaneCount++;
+                }
+            }
+
+            // The lane terminates at its last selected target when the
+            // authored penetration budget is exhausted.
+            if (selectedLaneCount > attack.AdditionalPenetrationCount)
+            {
+                return false;
+            }
+
+            bool found = false;
+            for (int index = 0; index < candidateCount; index++)
+            {
+                QueryCandidate candidate = candidates[index];
+                if (!candidate.IsValid
+                    || candidate.QueryStage != AttackQueryStage.Pellet
+                    || candidate.SampleIndex >= attack.PayloadCount)
+                {
+                    return false;
+                }
+
+                if (candidate.TargetKind != QueryTargetKind.EnvironmentBlocker
+                    || candidate.SampleIndex != sampleIndex)
+                {
+                    continue;
+                }
+
+                if (!found
+                    || candidate.DistanceKey < blocker.DistanceKey
+                    || candidate.DistanceKey == blocker.DistanceKey
+                        && candidate.QueryOrdinal < blocker.QueryOrdinal)
+                {
+                    blocker = candidate;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
         private static bool IsAttackValid(in AttackSnapshot attack)
         {
             if (!attack.AttackId.IsValid

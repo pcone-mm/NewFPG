@@ -23,9 +23,10 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private string designerNotes;
 
-        [D0PlannerField("环境 Prefab", "美术维护的完整手工房间。运行时将其作为整体实例化，不做地形片段拼接。")]
+        [D0PlannerField("关卡美术场景", "每个房间唯一对应的 Additive Art Scene。环境、灯光、天空盒、Volume、Probe 与烘焙数据均由该场景拥有。")]
         [SerializeField]
-        private GameObject environmentPrefab;
+        private FpgRoomArtSceneReference artScene =
+            new FpgRoomArtSceneReference();
 
         [D0PlannerField("主分组", "每个房间必须直接引用一个主分组。分组资产不反向保存房间列表。")]
         [SerializeField]
@@ -67,7 +68,10 @@ namespace FPG.Demo.Unity
         public string RoomId => roomId;
         public string DisplayName => displayName;
         public string DesignerNotes => designerNotes;
-        public GameObject EnvironmentPrefab => environmentPrefab;
+        public FpgRoomArtSceneReference ArtScene => artScene;
+        public string ArtScenePath => artScene == null
+            ? string.Empty
+            : artScene.ScenePath;
         public FpgRoomGroupDefinition MainGroup => mainGroup;
         public IReadOnlyList<FpgRoomTagDefinition> Tags =>
             tags ?? Array.Empty<FpgRoomTagDefinition>();
@@ -166,18 +170,17 @@ namespace FPG.Demo.Unity
                     "Room definition requires a display name.");
             }
 
-            if (environmentPrefab == null)
+            string artSceneError = "Art Scene reference is missing.";
+            if (artScene == null || !artScene.TryValidate(out artSceneError))
             {
-                AddError(issues, FpgRoomValidationCode.MissingEnvironmentPrefab,
-                    $"Room '{roomId}' requires an environment Prefab.");
-            }
-            else if (!FpgRoomValidationUtility.IsFinite(environmentPrefab.transform.localPosition)
-                || !FpgRoomValidationUtility.IsFinite(environmentPrefab.transform.localEulerAngles)
-                || environmentPrefab.transform.localPosition.sqrMagnitude > 0.000001f
-                || environmentPrefab.transform.localEulerAngles.sqrMagnitude > 0.000001f)
-            {
-                AddError(issues, FpgRoomValidationCode.InvalidEnvironmentTransform,
-                    $"Room '{roomId}' environment Prefab root must have identity local position and rotation.");
+                FpgRoomValidationCode code = artScene == null
+                    || !artScene.IsAssigned
+                        ? FpgRoomValidationCode.MissingArtScene
+                        : FpgRoomValidationCode.InvalidArtSceneReference;
+                AddError(
+                    issues,
+                    code,
+                    $"Room '{roomId}' has an invalid Art Scene reference: {artSceneError}");
             }
 
             ValidateGrouping(issues);

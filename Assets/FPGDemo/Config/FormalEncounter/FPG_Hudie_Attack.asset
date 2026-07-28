@@ -23,6 +23,7 @@ MonoBehaviour:
     alternateAnimations: []
     mainAnimation: attack
     loop: 0
+    holdUntilCanceled: 0
     animationPlaybackMode: 0
     animationStartTick: 0
     animationEndTick: 60
@@ -30,7 +31,7 @@ MonoBehaviour:
     attackEvents: []
     projectileEvents:
     - eventId: event.hudie-projectile.attack.0
-      tick: 30
+      tick: 49
       authoredOrdinal: 0
       socketId: 
       targetSource: 2
@@ -60,12 +61,13 @@ MonoBehaviour:
         rid: 1908295348123337104
     reloadEvents: []
     summonEvents: []
+    selfDestructOwnerEvents: []
     activePresentationTracks: []
     warnings:
     - eventId: warning.hudie-projectile
       warningId: enemy-source-fast
       startTick: 0
-      endTick: 30
+      endTick: 39
       authoredOrdinal: 1
       socketId: 
   priority: 0

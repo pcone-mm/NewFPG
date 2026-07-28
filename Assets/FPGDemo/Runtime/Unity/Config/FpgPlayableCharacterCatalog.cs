@@ -1,31 +1,94 @@
 using System;
 using System.Collections.Generic;
+using FPG.Demo.Player;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
     public readonly struct FpgPlayableCharacterSelection
     {
+        private static readonly SecondaryTriggerMode[]
+            LegacySupportedSecondaryModes =
+            {
+                SecondaryTriggerMode.ImmediateRepeatWhileHeld
+            };
+
         public FpgPlayableCharacterSelection(
             D0CharacterDefinition characterDefinition,
             D0ThreeCProfile threeCProfile,
             D0CombatFeelProfile combatFeelProfile,
             GameObject selectionPreviewPrefab)
+            : this(
+                characterDefinition,
+                threeCProfile,
+                combatFeelProfile,
+                selectionPreviewPrefab,
+                LegacySupportedSecondaryModes,
+                SecondaryTriggerMode.ImmediateRepeatWhileHeld)
+        {
+        }
+
+        public FpgPlayableCharacterSelection(
+            D0CharacterDefinition characterDefinition,
+            D0ThreeCProfile threeCProfile,
+            D0CombatFeelProfile combatFeelProfile,
+            GameObject selectionPreviewPrefab,
+            IReadOnlyList<SecondaryTriggerMode> supportedSecondaryModes,
+            SecondaryTriggerMode selectedSecondaryTriggerMode)
         {
             CharacterDefinition = characterDefinition;
             ThreeCProfile = threeCProfile;
             CombatFeelProfile = combatFeelProfile;
             SelectionPreviewPrefab = selectionPreviewPrefab;
+            SupportedSecondaryModes = supportedSecondaryModes;
+            SelectedSecondaryTriggerMode = selectedSecondaryTriggerMode;
         }
 
         public D0CharacterDefinition CharacterDefinition { get; }
         public D0ThreeCProfile ThreeCProfile { get; }
         public D0CombatFeelProfile CombatFeelProfile { get; }
         public GameObject SelectionPreviewPrefab { get; }
+        public IReadOnlyList<SecondaryTriggerMode> SupportedSecondaryModes
+        {
+            get;
+        }
+        public SecondaryTriggerMode SelectedSecondaryTriggerMode { get; }
         public string CharacterId => CharacterDefinition == null
             ? string.Empty
             : CharacterDefinition.CharacterId;
         public bool IsValid => TryValidate(out _);
+
+        public bool SupportsSecondaryMode(SecondaryTriggerMode mode)
+        {
+            IReadOnlyList<SecondaryTriggerMode> supportedModes =
+                SupportedSecondaryModes;
+            if (supportedModes == null)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < supportedModes.Count; index++)
+            {
+                if (supportedModes[index] == mode)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public FpgPlayableCharacterSelection WithSecondaryMode(
+            SecondaryTriggerMode mode)
+        {
+            return new FpgPlayableCharacterSelection(
+                CharacterDefinition,
+                ThreeCProfile,
+                CombatFeelProfile,
+                SelectionPreviewPrefab,
+                SupportedSecondaryModes,
+                mode);
+        }
 
         public bool TryValidate(out string error)
         {
@@ -62,6 +125,57 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            IReadOnlyList<SecondaryTriggerMode> supportedModes =
+                SupportedSecondaryModes;
+            if (supportedModes == null || supportedModes.Count == 0)
+            {
+                error = "Playable character selection requires at least one supported secondary mode.";
+                return false;
+            }
+
+            for (int index = 0; index < supportedModes.Count; index++)
+            {
+                SecondaryTriggerMode mode = supportedModes[index];
+                if (!Enum.IsDefined(typeof(SecondaryTriggerMode), mode))
+                {
+                    error =
+                        $"Playable character selection contains invalid secondary mode '{mode}'.";
+                    return false;
+                }
+
+                for (int previousIndex = 0;
+                    previousIndex < index;
+                    previousIndex++)
+                {
+                    if (supportedModes[previousIndex] == mode)
+                    {
+                        error =
+                            $"Playable character selection contains duplicate secondary mode '{mode}'.";
+                        return false;
+                    }
+                }
+            }
+
+            if (!Enum.IsDefined(
+                    typeof(SecondaryTriggerMode),
+                    SelectedSecondaryTriggerMode)
+                || !SupportsSecondaryMode(SelectedSecondaryTriggerMode))
+            {
+                error =
+                    $"Secondary mode '{SelectedSecondaryTriggerMode}' is not supported by playable character '{CharacterId}'.";
+                return false;
+            }
+
+            if (!CharacterDefinition.Weapon.TryCreate(
+                    SelectedSecondaryTriggerMode,
+                    out _,
+                    out error))
+            {
+                error =
+                    $"Playable character '{CharacterId}' cannot use secondary mode '{SelectedSecondaryTriggerMode}': {error}";
+                return false;
+            }
+
             if (SelectionPreviewPrefab == null)
             {
                 error = "Playable character selection requires a visual-only preview prefab.";
@@ -83,6 +197,12 @@ namespace FPG.Demo.Unity
     [Serializable]
     public sealed class FpgPlayableCharacterCatalogEntry
     {
+        private static readonly SecondaryTriggerMode[]
+            LegacySupportedSecondaryModes =
+            {
+                SecondaryTriggerMode.ImmediateRepeatWhileHeld
+            };
+
         [SerializeField]
         private D0CharacterDefinition character;
 
@@ -96,10 +216,28 @@ namespace FPG.Demo.Unity
         [Tooltip("Visual-only prefab used by Boot. It must not contain a D0 actor Entity.")]
         private GameObject selectionPreviewPrefab;
 
+        [SerializeField]
+        private SecondaryTriggerMode[] supportedSecondaryModes =
+            Array.Empty<SecondaryTriggerMode>();
+
+        [SerializeField]
+        private SecondaryTriggerMode defaultSecondaryMode =
+            SecondaryTriggerMode.ImmediateRepeatWhileHeld;
+
         public D0CharacterDefinition Character => character;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
         public D0CombatFeelProfile CombatFeelProfile => combatFeelProfile;
         public GameObject SelectionPreviewPrefab => selectionPreviewPrefab;
+        public IReadOnlyList<SecondaryTriggerMode> SupportedSecondaryModes =>
+            supportedSecondaryModes == null
+                || supportedSecondaryModes.Length == 0
+                ? LegacySupportedSecondaryModes
+                : supportedSecondaryModes;
+        public SecondaryTriggerMode DefaultSecondaryMode =>
+            supportedSecondaryModes == null
+                || supportedSecondaryModes.Length == 0
+                ? SecondaryTriggerMode.ImmediateRepeatWhileHeld
+                : defaultSecondaryMode;
 
         public bool TryCreateSelection(
             out FpgPlayableCharacterSelection selection,
@@ -109,8 +247,30 @@ namespace FPG.Demo.Unity
                 character,
                 threeCProfile,
                 combatFeelProfile,
-                selectionPreviewPrefab);
-            return selection.TryValidate(out error);
+                selectionPreviewPrefab,
+                SupportedSecondaryModes,
+                DefaultSecondaryMode);
+            if (!selection.TryValidate(out error))
+            {
+                return false;
+            }
+
+            IReadOnlyList<SecondaryTriggerMode> supportedModes =
+                SupportedSecondaryModes;
+            for (int index = 0; index < supportedModes.Count; index++)
+            {
+                FpgPlayableCharacterSelection candidate =
+                    selection.WithSecondaryMode(supportedModes[index]);
+                if (!candidate.TryValidate(out error))
+                {
+                    error =
+                        $"Supported secondary mode '{supportedModes[index]}' is invalid: {error}";
+                    return false;
+                }
+            }
+
+            error = string.Empty;
+            return true;
         }
     }
 

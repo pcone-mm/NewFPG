@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using FPG.Demo.Player;
 using FPG.Demo.Run;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -15,7 +16,8 @@ namespace FPG.Demo.Unity
         Running,
         Failed,
         WaitingForRoomSelection,
-        WaitingForCharacterSelection
+        WaitingForCharacterSelection,
+        WaitingForSecondaryModeSelection
     }
 
     [DefaultExecutionOrder(-10000)]
@@ -31,6 +33,9 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private Light bootLight;
 
+        [SerializeField]
+        private FpgRoomTransitionCurtain transitionCurtain;
+
         [Header("Character Selection")]
         [SerializeField]
         private FpgPlayableCharacterCatalog playableCharacterCatalog;
@@ -38,6 +43,9 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private FpgBootCharacterChoice[] characterChoices =
             Array.Empty<FpgBootCharacterChoice>();
+
+        [SerializeField]
+        private FpgBootSecondaryModeSelector secondaryModeSelector;
 
         [Header("Room Selection")]
         [SerializeField]
@@ -57,6 +65,8 @@ namespace FPG.Demo.Unity
         public GameBootstrapConfig Config => config;
         public FpgPlayableCharacterCatalog PlayableCharacterCatalog =>
             playableCharacterCatalog;
+        public FpgBootSecondaryModeSelector SecondaryModeSelector =>
+            secondaryModeSelector;
         public BootstrapState State { get; private set; }
         public string LastError { get; private set; } = string.Empty;
         public FpgPlayableCharacterSelection SelectedPlayerSelection { get; private set; }
@@ -108,6 +118,18 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (transitionCurtain == null)
+            {
+                error = "Boot room transition curtain is not assigned.";
+                return false;
+            }
+
+            if (!transitionCurtain.TryValidateAuthoring(out error))
+            {
+                error = "Boot room transition curtain is invalid: " + error;
+                return false;
+            }
+
             if (!config.TryValidate(out error))
             {
                 return false;
@@ -135,6 +157,13 @@ namespace FPG.Demo.Unity
 
             if (config.RequireCharacterSelection
                 && !TryValidateCharacterChoices(out error))
+            {
+                return false;
+            }
+
+            if (config.RequireCharacterSelection
+                && RequiresSecondaryModeSelector()
+                && !TryValidateSecondaryModeSelector(out error))
             {
                 return false;
             }
@@ -183,6 +212,43 @@ namespace FPG.Demo.Unity
             SelectedPlayerSelection = selection;
             choice.MarkSelected();
             SetCharacterChoicesSelectable(false);
+            if (selection.SupportedSecondaryModes.Count > 1)
+            {
+                return TryBeginSecondaryModeSelection(out error);
+            }
+
+            return TryContinueAfterCharacterSelection(out error);
+        }
+
+        public bool TrySelectSecondaryMode(
+            SecondaryTriggerMode mode,
+            out string error)
+        {
+            error = string.Empty;
+            if (State != BootstrapState.WaitingForSecondaryModeSelection)
+            {
+                error = "Boot is not waiting for a secondary-mode choice.";
+                return false;
+            }
+
+            if (!SelectedPlayerSelection.SupportsSecondaryMode(mode))
+            {
+                error =
+                    $"Secondary mode '{mode}' is not supported by selected character "
+                    + $"'{SelectedPlayerSelection.CharacterId}'.";
+                return false;
+            }
+
+            FpgPlayableCharacterSelection updatedSelection =
+                SelectedPlayerSelection.WithSecondaryMode(mode);
+            if (!updatedSelection.TryValidate(out error))
+            {
+                error = $"Selected secondary mode is invalid: {error}";
+                return false;
+            }
+
+            SelectedPlayerSelection = updatedSelection;
+            secondaryModeSelector?.Hide();
             return TryContinueAfterCharacterSelection(out error);
         }
 
@@ -229,6 +295,7 @@ namespace FPG.Demo.Unity
 
         private IEnumerator Start()
         {
+            secondaryModeSelector?.Hide();
             if (!TryValidateConfiguration(out string validationError))
             {
                 Fail(validationError);
@@ -328,6 +395,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            secondaryModeSelector?.Hide();
             SetCharacterChoicesSelectable(false);
             if (config.RequireEntranceSelection)
             {
@@ -348,6 +416,47 @@ namespace FPG.Demo.Unity
             return TryBeginLoadingRoom(GetDefaultRoomDefinition(), out error);
         }
 
+        private bool TryBeginSecondaryModeSelection(out string error)
+        {
+            IReadOnlyList<SecondaryTriggerMode> supportedModes =
+                SelectedPlayerSelection.SupportedSecondaryModes;
+            if (supportedModes == null || supportedModes.Count <= 1)
+            {
+                return TryContinueAfterCharacterSelection(out error);
+            }
+
+            if (secondaryModeSelector == null)
+            {
+                error =
+                    "Selected character supports multiple secondary modes, but "
+                    + "the Boot secondary-mode selector is not assigned.";
+                return false;
+            }
+
+            SetRoomEntrancesSelectable(false);
+            SetRoomEntrancesVisible(false);
+            if (!secondaryModeSelector.TryShow(
+                    SelectedPlayerSelection,
+                    HandleSecondaryModeSelected,
+                    out error))
+            {
+                error = "Boot secondary-mode selector is invalid: " + error;
+                return false;
+            }
+
+            State = BootstrapState.WaitingForSecondaryModeSelection;
+            error = string.Empty;
+            return true;
+        }
+
+        private void HandleSecondaryModeSelected(SecondaryTriggerMode mode)
+        {
+            if (!TrySelectSecondaryMode(mode, out string error))
+            {
+                Fail(error);
+            }
+        }
+
         private bool TryBeginLoadingRoom(
             FpgRoomDefinition roomDefinition,
             out string error)
@@ -362,6 +471,7 @@ namespace FPG.Demo.Unity
                 new BootstrapSelectionSnapshot(
                     SelectedPlayerSelection,
                     roomDefinition);
+            secondaryModeSelector?.Hide();
             State = BootstrapState.Loading;
             StartCoroutine(LoadRoomScene(snapshot));
             error = string.Empty;
@@ -370,6 +480,8 @@ namespace FPG.Demo.Unity
 
         private IEnumerator LoadRoomScene(BootstrapSelectionSnapshot snapshot)
         {
+            yield return transitionCurtain.FadeToOpaque();
+
             string sceneName = config.RoomSceneName;
             Scene roomScene = SceneManager.GetSceneByName(sceneName);
             bool loadedByBootstrap = false;
@@ -405,10 +517,13 @@ namespace FPG.Demo.Unity
                 roomScene = SceneManager.GetSceneByName(sceneName);
             }
 
-            CompleteBootstrap(roomScene, snapshot, loadedByBootstrap);
+            yield return CompleteBootstrap(
+                roomScene,
+                snapshot,
+                loadedByBootstrap);
         }
 
-        private void CompleteBootstrap(
+        private IEnumerator CompleteBootstrap(
             Scene roomScene,
             BootstrapSelectionSnapshot snapshot,
             bool loadedByBootstrap)
@@ -419,7 +534,7 @@ namespace FPG.Demo.Unity
                     $"Scene '{config.RoomSceneName}' was not loaded successfully.",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             if (!TryGetSingleComponent(
@@ -431,7 +546,7 @@ namespace FPG.Demo.Unity
                     formalHostError,
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             if (!SceneManager.SetActiveScene(roomScene))
@@ -440,9 +555,10 @@ namespace FPG.Demo.Unity
                     $"Unable to make scene '{config.RoomSceneName}' active.",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
+            formalSceneHost.SetPresentationEnabled(false);
             if (snapshot.RoomDefinition != null
                 && !formalSceneHost.TrySetRoomDefinition(
                     snapshot.RoomDefinition,
@@ -452,7 +568,7 @@ namespace FPG.Demo.Unity
                     $"Formal room selection is invalid: {roomError}",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             if (!formalSceneHost.TryComposePlayer(
@@ -463,7 +579,7 @@ namespace FPG.Demo.Unity
                     $"Formal room player composition is invalid: {playerError}",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             if (!formalSceneHost.TryValidate(out string sceneHostError))
@@ -472,7 +588,27 @@ namespace FPG.Demo.Unity
                     $"Formal room scene host is invalid: {sceneHostError}",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
+            }
+
+            bool artLoadSucceeded = false;
+            string artLoadError = string.Empty;
+            yield return formalSceneHost.RoomArtSceneLoader.LoadAsync(
+                formalSceneHost.RoomDefinition,
+                formalSceneHost.WorldCamera,
+                formalSceneHost.AimViewportSource,
+                (succeeded, error) =>
+                {
+                    artLoadSucceeded = succeeded;
+                    artLoadError = error;
+                });
+            if (!artLoadSucceeded)
+            {
+                FailRoomBootstrap(
+                    "Formal room Art Scene failed to load: " + artLoadError,
+                    roomScene,
+                    loadedByBootstrap);
+                yield break;
             }
 
             if (!formalSceneHost.TryPrepareAndStart(out string encounterError))
@@ -481,7 +617,7 @@ namespace FPG.Demo.Unity
                     $"Formal room encounter failed to start: {encounterError}",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             if (!formalSceneHost.TryActivatePlayerPresentation(
@@ -491,7 +627,7 @@ namespace FPG.Demo.Unity
                     $"Formal player presentation failed to activate: {presentationError}",
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             SelectedPlayerSelection = snapshot.CharacterSelection;
@@ -508,12 +644,14 @@ namespace FPG.Demo.Unity
                     "Formal room run flow failed to bind: " + runFlowError,
                     roomScene,
                     loadedByBootstrap);
-                return;
+                yield break;
             }
 
             formalSceneHost.SetPresentationEnabled(true);
             DisableBootPresentation();
             State = BootstrapState.Running;
+            LastError = string.Empty;
+            yield return transitionCurtain.FadeToTransparent();
 
             if (config.DevelopmentDiagnosticsEnabled)
             {
@@ -671,11 +809,11 @@ namespace FPG.Demo.Unity
             FpgFormalEncounterHost formalHost = ActiveFormalSceneHost;
             FpgPlayableCharacterSelection playerSelection =
                 SelectedPlayerSelection;
-            yield return null;
+            yield return transitionCurtain.FadeToOpaque();
 
             if (formalHost == null || offer == null || !offer.IsValid)
             {
-                FailRetainedRoomTransition(
+                yield return FailRetainedRoomTransitionAsync(
                     "Room transition lost its retained formal host.",
                     formalHost);
                 yield break;
@@ -686,14 +824,52 @@ namespace FPG.Demo.Unity
                 ? null
                 : new WaitForEndOfFrame();
 
+            Scene formalScene = formalHost.gameObject.scene;
+            bool artUnloadSucceeded = false;
+            string artUnloadError = string.Empty;
+            yield return formalHost.RoomArtSceneLoader.UnloadActiveAsync(
+                formalScene,
+                (succeeded, unloadError) =>
+                {
+                    artUnloadSucceeded = succeeded;
+                    artUnloadError = unloadError;
+                });
+            if (!artUnloadSucceeded)
+            {
+                yield return FailRetainedRoomTransitionAsync(
+                    "Previous room Art Scene failed to unload: "
+                    + artUnloadError,
+                    formalHost);
+                yield break;
+            }
+
             if (!formalHost.TrySetRoomDefinition(
                     offer.DestinationRoom,
                     out string error)
                 || !formalHost.TryComposePlayer(playerSelection, out error)
                 || !formalHost.TryValidate(out error))
             {
-                FailRetainedRoomTransition(
+                yield return FailRetainedRoomTransitionAsync(
                     "Next room composition failed: " + error,
+                    formalHost);
+                yield break;
+            }
+
+            bool artLoadSucceeded = false;
+            string artLoadError = string.Empty;
+            yield return formalHost.RoomArtSceneLoader.LoadAsync(
+                offer.DestinationRoom,
+                formalHost.WorldCamera,
+                formalHost.AimViewportSource,
+                (succeeded, loadError) =>
+                {
+                    artLoadSucceeded = succeeded;
+                    artLoadError = loadError;
+                });
+            if (!artLoadSucceeded)
+            {
+                yield return FailRetainedRoomTransitionAsync(
+                    "Next room Art Scene failed to load: " + artLoadError,
                     formalHost);
                 yield break;
             }
@@ -707,7 +883,7 @@ namespace FPG.Demo.Unity
                 || !formalHost.TryActivatePlayerPresentation(out error)
                 || !runFlowController.TryBind(this, formalHost, out error))
             {
-                FailRetainedRoomTransition(
+                yield return FailRetainedRoomTransitionAsync(
                     "Next room startup failed: " + error,
                     formalHost);
                 yield break;
@@ -721,6 +897,7 @@ namespace FPG.Demo.Unity
             ActiveEncounterDirector = formalHost.EncounterDirector;
             LastError = string.Empty;
             State = BootstrapState.Running;
+            yield return transitionCurtain.FadeToTransparent();
             roomTransitionCoroutine = null;
         }
 
@@ -741,10 +918,12 @@ namespace FPG.Demo.Unity
         private IEnumerator FailRunFlowNextFrame()
         {
             yield return null;
-            FailRetainedRoomTransition(LastError, ActiveFormalSceneHost);
+            yield return FailRetainedRoomTransitionAsync(
+                LastError,
+                ActiveFormalSceneHost);
         }
 
-        private void FailRetainedRoomTransition(
+        private IEnumerator FailRetainedRoomTransitionAsync(
             string error,
             FpgFormalEncounterHost formalHost)
         {
@@ -753,7 +932,27 @@ namespace FPG.Demo.Unity
                 : error;
             Debug.LogError("[" + nameof(GameBootstrap) + "] " + LastError, this);
             runFlowController.SetFault(LastError);
+            yield return transitionCurtain.FadeToOpaque();
             formalHost?.StopAndClear();
+
+            if (formalHost != null
+                && formalHost.RoomArtSceneLoader != null
+                && formalHost.RoomArtSceneLoader.HasActiveArtScene)
+            {
+                bool unloadSucceeded = false;
+                string unloadError = string.Empty;
+                yield return formalHost.RoomArtSceneLoader.UnloadActiveAsync(
+                    formalHost.gameObject.scene,
+                    (succeeded, failure) =>
+                    {
+                        unloadSucceeded = succeeded;
+                        unloadError = failure;
+                    });
+                if (!unloadSucceeded && !string.IsNullOrWhiteSpace(unloadError))
+                {
+                    LastError += " Art Scene cleanup failed: " + unloadError;
+                }
+            }
 
             Scene bootScene = gameObject.scene;
             if (bootScene.IsValid() && bootScene.isLoaded)
@@ -765,9 +964,11 @@ namespace FPG.Demo.Unity
             ActiveFormalSceneHost = null;
             ActiveEncounterDirector = null;
             SelectedRoom = null;
-            roomTransitionCoroutine = null;
             State = BootstrapState.Loading;
+            RestoreBootPresentationAfterFailure();
+            yield return transitionCurtain.FadeToTransparent();
             RestoreBootInteractionAfterFailure();
+            roomTransitionCoroutine = null;
         }
 
         private void ApplyFrameRateStrategy()
@@ -780,6 +981,7 @@ namespace FPG.Demo.Unity
 
         private void DisableBootPresentation()
         {
+            secondaryModeSelector?.Hide();
             SetCharacterChoicesSelectable(false);
             SetRoomEntrancesSelectable(false);
             SetRoomEntrancesVisible(false);
@@ -823,15 +1025,10 @@ namespace FPG.Demo.Unity
             ActiveEncounterDirector = null;
             SelectedRoom = null;
 
-            if (loadedByBootstrap && roomScene.IsValid() && roomScene.isLoaded
-                && (!bootScene.IsValid()
-                    || roomScene.handle != bootScene.handle))
-            {
-                StartCoroutine(UnloadFailedRoomScene(roomScene));
-                return;
-            }
-
-            RestoreBootInteractionAfterFailure();
+            StartCoroutine(
+                RecoverFailedRoomBootstrap(
+                    roomScene,
+                    loadedByBootstrap));
         }
 
         private static void RollbackRoomRuntime(Scene roomScene)
@@ -855,25 +1052,74 @@ namespace FPG.Demo.Unity
             }
         }
 
-        private IEnumerator UnloadFailedRoomScene(Scene roomScene)
+        private IEnumerator RecoverFailedRoomBootstrap(
+            Scene roomScene,
+            bool loadedByBootstrap)
         {
-            AsyncOperation unloadOperation =
-                SceneManager.UnloadSceneAsync(roomScene);
-            if (unloadOperation == null)
+            FpgRoomArtSceneLoader artLoader = null;
+            if (roomScene.IsValid() && roomScene.isLoaded)
             {
-                Debug.LogError(
-                    $"[{nameof(GameBootstrap)}] Failed to start unloading room scene '{roomScene.name}'.",
-                    this);
-                RestoreBootInteractionAfterFailure();
-                yield break;
+                TryGetSingleComponent(
+                    roomScene,
+                    out artLoader,
+                    out _);
             }
 
-            yield return unloadOperation;
+            if (artLoader != null && artLoader.HasActiveArtScene)
+            {
+                bool cleanupSucceeded = false;
+                string cleanupError = string.Empty;
+                yield return artLoader.UnloadActiveAsync(
+                    roomScene,
+                    (succeeded, failure) =>
+                    {
+                        cleanupSucceeded = succeeded;
+                        cleanupError = failure;
+                    });
+                if (!cleanupSucceeded)
+                {
+                    Debug.LogError(
+                        $"[{nameof(GameBootstrap)}] Failed to clean up the Art Scene: {cleanupError}",
+                        this);
+                }
+            }
+
+            Scene bootScene = gameObject.scene;
+            if (bootScene.IsValid() && bootScene.isLoaded
+                && SceneManager.GetActiveScene() != bootScene
+                && !SceneManager.SetActiveScene(bootScene))
+            {
+                Debug.LogError(
+                    $"[{nameof(GameBootstrap)}] Failed to restore Boot as the active scene.",
+                    this);
+            }
+
+            if (loadedByBootstrap && roomScene.IsValid() && roomScene.isLoaded
+                && (!bootScene.IsValid()
+                    || roomScene.handle != bootScene.handle))
+            {
+                AsyncOperation unloadOperation =
+                    SceneManager.UnloadSceneAsync(roomScene);
+                if (unloadOperation == null)
+                {
+                    Debug.LogError(
+                        $"[{nameof(GameBootstrap)}] Failed to start unloading room scene '{roomScene.name}'.",
+                        this);
+                }
+                else
+                {
+                    yield return unloadOperation;
+                }
+            }
+
+            RestoreBootPresentationAfterFailure();
+            yield return transitionCurtain.FadeToTransparent();
             RestoreBootInteractionAfterFailure();
         }
 
-        private void RestoreBootInteractionAfterFailure()
+        private void RestoreBootPresentationAfterFailure()
         {
+            secondaryModeSelector?.Hide();
             bootCamera.enabled = true;
             AudioListener bootListener = bootCamera.GetComponent<AudioListener>();
             if (bootListener != null)
@@ -885,6 +1131,12 @@ namespace FPG.Demo.Unity
             SetCharacterChoicesSelectable(false);
             SetRoomEntrancesSelectable(false);
             SetRoomEntrancesVisible(false);
+            State = BootstrapState.Loading;
+        }
+
+        private void RestoreBootInteractionAfterFailure()
+        {
+            RestoreBootPresentationAfterFailure();
 
             if (SelectedPlayerSelection.TryValidate(out _)
                 && config != null
@@ -904,6 +1156,7 @@ namespace FPG.Demo.Unity
 
         private void Fail(string error)
         {
+            secondaryModeSelector?.Hide();
             LastError = string.IsNullOrWhiteSpace(error)
                 ? "Game bootstrap failed."
                 : error;
@@ -963,6 +1216,54 @@ namespace FPG.Demo.Unity
             {
                 error =
                     "Boot character choices must represent every playable character catalog entry exactly once.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private bool RequiresSecondaryModeSelector()
+        {
+            FpgBootCharacterChoice[] choices =
+                characterChoices ?? Array.Empty<FpgBootCharacterChoice>();
+            for (int index = 0; index < choices.Length; index++)
+            {
+                FpgBootCharacterChoice choice = choices[index];
+                if (choice != null
+                    && choice.TryResolveSelection(
+                        playableCharacterCatalog,
+                        out FpgPlayableCharacterSelection selection,
+                        out _)
+                    && selection.SupportedSecondaryModes.Count > 1)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryValidateSecondaryModeSelector(out string error)
+        {
+            if (secondaryModeSelector == null)
+            {
+                error =
+                    "Boot requires a secondary-mode selector when a selectable "
+                    + "character supports multiple modes.";
+                return false;
+            }
+
+            if (secondaryModeSelector.gameObject.scene != gameObject.scene)
+            {
+                error =
+                    "Boot secondary-mode selector must belong to the Boot scene.";
+                return false;
+            }
+
+            if (!secondaryModeSelector.TryValidateAuthoring(out error))
+            {
+                error = "Boot secondary-mode selector is invalid: " + error;
                 return false;
             }
 
@@ -1085,6 +1386,7 @@ namespace FPG.Demo.Unity
 
         private void OnDestroy()
         {
+            secondaryModeSelector?.Hide();
             runFlowController.Dispose();
         }
 

@@ -8,20 +8,20 @@
 
 ## 配置入口与资产位置
 
-- 主配置资产：`Assets/FPGDemo/Config/D0Slice/CombatPresentationProfile.asset`
+- 主配置资产：`Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset`
 - 配置类型：`Assets/FPGDemo/Runtime/Unity/CombatPresentationProfile.cs`
 - 正式字段类型：`Assets/FPGDemo/Runtime/Unity/FormalCombatPresentationConfig.cs`
 - FormalRoom 场景：`Assets/FPGDemo/Scenes/FormalRoom.unity`
 - 敌人头顶条 Prefab：`Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_OverheadHealthBar.prefab`
 - 伤害跳字 Prefab：`Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_DamagePopup.prefab`
 - 跳字美术源资源：`Assets/Art/HUD/Hit_tip`
-- 生成入口：Unity 菜单 `FPG Demo/Formal Encounter/Refresh Formal HUD Assets`
+- HUD、跳字 Prefab 与 FormalRoom 引用均为 committed authored 资产，不提供生成入口。
 
 ## 引用关系
 
 `CombatPresentationProfile → Formal HUD / Damage Popup / Reticle 配置`
 
-`FormalRoom Installer → 玩家 HUD、头顶条 Prefab、跳字 Prefab、Feedback Bridge`
+`FormalRoom authored bindings → 玩家 HUD、头顶条 Prefab、跳字 Prefab、Feedback Bridge`
 
 `CombatantState → Vitals Snapshot Stream → Player HUD / Enemy RuntimeId Bar Binding`
 
@@ -29,12 +29,12 @@
 
 数字同帧显示权威值；条形从当前视觉比例缓动到新比例。暂停只冻结条形、跳字和准星脉冲的表现推进，不冻结或反写战斗状态。事件流发生 gap 时，生命条按 RuntimeId 拉取完整快照重同步；伤害跳字丢弃缺失批次，二者都不得让战斗进入 Fault。
 
-## 制作与安装步骤
+## 制作与验证步骤
 
 1. 打开 `CombatPresentationProfile.asset`，在正式 HUD、正式伤害跳字和正式准星分组中调整字段。不要在 FormalRoom 场景组件上复制颜色、时长、射程或范围值。
 2. 正式 HUD 必须恰好包含 `Life`、`Barrier`、`Ammo` 三项，且 `kind` 与 `order` 各自唯一。`order` 只决定三项映射到现有三个 HUD 槽位的顺序，不创建新的屏幕坐标。
 3. 身体、弱点和弹体拦截分别通过 `formalDamagePopup.spriteStyles` 绑定一套底纹与 0–9 Sprite；默认映射为 `Body → normal`、`Weakpoint → critcal`、`Intercept → elemental`。映射保存在 Profile，可在 Inspector 更换，不由 View 或 Bridge 写死。显示时长继续复用 `hitDefinitions` 中对应类型的 `duration`。
-4. 执行 `Refresh Formal HUD Assets`。安装器会通过 Unity API 更新 Prefab 和 FormalRoom 引用，并保存配置资产；不要手工编辑场景或 Prefab YAML。
+4. 结构或引用变化时，在 Prefab Mode 与 FormalRoom Inspector 中只修改目标对象并显式保存；不要手工编辑场景或 Prefab YAML，也不要使用全量生成器覆盖 authored 资产。
 5. 等待 Unity 编译和资源刷新完成，确认配置静态校验、Prefab 引用、实际 RectTransform 几何及正式场景绑定通过技术检查。
 6. 颜色辨识、缓动手感、跳字可读性与准星反馈节奏按本文末尾表格交由主管试玩确认。
 

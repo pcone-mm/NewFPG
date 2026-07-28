@@ -49,6 +49,20 @@ namespace FPG.Demo.Unity
             : GetComponentInChildren<FpgPlayerBarrierPresentationController>(true);
         public FpgPlayerBarrierPresentationController BarrierPresentation => Barrier;
 
+        public bool TryResolvePresentationSocket(
+            string socketId,
+            out Transform anchor)
+        {
+            FpgPlayerBarrierPresentationController cover = Barrier;
+            if (cover != null
+                && cover.TryResolvePresentationSocket(socketId, out anchor))
+            {
+                return true;
+            }
+
+            return TryResolveSocket(socketId, out anchor);
+        }
+
         public override bool TryValidate(out string error)
         {
             if (!base.TryValidate(out error))
@@ -100,6 +114,28 @@ namespace FPG.Demo.Unity
             if (Barrier == null)
             {
                 error = "Player entity requires a FpgPlayerBarrierPresentationController.";
+                return false;
+            }
+
+            if (!Barrier.TryValidate(out error))
+            {
+                return false;
+            }
+
+            Transform peekRoot = Barrier.PeekRoot;
+            if (VisualRoot == peekRoot || !VisualRoot.IsChildOf(peekRoot))
+            {
+                error = "Player entity VisualRoot must be below the cover PeekRoot.";
+                return false;
+            }
+
+            if (GameplayAnchor.IsChildOf(peekRoot)
+                || AimAnchor.IsChildOf(peekRoot)
+                || GroundAnchor.IsChildOf(peekRoot)
+                || CameraPivot.IsChildOf(peekRoot)
+                || SocketRegistry.transform.IsChildOf(peekRoot))
+            {
+                error = "Player gameplay anchors and authoritative sockets must remain outside PeekRoot.";
                 return false;
             }
 

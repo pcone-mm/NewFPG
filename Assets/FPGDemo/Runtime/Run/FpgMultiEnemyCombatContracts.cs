@@ -80,29 +80,21 @@ namespace FPG.Demo.Run
     {
         public FpgPlayerDefensePolicy(
             TickDuration perfectRetractWindow,
-            int perfectRetractMultiplierBasisPoints,
-            TickDuration barrierLockDuration,
-            int barrierRestoreBasisPoints)
+            int perfectRetractMultiplierBasisPoints)
         {
-            if (perfectRetractMultiplierBasisPoints < 0 || barrierRestoreBasisPoints < 0)
+            if (perfectRetractMultiplierBasisPoints < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(perfectRetractMultiplierBasisPoints));
             }
 
             PerfectRetractWindow = perfectRetractWindow;
             PerfectRetractMultiplierBasisPoints = perfectRetractMultiplierBasisPoints;
-            BarrierLockDuration = barrierLockDuration;
-            BarrierRestoreBasisPoints = barrierRestoreBasisPoints;
         }
 
         public TickDuration PerfectRetractWindow { get; }
         public int PerfectRetractMultiplierBasisPoints { get; }
-        public TickDuration BarrierLockDuration { get; }
-        public int BarrierRestoreBasisPoints { get; }
 
         public static FpgPlayerDefensePolicy Default => new FpgPlayerDefensePolicy(
-            TickDuration.Zero,
-            DamageSpec.BasisPoints,
             TickDuration.Zero,
             DamageSpec.BasisPoints);
 
@@ -110,9 +102,7 @@ namespace FPG.Demo.Run
         {
             return player.Exposure.CreateDefenseSnapshot(
                 PerfectRetractWindow,
-                PerfectRetractMultiplierBasisPoints,
-                BarrierLockDuration,
-                BarrierRestoreBasisPoints);
+                PerfectRetractMultiplierBasisPoints);
         }
     }
 

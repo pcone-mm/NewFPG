@@ -141,9 +141,14 @@ MonoBehaviour:
   - followMode: 1
     boneName: root
     keepAuthoredRotation: 1
+    positionOffset: {x: 0, y: -0.37, z: 0}
+    rotationOffsetEuler: {x: 0, y: 0, z: 0}
   - followMode: 1
     boneName: bone
     keepAuthoredRotation: 1
+    positionOffset: {x: 0.06, y: -0.13, z: 0}
+    rotationOffsetEuler: {x: 0, y: 0, z: 0}
+  previewHitboxesInPlayMode: 1
   skillWarningTint: {r: 1, g: 0.3, b: 0.12, a: 1}
   skeletonAnimation: {fileID: 5621907520704672879}
 --- !u!1 &3483609371074441311
@@ -172,9 +177,9 @@ Transform:
   m_GameObject: {fileID: 3483609371074441311}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.37, y: 6.06, z: 1.55}
-  m_LocalScale: {x: 2.5468, y: 2.5468, z: 2.5468}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: -2.07, y: 2.08, z: 1.55}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 2428690934748814920}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -197,7 +202,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.42
+  m_Radius: 0.39
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &3893156337031896479
 GameObject:
@@ -259,8 +264,8 @@ Transform:
   m_GameObject: {fileID: 4877985848408677331}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.9647789, y: 4.3779826, z: 0.9999999}
-  m_LocalScale: {x: 1.8147, y: 1.6246, z: 1}
+  m_LocalPosition: {x: -2.48, y: 2.01, z: 0.9999999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2428690934748814920}
@@ -284,7 +289,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.3240004, y: 6.27, z: 0.38}
+  m_Size: {x: 2, y: 2.3, z: 0.38}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &5190802722786790547
 GameObject:
@@ -347,8 +352,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
   m_LocalPosition: {x: -2.15, y: 0.15, z: 1.55}
-  m_LocalScale: {x: 2.2, y: 2.2, z: 2.2}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 7235337415655676541}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -443,7 +448,7 @@ MonoBehaviour:
     materialsInsideMask: []
     materialsOutsideMask: []
   disableRenderingOnOverride: 1
-  _animationName: appear
+  _animationName: idle
   loop: 1
   timeScale: 1
 --- !u!114 &1035076626606265179

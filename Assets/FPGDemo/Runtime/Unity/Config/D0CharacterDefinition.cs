@@ -26,7 +26,7 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(1)]
         private int life = 100;
 
-        [D0PlannerField("护盾上限", "战斗开始时的掩体护盾上限与初始值。必须大于 0；护盾被打空后按手感配置进入锁定与恢复。")]
+        [D0PlannerField("护盾上限", "战斗开始时的掩体护盾上限与初始值。必须大于 0；护盾被打空后保持耗尽。")]
         [SerializeField, Min(1)]
         private int barrier = 100;
 

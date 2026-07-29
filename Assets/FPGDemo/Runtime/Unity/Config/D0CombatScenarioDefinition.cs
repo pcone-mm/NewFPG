@@ -132,8 +132,6 @@ namespace FPG.Demo.Unity
                     encounter.Enemy.BreakValue,
                     feelProfile.PerfectRetractWindow,
                     feelProfile.PerfectRetractMultiplierBasisPoints,
-                    feelProfile.BarrierLockDuration,
-                    feelProfile.BarrierRestoreBasisPoints,
                     feelProfile.EnemyGroggyDuration,
                     technicalSettings.ProjectileBudgetCapacity,
                     technicalSettings.ProjectileCapacity,

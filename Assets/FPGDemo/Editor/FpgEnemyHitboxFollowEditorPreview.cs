@@ -26,6 +26,10 @@ namespace FPG.Demo.Editor
                 followSettings.FindPropertyRelative("boneName");
             SerializedProperty keepAuthoredRotation =
                 followSettings.FindPropertyRelative("keepAuthoredRotation");
+            SerializedProperty positionOffset =
+                followSettings.FindPropertyRelative("positionOffset");
+            SerializedProperty rotationOffsetEuler =
+                followSettings.FindPropertyRelative("rotationOffsetEuler");
             EditorGUILayout.PropertyField(
                 followMode,
                 new GUIContent("Follow Mode"));
@@ -40,10 +44,21 @@ namespace FPG.Demo.Editor
             keepAuthoredRotation.boolValue = !EditorGUILayout.Toggle(
                 new GUIContent("Follow Bone Rotation"),
                 followRotation);
+            EditorGUILayout.PropertyField(
+                positionOffset,
+                new GUIContent(
+                    "Position Offset",
+                    "Additional offset in the Spine bone's local axes, in Unity units."));
+            EditorGUILayout.PropertyField(
+                rotationOffsetEuler,
+                new GUIContent(
+                    "Rotation Offset",
+                    "Additional Euler rotation applied after the authored rotation offset."));
             EditorGUILayout.HelpBox(
-                "Scene preview follows the animated Spine bone without "
-                + "serializing the preview pose. Edit Collider Center and "
-                + "bounds while bone-following.",
+                "Scene preview and runtime add these values on top of the "
+                + "authored setup-pose offset. Use Collider Center for a "
+                + "shape-only position adjustment; moving a Weakpoint anchor "
+                + "also moves its other anchor consumers.",
                 MessageType.None);
         }
 
@@ -55,6 +70,10 @@ namespace FPG.Demo.Editor
                 string.Empty;
             followSettings.FindPropertyRelative("keepAuthoredRotation")
                 .boolValue = false;
+            followSettings.FindPropertyRelative("positionOffset")
+                .vector3Value = Vector3.zero;
+            followSettings.FindPropertyRelative("rotationOffsetEuler")
+                .vector3Value = Vector3.zero;
         }
 
         private static void DrawBoneSelector(
@@ -153,6 +172,8 @@ namespace FPG.Demo.Editor
             public bool FollowBoneRotation;
             public Vector3 PositionOffset;
             public Quaternion RotationOffset;
+            public Vector3 AdditionalPositionOffset;
+            public Quaternion AdditionalRotationOffset;
             public Vector3 AuthoredLocalPosition;
             public Quaternion AuthoredLocalRotation;
             public Vector3 SkeletonWorldPosition;
@@ -328,10 +349,15 @@ namespace FPG.Demo.Editor
                 }
 
                 Vector3 targetPosition = bonePosition
-                    + boneRotation * binding.PositionOffset;
+                    + boneRotation * (
+                        binding.PositionOffset
+                        + binding.AdditionalPositionOffset);
                 Quaternion targetRotation = binding.FollowBoneRotation
-                    ? boneRotation * binding.RotationOffset
-                    : binding.Target.rotation;
+                    ? boneRotation
+                        * binding.RotationOffset
+                        * binding.AdditionalRotationOffset
+                    : binding.Target.rotation
+                        * binding.AdditionalRotationOffset;
                 Matrix4x4 sourcePose = Matrix4x4.TRS(
                     binding.Target.position,
                     binding.Target.rotation,
@@ -392,7 +418,9 @@ namespace FPG.Demo.Editor
                     Collider = collider,
                     Target = target,
                     BoneName = settings.BoneName,
-                    FollowBoneRotation = settings.FollowBoneRotation
+                    FollowBoneRotation = settings.FollowBoneRotation,
+                    AdditionalPositionOffset = settings.PositionOffset,
+                    AdditionalRotationOffset = settings.RotationOffset
                 };
                 CaptureOffsets(
                     binding,

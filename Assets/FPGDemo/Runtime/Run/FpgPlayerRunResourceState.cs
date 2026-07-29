@@ -16,9 +16,7 @@ namespace FPG.Demo.Run
             string weaponId,
             int life,
             int barrier,
-            int ammo,
-            int remainingBarrierLockTicks,
-            int barrierRestoreBasisPoints)
+            int ammo)
         {
             if (string.IsNullOrWhiteSpace(characterId))
             {
@@ -49,32 +47,11 @@ namespace FPG.Demo.Run
                 throw new ArgumentOutOfRangeException(nameof(ammo));
             }
 
-            if (remainingBarrierLockTicks < 0)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(remainingBarrierLockTicks));
-            }
-
-            if (barrierRestoreBasisPoints < 0)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(barrierRestoreBasisPoints));
-            }
-
-            if (remainingBarrierLockTicks > 0 && barrier != 0)
-            {
-                throw new ArgumentException(
-                    "A barrier lock can only be carried while barrier is depleted.",
-                    nameof(barrier));
-            }
-
             CharacterId = characterId;
             WeaponId = weaponId;
             Life = life;
             Barrier = barrier;
             Ammo = ammo;
-            RemainingBarrierLockTicks = remainingBarrierLockTicks;
-            BarrierRestoreBasisPoints = barrierRestoreBasisPoints;
         }
 
         public string CharacterId { get; }
@@ -82,18 +59,12 @@ namespace FPG.Demo.Run
         public int Life { get; }
         public int Barrier { get; }
         public int Ammo { get; }
-        public int RemainingBarrierLockTicks { get; }
-        public int BarrierRestoreBasisPoints { get; }
-        public bool HasBarrierLock => RemainingBarrierLockTicks > 0;
 
         public bool IsValid => !string.IsNullOrWhiteSpace(CharacterId)
             && !string.IsNullOrWhiteSpace(WeaponId)
             && Life > 0
             && Barrier >= 0
-            && Ammo >= 0
-            && RemainingBarrierLockTicks >= 0
-            && BarrierRestoreBasisPoints >= 0
-            && (!HasBarrierLock || Barrier == 0);
+            && Ammo >= 0;
     }
 
     /// <summary>
@@ -106,53 +77,25 @@ namespace FPG.Demo.Run
             PlayerRuntime player,
             string characterId,
             string weaponId,
-            TickIndex currentTick,
             out FpgPlayerRunResourceState state)
         {
             state = default(FpgPlayerRunResourceState);
             if (player == null || string.IsNullOrWhiteSpace(characterId)
-                || string.IsNullOrWhiteSpace(weaponId) || !currentTick.IsValid
-                || player.Combatant.IsDead)
+                || string.IsNullOrWhiteSpace(weaponId) || player.Combatant.IsDead)
             {
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
             CombatantResourceSnapshot combatant =
                 player.Combatant.CaptureResources();
-            int barrier = combatant.Barrier;
-            int remainingBarrierLockTicks = 0;
-            if (combatant.BarrierLockUntilTick.IsValid)
-            {
-                long remaining = combatant.BarrierLockUntilTick - currentTick;
-                if (remaining > int.MaxValue)
-                {
-                    return DomainResult.Rejected(RejectReason.BufferCapacity);
-                }
-
-                if (remaining > 0L)
-                {
-                    remainingBarrierLockTicks = (int)remaining;
-                }
-                else
-                {
-                    barrier = Math.Min(
-                        player.Combatant.MaxBarrier,
-                        DamageResolver.RoundBasisPoints(
-                            player.Combatant.MaxBarrier,
-                            combatant.BarrierRestoreBasisPoints));
-                }
-            }
-
             try
             {
                 state = new FpgPlayerRunResourceState(
                     characterId,
                     weaponId,
                     combatant.Life,
-                    barrier,
-                    player.Weapon.Magazine.Ammo,
-                    remainingBarrierLockTicks,
-                    combatant.BarrierRestoreBasisPoints);
+                    combatant.Barrier,
+                    player.Weapon.Magazine.Ammo);
                 return DomainResult.Success;
             }
             catch (ArgumentException)
@@ -194,17 +137,12 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
-            TickIndex barrierLockUntilTick = state.HasBarrierLock
-                ? new TickIndex(state.RemainingBarrierLockTicks)
-                : TickIndex.Invalid;
             CombatantResourceSnapshot combatant =
                 new CombatantResourceSnapshot(
                     player.RuntimeId,
                     state.Life,
                     state.Barrier,
-                    player.Combatant.MaxBreak,
-                    barrierLockUntilTick,
-                    state.BarrierRestoreBasisPoints);
+                    player.Combatant.MaxBreak);
             DomainResult restored = player.Combatant.RestoreResources(combatant);
             if (!restored.IsSuccess)
             {

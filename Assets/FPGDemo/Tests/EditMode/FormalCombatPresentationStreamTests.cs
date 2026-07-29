@@ -75,7 +75,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void VitalsPublishesBarrierRestoreAndRestartAsCompleteSnapshots()
+        public void VitalsKeepsDepletedBarrierUntilRestartSnapshot()
         {
             CombatantState player = new CombatantState(
                 new RuntimeId(1L),
@@ -97,9 +97,7 @@ namespace FPG.Demo.Tests.EditMode
                 ExposureMode.Withdrawn,
                 new TickIndex(0L),
                 new TickDuration(0),
-                DamageSpec.BasisPoints,
-                new TickDuration(2),
-                5000);
+                DamageSpec.BasisPoints);
             ImpactResolution damage = resolver.ResolveCombatant(
                 CreateIntent(
                     1L,
@@ -123,28 +121,19 @@ namespace FPG.Demo.Tests.EditMode
                     FpgVitalsChangeReason.Damage),
                 Is.True);
 
-            Assert.That(player.TryRestoreBarrier(new TickIndex(3L)), Is.True);
-            Assert.That(player.Barrier, Is.EqualTo(20));
-            Assert.That(
-                stream.TryPublish(
-                    player,
-                    new TickIndex(3L),
-                    FpgVitalsChangeReason.BarrierRestore),
-                Is.True);
             Assert.That(
                 stream.TryGetLatest(
                     player.RuntimeId,
-                    out FpgVitalsSnapshot restored),
+                    out FpgVitalsSnapshot depleted),
                 Is.True);
             AssertAll(() =>
             {
-                Assert.That(restored.Sequence, Is.EqualTo(3L));
-                Assert.That(restored.Revision, Is.EqualTo(3L));
-                Assert.That(restored.Life, Is.EqualTo(100));
-                Assert.That(restored.Barrier, Is.EqualTo(20));
-                Assert.That(
-                    restored.Reason,
-                    Is.EqualTo(FpgVitalsChangeReason.BarrierRestore));
+                Assert.That(depleted.Sequence, Is.EqualTo(2L));
+                Assert.That(depleted.Revision, Is.EqualTo(2L));
+                Assert.That(depleted.Life, Is.EqualTo(100));
+                Assert.That(depleted.Barrier, Is.Zero);
+                Assert.That(depleted.Reason, Is.EqualTo(FpgVitalsChangeReason.Damage));
+                Assert.That(player.Barrier, Is.Zero);
             });
 
             CombatantResourceSnapshot fullResources =
@@ -152,9 +141,7 @@ namespace FPG.Demo.Tests.EditMode
                     player.RuntimeId,
                     player.MaxLife,
                     player.MaxBarrier,
-                    player.MaxBreak,
-                    TickIndex.Invalid,
-                    DamageSpec.BasisPoints);
+                    player.MaxBreak);
             Assert.That(player.RestoreResources(fullResources).IsSuccess, Is.True);
             stream.Clear();
             Assert.That(

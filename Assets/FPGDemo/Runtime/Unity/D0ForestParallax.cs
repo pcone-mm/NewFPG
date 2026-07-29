@@ -38,6 +38,7 @@ namespace FPG.Demo.Unity
 
         private void Awake()
         {
+            CaptureBasePositions();
             ResetVisualState();
         }
 
@@ -75,6 +76,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            CaptureBasePositions();
             aimViewportSource = context.AimViewportSource;
             ResetVisualState();
             error = string.Empty;
@@ -128,6 +130,22 @@ namespace FPG.Demo.Unity
 
             error = string.Empty;
             return true;
+        }
+
+        private void CaptureBasePositions()
+        {
+            if (layers == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < layers.Length; index++)
+            {
+                if (layers[index] != null)
+                {
+                    layers[index].CaptureBaseLocalPosition();
+                }
+            }
         }
     }
 

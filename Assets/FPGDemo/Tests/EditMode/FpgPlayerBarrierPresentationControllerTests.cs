@@ -30,18 +30,16 @@ namespace FPG.Demo.Tests.EditMode
             createdObjects.Clear();
         }
 
-        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 1, false, true)]
-        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Exposed, 60, false, true)]
-        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 0, false, false)]
-        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 60, true, false)]
-        [TestCase(FpgEncounterPhase.Combat, true, PlayerExposureState.Withdrawn, 60, false, false)]
-        [TestCase(FpgEncounterPhase.Cleared, false, PlayerExposureState.Withdrawn, 60, false, false)]
+        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 1, true)]
+        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Exposed, 60, true)]
+        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 0, false)]
+        [TestCase(FpgEncounterPhase.Combat, true, PlayerExposureState.Withdrawn, 60, false)]
+        [TestCase(FpgEncounterPhase.Cleared, false, PlayerExposureState.Withdrawn, 60, false)]
         public void BarrierVisibilityUsesCommittedFormalSnapshot(
             FpgEncounterPhase phase,
             bool paused,
             PlayerExposureState exposureState,
             int barrier,
-            bool barrierLocked,
             bool expected)
         {
             FpgFormalPlayerPresentationSnapshot snapshot = CreateSnapshot(
@@ -49,8 +47,7 @@ namespace FPG.Demo.Tests.EditMode
                 phase: phase,
                 paused: paused,
                 barrier: barrier,
-                exposureState: exposureState,
-                barrierLocked: barrierLocked);
+                exposureState: exposureState);
 
             Assert.That(
                 FpgPlayerBarrierPresentationController.ShouldShowBarrier(snapshot),
@@ -154,8 +151,7 @@ namespace FPG.Demo.Tests.EditMode
                 CreateSnapshot(
                     tick: 2L,
                     paused: true,
-                    barrier: 0,
-                    barrierLocked: true),
+                    barrier: 0),
                 1f);
 
             Assert.That(fixture.Controller.CurrentOpacity, Is.EqualTo(opacity));
@@ -378,8 +374,7 @@ namespace FPG.Demo.Tests.EditMode
             PlayerExposureState exposureState = PlayerExposureState.Withdrawn,
             WeaponState weaponState = WeaponState.Ready,
             bool peekRequested = false,
-            long peekStartedTick = -1L,
-            bool barrierLocked = false)
+            long peekStartedTick = -1L)
         {
             return new FpgFormalPlayerPresentationSnapshot(
                 new TickIndex(tick),
@@ -398,8 +393,7 @@ namespace FPG.Demo.Tests.EditMode
                 0f,
                 TickIndex.Invalid,
                 peekRequested,
-                new TickIndex(peekStartedTick),
-                barrierLocked);
+                new TickIndex(peekStartedTick));
         }
 
         private readonly struct ControllerFixture

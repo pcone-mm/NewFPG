@@ -55,6 +55,9 @@ namespace FPG.Demo.Unity
             Array.Empty<D0EnemyHitboxFollowSettings>();
 
         [SerializeField]
+        private bool previewHitboxesInPlayMode = true;
+
+        [SerializeField]
         private Color skillWarningTint =
             new Color(1f, 0.3f, 0.12f, 1f);
 
@@ -186,6 +189,7 @@ namespace FPG.Demo.Unity
         public bool GameplayEnabled => gameplayEnabled;
         public SkeletonAnimation SkeletonAnimation => skeletonAnimation;
         public string LastRootMotionError => lastRootMotionError ?? string.Empty;
+        public bool PreviewHitboxesInPlayMode => previewHitboxesInPlayMode;
 
         public bool TryGetHitPart(
             int hitPartOrdinal,
@@ -1505,7 +1509,9 @@ namespace FPG.Demo.Unity
                 targets[targetIndex++] = new D0EnemyHitboxBoneFollowTarget(
                     target,
                     settings.BoneName,
-                    settings.FollowBoneRotation);
+                    settings.FollowBoneRotation,
+                    settings.PositionOffset,
+                    settings.RotationOffset);
             }
 
             return D0EnemyHitboxBoneFollowRuntime.TryCreate(
@@ -1532,6 +1538,13 @@ namespace FPG.Demo.Unity
             if (settings.FollowMode != D0EnemyHitboxFollowMode.SpineBone)
             {
                 error = $"Formal enemy hit part {hitPartOrdinal} has an unsupported follow mode.";
+                return false;
+            }
+
+            if (!settings.HasFiniteOffsets)
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} "
+                    + "bone-follow offsets must be finite.";
                 return false;
             }
 

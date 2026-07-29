@@ -17,8 +17,6 @@ namespace FPG.Demo.Run
             int enemyBreak,
             TickDuration perfectRetractWindow,
             int perfectRetractMultiplierBasisPoints,
-            TickDuration barrierLockDuration,
-            int barrierRestoreBasisPoints,
             TickDuration enemyGroggyDuration,
             int projectileBudgetCapacity,
             int projectileCapacity = 32,
@@ -58,16 +56,6 @@ namespace FPG.Demo.Run
                 throw new ArgumentOutOfRangeException(nameof(perfectRetractMultiplierBasisPoints));
             }
 
-            if (barrierLockDuration.Value <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(barrierLockDuration));
-            }
-
-            if (barrierRestoreBasisPoints < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(barrierRestoreBasisPoints));
-            }
-
             if (enemyGroggyDuration.Value <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(enemyGroggyDuration));
@@ -90,8 +78,6 @@ namespace FPG.Demo.Run
             EnemyBreak = enemyBreak;
             PerfectRetractWindow = perfectRetractWindow;
             PerfectRetractMultiplierBasisPoints = perfectRetractMultiplierBasisPoints;
-            BarrierLockDuration = barrierLockDuration;
-            BarrierRestoreBasisPoints = barrierRestoreBasisPoints;
             EnemyGroggyDuration = enemyGroggyDuration;
             ProjectileBudgetCapacity = projectileBudgetCapacity;
             ProjectileCapacity = projectileCapacity;
@@ -116,8 +102,6 @@ namespace FPG.Demo.Run
         public int EnemyBreak { get; }
         public TickDuration PerfectRetractWindow { get; }
         public int PerfectRetractMultiplierBasisPoints { get; }
-        public TickDuration BarrierLockDuration { get; }
-        public int BarrierRestoreBasisPoints { get; }
         public TickDuration EnemyGroggyDuration { get; }
         public int ProjectileBudgetCapacity { get; }
         public int ProjectileCapacity { get; }
@@ -160,8 +144,6 @@ namespace FPG.Demo.Run
             hash = StableHash.Append(hash, unchecked((ulong)EnemyBreak));
             hash = StableHash.Append(hash, unchecked((ulong)PerfectRetractWindow.Value));
             hash = StableHash.Append(hash, unchecked((ulong)PerfectRetractMultiplierBasisPoints));
-            hash = StableHash.Append(hash, unchecked((ulong)BarrierLockDuration.Value));
-            hash = StableHash.Append(hash, unchecked((ulong)BarrierRestoreBasisPoints));
             hash = StableHash.Append(hash, unchecked((ulong)EnemyGroggyDuration.Value));
             hash = StableHash.Append(hash, unchecked((ulong)ProjectileBudgetCapacity));
             hash = StableHash.Append(hash, unchecked((ulong)ProjectileCapacity));

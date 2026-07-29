@@ -227,14 +227,6 @@ namespace FPG.Demo.Combat
                 : 0;
 
             bool barrierBroken = channel == DamageChannel.Barrier && hadBarrier && target.Barrier == 0;
-            if (barrierBroken)
-            {
-                target.BeginBarrierLock(
-                    intent.ImpactTick,
-                    defense.BarrierLockDuration,
-                    defense.BarrierRestoreBasisPoints);
-            }
-
             bool death = wasAlive && target.IsDead;
             bool breakTriggered = !death && breakBefore > 0 && target.Break == 0;
             int valueAfter = channel == DamageChannel.Barrier ? target.Barrier : target.Life;

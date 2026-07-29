@@ -7,6 +7,7 @@ using Spine.Unity;
 using UnityEngine;
 
 using FPG.Demo.Combat;
+using FPG.Demo.Core;
 using FPG.Demo.Unity;
 
 namespace FPG.Demo.Tests.EditMode
@@ -47,6 +48,43 @@ namespace FPG.Demo.Tests.EditMode
             {
                 FpgEnemyEntityView enemy = LoadEntity<FpgEnemyEntityView>(enemyPaths[index]);
                 Assert.That(enemy.TryValidate(out error), Is.True, enemyPaths[index] + ": " + error);
+            }
+        }
+
+        [Test]
+        public void FormalEnemyHitboxDebugDefaultsRemainBackwardCompatible()
+        {
+            string[] enemyPaths =
+            {
+                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_BurstbugEntity.prefab",
+                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_LuanEntity.prefab",
+                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_HudieEntity.prefab"
+            };
+
+            for (int pathIndex = 0; pathIndex < enemyPaths.Length; pathIndex++)
+            {
+                FpgEnemyEntityView enemy =
+                    LoadEntity<FpgEnemyEntityView>(enemyPaths[pathIndex]);
+                Assert.That(
+                    enemy.PreviewHitboxesInPlayMode,
+                    Is.True,
+                    enemyPaths[pathIndex]);
+                for (int hitPartIndex = 0;
+                    hitPartIndex < enemy.HitPartCount;
+                    hitPartIndex++)
+                {
+                    Assert.That(
+                        enemy.TryGetHitPartFollowSettings(
+                            hitPartIndex,
+                            out D0EnemyHitboxFollowSettings settings),
+                        Is.True,
+                        enemyPaths[pathIndex]);
+                    Assert.That(settings.PositionOffset, Is.EqualTo(Vector3.zero));
+                    Assert.That(
+                        settings.RotationOffsetEuler,
+                        Is.EqualTo(Vector3.zero));
+                    Assert.That(settings.HasFiniteOffsets, Is.True);
+                }
             }
         }
 
@@ -198,6 +236,108 @@ namespace FPG.Demo.Tests.EditMode
             SetField(enemy, "hitParts", Array.Empty<Collider>());
             Assert.That(enemy.TryValidate(out error), Is.False);
             Assert.That(error, Does.Contain("at least one hit part"));
+        }
+
+        [Test]
+        public void FormalEnemyRejectsNonFiniteBoneFollowOffset()
+        {
+            FpgEnemyEntityView enemy = CreateValidEnemy();
+            D0EnemyHitboxFollowSettings invalid = CreateHitboxFollowSettings(
+                "root",
+                new Vector3(float.NaN, 0f, 0f),
+                Vector3.zero,
+                true);
+            SetField(
+                enemy,
+                "hitPartFollowSettings",
+                new[] { invalid, default(D0EnemyHitboxFollowSettings) });
+
+            Assert.That(enemy.TryValidate(out string error), Is.False);
+            Assert.That(error, Does.Contain("finite"));
+        }
+
+        [Test]
+        public void HudieBoneFollowAppliesExtraPositionAndUnbindRestoresPose()
+        {
+            const string definitionPath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_Hudie_Enemy.asset";
+            const string prefabPath =
+                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_HudieEntity.prefab";
+            FpgEnemyDefinition definition =
+                AssetDatabase.LoadAssetAtPath<FpgEnemyDefinition>(definitionPath);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                prefabPath);
+            Assert.That(definition, Is.Not.Null, definitionPath);
+            Assert.That(prefab, Is.Not.Null, prefabPath);
+
+            GameObject baselineObject = UnityEngine.Object.Instantiate(prefab);
+            GameObject offsetObject = UnityEngine.Object.Instantiate(prefab);
+            createdObjects.Add(baselineObject);
+            createdObjects.Add(offsetObject);
+            FpgEnemyEntityView baseline =
+                baselineObject.GetComponent<FpgEnemyEntityView>();
+            FpgEnemyEntityView offset =
+                offsetObject.GetComponent<FpgEnemyEntityView>();
+            Assert.That(
+                baseline.TryGetHitPart(0, out Collider baselineBody, out _),
+                Is.True);
+            Assert.That(
+                offset.TryGetHitPart(0, out Collider offsetBody, out _),
+                Is.True);
+            Vector3 authoredLocalPosition = offsetBody.transform.localPosition;
+            Quaternion authoredLocalRotation = offsetBody.transform.localRotation;
+            var serializedOffset = new SerializedObject(offset);
+            Vector3 extraOffset = new Vector3(0f, 0f, 0.4f);
+            serializedOffset.FindProperty("hitPartFollowSettings")
+                .GetArrayElementAtIndex(0)
+                .FindPropertyRelative("positionOffset")
+                .vector3Value = extraOffset;
+            serializedOffset.ApplyModifiedPropertiesWithoutUndo();
+
+            try
+            {
+                Assert.That(
+                    baseline.TryBindFormalRuntime(
+                        new RuntimeId(801L),
+                        0,
+                        definition,
+                        out string baselineError),
+                    Is.True,
+                    baselineError);
+                Assert.That(
+                    offset.TryBindFormalRuntime(
+                        new RuntimeId(802L),
+                        1,
+                        definition,
+                        out string offsetError),
+                    Is.True,
+                    offsetError);
+
+                Vector3 expectedDelta = offset.SkeletonAnimation.transform
+                    .TransformDirection(Vector3.forward).normalized
+                    * extraOffset.z;
+                Vector3 actualDelta =
+                    offsetBody.transform.position - baselineBody.transform.position;
+                Assert.That(
+                    Vector3.Distance(expectedDelta, actualDelta),
+                    Is.LessThan(0.001f));
+            }
+            finally
+            {
+                baseline.UnbindFormalRuntime();
+                offset.UnbindFormalRuntime();
+            }
+
+            Assert.That(
+                Vector3.Distance(
+                    authoredLocalPosition,
+                    offsetBody.transform.localPosition),
+                Is.LessThan(0.0001f));
+            Assert.That(
+                Mathf.Abs(Quaternion.Dot(
+                    authoredLocalRotation,
+                    offsetBody.transform.localRotation)),
+                Is.GreaterThan(0.999999f));
         }
 
         [Test]
@@ -391,6 +531,27 @@ namespace FPG.Demo.Tests.EditMode
             GameObject child = CreateObject(name);
             child.transform.SetParent(parent, false);
             return child.transform;
+        }
+
+        private static D0EnemyHitboxFollowSettings CreateHitboxFollowSettings(
+            string boneName,
+            Vector3 positionOffset,
+            Vector3 rotationOffsetEuler,
+            bool followBoneRotation)
+        {
+            object boxed = default(D0EnemyHitboxFollowSettings);
+            SetField(
+                boxed,
+                "followMode",
+                D0EnemyHitboxFollowMode.SpineBone);
+            SetField(boxed, "boneName", boneName);
+            SetField(
+                boxed,
+                "keepAuthoredRotation",
+                !followBoneRotation);
+            SetField(boxed, "positionOffset", positionOffset);
+            SetField(boxed, "rotationOffsetEuler", rotationOffsetEuler);
+            return (D0EnemyHitboxFollowSettings)boxed;
         }
 
         private static void SetField(object target, string fieldName, object value)

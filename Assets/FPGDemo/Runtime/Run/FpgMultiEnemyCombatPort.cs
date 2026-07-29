@@ -1111,13 +1111,6 @@ namespace FPG.Demo.Run
                 return synchronized;
             }
 
-            if (player.Combatant.TryRestoreBarrier(tick))
-            {
-                PublishVitals(
-                    player.Combatant,
-                    tick,
-                    FpgVitalsChangeReason.BarrierRestore);
-            }
             for (int index = 0; index < enemies.Length; index++)
             {
                 EnemyRuntime runtime = enemies[index].Runtime;

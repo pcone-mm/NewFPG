@@ -42,8 +42,6 @@ namespace FPG.Demo.Tests.EditMode
                 40,
                 new TickDuration(18),
                 5000,
-                new TickDuration(30),
-                5000,
                 new TickDuration(20),
                 projectileBudgetCapacity,
                 projectileCapacity,

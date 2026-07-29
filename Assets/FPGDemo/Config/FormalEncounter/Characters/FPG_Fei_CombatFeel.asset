@@ -19,6 +19,4 @@ MonoBehaviour:
   secondaryAreaRadius: 3
   perfectRetractWindowTicks: 6
   perfectRetractMultiplierBasisPoints: 2500
-  barrierLockDurationTicks: 30
-  barrierRestoreBasisPoints: 10000
   enemyGroggyDurationTicks: 60

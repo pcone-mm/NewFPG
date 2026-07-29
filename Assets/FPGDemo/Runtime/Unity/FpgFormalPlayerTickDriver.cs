@@ -700,7 +700,7 @@ namespace FPG.Demo.Unity
                 frame,
                 tick,
                 skillExecutionController.RequiresExposureAt(tick));
-            if (!posture.IsSuccess && posture.RejectReason != RejectReason.BarrierLocked)
+            if (!posture.IsSuccess && posture.RejectReason != RejectReason.BarrierDepleted)
             {
                 return posture;
             }
@@ -788,7 +788,6 @@ namespace FPG.Demo.Unity
                 return DomainResult.Success;
             }
 
-            runtime.Player.Combatant.TryRestoreBarrier(tick);
             BattleTickInput tickInput = inputSource.GetTickInput(tick);
             if (!tickInput.IsValid || tickInput.Tick != tick)
             {
@@ -805,7 +804,7 @@ namespace FPG.Demo.Unity
                 tick,
                 skillExecutionController.RequiresExposureAt(tick));
             if (!posture.IsSuccess
-                && posture.RejectReason != RejectReason.BarrierLocked)
+                && posture.RejectReason != RejectReason.BarrierDepleted)
             {
                 return posture;
             }
@@ -2036,8 +2035,7 @@ namespace FPG.Demo.Unity
                 : player.Exposure.ApplyCombatPosture(
                     shouldExpose,
                     tick,
-                    player.Combatant.IsBarrierLocked(tick)
-                        || player.Combatant.Barrier <= 0,
+                    player.Combatant.Barrier <= 0,
                     out bool ignoredPostureChange);
 
             if (player.Exposure.State == PlayerExposureState.Withdrawn
@@ -2201,9 +2199,7 @@ namespace FPG.Demo.Unity
                     isCoverPeekRequested,
                     isCoverPeekRequested
                         ? coverPeekStartedTick
-                        : TickIndex.Invalid,
-                    tick.IsValid
-                        && player.Combatant.IsBarrierLocked(tick)));
+                        : TickIndex.Invalid));
         }
 
         public void ResetRuntimeState()

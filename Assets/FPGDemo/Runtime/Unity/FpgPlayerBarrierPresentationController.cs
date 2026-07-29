@@ -87,8 +87,7 @@ namespace FPG.Demo.Unity
             in FpgFormalPlayerPresentationSnapshot snapshot)
         {
             return snapshot.IsCombatActive
-                && snapshot.Barrier > 0
-                && !snapshot.IsBarrierLocked;
+                && snapshot.Barrier > 0;
         }
 
         public static bool ShouldShowCover(

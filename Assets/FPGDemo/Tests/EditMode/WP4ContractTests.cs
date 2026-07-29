@@ -868,8 +868,6 @@ namespace FPG.Demo.Tests.EditMode
                 source.EnemyBreak,
                 source.PerfectRetractWindow,
                 source.PerfectRetractMultiplierBasisPoints,
-                source.BarrierLockDuration,
-                source.BarrierRestoreBasisPoints,
                 source.EnemyGroggyDuration,
                 source.ProjectileBudgetCapacity,
                 source.ProjectileCapacity,

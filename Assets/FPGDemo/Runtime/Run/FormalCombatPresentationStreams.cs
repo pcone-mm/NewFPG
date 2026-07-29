@@ -8,7 +8,6 @@ namespace FPG.Demo.Run
     {
         Spawn = 0,
         Damage,
-        BarrierRestore,
         Death,
         Restart
     }

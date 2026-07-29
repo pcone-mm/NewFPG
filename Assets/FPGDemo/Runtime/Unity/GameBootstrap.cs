@@ -722,7 +722,6 @@ namespace FPG.Demo.Unity
 
             ActiveEncounterDirector?.DeactivateAndClearExits();
             if (!ActiveFormalSceneHost.TryCapturePlayerRunResources(
-                selectionEvent.Tick,
                 out FpgPlayerRunResourceState resources,
                 out string captureError))
             {

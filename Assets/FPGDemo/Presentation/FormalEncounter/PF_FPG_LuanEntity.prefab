@@ -172,8 +172,8 @@ Transform:
   m_GameObject: {fileID: 6684174484974473001}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.64, y: 4.53, z: 0}
-  m_LocalScale: {x: 2.1549513, y: 1.4080249, z: 1}
+  m_LocalPosition: {x: -2.052, y: 1.21, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6622456203144576302}
@@ -197,7 +197,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 6.2, y: 5.6, z: 0.38}
+  m_Size: {x: 3, y: 1.8, z: 0.38}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7330586324000684800
 GameObject:
@@ -250,9 +250,18 @@ MonoBehaviour:
   projectileAnchor: {fileID: 4396835713484727157}
   weakpointAnchor: {fileID: 8806544015064090275}
   overheadHealthBarAnchor: {fileID: 8806544015064090275}
+  socketRegistry: {fileID: 0}
   hitParts:
   - {fileID: 5508247598519997925}
   hitPartKinds: 00000000
+  hitPartFollowSettings:
+  - followMode: 0
+    boneName: 
+    keepAuthoredRotation: 0
+    positionOffset: {x: 0, y: 0, z: 0}
+    rotationOffsetEuler: {x: 0, y: 0, z: 0}
+  previewHitboxesInPlayMode: 1
+  skillWarningTint: {r: 1, g: 0.3, b: 0.12, a: 1}
   skeletonAnimation: {fileID: 2513147078046100123}
 --- !u!1 &8524543521040455939
 GameObject:
@@ -284,8 +293,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
   m_LocalPosition: {x: -2.15, y: 0.15, z: 1.55}
-  m_LocalScale: {x: 2.2, y: 2.2, z: 2.2}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 3211629801463726272}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -463,7 +472,7 @@ Transform:
   m_GameObject: {fileID: 9150767019621536483}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.11, y: 3.67, z: 1.55}
+  m_LocalPosition: {x: -2.1, y: 1.38, z: 1.55}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -488,5 +497,5 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 1.38
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}

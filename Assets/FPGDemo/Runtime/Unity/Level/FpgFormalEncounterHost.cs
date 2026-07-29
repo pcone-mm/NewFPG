@@ -252,17 +252,6 @@ namespace FPG.Demo.Unity
             out FpgPlayerRunResourceState state,
             out string error)
         {
-            TickIndex tick = encounterDirector == null
-                ? TickIndex.Invalid
-                : encounterDirector.CurrentTick;
-            return TryCapturePlayerRunResources(tick, out state, out error);
-        }
-
-        public bool TryCapturePlayerRunResources(
-            TickIndex currentTick,
-            out FpgPlayerRunResourceState state,
-            out string error)
-        {
             FpgFormalCombatRuntimeBundle runtime = CombatRuntime;
             D0CharacterDefinition definition = ActivePlayerDefinition;
             string characterId = definition == null
@@ -277,7 +266,6 @@ namespace FPG.Demo.Unity
                     : runtime.Player,
                 characterId,
                 weaponId,
-                currentTick,
                 out state);
             error = result.IsSuccess
                 ? string.Empty

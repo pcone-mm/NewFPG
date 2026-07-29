@@ -584,7 +584,7 @@ namespace FPG.Demo.Tests.EditMode
             WeaponReleaseBuffer output = new WeaponReleaseBuffer();
 
             ProcessPrimary(weapon, exposure, ids, output, 0L);
-            DomainResult lockedPosture = exposure.ApplyCombatPosture(
+            DomainResult depletedPosture = exposure.ApplyCombatPosture(
                 false,
                 new TickIndex(1L),
                 true,
@@ -592,8 +592,8 @@ namespace FPG.Demo.Tests.EditMode
 
             AssertAll(() =>
             {
-                Assert.That(lockedPosture.IsSuccess, Is.False);
-                Assert.That(lockedPosture.RejectReason, Is.EqualTo(RejectReason.BarrierLocked));
+                Assert.That(depletedPosture.IsSuccess, Is.False);
+                Assert.That(depletedPosture.RejectReason, Is.EqualTo(RejectReason.BarrierDepleted));
                 Assert.That(postureChanged, Is.False);
                 Assert.That(exposure.State, Is.EqualTo(PlayerExposureState.Exposed));
             });

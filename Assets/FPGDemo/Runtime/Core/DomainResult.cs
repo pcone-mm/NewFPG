@@ -10,7 +10,7 @@ namespace FPG.Demo.Core
         ExpiredSequence,
         NotEnoughAmmo,
         NotExposed,
-        BarrierLocked,
+        BarrierDepleted,
         ActionLocked,
         Cooldown,
         AlreadyTerminal,

@@ -975,20 +975,6 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(reason);
             }
 
-            bool barrierRestored = Player.Combatant.TryRestoreBarrier(tick);
-            if (barrierRestored)
-            {
-                combatKernel.Trace.Record(
-                    tick,
-                    CombatEventType.ExposureChanged,
-                    Player.RuntimeId,
-                    Player.RuntimeId,
-                    AttackId.Invalid,
-                    ImpactId.Invalid,
-                    0,
-                    Player.Combatant.Barrier);
-            }
-
             if (Enemy.AdvanceStartOfTick(tick))
             {
                 combatKernel.Trace.Record(
@@ -1022,7 +1008,7 @@ namespace FPG.Demo.Run
                 : Player.Exposure.ApplyCombatPosture(
                     shouldExpose,
                     tick,
-                    Player.Combatant.IsBarrierLocked(tick) || Player.Combatant.Barrier <= 0,
+                    Player.Combatant.Barrier <= 0,
                     out exposureChanged);
             WeaponState weaponBeforeExposureCancel = Player.Weapon.State;
             if (Player.Exposure.State == PlayerExposureState.Withdrawn
@@ -1584,9 +1570,7 @@ namespace FPG.Demo.Run
             {
                 DefenseSnapshot defense = Player.Exposure.CreateDefenseSnapshot(
                     Definition.PerfectRetractWindow,
-                    Definition.PerfectRetractMultiplierBasisPoints,
-                    Definition.BarrierLockDuration,
-                    Definition.BarrierRestoreBasisPoints);
+                    Definition.PerfectRetractMultiplierBasisPoints);
                 resolution = combatKernel.DamageResolver.ResolveCombatant(
                     intent,
                     Player.Combatant,

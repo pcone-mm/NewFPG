@@ -45,14 +45,6 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)]
         private int perfectRetractMultiplierBasisPoints = 2500;
 
-        [D0PlannerField("护盾破裂锁定（Tick）", "掩体护盾被打空后，不能恢复的锁定时长。单位为 Tick；锁定结束后按护盾恢复比例恢复。")]
-        [SerializeField, Min(1)]
-        private int barrierLockDurationTicks = 30;
-
-        [D0PlannerField("护盾恢复比例（万分比）", "护盾破裂锁定结束时恢复到护盾上限的比例。10000 表示恢复满值，5000 表示恢复 50%；10000 及以上都会回满，且不会超过护盾上限。")]
-        [SerializeField, Min(0)]
-        private int barrierRestoreBasisPoints = 10000;
-
         [D0PlannerField("敌人瘫痪时长（Tick）", "敌人韧性归零后保持瘫痪状态的时长。单位为 Tick；当前 D0 默认时钟为 60 Tick/秒。")]
         [SerializeField, Min(1)]
         private int enemyGroggyDurationTicks = 60;
@@ -63,8 +55,6 @@ namespace FPG.Demo.Unity
         public float SecondaryAreaRadius => secondaryAreaRadius;
         public TickDuration PerfectRetractWindow => new TickDuration(perfectRetractWindowTicks);
         public int PerfectRetractMultiplierBasisPoints => perfectRetractMultiplierBasisPoints;
-        public TickDuration BarrierLockDuration => new TickDuration(barrierLockDurationTicks);
-        public int BarrierRestoreBasisPoints => barrierRestoreBasisPoints;
         public TickDuration EnemyGroggyDuration => new TickDuration(enemyGroggyDurationTicks);
 
         public bool TryCreateAttackQuerySettings(
@@ -199,8 +189,6 @@ namespace FPG.Demo.Unity
                 || !IsFinitePositive(secondaryAreaRadius)
                 || perfectRetractWindowTicks <= 0
                 || perfectRetractMultiplierBasisPoints < 0
-                || barrierLockDurationTicks <= 0
-                || barrierRestoreBasisPoints < 0
                 || enemyGroggyDurationTicks <= 0)
             {
                 error = "Combat-feel profile contains invalid tuning values.";

@@ -10,16 +10,22 @@ namespace FPG.Demo.Unity
         public D0EnemyHitboxBoneFollowTarget(
             Transform target,
             string boneName,
-            bool followBoneRotation)
+            bool followBoneRotation,
+            Vector3 positionOffset,
+            Quaternion rotationOffset)
         {
             Target = target;
             BoneName = boneName;
             FollowBoneRotation = followBoneRotation;
+            PositionOffset = positionOffset;
+            RotationOffset = rotationOffset;
         }
 
         public Transform Target { get; }
         public string BoneName { get; }
         public bool FollowBoneRotation { get; }
+        public Vector3 PositionOffset { get; }
+        public Quaternion RotationOffset { get; }
     }
 
     /// <summary>
@@ -39,6 +45,9 @@ namespace FPG.Demo.Unity
             public Bone Bone;
             public Vector3 PositionOffset;
             public Quaternion RotationOffset;
+            public Vector3 AdditionalPositionOffset;
+            public Quaternion AdditionalRotationOffset;
+            public bool HasAdditionalRotationOffset;
             public Vector3 AuthoredLocalPosition;
             public Quaternion AuthoredLocalRotation;
             public Vector3 AuthoredWorldPosition;
@@ -162,6 +171,13 @@ namespace FPG.Demo.Unity
                     return false;
                 }
 
+                if (!IsFinite(target.PositionOffset)
+                    || !IsFinite(target.RotationOffset))
+                {
+                    error = $"Enemy hitbox bone-follow target {index} has a non-finite configured offset.";
+                    return false;
+                }
+
                 bindings[index] = new Binding
                 {
                     Target = target.Target,
@@ -171,6 +187,11 @@ namespace FPG.Demo.Unity
                     Bone = bone,
                     PositionOffset = positionOffset,
                     RotationOffset = rotationOffset,
+                    AdditionalPositionOffset = target.PositionOffset,
+                    AdditionalRotationOffset = target.RotationOffset,
+                    HasAdditionalRotationOffset = Mathf.Abs(Quaternion.Dot(
+                        target.RotationOffset,
+                        Quaternion.identity)) < 0.999999f,
                     AuthoredLocalPosition = target.Target.localPosition,
                     AuthoredLocalRotation = target.Target.localRotation,
                     AuthoredWorldPosition = target.Target.position,
@@ -285,12 +306,23 @@ namespace FPG.Demo.Unity
                 }
 
                 Vector3 targetPosition = bonePosition
-                    + boneRotation * binding.PositionOffset;
+                    + boneRotation * (
+                        binding.PositionOffset
+                        + binding.AdditionalPositionOffset);
                 if (binding.FollowBoneRotation)
                 {
                     binding.Target.SetPositionAndRotation(
                         targetPosition,
-                        boneRotation * binding.RotationOffset);
+                        boneRotation
+                        * binding.RotationOffset
+                        * binding.AdditionalRotationOffset);
+                }
+                else if (binding.HasAdditionalRotationOffset)
+                {
+                    binding.Target.SetPositionAndRotation(
+                        targetPosition,
+                        binding.AuthoredWorldRotation
+                        * binding.AdditionalRotationOffset);
                 }
                 else
                 {

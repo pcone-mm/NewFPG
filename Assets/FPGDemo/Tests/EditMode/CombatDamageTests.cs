@@ -60,7 +60,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void WithdrawnPlayerUsesBarrierWithEndExclusivePerfectWindowAndRestoresAtLockBoundary()
+        public void WithdrawnPlayerUsesBarrierWithEndExclusivePerfectWindowAndStaysDepletedAfterBreak()
         {
             CombatantState player = new CombatantState(
                 new RuntimeId(2L),
@@ -73,8 +73,6 @@ namespace FPG.Demo.Tests.EditMode
                 ExposureMode.Withdrawn,
                 new TickIndex(10L),
                 new TickDuration(3),
-                5000,
-                new TickDuration(5),
                 5000);
 
             ImpactResolution insideWindow = resolver.ResolveCombatant(
@@ -104,30 +102,20 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(barrierBreak.Packet.AppliedAmount, Is.EqualTo(10));
                 Assert.That(player.Life, Is.EqualTo(100));
                 Assert.That(player.Barrier, Is.Zero);
-                Assert.That(player.BarrierLockUntilTick, Is.EqualTo(new TickIndex(19L)));
-                Assert.That(player.IsBarrierLocked(new TickIndex(18L)), Is.True);
-                Assert.That(player.IsBarrierLocked(new TickIndex(19L)), Is.False);
             });
 
-            Assert.That(player.TryRestoreBarrier(new TickIndex(18L)), Is.False);
-            Assert.That(player.TryRestoreBarrier(new TickIndex(19L)), Is.True);
-            AssertAll(() =>
-            {
-                Assert.That(player.Barrier, Is.EqualTo(20));
-                Assert.That(player.BarrierLockUntilTick, Is.EqualTo(TickIndex.Invalid));
-            });
-
-            ImpactResolution exposedHit = resolver.ResolveCombatant(
+            ImpactResolution laterWithdrawnHit = resolver.ResolveCombatant(
                 CreateIntent(4L, player.RuntimeId, new TickIndex(19L), new DamageSpec(15, 0)),
                 player,
-                DefenseSnapshot.Exposed,
+                defense,
                 false);
 
             AssertAll(() =>
             {
-                Assert.That(exposedHit.Packet.Channel, Is.EqualTo(DamageChannel.Life));
+                Assert.That(laterWithdrawnHit.Packet.Channel, Is.EqualTo(DamageChannel.Life));
+                Assert.That(laterWithdrawnHit.PerfectRetract, Is.False);
                 Assert.That(player.Life, Is.EqualTo(85));
-                Assert.That(player.Barrier, Is.EqualTo(20));
+                Assert.That(player.Barrier, Is.Zero);
             });
         }
 
@@ -145,8 +133,6 @@ namespace FPG.Demo.Tests.EditMode
                 ExposureMode.Withdrawn,
                 new TickIndex(5L),
                 new TickDuration(3),
-                5000,
-                new TickDuration(5),
                 5000);
 
             ImpactResolution hit = resolver.ResolveCombatant(

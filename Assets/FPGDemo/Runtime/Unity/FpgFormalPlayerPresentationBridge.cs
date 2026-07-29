@@ -2336,8 +2336,7 @@ namespace FPG.Demo.Unity
                 fallback.SecondaryChargeProgress,
                 fallback.SecondaryChargeStartedTick,
                 fallback.IsCoverPeekRequested,
-                fallback.CoverPeekStartedTick,
-                fallback.IsBarrierLocked);
+                fallback.CoverPeekStartedTick);
         }
 
         private void ResetEventCursors()

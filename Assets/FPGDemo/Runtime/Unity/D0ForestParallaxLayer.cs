@@ -3,40 +3,56 @@ using UnityEngine;
 namespace FPG.Demo.Unity
 {
     /// <summary>
-    /// Per-layer authored base position and safe viewport offset. This concrete
-    /// MonoBehaviour intentionally lives in its own same-named source file so
-    /// Unity serializes stable scene references across domain and scene reloads.
+    /// Applies a safe viewport offset relative to the layer's authored
+    /// Transform. The base position is captured in memory at runtime so the
+    /// Transform remains the single authoring source of truth.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class D0ForestParallaxLayer : MonoBehaviour
     {
-        [SerializeField]
-        private Vector3 baseLocalPosition;
+        private Vector3 runtimeBaseLocalPosition;
+        private bool hasRuntimeBaseLocalPosition;
 
         [SerializeField]
         private Vector2 viewportOffsetMultiplier;
 
-        public Vector3 BaseLocalPosition => baseLocalPosition;
+        public Vector3 BaseLocalPosition => hasRuntimeBaseLocalPosition
+            ? runtimeBaseLocalPosition
+            : transform.localPosition;
 
         public Vector2 ViewportOffsetMultiplier => viewportOffsetMultiplier;
 
         public void Configure(Vector3 basePosition, Vector2 offsetMultiplier)
         {
-            baseLocalPosition = basePosition;
+            runtimeBaseLocalPosition = basePosition;
+            hasRuntimeBaseLocalPosition = true;
             viewportOffsetMultiplier = offsetMultiplier;
             ResetToBasePosition();
         }
 
         public void ApplyViewport(Vector2 viewport)
         {
-            transform.localPosition = baseLocalPosition + ComputeOffset(
+            CaptureBaseLocalPosition();
+            transform.localPosition = runtimeBaseLocalPosition + ComputeOffset(
                 viewport,
                 viewportOffsetMultiplier);
         }
 
         public void ResetToBasePosition()
         {
-            transform.localPosition = baseLocalPosition;
+            CaptureBaseLocalPosition();
+            transform.localPosition = runtimeBaseLocalPosition;
+        }
+
+        internal void CaptureBaseLocalPosition()
+        {
+            if (hasRuntimeBaseLocalPosition)
+            {
+                return;
+            }
+
+            runtimeBaseLocalPosition = transform.localPosition;
+            hasRuntimeBaseLocalPosition = true;
         }
 
         public static Vector3 ComputeOffset(Vector2 viewport, Vector2 multiplier)

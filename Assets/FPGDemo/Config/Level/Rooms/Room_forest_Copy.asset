@@ -48,6 +48,11 @@ MonoBehaviour:
     localPosition: {x: -2, y: 1, z: 14}
     localEulerAngles: {x: 0, y: 180, z: 0}
     role: 0
+  - markerId: enemy-main
+    displayName: Enemy Spawn 04
+    localPosition: {x: 0, y: 1, z: 6.5}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    role: 0
   - markerId: enemy-any-04
     displayName: Enemy Spawn 04
     localPosition: {x: 2, y: 1, z: 14}
@@ -57,7 +62,7 @@ MonoBehaviour:
   reachablePoints:
   - markerId: reachable-01
     displayName: "\u53EF\u5230\u8FBE\u70B9 1"
-    localPosition: {x: 4, y: 0.5, z: -0}
+    localPosition: {x: 5.5, y: 0.5, z: -0}
     localEulerAngles: {x: -0, y: 333.4756, z: -0}
     audience: 3
   - markerId: reachable-02
@@ -67,6 +72,6 @@ MonoBehaviour:
     audience: 3
   - markerId: reachable-03
     displayName: "\u53EF\u5230\u8FBE\u70B9 3"
-    localPosition: {x: -3.5, y: 0.5, z: -0}
+    localPosition: {x: -6, y: 0.5, z: -0}
     localEulerAngles: {x: -0, y: 334.68982, z: -0}
     audience: 3

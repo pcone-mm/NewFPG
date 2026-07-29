@@ -44,10 +44,10 @@ namespace FPG.Demo.Player
         public DomainResult ApplyAim(
             bool aimHeld,
             TickIndex currentTick,
-            bool barrierLocked,
+            bool barrierDepleted,
             out bool changed)
         {
-            return ApplyCombatPosture(aimHeld, currentTick, barrierLocked, out changed);
+            return ApplyCombatPosture(aimHeld, currentTick, barrierDepleted, out changed);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace FPG.Demo.Player
         public DomainResult ApplyCombatPosture(
             bool shouldExpose,
             TickIndex currentTick,
-            bool barrierLocked,
+            bool barrierDepleted,
             out bool changed)
         {
             changed = false;
@@ -69,10 +69,10 @@ namespace FPG.Demo.Player
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
-            if (!shouldExpose && barrierLocked)
+            if (!shouldExpose && barrierDepleted)
             {
                 ForceExposed(currentTick, out changed);
-                return DomainResult.Rejected(RejectReason.BarrierLocked);
+                return DomainResult.Rejected(RejectReason.BarrierDepleted);
             }
 
             PlayerExposureState requested = shouldExpose
@@ -160,9 +160,7 @@ namespace FPG.Demo.Player
 
         public DefenseSnapshot CreateDefenseSnapshot(
             TickDuration perfectWindow,
-            int perfectBarrierMultiplierBasisPoints,
-            TickDuration barrierLockDuration,
-            int barrierRestoreBasisPoints)
+            int perfectBarrierMultiplierBasisPoints)
         {
             ExposureMode exposure = State == PlayerExposureState.Withdrawn
                 ? ExposureMode.Withdrawn
@@ -172,9 +170,7 @@ namespace FPG.Demo.Player
                 exposure,
                 WithdrawnSinceTick,
                 perfectWindow,
-                perfectBarrierMultiplierBasisPoints,
-                barrierLockDuration,
-                barrierRestoreBasisPoints);
+                perfectBarrierMultiplierBasisPoints);
         }
     }
 }

@@ -65,6 +65,18 @@ namespace FPG.Demo.Unity
             }
         }
 
+        protected override void FixedUpdate()
+        {
+            if (!officialStartCompleted
+                || skeletonComponent == null
+                || skeletonComponent.Skeleton == null)
+            {
+                return;
+            }
+
+            base.FixedUpdate();
+        }
+
         protected override void OnDisable()
         {
             hasCapturedWorldPosition = false;

@@ -9,31 +9,22 @@ namespace FPG.Demo.Combat
             RuntimeId runtimeId,
             int life,
             int barrier,
-            int breakValue,
-            TickIndex barrierLockUntilTick,
-            int barrierRestoreBasisPoints)
+            int breakValue)
         {
             RuntimeId = runtimeId;
             Life = life;
             Barrier = barrier;
             Break = breakValue;
-            BarrierLockUntilTick = barrierLockUntilTick;
-            BarrierRestoreBasisPoints = barrierRestoreBasisPoints;
         }
 
         public RuntimeId RuntimeId { get; }
         public int Life { get; }
         public int Barrier { get; }
         public int Break { get; }
-        public TickIndex BarrierLockUntilTick { get; }
-        public int BarrierRestoreBasisPoints { get; }
     }
 
     public sealed class CombatantState
     {
-        private TickIndex barrierLockUntilTick = TickIndex.Invalid;
-        private int barrierRestoreBasisPoints = DamageSpec.BasisPoints;
-
         public CombatantState(
             RuntimeId runtimeId,
             CombatantKind kind,
@@ -80,26 +71,6 @@ namespace FPG.Demo.Combat
         public int Barrier { get; private set; }
         public int Break { get; private set; }
         public bool IsDead => Life <= 0;
-        public TickIndex BarrierLockUntilTick => barrierLockUntilTick;
-
-        public bool IsBarrierLocked(TickIndex currentTick)
-        {
-            return barrierLockUntilTick.IsValid && currentTick < barrierLockUntilTick;
-        }
-
-        public bool TryRestoreBarrier(TickIndex currentTick)
-        {
-            if (!barrierLockUntilTick.IsValid || currentTick < barrierLockUntilTick)
-            {
-                return false;
-            }
-
-            Barrier = Math.Min(
-                MaxBarrier,
-                DamageResolver.RoundBasisPoints(MaxBarrier, barrierRestoreBasisPoints));
-            barrierLockUntilTick = TickIndex.Invalid;
-            return true;
-        }
 
         public void RestoreBreakFull()
         {
@@ -147,9 +118,7 @@ namespace FPG.Demo.Combat
                 RuntimeId,
                 Life,
                 Barrier,
-                Break,
-                barrierLockUntilTick,
-                barrierRestoreBasisPoints);
+                Break);
         }
 
         public DomainResult RestoreResources(in CombatantResourceSnapshot snapshot)
@@ -157,8 +126,7 @@ namespace FPG.Demo.Combat
             if (snapshot.RuntimeId != RuntimeId
                 || snapshot.Life < 0 || snapshot.Life > MaxLife
                 || snapshot.Barrier < 0 || snapshot.Barrier > MaxBarrier
-                || snapshot.Break < 0 || snapshot.Break > MaxBreak
-                || snapshot.BarrierRestoreBasisPoints < 0)
+                || snapshot.Break < 0 || snapshot.Break > MaxBreak)
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
@@ -166,19 +134,7 @@ namespace FPG.Demo.Combat
             Life = snapshot.Life;
             Barrier = snapshot.Barrier;
             Break = snapshot.Break;
-            barrierLockUntilTick = snapshot.BarrierLockUntilTick;
-            barrierRestoreBasisPoints = snapshot.BarrierRestoreBasisPoints;
             return DomainResult.Success;
-        }
-
-        internal void BeginBarrierLock(
-            TickIndex currentTick,
-            TickDuration lockDuration,
-            int restoreBasisPoints)
-        {
-            Barrier = 0;
-            barrierLockUntilTick = currentTick + lockDuration;
-            barrierRestoreBasisPoints = Math.Max(0, restoreBasisPoints);
         }
     }
 }

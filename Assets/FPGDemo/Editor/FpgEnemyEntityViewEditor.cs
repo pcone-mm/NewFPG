@@ -1,6 +1,7 @@
 using FPG.Demo.Combat;
 using FPG.Demo.Unity;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
@@ -9,6 +10,13 @@ namespace FPG.Demo.Editor
     [CustomEditor(typeof(FpgEnemyEntityView))]
     internal sealed class FpgEnemyEntityViewEditor : UnityEditor.Editor
     {
+        private enum PrimitiveKind
+        {
+            Box,
+            Capsule,
+            Sphere
+        }
+
         private static readonly Color BodyFill =
             new Color(0.18f, 0.85f, 0.35f, 0.16f);
         private static readonly Color BodyOutline =
@@ -28,6 +36,7 @@ namespace FPG.Demo.Editor
         private SerializedProperty hitParts;
         private SerializedProperty hitPartKinds;
         private SerializedProperty hitPartFollowSettings;
+        private SerializedProperty previewHitboxesInPlayMode;
         private Collider activeHitbox;
 
         private void OnEnable()
@@ -36,6 +45,8 @@ namespace FPG.Demo.Editor
             hitPartKinds = serializedObject.FindProperty("hitPartKinds");
             hitPartFollowSettings = serializedObject.FindProperty(
                 "hitPartFollowSettings");
+            previewHitboxesInPlayMode = serializedObject.FindProperty(
+                "previewHitboxesInPlayMode");
             activeHitbox = hitParts.arraySize == 0
                 ? null
                 : hitParts.GetArrayElementAtIndex(0)
@@ -67,12 +78,14 @@ namespace FPG.Demo.Editor
                 "m_Script",
                 "hitParts",
                 "hitPartKinds",
-                "hitPartFollowSettings");
+                "hitPartFollowSettings",
+                "previewHitboxesInPlayMode");
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField(
                 "Hitbox Authoring",
                 EditorStyles.boldLabel);
+            DrawPlayModePreviewField();
             DrawHitPartList(view);
 
             if (serializedObject.ApplyModifiedProperties())
@@ -96,8 +109,25 @@ namespace FPG.Demo.Editor
             }
         }
 
+        private void DrawPlayModePreviewField()
+        {
+            EditorGUILayout.PropertyField(
+                previewHitboxesInPlayMode,
+                new GUIContent(
+                    "Play Mode Preview",
+                    "Show enabled hitboxes for every spawned enemy while playing."));
+            if (previewHitboxesInPlayMode.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "Body hitboxes are green and weakpoints are orange in the "
+                    + "Game and Scene views. Keep Gizmos enabled in that view.",
+                    MessageType.None);
+            }
+        }
+
         private void DrawHitPartList(FpgEnemyEntityView view)
         {
+            bool canEditStructure = CanEditPrefabStructure(view);
             bool kindsAreParallel = hitPartKinds.arraySize == 0
                 || hitPartKinds.arraySize == hitParts.arraySize;
             bool followSettingsAreParallel =
@@ -111,6 +141,7 @@ namespace FPG.Demo.Editor
                     MessageType.Error);
             }
 
+            int removeIndex = -1;
             for (int index = 0; index < hitParts.arraySize; index++)
             {
                 SerializedProperty colliderProperty =
@@ -149,6 +180,7 @@ namespace FPG.Demo.Editor
                         "Authored Transform (default)");
                 }
 
+                EditorGUILayout.BeginHorizontal();
                 using (new EditorGUI.DisabledScope(collider == null))
                 {
                     if (GUILayout.Button("Edit Bounds"))
@@ -157,7 +189,57 @@ namespace FPG.Demo.Editor
                     }
                 }
 
+                using (new EditorGUI.DisabledScope(!canEditStructure))
+                {
+                    if (GUILayout.Button(
+                            new GUIContent(
+                                "Delete",
+                                "Remove this binding and delete its Collider. "
+                                + "Standalone objects under "
+                                + "GameplayAnchor/Hitboxes are deleted too.")))
+                    {
+                        removeIndex = index;
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
+            }
+
+            if (removeIndex >= 0)
+            {
+                DeleteHitPart(view, removeIndex);
+                return;
+            }
+
+            bool cannotEditStructure = !canEditStructure
+                || !kindsAreParallel
+                || !followSettingsAreParallel;
+            using (new EditorGUI.DisabledScope(cannotEditStructure))
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Add Box"))
+                {
+                    AddHitPart(view, PrimitiveKind.Box);
+                }
+
+                if (GUILayout.Button("Add Capsule"))
+                {
+                    AddHitPart(view, PrimitiveKind.Capsule);
+                }
+
+                if (GUILayout.Button("Add Sphere"))
+                {
+                    AddHitPart(view, PrimitiveKind.Sphere);
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+
+            if (!canEditStructure)
+            {
+                EditorGUILayout.HelpBox(
+                    "Open this prefab in Prefab Mode to create or delete "
+                    + "hitbox objects.",
+                    MessageType.None);
             }
 
             if (hitPartFollowSettings.arraySize == 0
@@ -173,6 +255,273 @@ namespace FPG.Demo.Editor
                         hitPartFollowSettings.GetArrayElementAtIndex(index));
                 }
             }
+        }
+
+        private void AddHitPart(
+            FpgEnemyEntityView view,
+            PrimitiveKind kind)
+        {
+            if (!CanEditPrefabStructure(view)
+                || !HitPartArraysSupportStructureEdit())
+            {
+                return;
+            }
+
+            serializedObject.ApplyModifiedProperties();
+            serializedObject.Update();
+            int previousCount = hitParts.arraySize;
+            EnsureParallelArraysForStructureEdit(previousCount);
+
+            Transform hitboxRoot = EnsureHitboxRoot(view);
+            int suffix = previousCount + 1;
+            string objectName = $"HitPart_{kind}_{suffix}";
+            while (hitboxRoot.Find(objectName) != null)
+            {
+                suffix++;
+                objectName = $"HitPart_{kind}_{suffix}";
+            }
+
+            GameObject hitboxObject = new GameObject(objectName);
+            Undo.RegisterCreatedObjectUndo(
+                hitboxObject,
+                "Add formal enemy hitbox");
+            hitboxObject.layer = D0EnemyEntityView.HitboxLayer;
+            Undo.SetTransformParent(
+                hitboxObject.transform,
+                hitboxRoot,
+                "Parent formal enemy hitbox");
+
+            Collider template = ResolvePlacementTemplate(view);
+            if (template == null)
+            {
+                hitboxObject.transform.localPosition = Vector3.zero;
+                hitboxObject.transform.localRotation = Quaternion.identity;
+            }
+            else
+            {
+                hitboxObject.transform.SetPositionAndRotation(
+                    template.transform.position,
+                    template.transform.rotation);
+            }
+            hitboxObject.transform.localScale = Vector3.one;
+
+            Collider collider;
+            switch (kind)
+            {
+                case PrimitiveKind.Capsule:
+                    CapsuleCollider capsule =
+                        Undo.AddComponent<CapsuleCollider>(hitboxObject);
+                    capsule.direction = 1;
+                    capsule.radius = 0.5f;
+                    capsule.height = 1.5f;
+                    collider = capsule;
+                    break;
+                case PrimitiveKind.Sphere:
+                    SphereCollider sphere =
+                        Undo.AddComponent<SphereCollider>(hitboxObject);
+                    sphere.radius = 0.5f;
+                    collider = sphere;
+                    break;
+                default:
+                    BoxCollider box =
+                        Undo.AddComponent<BoxCollider>(hitboxObject);
+                    box.size = new Vector3(1.5f, 1.5f, 0.38f);
+                    collider = box;
+                    break;
+            }
+
+            collider.isTrigger = false;
+            collider.enabled = true;
+
+            Undo.RecordObject(view, "Add formal enemy hitbox binding");
+            serializedObject.Update();
+            int index = hitParts.arraySize;
+            hitParts.InsertArrayElementAtIndex(index);
+            hitParts.GetArrayElementAtIndex(index)
+                .objectReferenceValue = collider;
+            hitPartKinds.InsertArrayElementAtIndex(index);
+            hitPartKinds.GetArrayElementAtIndex(index)
+                .enumValueIndex = (int)HitPart.Body;
+            hitPartFollowSettings.InsertArrayElementAtIndex(index);
+            FpgEnemyHitboxFollowEditorFields.Reset(
+                hitPartFollowSettings.GetArrayElementAtIndex(index));
+            serializedObject.ApplyModifiedProperties();
+
+            RecordPrefabModification(view);
+            EditorUtility.SetDirty(collider);
+            FpgEnemyHitboxFollowEditorPreview.Rebuild(view);
+            SetActiveHitbox(collider, true);
+        }
+
+        private void DeleteHitPart(
+            FpgEnemyEntityView view,
+            int index)
+        {
+            if (!CanEditPrefabStructure(view)
+                || !HitPartArraysSupportStructureEdit()
+                || index < 0
+                || index >= hitParts.arraySize)
+            {
+                return;
+            }
+
+            Collider collider = hitParts.GetArrayElementAtIndex(index)
+                .objectReferenceValue as Collider;
+            int previousCount = hitParts.arraySize;
+            Undo.RecordObject(view, "Delete formal enemy hitbox");
+            DeleteArrayElement(hitParts, index);
+            if (hitPartKinds.arraySize == previousCount)
+            {
+                hitPartKinds.DeleteArrayElementAtIndex(index);
+            }
+            if (hitPartFollowSettings.arraySize == previousCount)
+            {
+                hitPartFollowSettings.DeleteArrayElementAtIndex(index);
+            }
+            serializedObject.ApplyModifiedProperties();
+
+            Collider nextActiveHitbox = activeHitbox == collider
+                ? ResolvePlacementTemplate(view)
+                : activeHitbox;
+            if (IsStandaloneHitboxObject(view, collider))
+            {
+                Undo.DestroyObjectImmediate(collider.gameObject);
+            }
+            else if (collider != null)
+            {
+                Undo.DestroyObjectImmediate(collider);
+            }
+            activeHitbox = nextActiveHitbox;
+
+            RecordPrefabModification(view);
+            FpgEnemyHitboxFollowEditorPreview.Rebuild(view);
+            SceneView.RepaintAll();
+        }
+
+        private bool HitPartArraysSupportStructureEdit()
+        {
+            return (hitPartKinds.arraySize == 0
+                    || hitPartKinds.arraySize == hitParts.arraySize)
+                && (hitPartFollowSettings.arraySize == 0
+                    || hitPartFollowSettings.arraySize == hitParts.arraySize);
+        }
+
+        private void EnsureParallelArraysForStructureEdit(int hitPartCount)
+        {
+            if (hitPartKinds.arraySize == 0 && hitPartCount > 0)
+            {
+                hitPartKinds.arraySize = hitPartCount;
+                for (int index = 0; index < hitPartCount; index++)
+                {
+                    hitPartKinds.GetArrayElementAtIndex(index)
+                        .enumValueIndex = (int)HitPart.Body;
+                }
+            }
+
+            if (hitPartFollowSettings.arraySize == 0
+                && hitPartCount > 0)
+            {
+                hitPartFollowSettings.arraySize = hitPartCount;
+                for (int index = 0; index < hitPartCount; index++)
+                {
+                    FpgEnemyHitboxFollowEditorFields.Reset(
+                        hitPartFollowSettings.GetArrayElementAtIndex(index));
+                }
+            }
+        }
+
+        private static void DeleteArrayElement(
+            SerializedProperty array,
+            int index)
+        {
+            int previousSize = array.arraySize;
+            array.DeleteArrayElementAtIndex(index);
+            if (array.arraySize == previousSize)
+            {
+                array.DeleteArrayElementAtIndex(index);
+            }
+        }
+
+        private Collider ResolvePlacementTemplate(FpgEnemyEntityView view)
+        {
+            if (activeHitbox != null
+                && TryGetHitPart(view, activeHitbox, out _))
+            {
+                return activeHitbox;
+            }
+
+            for (int index = 0; index < view.HitPartCount; index++)
+            {
+                if (view.TryGetHitPart(
+                        index,
+                        out Collider collider,
+                        out _))
+                {
+                    return collider;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform EnsureHitboxRoot(
+            FpgEnemyEntityView view)
+        {
+            Transform gameplayAnchor = view.GameplayAnchor;
+            Transform root = gameplayAnchor.Find("Hitboxes");
+            if (root != null)
+            {
+                return root;
+            }
+
+            GameObject rootObject = new GameObject("Hitboxes");
+            Undo.RegisterCreatedObjectUndo(
+                rootObject,
+                "Create formal enemy hitbox root");
+            Undo.SetTransformParent(
+                rootObject.transform,
+                gameplayAnchor,
+                "Parent formal enemy hitbox root");
+            rootObject.transform.localPosition = Vector3.zero;
+            rootObject.transform.localRotation = Quaternion.identity;
+            rootObject.transform.localScale = Vector3.one;
+            return rootObject.transform;
+        }
+
+        private static bool IsStandaloneHitboxObject(
+            FpgEnemyEntityView view,
+            Collider collider)
+        {
+            if (view == null || collider == null)
+            {
+                return false;
+            }
+
+            Transform hitboxRoot = view.GameplayAnchor.Find("Hitboxes");
+            if (hitboxRoot == null
+                || collider.transform.parent != hitboxRoot)
+            {
+                return false;
+            }
+
+            Component[] components = collider.GetComponents<Component>();
+            return components.Length == 2
+                && components[0] is Transform
+                && components[1] is Collider;
+        }
+
+        private static bool CanEditPrefabStructure(
+            FpgEnemyEntityView view)
+        {
+            if (view == null || EditorApplication.isPlaying)
+            {
+                return false;
+            }
+
+            PrefabStage prefabStage =
+                PrefabStageUtility.GetCurrentPrefabStage();
+            return prefabStage != null
+                && prefabStage.IsPartOfPrefabContents(view.gameObject);
         }
 
         private void OnSceneGUI()
@@ -324,17 +673,33 @@ namespace FPG.Demo.Editor
         [DrawGizmo(
             GizmoType.Selected
             | GizmoType.InSelectionHierarchy
+            | GizmoType.NonSelected
             | GizmoType.Pickable)]
         private static void DrawHitboxes(
             FpgEnemyEntityView view,
             GizmoType gizmoType)
         {
+            bool selected = (gizmoType & (
+                GizmoType.Selected
+                | GizmoType.InSelectionHierarchy)) != 0;
+            bool playModePreview = Application.isPlaying
+                && view.PreviewHitboxesInPlayMode;
+            if (!selected && !playModePreview)
+            {
+                return;
+            }
+
             for (int index = 0; index < view.HitPartCount; index++)
             {
                 if (!view.TryGetHitPart(
                         index,
                         out Collider collider,
                         out HitPart hitPart))
+                {
+                    continue;
+                }
+
+                if (playModePreview && !collider.enabled)
                 {
                     continue;
                 }

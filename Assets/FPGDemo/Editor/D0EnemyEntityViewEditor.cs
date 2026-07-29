@@ -38,6 +38,7 @@ namespace FPG.Demo.Editor
         private SerializedProperty weakpointGeometryId;
         private SerializedProperty hasWeakpoint;
         private SerializedProperty additionalBodyHitboxes;
+        private SerializedProperty previewHitboxesInPlayMode;
         private Collider activeHitbox;
 
         private void OnEnable()
@@ -50,6 +51,8 @@ namespace FPG.Demo.Editor
             weakpointGeometryId = serializedObject.FindProperty("weakpointGeometryId");
             hasWeakpoint = serializedObject.FindProperty("hasWeakpoint");
             additionalBodyHitboxes = serializedObject.FindProperty("additionalBodyHitboxes");
+            previewHitboxesInPlayMode = serializedObject.FindProperty(
+                "previewHitboxesInPlayMode");
             D0EnemyEntityView view = (D0EnemyEntityView)target;
             activeHitbox = view.BodyHitbox;
             Undo.undoRedoPerformed += HandleUndoRedo;
@@ -83,10 +86,12 @@ namespace FPG.Demo.Editor
                 "weakpointHitboxFollow",
                 "weakpointGeometryId",
                 "hasWeakpoint",
-                "additionalBodyHitboxes");
+                "additionalBodyHitboxes",
+                "previewHitboxesInPlayMode");
 
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Hitbox Authoring", EditorStyles.boldLabel);
+            DrawPlayModePreviewField();
             EditorGUILayout.HelpBox(
                 "The primary Body is the compatibility aim anchor and cannot be removed. "
                 + "Use the standard Move/Rotate tools and the bounds handles in Scene or Prefab Mode.",
@@ -138,6 +143,22 @@ namespace FPG.Demo.Editor
             else
             {
                 EditorGUILayout.HelpBox(error, MessageType.Error);
+            }
+        }
+
+        private void DrawPlayModePreviewField()
+        {
+            EditorGUILayout.PropertyField(
+                previewHitboxesInPlayMode,
+                new GUIContent(
+                    "Play Mode Preview",
+                    "Show enabled hitboxes for every spawned enemy while playing."));
+            if (previewHitboxesInPlayMode.boolValue)
+            {
+                EditorGUILayout.HelpBox(
+                    "Body hitboxes are green and weakpoints are orange in the "
+                    + "Game and Scene views. Keep Gizmos enabled in that view.",
+                    MessageType.None);
             }
         }
 
@@ -566,9 +587,23 @@ namespace FPG.Demo.Editor
             return false;
         }
 
-        [DrawGizmo(GizmoType.Selected | GizmoType.InSelectionHierarchy | GizmoType.Pickable)]
+        [DrawGizmo(
+            GizmoType.Selected
+            | GizmoType.InSelectionHierarchy
+            | GizmoType.NonSelected
+            | GizmoType.Pickable)]
         private static void DrawHitboxes(D0EnemyEntityView view, GizmoType gizmoType)
         {
+            bool selected = (gizmoType & (
+                GizmoType.Selected
+                | GizmoType.InSelectionHierarchy)) != 0;
+            bool playModePreview = Application.isPlaying
+                && view.PreviewHitboxesInPlayMode;
+            if (!selected && !playModePreview)
+            {
+                return;
+            }
+
             for (int index = 0; index < view.HitPartCount; index++)
             {
                 if (!view.TryGetHitPart(
@@ -576,6 +611,11 @@ namespace FPG.Demo.Editor
                         out Collider collider,
                         out HitPart hitPart,
                         out _))
+                {
+                    continue;
+                }
+
+                if (playModePreview && !collider.enabled)
                 {
                     continue;
                 }

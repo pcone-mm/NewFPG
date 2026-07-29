@@ -26,9 +26,30 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private bool keepAuthoredRotation;
 
+        [SerializeField]
+        private Vector3 positionOffset;
+
+        [SerializeField]
+        private Vector3 rotationOffsetEuler;
+
         public D0EnemyHitboxFollowMode FollowMode => followMode;
         public string BoneName => boneName;
         public bool FollowBoneRotation => !keepAuthoredRotation;
+        public Vector3 PositionOffset => positionOffset;
+        public Vector3 RotationOffsetEuler => rotationOffsetEuler;
+        public Quaternion RotationOffset => Quaternion.Euler(rotationOffsetEuler);
+        public bool HasFiniteOffsets => IsFinite(positionOffset)
+            && IsFinite(rotationOffsetEuler);
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
     }
 
     [Serializable]
@@ -90,6 +111,9 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private D0EnemyBodyHitboxBinding[] additionalBodyHitboxes = Array.Empty<D0EnemyBodyHitboxBinding>();
 
+        [SerializeField]
+        private bool previewHitboxesInPlayMode = true;
+
         private HitboxRegistry boundRegistry;
         private D0EnemyHitboxBoneFollowRuntime hitboxBoneFollowRuntime;
 
@@ -105,6 +129,7 @@ namespace FPG.Demo.Unity
         public int BodyGeometryId => bodyGeometryId;
         public int WeakpointGeometryId => weakpointGeometryId;
         public bool HasWeakpoint => hasWeakpoint;
+        public bool PreviewHitboxesInPlayMode => previewHitboxesInPlayMode;
         public int BodyHitboxCount => 1 + AdditionalBodyHitboxCount;
         public int HitPartCount => BodyHitboxCount + (hasWeakpoint ? 1 : 0);
         public int BoneFollowHitPartCount
@@ -518,7 +543,9 @@ namespace FPG.Demo.Unity
                 targets[targetIndex++] = new D0EnemyHitboxBoneFollowTarget(
                     target,
                     settings.BoneName,
-                    settings.FollowBoneRotation);
+                    settings.FollowBoneRotation,
+                    settings.PositionOffset,
+                    settings.RotationOffset);
             }
 
             return D0EnemyHitboxBoneFollowRuntime.TryCreate(
@@ -649,6 +676,12 @@ namespace FPG.Demo.Unity
             if (settings.FollowMode != D0EnemyHitboxFollowMode.SpineBone)
             {
                 error = $"Enemy entity {label} has an unsupported hitbox follow mode.";
+                return false;
+            }
+
+            if (!settings.HasFiniteOffsets)
+            {
+                error = $"Enemy entity {label} bone-follow offsets must be finite.";
                 return false;
             }
 

@@ -36,7 +36,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private FpgPlayerBarrierPresentationController cameraPreviewCover;
         private Camera cameraPreviewCamera;
         private D0ThreeCProfile cameraPreviewProfile;
-        private bool artPresentationBound;
         private FpgRoomMarkerKind? placementKind;
         private FpgRoomMarkerHandle selectedMarker;
         private bool cameraPreviewActive;
@@ -998,18 +997,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
-            FpgRoomArtPresentationContext context =
-                new FpgRoomArtPresentationContext(
-                    cameraPreviewCamera,
-                    roomArtRoot.MainDirectionalLight,
-                    null);
-            if (!roomArtRoot.TryBindPresentation(context, out error))
-            {
-                DestroyCameraPreviewObjects();
-                return false;
-            }
-
-            artPresentationBound = true;
             ApplyPreviewFlags(cameraPreviewRoot);
             cameraPreviewCamera.enabled = true;
             EditorApplication.QueuePlayerLoopUpdate();
@@ -1233,12 +1220,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void DestroyCameraPreviewObjects()
         {
-            if (artPresentationBound && roomArtRoot != null)
-            {
-                roomArtRoot.UnbindPresentation();
-            }
-
-            artPresentationBound = false;
             cameraPreviewPlayer = null;
             cameraPreviewCover = null;
             cameraPreviewCamera = null;

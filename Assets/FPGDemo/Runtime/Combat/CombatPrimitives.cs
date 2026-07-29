@@ -323,30 +323,22 @@ namespace FPG.Demo.Combat
             ExposureMode exposure,
             TickIndex withdrawnSinceTick,
             TickDuration perfectWindow,
-            int perfectBarrierMultiplierBasisPoints,
-            TickDuration barrierLockDuration,
-            int barrierRestoreBasisPoints)
+            int perfectBarrierMultiplierBasisPoints)
         {
             Exposure = exposure;
             WithdrawnSinceTick = withdrawnSinceTick;
             PerfectWindow = perfectWindow;
             PerfectBarrierMultiplierBasisPoints = perfectBarrierMultiplierBasisPoints;
-            BarrierLockDuration = barrierLockDuration;
-            BarrierRestoreBasisPoints = barrierRestoreBasisPoints;
         }
 
         public ExposureMode Exposure { get; }
         public TickIndex WithdrawnSinceTick { get; }
         public TickDuration PerfectWindow { get; }
         public int PerfectBarrierMultiplierBasisPoints { get; }
-        public TickDuration BarrierLockDuration { get; }
-        public int BarrierRestoreBasisPoints { get; }
 
         public static DefenseSnapshot Exposed => new DefenseSnapshot(
             ExposureMode.Exposed,
             TickIndex.Invalid,
-            TickDuration.Zero,
-            DamageSpec.BasisPoints,
             TickDuration.Zero,
             DamageSpec.BasisPoints);
     }

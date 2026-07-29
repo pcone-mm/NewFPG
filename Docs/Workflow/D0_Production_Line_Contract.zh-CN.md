@@ -74,7 +74,7 @@ CZN 资源导入不是本合同的替代品，而是“源文件与 Spine 交付
 
 运行时规则：准星和输入缓冲由 3C Profile 应用；攻击查询最大距离由 3C Profile 覆盖。Fei 攻击或瞄准时，只把 `PeekRoot` 沿本地 `+X` 移动 `1.35`；`GameplayRoot`、命中体、CharacterController、AimAnchor、CameraPivot 与权威 `SocketRegistry` 不移动。尚未完成 `0.08s` 探身时，正式输入门控按原始 InputSequence 暂存首发，最多等待 5 个 60Hz Tick；快速点按也会完成该发，并于开火后的下一 Tick 归位。表现枪口代理只改变 VFX 和射击轨迹的显示起点，攻击查询、投射物路径、碰撞与命中位置仍使用权威锚点。
 
-`CoverRoot` 是无 Collider/Rigidbody 的纯表现掩体。护盾有效且未锁定时墙体留在原位，角色从右侧探出；护盾耗尽或锁定时墙体同 Tick 隐藏，轮廓按 3C 淡出。普通有盾状态在最后实际攻击 Tick 后恢复 `Withdrawn`；破盾/锁定是已确认例外：松开后视觉仍瞬时归位，但确定性承伤状态继续保持 `Exposed`。暂停冻结当前过渡，终局、解绑、禁用与重启必须立即隐藏墙并恢复 authored 姿态。
+`CoverRoot` 是无 Collider/Rigidbody 的纯表现掩体。护盾有效时墙体留在原位，角色从右侧探出；护盾耗尽时墙体同 Tick 隐藏，轮廓按 3C 淡出。普通有盾状态在最后实际攻击 Tick 后恢复 `Withdrawn`；破盾是已确认例外：松开后视觉仍瞬时归位，但确定性承伤状态继续保持 `Exposed`，护盾值保持为 0。暂停冻结当前过渡，终局、解绑、禁用与重启必须立即隐藏墙并恢复 authored 姿态。
 
 ## Burstbug 行为与招式配置流程
 

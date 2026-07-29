@@ -82,8 +82,7 @@ namespace FPG.Demo.Unity
                 secondaryChargeProgress,
                 secondaryChargeStartedTick,
                 false,
-                TickIndex.Invalid,
-                false)
+                TickIndex.Invalid)
         {
         }
 
@@ -104,8 +103,7 @@ namespace FPG.Demo.Unity
             float secondaryChargeProgress,
             TickIndex secondaryChargeStartedTick,
             bool isCoverPeekRequested,
-            TickIndex coverPeekStartedTick,
-            bool isBarrierLocked)
+            TickIndex coverPeekStartedTick)
         {
             Tick = tick;
             PlayerRuntimeId = playerRuntimeId;
@@ -132,7 +130,6 @@ namespace FPG.Demo.Unity
             CoverPeekStartedTick = isCoverPeekRequested
                 ? coverPeekStartedTick
                 : TickIndex.Invalid;
-            IsBarrierLocked = isBarrierLocked;
         }
 
         public static FpgFormalPlayerPresentationSnapshot Unavailable =>
@@ -167,7 +164,6 @@ namespace FPG.Demo.Unity
         public TickIndex SecondaryChargeStartedTick { get; }
         public bool IsCoverPeekRequested { get; }
         public TickIndex CoverPeekStartedTick { get; }
-        public bool IsBarrierLocked { get; }
 
         public bool IsValid => PlayerRuntimeId.IsValid
             && MaxLife > 0

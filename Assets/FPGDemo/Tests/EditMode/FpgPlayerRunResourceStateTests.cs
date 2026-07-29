@@ -9,7 +9,7 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class FpgPlayerRunResourceStateTests
     {
         [Test]
-        public void CaptureAndRestore_RebasesBarrierLockAndDropsTransientState()
+        public void CaptureAndRestore_CarriesCurrentResourcesAndDropsTransientState()
         {
             PlayerRuntime source = CreatePlayer(1);
             Assert.That(
@@ -18,9 +18,7 @@ namespace FPG.Demo.Tests.EditMode
                         source.RuntimeId,
                         73,
                         0,
-                        0,
-                        new TickIndex(110L),
-                        4500)).IsSuccess,
+                        0)).IsSuccess,
                 Is.True);
             Assert.That(source.Weapon.Magazine.RestoreAmmo(3).IsSuccess, Is.True);
 
@@ -28,15 +26,12 @@ namespace FPG.Demo.Tests.EditMode
                 source,
                 "fei",
                 "fei-weapon",
-                new TickIndex(100L),
                 out FpgPlayerRunResourceState state);
 
             Assert.That(captured.IsSuccess, Is.True);
             Assert.That(state.Life, Is.EqualTo(73));
             Assert.That(state.Barrier, Is.Zero);
             Assert.That(state.Ammo, Is.EqualTo(3));
-            Assert.That(state.RemainingBarrierLockTicks, Is.EqualTo(10));
-            Assert.That(state.BarrierRestoreBasisPoints, Is.EqualTo(4500));
 
             PlayerRuntime target = CreatePlayer(2);
             DomainResult restored =
@@ -49,10 +44,6 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(restored.IsSuccess, Is.True);
             Assert.That(target.Combatant.Life, Is.EqualTo(73));
             Assert.That(target.Combatant.Barrier, Is.Zero);
-            Assert.That(target.Combatant.BarrierLockUntilTick.Value, Is.EqualTo(10L));
-            Assert.That(target.Combatant.IsBarrierLocked(new TickIndex(9L)), Is.True);
-            Assert.That(target.Combatant.TryRestoreBarrier(new TickIndex(10L)), Is.True);
-            Assert.That(target.Combatant.Barrier, Is.EqualTo(45));
             Assert.That(target.Weapon.Magazine.Ammo, Is.EqualTo(3));
             Assert.That(target.Weapon.State, Is.EqualTo(WeaponState.Ready));
             Assert.That(target.Weapon.LastProcessedTick, Is.EqualTo(TickIndex.Invalid));
@@ -61,7 +52,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void Capture_ExpiredBarrierLockNormalizesRestoredBarrier()
+        public void CaptureAndRestore_PreservesCurrentNonZeroBarrier()
         {
             PlayerRuntime source = CreatePlayer(1);
             Assert.That(
@@ -69,22 +60,31 @@ namespace FPG.Demo.Tests.EditMode
                     new CombatantResourceSnapshot(
                         source.RuntimeId,
                         80,
-                        0,
-                        0,
-                        new TickIndex(20L),
-                        5000)).IsSuccess,
+                        25,
+                        0)).IsSuccess,
                 Is.True);
 
             DomainResult captured = FpgPlayerRunResourceTransfer.TryCapture(
                 source,
                 "fei",
                 "fei-weapon",
-                new TickIndex(20L),
                 out FpgPlayerRunResourceState state);
 
             Assert.That(captured.IsSuccess, Is.True);
-            Assert.That(state.Barrier, Is.EqualTo(50));
-            Assert.That(state.RemainingBarrierLockTicks, Is.Zero);
+            Assert.That(state.Life, Is.EqualTo(80));
+            Assert.That(state.Barrier, Is.EqualTo(25));
+
+            PlayerRuntime target = CreatePlayer(2);
+            DomainResult restored =
+                FpgPlayerRunResourceTransfer.TryRestoreRoomEntry(
+                    target,
+                    "fei",
+                    "fei-weapon",
+                    state);
+
+            Assert.That(restored.IsSuccess, Is.True);
+            Assert.That(target.Combatant.Life, Is.EqualTo(80));
+            Assert.That(target.Combatant.Barrier, Is.EqualTo(25));
         }
 
         [Test]
@@ -96,9 +96,7 @@ namespace FPG.Demo.Tests.EditMode
                 "fei-weapon",
                 50,
                 25,
-                2,
-                0,
-                5000);
+                2);
 
             DomainResult restored =
                 FpgPlayerRunResourceTransfer.TryRestoreRoomEntry(

@@ -53,9 +53,9 @@
 
 ### 掩体与探身边界
 
-Fei Prefab 自带 `1.60 x 2.15 x 0.28` 的实体墙表现，局部位置为 `(0.30, 1.075, -0.16)`。墙体复用 `M_FPG_Cover`，不带 Collider 或 Rigidbody，因此不改变敌我弹道、寻敌或命中体。护盾值大于 0 且未锁定时墙体可见；护盾耗尽或锁定时墙体立即隐藏。
+Fei Prefab 自带 `1.60 x 2.15 x 0.28` 的实体墙表现，局部位置为 `(0.30, 1.075, -0.16)`。墙体复用 `M_FPG_Cover`，不带 Collider 或 Rigidbody，因此不改变敌我弹道、寻敌或命中体。护盾值大于 0 时墙体可见；护盾耗尽时墙体立即隐藏，并在护盾保持耗尽期间维持隐藏。
 
-攻击或瞄准请求使 `PeekRoot` 沿本地 `+X 1.35` 探身。只有 `VisualRoot` 与表现枪口代理位于该根下；gameplay 根、命中体、CharacterController、AimAnchor、CameraPivot 和权威 SocketRegistry 始终使用 authored 位置。未完成探身的首发最多延迟 5 Tick，已完全探身时不增加延迟；快速点按会保留并完成该发。普通有盾状态在最后攻击 Tick 后恢复 `Withdrawn`，破盾/锁定时则只恢复视觉位置，承伤状态继续为 `Exposed`。
+攻击或瞄准请求使 `PeekRoot` 沿本地 `+X 1.35` 探身。只有 `VisualRoot` 与表现枪口代理位于该根下；gameplay 根、命中体、CharacterController、AimAnchor、CameraPivot 和权威 SocketRegistry 始终使用 authored 位置。未完成探身的首发最多延迟 5 Tick，已完全探身时不增加延迟；快速点按会保留并完成该发。普通有盾状态在最后攻击 Tick 后恢复 `Withdrawn`，破盾后则只恢复视觉位置，承伤状态继续为 `Exposed`，护盾值保持为 0。
 
 ## 示例
 
@@ -76,7 +76,7 @@ Fei 默认资产的常用起点如下：
 | 资产 `FPG_Fei_ThreeC.asset` 可被 Inspector 编辑 | 已通过 Unity 编译确认 |
 | Play Mode 修改镜头/准星/护盾/射击反馈可即时看到 | 待主管试玩/确认 |
 | 修改最大瞄准距离和输入缓冲后，完整重启生效 | 待主管试玩/确认 |
-| 射击、快速点按、破盾、恢复、暂停与重启的掩体手感 | 待主管试玩/确认 |
+| 射击、快速点按、破盾后耗尽保持、暂停与重启的掩体手感 | 待主管试玩/确认 |
 | 普通调参不依赖场景生成器 | 已由编辑器预览与运行时应用链路覆盖 |
 | 场景结构、父子关系或绑定损坏时只允许显式修复权威资产 | 合同校验必须 fail-closed |
 

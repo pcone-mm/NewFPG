@@ -109,8 +109,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7866261694594662322}
   - {fileID: 214481729534926385}
@@ -194,7 +194,7 @@ Transform:
   m_GameObject: {fileID: 1375225381162496038}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.37, y: 6.06, z: 1.55}
+  m_LocalPosition: {x: -2.02, y: 3.84, z: 1.55}
   m_LocalScale: {x: 2.5468, y: 2.5468, z: 2.5468}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -281,8 +281,8 @@ Transform:
   m_GameObject: {fileID: 6989474739402021802}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.9647789, y: 4.3779826, z: 0.9999999}
-  m_LocalScale: {x: 1.8147, y: 1.6246, z: 1}
+  m_LocalPosition: {x: -2.71, y: 3.48, z: 0.9999999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 214481729534926385}
@@ -306,7 +306,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 5.3240004, y: 6.27, z: 0.38}
+  m_Size: {x: 5.35, y: 6.27, z: 0.38}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7729553436240366826
 GameObject:
@@ -353,15 +353,15 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 29d7e415b209d3d45843fd020d364581, type: 2}
     - target: {fileID: 4730158464120823600, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4730158464120823600, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4730158464120823600, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4730158464120823600, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -403,6 +403,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4730158464120823600, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4739755167401661588, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: fixDrawOrder
       value: 0
@@ -413,7 +417,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4739755167401661588, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: _animationName
-      value: appear
+      value: idle
       objectReference: {fileID: 0}
     - target: {fileID: 4739755167401661588, guid: 9a99484419b01d1478b7a68d1619438b, type: 3}
       propertyPath: immutableTriangles

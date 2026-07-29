@@ -245,7 +245,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8811375339980499798, guid: c02f8f1b840951447a366680c93218f5, type: 3}
       propertyPath: bodyHitboxFollow.boneName
-      value: bone
+      value: root
       objectReference: {fileID: 0}
     - target: {fileID: 8811375339980499798, guid: c02f8f1b840951447a366680c93218f5, type: 3}
       propertyPath: bodyHitboxFollow.followMode

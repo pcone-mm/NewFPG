@@ -36,16 +36,29 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            GameObject[] sceneRoots = scene.GetRootGameObjects();
-            if (sceneRoots.Length != 1)
+            GameObject[] allSceneRoots = scene.GetRootGameObjects();
+            List<GameObject> sceneRoots = new List<GameObject>(
+                allSceneRoots.Length);
+            for (int index = 0; index < allSceneRoots.Length; index++)
             {
-                error = $"Art Scene '{scene.path}' must contain exactly one scene root; found {sceneRoots.Length}.";
+                GameObject sceneRoot = allSceneRoots[index];
+                if ((sceneRoot.hideFlags & HideFlags.DontSaveInEditor) == 0)
+                {
+                    sceneRoots.Add(sceneRoot);
+                }
+            }
+
+            if (sceneRoots.Count != 1)
+            {
+                error =
+                    $"Art Scene '{scene.path}' must contain exactly one scene root after excluding transient editor previews; found {sceneRoots.Count}.";
                 return false;
             }
 
             FpgRoomArtRoot[] candidates =
                 sceneRoots[0].GetComponentsInChildren<FpgRoomArtRoot>(true);
-            if (candidates.Length != 1 || candidates[0].gameObject != sceneRoots[0])
+            if (candidates.Length != 1
+                || candidates[0].gameObject != sceneRoots[0])
             {
                 error = $"Art Scene '{scene.path}' must contain exactly one FpgRoomArtRoot on its sole scene root.";
                 return false;

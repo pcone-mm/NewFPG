@@ -269,7 +269,16 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!definition.Weapon.TryResolveSecondarySkill(
+                    secondaryTriggerMode,
+                    out FpgPlayerSkillDefinition authoredSecondary,
+                    out error))
+            {
+                return false;
+            }
+
             if (!definition.Weapon.TryCompileSkills(
+                    secondaryTriggerMode,
                     out FpgCompiledPlayerSkillDefinition compiledPrimary,
                     out FpgCompiledPlayerSkillDefinition compiledSecondary,
                     out FpgCompiledPlayerSkillDefinition compiledReload,
@@ -279,7 +288,7 @@ namespace FPG.Demo.Unity
                     compiledPrimary,
                     out error)
                 || !TryValidatePresentationMappings(
-                    definition.Weapon.SecondarySkill,
+                    authoredSecondary,
                     compiledSecondary,
                     out error)
                 || !TryValidatePresentationMappings(
@@ -289,7 +298,7 @@ namespace FPG.Demo.Unity
                 || !FpgPlayerSkillPresentationResolver.TryValidatePrefabBindings(
                     definition.EntityPrefab,
                     definition.Weapon.PrimarySkill,
-                    definition.Weapon.SecondarySkill,
+                    authoredSecondary,
                     definition.Weapon.ReloadSkill,
                     out error)
                 || !FpgPlayerSkillExecutionController.TryCreate(
@@ -1531,7 +1540,12 @@ namespace FPG.Demo.Unity
                 case FpgPlayerSkillSlot.Primary:
                     return weapon.PrimarySkill;
                 case FpgPlayerSkillSlot.Secondary:
-                    return weapon.SecondarySkill;
+                    return weapon.TryResolveSecondarySkill(
+                        playerSecondaryTriggerMode,
+                        out FpgPlayerSkillDefinition secondary,
+                        out _)
+                        ? secondary
+                        : null;
                 case FpgPlayerSkillSlot.Reload:
                     return weapon.ReloadSkill;
                 default:

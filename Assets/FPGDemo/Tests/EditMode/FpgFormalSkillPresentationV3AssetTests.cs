@@ -13,8 +13,10 @@ namespace FPG.Demo.Tests.EditMode
     {
         private const string PrimaryPath =
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset";
-        private const string SecondaryPath =
-            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset";
+        private const string ImmediateSecondaryPath =
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Immediate.asset";
+        private const string ChargeSecondaryPath =
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Charge.asset";
         private const string ReloadPath =
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset";
         private const string BurstbugFastPath =
@@ -40,7 +42,8 @@ namespace FPG.Demo.Tests.EditMode
             FpgPlayerSkillDefinition[] playerSkills =
             {
                 LoadRequired<FpgPlayerSkillDefinition>(PrimaryPath),
-                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath),
+                LoadRequired<FpgPlayerSkillDefinition>(ImmediateSecondaryPath),
+                LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath),
                 LoadRequired<FpgPlayerSkillDefinition>(ReloadPath)
             };
             FpgEnemyAttackDefinition[] enemySkills =
@@ -113,10 +116,12 @@ namespace FPG.Demo.Tests.EditMode
                 primaryAttack.ImpactPresentation.BaseVfx.Prefab,
                 FeiVfxRoot + "PF_FPG_Fei_Primary_Hit.prefab");
 
-            FpgPlayerSkillDefinition secondary =
-                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath);
+            FpgPlayerSkillDefinition immediateSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ImmediateSecondaryPath);
+            FpgPlayerSkillDefinition chargeSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath);
             FpgSkillSequenceDefinition chargeEnter =
-                FindSequence(secondary, FpgSkillSequenceKind.ChargeEnter);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.ChargeEnter);
             Assert.That(chargeEnter.ActivePresentationTracks.Count, Is.EqualTo(1));
             Assert.That(
                 chargeEnter.ActivePresentationTracks[0].VfxEvents.Count,
@@ -136,7 +141,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.Not.Null);
 
             FpgSkillSequenceDefinition secondaryExecute =
-                FindSequence(secondary, FpgSkillSequenceKind.Execute);
+                FindSequence(immediateSecondary, FpgSkillSequenceKind.Execute);
             Assert.That(
                 secondaryExecute.ActivePresentationTracks[0].VfxEvents[0]
                     .BoundGameplayEventId,
@@ -147,7 +152,7 @@ namespace FPG.Demo.Tests.EditMode
                 FeiVfxRoot + "PF_FPG_Fei_Secondary_Muzzle.prefab");
 
             FpgSkillSequenceDefinition release =
-                FindSequence(secondary, FpgSkillSequenceKind.Release);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.Release);
             Assert.That(release.ActivePresentationTracks.Count, Is.EqualTo(1));
             Assert.That(
                 release.ActivePresentationTracks[0].VfxEvents[0]

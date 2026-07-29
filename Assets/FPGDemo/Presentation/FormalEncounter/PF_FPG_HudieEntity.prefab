@@ -132,10 +132,19 @@ MonoBehaviour:
   projectileAnchor: {fileID: 5113202062881309589}
   weakpointAnchor: {fileID: 3245399587820886706}
   overheadHealthBarAnchor: {fileID: 3245399587820886706}
+  socketRegistry: {fileID: 0}
   hitParts:
   - {fileID: 6717136122138105110}
   - {fileID: 6750986781734079171}
   hitPartKinds: 0000000001000000
+  hitPartFollowSettings:
+  - followMode: 1
+    boneName: root
+    keepAuthoredRotation: 1
+  - followMode: 1
+    boneName: bone
+    keepAuthoredRotation: 1
+  skillWarningTint: {r: 1, g: 0.3, b: 0.12, a: 1}
   skeletonAnimation: {fileID: 5621907520704672879}
 --- !u!1 &3483609371074441311
 GameObject:

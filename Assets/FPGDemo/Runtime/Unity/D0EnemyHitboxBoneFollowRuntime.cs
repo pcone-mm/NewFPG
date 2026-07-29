@@ -24,25 +24,32 @@ namespace FPG.Demo.Unity
 
     /// <summary>
     /// Runtime-only bridge for the small set of hit parts that explicitly opt
-    /// into Spine bone following. Authored offsets are captured at bind time;
-    /// no follower components or Spine objects are serialized into the prefab.
+    /// into Spine bone following. Authored offsets are resolved against the
+    /// Spine setup pose; no follower components or Spine objects are serialized
+    /// into the prefab.
     /// </summary>
     internal sealed class D0EnemyHitboxBoneFollowRuntime : IDisposable
     {
         private struct Binding
         {
             public Transform Target;
+            public Transform AuthoredParent;
             public string BoneName;
             public bool FollowBoneRotation;
             public Bone Bone;
             public Vector3 PositionOffset;
             public Quaternion RotationOffset;
+            public Vector3 AuthoredLocalPosition;
+            public Quaternion AuthoredLocalRotation;
+            public Vector3 AuthoredWorldPosition;
+            public Quaternion AuthoredWorldRotation;
         }
 
         private readonly SkeletonAnimation skeletonAnimation;
         private readonly Binding[] bindings;
         private Skeleton cachedSkeleton;
         private bool active;
+        private bool disposed;
         private bool boneResolutionFailed;
 
         private D0EnemyHitboxBoneFollowRuntime(
@@ -81,6 +88,27 @@ namespace FPG.Demo.Unity
             }
 
             skeleton.UpdateWorldTransform();
+            SkeletonData skeletonData = skeleton.Data;
+            if (skeletonData == null)
+            {
+                error = "Enemy hitbox bone following could not load Spine SkeletonData.";
+                return false;
+            }
+
+            Skeleton setupSkeleton;
+            try
+            {
+                setupSkeleton = new Skeleton(skeletonData);
+                setupSkeleton.SetToSetupPose();
+                setupSkeleton.UpdateWorldTransform();
+            }
+            catch (Exception exception)
+            {
+                error = "Enemy hitbox bone following could not build its setup-pose reference: "
+                    + exception.Message;
+                return false;
+            }
+
             var bindings = new Binding[targets.Length];
             for (int index = 0; index < targets.Length; index++)
             {
@@ -107,13 +135,20 @@ namespace FPG.Demo.Unity
                     return false;
                 }
 
+                Bone setupBone = setupSkeleton.FindBone(target.BoneName);
+                if (setupBone == null)
+                {
+                    error = $"Enemy hitbox bone '{target.BoneName}' was not found in the setup-pose reference.";
+                    return false;
+                }
+
                 if (!TryGetBoneWorldPose(
                         skeletonAnimation.transform,
-                        bone,
+                        setupBone,
                         out Vector3 bonePosition,
                         out Quaternion boneRotation))
                 {
-                    error = $"Enemy hitbox bone '{target.BoneName}' has a degenerate world pose.";
+                    error = $"Enemy hitbox bone '{target.BoneName}' has a degenerate setup pose.";
                     return false;
                 }
 
@@ -130,11 +165,16 @@ namespace FPG.Demo.Unity
                 bindings[index] = new Binding
                 {
                     Target = target.Target,
+                    AuthoredParent = target.Target.parent,
                     BoneName = target.BoneName,
                     FollowBoneRotation = target.FollowBoneRotation,
                     Bone = bone,
                     PositionOffset = positionOffset,
-                    RotationOffset = rotationOffset
+                    RotationOffset = rotationOffset,
+                    AuthoredLocalPosition = target.Target.localPosition,
+                    AuthoredLocalRotation = target.Target.localRotation,
+                    AuthoredWorldPosition = target.Target.position,
+                    AuthoredWorldRotation = target.Target.rotation
                 };
             }
 
@@ -150,7 +190,7 @@ namespace FPG.Demo.Unity
 
         public void Activate()
         {
-            if (active)
+            if (active || disposed)
             {
                 return;
             }
@@ -163,14 +203,45 @@ namespace FPG.Demo.Unity
 
         public void Dispose()
         {
-            if (!active)
+            if (disposed)
             {
                 return;
             }
 
-            skeletonAnimation.UpdateComplete -= HandleUpdateComplete;
-            skeletonAnimation.OnRebuild -= HandleSkeletonRebuild;
+            if (active)
+            {
+                skeletonAnimation.UpdateComplete -= HandleUpdateComplete;
+                skeletonAnimation.OnRebuild -= HandleSkeletonRebuild;
+            }
+
             active = false;
+            disposed = true;
+            RestoreAuthoredPoses();
+        }
+
+        private void RestoreAuthoredPoses()
+        {
+            for (int index = 0; index < bindings.Length; index++)
+            {
+                Binding binding = bindings[index];
+                if (binding.Target == null)
+                {
+                    continue;
+                }
+
+                if (binding.Target.parent == binding.AuthoredParent)
+                {
+                    binding.Target.SetLocalPositionAndRotation(
+                        binding.AuthoredLocalPosition,
+                        binding.AuthoredLocalRotation);
+                }
+                else
+                {
+                    binding.Target.SetPositionAndRotation(
+                        binding.AuthoredWorldPosition,
+                        binding.AuthoredWorldRotation);
+                }
+            }
         }
 
         private void HandleSkeletonRebuild(SkeletonRenderer renderer)

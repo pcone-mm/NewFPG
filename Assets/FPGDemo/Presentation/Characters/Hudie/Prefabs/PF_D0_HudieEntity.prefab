@@ -138,9 +138,18 @@ MonoBehaviour:
   weakpointAnchor: {fileID: 1028076135106534091}
   bodyHitbox: {fileID: 9112334283366405487}
   weakpointHitbox: {fileID: 9150714947016690362}
+  bodyHitboxFollow:
+    followMode: 1
+    boneName: root
+    keepAuthoredRotation: 1
+  weakpointHitboxFollow:
+    followMode: 1
+    boneName: bone
+    keepAuthoredRotation: 1
   bodyGeometryId: 2001
   weakpointGeometryId: 2002
   hasWeakpoint: 1
+  additionalBodyHitboxes: []
 --- !u!114 &1100003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -157,7 +166,6 @@ MonoBehaviour:
   presentationProfile: {fileID: 0}
   playerActor: 0
   pulseRoot: {fileID: 7866261694594662322}
-  primaryRetriggerWindow: 0.48
   primaryPulseDuration: 0.075
   primaryPulseScale: 0.045
 --- !u!1 &1375225381162496038

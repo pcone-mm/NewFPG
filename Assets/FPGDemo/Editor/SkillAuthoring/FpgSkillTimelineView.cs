@@ -47,6 +47,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
         ResizeEnd = 2
     }
 
+    internal enum FpgSkillTimelineEventRangeEditMode
+    {
+        ResizeStart = 0,
+        ResizeEnd = 1
+    }
+
     internal sealed class FpgSkillTimelineBlockViewModel
     {
         public FpgSkillTimelineBlockKind Kind;
@@ -128,6 +134,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private VisualElement playhead;
         private VisualElement creationPreview;
         private EventDragState eventDrag;
+        private EventRangeDragState eventRangeDrag;
         private BlockDragState blockDrag;
         private ScrubDragState scrubDrag;
         private CreationDragState creationDrag;
@@ -171,6 +178,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
             EventSelectionChanged;
         public event Action<IReadOnlyList<FpgSkillEventKey>, int>
             EventsTickDeltaChanged;
+        public event Action<
+            FpgSkillEventKey,
+            FpgSkillTimelineEventRangeEditMode,
+            int,
+            int> EventRangeChanged;
         public event Action<FpgSkillTimelineCreateRequest> EventCreateRequested;
         public event Action<FpgSkillTimelineBlockKind, int> BlockSelected;
         public event Action<FpgSkillEventKey, int> EventOrderDeltaChanged;
@@ -188,6 +200,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
             scrubDrag != null
             || creationDrag != null
             || eventDrag != null
+            || eventRangeDrag != null
             || blockDrag != null;
         public FpgSkillEventKey SelectedEventKey => selection.PrimaryEventKey;
         public IReadOnlyList<FpgSkillEventKey> SelectedEventKeys =>
@@ -443,9 +456,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
             canvas.style.width = width;
             canvas.style.height = LaneTop + laneCount * LaneHeight + 10f;
 
-            VisualElement ruler = new VisualElement();
+            VisualElement ruler = new VisualElement { name = "timeline-ruler" };
             ruler.AddToClassList("timeline-ruler");
-            ruler.pickingMode = PickingMode.Ignore;
+            ruler.pickingMode = PickingMode.Position;
+            ruler.RegisterCallback<PointerDownEvent>(OnRulerPointerDown);
             canvas.Add(ruler);
 
             int majorStep = pixelsPerTick >= 18f
@@ -662,9 +676,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 ? "事件 " + (model.Key.LocalIndex + 1)
                 : model.Label;
             bool isPointEvent = model.DurationTicks <= 0;
+            bool canResize = model.Track == FpgSkillEventTrackKind.Warning
+                && model.DurationTicks > 0;
             Label marker = new Label(
                 isPointEvent ? GetPointEventIcon(model.Track) : fullLabel);
             marker.AddToClassList("timeline-event");
+            marker.EnableInClassList(
+                "timeline-event--resizable",
+                canResize);
             if (selection.Contains(model.Key))
             {
                 marker.AddToClassList("timeline-event--selected");
@@ -692,19 +711,58 @@ namespace FPG.Demo.Editor.SkillAuthoring
             marker.style.borderRightColor = borderColor;
             marker.style.borderTopColor = borderColor;
             marker.style.borderBottomColor = borderColor;
+            string interactionHint = canResize
+                ? "拖动中部平移；拖动左右边缘调整开始和结束 Tick。"
+                : "左右拖动修改 Tick；同 Tick 上下拖动修改执行顺序。";
             marker.tooltip = string.Format(
-                "{0} · {1}\nTick {2}，顺序 {3}{4}\n左右拖动修改 Tick；同 Tick 上下拖动修改执行顺序。",
+                "{0} · {1}\nTick {2}，顺序 {3}{4}\n{5}",
                 string.IsNullOrWhiteSpace(model.LaneLabel) ? "事件" : model.LaneLabel,
                 fullLabel,
                 model.Tick,
                 model.AuthoredOrdinal,
                 model.DurationTicks > 0
                     ? "，持续 " + model.DurationTicks + " Tick"
-                    : string.Empty);
+                    : string.Empty,
+                interactionHint);
             marker.RegisterCallback<PointerDownEvent>(evt =>
                 BeginEventDrag(evt, model));
+            if (canResize)
+            {
+                marker.Add(CreateEventResizeHandle(
+                    marker,
+                    model,
+                    FpgSkillTimelineEventRangeEditMode.ResizeStart));
+                marker.Add(CreateEventResizeHandle(
+                    marker,
+                    model,
+                    FpgSkillTimelineEventRangeEditMode.ResizeEnd));
+            }
+
             markers[model.Key] = marker;
             canvas.Add(marker);
+        }
+
+        private VisualElement CreateEventResizeHandle(
+            VisualElement marker,
+            FpgSkillTimelineEventViewModel model,
+            FpgSkillTimelineEventRangeEditMode editMode)
+        {
+            VisualElement handle = new VisualElement
+            {
+                pickingMode = PickingMode.Position,
+                tooltip = editMode
+                    == FpgSkillTimelineEventRangeEditMode.ResizeStart
+                        ? "拖动调整预警开始 Tick"
+                        : "拖动调整预警结束 Tick"
+            };
+            handle.AddToClassList("timeline-event__resize-handle");
+            handle.AddToClassList(
+                editMode == FpgSkillTimelineEventRangeEditMode.ResizeStart
+                    ? "timeline-event__resize-handle--start"
+                    : "timeline-event__resize-handle--end");
+            handle.RegisterCallback<PointerDownEvent>(evt =>
+                BeginEventRangeDrag(evt, marker, model, editMode));
+            return handle;
         }
 
         private static string GetPointEventIcon(
@@ -754,10 +812,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 int lane = PositionToLane(local.y);
                 if (lane < FirstEventLane)
                 {
-                    BeginScrubAtTick(evt.pointerId, tick);
-                    canvas.CapturePointer(evt.pointerId);
-                    Focus();
-                    evt.StopPropagation();
                     return;
                 }
 
@@ -784,7 +838,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
             ApplySelectionStyles();
             ApplyBlockSelectionStyles();
             NotifySelectionChanged();
-            BeginScrubAtTick(evt.pointerId, tick);
+            Focus();
+            evt.StopPropagation();
+        }
+
+        private void OnRulerPointerDown(PointerDownEvent evt)
+        {
+            if (evt.button != 0 || evt.altKey)
+            {
+                return;
+            }
+
+            Vector2 local = canvas.WorldToLocal(evt.position);
+            BeginScrubAtTick(evt.pointerId, PositionToTick(local.x));
             canvas.CapturePointer(evt.pointerId);
             Focus();
             evt.StopPropagation();
@@ -792,6 +858,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void OnCanvasPointerMove(PointerMoveEvent evt)
         {
+            if (eventRangeDrag != null
+                && eventRangeDrag.PointerId == evt.pointerId
+                && canvas.HasPointerCapture(evt.pointerId))
+            {
+                ContinueEventRangeDrag(evt);
+                evt.StopPropagation();
+                return;
+            }
+
             if (eventDrag != null
                 && eventDrag.PointerId == evt.pointerId
                 && canvas.HasPointerCapture(evt.pointerId))
@@ -830,7 +905,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 Vector2 local = canvas.WorldToLocal(evt.position);
                 creationDrag.CurrentTick = PositionToTick(local.x);
                 UpdateCreationPreview();
-                SetPlayhead(creationDrag.CurrentTick, true);
                 evt.StopPropagation();
                 return;
             }
@@ -847,6 +921,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void OnCanvasPointerUp(PointerUpEvent evt)
         {
+            if (eventRangeDrag != null
+                && eventRangeDrag.PointerId == evt.pointerId)
+            {
+                EndEventRangeDrag(evt);
+                evt.StopPropagation();
+                return;
+            }
+
             if (eventDrag != null && eventDrag.PointerId == evt.pointerId)
             {
                 EndEventDrag(evt);
@@ -973,7 +1055,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             eventDrag = state;
             canvas.CapturePointer(evt.pointerId);
-            SetPlayhead(model.Tick, true);
             Focus();
             evt.StopPropagation();
         }
@@ -1048,12 +1129,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 }
             }
 
-            if (eventDrag.StartTicks.TryGetValue(
-                    selection.PrimaryEventKey,
-                    out int primaryStartTick))
-            {
-                SetPlayhead(primaryStartTick + nextDelta, true);
-            }
         }
 
         private void EndEventDrag(PointerUpEvent evt)
@@ -1085,6 +1160,126 @@ namespace FPG.Demo.Editor.SkillAuthoring
             {
                 Rebuild();
             }
+        }
+
+        private void BeginEventRangeDrag(
+            PointerDownEvent evt,
+            VisualElement marker,
+            FpgSkillTimelineEventViewModel model,
+            FpgSkillTimelineEventRangeEditMode editMode)
+        {
+            if (evt.button != 0
+                || evt.altKey
+                || model.Track != FpgSkillEventTrackKind.Warning
+                || model.DurationTicks <= 0)
+            {
+                return;
+            }
+
+            int startTick = Mathf.Clamp(model.Tick, 0, durationTicks);
+            int endTick = Mathf.Clamp(
+                model.Tick + model.DurationTicks,
+                startTick,
+                durationTicks);
+            if (endTick <= startTick)
+            {
+                evt.StopImmediatePropagation();
+                return;
+            }
+
+            selection.SetSingle(model.Key);
+            selectedBlockIndex = -1;
+            ApplySelectionStyles();
+            ApplyBlockSelectionStyles();
+            NotifySelectionChanged();
+            eventRangeDrag = new EventRangeDragState
+            {
+                PointerId = evt.pointerId,
+                EventKey = model.Key,
+                EditMode = editMode,
+                StartWorldX = evt.position.x,
+                StartTick = startTick,
+                EndTick = endTick,
+                CurrentStartTick = startTick,
+                CurrentEndTick = endTick,
+                Element = marker
+            };
+            canvas.CapturePointer(evt.pointerId);
+            Focus();
+            evt.StopImmediatePropagation();
+        }
+
+        private void ContinueEventRangeDrag(PointerMoveEvent evt)
+        {
+            if (eventRangeDrag == null
+                || eventRangeDrag.PointerId != evt.pointerId
+                || !canvas.HasPointerCapture(evt.pointerId))
+            {
+                return;
+            }
+
+            int delta = Mathf.RoundToInt(
+                (evt.position.x - eventRangeDrag.StartWorldX)
+                / pixelsPerTick);
+            int nextStart = eventRangeDrag.StartTick;
+            int nextEnd = eventRangeDrag.EndTick;
+            if (eventRangeDrag.EditMode
+                == FpgSkillTimelineEventRangeEditMode.ResizeStart)
+            {
+                nextStart = AddAndClamp(
+                    eventRangeDrag.StartTick,
+                    delta,
+                    0,
+                    eventRangeDrag.EndTick - 1);
+            }
+            else
+            {
+                nextEnd = AddAndClamp(
+                    eventRangeDrag.EndTick,
+                    delta,
+                    eventRangeDrag.StartTick + 1,
+                    durationTicks);
+            }
+
+            eventRangeDrag.CurrentStartTick = nextStart;
+            eventRangeDrag.CurrentEndTick = nextEnd;
+            eventRangeDrag.Element.style.left = TimelineOrigin
+                + nextStart * pixelsPerTick;
+            eventRangeDrag.Element.style.width = Mathf.Max(
+                PointEventWidth,
+                (nextEnd - nextStart) * pixelsPerTick);
+        }
+
+        private void EndEventRangeDrag(PointerUpEvent evt)
+        {
+            if (eventRangeDrag == null
+                || eventRangeDrag.PointerId != evt.pointerId)
+            {
+                return;
+            }
+
+            EventRangeDragState completed = eventRangeDrag;
+            eventRangeDrag = null;
+            ReleaseCanvasPointer(evt.pointerId);
+            bool changed = completed.CurrentStartTick != completed.StartTick
+                || completed.CurrentEndTick != completed.EndTick;
+            if (!changed)
+            {
+                Rebuild();
+                return;
+            }
+
+            if (EventRangeChanged == null)
+            {
+                Rebuild();
+                return;
+            }
+
+            EventRangeChanged.Invoke(
+                completed.EventKey,
+                completed.EditMode,
+                completed.CurrentStartTick,
+                completed.CurrentEndTick);
         }
 
         private void BeginBlockDrag(
@@ -1147,11 +1342,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 DurationLabel = durationLabel
             };
             canvas.CapturePointer(evt.pointerId);
-            SetPlayhead(
-                editMode == FpgSkillTimelineBlockEditMode.ResizeEnd
-                    ? endTick
-                    : startTick,
-                true);
             Focus();
             evt.StopImmediatePropagation();
         }
@@ -1202,12 +1392,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
             blockDrag.CurrentStartTick = nextStart;
             blockDrag.CurrentEndTick = nextEnd;
             UpdateBlockDragVisual(blockDrag);
-            SetPlayhead(
-                blockDrag.EditMode
-                    == FpgSkillTimelineBlockEditMode.ResizeEnd
-                    ? nextEnd
-                    : nextStart,
-                true);
         }
 
         private void EndBlockDrag(PointerUpEvent evt)
@@ -1342,6 +1526,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
             if (eventDrag != null && eventDrag.PointerId == pointerId)
             {
                 eventDrag = null;
+                handled = true;
+                rebuild = true;
+            }
+
+            if (eventRangeDrag != null
+                && eventRangeDrag.PointerId == pointerId)
+            {
+                eventRangeDrag = null;
                 handled = true;
                 rebuild = true;
             }
@@ -1966,6 +2158,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
             public EventDragAxis Axis;
             public int MinimumDeltaTicks;
             public int MaximumDeltaTicks;
+        }
+
+        private sealed class EventRangeDragState
+        {
+            public int PointerId;
+            public FpgSkillEventKey EventKey;
+            public FpgSkillTimelineEventRangeEditMode EditMode;
+            public float StartWorldX;
+            public int StartTick;
+            public int EndTick;
+            public int CurrentStartTick;
+            public int CurrentEndTick;
+            public VisualElement Element;
         }
 
         private sealed class CreationDragState

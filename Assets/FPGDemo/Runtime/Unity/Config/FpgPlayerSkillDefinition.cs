@@ -689,6 +689,9 @@ namespace FPG.Demo.Unity
         public int SequenceCooldownTicks => sequenceCooldownTicks;
         public int ChargeProgressTicks => chargeProgressTicks;
 
+        protected override bool RequiresExecuteSequence =>
+            !IsChargeReleaseAreaOrProjectileSkill();
+
         public bool TryCompile(
             out FpgCompiledPlayerSkillDefinition definition,
             out string error)
@@ -901,8 +904,16 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (hasAreaPayload
-                && secondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+            bool isChargedAreaSkill = hasAreaPayload
+                && secondaryTriggerMode == SecondaryTriggerMode.ChargeRelease;
+            if (isChargedAreaSkill
+                && HasSequence(FpgSkillSequenceKind.Execute))
+            {
+                error = $"Charged player skill '{SkillId}' cannot contain an Execute sequence.";
+                return false;
+            }
+
+            if (isChargedAreaSkill
                 && (!HasSequence(FpgSkillSequenceKind.ChargeEnter)
                     || !HasSequence(FpgSkillSequenceKind.ChargeLoop)
                     || !HasSequence(FpgSkillSequenceKind.Release)
@@ -912,8 +923,54 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!isChargedAreaSkill
+                && !HasSequence(FpgSkillSequenceKind.Execute))
+            {
+                error = $"Skill '{SkillId}' requires an Execute sequence.";
+                return false;
+            }
+
             error = string.Empty;
             return true;
+        }
+
+        private bool IsChargeReleaseAreaOrProjectileSkill()
+        {
+            if (secondaryTriggerMode != SecondaryTriggerMode.ChargeRelease)
+            {
+                return false;
+            }
+
+            for (int sequenceIndex = 0;
+                sequenceIndex < Sequences.Count;
+                sequenceIndex++)
+            {
+                FpgSkillSequenceDefinition sequence = Sequences[sequenceIndex];
+                if (sequence == null)
+                {
+                    continue;
+                }
+
+                if (sequence.ProjectileEvents.Count > 0)
+                {
+                    return true;
+                }
+
+                for (int actionIndex = 0;
+                    actionIndex < sequence.AttackEvents.Count;
+                    actionIndex++)
+                {
+                    FpgSkillAttackEventDefinition action =
+                        sequence.AttackEvents[actionIndex];
+                    if (action != null
+                        && action.Mode == FpgSkillAttackMode.AreaAtFirstSurface)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private bool TryInspectTypedGameplay(

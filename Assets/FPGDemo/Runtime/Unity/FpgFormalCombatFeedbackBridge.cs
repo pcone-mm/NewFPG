@@ -824,12 +824,26 @@ namespace FPG.Demo.Unity
 
             D0WeaponDefinition weapon =
                 playerTickDriver.PlayerDefinition.Weapon;
-            FpgPlayerSkillDefinition skill = action.ReleaseKind
-                == WeaponReleaseKind.Primary
-                    ? weapon.PrimarySkill
-                    : action.ReleaseKind == WeaponReleaseKind.Secondary
-                        ? weapon.SecondarySkill
-                        : weapon.ReloadSkill;
+            FpgPlayerSkillDefinition skill;
+            if (action.ReleaseKind == WeaponReleaseKind.Primary)
+            {
+                skill = weapon.PrimarySkill;
+            }
+            else if (action.ReleaseKind == WeaponReleaseKind.Secondary)
+            {
+                if (!weapon.TryResolveSecondarySkill(
+                        playerTickDriver.PlayerSecondaryTriggerMode,
+                        out skill,
+                        out _))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                skill = weapon.ReloadSkill;
+            }
+
             if (!FpgSkillPresentationRegistry.TryResolveActionPresentation(
                     skill,
                     action.GameplayEventId,

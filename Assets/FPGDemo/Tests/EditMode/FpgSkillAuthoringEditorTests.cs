@@ -7,6 +7,7 @@ using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace FPG.Demo.Tests.EditMode
 {
@@ -427,6 +428,102 @@ namespace FPG.Demo.Tests.EditMode
                         .FindPropertyRelative("scale").vector3Value,
                     Is.EqualTo(new Vector3(1.5f, 2f, 1f)));
             });
+        }
+
+        [Test]
+        public void WarningRangeEditClampsEndpointsAndSupportsUndo()
+        {
+            WithSkill((skill, serialized) =>
+            {
+                FpgSkillEventKey warning = FpgSkillSerializedAdapter.AddEvent(
+                    serialized,
+                    0,
+                    5,
+                    FpgSkillEventTrackKind.Warning,
+                    10);
+
+                Assert.That(
+                    FpgSkillSerializedAdapter.EditWarningRange(
+                        serialized,
+                        0,
+                        warning,
+                        FpgSkillTimelineEventRangeEditMode.ResizeStart,
+                        -4,
+                        15,
+                        out int appliedStart,
+                        out int appliedEnd),
+                    Is.True);
+                Assert.That(appliedStart, Is.Zero);
+                Assert.That(appliedEnd, Is.EqualTo(15));
+
+                Undo.IncrementCurrentGroup();
+                Assert.That(
+                    FpgSkillSerializedAdapter.EditWarningRange(
+                        serialized,
+                        0,
+                        warning,
+                        FpgSkillTimelineEventRangeEditMode.ResizeEnd,
+                        appliedStart,
+                        99,
+                        out appliedStart,
+                        out appliedEnd),
+                    Is.True);
+                Assert.That(appliedStart, Is.Zero);
+                Assert.That(appliedEnd, Is.EqualTo(30));
+
+                FpgSkillEventRecord record = ReadEvents(serialized)
+                    .Single(item => item.Key == warning);
+                Assert.That(record.Tick, Is.Zero);
+                Assert.That(record.DurationTicks, Is.EqualTo(30));
+
+                Undo.PerformUndo();
+                serialized.UpdateIfRequiredOrScript();
+                record = ReadEvents(serialized)
+                    .Single(item => item.Key == warning);
+                Assert.That(record.Tick, Is.Zero);
+                Assert.That(record.DurationTicks, Is.EqualTo(15));
+            });
+        }
+
+        [Test]
+        public void TimelineAddsResizeHandlesOnlyForWarningRanges()
+        {
+            FpgSkillTimelineView timeline = new FpgSkillTimelineView();
+            timeline.SetModel(
+                30,
+                new[]
+                {
+                    new FpgSkillTimelineEventViewModel
+                    {
+                        Key = new FpgSkillEventKey(
+                            FpgSkillEventTrackKind.Warning,
+                            FpgSkillActionKind.None,
+                            0),
+                        Tick = 5,
+                        DurationTicks = 10,
+                        Track = FpgSkillEventTrackKind.Warning,
+                        Label = "Warning"
+                    },
+                    new FpgSkillTimelineEventViewModel
+                    {
+                        Key = new FpgSkillEventKey(
+                            FpgSkillEventTrackKind.GameplayAction,
+                            FpgSkillActionKind.Attack,
+                            0),
+                        Tick = 8,
+                        Track = FpgSkillEventTrackKind.GameplayAction,
+                        Label = "Attack"
+                    }
+                });
+
+            List<VisualElement> handles = timeline
+                .Query<VisualElement>(
+                    className: "timeline-event__resize-handle")
+                .ToList();
+            Assert.That(handles, Has.Count.EqualTo(2));
+            Assert.That(
+                timeline.Q<VisualElement>("timeline-ruler").pickingMode,
+                Is.EqualTo(PickingMode.Position));
         }
 
         [Test]

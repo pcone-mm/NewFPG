@@ -18,7 +18,8 @@ MonoBehaviour:
   designerNotes: Formal Fei primary and secondary weapon definition.
   magazineCapacity: 8
   primarySkill: {fileID: 11400000, guid: 815897f37da29434f985bf8f97e1e0c5, type: 2}
-  secondarySkill: {fileID: 11400000, guid: d38880fc26997aa439fe720140c2d28f, type: 2}
+  immediateSecondarySkill: {fileID: 11400000, guid: 5d0e190f92d948a792b14d005836a260, type: 2}
+  chargeSecondarySkill: {fileID: 11400000, guid: d38880fc26997aa439fe720140c2d28f, type: 2}
   reloadSkill: {fileID: 11400000, guid: bf5dcba5acec96246a246e06a4213004, type: 2}
   aimIndicator:
     restingColor: {r: 0.48, g: 0.82, b: 0.92, a: 0.56}

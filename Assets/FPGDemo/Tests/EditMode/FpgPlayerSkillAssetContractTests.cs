@@ -16,8 +16,10 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Weapon.asset";
         private const string PrimaryPath =
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset";
-        private const string SecondaryPath =
-            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset";
+        private const string ImmediateSecondaryPath =
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Immediate.asset";
+        private const string ChargeSecondaryPath =
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Charge.asset";
         private const string ReloadPath =
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset";
         private const string PresentationBridgePath =
@@ -33,13 +35,20 @@ namespace FPG.Demo.Tests.EditMode
             D0WeaponDefinition weapon = LoadRequired<D0WeaponDefinition>(WeaponPath);
             FpgPlayerSkillDefinition primary =
                 LoadRequired<FpgPlayerSkillDefinition>(PrimaryPath);
-            FpgPlayerSkillDefinition secondary =
-                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath);
+            FpgPlayerSkillDefinition immediateSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ImmediateSecondaryPath);
+            FpgPlayerSkillDefinition chargeSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath);
             FpgPlayerSkillDefinition reload =
                 LoadRequired<FpgPlayerSkillDefinition>(ReloadPath);
 
             Assert.That(weapon.PrimarySkill, Is.SameAs(primary));
-            Assert.That(weapon.SecondarySkill, Is.SameAs(secondary));
+            Assert.That(
+                weapon.ImmediateSecondarySkill,
+                Is.SameAs(immediateSecondary));
+            Assert.That(
+                weapon.ChargeSecondarySkill,
+                Is.SameAs(chargeSecondary));
             Assert.That(weapon.ReloadSkill, Is.SameAs(reload));
 
             FpgSkillSequenceDefinition primaryExecute =
@@ -57,28 +66,36 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(primary.SequenceCooldownTicks, Is.EqualTo(12));
 
             Assert.That(
-                secondary.Sequences.Select(value => value.Kind),
-                Is.SupersetOf(new[]
+                immediateSecondary.Sequences.Select(value => value.Kind),
+                Is.EquivalentTo(new[]
                 {
-                    FpgSkillSequenceKind.Execute,
+                    FpgSkillSequenceKind.Execute
+                }));
+            Assert.That(
+                chargeSecondary.Sequences.Select(value => value.Kind),
+                Is.EquivalentTo(new[]
+                {
                     FpgSkillSequenceKind.ChargeEnter,
                     FpgSkillSequenceKind.ChargeLoop,
                     FpgSkillSequenceKind.Release,
                     FpgSkillSequenceKind.Cancel
                 }));
             Assert.That(
-                secondary.SecondaryTriggerMode,
+                immediateSecondary.SecondaryTriggerMode,
+                Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            Assert.That(
+                chargeSecondary.SecondaryTriggerMode,
                 Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
             FpgSkillSequenceDefinition release =
-                FindSequence(secondary, FpgSkillSequenceKind.Release);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.Release);
             FpgSkillSequenceDefinition execute =
-                FindSequence(secondary, FpgSkillSequenceKind.Execute);
+                FindSequence(immediateSecondary, FpgSkillSequenceKind.Execute);
             FpgSkillSequenceDefinition chargeEnter =
-                FindSequence(secondary, FpgSkillSequenceKind.ChargeEnter);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.ChargeEnter);
             FpgSkillSequenceDefinition chargeLoop =
-                FindSequence(secondary, FpgSkillSequenceKind.ChargeLoop);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.ChargeLoop);
             FpgSkillSequenceDefinition cancel =
-                FindSequence(secondary, FpgSkillSequenceKind.Cancel);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.Cancel);
             Assert.That(execute.DurationTicks, Is.EqualTo(60));
             Assert.That(execute.MainAnimation, Is.EqualTo("defense_play"));
             Assert.That(execute.ProjectileEvents.Count, Is.EqualTo(1));
@@ -94,9 +111,14 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(release.ProjectileEvents[0].Tick, Is.Zero);
             Assert.That(cancel.DurationTicks, Is.EqualTo(28));
             Assert.That(cancel.MainAnimation, Is.EqualTo("u4_attack_end"));
-            Assert.That(secondary.MinimumChargeTicks, Is.EqualTo(30));
-            Assert.That(secondary.ChargeProgressTicks, Is.EqualTo(30));
-            Assert.That(secondary.SequenceCooldownTicks, Is.EqualTo(30));
+            Assert.That(immediateSecondary.MinimumChargeTicks, Is.Zero);
+            Assert.That(immediateSecondary.ChargeProgressTicks, Is.Zero);
+            Assert.That(
+                immediateSecondary.SequenceCooldownTicks,
+                Is.EqualTo(30));
+            Assert.That(chargeSecondary.MinimumChargeTicks, Is.EqualTo(30));
+            Assert.That(chargeSecondary.ChargeProgressTicks, Is.EqualTo(30));
+            Assert.That(chargeSecondary.SequenceCooldownTicks, Is.EqualTo(30));
 
             FpgSkillSequenceDefinition reloadExecute =
                 FindSequence(reload, FpgSkillSequenceKind.Execute);
@@ -110,8 +132,10 @@ namespace FPG.Demo.Tests.EditMode
         {
             FpgPlayerSkillDefinition primary =
                 LoadRequired<FpgPlayerSkillDefinition>(PrimaryPath);
-            FpgPlayerSkillDefinition secondary =
-                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath);
+            FpgPlayerSkillDefinition immediateSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ImmediateSecondaryPath);
+            FpgPlayerSkillDefinition chargeSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath);
             FpgPlayerSkillDefinition reload =
                 LoadRequired<FpgPlayerSkillDefinition>(ReloadPath);
 
@@ -129,7 +153,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo("event.fei.primary.attack.0"));
 
             FpgSkillSequenceDefinition chargeEnter =
-                FindSequence(secondary, FpgSkillSequenceKind.ChargeEnter);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.ChargeEnter);
             Assert.That(
                 chargeEnter.ActivePresentationTracks.Count,
                 Is.EqualTo(1));
@@ -139,7 +163,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.Empty);
 
             FpgSkillSequenceDefinition execute =
-                FindSequence(secondary, FpgSkillSequenceKind.Execute);
+                FindSequence(immediateSecondary, FpgSkillSequenceKind.Execute);
             Assert.That(
                 execute.ActivePresentationTracks.Count,
                 Is.EqualTo(1));
@@ -149,7 +173,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo("event.fei.secondary.execute.attack.0"));
 
             FpgSkillSequenceDefinition release =
-                FindSequence(secondary, FpgSkillSequenceKind.Release);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.Release);
             Assert.That(
                 release.ActivePresentationTracks.Count,
                 Is.EqualTo(1));
@@ -175,8 +199,9 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(
                 weapon.TryCompileSkills(
+                    SecondaryTriggerMode.ChargeRelease,
                     out FpgCompiledPlayerSkillDefinition primary,
-                    out FpgCompiledPlayerSkillDefinition secondary,
+                    out FpgCompiledPlayerSkillDefinition chargeSecondary,
                     out FpgCompiledPlayerSkillDefinition reload,
                     out string compileError),
                 Is.True,
@@ -191,20 +216,41 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(primarySummary.LastAttackTick, Is.Zero);
 
             Assert.That(
-                secondary.TryGetSequenceSummary(
+                chargeSecondary.TryGetSequenceSummary(
                     FpgSkillSequenceKind.Release,
                     out FpgCompiledPlayerSkillSequenceSummary secondarySummary),
                 Is.True);
             Assert.That(secondarySummary.TotalAmmoCost, Is.EqualTo(2));
             Assert.That(secondarySummary.LastAttackTick, Is.Zero);
             Assert.That(
-                secondary.TryGetSequenceSummary(
+                chargeSecondary.Timeline.TryGetSequence(
+                    FpgSkillSequenceKind.Execute,
+                    out _),
+                Is.False);
+            Assert.That(chargeSecondary.ProjectileActionCount, Is.EqualTo(1));
+
+            Assert.That(
+                weapon.TryCompileSkills(
+                    SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                    out _,
+                    out FpgCompiledPlayerSkillDefinition immediateSecondary,
+                    out _,
+                    out string immediateCompileError),
+                Is.True,
+                immediateCompileError);
+            Assert.That(
+                immediateSecondary.TryGetSequenceSummary(
                     FpgSkillSequenceKind.Execute,
                     out FpgCompiledPlayerSkillSequenceSummary immediateSummary),
                 Is.True);
             Assert.That(immediateSummary.TotalAmmoCost, Is.EqualTo(2));
             Assert.That(immediateSummary.LastAttackTick, Is.Zero);
-            Assert.That(secondary.ProjectileActionCount, Is.EqualTo(2));
+            Assert.That(
+                immediateSecondary.Timeline.TryGetSequence(
+                    FpgSkillSequenceKind.Release,
+                    out _),
+                Is.False);
+            Assert.That(immediateSecondary.ProjectileActionCount, Is.EqualTo(1));
 
             Assert.That(
                 reload.TryGetSequenceSummary(
@@ -233,6 +279,7 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 immediateWeapon.SecondaryTriggerMode,
                 Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            Assert.That(immediateWeapon.SecondaryMinimumCharge.Value, Is.Zero);
             Assert.That(
                 immediateWeapon.SecondaryAmmoCost,
                 Is.EqualTo(runtimeWeapon.SecondaryAmmoCost));
@@ -246,12 +293,14 @@ namespace FPG.Demo.Tests.EditMode
         [Test]
         public void FeiSecondaryModesShareOneProjectilePayloadContract()
         {
-            FpgPlayerSkillDefinition secondary =
-                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath);
+            FpgPlayerSkillDefinition immediateSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ImmediateSecondaryPath);
+            FpgPlayerSkillDefinition chargeSecondary =
+                LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath);
             FpgSkillSequenceDefinition immediateSequence =
-                FindSequence(secondary, FpgSkillSequenceKind.Execute);
+                FindSequence(immediateSecondary, FpgSkillSequenceKind.Execute);
             FpgSkillSequenceDefinition chargedSequence =
-                FindSequence(secondary, FpgSkillSequenceKind.Release);
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.Release);
             FpgSkillProjectileEventDefinition immediate =
                 immediateSequence.ProjectileEvents[0];
             FpgSkillProjectileEventDefinition charged =
@@ -266,20 +315,26 @@ namespace FPG.Demo.Tests.EditMode
                 immediate.EventId);
 
             Assert.That(
-                secondary.TryCompile(
-                    out FpgCompiledPlayerSkillDefinition compiled,
-                    out string compileError),
+                chargeSecondary.TryCompile(
+                    out FpgCompiledPlayerSkillDefinition compiledChargeSkill,
+                    out string chargeCompileError),
                 Is.True,
-                compileError);
+                chargeCompileError);
+            Assert.That(
+                immediateSecondary.TryCompile(
+                    out FpgCompiledPlayerSkillDefinition compiledImmediateSkill,
+                    out string immediateCompileError),
+                Is.True,
+                immediateCompileError);
             FpgCompiledPlayerProjectileAction compiledCharged =
                 ResolveCompiledProjectileAction(
-                    compiled,
+                    compiledChargeSkill,
                     FpgSkillSequenceKind.Release,
                     out FpgCompiledSkillSequence compiledChargedSequence,
                     out FpgCompiledSkillEvent compiledChargedEvent);
             FpgCompiledPlayerProjectileAction compiledImmediate =
                 ResolveCompiledProjectileAction(
-                    compiled,
+                    compiledImmediateSkill,
                     FpgSkillSequenceKind.Execute,
                     out FpgCompiledSkillSequence compiledImmediateSequence,
                     out FpgCompiledSkillEvent compiledImmediateEvent);
@@ -307,7 +362,7 @@ namespace FPG.Demo.Tests.EditMode
             const string impactPath =
                 "Assets/FPGDemo/Presentation/Characters/Fei/VFX/PF_FPG_Fei_Secondary_Hit.prefab";
             FpgPlayerSkillDefinition secondary =
-                LoadRequired<FpgPlayerSkillDefinition>(SecondaryPath);
+                LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath);
             FpgSkillSequenceDefinition release =
                 FindSequence(secondary, FpgSkillSequenceKind.Release);
             FpgSkillProjectileEventDefinition projectile =

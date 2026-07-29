@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using FPG.Demo.Core;
-using FPG.Demo.Run;
 using FPG.Demo.Skills;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -803,19 +802,6 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            for (int index = 0; index < summons.Count; index++)
-            {
-                FpgSkillSummonEventDefinition summon = summons[index];
-                if (summon.SummonOccupancyMode
-                        == FpgSummonOccupancyMode.ReplaceOwner
-                    && !boundSummonEventIds.Contains(summon.EventId))
-                {
-                    error =
-                        $"Replace-owner summon action '{summon.EventId}' requires one same-tick self-destruct action bound to it.";
-                    return false;
-                }
-            }
-
             error = string.Empty;
             return true;
         }
@@ -969,6 +955,8 @@ namespace FPG.Demo.Unity
         public FpgSkillAuthoringSchemaState AuthoringSchemaState =>
             FpgSkillAuthoringSchemaState.V3Only;
 
+        protected virtual bool RequiresExecuteSequence => true;
+
         public virtual bool TryValidate(out string error)
         {
             if (authoringSchemaVersion != CurrentAuthoringSchemaVersion)
@@ -987,9 +975,12 @@ namespace FPG.Demo.Unity
 
             FpgSkillSequenceDefinition[] values =
                 sequences ?? Array.Empty<FpgSkillSequenceDefinition>();
+            bool requiresExecuteSequence = RequiresExecuteSequence;
             if (values.Length == 0)
             {
-                error = $"Skill '{skillId}' requires an Execute sequence.";
+                error = requiresExecuteSequence
+                    ? $"Skill '{skillId}' requires an Execute sequence."
+                    : $"Skill '{skillId}' requires at least one sequence.";
                 return false;
             }
 
@@ -1026,7 +1017,7 @@ namespace FPG.Demo.Unity
                 hasExecute |= value.Kind == FpgSkillSequenceKind.Execute;
             }
 
-            if (!hasExecute)
+            if (requiresExecuteSequence && !hasExecute)
             {
                 error = $"Skill '{skillId}' requires an Execute sequence.";
                 return false;
@@ -1069,7 +1060,8 @@ namespace FPG.Demo.Unity
 
                 definition = new FpgCompiledSkillDefinition(
                     FpgSkillStableId.CompileSkill(skillId),
-                    compiled);
+                    compiled,
+                    RequiresExecuteSequence);
                 error = string.Empty;
                 return true;
             }

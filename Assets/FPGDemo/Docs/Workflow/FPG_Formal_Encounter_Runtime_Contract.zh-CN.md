@@ -30,22 +30,24 @@
 
 本节是 Fei 副射的唯一设计与运行合同。旧 D0 副射文档、旧即时模式说明和旧表现字段表均已退役，不得作为实现或验收依据。
 
+两种模式由两个独立权威技能资产承载：`FPG_Fei_Secondary_Immediate.asset` 只拥有 `Execute`，`FPG_Fei_Secondary_Charge.asset` 只拥有 `ChargeEnter`、`ChargeLoop`、`Release`、`Cancel`。Weapon 依赖链必须同时稳定引用两者，并按已选择模式解析对应资产；不得把五个序列重新合并到单一技能资产。
+
 角色选择阶段必须展示 Fei 的两种副射模式，并把选择写入 `FpgPlayableCharacterSelection` 和跨场景选择快照；选择只在当前运行中生效，不写入持久化设置。只有一个可用模式的角色可自动选择，Fei 默认模式为瞬发：
 
 - **瞬发模式**：点按执行一次，长按按弹药与副射冷却重复执行；每次使用 `Execute`，动画为 `defense_play`，初始时长 60 Tick。
 - **蓄力模式**：按下后依次进入 `ChargeEnter` 与 `ChargeLoop`，满蓄后松开进入 `Release`，成功发射完成后进入 `Cancel` 作为后摇；未满松开直接进入 `Cancel`，不提交攻击也不扣弹。
 
-五个序列的固定职责如下：
+两个资产内各序列的固定职责如下：
 
-| Sequence | 动画 | 初始时长 | 职责 |
-| --- | --- | ---: | --- |
-| `Execute` | `defense_play` | 60 Tick | 瞬发模式单次射击；包含与 `Release` 相同的攻击 payload 和发射表现 |
-| `ChargeEnter` | `u4_attack_ready` | 28 Tick | 蓄力起始，不提交攻击 |
-| `ChargeLoop` | `u4_attack_ready` | 持续 | 动画 `loop=true`，运行时 `holdUntilCanceled=true`，持续到松开或硬中断 |
-| `Release` | `u4_attack_play` | 52 Tick | 满蓄松开的发射段；Tick 0 提交攻击 |
-| `Cancel` | `u4_attack_end` | 28 Tick | 未满取消或成功发射后的后摇 |
+| Asset | Sequence | 动画 | 初始时长 | 职责 |
+| --- | --- | --- | ---: | --- |
+| `FPG_Fei_Secondary_Immediate.asset` | `Execute` | `defense_play` | 60 Tick | 瞬发模式单次射击；包含与 `Release` 相同的攻击 payload 和发射表现 |
+| `FPG_Fei_Secondary_Charge.asset` | `ChargeEnter` | `u4_attack_ready` | 28 Tick | 蓄力起始，不提交攻击 |
+| `FPG_Fei_Secondary_Charge.asset` | `ChargeLoop` | `u4_attack_ready` | 持续 | 动画 `loop=true`，运行时 `holdUntilCanceled=true`，持续到松开或硬中断 |
+| `FPG_Fei_Secondary_Charge.asset` | `Release` | `u4_attack_play` | 52 Tick | 满蓄松开的发射段；Tick 0 提交攻击 |
+| `FPG_Fei_Secondary_Charge.asset` | `Cancel` | `u4_attack_end` | 28 Tick | 未满取消或成功发射后的后摇 |
 
-`loop` 只控制 Spine 动画取样；`holdUntilCanceled` 独立控制序列运行时保持。各阶段拥有独立 Execution ID，但由控制器维护为一个逻辑动作链。`Execute` 与 `Release` 必须使用相同的固定攻击 payload：弹药、伤害、削韧、射程、弹丸、范围和命中上限均不随蓄力进度变化。
+`loop` 只控制 Spine 动画取样；`holdUntilCanceled` 独立控制序列运行时保持。各阶段拥有独立 Execution ID，但由控制器维护为一个逻辑动作链。拆分不改变 gameplay 行为：`Execute` 与 `Release` 必须使用相同的固定攻击 payload，弹药、伤害、削韧、射程、弹丸、范围和命中上限均不随蓄力进度变化。
 
 蓄力进度以技能启动 Tick 为基准，`chargeProgressTicks = minimumChargeTicks = 30`。进度为 `clamp((currentTick - chargeStartTick) / 30, 0, 1)`；满蓄前松开取消，满蓄后继续按住时保持 1。仿真快照发布 `IsSecondaryCharging`、`SecondaryChargeProgress` 和蓄力起始 Tick，表现层不得用 `deltaTime` 重建第二套进度。
 
@@ -59,9 +61,9 @@
 - 不允许按 Luan、Hudie 或其他敌人 ID 编写特殊运行分支。
 - Luan 召唤的 delay 阶段只发布开始/蓄力事实，不提前调用 summon sink，也不杀死 owner。
 - Luan 使用通用 `ReplaceOwner + OwnerPosition` 策略：释放时跳过房间玩法配额和普通出生点，实体端在 owner 存活期间快照其根节点世界 Pose 并 Prepare Hudie。
-- Luan 的 Summon 与 `SelfDestructOwner` 是两个独立玩法节点；自杀节点通过稳定 Event ID 绑定同 Tick 更早的 Summon，不由召唤载荷携带死亡结果。
-- 只有 Hudie Prepare 并进入统一 Spawn Queue、sink 返回 `Queued` 后，绑定的自杀节点才执行并允许 Luan 死亡。
-- Retry 保留 owner、召唤命令与等待中的自杀命令；静态玩法配额结束只消费普通召唤命令，绑定的自杀命令不执行。ReplaceOwner 的固定容量或状态拒绝属于预检未覆盖的系统故障：不会提交 owner 死亡，而是让战斗按既有契约 fail-closed。
+- Luan 的 Summon 与 `SelfDestructOwner` 是两个独立玩法节点；当前配置在 Tick 44 召唤，并在 Tick 71 以空绑定自毁，不由召唤载荷或 Occupancy Mode 隐式携带死亡结果。
+- 空绑定自毁按自身 Tick 无条件执行；若策划把自毁绑定到同 Tick 更早的 Summon，则只有 Hudie Prepare 并进入统一 Spawn Queue、sink 返回 `Queued` 后才允许 Luan 死亡。
+- Retry、拒绝或静态上限只会门控实际配置了依赖的自毁节点；空绑定节点不等待召唤结果。ReplaceOwner 的固定容量或状态拒绝仍按既有契约 fail-closed，不得通过敌人 ID 特判改变配置语义。
 
 ## 清场、出口与跨房
 
@@ -84,6 +86,6 @@ PlayMode 的动作观感、命中反馈和完整试玩由人工验收；自动�
 3. Fei 蓄力副射按 `ChargeEnter → ChargeLoop → Release → Cancel` 转换，准星和枪口特效在 30 Tick 同步达到满蓄；未满松开不扣弹。
 4. `Release` Tick 0 提交攻击，`Cancel` 后摇可被满足弹药和独立冷却条件的主射或副射抢占；已提交弹丸和命中特效继续完成。
 5. Fei 换弹只在第 84 Tick 补满弹匣，终点提交后动作结束。
-6. Burstbug、Hudie、Luan 的预警、动作与逻辑事件分别在迁移后的精确 Tick 触发；Luan 保持 ReplaceOwner、OwnerPosition，并由绑定 Summon 的独立 `SelfDestructOwner` 节点在成功入队后结束 owner。
+6. Burstbug、Hudie、Luan 的预警、动作与逻辑事件分别在迁移后的精确 Tick 触发；Luan 保持 ReplaceOwner、OwnerPosition，并由 Tick 71 的空绑定 `SelfDestructOwner` 节点按配置结束 owner。
 7. 每次成功提交的动画、VFX/SFX、Combat Trace 使用相同 Execution ID、Event ID 与 Tick；被取消或失败的事件不产生 Attack/Shot ID。
 8. 观察 60 次 FixedUpdate 约等于一秒，并确认硬打断只取消尚未触发的事件。

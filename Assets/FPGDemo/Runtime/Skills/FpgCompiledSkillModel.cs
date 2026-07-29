@@ -662,8 +662,19 @@ namespace FPG.Demo.Skills
         private readonly FpgCompiledSkillSequence[] sequences;
 
         public FpgCompiledSkillDefinition(int skillId, FpgCompiledSkillSequence[] sequences)
+            : this(skillId, sequences, true)
         {
-            FpgSkillValidationResult validation = FpgSkillCompiler.ValidateDefinition(skillId, sequences);
+        }
+
+        public FpgCompiledSkillDefinition(
+            int skillId,
+            FpgCompiledSkillSequence[] sequences,
+            bool requiresExecuteSequence)
+        {
+            FpgSkillValidationResult validation = FpgSkillCompiler.ValidateDefinition(
+                skillId,
+                sequences,
+                requiresExecuteSequence);
             if (!validation.IsValid)
             {
                 throw new ArgumentException(validation.ToString(), nameof(sequences));
@@ -726,14 +737,35 @@ namespace FPG.Demo.Skills
             out FpgCompiledSkillDefinition definition,
             out FpgSkillValidationResult validation)
         {
-            validation = FpgSkillCompiler.ValidateDefinition(skillId, sequences);
+            return TryCreate(
+                skillId,
+                sequences,
+                true,
+                out definition,
+                out validation);
+        }
+
+        public static bool TryCreate(
+            int skillId,
+            FpgCompiledSkillSequence[] sequences,
+            bool requiresExecuteSequence,
+            out FpgCompiledSkillDefinition definition,
+            out FpgSkillValidationResult validation)
+        {
+            validation = FpgSkillCompiler.ValidateDefinition(
+                skillId,
+                sequences,
+                requiresExecuteSequence);
             if (!validation.IsValid)
             {
                 definition = null;
                 return false;
             }
 
-            definition = new FpgCompiledSkillDefinition(skillId, sequences);
+            definition = new FpgCompiledSkillDefinition(
+                skillId,
+                sequences,
+                requiresExecuteSequence);
             return true;
         }
     }
@@ -794,12 +826,40 @@ namespace FPG.Demo.Skills
             out FpgCompiledSkillDefinition definition,
             out FpgSkillValidationResult validation)
         {
-            return FpgCompiledSkillDefinition.TryCreate(skillId, sequences, out definition, out validation);
+            return TryCompileDefinition(
+                skillId,
+                sequences,
+                true,
+                out definition,
+                out validation);
+        }
+
+        public static bool TryCompileDefinition(
+            int skillId,
+            FpgCompiledSkillSequence[] sequences,
+            bool requiresExecuteSequence,
+            out FpgCompiledSkillDefinition definition,
+            out FpgSkillValidationResult validation)
+        {
+            return FpgCompiledSkillDefinition.TryCreate(
+                skillId,
+                sequences,
+                requiresExecuteSequence,
+                out definition,
+                out validation);
         }
 
         internal static FpgSkillValidationResult ValidateDefinition(
             int skillId,
             FpgCompiledSkillSequence[] sequences)
+        {
+            return ValidateDefinition(skillId, sequences, true);
+        }
+
+        internal static FpgSkillValidationResult ValidateDefinition(
+            int skillId,
+            FpgCompiledSkillSequence[] sequences,
+            bool requiresExecuteSequence)
         {
             if (skillId <= 0)
             {
@@ -849,7 +909,7 @@ namespace FPG.Demo.Skills
                 }
             }
 
-            if (!hasExecute)
+            if (requiresExecuteSequence && !hasExecute)
             {
                 return Invalid(FpgSkillValidationError.MissingExecuteSequence, -1, -1, 0);
             }

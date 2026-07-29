@@ -5,6 +5,7 @@ using FPG.Demo.Core;
 using FPG.Demo.Player;
 using FPG.Demo.Skills;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FPG.Demo.Unity
 {
@@ -45,9 +46,14 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private FpgPlayerSkillDefinition primarySkill;
 
-        [D0PlannerField("副射技能", "副射正式技能资产。蓄力释放优先执行 Release 序列，否则执行 Execute 序列。")]
+        [D0PlannerField("瞬发副射技能", "按住重复触发的独立副射技能资产，只执行 Execute 序列。")]
         [SerializeField]
-        private FpgPlayerSkillDefinition secondarySkill;
+        private FpgPlayerSkillDefinition immediateSecondarySkill;
+
+        [D0PlannerField("蓄力副射技能", "按下、蓄力、释放与取消的独立副射技能资产。")]
+        [FormerlySerializedAs("secondarySkill")]
+        [SerializeField]
+        private FpgPlayerSkillDefinition chargeSecondarySkill;
 
         [D0PlannerField("换弹技能", "换弹正式技能资产。Execute 序列必须包含 ReloadCommit 逻辑事件。")]
         [SerializeField]
@@ -87,14 +93,9 @@ namespace FPG.Demo.Unity
                 ? payload.AdditionalPenetrationCount
                 : 0;
 
-        public SecondaryTriggerMode SecondaryTriggerMode =>
-            secondarySkill == null
-                ? SecondaryTriggerMode.ChargeRelease
-                : secondarySkill.SecondaryTriggerMode;
-
         public AttackQueryMode SecondaryQueryMode =>
             TryFindCompiledPayload(
-                secondarySkill,
+                chargeSecondarySkill,
                 FpgPlayerSkillActionKind.AreaAtFirstSurface,
                 FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
                 out FpgCompiledPlayerSkillAction payload)
@@ -102,15 +103,17 @@ namespace FPG.Demo.Unity
                 : AttackQueryMode.AreaAtFirstSurface;
 
         public int SecondaryMinimumChargeTicks =>
-            secondarySkill == null ? 0 : secondarySkill.MinimumChargeTicks;
+            chargeSecondarySkill == null
+                ? 0
+                : chargeSecondarySkill.MinimumChargeTicks;
 
         public int SecondaryAmmoCost => GetSequenceAmmoCost(
-            secondarySkill,
-            ResolveSecondarySequenceKind());
+            chargeSecondarySkill,
+            FpgSkillSequenceKind.Release);
 
         public int SecondaryEnemyMaxImpactCount =>
             TryFindCompiledPayload(
-                secondarySkill,
+                chargeSecondarySkill,
                 FpgPlayerSkillActionKind.AreaAtFirstSurface,
                 FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
                 out FpgCompiledPlayerSkillAction payload)
@@ -119,7 +122,7 @@ namespace FPG.Demo.Unity
 
         public int SecondaryProjectileMaxImpactCount =>
             TryFindCompiledPayload(
-                secondarySkill,
+                chargeSecondarySkill,
                 FpgPlayerSkillActionKind.AreaAtFirstSurface,
                 FpgPlayerSkillActionKind.ProjectileAreaAtFirstSurface,
                 out FpgCompiledPlayerSkillAction payload)
@@ -131,7 +134,10 @@ namespace FPG.Demo.Unity
             FpgSkillSequenceKind.Execute);
 
         public FpgPlayerSkillDefinition PrimarySkill => primarySkill;
-        public FpgPlayerSkillDefinition SecondarySkill => secondarySkill;
+        public FpgPlayerSkillDefinition ImmediateSecondarySkill =>
+            immediateSecondarySkill;
+        public FpgPlayerSkillDefinition ChargeSecondarySkill =>
+            chargeSecondarySkill;
         public FpgPlayerSkillDefinition ReloadSkill => reloadSkill;
 
         public PlayerAimIndicatorPresentationDefinition AimIndicator =>
@@ -155,7 +161,7 @@ namespace FPG.Demo.Unity
         public bool TryCreate(out WeaponDefinition definition, out string error)
         {
             return TryCreate(
-                SecondaryTriggerMode,
+                SecondaryTriggerMode.ChargeRelease,
                 out definition,
                 out error);
         }
@@ -186,7 +192,16 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!TryResolveSecondarySkill(
+                    secondaryTriggerModeOverride,
+                    out FpgPlayerSkillDefinition selectedSecondarySkill,
+                    out error))
+            {
+                return false;
+            }
+
             if (!TryCompileSkills(
+                    secondaryTriggerModeOverride,
                     out FpgCompiledPlayerSkillDefinition compiledPrimary,
                     out FpgCompiledPlayerSkillDefinition compiledSecondary,
                     out FpgCompiledPlayerSkillDefinition compiledReload,
@@ -215,7 +230,7 @@ namespace FPG.Demo.Unity
                     new TickDuration(projection.PrimaryLockTicks),
                     projection.PrimaryPayload.Damage,
                     projection.SecondaryAmmoCost,
-                    new TickDuration(SecondaryMinimumChargeTicks),
+                    new TickDuration(selectedSecondarySkill.MinimumChargeTicks),
                     new TickDuration(projection.SecondaryLockTicks),
                     projection.SecondaryPayload.Damage,
                     new TickDuration(projection.ReloadLockTicks),
@@ -240,6 +255,7 @@ namespace FPG.Demo.Unity
         }
 
         public bool TryCompileSkills(
+            SecondaryTriggerMode secondaryTriggerMode,
             out FpgCompiledPlayerSkillDefinition compiledPrimary,
             out FpgCompiledPlayerSkillDefinition compiledSecondary,
             out FpgCompiledPlayerSkillDefinition compiledReload,
@@ -249,9 +265,45 @@ namespace FPG.Demo.Unity
             compiledSecondary = null;
             compiledReload = null;
 
-            if (primarySkill == null || secondarySkill == null || reloadSkill == null)
+            if (primarySkill == null || immediateSecondarySkill == null
+                || chargeSecondarySkill == null || reloadSkill == null)
             {
-                error = "Weapon definition requires primary, secondary and reload skill assets.";
+                error = "Weapon definition requires primary, immediate secondary, charge secondary and reload skill assets.";
+                return false;
+            }
+
+            if (ReferenceEquals(immediateSecondarySkill, chargeSecondarySkill))
+            {
+                error = "Weapon definition requires distinct immediate and charge secondary skill assets.";
+                return false;
+            }
+
+            if (string.Equals(
+                    immediateSecondarySkill.SkillId,
+                    chargeSecondarySkill.SkillId,
+                    StringComparison.Ordinal))
+            {
+                error = "Weapon definition requires unique immediate and charge secondary skill IDs.";
+                return false;
+            }
+
+            if (!TryResolveSecondarySkill(
+                    secondaryTriggerMode,
+                    out FpgPlayerSkillDefinition selectedSecondarySkill,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!TryResolveSecondarySkill(
+                    SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                    out _,
+                    out error)
+                || !TryResolveSecondarySkill(
+                    SecondaryTriggerMode.ChargeRelease,
+                    out _,
+                    out error))
+            {
                 return false;
             }
 
@@ -261,11 +313,27 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (!secondarySkill.TryCompile(out compiledSecondary, out error))
+            if (!immediateSecondarySkill.TryCompile(
+                    out FpgCompiledPlayerSkillDefinition compiledImmediate,
+                    out error))
             {
-                error = "Secondary skill is invalid: " + error;
+                error = "Immediate secondary skill is invalid: " + error;
                 return false;
             }
+
+            if (!chargeSecondarySkill.TryCompile(
+                    out FpgCompiledPlayerSkillDefinition compiledCharge,
+                    out error))
+            {
+                error = "Charge secondary skill is invalid: " + error;
+                return false;
+            }
+
+            compiledSecondary = ReferenceEquals(
+                    selectedSecondarySkill,
+                    immediateSecondarySkill)
+                ? compiledImmediate
+                : compiledCharge;
 
             if (!reloadSkill.TryCompile(out compiledReload, out error))
             {
@@ -298,12 +366,7 @@ namespace FPG.Demo.Unity
             }
 
             FpgSkillSequenceKind secondarySequenceKind =
-                secondaryTriggerModeOverride == SecondaryTriggerMode.ChargeRelease
-                    && compiledSecondary.Timeline.TryGetSequence(
-                        FpgSkillSequenceKind.Release,
-                        out _)
-                        ? FpgSkillSequenceKind.Release
-                        : FpgSkillSequenceKind.Execute;
+                ResolveSecondarySequenceKind(secondaryTriggerModeOverride);
             if (!compiledSecondary.Timeline.TryGetSequence(
                     secondarySequenceKind,
                     out FpgCompiledSkillSequence secondarySequence)
@@ -489,9 +552,49 @@ namespace FPG.Demo.Unity
         }
 
 
-        private FpgSkillSequenceKind ResolveSecondarySequenceKind()
+        public bool TryResolveSecondarySkill(
+            SecondaryTriggerMode mode,
+            out FpgPlayerSkillDefinition skill,
+            out string error)
         {
-            return SecondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+            switch (mode)
+            {
+                case SecondaryTriggerMode.ImmediateRepeatWhileHeld:
+                    skill = immediateSecondarySkill;
+                    break;
+                case SecondaryTriggerMode.ChargeRelease:
+                    skill = chargeSecondarySkill;
+                    break;
+                default:
+                    skill = null;
+                    error =
+                        $"Weapon definition has invalid secondary trigger mode '{mode}'.";
+                    return false;
+            }
+
+            if (skill == null)
+            {
+                error =
+                    $"Weapon definition has no secondary skill for trigger mode '{mode}'.";
+                return false;
+            }
+
+            if (skill.SecondaryTriggerMode != mode)
+            {
+                error =
+                    $"Secondary skill '{skill.SkillId}' declares trigger mode '{skill.SecondaryTriggerMode}' instead of '{mode}'.";
+                skill = null;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static FpgSkillSequenceKind ResolveSecondarySequenceKind(
+            SecondaryTriggerMode mode)
+        {
+            return mode == SecondaryTriggerMode.ChargeRelease
                 ? FpgSkillSequenceKind.Release
                 : FpgSkillSequenceKind.Execute;
         }

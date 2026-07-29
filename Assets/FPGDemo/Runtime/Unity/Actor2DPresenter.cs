@@ -848,7 +848,11 @@ namespace FPG.Demo.Unity
                     out error)
                 && TryValidateSkillAnimations(
                     data,
-                    weaponDefinition.SecondarySkill,
+                    weaponDefinition.ImmediateSecondarySkill,
+                    out error)
+                && TryValidateSkillAnimations(
+                    data,
+                    weaponDefinition.ChargeSecondarySkill,
                     out error)
                 && TryValidateSkillAnimations(
                     data,

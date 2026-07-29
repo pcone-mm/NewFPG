@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/FPGDemo/Scenes/FormalRoom.unity
     guid: 83060ba3cbc3bb245ad3967738ee772a
   - enabled: 1
+    path: Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest 1.unity
+    guid: 6710223166a741541a98dd27af74fac3
+  - enabled: 1
     path: Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest.unity
     guid: 7de16d1db687374429ee606861571e00
   m_configObjects:

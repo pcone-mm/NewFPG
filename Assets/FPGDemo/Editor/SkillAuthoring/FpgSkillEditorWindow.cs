@@ -266,6 +266,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 OnTimelineEventSelectionChanged;
             timelineView.EventsTickDeltaChanged +=
                 OnTimelineEventsTickDeltaChanged;
+            timelineView.EventRangeChanged +=
+                OnTimelineEventRangeChanged;
             timelineView.BlockRangeChanged +=
                 OnTimelineBlockRangeChanged;
             timelineView.BlockSelected += OnTimelineBlockSelected;
@@ -1832,6 +1834,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void OnTimelineEventSelectionChanged(
             IReadOnlyList<FpgSkillEventKey> eventKeys)
         {
+            if (eventKeys != null && eventKeys.Count > 0)
+            {
+                Pause();
+            }
             eventSelection.Set(
                 eventKeys,
                 timelineView.SelectedEventKey);
@@ -1851,10 +1857,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
                             record.PresentationTrackIndex;
                     }
 
-                    SetCurrentTick(
-                        PreviewTickForSelectedSequence(record.Tick),
-                        false,
-                        false);
                 }
             }
 
@@ -1878,15 +1880,38 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            currentTick = PreviewTickForSelectedSequence(
-                Mathf.Clamp(
-                    timelineView.PlayheadTick,
-                    0,
-                    durationTicks));
             eventSelection.Set(
                 eventKeys,
                 timelineView.SelectedEventKey);
             selectedEventKey = eventSelection.PrimaryEventKey;
+            RefreshFromSerialized();
+        }
+
+        private void OnTimelineEventRangeChanged(
+            FpgSkillEventKey eventKey,
+            FpgSkillTimelineEventRangeEditMode editMode,
+            int requestedStartTick,
+            int requestedEndTick)
+        {
+            if (serializedAsset == null
+                || !FpgSkillSerializedAdapter.EditWarningRange(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    eventKey,
+                    editMode,
+                    requestedStartTick,
+                    requestedEndTick,
+                    out _,
+                    out _))
+            {
+                RefreshTimeline();
+                RefreshInspector();
+                return;
+            }
+
+            selectedAnimationTrack = false;
+            selectedEventKey = eventKey;
+            eventSelection.SetSingle(eventKey);
             RefreshFromSerialized();
         }
 
@@ -1902,7 +1927,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 index,
                 editMode,
                 requestedStartTick,
-                requestedEndTick);
+                requestedEndTick,
+                preservePreviewTick: true);
         }
 
         private void CommitTimelineBlockRange(
@@ -1911,7 +1937,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             FpgSkillTimelineBlockEditMode editMode,
             int requestedStartTick,
             int requestedEndTick,
-            int requestedFocusTick = -1)
+            int requestedFocusTick = -1,
+            bool preservePreviewTick = false)
         {
             if (serializedAsset == null
                 || !FpgSkillSerializedAdapter.EditTimelineBlockRange(
@@ -1930,14 +1957,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            int maximumTick = Mathf.Max(durationTicks, appliedEndTick);
-            int focusTick = requestedFocusTick >= 0
-                ? Mathf.Min(requestedFocusTick, maximumTick)
-                : editMode == FpgSkillTimelineBlockEditMode.ResizeEnd
-                    ? appliedEndTick
-                    : appliedStartTick;
-            currentTick = PreviewTickForSelectedSequence(
-                Mathf.Clamp(focusTick, 0, maximumTick));
+            if (!preservePreviewTick)
+            {
+                int maximumTick = Mathf.Max(durationTicks, appliedEndTick);
+                int focusTick = requestedFocusTick >= 0
+                    ? Mathf.Min(requestedFocusTick, maximumTick)
+                    : editMode == FpgSkillTimelineBlockEditMode.ResizeEnd
+                        ? appliedEndTick
+                        : appliedStartTick;
+                currentTick = PreviewTickForSelectedSequence(
+                    Mathf.Clamp(focusTick, 0, maximumTick));
+            }
             selectedAnimationTrack =
                 kind == FpgSkillTimelineBlockKind.Animation;
             selectedEventKey = FpgSkillEventKey.Invalid;
@@ -1992,11 +2022,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            currentTick = PreviewTickForSelectedSequence(request.Tick);
             if (request.Track == FpgSkillEventTrackKind.GameplayAction)
             {
                 GenericMenu actionMenu = new GenericMenu();
-                BuildActionAddMenu(actionMenu, request.Tick);
+                BuildActionAddMenu(
+                    actionMenu,
+                    request.Tick,
+                    preservePreviewTick: true);
                 actionMenu.ShowAsContext();
                 return;
             }
@@ -2011,7 +2043,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     presentationMenu,
                     request.PresentationTrackIndex,
                     request.Tick,
-                    string.Empty);
+                    string.Empty,
+                    preservePreviewTick: true);
                 presentationMenu.ShowAsContext();
                 return;
             }
@@ -2035,12 +2068,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             eventSelection.SetSingle(eventKey);
             selectedEventKey = eventKey;
-            currentTick = PreviewTickForSelectedSequence(request.Tick);
             RefreshFromSerialized();
-            SelectEvent(eventKey, true);
+            SelectEvent(eventKey, true, seekPreview: false);
         }
 
-        private void SelectEvent(FpgSkillEventKey eventKey, bool frame)
+        private void SelectEvent(
+            FpgSkillEventKey eventKey,
+            bool frame,
+            bool seekPreview = true)
         {
             selectedEventKey = NormalizeEventSelection(eventKey);
 
@@ -2060,10 +2095,17 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     RefreshPresentationTrackControls();
                 }
 
-                SetCurrentTick(
-                    PreviewTickForSelectedSequence(record.Tick),
-                    false,
-                    frame);
+                if (seekPreview)
+                {
+                    SetCurrentTick(
+                        PreviewTickForSelectedSequence(record.Tick),
+                        false,
+                        frame);
+                }
+                else if (frame)
+                {
+                    timelineView.FrameTick(record.Tick);
+                }
             }
 
             RefreshInspector();
@@ -2099,7 +2141,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void BuildActionAddMenu(
             GenericMenu menu,
-            int tick)
+            int tick,
+            bool preservePreviewTick = false)
         {
             bool enemy = selectedAsset != null
                 && selectedAsset.GetType().Name.IndexOf(
@@ -2111,49 +2154,56 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 FpgSkillActionKind.Attack,
                 1,
                 !enemy,
-                tick);
+                tick,
+                preservePreviewTick);
             AddTypedActionMenuItem(
                 menu,
                 "玩法动作/范围攻击",
                 FpgSkillActionKind.Attack,
                 2,
                 !enemy,
-                tick);
+                tick,
+                preservePreviewTick);
             AddTypedActionMenuItem(
                 menu,
                 "玩法动作/指定目标攻击",
                 FpgSkillActionKind.Attack,
                 3,
                 enemy,
-                tick);
+                tick,
+                preservePreviewTick);
             AddTypedActionMenuItem(
                 menu,
                 "玩法动作/发射投射物",
                 FpgSkillActionKind.LaunchProjectile,
                 enemy ? 2 : 1,
                 true,
-                tick);
+                tick,
+                preservePreviewTick);
             AddTypedActionMenuItem(
                 menu,
                 "玩法动作/完成换弹",
                 FpgSkillActionKind.CommitReload,
                 0,
                 !enemy,
-                tick);
+                tick,
+                preservePreviewTick);
             AddTypedActionMenuItem(
                 menu,
                 "玩法动作/召唤单位",
                 FpgSkillActionKind.SummonActors,
                 0,
                 enemy,
-                tick);
+                tick,
+                preservePreviewTick);
             AddTypedActionMenuItem(
                 menu,
                 "玩法动作/召唤者自毁",
                 FpgSkillActionKind.SelfDestructOwner,
                 0,
                 enemy,
-                tick);
+                tick,
+                preservePreviewTick);
         }
 
         private void AddTypedActionMenuItem(
@@ -2162,7 +2212,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             FpgSkillActionKind actionKind,
             int modeValue,
             bool enabled,
-            int tick)
+            int tick,
+            bool preservePreviewTick)
         {
             GUIContent content = new GUIContent(label);
             if (enabled)
@@ -2170,7 +2221,11 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 menu.AddItem(
                     content,
                     false,
-                    () => AddAction(actionKind, modeValue, tick));
+                    () => AddAction(
+                        actionKind,
+                        modeValue,
+                        tick,
+                        preservePreviewTick));
             }
             else
             {
@@ -2182,7 +2237,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             GenericMenu menu,
             int presentationTrackIndex,
             int tick,
-            string prefix)
+            string prefix,
+            bool preservePreviewTick = false)
         {
             string menuPrefix = prefix ?? string.Empty;
             if (presentationTrackIndex < 0
@@ -2199,27 +2255,31 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 () => AddActivePresentationEvent(
                     presentationTrackIndex,
                     FpgSkillEventTrackKind.PresentationVfx,
-                    tick));
+                    tick,
+                    preservePreviewTick));
             menu.AddItem(
                 new GUIContent(menuPrefix + "音效"),
                 false,
                 () => AddActivePresentationEvent(
                     presentationTrackIndex,
                     FpgSkillEventTrackKind.PresentationAudio,
-                    tick));
+                    tick,
+                    preservePreviewTick));
             menu.AddItem(
                 new GUIContent(menuPrefix + "震屏"),
                 false,
                 () => AddActivePresentationEvent(
                     presentationTrackIndex,
                     FpgSkillEventTrackKind.PresentationCameraShake,
-                    tick));
+                    tick,
+                    preservePreviewTick));
         }
 
         private void AddActivePresentationEvent(
             int presentationTrackIndex,
             FpgSkillEventTrackKind eventTrack,
-            int tick)
+            int tick,
+            bool preservePreviewTick)
         {
             FpgSkillEventKey eventKey =
                 FpgSkillSerializedAdapter.AddActivePresentationEvent(
@@ -2234,13 +2294,16 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
-            currentTick = PreviewTickForSelectedSequence(tick);
+            if (!preservePreviewTick)
+            {
+                currentTick = PreviewTickForSelectedSequence(tick);
+            }
             selectedPresentationTrackIndex = presentationTrackIndex;
             selectedEventKey = eventKey;
 
             eventSelection.SetSingle(eventKey);
             RefreshFromSerialized();
-            SelectEvent(eventKey, true);
+            SelectEvent(eventKey, true, !preservePreviewTick);
         }
 
         private void AddEventMenuItem(
@@ -2287,7 +2350,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void AddAction(
             FpgSkillActionKind actionKind,
             int modeValue,
-            int tick)
+            int tick,
+            bool preservePreviewTick)
         {
             FpgSkillEventKey eventKey =
                 FpgSkillSerializedAdapter.AddAction(
@@ -2304,9 +2368,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             selectedEventKey = eventKey;
 
-            currentTick = PreviewTickForSelectedSequence(tick);
+            if (!preservePreviewTick)
+            {
+                currentTick = PreviewTickForSelectedSequence(tick);
+            }
             RefreshFromSerialized();
-            SelectEvent(eventKey, true);
+            SelectEvent(eventKey, true, !preservePreviewTick);
         }
 
         private void DuplicateEvent()

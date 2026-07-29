@@ -151,7 +151,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         public static bool TrySynchronizeAll(out string error)
         {
-            FpgRoomDefinition[] rooms = LoadCatalogRooms();
+            FpgRoomDefinition[] rooms = LoadAllRooms();
             Array.Sort(
                 rooms,
                 (left, right) => StringComparer.Ordinal.Compare(
@@ -159,8 +159,35 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     right.RoomId));
             for (int index = 0; index < rooms.Length; index++)
             {
-                if (!TrySynchronizeReference(
+                FpgRoomArtSceneReference artScene = rooms[index].ArtScene;
+                if (artScene == null
+                    || (string.IsNullOrWhiteSpace(artScene.SceneGuid)
+                        && string.IsNullOrWhiteSpace(artScene.ScenePath)))
+                {
+                    continue;
+                }
+
+                if (!TryPreflightSynchronization(
                         rooms[index],
+                        out error))
+                {
+                    return false;
+                }
+            }
+
+            for (int index = 0; index < rooms.Length; index++)
+            {
+                FpgRoomDefinition room = rooms[index];
+                FpgRoomArtSceneReference artScene = room.ArtScene;
+                if (artScene == null
+                    || (string.IsNullOrWhiteSpace(artScene.SceneGuid)
+                        && string.IsNullOrWhiteSpace(artScene.ScenePath)))
+                {
+                    continue;
+                }
+
+                if (!TrySynchronizeReference(
+                        room,
                         out error))
                 {
                     return false;
@@ -170,6 +197,58 @@ namespace FPG.Demo.Editor.LevelAuthoring
             error = string.Empty;
             return true;
         }
+
+        public static FpgRoomDefinition[] LoadAllRooms()
+        {
+            return AssetDatabase.FindAssets("t:FpgRoomDefinition")
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(path =>
+                    AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(path))
+                .Where(room => room != null)
+                .OrderBy(room => room.RoomId, StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        private static bool TryPreflightSynchronization(
+            FpgRoomDefinition room,
+            out string error)
+        {
+            SerializedObject serializedRoom = new SerializedObject(room);
+            SerializedProperty artScene =
+                serializedRoom.FindProperty("artScene");
+            SerializedProperty guidProperty =
+                artScene?.FindPropertyRelative("sceneGuid");
+            SerializedProperty pathProperty =
+                artScene?.FindPropertyRelative("scenePath");
+            if (guidProperty == null || pathProperty == null)
+            {
+                error =
+                    $"Room '{room.name}' has no serialized Art Scene reference.";
+                return false;
+            }
+
+            string guid = guidProperty.stringValue;
+            if (string.IsNullOrWhiteSpace(guid))
+            {
+                error =
+                    $"Room '{room.name}' has an Art Scene path but no GUID.";
+                return false;
+            }
+
+            string resolvedPath = AssetDatabase.GUIDToAssetPath(guid);
+            if (string.IsNullOrWhiteSpace(resolvedPath)
+                || AssetDatabase.LoadAssetAtPath<SceneAsset>(
+                    resolvedPath) == null)
+            {
+                error =
+                    $"Room '{room.name}' Art Scene GUID '{guid}' does not resolve to a Scene asset.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
 
         public static FpgRoomDefinition[] LoadCatalogRooms()
         {
@@ -272,6 +351,27 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgRoomDefinition room,
             out string error)
         {
+            return TryValidateSceneCore(
+                room,
+                false,
+                out error);
+        }
+
+        internal static bool TryValidateSceneForBindingRepair(
+            FpgRoomDefinition room,
+            out string error)
+        {
+            return TryValidateSceneCore(
+                room,
+                true,
+                out error);
+        }
+
+        private static bool TryValidateSceneCore(
+            FpgRoomDefinition room,
+            bool allowDirtyLoadedScene,
+            out string error)
+        {
             error = string.Empty;
             if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
                     room,
@@ -292,13 +392,32 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         OpenSceneMode.Additive);
                 }
 
+                if (scene.isDirty
+                    && (openedForValidation || !allowDirtyLoadedScene))
+                {
+                    error = openedForValidation
+                        ? $"Opening Art Scene '{scene.path}' dirtied it during validation; the scene was left open to avoid discarding changes."
+                        : $"Art Scene '{scene.path}' has unsaved changes; save it before validation.";
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
+                }
+
                 if (!FpgRoomArtRoot.TryResolve(
                         scene,
                         room,
                         out FpgRoomArtRoot root,
                         out error))
                 {
-                    return false;
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
                 }
 
                 if (SceneManager.GetActiveScene() != scene
@@ -306,40 +425,127 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 {
                     error =
                         $"Could not make Art Scene '{scene.path}' active for validation.";
-                    return false;
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
                 }
 
                 if (!TryGetAuthoredSun(out Light authoredSun, out error))
                 {
-                    return false;
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
                 }
 
                 if (authoredSun != root.MainDirectionalLight)
                 {
                     error =
                         $"Art Scene '{scene.path}' RenderSettings.sun must equal the root's main directional light.";
-                    return false;
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
                 }
 
                 if (!TryValidateForbiddenComponents(root, out error))
                 {
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
+                }
+
+                if (scene.isDirty
+                    && (openedForValidation || !allowDirtyLoadedScene))
+                {
+                    error =
+                        $"Validating Art Scene '{scene.path}' dirtied it; the scene was left open to avoid discarding changes.";
+                    return CompleteSceneValidation(
+                        false,
+                        openedForValidation,
+                        scene,
+                        previousActive,
+                        ref error);
+                }
+
+                return CompleteSceneValidation(
+                    true,
+                    openedForValidation,
+                    scene,
+                    previousActive,
+                    ref error);
+            }
+            catch (Exception exception)
+            {
+                error =
+                    "Art Scene validation failed: "
+                    + exception.GetBaseException().Message;
+                return CompleteSceneValidation(
+                    false,
+                    openedForValidation,
+                    scene,
+                    previousActive,
+                    ref error);
+            }
+        }
+
+        private static bool CompleteSceneValidation(
+            bool succeeded,
+            bool openedForValidation,
+            Scene scene,
+            Scene previousActive,
+            ref string error)
+        {
+            try
+            {
+                if (previousActive.IsValid() && previousActive.isLoaded
+                    && SceneManager.GetActiveScene() != previousActive
+                    && !SceneManager.SetActiveScene(previousActive))
+                {
+                    succeeded = false;
+                    error +=
+                        $" Could not restore active Scene '{previousActive.path}'.";
+                }
+
+                if (!openedForValidation
+                    || !scene.IsValid()
+                    || !scene.isLoaded)
+                {
+                    return succeeded;
+                }
+
+                if (scene.isDirty)
+                {
+                    error +=
+                        $" Art Scene '{scene.path}' remains open because validation left it dirty.";
                     return false;
                 }
 
-                return true;
-            }
-            finally
-            {
-                if (previousActive.IsValid() && previousActive.isLoaded
-                    && SceneManager.GetActiveScene() != previousActive)
+                if (!EditorSceneManager.CloseScene(scene, true))
                 {
-                    SceneManager.SetActiveScene(previousActive);
+                    error +=
+                        $" Could not close validated Art Scene '{scene.path}'.";
+                    return false;
                 }
 
-                if (openedForValidation && scene.IsValid() && scene.isLoaded)
-                {
-                    EditorSceneManager.CloseScene(scene, true);
-                }
+                return succeeded;
+            }
+            catch (Exception exception)
+            {
+                error +=
+                    " Art Scene validation cleanup failed: "
+                    + exception.GetBaseException().Message;
+                return false;
             }
         }
 

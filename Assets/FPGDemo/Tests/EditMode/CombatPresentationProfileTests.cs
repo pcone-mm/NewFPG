@@ -81,7 +81,7 @@ namespace FPG.Demo.Tests.EditMode
                 primary.ActivePresentationTracks[0].VfxEvents[0].OwnerSocketId,
                 Is.EqualTo(D0ActorSocketRegistry.PrimaryMuzzleId));
             FpgSkillSequenceDefinition secondaryExecute =
-                weapon.SecondarySkill.Sequences
+                weapon.ImmediateSecondarySkill.Sequences
                     .Single(item => item.Kind == FpgSkillSequenceKind.Execute);
             Assert.That(
                 secondaryExecute.MainAnimation,
@@ -91,7 +91,7 @@ namespace FPG.Demo.Tests.EditMode
                     .VfxEvents[0].OwnerSocketId,
                 Is.EqualTo(D0ActorSocketRegistry.SecondaryMuzzleId));
             FpgSkillSequenceDefinition secondaryRelease =
-                weapon.SecondarySkill.Sequences
+                weapon.ChargeSecondarySkill.Sequences
                     .Single(item => item.Kind == FpgSkillSequenceKind.Release);
             Assert.That(
                 secondaryRelease.MainAnimation,
@@ -114,16 +114,20 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void FeiWeaponUsesChargeReleaseSecondaryTriggerMode()
+        public void FeiWeaponResolvesBothSecondaryTriggerModes()
         {
             D0WeaponDefinition weapon =
                 LoadRequired<D0WeaponDefinition>(FeiWeaponPath);
 
             Assert.That(
-                weapon.SecondaryTriggerMode,
+                weapon.ImmediateSecondarySkill.SecondaryTriggerMode,
+                Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            Assert.That(
+                weapon.ChargeSecondarySkill.SecondaryTriggerMode,
                 Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
             Assert.That(
                 weapon.TryCreate(
+                    SecondaryTriggerMode.ChargeRelease,
                     out WeaponDefinition runtimeWeapon,
                     out string definitionError),
                 Is.True,
@@ -131,6 +135,16 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 runtimeWeapon.SecondaryTriggerMode,
                 Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
+            Assert.That(
+                weapon.TryCreate(
+                    SecondaryTriggerMode.ImmediateRepeatWhileHeld,
+                    out WeaponDefinition immediateWeapon,
+                    out string immediateError),
+                Is.True,
+                immediateError);
+            Assert.That(
+                immediateWeapon.SecondaryTriggerMode,
+                Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
         }
 
         [Test]

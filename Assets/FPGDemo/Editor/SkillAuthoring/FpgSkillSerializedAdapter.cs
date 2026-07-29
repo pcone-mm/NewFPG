@@ -2520,6 +2520,83 @@ namespace FPG.Demo.Editor.SkillAuthoring
             return true;
         }
 
+        public static bool EditWarningRange(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            FpgSkillEventKey eventKey,
+            FpgSkillTimelineEventRangeEditMode editMode,
+            int requestedStartTick,
+            int requestedEndTick,
+            out int appliedStartTick,
+            out int appliedEndTick)
+        {
+            appliedStartTick = 0;
+            appliedEndTick = 0;
+            if (serializedObject == null
+                || serializedObject.targetObject == null
+                || eventKey.Track != FpgSkillEventTrackKind.Warning)
+            {
+                return false;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            SerializedProperty warning = GetEventProperty(
+                serializedObject,
+                sequenceIndex,
+                eventKey);
+            SerializedProperty startProperty =
+                warning?.FindPropertyRelative("startTick");
+            SerializedProperty endProperty =
+                warning?.FindPropertyRelative("endTick");
+            int sequenceDuration = GetDurationTicks(sequence);
+            if (sequence == null
+                || sequenceDuration <= 0
+                || startProperty == null
+                || endProperty == null
+                || startProperty.propertyType
+                    != SerializedPropertyType.Integer
+                || endProperty.propertyType
+                    != SerializedPropertyType.Integer)
+            {
+                return false;
+            }
+
+            if (editMode
+                == FpgSkillTimelineEventRangeEditMode.ResizeStart)
+            {
+                appliedEndTick = Mathf.Clamp(
+                    requestedEndTick,
+                    1,
+                    sequenceDuration);
+                appliedStartTick = Mathf.Clamp(
+                    requestedStartTick,
+                    0,
+                    appliedEndTick - 1);
+            }
+            else
+            {
+                appliedStartTick = Mathf.Clamp(
+                    requestedStartTick,
+                    0,
+                    sequenceDuration - 1);
+                appliedEndTick = Mathf.Clamp(
+                    requestedEndTick,
+                    appliedStartTick + 1,
+                    sequenceDuration);
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Resize skill warning");
+            startProperty.intValue = appliedStartTick;
+            endProperty.intValue = appliedEndTick;
+            Apply(serializedObject);
+            return true;
+        }
+
         public static bool MoveTimelineBlockByDelta(
             SerializedObject serializedObject,
             int sequenceIndex,

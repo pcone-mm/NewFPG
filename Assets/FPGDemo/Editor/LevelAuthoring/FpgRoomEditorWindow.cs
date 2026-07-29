@@ -595,6 +595,32 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         : "Art Scene：已保存";
             }
 
+            if (definition != null
+                && FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    definition,
+                    out _))
+            {
+                Scene loadedArtScene = SceneManager.GetSceneByPath(
+                    definition.ArtScenePath);
+                if (loadedArtScene.IsValid()
+                    && loadedArtScene.isLoaded
+                    && !FpgRoomArtRoot.TryResolve(
+                        loadedArtScene,
+                        definition,
+                        out _,
+                        out string rootError))
+                {
+                    sceneState = "Art Scene: contract error (" + rootError + ")";
+                }
+            }
+
+            string productionState = definition == null
+                ? string.Empty
+                : !FpgRoomAuthoringOperations.IsRoomRegistered(definition)
+                    ? " | Production: not registered"
+                    : !FpgProductionSceneList.TryValidateEditorBuildSettings(out _)
+                        ? " | Production: Build Settings mismatch"
+                        : " | Production: registered";
             string cameraState = sceneTool?.IsCameraPreviewActive == true
                 ? $" | 镜头：16:9 {selectedCameraTemplate?.DisplayName}"
                 : string.Empty;
@@ -608,7 +634,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 : message + " | ";
             statusLabel.text =
                 prefix + roomState + " | " + sceneState + cameraState
-                + threeCState;
+                + threeCState + productionState;
         }
 
         private void OnSceneDirtied(Scene scene)
@@ -1686,6 +1712,53 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     .GroupBy(id => id, StringComparer.Ordinal)
                     .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
                 validation.AddRange(FpgRoomAuthoringSchema.Validate(selectedRoom, idCounts));
+
+                if (selectedRoom is FpgRoomDefinition definition)
+                {
+                    if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                            definition,
+                            out string referenceError))
+                    {
+                        validation.Add(new FpgRoomValidationItem(
+                            FpgRoomValidationSeverity.Error,
+                            "Art Scene reference is invalid: " + referenceError,
+                            "artScene"));
+                    }
+                    else
+                    {
+                        Scene loadedArtScene = SceneManager.GetSceneByPath(
+                            definition.ArtScenePath);
+                        if (loadedArtScene.IsValid()
+                            && loadedArtScene.isLoaded
+                            && !FpgRoomArtRoot.TryResolve(
+                                loadedArtScene,
+                                definition,
+                                out _,
+                                out string contractError))
+                        {
+                            validation.Add(new FpgRoomValidationItem(
+                                FpgRoomValidationSeverity.Error,
+                                "Art Scene contract is invalid: "
+                                + contractError,
+                                "artScene"));
+                        }
+                    }
+
+                    if (!FpgRoomAuthoringOperations.IsRoomRegistered(definition))
+                    {
+                        validation.Add(new FpgRoomValidationItem(
+                            FpgRoomValidationSeverity.Warning,
+                            "Room is not registered in the production RoomCatalog; runtime routing and builds cannot use it."));
+                    }
+                    else if (!FpgProductionSceneList.TryValidateEditorBuildSettings(
+                            out string buildSettingsError))
+                    {
+                        validation.Add(new FpgRoomValidationItem(
+                            FpgRoomValidationSeverity.Error,
+                            "Production Build Settings are invalid: "
+                            + buildSettingsError));
+                    }
+                }
             }
 
             if (selectedRoom != null && validation.Count == 0)
@@ -1793,44 +1866,47 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void DuplicateRoom()
         {
-            if (selectedRoom == null)
+            if (!(selectedRoom is FpgRoomDefinition sourceRoom))
             {
                 return;
             }
 
-            string sourcePath = AssetDatabase.GetAssetPath(selectedRoom);
+            string sourcePath = AssetDatabase.GetAssetPath(sourceRoom);
             string directory = Path.GetDirectoryName(sourcePath)?.Replace('\\', '/');
-            string defaultName = selectedRoom.name + "_Copy";
+            string defaultName = sourceRoom.name + "_Copy";
             string path = EditorUtility.SaveFilePanelInProject(
                 "Duplicate Room",
                 defaultName,
                 "asset",
-                "The copy receives a new room ID while marker IDs are preserved.",
+                "Copies the room and Art Scene, repairs the scene root binding, and registers both for production.",
                 directory);
             if (string.IsNullOrWhiteSpace(path))
             {
                 return;
             }
 
-            ScriptableObject copy = Instantiate(selectedRoom);
-            copy.name = Path.GetFileNameWithoutExtension(path);
-            SerializedObject serialized = new SerializedObject(copy);
-            serialized.FindProperty("roomId").stringValue = GenerateRoomId();
-            SerializedProperty displayName = serialized.FindProperty("displayName");
-            displayName.stringValue = string.IsNullOrWhiteSpace(displayName.stringValue)
-                ? copy.name
-                : displayName.stringValue + " Copy";
-            SerializedProperty artScene = serialized.FindProperty("artScene");
-            artScene.FindPropertyRelative("sceneGuid").stringValue =
-                string.Empty;
-            artScene.FindPropertyRelative("scenePath").stringValue =
-                string.Empty;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            AssetDatabase.CreateAsset(copy, AssetDatabase.GenerateUniqueAssetPath(path));
-            AssetDatabase.SaveAssetIfDirty(copy);
+            sceneTool?.PrepareForSceneSaveOrSwitch();
+            if (!FpgRoomAuthoringOperations.TryDuplicateRoomWithArtScene(
+                    sourceRoom,
+                    path,
+                    true,
+                    out FpgRoomDefinition copy,
+                    out string error))
+            {
+                sceneTool?.RebuildPreview();
+                EditorUtility.DisplayDialog(
+                    "Duplicate Room Failed",
+                    error,
+                    "OK");
+                UpdateLevelStatus("Duplicate room failed: " + error);
+                return;
+            }
+
             RefreshRoomAssets();
             SelectRoom(copy);
             Selection.activeObject = copy;
+            UpdateLevelStatus(
+                $"Duplicated room '{copy.RoomId}' with a bound Art Scene and production registration.");
         }
 
         private void SaveRoom()

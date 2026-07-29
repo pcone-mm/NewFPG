@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0d01084bef974828a46e71de78751c85, type: 3}
+  m_Name: Room_forest_Copy
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomDefinition
+  roomId: room-9e3826afc87142d39053fd04d648a28d
+  displayName: Forest Copy
+  designerNotes: Formal forest combat room authored for the Boot to FormalRoom run
+    flow.
+  artScene:
+    sceneGuid: 6710223166a741541a98dd27af74fac3
+    scenePath: Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest 1.unity
+  mainGroup: {fileID: 11400000, guid: d814bbfb2d3a02f48a22d86a71c75a59, type: 2}
+  tags:
+  - {fileID: 11400000, guid: 0eab32ab239bbc149b531942e59c03a6, type: 2}
+  exitSlots:
+  - markerId: exit-main
+    displayName: Main Exit
+    localPosition: {x: 0, y: 1.5, z: 20.5}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+  playerEntryPoints:
+  - markerId: player-main
+    displayName: "\u73A9\u5BB6\u5165\u53E3 player-main"
+    localPosition: {x: 0, y: 1.04, z: 0}
+    localEulerAngles: {x: 0, y: 0, z: 0}
+  enemySpawnPoints:
+  - markerId: enemy-any-01
+    displayName: Enemy Spawn 01
+    localPosition: {x: -3.5, y: 1, z: 10.5}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    role: 0
+  - markerId: enemy-any-02
+    displayName: Enemy Spawn 02
+    localPosition: {x: 3.5, y: 1, z: 10.5}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    role: 0
+  - markerId: enemy-any-03
+    displayName: Enemy Spawn 03
+    localPosition: {x: -2, y: 1, z: 14}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    role: 0
+  - markerId: enemy-any-04
+    displayName: Enemy Spawn 04
+    localPosition: {x: 2, y: 1, z: 14}
+    localEulerAngles: {x: 0, y: 180, z: 0}
+    role: 0
+  destructibleSlots: []
+  reachablePoints:
+  - markerId: reachable-01
+    displayName: "\u53EF\u5230\u8FBE\u70B9 1"
+    localPosition: {x: 4, y: 0.5, z: -0}
+    localEulerAngles: {x: -0, y: 333.4756, z: -0}
+    audience: 3
+  - markerId: reachable-02
+    displayName: "\u53EF\u5230\u8FBE\u70B9 2"
+    localPosition: {x: -0, y: 0.5, z: 0}
+    localEulerAngles: {x: -0, y: 333.41418, z: -0}
+    audience: 3
+  - markerId: reachable-03
+    displayName: "\u53EF\u5230\u8FBE\u70B9 3"
+    localPosition: {x: -3.5, y: 0.5, z: -0}
+    localEulerAngles: {x: -0, y: 334.68982, z: -0}
+    audience: 3

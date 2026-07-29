@@ -8,7 +8,7 @@
 - 每个 Art Scene 必须只有一个 identity `FpgRoomArtRoot`，并通过 `IFpgRoomArtPresentationBinding` 显式绑定/解绑 Formal Camera、主方向光与瞄准视口；表现绑定不能反写 gameplay 状态。
 - `FpgFormalEncounterHost`、`FpgRoomEncounterDirector` 和 adapters 把房间/Profile/Override 连接到 `FpgEncounterSession`。
 - `FpgFormalPlayerComposer` 在 inactive staging root 完成玩家校验和组合后才激活实体。
-- room/group/tag/marker ID 是资产、预览和运行时共享合同；复制时必须生成新 ID。
+- room ID 与 Art Scene GUID 是资产、预览和运行时共享身份，整房复制时必须生成新的两者；marker ID 只在房间内作用，可以保留，group/tag 引用默认共享。
 - Editor playtest override 只用于临时正式预览，使用后必须清理，不能成为全局运行入口。
 - `FpgRoomTransitionCurtain` 归 Boot 所有，跨房时先遮罩，再卸载旧 Art Scene、装载新 Art Scene、重建遭遇，最后揭幕；任一步失败都保持 fail-closed。
 - 验证以 Unity 编译/Console、`FormalFirstAuthoringContractTests.cs`、`FpgRoomDefinitionTests.cs`、`FpgRoomArtSceneContractTests.cs`、`FpgRoomArtSceneLoaderPlayModeTests.cs`、`FpgRoomExitRuntimeTests.cs` 为准。

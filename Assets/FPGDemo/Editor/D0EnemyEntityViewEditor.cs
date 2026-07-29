@@ -1,4 +1,3 @@
-using System;
 using Object = UnityEngine.Object;
 
 using FPG.Demo.Combat;
@@ -51,7 +50,22 @@ namespace FPG.Demo.Editor
             weakpointGeometryId = serializedObject.FindProperty("weakpointGeometryId");
             hasWeakpoint = serializedObject.FindProperty("hasWeakpoint");
             additionalBodyHitboxes = serializedObject.FindProperty("additionalBodyHitboxes");
-            activeHitbox = ((D0EnemyEntityView)target).BodyHitbox;
+            D0EnemyEntityView view = (D0EnemyEntityView)target;
+            activeHitbox = view.BodyHitbox;
+            Undo.undoRedoPerformed += HandleUndoRedo;
+            FpgEnemyHitboxFollowEditorPreview.Rebuild(view);
+        }
+
+        private void OnDisable()
+        {
+            Undo.undoRedoPerformed -= HandleUndoRedo;
+        }
+
+        private void HandleUndoRedo()
+        {
+            FpgEnemyHitboxFollowEditorPreview.Rebuild(
+                (D0EnemyEntityView)target);
+            Repaint();
         }
 
         public override void OnInspectorGUI()
@@ -108,6 +122,7 @@ namespace FPG.Demo.Editor
             if (serializedObject.ApplyModifiedProperties())
             {
                 EditorUtility.SetDirty(view);
+                FpgEnemyHitboxFollowEditorPreview.Rebuild(view);
                 SceneView.RepaintAll();
             }
 
@@ -217,117 +232,14 @@ namespace FPG.Demo.Editor
             D0EnemyEntityView view,
             SerializedProperty followSettings)
         {
-            if (followSettings == null)
-            {
-                return;
-            }
-
-            SerializedProperty followMode = followSettings.FindPropertyRelative("followMode");
-            SerializedProperty boneName = followSettings.FindPropertyRelative("boneName");
-            SerializedProperty keepAuthoredRotation = followSettings.FindPropertyRelative("keepAuthoredRotation");
-            EditorGUILayout.PropertyField(followMode, new GUIContent("Follow Mode"));
-            if (followMode.intValue != (int)D0EnemyHitboxFollowMode.SpineBone)
-            {
-                return;
-            }
-
-            DrawBoneSelector(view, boneName);
-            bool followRotation = !keepAuthoredRotation.boolValue;
-            keepAuthoredRotation.boolValue = !EditorGUILayout.Toggle(
-                new GUIContent("Follow Bone Rotation"),
-                followRotation);
-            EditorGUILayout.HelpBox(
-                "Spine Bone follows animated position after Spine updates. "
-                + "Collider scale and shear remain authored.",
-                MessageType.None);
-        }
-
-        private static void DrawBoneSelector(
-            D0EnemyEntityView view,
-            SerializedProperty boneName)
-        {
-            if (!TryGetBoneNames(view, out string[] boneNames))
-            {
-                EditorGUILayout.PropertyField(boneName, new GUIContent("Spine Bone"));
-                return;
-            }
-
-            string currentBoneName = boneName.stringValue;
-            int boneIndex = Array.IndexOf(boneNames, currentBoneName);
-            bool missingBone = !string.IsNullOrEmpty(currentBoneName) && boneIndex < 0;
-            var options = new string[boneNames.Length + 1];
-            options[0] = missingBone
-                ? $"<Missing: {currentBoneName}>"
-                : "<None>";
-            for (int index = 0; index < boneNames.Length; index++)
-            {
-                options[index + 1] = boneNames[index];
-            }
-
-            int selectedIndex = boneIndex < 0 ? 0 : boneIndex + 1;
-            int nextIndex = EditorGUILayout.Popup(
-                new GUIContent("Spine Bone"),
-                selectedIndex,
-                options);
-            if (nextIndex > 0)
-            {
-                boneName.stringValue = boneNames[nextIndex - 1];
-            }
-            else if (selectedIndex > 0)
-            {
-                boneName.stringValue = string.Empty;
-            }
-
-            if (missingBone)
-            {
-                EditorGUILayout.PropertyField(boneName, new GUIContent("Bone Name"));
-            }
-        }
-
-        private static bool TryGetBoneNames(
-            D0EnemyEntityView view,
-            out string[] boneNames)
-        {
-            boneNames = Array.Empty<string>();
-            Spine.Unity.SkeletonAnimation skeletonAnimation = view == null
-                ? null
-                : view.SkeletonAnimation;
-            if (skeletonAnimation == null || skeletonAnimation.SkeletonDataAsset == null)
-            {
-                return false;
-            }
-
-            Spine.SkeletonData skeletonData;
-            try
-            {
-                skeletonData = skeletonAnimation.SkeletonDataAsset.GetSkeletonData(true);
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-
-            if (skeletonData == null)
-            {
-                return false;
-            }
-
-            Spine.ExposedList<Spine.BoneData> bones = skeletonData.Bones;
-            boneNames = new string[bones.Count];
-            for (int index = 0; index < bones.Count; index++)
-            {
-                boneNames[index] = bones.Items[index].Name;
-            }
-
-            return true;
+            FpgEnemyHitboxFollowEditorFields.Draw(
+                view == null ? null : view.SkeletonAnimation,
+                followSettings);
         }
 
         private static void ResetFollowSettings(SerializedProperty followSettings)
         {
-            followSettings.FindPropertyRelative("followMode").intValue =
-                (int)D0EnemyHitboxFollowMode.AuthoredTransform;
-            followSettings.FindPropertyRelative("boneName").stringValue = string.Empty;
-            followSettings.FindPropertyRelative("keepAuthoredRotation").boolValue = false;
+            FpgEnemyHitboxFollowEditorFields.Reset(followSettings);
         }
 
         private void AddBody(D0EnemyEntityView view, PrimitiveKind kind)
@@ -395,6 +307,7 @@ namespace FPG.Demo.Editor
 
             RecordPrefabModification(view);
             EditorUtility.SetDirty(collider);
+            FpgEnemyHitboxFollowEditorPreview.Rebuild(view);
             SetActiveHitbox(collider, true);
         }
 
@@ -423,6 +336,7 @@ namespace FPG.Demo.Editor
             }
 
             RecordPrefabModification(view);
+            FpgEnemyHitboxFollowEditorPreview.Rebuild(view);
             SceneView.RepaintAll();
         }
 
@@ -527,14 +441,27 @@ namespace FPG.Demo.Editor
                 }
             }
 
-            DrawTransformHandle(collider.transform);
+            bool followsBone =
+                FpgEnemyHitboxFollowEditorPreview.IsFollowing(
+                    view,
+                    collider);
+            if (!followsBone)
+            {
+                DrawTransformHandle(collider.transform);
+            }
 
             Color handleColor = hitPart == HitPart.Weakpoint
                 ? WeakpointOutline
                 : BodyOutline;
             Matrix4x4 previousMatrix = Handles.matrix;
             Color previousColor = Handles.color;
-            Handles.matrix = collider.transform.localToWorldMatrix;
+            Handles.matrix =
+                FpgEnemyHitboxFollowEditorPreview.TryGetMatrix(
+                    view,
+                    collider,
+                    out Matrix4x4 previewMatrix)
+                    ? previewMatrix
+                    : collider.transform.localToWorldMatrix;
             Handles.color = handleColor;
             try
             {
@@ -654,6 +581,7 @@ namespace FPG.Demo.Editor
                 }
 
                 DrawColliderGizmo(
+                    view,
                     collider,
                     hitPart == HitPart.Weakpoint ? WeakpointFill : BodyFill,
                     hitPart == HitPart.Weakpoint ? WeakpointOutline : BodyOutline);
@@ -661,13 +589,20 @@ namespace FPG.Demo.Editor
         }
 
         private static void DrawColliderGizmo(
+            D0EnemyEntityView view,
             Collider collider,
             Color fillColor,
             Color outlineColor)
         {
             Matrix4x4 previousMatrix = Gizmos.matrix;
             Color previousColor = Gizmos.color;
-            Gizmos.matrix = collider.transform.localToWorldMatrix;
+            Gizmos.matrix =
+                FpgEnemyHitboxFollowEditorPreview.TryGetMatrix(
+                    view,
+                    collider,
+                    out Matrix4x4 previewMatrix)
+                    ? previewMatrix
+                    : collider.transform.localToWorldMatrix;
             try
             {
                 if (collider is BoxCollider box)

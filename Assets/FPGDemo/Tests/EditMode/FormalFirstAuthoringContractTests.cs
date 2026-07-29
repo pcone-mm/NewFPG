@@ -30,7 +30,8 @@ namespace FPG.Demo.Tests.EditMode
         {
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset",
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset",
-            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Immediate.asset",
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Charge.asset",
             "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack.asset",
             "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack_HeavyBreak.asset",
             "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack_Volley.asset",
@@ -445,7 +446,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(FpgEnemySkillActionKind.SelfDestructOwner));
             Assert.That(
                 selfDestruct.BoundGameplayEventId,
-                Is.EqualTo(compiled.SummonActions[0].ActionId));
+                Is.Zero);
             Assert.That(
                 summon.OccupancyMode,
                 Is.EqualTo(FpgSummonOccupancyMode.ReplaceOwner));
@@ -467,13 +468,13 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(0));
             Assert.That(
                 sequence.SelfDestructOwnerEvents[0].Tick,
-                Is.EqualTo(44));
+                Is.EqualTo(71));
             Assert.That(
                 sequence.SelfDestructOwnerEvents[0].AuthoredOrdinal,
                 Is.EqualTo(3));
             Assert.That(
                 sequence.SelfDestructOwnerEvents[0].BoundGameplayEventId,
-                Is.EqualTo(sequence.SummonEvents[0].EventId));
+                Is.Empty);
         }
 
         [Test]

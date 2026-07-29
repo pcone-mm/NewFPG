@@ -22,6 +22,11 @@ namespace FPG.Demo.Unity
             new FpgSkillPresentationRegistry();
         private readonly FpgSkillAudioSourcePool audioPool =
             new FpgSkillAudioSourcePool();
+        private readonly List<PreparedSkillContract> preparedSkills =
+            new List<PreparedSkillContract>();
+        private CombatPresentationProfile preparedProfile;
+        private int preparedWorldEffectCapacity;
+        private int preparedAudioSourceCapacity;
         private bool prepared;
 
         public D0CombatVfxWorld VfxWorld => vfxWorld;
@@ -34,15 +39,25 @@ namespace FPG.Demo.Unity
             FpgFormalPlayerCameraFeedback nextCameraFeedback,
             out string error)
         {
-            if (prepared)
-            {
-                error = "Skill presentation world is already prepared.";
-                return false;
-            }
-
             if (nextVfxWorld == null)
             {
                 error = "Skill presentation world requires a VFX world.";
+                return false;
+            }
+
+            if (prepared)
+            {
+                // FormalRoom retains this world across room compositions.
+                // The prepared pools may be reused, but never rebound.
+                if (vfxWorld == nextVfxWorld
+                    && cameraFeedback == nextCameraFeedback)
+                {
+                    error = string.Empty;
+                    return true;
+                }
+
+                error =
+                    "Skill presentation world cannot change its VFX world or camera feedback after preparation.";
                 return false;
             }
 
@@ -60,8 +75,7 @@ namespace FPG.Demo.Unity
             error = string.Empty;
             if (prepared)
             {
-                error = string.Empty;
-                return true;
+                return TryValidatePreparedContract(skillDefinitions, profile, out error);
             }
 
             if (vfxWorld == null || profile == null
@@ -77,15 +91,30 @@ namespace FPG.Demo.Unity
             }
 
             registry.Clear();
+            preparedSkills.Clear();
             if (skillDefinitions != null)
             {
                 foreach (FpgSkillTimelineDefinition skill in skillDefinitions)
                 {
-                    if (skill != null && !registry.TryRegister(skill, out error))
+                    if (skill == null)
+                    {
+                        continue;
+                    }
+
+                    if (!skill.TryCompile(
+                            out FpgCompiledSkillDefinition compiled,
+                            out error)
+                        || !registry.TryRegister(skill, out error))
                     {
                         registry.Clear();
+                        preparedSkills.Clear();
                         return false;
                     }
+
+                    preparedSkills.Add(new PreparedSkillContract(
+                        skill,
+                        compiled.SkillId,
+                        compiled.PresentationHash));
                 }
             }
 
@@ -95,21 +124,27 @@ namespace FPG.Demo.Unity
                 references,
                 profile.PoolCapacities.WorldEffectCapacity,
                 out error)
-                || !vfxWorld.TrySetGlobalActiveCapacity(
-                    profile.PoolCapacities.WorldEffectCapacity,
-                    out error)
-                || !vfxWorld.TryPrepareForScenario(references, out error)
                 || !audioPool.TryPrepare(
                     transform,
                     profile.PoolCapacities.AudioSourceCapacity,
-                    out error))
+                    out error)
+                || !vfxWorld.TrySetGlobalActiveCapacity(
+                    profile.PoolCapacities.WorldEffectCapacity,
+                    out error)
+                || !vfxWorld.TryPrepareForScenario(references, out error))
             {
                 registry.Clear();
+                preparedSkills.Clear();
                 audioPool.Dispose();
                 return false;
             }
 
             PresentationFaultCount = 0;
+            preparedProfile = profile;
+            preparedWorldEffectCapacity =
+                profile.PoolCapacities.WorldEffectCapacity;
+            preparedAudioSourceCapacity =
+                profile.PoolCapacities.AudioSourceCapacity;
             prepared = true;
             error = string.Empty;
             return true;
@@ -406,6 +441,86 @@ namespace FPG.Demo.Unity
             }
 
             return success;
+        }
+
+        private bool TryValidatePreparedContract(
+            IEnumerable<FpgSkillTimelineDefinition> skillDefinitions,
+            CombatPresentationProfile profile,
+            out string error)
+        {
+            const string ChangedContractError =
+                "Skill presentation world preparation inputs cannot change after preparation.";
+            if (profile == null
+                || profile != preparedProfile
+                || profile.PoolCapacities == null
+                || profile.PoolCapacities.WorldEffectCapacity
+                    != preparedWorldEffectCapacity
+                || profile.PoolCapacities.AudioSourceCapacity
+                    != preparedAudioSourceCapacity)
+            {
+                error = ChangedContractError;
+                return false;
+            }
+
+            int preparedIndex = 0;
+            if (skillDefinitions != null)
+            {
+                foreach (FpgSkillTimelineDefinition skill in skillDefinitions)
+                {
+                    if (skill == null)
+                    {
+                        continue;
+                    }
+
+                    if (preparedIndex >= preparedSkills.Count)
+                    {
+                        error = ChangedContractError;
+                        return false;
+                    }
+
+                    PreparedSkillContract preparedSkill =
+                        preparedSkills[preparedIndex];
+                    if (skill != preparedSkill.Definition
+                        || !skill.TryCompile(
+                            out FpgCompiledSkillDefinition compiled,
+                            out _)
+                        || compiled.SkillId != preparedSkill.SkillId
+                        || compiled.PresentationHash
+                            != preparedSkill.PresentationHash)
+                    {
+                        error = ChangedContractError;
+                        return false;
+                    }
+
+                    preparedIndex++;
+                }
+            }
+
+            if (preparedIndex != preparedSkills.Count)
+            {
+                error = ChangedContractError;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private readonly struct PreparedSkillContract
+        {
+            public PreparedSkillContract(
+                FpgSkillTimelineDefinition definition,
+                int skillId,
+                ulong presentationHash)
+            {
+                Definition = definition;
+                SkillId = skillId;
+                PresentationHash = presentationHash;
+            }
+
+            public FpgSkillTimelineDefinition Definition { get; }
+            public int SkillId { get; }
+            public ulong PresentationHash { get; }
         }
 
         public void ClearRuntimePresentation()

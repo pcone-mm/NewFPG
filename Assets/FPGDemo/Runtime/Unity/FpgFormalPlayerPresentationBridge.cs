@@ -190,7 +190,9 @@ namespace FPG.Demo.Unity
             if (!playerTickDriver.IsPlayerConfigured
                 || playerTickDriver.PlayerDefinition != definition
                 || playerTickDriver.PlayerEntity != nextPlayerEntity
-                || playerTickDriver.ThreeCProfile != nextSelection.ThreeCProfile)
+                || playerTickDriver.ThreeCProfile != nextSelection.ThreeCProfile
+                || playerTickDriver.PlayerSecondaryTriggerMode
+                    != nextSelection.SelectedSecondaryTriggerMode)
             {
                 error = "Formal player presentation and tick driver must share the selected player binding.";
                 return false;
@@ -279,7 +281,14 @@ namespace FPG.Demo.Unity
             HashSet<FpgSkillTimelineDefinition> seen =
                 new HashSet<FpgSkillTimelineDefinition>();
             AddPresentationSkill(weapon.PrimarySkill, skills, seen);
-            AddPresentationSkill(weapon.SecondarySkill, skills, seen);
+            AddPresentationSkill(
+                weapon.ImmediateSecondarySkill,
+                skills,
+                seen);
+            AddPresentationSkill(
+                weapon.ChargeSecondarySkill,
+                skills,
+                seen);
             AddPresentationSkill(weapon.ReloadSkill, skills, seen);
 
             FpgEnemyDefinitionCatalog catalog = encounterDirector == null
@@ -475,6 +484,7 @@ namespace FPG.Demo.Unity
             ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.EndCombat();
+            skillPresentationWorld?.ClearRuntimePresentation();
             if (playerEntity != null && playerEntity.Barrier != null)
             {
                 playerEntity.Barrier.UnbindFormalSource();
@@ -1008,14 +1018,24 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            FpgSkillTimelineDefinition skill =
-                action.Type == FpgFormalPlayerActionType.ReloadCompleted
-                    ? weapon.ReloadSkill
-                    : action.ReleaseKind == WeaponReleaseKind.Primary
-                        ? weapon.PrimarySkill
-                        : action.ReleaseKind == WeaponReleaseKind.Secondary
-                            ? weapon.SecondarySkill
-                            : null;
+            FpgSkillTimelineDefinition skill = null;
+            if (action.Type == FpgFormalPlayerActionType.ReloadCompleted)
+            {
+                skill = weapon.ReloadSkill;
+            }
+            else if (action.ReleaseKind == WeaponReleaseKind.Primary)
+            {
+                skill = weapon.PrimarySkill;
+            }
+            else if (action.ReleaseKind == WeaponReleaseKind.Secondary
+                && weapon.TryResolveSecondarySkill(
+                    selection.SelectedSecondaryTriggerMode,
+                    out FpgPlayerSkillDefinition secondary,
+                    out _))
+            {
+                skill = secondary;
+            }
+
             return FpgSkillPresentationRegistry.TryResolveActionPresentation(
                 skill,
                 action.GameplayEventId,

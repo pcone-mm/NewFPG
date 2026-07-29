@@ -42,8 +42,38 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
+            return TryBuild(catalog.Rooms, out scenes, out error);
+        }
+
+        public static bool TryBuild(
+            IReadOnlyList<FpgRoomDefinition> sourceRooms,
+            out string[] scenes,
+            out string error)
+        {
+            scenes = Array.Empty<string>();
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(BootScenePath) == null
+                || AssetDatabase.LoadAssetAtPath<SceneAsset>(
+                    FormalRoomScenePath) == null)
+            {
+                error =
+                    "Production build requires Boot and FormalRoom scenes.";
+                return false;
+            }
+
+            if (sourceRooms == null || sourceRooms.Count == 0)
+            {
+                error = "Production scene list requires at least one room.";
+                return false;
+            }
+
             List<FpgRoomDefinition> rooms =
-                catalog.Rooms.Where(room => room != null).ToList();
+                sourceRooms.Where(room => room != null).ToList();
+            if (rooms.Count != sourceRooms.Count)
+            {
+                error = "Production scene list contains a missing room.";
+                return false;
+            }
+
             rooms.Sort(
                 (left, right) => StringComparer.Ordinal.Compare(
                     left.RoomId,
@@ -94,10 +124,25 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
-            return TryValidateConfiguredScenes(
-                EditorBuildSettings.scenes,
-                expectedScenes,
-                out error);
+            if (!TryValidateConfiguredScenes(
+                    EditorBuildSettings.globalScenes,
+                    expectedScenes,
+                    out error))
+            {
+                error = "Global Build Settings are invalid: " + error;
+                return false;
+            }
+
+            if (!TryValidateConfiguredScenes(
+                    EditorBuildSettings.scenes,
+                    expectedScenes,
+                    out error))
+            {
+                error = "Active Build Settings are invalid: " + error;
+                return false;
+            }
+
+            return true;
         }
 
         public static bool TryValidateConfiguredScenes(

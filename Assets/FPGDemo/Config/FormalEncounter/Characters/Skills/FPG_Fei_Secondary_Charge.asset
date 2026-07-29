@@ -10,76 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4818c1a910e12794fa92127eee4d9fb4, type: 3}
-  m_Name: FPG_Fei_Secondary
+  m_Name: FPG_Fei_Secondary_Charge
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgPlayerSkillDefinition
   authoringSchemaVersion: 3
-  skillId: fei.secondary
-  displayName: Fei Secondary
-  designerNotes: Fei secondary supports immediate and charged modes. Execute and
-    Release share one projectile payload; charge requires 30 simulation ticks.
+  skillId: fei.secondary.charge
+  displayName: Fei Secondary Charge
+  designerNotes: Fei charged secondary. ChargeEnter and ChargeLoop build charge;
+    Release emits the projectile and Cancel provides the recovery stage.
   sequences:
-  - kind: 1
-    durationTicks: 60
-    alternateAnimations: []
-    mainAnimation: defense_play
-    loop: 0
-    holdUntilCanceled: 0
-    animationPlaybackMode: 0
-    animationStartTick: 0
-    animationEndTick: 60
-    sourceAnimationDurationTicks: 0
-    attackEvents: []
-    projectileEvents:
-    - eventId: event.fei.secondary.execute.attack.0
-      tick: 0
-      authoredOrdinal: 0
-      socketId: weapon.secondary.muzzle
-      targetSource: 1
-      targetOffset: {x: 0, y: 0, z: 0}
-      impactMode: 1
-      ammoCost: 2
-      baseDamage: 28
-      breakDamage: 20
-      weakpointDamageMultiplierBasisPoints: 12000
-      weakpointBreakMultiplierBasisPoints: 25000
-      threatDefinitionId: 1
-      projectileDefinitionId: 1
-      projectileCount: 1
-      projectileFlightTicks: 18
-      projectileLifetimeTicks: 19
-      projectileMaxHitPoints: 0
-      projectileInterceptable: 0
-      projectileBudgetUnits: 1
-      projectileSweepRadiusKey: 120
-      threatPresentationKind: 0
-      areaCombatantLimit: 4
-      areaProjectileLimit: 4
-      allowedTargetKinds: -1
-      flightVfx:
-        rid: 1908295404247580864
-      collisionPresentation:
-        rid: 1908295404247580865
-    reloadEvents: []
-    summonEvents: []
-    selfDestructOwnerEvents: []
-    activePresentationTracks:
-    - trackId: track.fei.secondary.execute.active
-      displayName: Active Presentation
-      vfxEvents:
-      - eventId: presentation.fei.secondary.execute.muzzle.0
-        tick: 0
-        authoredOrdinal: 1
-        boundGameplayEventId: event.fei.secondary.execute.attack.0
-        presentation:
-          prefab: {fileID: 2565437225881306255, guid: ea85eb631d5ad0d4d8a1701d53989e36, type: 3}
-          durationSeconds: 0.2
-          scale: {x: 1, y: 1, z: 1}
-          rotationOffsetEuler: {x: 0, y: 0, z: 0}
-        anchor: 1
-        socketId: weapon.secondary.muzzle
-      audioEvents: []
-      cameraShakeEvents: []
-    warnings: []
   - kind: 2
     durationTicks: 28
     alternateAnimations: []
@@ -241,35 +179,6 @@ MonoBehaviour:
         weakpointCameraShakeOverride:
           rid: -2
     - rid: 1908295348123337096
-      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
-      data:
-        prefab: {fileID: 7249675442437269310, guid: 104df9a4807d45cd928af41f799187a0, type: 3}
-        durationSeconds: 1.8
-        scale: {x: 1.25, y: 1.25, z: 1.25}
-        rotationOffsetEuler: {x: 0, y: 0, z: 0}
-    - rid: 1908295404247580864
-      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
-      data:
-        prefab: {fileID: 1597428183965336373, guid: 6170d560b53147d496995067d3ec840f, type: 3}
-        durationSeconds: 2
-        scale: {x: 1, y: 1, z: 1}
-        rotationOffsetEuler: {x: 0, y: 0, z: 0}
-    - rid: 1908295404247580865
-      type: {class: FpgImpactPresentationBundleDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
-      data:
-        baseVfx:
-          rid: 1908295404247580866
-        baseAudio:
-          rid: -2
-        baseCameraShake:
-          rid: -2
-        weakpointVfxOverride:
-          rid: -2
-        weakpointAudioOverride:
-          rid: -2
-        weakpointCameraShakeOverride:
-          rid: -2
-    - rid: 1908295404247580866
       type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
       data:
         prefab: {fileID: 7249675442437269310, guid: 104df9a4807d45cd928af41f799187a0, type: 3}

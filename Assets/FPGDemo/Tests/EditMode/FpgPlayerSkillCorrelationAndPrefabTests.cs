@@ -144,11 +144,20 @@ namespace FPG.Demo.Tests.EditMode
                 FpgPlayerSkillPresentationResolver.TryValidatePrefabBindings(
                     character.EntityPrefab,
                     character.Weapon.PrimarySkill,
-                    character.Weapon.SecondarySkill,
+                    character.Weapon.ImmediateSecondarySkill,
                     character.Weapon.ReloadSkill,
-                    out string error),
+                    out string immediateError),
                 Is.True,
-                error);
+                immediateError);
+            Assert.That(
+                FpgPlayerSkillPresentationResolver.TryValidatePrefabBindings(
+                    character.EntityPrefab,
+                    character.Weapon.PrimarySkill,
+                    character.Weapon.ChargeSecondarySkill,
+                    character.Weapon.ReloadSkill,
+                    out string chargeError),
+                Is.True,
+                chargeError);
         }
 
         [Test]
@@ -175,7 +184,7 @@ namespace FPG.Demo.Tests.EditMode
                     FpgPlayerSkillPresentationResolver.TryValidatePrefabBindings(
                         character.EntityPrefab,
                         missingAnimation,
-                        character.Weapon.SecondarySkill,
+                        character.Weapon.ChargeSecondarySkill,
                         character.Weapon.ReloadSkill,
                         out string animationError),
                     Is.False);
@@ -198,7 +207,7 @@ namespace FPG.Demo.Tests.EditMode
                     FpgPlayerSkillPresentationResolver.TryValidatePrefabBindings(
                         character.EntityPrefab,
                         missingSocket,
-                        character.Weapon.SecondarySkill,
+                        character.Weapon.ChargeSecondarySkill,
                         character.Weapon.ReloadSkill,
                         out string socketError),
                     Is.False);

@@ -51,6 +51,10 @@ namespace FPG.Demo.Unity
         private HitPart[] hitPartKinds = Array.Empty<HitPart>();
 
         [SerializeField]
+        private D0EnemyHitboxFollowSettings[] hitPartFollowSettings =
+            Array.Empty<D0EnemyHitboxFollowSettings>();
+
+        [SerializeField]
         private Color skillWarningTint =
             new Color(1f, 0.3f, 0.12f, 1f);
 
@@ -108,6 +112,9 @@ namespace FPG.Demo.Unity
         private FpgEntitySkeletonRootMotionBridge rootMotionBridge;
 
         [NonSerialized]
+        private D0EnemyHitboxBoneFollowRuntime hitboxBoneFollowRuntime;
+
+        [NonSerialized]
         private float authoredSkeletonTimeScale = 1f;
 
         [NonSerialized]
@@ -154,6 +161,26 @@ namespace FPG.Demo.Unity
             : overheadHealthBarAnchor;
         public IReadOnlyList<Collider> HitParts => hitParts ?? Array.Empty<Collider>();
         public int HitPartCount => hitParts == null ? 0 : hitParts.Length;
+        public int BoneFollowHitPartCount
+        {
+            get
+            {
+                int count = 0;
+                for (int index = 0; index < HitPartCount; index++)
+                {
+                    if (TryGetHitPartFollowSettings(
+                            index,
+                            out D0EnemyHitboxFollowSettings settings)
+                        && settings.FollowMode
+                            == D0EnemyHitboxFollowMode.SpineBone)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
         public string RuntimeId => runtimeId ?? string.Empty;
         public int SpawnSequence => spawnSequence;
         public bool GameplayEnabled => gameplayEnabled;
@@ -175,10 +202,42 @@ namespace FPG.Demo.Unity
 
             collider = colliders[hitPartOrdinal];
             HitPart[] kinds = hitPartKinds ?? Array.Empty<HitPart>();
+            if (kinds.Length != 0 && hitPartOrdinal >= kinds.Length)
+            {
+                hitPart = HitPart.Body;
+                return false;
+            }
+
             hitPart = kinds.Length == 0 ? HitPart.Body : kinds[hitPartOrdinal];
             return collider != null
                 && Enum.IsDefined(typeof(HitPart), hitPart)
                 && hitPart != HitPart.Projectile;
+        }
+
+        public bool TryGetHitPartFollowSettings(
+            int hitPartOrdinal,
+            out D0EnemyHitboxFollowSettings settings)
+        {
+            if (hitPartOrdinal < 0 || hitPartOrdinal >= HitPartCount)
+            {
+                settings = default(D0EnemyHitboxFollowSettings);
+                return false;
+            }
+
+            D0EnemyHitboxFollowSettings[] followSettings =
+                hitPartFollowSettings
+                ?? Array.Empty<D0EnemyHitboxFollowSettings>();
+            if (followSettings.Length != 0
+                && hitPartOrdinal >= followSettings.Length)
+            {
+                settings = default(D0EnemyHitboxFollowSettings);
+                return false;
+            }
+
+            settings = followSettings.Length == 0
+                ? default(D0EnemyHitboxFollowSettings)
+                : followSettings[hitPartOrdinal];
+            return true;
         }
 
         public void BindRuntime(string nextRuntimeId, int nextSpawnSequence)
@@ -216,6 +275,15 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (presentationInitialized
+                || hitboxBoneFollowRuntime != null
+                || !string.IsNullOrEmpty(runtimeId)
+                || spawnSequence >= 0)
+            {
+                error = "Formal entity is already bound. Unbind it before binding again.";
+                return false;
+            }
+
             if (!TryValidate(out error))
             {
                 return false;
@@ -227,9 +295,19 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!TryCreateHitboxBoneFollowRuntime(
+                    out D0EnemyHitboxBoneFollowRuntime nextBoneFollowRuntime,
+                    out error))
+            {
+                ResetPresentation();
+                return false;
+            }
+
             BindRuntime(nextRuntimeId.ToString(), nextSpawnSequence);
             boundDefinition = definition;
             boundBehavior = definition.Behavior;
+            hitboxBoneFollowRuntime = nextBoneFollowRuntime;
+            hitboxBoneFollowRuntime?.Activate();
             SetFormalGameplayEnabled(false);
             if (!TryPlayEntry(out error))
             {
@@ -610,6 +688,9 @@ namespace FPG.Demo.Unity
         {
             Collider[] colliders = hitParts ?? Array.Empty<Collider>();
             HitPart[] kinds = hitPartKinds ?? Array.Empty<HitPart>();
+            D0EnemyHitboxFollowSettings[] followSettings =
+                hitPartFollowSettings
+                ?? Array.Empty<D0EnemyHitboxFollowSettings>();
             if (SocketRegistry == null)
             {
                 error = "Formal enemy entity requires a D0ActorSocketRegistry.";
@@ -627,6 +708,17 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (followSettings.Length != 0
+                && followSettings.Length != colliders.Length)
+            {
+                error = "Formal enemy entity hit-part follow settings "
+                    + "must be empty or parallel the Collider array.";
+                return false;
+            }
+
+            SkeletonData skeletonData = null;
+            bool skeletonDataLoaded = false;
+
             for (int index = 0; index < colliders.Length; index++)
             {
                 if (colliders[index] == null)
@@ -639,6 +731,20 @@ namespace FPG.Demo.Unity
                 if (!Enum.IsDefined(typeof(HitPart), kind) || kind == HitPart.Projectile)
                 {
                     error = $"Formal enemy entity hit part {index} has an invalid combatant kind.";
+                    return false;
+                }
+
+                D0EnemyHitboxFollowSettings settings =
+                    followSettings.Length == 0
+                        ? default(D0EnemyHitboxFollowSettings)
+                        : followSettings[index];
+                if (!TryValidateHitboxFollowSettings(
+                        settings,
+                        index,
+                        ref skeletonData,
+                        ref skeletonDataLoaded,
+                        out error))
+                {
                     return false;
                 }
             }
@@ -1318,6 +1424,8 @@ namespace FPG.Demo.Unity
 
         private void ResetPresentation()
         {
+            hitboxBoneFollowRuntime?.Dispose();
+            hitboxBoneFollowRuntime = null;
             ClearSkillWarnings();
             StopTickDrivenAnimation();
             rootMotionBridge?.ResetForPool();
@@ -1351,6 +1459,145 @@ namespace FPG.Demo.Unity
             boundDefinition = null;
             boundBehavior = null;
             lastRootMotionError = string.Empty;
+        }
+
+        private bool TryCreateHitboxBoneFollowRuntime(
+            out D0EnemyHitboxBoneFollowRuntime runtime,
+            out string error)
+        {
+            int followCount = BoneFollowHitPartCount;
+            if (followCount == 0)
+            {
+                runtime = null;
+                error = string.Empty;
+                return true;
+            }
+
+            var targets = new D0EnemyHitboxBoneFollowTarget[followCount];
+            int targetIndex = 0;
+            for (int hitPartOrdinal = 0;
+                hitPartOrdinal < HitPartCount;
+                hitPartOrdinal++)
+            {
+                if (!TryGetHitPartFollowSettings(
+                        hitPartOrdinal,
+                        out D0EnemyHitboxFollowSettings settings)
+                    || settings.FollowMode
+                        != D0EnemyHitboxFollowMode.SpineBone)
+                {
+                    continue;
+                }
+
+                if (!TryGetHitPart(
+                        hitPartOrdinal,
+                        out Collider collider,
+                        out HitPart hitPart))
+                {
+                    runtime = null;
+                    error = $"Formal enemy hit part {hitPartOrdinal} "
+                        + "could not prepare bone following.";
+                    return false;
+                }
+
+                Transform target = hitPart == HitPart.Weakpoint
+                    ? WeakpointAnchor
+                    : collider.transform;
+                targets[targetIndex++] = new D0EnemyHitboxBoneFollowTarget(
+                    target,
+                    settings.BoneName,
+                    settings.FollowBoneRotation);
+            }
+
+            return D0EnemyHitboxBoneFollowRuntime.TryCreate(
+                skeletonAnimation,
+                targets,
+                out runtime,
+                out error);
+        }
+
+        private bool TryValidateHitboxFollowSettings(
+            D0EnemyHitboxFollowSettings settings,
+            int hitPartOrdinal,
+            ref SkeletonData skeletonData,
+            ref bool skeletonDataLoaded,
+            out string error)
+        {
+            if (settings.FollowMode
+                == D0EnemyHitboxFollowMode.AuthoredTransform)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            if (settings.FollowMode != D0EnemyHitboxFollowMode.SpineBone)
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} has an unsupported follow mode.";
+                return false;
+            }
+
+            string boneName = settings.BoneName;
+            if (string.IsNullOrWhiteSpace(boneName))
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} "
+                    + "bone-follow mode requires a Spine bone name.";
+                return false;
+            }
+
+            if (!string.Equals(
+                    boneName,
+                    boneName.Trim(),
+                    StringComparison.Ordinal))
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} "
+                    + "Spine bone name must not have surrounding whitespace.";
+                return false;
+            }
+
+            if (skeletonAnimation == null
+                || skeletonAnimation.SkeletonDataAsset == null)
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} "
+                    + "bone-follow mode requires valid Spine skeleton data.";
+                return false;
+            }
+
+            UpdateMode invisibleMode =
+                skeletonAnimation.updateWhenInvisible;
+            if (invisibleMode != UpdateMode.EverythingExceptMesh
+                && invisibleMode != UpdateMode.FullUpdate)
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} "
+                    + "bone following requires Spine to update bones "
+                    + "while invisible.";
+                return false;
+            }
+
+            if (!skeletonDataLoaded)
+            {
+                skeletonDataLoaded = true;
+                try
+                {
+                    skeletonData = skeletonAnimation.SkeletonDataAsset
+                        .GetSkeletonData(true);
+                }
+                catch (Exception exception)
+                {
+                    error = "Formal enemy hitbox bone validation failed: "
+                        + exception.Message;
+                    return false;
+                }
+            }
+
+            if (skeletonData == null
+                || skeletonData.FindBone(boneName) == null)
+            {
+                error = $"Formal enemy hit part {hitPartOrdinal} "
+                    + $"Spine bone '{boneName}' does not exist.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         private bool CanPresentSkillEvent(

@@ -18,7 +18,7 @@
 - `Presentation/FormalEncounter` 保存正式 Entity/HUD/出口 prefab；`Presentation/Level` 保存房间 Art Scene 与环境资源；`Presentation/Characters/*/Spine` 保存运行时渲染依赖，`Presentation/Characters/*/VFX` 保存项目自有特效 wrapper。
 - 正式技能配置只引用 `Presentation/Characters/*/VFX/PF_FPG_*` wrapper；wrapper 可保留对 `Assets/VFX_Klaus/` 源材质、网格或 prefab 的显式 GUID 依赖，但不得引用供应商 `Timeline/` 或 `VFX_Lab/` demo。
 - `SourceArt/CZN` 与 `Assets/Imported/CZN` 保存 CZN 源输入；项目负责人已确认这些素材可进入公开仓库。
-- `Editor/` 保存发布构建和薄 Inspector；`Editor/LevelAuthoring` 维护房间编辑、Art Scene 合同、正式预览与验证，进入后先读对应局部指南。
+- `Editor/` 保存发布构建、正式实体 Inspector 和共享 Editor-only 工具；`Editor/LevelAuthoring` 维护房间编辑、Art Scene 合同、正式预览与验证，进入后先读对应局部指南。
 - `Editor/SkillAuthoring` 保存纯 V3 技能时间轴、校验和隔离预览工具；常规配置修改从 `FPG Demo/Skill Editor` 进入，并先看该目录局部指南。
 - `Integrations/` 隔离项目对第三方运行时 API 的直接适配；当前体积雾/体积光绑定不得扩散到纯领域程序集或 `FPG.Unity` asmdef。
 

@@ -169,7 +169,8 @@ namespace FPG.Demo.Tests.EditMode
             string[] paths =
             {
                 "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset",
-                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset",
+                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Immediate.asset",
+                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Charge.asset",
                 "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset",
                 "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack.asset",
                 "Assets/FPGDemo/Config/FormalEncounter/FPG_Burstbug_Attack_Volley.asset",
@@ -215,6 +216,184 @@ namespace FPG.Demo.Tests.EditMode
                 references,
                 vfxHandleCount - 1,
                 out _), Is.False);
+        }
+
+        [Test]
+        public void PreparedWorldReusesOnlyTheSameSceneAndPreparationBindings()
+        {
+            const string skillPath =
+                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset";
+            const string alternateSkillPath =
+                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset";
+            const string profilePath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
+            GameObject worldOwner = new GameObject("RetainedSkillPresentationWorld");
+            GameObject alternateOwner = new GameObject("AlternateSkillPresentationBindings");
+            CombatPresentationProfile alternateProfile = null;
+            FpgSkillTimelineDefinition mutableSkill = null;
+            try
+            {
+                FpgSkillTimelineDefinition skill =
+                    AssetDatabase.LoadAssetAtPath<FpgSkillTimelineDefinition>(
+                        skillPath);
+                FpgSkillTimelineDefinition alternateSkill =
+                    AssetDatabase.LoadAssetAtPath<FpgSkillTimelineDefinition>(
+                        alternateSkillPath);
+                CombatPresentationProfile profile =
+                    AssetDatabase.LoadAssetAtPath<CombatPresentationProfile>(
+                        profilePath);
+                Assert.That(skill, Is.Not.Null, skillPath);
+                Assert.That(alternateSkill, Is.Not.Null, alternateSkillPath);
+                Assert.That(profile, Is.Not.Null, profilePath);
+                mutableSkill = Object.Instantiate(skill);
+
+                D0CombatVfxWorld vfxWorld =
+                    worldOwner.AddComponent<D0CombatVfxWorld>();
+                FpgFormalPlayerCameraFeedback cameraFeedback =
+                    worldOwner.AddComponent<FpgFormalPlayerCameraFeedback>();
+                FpgSkillPresentationWorld world =
+                    worldOwner.AddComponent<FpgSkillPresentationWorld>();
+                Assert.That(
+                    world.TryConfigure(
+                        vfxWorld,
+                        cameraFeedback,
+                        out string configureError),
+                    Is.True,
+                    configureError);
+                Assert.That(
+                    world.TryPrepare(
+                        new[] { mutableSkill },
+                        profile,
+                        out string prepareError),
+                    Is.True,
+                    prepareError);
+
+                int registryCount = world.Registry.Count;
+                int poolCount = vfxWorld.PoolCount;
+                int prewarmedInstanceCount = vfxWorld.PrewarmedInstanceCount;
+                int prepareInstantiateCount = vfxWorld.PrepareInstantiateCount;
+                int audioSourceCount =
+                    worldOwner.GetComponentsInChildren<AudioSource>(true).Length;
+                Assert.That(registryCount, Is.GreaterThan(0));
+                Assert.That(poolCount, Is.GreaterThan(0));
+                Assert.That(prewarmedInstanceCount, Is.GreaterThan(0));
+                Assert.That(audioSourceCount, Is.GreaterThan(0));
+
+                world.ClearRuntimePresentation();
+                Assert.That(world.IsPrepared, Is.True);
+                Assert.That(
+                    world.TryConfigure(
+                        vfxWorld,
+                        cameraFeedback,
+                        out string retainedConfigureError),
+                    Is.True,
+                    retainedConfigureError);
+                Assert.That(
+                    world.TryPrepare(
+                        new[] { mutableSkill },
+                        profile,
+                        out string retainedPrepareError),
+                    Is.True,
+                    retainedPrepareError);
+                Assert.That(world.Registry.Count, Is.EqualTo(registryCount));
+                Assert.That(vfxWorld.PoolCount, Is.EqualTo(poolCount));
+                Assert.That(
+                    vfxWorld.PrewarmedInstanceCount,
+                    Is.EqualTo(prewarmedInstanceCount));
+                Assert.That(
+                    vfxWorld.PrepareInstantiateCount,
+                    Is.EqualTo(prepareInstantiateCount));
+                Assert.That(
+                    worldOwner.GetComponentsInChildren<AudioSource>(true).Length,
+                    Is.EqualTo(audioSourceCount));
+
+                D0CombatVfxWorld alternateVfxWorld =
+                    alternateOwner.AddComponent<D0CombatVfxWorld>();
+                Assert.That(
+                    world.TryConfigure(
+                        alternateVfxWorld,
+                        cameraFeedback,
+                        out string vfxRebindError),
+                    Is.False);
+                StringAssert.Contains("cannot change", vfxRebindError);
+
+                FpgFormalPlayerCameraFeedback alternateCameraFeedback =
+                    alternateOwner.AddComponent<FpgFormalPlayerCameraFeedback>();
+                Assert.That(
+                    world.TryConfigure(
+                        vfxWorld,
+                        alternateCameraFeedback,
+                        out string cameraRebindError),
+                    Is.False);
+                StringAssert.Contains("cannot change", cameraRebindError);
+                Assert.That(world.VfxWorld, Is.SameAs(vfxWorld));
+                Assert.That(
+                    GetField(world, "cameraFeedback"),
+                    Is.SameAs(cameraFeedback));
+                Assert.That(alternateVfxWorld.IsPrepared, Is.False);
+
+                alternateProfile = Object.Instantiate(profile);
+                Assert.That(
+                    world.TryPrepare(
+                        new[] { mutableSkill },
+                        alternateProfile,
+                        out string profileChangeError),
+                    Is.False);
+                StringAssert.Contains(
+                    "cannot change",
+                    profileChangeError);
+                Assert.That(
+                    world.TryPrepare(
+                        new[] { alternateSkill },
+                        profile,
+                        out string skillChangeError),
+                    Is.False);
+                StringAssert.Contains(
+                    "cannot change",
+                    skillChangeError);
+                Assert.That(
+                    world.TryPrepare(
+                        null,
+                        profile,
+                        out string missingSkillsError),
+                    Is.False);
+                StringAssert.Contains(
+                    "cannot change",
+                    missingSkillsError);
+
+                string originalSkillId = mutableSkill.SkillId;
+                FieldInfo skillIdField =
+                    typeof(FpgSkillTimelineDefinition).GetField(
+                        "skillId",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(skillIdField, Is.Not.Null);
+                skillIdField.SetValue(
+                    mutableSkill,
+                    originalSkillId + ".changed");
+                Assert.That(
+                    world.TryPrepare(
+                        new[] { mutableSkill },
+                        profile,
+                        out string mutatedSkillError),
+                    Is.False);
+                StringAssert.Contains(
+                    "cannot change",
+                    mutatedSkillError);
+                skillIdField.SetValue(mutableSkill, originalSkillId);
+
+                Assert.That(world.Registry.Count, Is.EqualTo(registryCount));
+                Assert.That(vfxWorld.PoolCount, Is.EqualTo(poolCount));
+                Assert.That(
+                    vfxWorld.PrepareInstantiateCount,
+                    Is.EqualTo(prepareInstantiateCount));
+            }
+            finally
+            {
+                Object.DestroyImmediate(mutableSkill);
+                Object.DestroyImmediate(alternateProfile);
+                Object.DestroyImmediate(alternateOwner);
+                Object.DestroyImmediate(worldOwner);
+            }
         }
 
         [Test]
@@ -291,7 +470,7 @@ namespace FPG.Demo.Tests.EditMode
         public void PostActionAnimationCancelKeepsCommittedFlightAndImpactAlive()
         {
             const string secondaryPath =
-                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary.asset";
+                "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Charge.asset";
             const string profilePath =
                 "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
             GameObject worldOwner = new GameObject("CommittedProjectileVfxWorld");

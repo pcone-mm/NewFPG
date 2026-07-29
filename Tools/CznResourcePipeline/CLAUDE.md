@@ -11,7 +11,7 @@
 
 ## 工作规则
 
-- 运行前先读 `.codex/skills/czn-character-spine-unity-import/SKILL.md` 和 `references/WORKFLOW.zh-CN.md`；不要直接套用 Heidemarie 的默认参数。
+- 运行前先读 `.codex/skills/czn-character-spine-unity-import/SKILL.md` 和 `.codex/skills/czn-character-spine-unity-import/references/WORKFLOW.zh-CN.md`；不要直接套用 Heidemarie 的默认参数。
 - 提取命令必须显式传入 `--records`、`--label`、`--character-id`、`--external-root` 和 `--unity-root`，避免把 30093 样本路径误用于新角色。
 - `complete_records.json` 是可复现提取的证据；缺它时先做依赖审计，不要按名字猜资源。
 - `__pycache__/` 和临时审计输出不应进入日常上下文或版本控制。

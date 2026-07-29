@@ -3,7 +3,7 @@
 ## 权威资产
 
 - 玩家：`Config/FormalEncounter/Characters/FPG_Fei_*.asset`
-- 玩家技能：`Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset`、`FPG_Fei_Secondary.asset`、`FPG_Fei_Reload.asset`
+- 玩家技能：`Config/FormalEncounter/Characters/Skills/FPG_Fei_Primary.asset`、`FPG_Fei_Secondary_Immediate.asset`、`FPG_Fei_Secondary_Charge.asset`、`FPG_Fei_Reload.asset`
 - 玩家 catalog：`FPG_PlayableCharacterCatalog.asset`
 - 普通房基础：`FPG_NormalRoom_Profile.asset`、EnemyPool、EnemyCatalog
 - 敌人：`FPG_Burstbug_*`、`FPG_Hudie_*`、`FPG_Luan_*`
@@ -21,9 +21,9 @@
 
 玩家链为：
 
-`FpgPlayableCharacterCatalog -> D0CharacterDefinition/D0ThreeCProfile -> D0WeaponDefinition -> Primary/Secondary/Reload Skill -> FpgPlayerEntityView`
+`FpgPlayableCharacterCatalog -> D0CharacterDefinition/D0ThreeCProfile -> D0WeaponDefinition -> Primary/Immediate Secondary/Charge Secondary/Reload Skill -> FpgPlayerEntityView`
 
-其中 D0 前缀仅为序列化兼容，不表示旧主线。
+其中 `FPG_Fei_Secondary_Immediate.asset` 只拥有 `Execute`，`FPG_Fei_Secondary_Charge.asset` 只拥有 `ChargeEnter/ChargeLoop/Release/Cancel`；两者是独立权威技能资产，但射击 gameplay payload 必须保持等价。其中 D0 前缀仅为序列化兼容，不表示旧主线。
 
 ## 配置规则
 
@@ -42,11 +42,11 @@
 怪物技能资产内的 Summon 载荷槽用两条独立配置轴描述召唤，不由房间或敌人 ID 推断：
 
 - `Occupancy Mode = AdditionalEntity`：召唤物是额外战斗单位，执行 `Max Per Owner`、`Max Per Encounter`、房间同屏数量和 Cap Weight 检测。
-- `Occupancy Mode = ReplaceOwner`：召唤物替换施法者，不执行上述玩法数量检测；对应序列必须在同 Tick 的后续位置配置一个绑定该 Summon 事件的 `SelfDestructOwner` 节点，两个未使用的 Max 字段必须为 `0`。
+- `Occupancy Mode = ReplaceOwner`：召唤物占用替换链容量，不执行上述玩法数量检测，两个未使用的 Max 字段必须为 `0`；owner 生命周期由独立 `SelfDestructOwner` 节点配置，不从 Occupancy Mode 推断。
 - `Placement Mode = EncounterSpawnPoint`：走普通房间选点、角色兼容与点位占用。
 - `Placement Mode = OwnerPosition`：技能释放并提交 Spawn Queue 时，按施法者实体根节点快照世界位置与朝向；不选点、不占点，也不因房间点位不足重试。
 
-两种策略都必须携带稳定召唤能力 ID 并进入统一 Spawn Queue。Summon 节点只负责召唤；`SelfDestructOwner` 节点负责 owner 死亡，可无条件执行，也可通过稳定 Event ID 绑定同 Tick 且排序更早的 Summon。绑定后只有 Spawn Queue 返回 `Queued` 才执行自杀，Retry 会一起等待，拒绝或静态上限不会误杀 owner。普通召唤的 per-owner 配额按 `owner + payload slot ID` 分桶，ReplaceOwner 既不占用也不消耗该玩法配额。固定 roster、队列、hitbox、稳定序列和递归深度仍由预检按召唤图推导；实体池预热则由同一预检按候选敌人类型分别给出容量，Director 不再重复推测召唤图。这些是固定内存与事务完整性边界，不是房间玩法数量限制。
+两种策略都必须携带稳定召唤能力 ID 并进入统一 Spawn Queue。Summon 节点只负责召唤；`SelfDestructOwner` 节点负责 owner 死亡，可在自身 Tick 无条件执行，也可通过稳定 Event ID 绑定同 Tick 且排序更早的 Summon。只有实际填写绑定时，Spawn Queue 返回 `Queued` 才执行自杀，Retry 会一起等待，拒绝或静态上限不会误杀 owner；空绑定则完全按自毁节点自身配置执行。普通召唤的 per-owner 配额按 `owner + payload slot ID` 分桶，ReplaceOwner 既不占用也不消耗该玩法配额。固定 roster、队列、hitbox、稳定序列和递归深度仍由预检按召唤图推导；实体池预热则由同一预检按候选敌人类型分别给出容量，Director 不再重复推测召唤图。这些是固定内存与事务完整性边界，不是房间玩法数量限制。
 
 ## 修改流程
 

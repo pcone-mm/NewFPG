@@ -22,6 +22,7 @@
 
             </ui:VisualElement>
 
+            <ui:TwoPaneSplitView name="center-inspector-split" class="center-inspector-split" fixed-pane-index="1" fixed-pane-initial-dimension="340" orientation="Horizontal" view-data-key="fpg-skill-editor-inspector-split">
             <ui:ScrollView name="center-scroll" mode="Vertical" class="center-pane center-scroll">
                 <ui:VisualElement class="center-content">
                     <ui:VisualElement class="preview-header">
@@ -77,6 +78,7 @@
                     <ui:VisualElement name="inspector-content" />
                 </ui:ScrollView>
             </ui:VisualElement>
+            </ui:TwoPaneSplitView>
         </ui:VisualElement>
 
         <ui:VisualElement class="bottom-pane">

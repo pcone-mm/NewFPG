@@ -17,7 +17,8 @@ namespace FPG.Demo.Unity
             bool reloadPressed,
             bool pausePressed,
             bool restartPressed,
-            bool secondaryHeld = false)
+            bool secondaryHeld = false,
+            FpgCoverMoveDirection coverMoveDirection = FpgCoverMoveDirection.None)
         {
             AimHeld = aimHeld;
             PrimaryHeld = primaryHeld;
@@ -27,6 +28,7 @@ namespace FPG.Demo.Unity
             PausePressed = pausePressed;
             RestartPressed = restartPressed;
             SecondaryHeld = secondaryHeld;
+            CoverMoveDirection = coverMoveDirection;
         }
 
         public bool AimHeld { get; }
@@ -37,6 +39,7 @@ namespace FPG.Demo.Unity
         public bool PausePressed { get; }
         public bool RestartPressed { get; }
         public bool SecondaryHeld { get; }
+        public FpgCoverMoveDirection CoverMoveDirection { get; }
     }
 
     public sealed class UnityBattleInputSource : IPlayerInputSource, IBattleTickInputSource
@@ -70,6 +73,7 @@ namespace FPG.Demo.Unity
         private SpatialVectorKey aimUp;
         private long aimPoseVersion;
         private bool hasAimPose;
+        private FpgCoverMoveDirection pendingCoverMoveDirection;
 
         public int ConfiguredInputBufferTicks => gameplayEdgeQueueCapacity
             / BattleTickInput.MaxEdgeCommandCount;
@@ -101,6 +105,17 @@ namespace FPG.Demo.Unity
                 mouse != null && mouse.rightButton.wasPressedThisFrame;
             bool secondaryReleased =
                 mouse != null && mouse.rightButton.wasReleasedThisFrame;
+            bool moveLeft = keyboard != null
+                && (keyboard.aKey.wasPressedThisFrame
+                    || keyboard.leftArrowKey.wasPressedThisFrame);
+            bool moveRight = keyboard != null
+                && (keyboard.dKey.wasPressedThisFrame
+                    || keyboard.rightArrowKey.wasPressedThisFrame);
+            FpgCoverMoveDirection coverMoveDirection = moveLeft == moveRight
+                ? FpgCoverMoveDirection.None
+                : moveLeft
+                    ? FpgCoverMoveDirection.Left
+                    : FpgCoverMoveDirection.Right;
             Capture(new UnityInputSnapshot(
                 mouse != null && mouse.rightButton.isPressed,
                 mouse != null && mouse.leftButton.isPressed,
@@ -109,7 +124,8 @@ namespace FPG.Demo.Unity
                 keyboard != null && keyboard.rKey.wasPressedThisFrame,
                 keyboard != null && keyboard.escapeKey.wasPressedThisFrame,
                 keyboard != null && keyboard.f5Key.wasPressedThisFrame,
-                mouse != null && mouse.rightButton.isPressed));
+                mouse != null && mouse.rightButton.isPressed,
+                coverMoveDirection));
         }
 
         public void Capture(UnityInputSnapshot snapshot)
@@ -137,6 +153,11 @@ namespace FPG.Demo.Unity
                 InputEdgeType.ReloadPressed);
             pausePressed |= snapshot.PausePressed;
             restartPressed |= snapshot.RestartPressed;
+            if (pendingCoverMoveDirection == FpgCoverMoveDirection.None
+                && snapshot.CoverMoveDirection != FpgCoverMoveDirection.None)
+            {
+                pendingCoverMoveDirection = snapshot.CoverMoveDirection;
+            }
             hasCaptured = true;
         }
 
@@ -185,7 +206,13 @@ namespace FPG.Demo.Unity
                 aimRight,
                 aimUp,
                 aimPoseVersion);
-            return new BattleTickInput(GetFrame(tick), pose);
+            FpgCoverMoveDirection coverMoveDirection =
+                pendingCoverMoveDirection;
+            pendingCoverMoveDirection = FpgCoverMoveDirection.None;
+            return new BattleTickInput(
+                GetFrame(tick),
+                pose,
+                coverMoveDirection);
         }
 
         public void SetAimPose(AimPoseSnapshot pose)
@@ -298,6 +325,7 @@ namespace FPG.Demo.Unity
             secondaryHeld = false;
             gameplayEdgeHead = 0;
             gameplayEdgeCount = 0;
+            pendingCoverMoveDirection = FpgCoverMoveDirection.None;
             cancelSecondaryOnNextFrame = true;
             hasCaptured = false;
         }
@@ -311,6 +339,7 @@ namespace FPG.Demo.Unity
         {
             gameplayEdgeHead = 0;
             gameplayEdgeCount = 0;
+            pendingCoverMoveDirection = FpgCoverMoveDirection.None;
             cancelSecondaryOnNextFrame = cancelSecondary || secondaryHeld;
         }
 

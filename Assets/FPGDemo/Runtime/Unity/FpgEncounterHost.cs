@@ -54,6 +54,8 @@ namespace FPG.Demo.Unity
 
         private long nextTick;
         private bool prepared;
+        private bool initialCoverTransitionPending;
+        private string pendingInitialCoverId = string.Empty;
 
         public FpgRoomDefinition RoomDefinition => roomDefinition;
         public FpgEncounterProfile EncounterProfile => encounterProfile;
@@ -74,6 +76,7 @@ namespace FPG.Demo.Unity
             {
                 director.RoomCleared += HandleRoomCleared;
                 director.LifecycleEvent += HandleDirectorLifecycle;
+                director.RestartSucceeded += HandleDirectorRestartSucceeded;
             }
         }
 
@@ -250,14 +253,13 @@ namespace FPG.Demo.Unity
                     return Fail(error, out error);
                 }
 
-                if (!director.TryPlacePlayerAtEntry(playerEntryMarkerId, out error))
+                if (!TryBeginInitialCoverTransition(out error))
                 {
-                    return Fail(error, out error);
-                }
-
-                if (!director.TryStart(out error))
-                {
-                    return Fail(error, out error);
+                    return Fail(
+                        string.IsNullOrWhiteSpace(error)
+                            ? "Formal initial cover transition could not start."
+                            : error,
+                        out error);
                 }
 
                 nextTick = 1L;
@@ -280,6 +282,24 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (initialCoverTransitionPending)
+            {
+                TryCompleteInitialCoverTransition();
+                if (!prepared)
+                {
+                    error = string.IsNullOrWhiteSpace(LastError)
+                        ? "Formal initial cover transition failed."
+                        : LastError;
+                    return false;
+                }
+
+                if (initialCoverTransitionPending)
+                {
+                    error = string.Empty;
+                    return true;
+                }
+            }
+
             bool result = director.Tick(tick, out error);
             if (!result)
             {
@@ -292,6 +312,8 @@ namespace FPG.Demo.Unity
         public void StopAndClear()
         {
             prepared = false;
+            initialCoverTransitionPending = false;
+            pendingInitialCoverId = string.Empty;
             director?.ClearPlayerBinding();
             Plan = null;
         }
@@ -320,9 +342,20 @@ namespace FPG.Demo.Unity
             bool restarted = director.TryRestart(out error);
             if (restarted)
             {
-                nextTick = 1L;
+                if (!initialCoverTransitionPending)
+                {
+                    error = string.IsNullOrWhiteSpace(LastError)
+                        ? "Formal restart could not begin the cover entry transition."
+                        : LastError;
+                    restarted = false;
+                }
+                else
+                {
+                    nextTick = 1L;
+                }
             }
-            else
+
+            if (!restarted)
             {
                 LastError = error ?? string.Empty;
             }
@@ -334,6 +367,12 @@ namespace FPG.Demo.Unity
             if (!driveFromFixedUpdate || !prepared || director == null
                 || director.IsPaused)
             {
+                return;
+            }
+
+            if (initialCoverTransitionPending)
+            {
+                TryCompleteInitialCoverTransition();
                 return;
             }
 
@@ -355,6 +394,114 @@ namespace FPG.Demo.Unity
             }
         }
 
+        private void TryCompleteInitialCoverTransition()
+        {
+            FpgCoverTraversalPresenter presenter =
+                director.PlayerTickDriver?.CoverTraversalPresenter;
+            if (presenter == null || !presenter.HasReachedVisualEnd)
+            {
+                return;
+            }
+
+            if (!director.TryPlacePlayerAtCover(
+                    pendingInitialCoverId,
+                    out string error)
+                || !director.TryResolveCoverReachablePose(
+                    pendingInitialCoverId,
+                    out Pose pose))
+            {
+                FailInitialCoverTransition(error);
+                return;
+            }
+
+            presenter.Complete(pose);
+            FpgCoverSnapshot cover = director.CombatRuntime.Covers.CurrentSnapshot;
+            if (cover.IsDestroyed)
+            {
+                director.Player.Exposure.ForceExposed(new TickIndex(0L), out _);
+            }
+            else
+            {
+                director.Player.Exposure.ApplyCombatPosture(
+                    false,
+                    new TickIndex(0L),
+                    false,
+                    out _);
+            }
+
+            director.RefreshCoverViews();
+            if (!director.TryStart(out error))
+            {
+                FailInitialCoverTransition(error);
+                return;
+            }
+
+            initialCoverTransitionPending = false;
+            pendingInitialCoverId = string.Empty;
+        }
+
+        private bool TryBeginInitialCoverTransition(out string error)
+        {
+            FpgCoverTraversalPresenter traversalPresenter =
+                director.PlayerTickDriver?.CoverTraversalPresenter;
+            traversalPresenter?.Cancel();
+            if (!director.TryPlacePlayerAtEntry(playerEntryMarkerId, out error))
+            {
+                return false;
+            }
+
+            FpgFormalPlayerCameraFeedback cameraFeedback =
+                director.PlayerTickDriver?.CameraFeedback;
+            if (cameraFeedback == null
+                || !cameraFeedback.TryApplyFixedSceneRig(
+                    director.PlayerAnchor,
+                    out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Formal cover entry requires the configured camera rig."
+                    : error;
+                return false;
+            }
+
+            FpgCoverRuntime covers = director.CombatRuntime?.Covers;
+            FpgCoverSnapshot startingCover = covers == null
+                ? default(FpgCoverSnapshot)
+                : covers.CurrentSnapshot;
+            if (!startingCover.IsValid
+                || traversalPresenter == null
+                || !director.TryResolveCoverReachablePose(
+                    startingCover.CoverId,
+                    out Pose targetPose)
+                || !traversalPresenter.TryBegin(
+                    new Pose(
+                        director.PlayerAnchor.position,
+                        director.PlayerAnchor.rotation),
+                    targetPose,
+                    director.PlayerTickDriver.ThreeCProfile
+                        .CoverTraversalSeconds,
+                    out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Formal initial cover transition could not start."
+                    : error;
+                return false;
+            }
+
+            initialCoverTransitionPending = true;
+            pendingInitialCoverId = startingCover.CoverId;
+            error = string.Empty;
+            return true;
+        }
+
+        private void FailInitialCoverTransition(string message)
+        {
+            director.PlayerTickDriver?.CoverTraversalPresenter?.Cancel();
+            initialCoverTransitionPending = false;
+            pendingInitialCoverId = string.Empty;
+            prepared = false;
+            Fail(message, out _);
+        }
+
         private bool Fail(string message, out string error)
         {
             error = string.IsNullOrWhiteSpace(message) ? "Formal encounter host failed." : message;
@@ -373,6 +520,7 @@ namespace FPG.Demo.Unity
             {
                 director.RoomCleared -= HandleRoomCleared;
                 director.LifecycleEvent -= HandleDirectorLifecycle;
+                director.RestartSucceeded -= HandleDirectorRestartSucceeded;
             }
 
             if (prepared)
@@ -390,6 +538,18 @@ namespace FPG.Demo.Unity
                 nextTick = 1L;
                 LastError = string.Empty;
             }
+        }
+
+        private void HandleDirectorRestartSucceeded()
+        {
+            nextTick = 1L;
+            if (!TryBeginInitialCoverTransition(out string error))
+            {
+                FailInitialCoverTransition(error);
+                return;
+            }
+
+            LastError = string.Empty;
         }
 }
 }

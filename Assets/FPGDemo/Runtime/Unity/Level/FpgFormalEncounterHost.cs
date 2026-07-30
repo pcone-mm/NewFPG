@@ -454,7 +454,7 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            return encounterDirector.Tick(tick, out error);
+            return encounterHost.Tick(tick, out error);
         }
 
         public void Dispose()

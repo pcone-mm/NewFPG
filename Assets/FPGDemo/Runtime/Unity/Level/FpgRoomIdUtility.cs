@@ -33,8 +33,8 @@ namespace FPG.Demo.Unity
                 case FpgRoomMarkerKind.Destructible:
                     prefix = "destructible";
                     break;
-                case FpgRoomMarkerKind.Reachable:
-                    prefix = "reachable";
+                case FpgRoomMarkerKind.Cover:
+                    prefix = "cover";
                     break;
                 default:
                     prefix = "marker";

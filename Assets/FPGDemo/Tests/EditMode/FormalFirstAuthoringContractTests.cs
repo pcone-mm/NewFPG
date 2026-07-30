@@ -569,7 +569,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void RoomEditorDoesNotExposeLegacyD0ScenarioControls()
+        public void RoomEditorExposesIndependentCoverAuthoringControls()
         {
             VisualTreeAsset layout = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
                 RoomEditorLayoutPath);
@@ -580,8 +580,10 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(root.Q("scenario-field"), Is.Null);
             Assert.That(root.Q("play-room-button"), Is.Null);
-            Assert.That(root.Q("cover-position-field"), Is.Not.Null);
-            Assert.That(root.Q("reset-cover-position-button"), Is.Not.Null);
+            Assert.That(root.Q("cover-position-field"), Is.Null);
+            Assert.That(root.Q("reset-cover-position-button"), Is.Null);
+            Assert.That(root.Q("place-cover-button"), Is.Not.Null);
+            Assert.That(root.Q("show-cover-toggle"), Is.Not.Null);
         }
 
         private static List<T> FindComponents<T>(Scene scene)

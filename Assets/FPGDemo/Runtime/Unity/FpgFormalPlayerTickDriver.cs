@@ -39,6 +39,8 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(1f)] private float aimDistance = 50f;
         [SerializeField] private LayerMask aimLayerMask = (1 << 29) | (1 << 28);
         [SerializeField] private Transform playerRoot = null;
+        [SerializeField]
+        private FpgCoverTraversalPresenter coverTraversalPresenter = null;
 
         [Header("Input")]
         [SerializeField] private bool captureFromDevices = true;
@@ -113,6 +115,8 @@ namespace FPG.Demo.Unity
         public TickIndex CoverPeekStartedTick => coverPeekStartedTick;
         public FpgFormalPlayerPresentationSource PresentationSource =>
             presentationSource;
+        public FpgCoverTraversalPresenter CoverTraversalPresenter =>
+            coverTraversalPresenter;
 
         public event Action<FpgFormalPlayerActionEvent> ActionCommitted
         {
@@ -154,11 +158,26 @@ namespace FPG.Demo.Unity
             }
 
             presentationPaused = isPaused;
+            coverTraversalPresenter?.SetPaused(isPaused);
             SetAimViewportFrozen(isPaused);
 
             if (inputSource == null)
             {
                 ResetInputSource();
+            }
+
+            FpgEncounterPhase phase = encounterDirector == null
+                ? FpgEncounterPhase.None
+                : encounterDirector.Phase;
+            if (phase == FpgEncounterPhase.None
+                || phase == FpgEncounterPhase.Preparing)
+            {
+                inputSource.ConsumeRestartPressed();
+                inputSource.ConsumePausePressed();
+                inputSource.ClearGameplayInput();
+                ClearCoverPeekGate();
+                coverTraversalPresenter?.SetPaused(false);
+                return;
             }
 
             if (captureFromDevices)
@@ -193,6 +212,8 @@ namespace FPG.Demo.Unity
                 return;
             }
 
+
+
             if (inputSource.ConsumeRestartPressed())
             {
                 ClearCoverPeekGate();
@@ -206,6 +227,17 @@ namespace FPG.Demo.Unity
 
             if (inputSource.ConsumePausePressed())
             {
+                if (phase != FpgEncounterPhase.Warning
+                    && phase != FpgEncounterPhase.Spawning
+                    && phase != FpgEncounterPhase.Combat
+                    && phase != FpgEncounterPhase.WaveDelay
+                    && phase != FpgEncounterPhase.Paused)
+                {
+                    inputSource.ClearGameplayInput();
+                    ClearCoverPeekGate();
+                    return;
+                }
+
                 bool changed = encounterDirector != null
                     && (encounterDirector.IsPaused
                         ? encounterDirector.TryResume(out _)
@@ -218,6 +250,7 @@ namespace FPG.Demo.Unity
 
                 inputSource.ClearGameplayInput();
                 ClearCoverPeekGate();
+                coverTraversalPresenter?.SetPaused(encounterDirector.IsPaused);
                 SetAimViewportFrozen(encounterDirector.IsPaused);
             }
             else if (encounterDirector != null && encounterDirector.IsPaused)
@@ -324,6 +357,20 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            FpgCoverTraversalPresenter traversalPresenter =
+                entity.GetComponent<FpgCoverTraversalPresenter>();
+            if (traversalPresenter == null
+                || !traversalPresenter.TryConfigure(
+                    entity.VisualRoot,
+                    entity.CameraPivot,
+                    out error))
+            {
+                error = traversalPresenter == null
+                    ? "Formal player entity requires a cover traversal presenter."
+                    : error;
+                return false;
+            }
+
             int presentationCommitCapacity;
             try
             {
@@ -353,6 +400,7 @@ namespace FPG.Demo.Unity
             playerSecondaryTriggerMode = secondaryTriggerMode;
             aimAnchor = entity.AimAnchor;
             playerRoot = entity.transform;
+            coverTraversalPresenter = traversalPresenter;
             aimDistance = profile.MaximumAimDistance;
             aimLayerMask = querySettings.HitboxLayerMask
                 | querySettings.BlockerLayerMask;
@@ -370,6 +418,21 @@ namespace FPG.Demo.Unity
             if (runtimeObserved)
             {
                 error = "Formal camera feedback cannot change after runtime binding.";
+                return false;
+            }
+
+            error = string.Empty;
+            if (feedback == null || feedback.CameraRig == null
+                || coverTraversalPresenter == null
+                || playerEntity == null
+                || !coverTraversalPresenter.TryConfigure(
+                    playerEntity.VisualRoot,
+                    feedback.CameraRig,
+                    out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Formal cover traversal requires the scene camera rig."
+                    : error;
                 return false;
             }
 
@@ -680,6 +743,16 @@ namespace FPG.Demo.Unity
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
+            DomainResult coverMovement = ProcessCoverMovement(
+                tickInput,
+                tick,
+                runtime,
+                out bool movementConsumedTick);
+            if (!coverMovement.IsSuccess || movementConsumedTick)
+            {
+                return coverMovement;
+            }
+
             PlayerInputFrame frame = tickInput.CopyToPlayerInputFrame(edgeBuffer);
             DomainResult gated = TryBuildCoverGatedInput(
                 tickInput,
@@ -699,7 +772,9 @@ namespace FPG.Demo.Unity
                 runtime.Player,
                 frame,
                 tick,
-                skillExecutionController.RequiresExposureAt(tick));
+                skillExecutionController.RequiresExposureAt(tick),
+                runtime.Covers?.CurrentCoverIsDestroyed
+                    ?? runtime.Player.Combatant.Barrier <= 0);
             if (!posture.IsSuccess && posture.RejectReason != RejectReason.BarrierDepleted)
             {
                 return posture;
@@ -802,7 +877,9 @@ namespace FPG.Demo.Unity
                 runtime.Player,
                 frame,
                 tick,
-                skillExecutionController.RequiresExposureAt(tick));
+                skillExecutionController.RequiresExposureAt(tick),
+                runtime.Covers?.CurrentCoverIsDestroyed
+                    ?? runtime.Player.Combatant.Barrier <= 0);
             if (!posture.IsSuccess
                 && posture.RejectReason != RejectReason.BarrierDepleted)
             {
@@ -2012,18 +2089,165 @@ namespace FPG.Demo.Unity
             return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
+        private DomainResult ProcessCoverMovement(
+            BattleTickInput tickInput,
+            TickIndex tick,
+            FpgFormalCombatRuntimeBundle runtime,
+            out bool consumedTick)
+        {
+            consumedTick = false;
+            FpgCoverRuntime covers = runtime.Covers;
+            if (covers == null)
+            {
+                return DomainResult.Success;
+            }
+
+            bool wasTraversing = covers.IsTraversing;
+            Pose completedPose = default;
+            if (wasTraversing && tick.IsValid
+                && tick >= covers.TraversalEndsTick)
+            {
+                FpgCoverSnapshot target = covers.TargetSnapshot;
+                if (coverTraversalPresenter == null
+                    || encounterDirector == null
+                    || !target.IsValid
+                    || !encounterDirector.TryResolveCoverReachablePose(
+                        target.CoverId,
+                        out completedPose))
+                {
+                    covers.CancelTraversal();
+                    coverTraversalPresenter?.Cancel();
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+            }
+
+            DomainResult advanced = covers.Advance(tick, out bool completed);
+            if (!advanced.IsSuccess)
+            {
+                return advanced;
+            }
+
+            if (completed)
+            {
+                FpgCoverSnapshot current = covers.CurrentSnapshot;
+                if (encounterDirector == null
+                    || !encounterDirector.TryPlacePlayerAtCover(
+                        current.CoverId,
+                        out _))
+                {
+                    coverTraversalPresenter?.Cancel();
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
+                coverTraversalPresenter.Complete(completedPose);
+
+                if (current.IsDestroyed)
+                {
+                    runtime.Player.Exposure.ForceExposed(tick, out _);
+                }
+                else
+                {
+                    runtime.Player.Exposure.ApplyCombatPosture(
+                        false,
+                        tick,
+                        false,
+                        out _);
+                }
+            }
+
+            if (!wasTraversing
+                && tickInput.CoverMoveDirection
+                    != FpgCoverMoveDirection.None)
+            {
+                FpgCoverSnapshot source = covers.CurrentSnapshot;
+                DomainResult started = covers.TryBeginMove(
+                    tickInput.CoverMoveDirection,
+                    tick,
+                    out FpgCoverSnapshot target);
+                if (!started.IsSuccess)
+                {
+                    return started.RejectReason == RejectReason.InvalidTarget
+                        ? DomainResult.Success
+                        : started;
+                }
+
+                if (coverTraversalPresenter == null
+                    || encounterDirector == null
+                    || !encounterDirector.TryResolveCoverReachablePose(
+                        source.CoverId,
+                        out Pose sourcePose)
+                    || !encounterDirector.TryResolveCoverReachablePose(
+                        target.CoverId,
+                        out Pose targetPose)
+                    || !coverTraversalPresenter.TryBegin(
+                        sourcePose,
+                        targetPose,
+                        threeCProfile.CoverTraversalSeconds,
+                        out _))
+                {
+                    covers.CancelTraversal();
+                    coverTraversalPresenter?.Cancel();
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
+                ClearCoverPeekGate();
+                inputSource.ClearGameplayInput();
+                weaponRelease.Reset();
+                DomainResult interrupted =
+                    skillExecutionController.HardInterrupt(
+                        tick,
+                        runtime.Player.Weapon);
+                if (!interrupted.IsSuccess)
+                {
+                    covers.CancelTraversal();
+                    coverTraversalPresenter.Cancel();
+                    return interrupted;
+                }
+
+                PublishSkillSequenceFrames();
+                ReleaseTerminalPresentationCommits();
+                runtime.Player.Weapon.CancelSkillAction();
+                runtime.Player.Exposure.ForceExposed(tick, out _);
+                wasTraversing = true;
+            }
+
+            if (!wasTraversing)
+            {
+                return DomainResult.Success;
+            }
+
+            PlayerInputFrame emptyFrame = PlayerInputFrame.Empty(tick);
+            DomainResult processed = skillExecutionController.ProcessFrame(
+                emptyFrame,
+                runtime.Player);
+            if (!processed.IsSuccess)
+            {
+                return processed;
+            }
+
+            PublishSkillSequenceFrames();
+            ReleaseTerminalPresentationCommits();
+            lastProcessedTick = tick;
+            encounterDirector?.RefreshCoverViews();
+            PublishSnapshot(runtime, tick);
+            consumedTick = true;
+            return DomainResult.Success;
+        }
+
         private static DomainResult ApplyPosture(
             PlayerRuntime player,
             PlayerInputFrame frame,
             TickIndex tick,
-            bool activeSkillRequiresExposure)
+            bool activeSkillRequiresExposure,
+            bool coverDepleted)
         {
             PlayerExposureState previousExposure = player.Exposure.State;
             bool reloadKeepsWithdrawn = player.Weapon.State == WeaponState.Reloading
                 && (!player.Weapon.StateUntilTick.IsValid
                     || tick < player.Weapon.StateUntilTick);
-            bool reloadRequestsWithdrawn = reloadKeepsWithdrawn || frame.HasReloadInput;
-            bool shouldExpose = !reloadRequestsWithdrawn
+            bool reloadRequestsWithdrawn = !coverDepleted
+                && (reloadKeepsWithdrawn || frame.HasReloadInput);
+            bool shouldExpose = coverDepleted || !reloadRequestsWithdrawn
                 && !frame.CancelSecondary
                 && (activeSkillRequiresExposure
                     || frame.AimHeld
@@ -2035,7 +2259,7 @@ namespace FPG.Demo.Unity
                 : player.Exposure.ApplyCombatPosture(
                     shouldExpose,
                     tick,
-                    player.Combatant.Barrier <= 0,
+                    coverDepleted,
                     out bool ignoredPostureChange);
 
             if (player.Exposure.State == PlayerExposureState.Withdrawn
@@ -2175,6 +2399,9 @@ namespace FPG.Demo.Unity
                     player.Weapon,
                     tick)
                 : 0f;
+            FpgCoverSnapshot cover = runtime.Covers == null
+                ? default(FpgCoverSnapshot)
+                : runtime.Covers.CurrentSnapshot;
             presentationSource.PublishSnapshot(
                 new FpgFormalPlayerPresentationSnapshot(
                     tick,
@@ -2185,8 +2412,12 @@ namespace FPG.Demo.Unity
                     encounterDirector != null && encounterDirector.IsPaused,
                     player.Combatant.Life,
                     player.Combatant.MaxLife,
-                    player.Combatant.Barrier,
-                    player.Combatant.MaxBarrier,
+                    cover.IsValid
+                        ? cover.Durability
+                        : player.Combatant.Barrier,
+                    cover.IsValid
+                        ? cover.MaxDurability
+                        : player.Combatant.MaxBarrier,
                     player.Weapon.Magazine.Ammo,
                     player.Weapon.Magazine.Capacity,
                     player.Exposure.State,
@@ -2199,11 +2430,67 @@ namespace FPG.Demo.Unity
                     isCoverPeekRequested,
                     isCoverPeekRequested
                         ? coverPeekStartedTick
-                        : TickIndex.Invalid));
+                        : TickIndex.Invalid,
+                    cover.IsValid ? cover.CoverId : string.Empty,
+                    cover.IsValid && cover.IsDestroyed,
+                    runtime.Covers != null && runtime.Covers.IsTraversing));
+        }
+
+        public void CancelCoverTraversalForTerminalState()
+        {
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            FpgCoverRuntime covers = runtime == null || runtime.IsDisposed
+                ? null
+                : runtime.Covers;
+            bool presentationPlaying = coverTraversalPresenter != null
+                && coverTraversalPresenter.IsPlaying;
+            if (covers == null)
+            {
+                if (presentationPlaying)
+                {
+                    coverTraversalPresenter.Cancel();
+                }
+                return;
+            }
+
+            bool runtimeTraversing = covers.IsTraversing;
+            if (!runtimeTraversing && !presentationPlaying)
+            {
+                return;
+            }
+
+            if (runtimeTraversing)
+            {
+                covers.CancelTraversal();
+                FpgCoverSnapshot current = covers.CurrentSnapshot;
+                encounterDirector.TryPlacePlayerAtCover(current.CoverId, out _);
+                TickIndex terminalTick = encounterDirector.CurrentTick.IsValid
+                    ? encounterDirector.CurrentTick
+                    : new TickIndex(0L);
+                if (current.IsDestroyed)
+                {
+                    runtime.Player.Exposure.ForceExposed(terminalTick, out _);
+                }
+                else
+                {
+                    runtime.Player.Exposure.ApplyCombatPosture(
+                        false,
+                        terminalTick,
+                        false,
+                        out _);
+                }
+
+                encounterDirector.RefreshCoverViews();
+            }
+
+            coverTraversalPresenter?.Cancel();
         }
 
         public void ResetRuntimeState()
         {
+            coverTraversalPresenter?.Cancel();
             Array.Clear(edgeBuffer, 0, edgeBuffer.Length);
             ClearCoverPeekGate();
             Array.Clear(queryCandidates, 0, queryCandidates.Length);

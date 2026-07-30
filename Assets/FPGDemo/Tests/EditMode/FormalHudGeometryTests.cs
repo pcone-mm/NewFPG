@@ -253,12 +253,35 @@ namespace FPG.Demo.Tests.EditMode
                 AssertBarRatio(life, 0.5f);
                 AssertBarRatio(barrier, 0.25f);
                 AssertBarRatio(ammo, 0.25f);
+                Assert.That(barrierText.text, Is.EqualTo("COVER 25 / 100"));
                 AssertConfiguredValue(
                     profile,
                     FpgHudResourceKind.Life,
                     lifeText,
                     50,
                     100);
+
+                presenter.Refresh(CreateSnapshot(
+                    life: 50,
+                    maxLife: 100,
+                    barrier: 25,
+                    maxBarrier: 100,
+                    ammo: 2,
+                    magazineCapacity: 8,
+                    coverMoving: true));
+                Assert.That(barrierText.text, Is.EqualTo("COVER — MOVING"));
+
+                presenter.Refresh(CreateSnapshot(
+                    life: 50,
+                    maxLife: 100,
+                    barrier: 0,
+                    maxBarrier: 100,
+                    ammo: 2,
+                    magazineCapacity: 8,
+                    coverDestroyed: true));
+                Assert.That(
+                    barrierText.text,
+                    Is.EqualTo("COVER 0 / 100 · DESTROYED"));
 
                 presenter.Refresh(CreateSnapshot(
                     life: 50,
@@ -884,7 +907,9 @@ namespace FPG.Demo.Tests.EditMode
             int barrier,
             int maxBarrier,
             int ammo,
-            int magazineCapacity)
+            int magazineCapacity,
+            bool coverDestroyed = false,
+            bool coverMoving = false)
         {
             return new FpgFormalPlayerPresentationSnapshot(
                 new TickIndex(1L),
@@ -898,7 +923,15 @@ namespace FPG.Demo.Tests.EditMode
                 ammo,
                 magazineCapacity,
                 PlayerExposureState.Exposed,
-                WeaponState.Ready);
+                WeaponState.Ready,
+                false,
+                0f,
+                TickIndex.Invalid,
+                false,
+                TickIndex.Invalid,
+                "cover-center",
+                coverDestroyed,
+                coverMoving);
         }
 
         private static FpgFormalBarView CreateBar(

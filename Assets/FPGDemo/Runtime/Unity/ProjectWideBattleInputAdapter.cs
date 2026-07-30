@@ -40,6 +40,7 @@ namespace FPG.Demo.Unity
         private const string RestartActionPath = "Battle/Restart";
         private const string LookActionPath = "Player/Look";
         private const string PointActionPath = "UI/Point";
+        private const string MoveActionPath = "Player/Move";
 
         private InputActionAsset actionAsset;
         private InputAction aimAction;
@@ -50,6 +51,7 @@ namespace FPG.Demo.Unity
         private InputAction restartAction;
         private InputAction lookAction;
         private InputAction pointAction;
+        private InputAction moveAction;
         private InputAction subscribedPauseAction;
         private Func<bool> earlyPausePressedHandler;
         private int lastForwardedPauseFrame = -1;
@@ -106,6 +108,13 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            Vector2 move = moveAction.ReadValue<Vector2>();
+            FPG.Demo.Run.FpgCoverMoveDirection coverMoveDirection =
+                !moveAction.WasPressedThisFrame() || Mathf.Abs(move.x) < 0.5f
+                    ? FPG.Demo.Run.FpgCoverMoveDirection.None
+                    : move.x < 0f
+                        ? FPG.Demo.Run.FpgCoverMoveDirection.Left
+                        : FPG.Demo.Run.FpgCoverMoveDirection.Right;
             inputSource.Capture(new UnityInputSnapshot(
                 aimAction.IsPressed(),
                 primaryAction.IsPressed(),
@@ -114,7 +123,8 @@ namespace FPG.Demo.Unity
                 reloadAction.WasPressedThisFrame(),
                 pauseAction.WasPressedThisFrame(),
                 restartAction.WasPressedThisFrame(),
-                secondaryAction.IsPressed()));
+                secondaryAction.IsPressed(),
+                coverMoveDirection));
             return true;
         }
 
@@ -159,7 +169,8 @@ namespace FPG.Demo.Unity
                 && secondaryAction != null
                 && reloadAction != null
                 && pauseAction != null
-                && restartAction != null)
+                && restartAction != null
+                && moveAction != null)
             {
                 EnsurePausePerformedSubscription();
                 return true;
@@ -173,12 +184,14 @@ namespace FPG.Demo.Unity
             reloadAction = actionAsset.FindAction(ReloadActionPath);
             pauseAction = actionAsset.FindAction(PauseActionPath);
             restartAction = actionAsset.FindAction(RestartActionPath);
+            moveAction = actionAsset.FindAction(MoveActionPath);
             bool resolved = aimAction != null
                 && primaryAction != null
                 && secondaryAction != null
                 && reloadAction != null
                 && pauseAction != null
-                && restartAction != null;
+                && restartAction != null
+                && moveAction != null;
             if (!resolved)
             {
                 ClearCachedActions();
@@ -234,6 +247,7 @@ namespace FPG.Demo.Unity
             restartAction = null;
             lookAction = null;
             pointAction = null;
+            moveAction = null;
             lastForwardedPauseFrame = -1;
         }
 

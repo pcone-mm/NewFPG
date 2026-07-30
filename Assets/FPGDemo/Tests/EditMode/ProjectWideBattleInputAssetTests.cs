@@ -56,6 +56,26 @@ namespace FPG.Demo.Tests.EditMode
             AssertHasBinding(point, "<Mouse>/position");
         }
 
+        [Test]
+        public void CoverMovementReusesPlayerMoveHorizontalKeyboardBindings()
+        {
+            InputActionAsset actions =
+                AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputActionsPath);
+            Assert.That(actions, Is.Not.Null);
+
+            InputAction move = actions.FindActionMap(
+                "Player",
+                throwIfNotFound: true).FindAction(
+                    "Move",
+                    throwIfNotFound: true);
+            Assert.That(move.type, Is.EqualTo(InputActionType.Value));
+            Assert.That(move.expectedControlType, Is.EqualTo("Vector2"));
+            AssertHasBinding(move, "<Keyboard>/a");
+            AssertHasBinding(move, "<Keyboard>/leftArrow");
+            AssertHasBinding(move, "<Keyboard>/d");
+            AssertHasBinding(move, "<Keyboard>/rightArrow");
+        }
+
         private static void AssertBattleBinding(InputActionMap battle, string actionName, string path)
         {
             InputAction action = battle.FindAction(actionName, throwIfNotFound: true);

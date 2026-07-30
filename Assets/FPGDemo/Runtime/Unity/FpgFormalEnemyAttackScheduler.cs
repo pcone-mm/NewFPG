@@ -633,6 +633,7 @@ namespace FPG.Demo.Unity
             if (!owner.IsUsed
                 || owner.ActivePatternIndex >= 0
                 || !combatPort.CanAttack(owner.RuntimeId)
+                || !combatPort.CanTargetPlayer
                 || pattern.Occurrence == long.MaxValue
                 || nextScheduleSequence < 0L
                 || nextScheduleSequence
@@ -1798,7 +1799,8 @@ namespace FPG.Demo.Unity
                 if (!owner.IsUsed
                     || owner.ActivePatternIndex >= 0
                     || owner.LastStartTick == tick
-                    || !combatPort.CanAttack(owner.RuntimeId))
+                    || !combatPort.CanAttack(owner.RuntimeId)
+                    || !combatPort.CanTargetPlayer)
                 {
                     continue;
                 }

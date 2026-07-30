@@ -3,6 +3,7 @@
 `FPG.LevelAuthoring.Editor` 只负责正式房间编辑、Scene View marker、Art Scene 合同、正式 Encounter 预览和验证。
 
 - `FpgRoomEditorWindow`、UXML/USS 与 `FpgRoomSceneTool` 维护房间资产和 marker。
+- Cover marker 写入 `RoomDefinition.coverSlots`；Scene Tool 分别编辑掩体 pose 与玩家到达 pose，复制时同时偏移两者并清除副本的 `isStartingCover`。不要恢复 `D0ThreeCProfile.coverLocalPosition` 这条旧 authoring 路径。
 - `FpgRoomAuthoringOperations` 只执行用户显式触发的整房复制、Art Scene root 修复和生产注册；源 RoomDefinition/Art Scene 必须先保存，RoomDefinition、独立 Art Scene、catalog 与 Build Settings 在失败时必须回滚或保留为可恢复的完整组合。
 - 全局同步忽略 GUID/path 均为空的草稿房间；公开校验与 binding repair 遇到已加载且未保存的 Art Scene 时必须拒绝操作，不得替用户保存、关闭或覆盖。
 - `FpgRoomArtSceneEditorUtility` 以 GUID 为真源同步存储路径；postprocessor 只更新内存并标脏 RoomDefinition，必须由用户显式保存关卡后才落盘。

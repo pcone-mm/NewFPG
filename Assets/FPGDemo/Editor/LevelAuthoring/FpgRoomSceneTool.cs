@@ -33,7 +33,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private FpgRoomArtRoot roomArtRoot;
         private GameObject cameraPreviewRoot;
         private GameObject cameraPreviewPlayer;
-        private FpgPlayerBarrierPresentationController cameraPreviewCover;
         private Camera cameraPreviewCamera;
         private D0ThreeCProfile cameraPreviewProfile;
         private FpgRoomMarkerKind? placementKind;
@@ -222,12 +221,36 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     role.intValue = 0;
                 }
             }
-            else if (kind == FpgRoomMarkerKind.Reachable)
+            else if (kind == FpgRoomMarkerKind.Cover)
             {
-                SerializedProperty audience = FpgRoomAuthoringSchema.FindRelative(marker, "audience", "actorMask");
-                if (audience != null)
+                SerializedProperty prefab =
+                    FpgRoomAuthoringSchema.FindRelative(marker, "prefab");
+                SerializedProperty durability =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "maxDurability");
+                SerializedProperty startingCover =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "isStartingCover");
+                SerializedProperty reachablePosition =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "playerReachableLocalPosition");
+                SerializedProperty reachableRotation =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "playerReachableLocalEulerAngles");
+                if (prefab != null) prefab.objectReferenceValue = null;
+                if (durability != null) durability.intValue = 100;
+                if (startingCover != null) startingCover.boolValue = index == 0;
+                if (reachablePosition != null)
                 {
-                    audience.intValue = 3;
+                    reachablePosition.vector3Value = Snap(localPosition);
+                }
+                if (reachableRotation != null)
+                {
+                    reachableRotation.vector3Value = localRotation.eulerAngles;
                 }
             }
 
@@ -271,6 +294,28 @@ namespace FPG.Demo.Editor.LevelAuthoring
             FpgRoomAuthoringSchema.SetMarkerPosition(
                 duplicate,
                 Snap(FpgRoomAuthoringSchema.GetMarkerPosition(duplicate) + offset));
+            if (markerKind == FpgRoomMarkerKind.Cover)
+            {
+                SerializedProperty reachablePosition =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        duplicate,
+                        "playerReachableLocalPosition");
+                SerializedProperty startingCover =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        duplicate,
+                        "isStartingCover");
+                if (reachablePosition != null)
+                {
+                    reachablePosition.vector3Value =
+                        Snap(reachablePosition.vector3Value + offset);
+                }
+
+                if (startingCover != null)
+                {
+                    startingCover.boolValue = false;
+                }
+            }
+
             serializedRoom.ApplyModifiedProperties();
             EditorUtility.SetDirty(room);
             SetSelectedMarker(new FpgRoomMarkerHandle(markerKind, duplicateIndex, id, string.Empty));
@@ -313,7 +358,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void RefreshMarkerVisualization(FpgRoomMarkerKind kind)
         {
-            if (kind == FpgRoomMarkerKind.Destructible)
+            if (kind == FpgRoomMarkerKind.Destructible
+                || kind == FpgRoomMarkerKind.Cover)
             {
                 RebuildPreview();
                 return;
@@ -425,6 +471,28 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         slot,
                         "prefab",
                         "destructiblePrefab")?.objectReferenceValue as GameObject;
+                    if (prefab == null)
+                    {
+                        continue;
+                    }
+
+                    InstantiatePreview(
+                        prefab,
+                        previewRoot.transform,
+                        FpgRoomAuthoringSchema.GetMarkerPosition(slot),
+                        FpgRoomAuthoringSchema.GetMarkerRotation(slot));
+                }
+            }
+
+            SerializedProperty covers = serializedRoom.FindProperty("coverSlots");
+            if (covers != null && covers.isArray)
+            {
+                for (int index = 0; index < covers.arraySize; index++)
+                {
+                    SerializedProperty slot = covers.GetArrayElementAtIndex(index);
+                    GameObject prefab = FpgRoomAuthoringSchema.FindRelative(
+                        slot,
+                        "prefab")?.objectReferenceValue as GameObject;
                     if (prefab == null)
                     {
                         continue;
@@ -574,6 +642,53 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 Handles.ArrowHandleCap(0, position, rotation, size * 2.2f, EventType.Repaint);
                 string label = string.IsNullOrWhiteSpace(handle.DisplayName) ? handle.MarkerId : handle.DisplayName;
                 Handles.Label(position + Vector3.up * size * 1.4f, label);
+
+                if (handle.Kind == FpgRoomMarkerKind.Cover)
+                {
+                    SerializedProperty reachablePositionProperty =
+                        FpgRoomAuthoringSchema.FindRelative(
+                            marker,
+                            "playerReachableLocalPosition");
+                    SerializedProperty reachableRotationProperty =
+                        FpgRoomAuthoringSchema.FindRelative(
+                            marker,
+                            "playerReachableLocalEulerAngles");
+                    if (reachablePositionProperty == null
+                        || reachableRotationProperty == null)
+                    {
+                        continue;
+                    }
+
+                    Vector3 reachablePosition =
+                        reachablePositionProperty.vector3Value;
+                    Quaternion reachableRotation = Quaternion.Euler(
+                        reachableRotationProperty.vector3Value);
+                    float reachableSize =
+                        HandleUtility.GetHandleSize(reachablePosition) * 0.1f;
+                    Handles.color = isSelected
+                        ? new Color(1f, 0.95f, 0.4f)
+                        : new Color(0.24f, 0.88f, 0.96f);
+                    Handles.DrawDottedLine(position, reachablePosition, 4f);
+                    if (Handles.Button(
+                            reachablePosition,
+                            reachableRotation,
+                            reachableSize,
+                            reachableSize * 1.25f,
+                            Handles.CubeHandleCap))
+                    {
+                        SetSelectedMarker(handle);
+                    }
+
+                    Handles.ArrowHandleCap(
+                        0,
+                        reachablePosition,
+                        reachableRotation,
+                        reachableSize * 2.2f,
+                        EventType.Repaint);
+                    Handles.Label(
+                        reachablePosition + Vector3.up * reachableSize * 1.4f,
+                        "玩家到达点");
+                }
             }
         }
 
@@ -591,6 +706,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 SetSelectedMarker(null);
                 return;
+            }
+
+            if (selectedMarker.Kind == FpgRoomMarkerKind.Cover)
+            {
+                DrawSelectedCoverReachableHandle(serializedRoom, marker);
             }
 
             Vector3 position = FpgRoomAuthoringSchema.GetMarkerPosition(marker);
@@ -624,7 +744,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             serializedRoom.ApplyModifiedProperties();
             EditorUtility.SetDirty(room);
-            if (selectedMarker.Kind == FpgRoomMarkerKind.Destructible)
+            if (selectedMarker.Kind == FpgRoomMarkerKind.Destructible
+                || selectedMarker.Kind == FpgRoomMarkerKind.Cover)
             {
                 RebuildPreview();
             }
@@ -633,6 +754,73 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 TryRefreshCameraPreview(out _);
             }
 
+            RoomChanged?.Invoke();
+        }
+
+        private void DrawSelectedCoverReachableHandle(
+            SerializedObject serializedRoom,
+            SerializedProperty marker)
+        {
+            SerializedProperty reachablePositionProperty =
+                FpgRoomAuthoringSchema.FindRelative(
+                    marker,
+                    "playerReachableLocalPosition");
+            SerializedProperty reachableRotationProperty =
+                FpgRoomAuthoringSchema.FindRelative(
+                    marker,
+                    "playerReachableLocalEulerAngles");
+            if (reachablePositionProperty == null
+                || reachableRotationProperty == null)
+            {
+                return;
+            }
+
+            Vector3 position = reachablePositionProperty.vector3Value;
+            Quaternion rotation = Quaternion.Euler(
+                reachableRotationProperty.vector3Value);
+            EditorGUI.BeginChangeCheck();
+            if (Tools.current == Tool.Rotate)
+            {
+                rotation = Handles.RotationHandle(rotation, position);
+            }
+            else
+            {
+                position = Handles.PositionHandle(position, rotation);
+            }
+
+            if (!EditorGUI.EndChangeCheck())
+            {
+                return;
+            }
+
+            Undo.RecordObject(
+                room,
+                Tools.current == Tool.Rotate
+                    ? "旋转玩家到达点"
+                    : "移动玩家到达点");
+            serializedRoom.Update();
+            marker = FpgRoomAuthoringSchema.FindMarkerProperty(
+                serializedRoom,
+                selectedMarker.Kind,
+                selectedMarker.Index);
+            reachablePositionProperty = FpgRoomAuthoringSchema.FindRelative(
+                marker,
+                "playerReachableLocalPosition");
+            reachableRotationProperty = FpgRoomAuthoringSchema.FindRelative(
+                marker,
+                "playerReachableLocalEulerAngles");
+            if (Tools.current == Tool.Rotate)
+            {
+                reachableRotationProperty.vector3Value =
+                    rotation.eulerAngles;
+            }
+            else
+            {
+                reachablePositionProperty.vector3Value = Snap(position);
+            }
+
+            serializedRoom.ApplyModifiedProperties();
+            EditorUtility.SetDirty(room);
             RoomChanged?.Invoke();
         }
 
@@ -1004,28 +1192,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             return true;
         }
 
-        internal bool TryRefreshCoverPreview(
-            D0ThreeCProfile profile,
-            out string error)
-        {
-            if (!cameraPreviewActive || cameraPreviewCover == null)
-            {
-                error = string.Empty;
-                return true;
-            }
-
-            if (!cameraPreviewCover.TrySetThreeCProfile(profile, out error))
-            {
-                return false;
-            }
-
-            SetCoverPreviewVisible(cameraPreviewCover, profile);
-            SceneView.RepaintAll();
-            EditorApplication.QueuePlayerLoopUpdate();
-            error = string.Empty;
-            return true;
-        }
-
         private bool TryCreatePlayerPreview(
             D0ThreeCProfile profile,
             Transform playerAnchor,
@@ -1065,37 +1231,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
-            FpgPlayerBarrierPresentationController cover = playerView?.Barrier;
-            if (cover == null || !cover.TrySetThreeCProfile(profile, out error))
+            FpgPlayerBarrierPresentationController peek = playerView?.Barrier;
+            if (peek == null || !peek.TrySetThreeCProfile(profile, out error))
             {
                 if (string.IsNullOrWhiteSpace(error))
                 {
-                    error = "Formal camera preview player requires a cover presentation controller.";
+                    error = "Formal camera preview player requires a peek presentation controller.";
                 }
 
                 return false;
             }
 
-            cameraPreviewCover = cover;
-            SetCoverPreviewVisible(cover, profile);
             error = string.Empty;
             return true;
-        }
-
-        private static void SetCoverPreviewVisible(
-            FpgPlayerBarrierPresentationController cover,
-            D0ThreeCProfile profile)
-        {
-            cover.CoverRenderer.enabled = true;
-            LineRenderer outline = cover.GetComponent<LineRenderer>();
-            if (outline != null)
-            {
-                Color color = profile.BarrierColor;
-                color.a *= profile.BarrierMaximumOpacity;
-                outline.startColor = color;
-                outline.endColor = color;
-                outline.enabled = true;
-            }
         }
 
         private static bool TryResolvePlayerEntityPrefab(
@@ -1221,7 +1369,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private void DestroyCameraPreviewObjects()
         {
             cameraPreviewPlayer = null;
-            cameraPreviewCover = null;
             cameraPreviewCamera = null;
             if (cameraPreviewRoot != null)
             {

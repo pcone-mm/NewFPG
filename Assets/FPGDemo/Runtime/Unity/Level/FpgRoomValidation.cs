@@ -25,16 +25,22 @@ namespace FPG.Demo.Unity
         DuplicateMarkerId = 10,
         InvalidMarkerPose = 11,
         MissingDestructiblePrefab = 12,
-        InvalidReachableAudience = 13,
         MissingPlayerEntryPoint = 14,
         MissingEnemySpawnPoint = 15,
         MissingExitSlot = 16,
-        MissingReachablePoint = 17,
         DuplicateRoomId = 18,
         MissingRoomReference = 19,
         MissingMarkerDisplayName = 20,
         InvalidEnemySpawnRole = 21,
-        InvalidArtSceneReference = 22
+        InvalidArtSceneReference = 22,
+        MissingCoverSlot = 23,
+        MissingCoverPrefab = 24,
+        InvalidCoverPrefab = 25,
+        InvalidCoverDurability = 26,
+        InvalidCoverReachablePose = 27,
+        MissingStartingCover = 28,
+        MultipleStartingCovers = 29,
+        OverlappingCoverReachablePosition = 30
     }
 
     public sealed class FpgRoomValidationIssue

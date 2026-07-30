@@ -8,11 +8,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
 {
     internal enum FpgRoomMarkerKind
     {
-        Exit,
-        PlayerEntry,
-        EnemySpawn,
-        Destructible,
-        Reachable
+        Exit = 0,
+        PlayerEntry = 1,
+        EnemySpawn = 2,
+        Destructible = 3,
+        Cover = 5
     }
 
     internal enum FpgRoomValidationSeverity
@@ -110,7 +110,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 { FpgRoomMarkerKind.PlayerEntry, "playerEntryPoints" },
                 { FpgRoomMarkerKind.EnemySpawn, "enemySpawnPoints" },
                 { FpgRoomMarkerKind.Destructible, "destructibleSlots" },
-                { FpgRoomMarkerKind.Reachable, "reachablePoints" }
+                { FpgRoomMarkerKind.Cover, "coverSlots" }
             };
 
         private static readonly Dictionary<FpgRoomMarkerKind, Color> MarkerColors =
@@ -120,7 +120,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 { FpgRoomMarkerKind.PlayerEntry, new Color(0.22f, 0.86f, 0.62f) },
                 { FpgRoomMarkerKind.EnemySpawn, new Color(0.94f, 0.32f, 0.30f) },
                 { FpgRoomMarkerKind.Destructible, new Color(0.76f, 0.39f, 0.88f) },
-                { FpgRoomMarkerKind.Reachable, new Color(0.27f, 0.62f, 0.94f) }
+                { FpgRoomMarkerKind.Cover, new Color(0.96f, 0.78f, 0.28f) }
             };
 
         internal static Type RoomType => Type.GetType(RoomTypeName, false);
@@ -137,7 +137,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case FpgRoomMarkerKind.PlayerEntry: return "玩家入口";
                 case FpgRoomMarkerKind.EnemySpawn: return "敌人出生";
                 case FpgRoomMarkerKind.Destructible: return "可破坏物";
-                case FpgRoomMarkerKind.Reachable: return "可到达点";
+                case FpgRoomMarkerKind.Cover: return "掩体";
                 default: return kind.ToString();
             }
         }
@@ -160,9 +160,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case "role": return "出生角色分类";
                 case "destructiblePrefab": return "可破坏物 Prefab";
                 case "prefab": return "Prefab";
-                case "applicability": return "适用对象";
-                case "applicableActors": return "适用对象";
-                case "actorMask": return "适用对象";
+                case "maxDurability": return "最大耐久";
+                case "isStartingCover": return "初始掩体";
+                case "playerReachableLocalPosition": return "玩家到达点位置";
+                case "playerReachableLocalEulerAngles": return "玩家到达点朝向";
                 default: return ObjectNames.NicifyVariableName(propertyName);
             }
         }
@@ -530,8 +531,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return "enemySpawnPoints";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingExitSlot:
                     return "exitSlots";
-                case FPG.Demo.Unity.FpgRoomValidationCode.MissingReachablePoint:
-                    return "reachablePoints";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingCoverSlot:
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingStartingCover:
+                case FPG.Demo.Unity.FpgRoomValidationCode.MultipleStartingCovers:
+                    return "coverSlots";
                 default:
                     return null;
             }
@@ -570,20 +573,32 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return $"标记 '{issue.MarkerId}' 包含非法 Transform。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingDestructiblePrefab:
                     return $"可破坏物槽位 '{issue.MarkerId}' 缺少 Prefab。";
-                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidReachableAudience:
-                    return $"可到达点 '{issue.MarkerId}' 没有有效的玩家/敌人适用掩码。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingPlayerEntryPoint:
                     return "至少需要一个玩家入口。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingEnemySpawnPoint:
                     return "至少需要一个敌人出生点。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingExitSlot:
                     return "尚未配置出口插槽；单房试玩仍可继续。";
-                case FPG.Demo.Unity.FpgRoomValidationCode.MissingReachablePoint:
-                    return "尚未配置可到达点；单房试玩仍可继续。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingMarkerDisplayName:
                     return $"标记 '{issue.MarkerId}' 缺少中文显示名。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.InvalidEnemySpawnRole:
                     return $"敌人出生点 '{issue.MarkerId}' 的角色分类无效。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingCoverSlot:
+                    return "至少需要配置一个掩体。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingCoverPrefab:
+                    return $"掩体 '{issue.MarkerId}' 缺少 Prefab。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverPrefab:
+                    return $"掩体 '{issue.MarkerId}' 的 Prefab 契约无效：{issue.Message}";
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverDurability:
+                    return $"掩体 '{issue.MarkerId}' 的最大耐久必须大于 0。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverReachablePose:
+                    return $"掩体 '{issue.MarkerId}' 的玩家到达点无效。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MissingStartingCover:
+                    return "必须指定一个初始掩体。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.MultipleStartingCovers:
+                    return "只能指定一个初始掩体。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.OverlappingCoverReachablePosition:
+                    return $"掩体 '{issue.MarkerId}' 的玩家到达点横向位置与其他掩体重叠。";
                 default:
                     return issue.Message;
             }
@@ -623,7 +638,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case FpgRoomMarkerKind.PlayerEntry: prefix = "player"; break;
                 case FpgRoomMarkerKind.EnemySpawn: prefix = "enemy-any"; break;
                 case FpgRoomMarkerKind.Destructible: prefix = "destructible"; break;
-                case FpgRoomMarkerKind.Reachable: prefix = "reachable"; break;
+                case FpgRoomMarkerKind.Cover: prefix = "cover"; break;
                 default: prefix = "marker"; break;
             }
 

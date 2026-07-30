@@ -33,6 +33,9 @@ namespace FPG.Demo.Unity
         private int lastMaxLife = int.MinValue;
         private int lastBarrier = int.MinValue;
         private int lastMaxBarrier = int.MinValue;
+        private bool lastCoverDestroyed;
+        private bool lastCoverMoving;
+        private string lastCoverId = string.Empty;
         private int lastAmmo = int.MinValue;
         private int lastMagazineCapacity = int.MinValue;
         private FpgFormalPlayerPresentationState lastState =
@@ -133,21 +136,24 @@ namespace FPG.Demo.Unity
                 lastMaxLife = snapshot.MaxLife;
             }
 
-            if (snapshot.Barrier != lastBarrier
-                || snapshot.MaxBarrier != lastMaxBarrier)
+            if (snapshot.CoverDurability != lastBarrier
+                || snapshot.MaxCoverDurability != lastMaxBarrier
+                || snapshot.IsCoverDestroyed != lastCoverDestroyed
+                || snapshot.IsCoverMoving != lastCoverMoving
+                || snapshot.CurrentCoverId != lastCoverId)
             {
                 barrierBar.SetValue(
-                    snapshot.Barrier,
-                    snapshot.MaxBarrier,
+                    snapshot.CoverDurability,
+                    snapshot.MaxCoverDurability,
                     immediate);
                 SetText(
                     barrierText,
-                    FormatValue(
-                        barrierPresentation,
-                        snapshot.Barrier,
-                        snapshot.MaxBarrier));
-                lastBarrier = snapshot.Barrier;
-                lastMaxBarrier = snapshot.MaxBarrier;
+                    FormatCoverValue(snapshot));
+                lastBarrier = snapshot.CoverDurability;
+                lastMaxBarrier = snapshot.MaxCoverDurability;
+                lastCoverDestroyed = snapshot.IsCoverDestroyed;
+                lastCoverMoving = snapshot.IsCoverMoving;
+                lastCoverId = snapshot.CurrentCoverId;
             }
 
             if (snapshot.Ammo != lastAmmo
@@ -200,6 +206,9 @@ namespace FPG.Demo.Unity
             lastMaxLife = int.MinValue;
             lastBarrier = int.MinValue;
             lastMaxBarrier = int.MinValue;
+            lastCoverDestroyed = false;
+            lastCoverMoving = false;
+            lastCoverId = string.Empty;
             lastAmmo = int.MinValue;
             lastMagazineCapacity = int.MinValue;
             lastState = (FpgFormalPlayerPresentationState)(-1);
@@ -297,6 +306,29 @@ namespace FPG.Demo.Unity
             FpgHudResourcePresentation presentation)
         {
             return presentation == null ? string.Empty : presentation.Label + " --";
+        }
+
+        private static string FormatCoverValue(
+            in FpgFormalPlayerPresentationSnapshot value)
+        {
+            if (value.IsCoverMoving)
+            {
+                return "COVER — MOVING";
+            }
+
+            if (value.IsCoverDestroyed)
+            {
+                return string.Format(
+                    CultureInfo.InvariantCulture,
+                    "COVER 0 / {0} · DESTROYED",
+                    Mathf.Max(0, value.MaxCoverDurability));
+            }
+
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "COVER {0} / {1}",
+                Mathf.Max(0, value.CoverDurability),
+                Mathf.Max(0, value.MaxCoverDurability));
         }
 
         private static string FormatState(

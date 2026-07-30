@@ -5,8 +5,9 @@ using UnityEngine;
 namespace FPG.Demo.Unity
 {
     /// <summary>
-    /// Presentation-only cover and peek pose for Fei. It consumes committed
-    /// player snapshots and never moves gameplay anchors or owns combat state.
+    /// Presentation-only peek pose for Fei. The historical class name remains
+    /// as a prefab compatibility boundary; independent room cover owns visuals,
+    /// collision and durability.
     /// </summary>
     [DefaultExecutionOrder(910)]
     [DisallowMultipleComponent]
@@ -86,8 +87,7 @@ namespace FPG.Demo.Unity
         public static bool ShouldShowBarrier(
             in FpgFormalPlayerPresentationSnapshot snapshot)
         {
-            return snapshot.IsCombatActive
-                && snapshot.Barrier > 0;
+            return false;
         }
 
         public static bool ShouldShowCover(
@@ -134,22 +134,8 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (coverVisualRoot == null)
-            {
-                error = "D0 player cover presentation requires a CoverVisualRoot.";
-                return false;
-            }
-
             peekTransitionSeconds = profile.PeekTransitionSeconds;
             retractTransitionSeconds = profile.RetractTransitionSeconds;
-            coverVisualRoot.localPosition = profile.CoverLocalPosition;
-            fadeInSeconds = profile.BarrierFadeInSeconds;
-            fadeOutSeconds = profile.BarrierFadeOutSeconds;
-            maximumOpacity = profile.BarrierMaximumOpacity;
-            barrierColor = profile.BarrierColor;
-            currentOpacity = Mathf.Min(currentOpacity, maximumOpacity);
-            ConfigureLineRenderer();
-            SetOpacity(currentOpacity);
             error = string.Empty;
             return true;
         }
@@ -190,51 +176,9 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (coverVisualRoot == null)
+            if (peekRoot == transform || !peekRoot.IsChildOf(transform))
             {
-                error = "D0 player cover presentation requires a CoverVisualRoot.";
-                return false;
-            }
-
-            if (coverRenderer == null)
-            {
-                error = "D0 player cover presentation requires a cover Renderer.";
-                return false;
-            }
-
-            if (lineMaterial == null)
-            {
-                error = "D0 player cover presentation requires a transparent line material.";
-                return false;
-            }
-
-            LineRenderer resolvedLineRenderer = ResolveLineRenderer();
-            if (resolvedLineRenderer == null)
-            {
-                error = "D0 player cover presentation requires a LineRenderer.";
-                return false;
-            }
-
-            if (coverVisualRoot == transform
-                || !coverVisualRoot.IsChildOf(transform))
-            {
-                error = "D0 player CoverVisualRoot must be below the fixed cover root.";
-                return false;
-            }
-
-            if (coverRenderer.transform != coverVisualRoot
-                && !coverRenderer.transform.IsChildOf(coverVisualRoot))
-            {
-                error = "D0 player cover Renderer must be below CoverVisualRoot.";
-                return false;
-            }
-
-            if (peekRoot == transform
-                || peekRoot.IsChildOf(transform)
-                || transform.IsChildOf(peekRoot)
-                || peekRoot.root != transform.root)
-            {
-                error = "D0 player PeekRoot and fixed cover root must be independent sibling branches.";
+                error = "D0 player PeekRoot must be below the player presentation controller.";
                 return false;
             }
 
@@ -260,21 +204,16 @@ namespace FPG.Demo.Unity
 
             if (!IsFinite(peekTransitionSeconds)
                 || !IsFinite(retractTransitionSeconds)
-                || !IsFinite(fadeInSeconds)
-                || !IsFinite(fadeOutSeconds)
                 || peekTransitionSeconds < 0f
-                || retractTransitionSeconds < 0f
-                || fadeInSeconds <= 0f
-                || fadeOutSeconds <= 0f)
+                || retractTransitionSeconds < 0f)
             {
                 error = "D0 player cover presentation durations must be finite and non-negative.";
                 return false;
             }
 
-            if (ContainsPhysicsComponents(coverVisualRoot)
-                || ContainsPhysicsComponents(peekRoot))
+            if (ContainsPhysicsComponents(peekRoot))
             {
-                error = "D0 player cover and peek presentation branches must not contain Collider or Rigidbody components.";
+                error = "D0 player peek presentation branch must not contain Collider or Rigidbody components.";
                 return false;
             }
 
@@ -291,8 +230,6 @@ namespace FPG.Demo.Unity
             float deltaTime)
         {
             lastAppliedFrame = Time.frameCount;
-            EnsureLineRenderer();
-            ConfigureLineRenderer();
             EnsureAuthoredPeekPoseCaptured();
 
             if (snapshot.IsPaused)
@@ -306,9 +243,8 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            bool showCover = ShouldShowBarrier(snapshot);
-            SetCoverMeshVisible(showCover);
-            AdvanceOpacity(showCover, SanitizeDeltaTime(deltaTime));
+            SetCoverMeshVisible(false);
+            SetOpacity(0f);
             AdvancePeek(snapshot, SanitizeDeltaTime(deltaTime));
         }
 
@@ -322,8 +258,6 @@ namespace FPG.Demo.Unity
 
         private void Awake()
         {
-            EnsureLineRenderer();
-            ConfigureLineRenderer();
             EnsureAuthoredPeekPoseCaptured();
             ResetPresentation();
         }

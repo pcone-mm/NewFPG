@@ -334,6 +334,54 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void CoverMoveEdgeIsConsumedOnceAcrossCatchUpTicks()
+        {
+            UnityBattleInputSource source = new UnityBattleInputSource();
+            source.CaptureAimPose(Vector3.zero, Vector3.forward, Vector3.up);
+            source.Capture(new UnityInputSnapshot(
+                aimHeld: false,
+                primaryHeld: false,
+                secondaryPressed: false,
+                secondaryReleased: false,
+                reloadPressed: false,
+                pausePressed: false,
+                restartPressed: false,
+                coverMoveDirection: FpgCoverMoveDirection.Right));
+
+            BattleTickInput first = source.GetTickInput(new TickIndex(0L));
+            BattleTickInput catchUp = source.GetTickInput(new TickIndex(1L));
+
+            Assert.That(
+                first.CoverMoveDirection,
+                Is.EqualTo(FpgCoverMoveDirection.Right));
+            Assert.That(
+                catchUp.CoverMoveDirection,
+                Is.EqualTo(FpgCoverMoveDirection.None));
+        }
+
+        [Test]
+        public void GameplayAndRoomInteractionClearsDropPendingCoverMove()
+        {
+            UnityBattleInputSource source = new UnityBattleInputSource();
+            source.CaptureAimPose(Vector3.zero, Vector3.forward, Vector3.up);
+            source.Capture(new UnityInputSnapshot(
+                false, false, false, false, false, false, false,
+                coverMoveDirection: FpgCoverMoveDirection.Left));
+            source.ClearGameplayInput();
+            Assert.That(
+                source.GetTickInput(new TickIndex(0L)).CoverMoveDirection,
+                Is.EqualTo(FpgCoverMoveDirection.None));
+
+            source.Capture(new UnityInputSnapshot(
+                false, false, false, false, false, false, false,
+                coverMoveDirection: FpgCoverMoveDirection.Right));
+            source.BeginRoomInteraction();
+            Assert.That(
+                source.GetTickInput(new TickIndex(1L)).CoverMoveDirection,
+                Is.EqualTo(FpgCoverMoveDirection.None));
+        }
+
+        [Test]
         public void TickInputRequiresAndQuantizesAnExplicitAimPose()
         {
             UnityBattleInputSource source = new UnityBattleInputSource();

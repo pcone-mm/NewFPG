@@ -11,12 +11,16 @@ namespace FPG.Demo.Unity
         private readonly List<GameObject> destructibleInstances = new List<GameObject>();
         private readonly Dictionary<string, GameObject> destructiblesBySlotId =
             new Dictionary<string, GameObject>(StringComparer.Ordinal);
+        private readonly List<GameObject> coverInstances = new List<GameObject>();
+        private readonly Dictionary<string, FpgCoverEntityView> coversBySlotId =
+            new Dictionary<string, FpgCoverEntityView>(StringComparer.Ordinal);
 
         private FpgRoomDefinition roomDefinition;
         public FpgRoomDefinition RoomDefinition => roomDefinition;
         public bool IsInitialized => roomDefinition != null;
         public bool Initialized => IsInitialized;
         public IReadOnlyList<GameObject> DestructibleInstances => destructibleInstances;
+        public IReadOnlyList<GameObject> CoverInstances => coverInstances;
 
         public void Initialize(FpgRoomDefinition definition)
         {
@@ -60,6 +64,23 @@ namespace FPG.Demo.Unity
                     destructibleInstances.Add(instance);
                     destructiblesBySlotId.Add(slot.MarkerId, instance);
                 }
+
+                IReadOnlyList<FpgRoomCoverSlot> covers = definition.CoverSlots;
+                for (int index = 0; index < covers.Count; index++)
+                {
+                    FpgRoomCoverSlot slot = covers[index];
+                    GameObject instance = InstantiateOwned(
+                        slot.Prefab,
+                        $"{slot.Prefab.name} [{slot.MarkerId}]",
+                        slot.LocalPosition,
+                        slot.LocalRotation,
+                        preservePrefabScale: true);
+                    FpgCoverEntityView view =
+                        instance.GetComponent<FpgCoverEntityView>();
+                    view.ApplyDestroyed(false);
+                    coverInstances.Add(instance);
+                    coversBySlotId.Add(slot.MarkerId, view);
+                }
             }
             catch (Exception exception)
             {
@@ -77,6 +98,8 @@ namespace FPG.Demo.Unity
             roomDefinition = null;
             destructibleInstances.Clear();
             destructiblesBySlotId.Clear();
+            coverInstances.Clear();
+            coversBySlotId.Clear();
 
             for (int index = ownedInstances.Count - 1; index >= 0; index--)
             {
@@ -149,21 +172,6 @@ namespace FPG.Demo.Unity
             return false;
         }
 
-        public bool TryResolveReachablePose(string markerId, out Pose worldPose)
-        {
-            if (roomDefinition != null
-                && roomDefinition.TryGetReachablePoint(
-                    markerId,
-                    out FpgRoomReachablePoint point))
-            {
-                worldPose = ResolveWorldPose(point.LocalPose);
-                return true;
-            }
-
-            worldPose = default;
-            return false;
-        }
-
         public bool TryResolveDestructiblePose(string markerId, out Pose worldPose)
         {
             if (roomDefinition != null
@@ -172,6 +180,23 @@ namespace FPG.Demo.Unity
                     out FpgRoomDestructibleSlot slot))
             {
                 worldPose = ResolveWorldPose(slot.LocalPose);
+                return true;
+            }
+
+            worldPose = default;
+            return false;
+        }
+
+        public bool TryResolveCoverReachablePose(
+            string markerId,
+            out Pose worldPose)
+        {
+            if (roomDefinition != null
+                && roomDefinition.TryGetCoverSlot(
+                    markerId,
+                    out FpgRoomCoverSlot slot))
+            {
+                worldPose = ResolveWorldPose(slot.PlayerReachableLocalPose);
                 return true;
             }
 
@@ -222,6 +247,39 @@ namespace FPG.Demo.Unity
 
             instance = null;
             return false;
+        }
+
+        public bool TryGetCoverView(
+            string markerId,
+            out FpgCoverEntityView view)
+        {
+            if (!string.IsNullOrEmpty(markerId)
+                && coversBySlotId.TryGetValue(markerId, out view)
+                && view != null)
+            {
+                return true;
+            }
+
+            view = null;
+            return false;
+        }
+
+        public void RefreshCoverViews(FPG.Demo.Run.FpgCoverRuntime covers)
+        {
+            if (covers == null)
+            {
+                return;
+            }
+
+            for (int index = 0; index < covers.Count; index++)
+            {
+                FPG.Demo.Run.FpgCoverSnapshot snapshot =
+                    covers.GetSnapshot(index);
+                if (TryGetCoverView(snapshot.CoverId, out FpgCoverEntityView view))
+                {
+                    view.ApplySnapshot(snapshot);
+                }
+            }
         }
 
         private GameObject InstantiateOwned(

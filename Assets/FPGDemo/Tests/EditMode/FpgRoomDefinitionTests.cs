@@ -109,6 +109,60 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void RoomValidationEnforcesIndependentCoverAuthoringContracts()
+        {
+            FpgRoomDefinition clone = Object.Instantiate(
+                LoadRequired<FpgRoomDefinition>(RoomPath));
+            try
+            {
+                SerializedObject serialized = new SerializedObject(clone);
+                SerializedProperty covers = serialized.FindProperty("coverSlots");
+                for (int index = 0; index < covers.arraySize; index++)
+                {
+                    covers.GetArrayElementAtIndex(index)
+                        .FindPropertyRelative("isStartingCover")
+                        .boolValue = false;
+                }
+
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                AssertRoomIssue(
+                    clone.Validate(),
+                    FpgRoomValidationCode.MissingStartingCover);
+
+                serialized.Update();
+                covers = serialized.FindProperty("coverSlots");
+                SerializedProperty first = covers.GetArrayElementAtIndex(0);
+                SerializedProperty second = covers.GetArrayElementAtIndex(1);
+                first.FindPropertyRelative("isStartingCover").boolValue = true;
+                second.FindPropertyRelative("isStartingCover").boolValue = true;
+                first.FindPropertyRelative("prefab").objectReferenceValue = null;
+                first.FindPropertyRelative("maxDurability").intValue = 0;
+                first.FindPropertyRelative("playerReachableLocalPosition")
+                    .vector3Value = second.FindPropertyRelative(
+                        "playerReachableLocalPosition").vector3Value;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                FpgRoomValidationResult validation = clone.Validate();
+                AssertRoomIssue(
+                    validation,
+                    FpgRoomValidationCode.MultipleStartingCovers);
+                AssertRoomIssue(
+                    validation,
+                    FpgRoomValidationCode.MissingCoverPrefab);
+                AssertRoomIssue(
+                    validation,
+                    FpgRoomValidationCode.InvalidCoverDurability);
+                AssertRoomIssue(
+                    validation,
+                    FpgRoomValidationCode.OverlappingCoverReachablePosition);
+            }
+            finally
+            {
+                Object.DestroyImmediate(clone);
+            }
+        }
+
+        [Test]
         public void SemanticIdUtilitiesNormalizeAndAvoidCollisions()
         {
             Assert.That(
@@ -122,10 +176,16 @@ namespace FPG.Demo.Tests.EditMode
                     "Melee 01",
                     new[] { "enemy-melee-01" }),
                 Is.EqualTo("enemy-melee-01-02"));
+            Assert.That(
+                FpgRoomIdUtility.GenerateMarkerId(
+                    FpgRoomMarkerKind.Cover,
+                    "Left",
+                    new[] { "cover-left" }),
+                Is.EqualTo("cover-left-02"));
         }
 
         [Test]
-        public void RoomInstanceDoesNotInstantiateTheArtEnvironment()
+        public void RoomInstanceCreatesCoversWithoutInstantiatingArtEnvironment()
         {
             GameObject host = new GameObject("RoomInstanceTestHost");
             try
@@ -138,7 +198,11 @@ namespace FPG.Demo.Tests.EditMode
                     Is.True,
                     error);
                 Assert.That(instance.DestructibleInstances, Is.Empty);
-                Assert.That(host.transform.childCount, Is.Zero);
+                Assert.That(instance.CoverInstances, Has.Count.EqualTo(3));
+                Assert.That(host.transform.childCount, Is.EqualTo(3));
+                Assert.That(
+                    host.GetComponentsInChildren<FpgCoverEntityView>(true),
+                    Has.Length.EqualTo(3));
             }
             finally
             {

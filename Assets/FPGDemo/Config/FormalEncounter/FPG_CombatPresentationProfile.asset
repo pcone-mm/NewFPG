@@ -70,7 +70,7 @@ MonoBehaviour:
     valueFormat: '{0}/{1}'
     barEaseDuration: 0.16
   - kind: 1
-    label: BARRIER
+    label: COVER
     color: {r: 0.22, g: 0.75, b: 1, a: 1}
     order: 1
     valueFormat: '{0}/{1}'

@@ -5,6 +5,7 @@
 ## 职责
 
 - `audit_ssra_character.py` 辅助生成角色候选记录；完整依赖闭包仍需要人工审计后形成 `complete_records.json`。
+- `build_monster_catalog.py` 只读 SSRA/SSRC 与 `game_*.log`，把可搜索怪物 ID、资源路径、预览图和静态页面写到 `--output` 指定的目录（默认 `output/CZNMonsterCatalog/Browser`）；不得写回或启动客户端。
 - `extract_character.py`、`extract_monsters.py` 负责从已审计记录提取 Unity 可读资源和 local-only 原始副本。
 - `scsp1u_to_spine.py`、`probe_scsp1u.py`、`emit_spine_animations.py` 负责私有 SCSP1U 到 canonical Spine JSON 的转换。
 - `validate_import.py` 负责 hash、atlas/PNG、SCSP1U marker 和配置文件一致性校验。

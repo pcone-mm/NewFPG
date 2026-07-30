@@ -17,12 +17,6 @@
             <ui:Button name="stop-camera-preview-button" text="&#x5173;&#x95ED;&#x9884;&#x89C8;" tooltip="&#x79FB;&#x9664;&#x4E34;&#x65F6;&#x955C;&#x5934;&#x5E76;&#x6062;&#x590D; Game View &#x753B;&#x5E45;" />
             <ui:Label name="camera-preview-state-label" text="&#x672A;&#x542F;&#x7528;" class="camera-preview-state" />
         </ui:VisualElement>
-        <ui:VisualElement class="cover-position-toolbar">
-            <ui:Label text="&#x89D2;&#x8272;&#x63A9;&#x4F53;" class="toolbar-label" />
-            <uie:Vector3Field name="cover-position-field" label="&#x5C40;&#x90E8;&#x4F4D;&#x7F6E;" class="cover-position-field" tooltip="X &#x63A7;&#x5236;&#x6A2A;&#x5411;&#xFF0C;Y &#x63A7;&#x5236;&#x9AD8;&#x5EA6;&#xFF0C;Z &#x63A7;&#x5236;&#x753B;&#x9762;&#x6DF1;&#x5EA6;&#x3002;&#x5F53;&#x524D;&#x955C;&#x5934;&#x5728;&#x8D1F; Z &#x65B9;&#x5411;&#xFF0C;&#x589E;&#x5927; Z &#x53EF;&#x907F;&#x514D;&#x63A9;&#x4F53;&#x906E;&#x6321;&#x89D2;&#x8272;&#x3002;" />
-            <ui:Button name="reset-cover-position-button" text="&#x91CD;&#x7F6E;" tooltip="&#x6062;&#x590D;&#x9ED8;&#x8BA4;&#x63A9;&#x4F53;&#x4F4D;&#x7F6E;" />
-        </ui:VisualElement>
-
         <ui:VisualElement class="content-split">
             <ui:VisualElement class="browser-pane">
                 <ui:Label text="房间库" class="section-title" />
@@ -41,7 +35,7 @@
                     <ui:Button name="place-player-button" text="玩家" tooltip="在 SceneView 放置玩家入口" class="marker-tool marker-tool--player" />
                     <ui:Button name="place-enemy-button" text="敌人" tooltip="在 SceneView 放置敌人出生点" class="marker-tool marker-tool--enemy" />
                     <ui:Button name="place-destructible-button" text="可破坏物" tooltip="在 SceneView 放置可破坏物插槽" class="marker-tool marker-tool--destructible" />
-                    <ui:Button name="place-reachable-button" text="可到达点" tooltip="在 SceneView 放置可到达点" class="marker-tool marker-tool--reachable" />
+                    <ui:Button name="place-cover-button" text="掩体" tooltip="在 SceneView 放置独立掩体及玩家到达点" class="marker-tool marker-tool--cover" />
                     <ui:VisualElement class="toolbar-spacer" />
                     <ui:FloatField name="snap-field" label="吸附" value="0.5" class="snap-field" />
                 </ui:VisualElement>
@@ -52,7 +46,7 @@
                     <ui:Toggle name="show-player-toggle" label="玩家" value="true" />
                     <ui:Toggle name="show-enemy-toggle" label="敌人" value="true" />
                     <ui:Toggle name="show-destructible-toggle" label="可破坏物" value="true" />
-                    <ui:Toggle name="show-reachable-toggle" label="可到达点" value="true" />
+                    <ui:Toggle name="show-cover-toggle" label="掩体" value="true" />
                 </ui:VisualElement>
 
                 <ui:VisualElement class="authoring-split">

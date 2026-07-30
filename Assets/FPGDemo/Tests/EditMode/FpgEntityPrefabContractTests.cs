@@ -89,50 +89,23 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void FormalPlayerCoverUsesAuthoredWallAndPeekBranches()
+        public void FormalPlayerAndIndependentCoverPrefabsSatisfyContracts()
         {
             FpgPlayerEntityView player = LoadEntity<FpgPlayerEntityView>(
                 "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab");
             FpgPlayerBarrierPresentationController cover = player.Barrier;
 
             Assert.That(cover, Is.Not.Null);
-            Assert.That(cover.transform.parent, Is.SameAs(player.transform));
+            Assert.That(cover.transform, Is.SameAs(player.transform));
             Assert.That(cover.PeekRoot.parent, Is.SameAs(player.transform));
             Assert.That(player.VisualRoot.parent, Is.SameAs(cover.PeekRoot));
-            Assert.That(
-                cover.CoverVisualRoot.parent,
-                Is.SameAs(cover.transform));
-            Assert.That(
-                cover.CoverVisualRoot.localPosition,
-                Is.EqualTo(new Vector3(0.3f, 1.075f, 0.25f)));
-            Assert.That(
-                cover.CoverVisualRoot.localScale,
-                Is.EqualTo(new Vector3(1.6f, 2.15f, 0.28f)));
+            Assert.That(cover.CoverVisualRoot, Is.Null);
+            Assert.That(cover.CoverRenderer, Is.Null);
+            Assert.That(player.transform.Find("CoverRoot"), Is.Null);
+            Assert.That(player.transform.Find("CoverWall"), Is.Null);
             Assert.That(
                 cover.PeekLocalOffset,
                 Is.EqualTo(new Vector3(1.35f, 0f, 0f)));
-            Assert.That(
-                AssetDatabase.GetAssetPath(cover.CoverRenderer.sharedMaterial),
-                Is.EqualTo(
-                    "Assets/FPGDemo/Presentation/Materials/M_FPG_Cover.mat"));
-
-            LineRenderer outline = cover.GetComponent<LineRenderer>();
-            Assert.That(outline, Is.Not.Null);
-            Assert.That(outline.loop, Is.True);
-            Assert.That(outline.positionCount, Is.EqualTo(4));
-            Assert.That(
-                outline.GetPosition(0).z,
-                Is.EqualTo(0.11f).Within(0.0001f));
-            Assert.That(
-                AssetDatabase.GetAssetPath(outline.sharedMaterial),
-                Is.EqualTo(
-                    "Assets/FPGDemo/Presentation/M_FPG_Feedback.mat"));
-            Assert.That(
-                cover.CoverVisualRoot.GetComponentsInChildren<Collider>(true),
-                Is.Empty);
-            Assert.That(
-                cover.CoverVisualRoot.GetComponentsInChildren<Rigidbody>(true),
-                Is.Empty);
             Assert.That(
                 cover.PrimaryPresentationMuzzle.IsChildOf(cover.PeekRoot),
                 Is.True);
@@ -143,13 +116,41 @@ namespace FPG.Demo.Tests.EditMode
                 player.SocketRegistry.transform.IsChildOf(cover.PeekRoot),
                 Is.False);
 
-            D0ThreeCProfile threeC =
-                AssetDatabase.LoadAssetAtPath<D0ThreeCProfile>(
-                    "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_ThreeC.asset");
-            Assert.That(threeC, Is.Not.Null);
+            FpgCoverTraversalPresenter traversal =
+                player.GetComponent<FpgCoverTraversalPresenter>();
+            Assert.That(traversal, Is.Not.Null);
+            SerializedObject traversalSo = new SerializedObject(traversal);
+            FpgCoverTransitionEffectView effect = traversalSo
+                .FindProperty("transitionEffectPrefab")
+                .objectReferenceValue as FpgCoverTransitionEffectView;
+            Assert.That(effect, Is.Not.Null);
+            Assert.That(effect.TryValidate(out string effectError), Is.True, effectError);
             Assert.That(
-                threeC.CoverLocalPosition,
-                Is.EqualTo(cover.CoverVisualRoot.localPosition));
+                AssetDatabase.GetAssetPath(effect.gameObject),
+                Is.EqualTo(
+                    "Assets/FPGDemo/Presentation/FormalEncounter/VFX/PF_FPG_CoverTransition.prefab"));
+
+            GameObject coverPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab");
+            Assert.That(coverPrefab, Is.Not.Null);
+            Assert.That(coverPrefab.layer, Is.EqualTo(28));
+            FpgCoverEntityView coverView =
+                coverPrefab.GetComponent<FpgCoverEntityView>();
+            Assert.That(coverView, Is.Not.Null);
+            Assert.That(
+                coverView.TryValidate(out string coverError),
+                Is.True,
+                coverError);
+            SerializedObject coverSo = new SerializedObject(coverView);
+            Assert.That(
+                coverSo.FindProperty("intactRoot").objectReferenceValue,
+                Is.Not.Null);
+            Assert.That(
+                coverSo.FindProperty("destroyedRoot").objectReferenceValue,
+                Is.Not.Null);
+            Assert.That(
+                coverSo.FindProperty("blockingColliders").arraySize,
+                Is.GreaterThan(0));
         }
 
         [Test]
@@ -432,16 +433,9 @@ namespace FPG.Demo.Tests.EditMode
             Transform secondaryPresentationMuzzle = CreateChild(
                 peekRoot,
                 "SecondaryPresentationMuzzle");
-            Transform coverRoot = CreateChild(root.transform, "CoverRoot");
-            coverRoot.gameObject.AddComponent<LineRenderer>();
             FpgPlayerBarrierPresentationController barrier =
-                coverRoot.gameObject.AddComponent<
+                root.AddComponent<
                     FpgPlayerBarrierPresentationController>();
-            Transform coverVisualRoot = CreateChild(
-                coverRoot,
-                "CoverVisualRoot");
-            MeshRenderer coverRenderer =
-                coverVisualRoot.gameObject.AddComponent<MeshRenderer>();
             Transform socketsRoot = CreateChild(root.transform, "Sockets");
             D0ActorSocketRegistry sockets = socketsRoot.gameObject.AddComponent<D0ActorSocketRegistry>();
             Transform primaryMuzzle = CreateChild(socketsRoot, "PrimaryMuzzle");
@@ -477,12 +471,7 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True,
                 socketError);
 
-            Material lineMaterial = AssetDatabase.LoadAssetAtPath<Material>(
-                "Assets/FPGDemo/Presentation/M_FPG_Feedback.mat");
-            Assert.That(lineMaterial, Is.Not.Null);
             SetField(barrier, "peekRoot", peekRoot);
-            SetField(barrier, "coverVisualRoot", coverVisualRoot);
-            SetField(barrier, "coverRenderer", coverRenderer);
             SetField(
                 barrier,
                 "primaryPresentationMuzzle",
@@ -491,7 +480,6 @@ namespace FPG.Demo.Tests.EditMode
                 barrier,
                 "secondaryPresentationMuzzle",
                 secondaryPresentationMuzzle);
-            SetField(barrier, "lineMaterial", lineMaterial);
             barrier.ResetPresentation();
 
             SetField(player, "gameplayAnchor", gameplay);

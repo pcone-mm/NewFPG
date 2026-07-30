@@ -473,6 +473,180 @@ namespace FPG.Demo.Tests.EditMode
             });
         }
 
+        [Test]
+        public void CoverRuntimeMovesByAdjacentSortedNodeAndKeepsDestroyedLandingPoints()
+        {
+            RuntimeId playerId = new RuntimeId(1L);
+            FpgCoverRuntime covers = new FpgCoverRuntime(
+                playerId,
+                new[]
+                {
+                    new FpgCoverNodeDefinition("right", 4000, 100, false),
+                    new FpgCoverNodeDefinition("left", -3500, 80, false),
+                    new FpgCoverNodeDefinition("center", 0, 100, true)
+                },
+                new TickDuration(2));
+
+            Assert.That(covers.CurrentSnapshot.CoverId, Is.EqualTo("center"));
+            Assert.That(
+                covers.TryBeginMove(
+                    FpgCoverMoveDirection.Left,
+                    new TickIndex(0L),
+                    out FpgCoverSnapshot left).IsSuccess,
+                Is.True);
+            Assert.That(left.CoverId, Is.EqualTo("left"));
+            Assert.That(covers.CanBeTargeted, Is.False);
+            Assert.That(
+                covers.Advance(new TickIndex(1L), out bool early).IsSuccess,
+                Is.True);
+            Assert.That(early, Is.False);
+            Assert.That(
+                covers.Advance(new TickIndex(2L), out bool completed).IsSuccess,
+                Is.True);
+            Assert.That(completed, Is.True);
+
+            CombatantState leftDefense = covers.CurrentDefenseState;
+            Assert.That(
+                leftDefense.RestoreResources(
+                    new CombatantResourceSnapshot(playerId, 1, 0, 0))
+                    .IsSuccess,
+                Is.True);
+            Assert.That(covers.CurrentSnapshot.IsDestroyed, Is.True);
+            Assert.That(covers.CurrentDefenseState, Is.Null);
+
+            Assert.That(
+                covers.TryBeginMove(
+                    FpgCoverMoveDirection.Right,
+                    new TickIndex(3L),
+                    out _).IsSuccess,
+                Is.True);
+            covers.Advance(new TickIndex(5L), out _);
+            Assert.That(
+                covers.TryBeginMove(
+                    FpgCoverMoveDirection.Left,
+                    new TickIndex(6L),
+                    out FpgCoverSnapshot destroyedTarget).IsSuccess,
+                Is.True);
+            Assert.That(destroyedTarget.IsDestroyed, Is.True);
+            covers.Advance(new TickIndex(8L), out _);
+            Assert.That(covers.CurrentSnapshot.CoverId, Is.EqualTo("left"));
+            Assert.That(covers.CurrentSnapshot.IsDestroyed, Is.True);
+            Assert.That(
+                covers.TryBeginMove(
+                    FpgCoverMoveDirection.Left,
+                    new TickIndex(9L),
+                    out _).RejectReason,
+                Is.EqualTo(RejectReason.InvalidTarget));
+
+            Assert.That(
+                covers.TryBeginMove(
+                    FpgCoverMoveDirection.Right,
+                    new TickIndex(10L),
+                    out _).IsSuccess,
+                Is.True);
+            covers.CancelTraversal();
+            Assert.That(covers.IsTraversing, Is.False);
+            Assert.That(covers.TargetSnapshot.IsValid, Is.False);
+            Assert.That(covers.CurrentSnapshot.CoverId, Is.EqualTo("left"));
+            Assert.That(covers.CurrentSnapshot.IsDestroyed, Is.True);
+            Assert.That(
+                covers.Advance(
+                    new TickIndex(12L),
+                    out bool canceledCompleted).IsSuccess,
+                Is.True);
+            Assert.That(canceledCompleted, Is.False);
+            Assert.That(covers.CurrentSnapshot.CoverId, Is.EqualTo("left"));
+
+            covers.Reset();
+            Assert.That(covers.CurrentSnapshot.CoverId, Is.EqualTo("center"));
+            Assert.That(covers.GetSnapshot(0).Durability, Is.EqualTo(80));
+        }
+
+        [Test]
+        public void PlayerDamageRoutesToCurrentCoverOnlyWhileWithdrawn()
+        {
+            PortFixture fixture = new PortFixture(2, 8, 4);
+            RuntimeId enemyId = fixture.RegisterEnemy(100);
+            FpgCoverRuntime covers = fixture.BindDefaultCovers();
+            Assert.That(
+                fixture.Player.Exposure.ApplyCombatPosture(
+                    false,
+                    new TickIndex(0L),
+                    false,
+                    out _).IsSuccess,
+                Is.True);
+
+            fixture.QueueEnemyImpact(enemyId, 1L, 0L, 25);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.ImpactResolution,
+                    new TickIndex(0L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(100));
+            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(75));
+
+            fixture.Player.Exposure.ForceExposed(new TickIndex(1L), out _);
+            fixture.QueueEnemyImpact(enemyId, 2L, 1L, 25);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.ImpactResolution,
+                    new TickIndex(1L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(75));
+            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(75));
+
+            Assert.That(
+                fixture.Player.Exposure.ApplyCombatPosture(
+                    false,
+                    new TickIndex(2L),
+                    false,
+                    out _).IsSuccess,
+                Is.True);
+            fixture.QueueEnemyImpact(enemyId, 3L, 2L, 100);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.ImpactResolution,
+                    new TickIndex(2L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+            Assert.That(covers.CurrentSnapshot.IsDestroyed, Is.True);
+            Assert.That(
+                fixture.Player.Exposure.State,
+                Is.EqualTo(PlayerExposureState.Exposed));
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(75));
+        }
+
+        [Test]
+        public void CoverTraversalRejectsTargetingAndConsumesCommittedDamage()
+        {
+            PortFixture fixture = new PortFixture(1, 4, 2);
+            RuntimeId enemyId = fixture.RegisterEnemy(100);
+            FpgCoverRuntime covers = fixture.BindDefaultCovers();
+            Assert.That(
+                covers.TryBeginMove(
+                    FpgCoverMoveDirection.Right,
+                    new TickIndex(0L),
+                    out _).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Port.CanTargetPlayer, Is.False);
+
+            fixture.QueueEnemyImpact(enemyId, 1L, 0L, 50);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.ImpactResolution,
+                    new TickIndex(0L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(100));
+            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(100));
+
+            covers.Advance(new TickIndex(2L), out bool completed);
+            Assert.That(completed, Is.True);
+            Assert.That(fixture.Port.CanTargetPlayer, Is.True);
+        }
+
         [TestCase(8, 8, 136, 128, 128, true)]
         [TestCase(8, 7, 136, 128, 128, false)]
         [TestCase(8, 8, 136, 7, 128, false)]
@@ -615,7 +789,7 @@ namespace FPG.Demo.Tests.EditMode
                     impactQueueCapacity: impactQueueCapacity,
                     traceCapacity: 128,
                     projectileReservationCapacity: 4);
-                PlayerRuntime player = new PlayerRuntime(
+                Player = new PlayerRuntime(
                     new CombatantState(
                         PlayerId,
                         CombatantKind.Player,
@@ -626,7 +800,7 @@ namespace FPG.Demo.Tests.EditMode
                     new WeaponRuntime(CreateWeaponDefinition()));
                 Port = new FpgMultiEnemyCombatPort(
                     Kernel,
-                    player,
+                    Player,
                     ids,
                     new FpgMultiEnemyCombatCapacity(
                         enemyCapacity: 4,
@@ -647,7 +821,48 @@ namespace FPG.Demo.Tests.EditMode
 
             public RuntimeId PlayerId { get; }
             public CombatKernel Kernel { get; }
+            public PlayerRuntime Player { get; }
             public FpgMultiEnemyCombatPort Port { get; }
+
+            public FpgCoverRuntime BindDefaultCovers()
+            {
+                FpgCoverRuntime covers = new FpgCoverRuntime(
+                    PlayerId,
+                    new[]
+                    {
+                        new FpgCoverNodeDefinition("left", -1, 100, false),
+                        new FpgCoverNodeDefinition("center", 0, 100, true),
+                        new FpgCoverNodeDefinition("right", 1, 100, false)
+                    },
+                    new TickDuration(2));
+                Assert.That(Port.TryBindCoverRuntime(covers).IsSuccess, Is.True);
+                return covers;
+            }
+
+            public void QueueEnemyImpact(
+                RuntimeId enemyId,
+                long impactId,
+                long tick,
+                int damage)
+            {
+                ImpactIntent intent = new ImpactIntent(
+                    new ImpactId(impactId),
+                    new AttackId(impactId),
+                    ShotId.Invalid,
+                    enemyId,
+                    PlayerId,
+                    new TickIndex(tick),
+                    new DamageSpec(damage, 0),
+                    HitPart.Body,
+                    DamageType.Normal,
+                    CombatTags.EnemyAttack);
+                Assert.That(
+                    Kernel.ImpactQueue.TryEnqueue(
+                        intent,
+                        ImpactPhasePriority.EnemyImpact,
+                        enemyId).IsSuccess,
+                    Is.True);
+            }
 
             public RuntimeId RegisterEnemy(int life)
             {

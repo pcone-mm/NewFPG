@@ -9,7 +9,7 @@ namespace FPG.Demo.Unity
         PlayerEntry = 1,
         EnemySpawn = 2,
         Destructible = 3,
-        Reachable = 4
+        Cover = 5
     }
 
     public enum FpgRoomEnemySpawnRole
@@ -18,15 +18,6 @@ namespace FPG.Demo.Unity
         Melee = 1,
         Ranged = 2,
         Support = 3
-    }
-
-    [Flags]
-    public enum FpgRoomReachableAudience
-    {
-        None = 0,
-        Player = 1 << 0,
-        Enemy = 1 << 1,
-        PlayerAndEnemy = Player | Enemy
     }
 
     [Serializable]
@@ -96,13 +87,45 @@ namespace FPG.Demo.Unity
     }
 
     [Serializable]
-    public sealed class FpgRoomReachablePoint : FpgRoomMarker
+    public sealed class FpgRoomCoverSlot : FpgRoomMarker
     {
-        [D0PlannerField("适用对象", "声明该点适用于玩家、敌人或两者。v1 不创建连线，也不执行 A* 或 NavMesh 可达校验。")]
+        [D0PlannerField("掩体 Prefab", "掩体样式、完好与损毁外观以及阻挡碰撞均由 Prefab 所有。")]
         [SerializeField]
-        private FpgRoomReachableAudience audience = FpgRoomReachableAudience.PlayerAndEnemy;
+        private GameObject prefab;
 
-        public FpgRoomReachableAudience Audience => audience;
-        public override FpgRoomMarkerKind Kind => FpgRoomMarkerKind.Reachable;
+        [D0PlannerField("最大耐久", "进入或重新开始房间时恢复到该值，不跨房间保存。")]
+        [SerializeField]
+        private int maxDurability = 100;
+
+        [D0PlannerField("初始掩体", "正式房间必须且只能配置一个初始掩体。")]
+        [SerializeField]
+        private bool isStartingCover;
+
+        [D0PlannerField("玩家到达点位置", "玩家在该掩体节点停留时使用的房间局部位置。")]
+        [SerializeField]
+        private Vector3 playerReachableLocalPosition;
+
+        [D0PlannerField("玩家到达点旋转", "玩家抵达该掩体节点后的房间局部朝向。")]
+        [SerializeField]
+        private Vector3 playerReachableLocalEulerAngles;
+
+        public GameObject Prefab => prefab;
+        public int MaxDurability => maxDurability;
+        public bool IsStartingCover => isStartingCover;
+        public Vector3 PlayerReachableLocalPosition =>
+            playerReachableLocalPosition;
+        public Vector3 PlayerReachableLocalEulerAngles =>
+            playerReachableLocalEulerAngles;
+        public Quaternion PlayerReachableLocalRotation =>
+            Quaternion.Euler(playerReachableLocalEulerAngles);
+        public Pose PlayerReachableLocalPose => new Pose(
+            playerReachableLocalPosition,
+            PlayerReachableLocalRotation);
+        public override FpgRoomMarkerKind Kind => FpgRoomMarkerKind.Cover;
+
+        internal bool HasFiniteReachablePose =>
+            FpgRoomValidationUtility.IsFinite(playerReachableLocalPosition)
+            && FpgRoomValidationUtility.IsFinite(
+                playerReachableLocalEulerAngles);
     }
 }

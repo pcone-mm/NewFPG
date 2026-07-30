@@ -93,6 +93,10 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0f)]
         private float retractTransitionSeconds = 0.10f;
 
+        [D0PlannerField("掩体移动时长（秒）", "玩家在相邻掩体到达点之间化为光球移动的默认时长。")]
+        [SerializeField, Min(0.01f)]
+        private float coverTraversalSeconds = 0.25f;
+
         [D0PlannerSection("护盾显示")]
         [D0PlannerField("掩体局部位置", "掩体相对玩家实体的位置。X 控制横向，Y 控制高度，Z 控制画面深度；当前正式镜头位于玩家负 Z 方向，增大 Z 会把掩体移到角色画面后方，避免遮挡角色。仅移动表现，不改变命中体或弹道。")]
         [SerializeField]
@@ -146,6 +150,7 @@ namespace FPG.Demo.Unity
         public int InputBufferTicks => inputBufferTicks;
         public float PeekTransitionSeconds => peekTransitionSeconds;
         public float RetractTransitionSeconds => retractTransitionSeconds;
+        public float CoverTraversalSeconds => coverTraversalSeconds;
         public Vector3 CoverLocalPosition => coverLocalPosition;
         public float BarrierFadeInSeconds => barrierFadeInSeconds;
         public float BarrierFadeOutSeconds => barrierFadeOutSeconds;
@@ -192,6 +197,7 @@ namespace FPG.Demo.Unity
                 || inputBufferTicks > 32
                 || !IsFiniteNonNegative(peekTransitionSeconds)
                 || !IsFiniteNonNegative(retractTransitionSeconds)
+                || !IsFinitePositive(coverTraversalSeconds)
                 || !IsFinite(coverLocalPosition)
                 || !IsFinitePositive(barrierFadeInSeconds)
                 || !IsFinitePositive(barrierFadeOutSeconds)

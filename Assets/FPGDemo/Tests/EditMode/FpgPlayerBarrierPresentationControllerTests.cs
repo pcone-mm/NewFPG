@@ -30,12 +30,12 @@ namespace FPG.Demo.Tests.EditMode
             createdObjects.Clear();
         }
 
-        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 1, true)]
-        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Exposed, 60, true)]
+        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 1, false)]
+        [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Exposed, 60, false)]
         [TestCase(FpgEncounterPhase.Combat, false, PlayerExposureState.Withdrawn, 0, false)]
         [TestCase(FpgEncounterPhase.Combat, true, PlayerExposureState.Withdrawn, 60, false)]
         [TestCase(FpgEncounterPhase.Cleared, false, PlayerExposureState.Withdrawn, 60, false)]
-        public void BarrierVisibilityUsesCommittedFormalSnapshot(
+        public void PlayerAttachedCoverVisibilityIsAlwaysDisabled(
             FpgEncounterPhase phase,
             bool paused,
             PlayerExposureState exposureState,
@@ -157,35 +157,26 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(fixture.Controller.CurrentOpacity, Is.EqualTo(opacity));
             Assert.That(fixture.Controller.CurrentPeekProgress, Is.EqualTo(progress));
             Assert.That(fixture.PeekRoot.localPosition, Is.EqualTo(position));
-            Assert.That(fixture.Controller.IsCoverMeshVisible, Is.True);
+            Assert.That(fixture.Controller.IsCoverMeshVisible, Is.False);
         }
 
         [Test]
-        public void BrokenBarrierHidesMeshImmediatelyAndFadesOutline()
+        public void IndependentCoverIsNotDrivenByPlayerPresentationSnapshots()
         {
             ControllerFixture fixture = CreateControllerFixture();
             fixture.Controller.ApplyCommittedSnapshot(
                 CreateSnapshot(tick: 1L),
                 0.18f);
 
-            Assert.That(fixture.Controller.IsCoverMeshVisible, Is.True);
-            Assert.That(fixture.CoverRenderer.enabled, Is.True);
-            Assert.That(fixture.Controller.CurrentOpacity, Is.GreaterThan(0f));
-            Assert.That(fixture.LineRenderer.loop, Is.True);
-            Assert.That(fixture.LineRenderer.positionCount, Is.EqualTo(4));
+            Assert.That(fixture.Controller.IsCoverMeshVisible, Is.False);
+            Assert.That(fixture.Controller.CurrentOpacity, Is.Zero);
+            Assert.That(fixture.Controller.IsVisible, Is.False);
 
             fixture.Controller.ApplyCommittedSnapshot(
                 CreateSnapshot(tick: 2L, barrier: 0),
                 0.01f);
 
             Assert.That(fixture.Controller.IsCoverMeshVisible, Is.False);
-            Assert.That(fixture.CoverRenderer.enabled, Is.False);
-            Assert.That(fixture.Controller.CurrentOpacity, Is.GreaterThan(0f));
-
-            fixture.Controller.ApplyCommittedSnapshot(
-                CreateSnapshot(tick: 3L, barrier: 0),
-                0.12f);
-
             Assert.That(fixture.Controller.CurrentOpacity, Is.Zero);
         }
 
@@ -214,7 +205,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void ThreeCProfileMovesCoverAndRebuildsItsOutline()
+        public void ThreeCProfileDoesNotMoveAnAttachedCoverVisual()
         {
             ControllerFixture fixture = CreateControllerFixture();
             D0ThreeCProfile profile = Track(
@@ -226,38 +217,16 @@ namespace FPG.Demo.Tests.EditMode
                 fixture.Controller.TrySetThreeCProfile(profile, out string error),
                 Is.True,
                 error);
-            Assert.That(
-                fixture.Controller.CoverVisualRoot.localPosition,
-                Is.EqualTo(expectedPosition));
-
-            Bounds bounds = fixture.CoverRenderer.localBounds;
-            if (bounds.size.sqrMagnitude <= 0.000001f)
-            {
-                bounds = new Bounds(Vector3.zero, Vector3.one);
-            }
-
-            Vector3 expectedFirstPoint = fixture.Controller.transform
-                .InverseTransformPoint(
-                    fixture.CoverRenderer.transform.TransformPoint(
-                        new Vector3(
-                            bounds.min.x,
-                            bounds.min.y,
-                            bounds.min.z)));
-            Assert.That(
-                Vector3.Distance(
-                    fixture.LineRenderer.GetPosition(0),
-                    expectedFirstPoint),
-                Is.LessThan(0.0001f));
+            Assert.That(fixture.Controller.CoverVisualRoot, Is.Null);
+            Assert.That(fixture.Controller.CoverRenderer, Is.Null);
         }
 
         [Test]
-        public void ThreeCProfileRejectsNonFiniteCoverPositionWithoutMovingCover()
+        public void ThreeCProfileIgnoresLegacyNonFiniteCoverPosition()
         {
             ControllerFixture fixture = CreateControllerFixture();
             D0ThreeCProfile profile = Track(
                 ScriptableObject.CreateInstance<D0ThreeCProfile>());
-            Vector3 originalPosition =
-                fixture.Controller.CoverVisualRoot.localPosition;
             SetField(
                 profile,
                 "coverLocalPosition",
@@ -265,18 +234,16 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(
                 fixture.Controller.TrySetThreeCProfile(profile, out string error),
-                Is.False);
-            Assert.That(error, Does.Contain("invalid"));
-            Assert.That(
-                fixture.Controller.CoverVisualRoot.localPosition,
-                Is.EqualTo(originalPosition));
+                Is.True,
+                error);
+            Assert.That(fixture.Controller.CoverVisualRoot, Is.Null);
         }
 
         [Test]
-        public void CoverValidationRejectsPhysicsBelowPresentationBranches()
+        public void CoverValidationRejectsPhysicsBelowPeekBranch()
         {
             ControllerFixture fixture = CreateControllerFixture();
-            fixture.CoverRenderer.gameObject.AddComponent<BoxCollider>();
+            fixture.PeekRoot.gameObject.AddComponent<BoxCollider>();
 
             Assert.That(
                 fixture.Controller.TryValidate(out string error),
@@ -295,26 +262,13 @@ namespace FPG.Demo.Tests.EditMode
             Transform secondaryMuzzle = CreateChild(
                 peekRoot,
                 "SecondaryPresentationMuzzle");
-            Transform coverRoot = CreateChild(entity.transform, "CoverRoot");
-            LineRenderer lineRenderer =
-                coverRoot.gameObject.AddComponent<LineRenderer>();
             FpgPlayerBarrierPresentationController controller =
-                coverRoot.gameObject.AddComponent<
+                entity.AddComponent<
                     FpgPlayerBarrierPresentationController>();
-            Transform coverVisual = CreateChild(
-                coverRoot,
-                "CoverVisualRoot");
-            coverVisual.localScale = new Vector3(1.6f, 2.15f, 0.28f);
-            MeshRenderer coverRenderer =
-                coverVisual.gameObject.AddComponent<MeshRenderer>();
-            Material lineMaterial = CreateLineMaterial();
 
             SetField(controller, "peekRoot", peekRoot);
-            SetField(controller, "coverVisualRoot", coverVisual);
-            SetField(controller, "coverRenderer", coverRenderer);
             SetField(controller, "primaryPresentationMuzzle", primaryMuzzle);
             SetField(controller, "secondaryPresentationMuzzle", secondaryMuzzle);
-            SetField(controller, "lineMaterial", lineMaterial);
             controller.ResetPresentation();
 
             Assert.That(controller.TryValidate(out string error), Is.True, error);
@@ -322,21 +276,7 @@ namespace FPG.Demo.Tests.EditMode
                 controller,
                 peekRoot,
                 primaryMuzzle,
-                secondaryMuzzle,
-                coverRenderer,
-                lineRenderer);
-        }
-
-        private Material CreateLineMaterial()
-        {
-            Shader shader = Shader.Find("Sprites/Default");
-            Assert.That(shader, Is.Not.Null);
-            Material material = new Material(shader)
-            {
-                name = "TestCoverLineMaterial"
-            };
-            createdObjects.Add(material);
-            return material;
+                secondaryMuzzle);
         }
 
         private T Track<T>(T value)
@@ -402,24 +342,18 @@ namespace FPG.Demo.Tests.EditMode
                 FpgPlayerBarrierPresentationController controller,
                 Transform peekRoot,
                 Transform primaryMuzzle,
-                Transform secondaryMuzzle,
-                Renderer coverRenderer,
-                LineRenderer lineRenderer)
+                Transform secondaryMuzzle)
             {
                 Controller = controller;
                 PeekRoot = peekRoot;
                 PrimaryMuzzle = primaryMuzzle;
                 SecondaryMuzzle = secondaryMuzzle;
-                CoverRenderer = coverRenderer;
-                LineRenderer = lineRenderer;
             }
 
             public FpgPlayerBarrierPresentationController Controller { get; }
             public Transform PeekRoot { get; }
             public Transform PrimaryMuzzle { get; }
             public Transform SecondaryMuzzle { get; }
-            public Renderer CoverRenderer { get; }
-            public LineRenderer LineRenderer { get; }
         }
     }
 }

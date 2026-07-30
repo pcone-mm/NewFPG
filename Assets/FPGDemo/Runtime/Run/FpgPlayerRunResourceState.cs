@@ -94,7 +94,7 @@ namespace FPG.Demo.Run
                     characterId,
                     weaponId,
                     combatant.Life,
-                    combatant.Barrier,
+                    0,
                     player.Weapon.Magazine.Ammo);
                 return DomainResult.Success;
             }
@@ -125,7 +125,6 @@ namespace FPG.Demo.Run
             }
 
             if (state.Life > player.Combatant.MaxLife
-                || state.Barrier > player.Combatant.MaxBarrier
                 || state.Ammo > player.Weapon.Magazine.Capacity)
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
@@ -141,7 +140,7 @@ namespace FPG.Demo.Run
                 new CombatantResourceSnapshot(
                     player.RuntimeId,
                     state.Life,
-                    state.Barrier,
+                    0,
                     player.Combatant.MaxBreak);
             DomainResult restored = player.Combatant.RestoreResources(combatant);
             if (!restored.IsSuccess)

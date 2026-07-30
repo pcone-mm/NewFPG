@@ -59,11 +59,11 @@ namespace FPG.Demo.Unity
         private FpgRoomDestructibleSlot[] destructibleSlots =
             Array.Empty<FpgRoomDestructibleSlot>();
 
-        [D0PlannerSection("声明式可到达点")]
-        [D0PlannerField("可到达点列表", "v1 仅保存策划声明和适用掩码，不保存连线，也不接入 A* 或 NavMesh 校验。")]
+        [D0PlannerSection("独立掩体")]
+        [D0PlannerField("掩体列表", "每个掩体同时配置独立样式、耐久以及玩家到达点。")]
         [SerializeField]
-        private FpgRoomReachablePoint[] reachablePoints =
-            Array.Empty<FpgRoomReachablePoint>();
+        private FpgRoomCoverSlot[] coverSlots =
+            Array.Empty<FpgRoomCoverSlot>();
 
         public string RoomId => roomId;
         public string DisplayName => displayName;
@@ -83,8 +83,8 @@ namespace FPG.Demo.Unity
             enemySpawnPoints ?? Array.Empty<FpgRoomEnemySpawnPoint>();
         public IReadOnlyList<FpgRoomDestructibleSlot> DestructibleSlots =>
             destructibleSlots ?? Array.Empty<FpgRoomDestructibleSlot>();
-        public IReadOnlyList<FpgRoomReachablePoint> ReachablePoints =>
-            reachablePoints ?? Array.Empty<FpgRoomReachablePoint>();
+        public IReadOnlyList<FpgRoomCoverSlot> CoverSlots =>
+            coverSlots ?? Array.Empty<FpgRoomCoverSlot>();
 
         public bool TryGetExitSlot(string markerId, out FpgRoomExitSlot slot)
         {
@@ -112,11 +112,11 @@ namespace FPG.Demo.Unity
             return TryFind(DestructibleSlots, markerId, out slot);
         }
 
-        public bool TryGetReachablePoint(
+        public bool TryGetCoverSlot(
             string markerId,
-            out FpgRoomReachablePoint point)
+            out FpgRoomCoverSlot slot)
         {
-            return TryFind(ReachablePoints, markerId, out point);
+            return TryFind(CoverSlots, markerId, out slot);
         }
 
         public bool TryGetMarker(string markerId, out FpgRoomMarker marker)
@@ -145,9 +145,9 @@ namespace FPG.Demo.Unity
                 return true;
             }
 
-            if (TryGetReachablePoint(markerId, out FpgRoomReachablePoint reachable))
+            if (TryGetCoverSlot(markerId, out FpgRoomCoverSlot cover))
             {
-                marker = reachable;
+                marker = cover;
                 return true;
             }
 
@@ -190,7 +190,7 @@ namespace FPG.Demo.Unity
             ValidateMarkers(PlayerEntryPoints, markerIds, issues);
             ValidateMarkers(EnemySpawnPoints, markerIds, issues);
             ValidateMarkers(DestructibleSlots, markerIds, issues);
-            ValidateMarkers(ReachablePoints, markerIds, issues);
+            ValidateMarkers(CoverSlots, markerIds, issues);
 
             if (PlayerEntryPoints.Count == 0)
             {
@@ -210,11 +210,7 @@ namespace FPG.Demo.Unity
                     $"Room '{roomId}' has no exit slot. Single-room play remains available.");
             }
 
-            if (ReachablePoints.Count == 0)
-            {
-                AddWarning(issues, FpgRoomValidationCode.MissingReachablePoint,
-                    $"Room '{roomId}' has no declared reachable point.");
-            }
+            ValidateCovers(issues);
 
             return new FpgRoomValidationResult(issues);
         }
@@ -309,20 +305,124 @@ namespace FPG.Demo.Unity
                         marker, $"Destructible slot '{marker.MarkerId}' requires a Prefab.");
                 }
 
-                if (marker is FpgRoomReachablePoint reachable
-                    && (reachable.Audience == FpgRoomReachableAudience.None
-                        || (reachable.Audience & ~FpgRoomReachableAudience.PlayerAndEnemy) != 0))
-                {
-                    AddMarkerError(issues, FpgRoomValidationCode.InvalidReachableAudience,
-                        marker, $"Reachable point '{marker.MarkerId}' requires a valid player/enemy audience mask.");
-                }
-
                 if (marker is FpgRoomEnemySpawnPoint enemy
                     && !Enum.IsDefined(typeof(FpgRoomEnemySpawnRole), enemy.Role))
                 {
                     AddMarkerError(issues, FpgRoomValidationCode.InvalidEnemySpawnRole,
                         marker, $"Enemy spawn point '{marker.MarkerId}' has an invalid role.");
                 }
+
+                if (marker is FpgRoomCoverSlot cover)
+                {
+                    if (cover.Prefab == null)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.MissingCoverPrefab,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' requires a Prefab.");
+                    }
+                    else
+                    {
+                        FpgCoverEntityView view =
+                            cover.Prefab.GetComponent<FpgCoverEntityView>();
+                        if (view == null)
+                        {
+                            AddMarkerError(
+                                issues,
+                                FpgRoomValidationCode.InvalidCoverPrefab,
+                                marker,
+                                $"Cover slot '{marker.MarkerId}' has an invalid Prefab: "
+                                    + "FpgCoverEntityView is missing.");
+                        }
+                        else if (!view.TryValidate(out string viewError))
+                        {
+                            AddMarkerError(
+                                issues,
+                                FpgRoomValidationCode.InvalidCoverPrefab,
+                                marker,
+                                $"Cover slot '{marker.MarkerId}' has an invalid Prefab: "
+                                    + viewError);
+                        }
+                    }
+
+                    if (cover.MaxDurability <= 0)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.InvalidCoverDurability,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' requires positive durability.");
+                    }
+
+                    if (!cover.HasFiniteReachablePose)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.InvalidCoverReachablePose,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' requires a finite player reachable pose.");
+                    }
+                }
+            }
+        }
+
+        private void ValidateCovers(List<FpgRoomValidationIssue> issues)
+        {
+            if (CoverSlots.Count == 0)
+            {
+                AddError(
+                    issues,
+                    FpgRoomValidationCode.MissingCoverSlot,
+                    $"Room '{roomId}' requires at least one cover slot.");
+                return;
+            }
+
+            int startingCoverCount = 0;
+            for (int index = 0; index < CoverSlots.Count; index++)
+            {
+                FpgRoomCoverSlot cover = CoverSlots[index];
+                if (cover == null)
+                {
+                    continue;
+                }
+
+                if (cover.IsStartingCover)
+                {
+                    startingCoverCount++;
+                }
+
+                for (int otherIndex = 0; otherIndex < index; otherIndex++)
+                {
+                    FpgRoomCoverSlot other = CoverSlots[otherIndex];
+                    if (other != null
+                        && Mathf.Abs(
+                            cover.PlayerReachableLocalPosition.x
+                            - other.PlayerReachableLocalPosition.x) < 0.001f)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.OverlappingCoverReachablePosition,
+                            cover,
+                            $"Cover slots '{other.MarkerId}' and '{cover.MarkerId}' "
+                                + "must not share the same player reachable X position.");
+                    }
+                }
+            }
+
+            if (startingCoverCount == 0)
+            {
+                AddError(
+                    issues,
+                    FpgRoomValidationCode.MissingStartingCover,
+                    $"Room '{roomId}' requires exactly one starting cover.");
+            }
+            else if (startingCoverCount > 1)
+            {
+                AddError(
+                    issues,
+                    FpgRoomValidationCode.MultipleStartingCovers,
+                    $"Room '{roomId}' contains more than one starting cover.");
             }
         }
 

@@ -91,6 +91,8 @@ namespace FPG.Demo.Unity
         public FpgMultiEnemyCombatPort CombatPort =>
             combatRuntime == null ? null : combatRuntime.CombatPort;
         public PlayerRuntime Player => combatRuntime == null ? null : combatRuntime.Player;
+        public FpgFormalPlayerTickDriver PlayerTickDriver =>
+            configuredPlayerDriver as FpgFormalPlayerTickDriver;
         public SessionIdAllocator IdAllocator => idAllocator;
         public bool UsesFormalSession => session != null;
         public bool IsPaused => session != null
@@ -415,6 +417,55 @@ namespace FPG.Demo.Unity
                 return FailPreparation(FpgEncounterFailureReason.External, error, out error);
             }
 
+            try
+            {
+                IReadOnlyList<FpgRoomCoverSlot> coverSlots =
+                    roomDefinition.CoverSlots;
+                FpgCoverNodeDefinition[] coverDefinitions =
+                    new FpgCoverNodeDefinition[coverSlots.Count];
+                for (int coverIndex = 0;
+                    coverIndex < coverSlots.Count;
+                    coverIndex++)
+                {
+                    FpgRoomCoverSlot cover = coverSlots[coverIndex];
+                    int lateralPositionKey = checked((int)Math.Round(
+                        cover.PlayerReachableLocalPosition.x
+                            * SpatialContract.PositionUnitsPerMeter,
+                        MidpointRounding.AwayFromZero));
+                    coverDefinitions[coverIndex] = new FpgCoverNodeDefinition(
+                        cover.MarkerId,
+                        lateralPositionKey,
+                        cover.MaxDurability,
+                        cover.IsStartingCover);
+                }
+
+                float traversalSeconds = factory is FpgFormalCombatPortFactory
+                        concreteFactory
+                    && concreteFactory.PlayerThreeCProfile != null
+                        ? concreteFactory.PlayerThreeCProfile.CoverTraversalSeconds
+                        : 0.25f;
+                FpgCoverRuntime covers = new FpgCoverRuntime(
+                    combatRuntime.Player.RuntimeId,
+                    coverDefinitions,
+                    TickDuration.FromSeconds(traversalSeconds));
+                if (!combatRuntime.TryBindCovers(covers, out error))
+                {
+                    throw new InvalidOperationException(error);
+                }
+
+                roomInstance.RefreshCoverViews(covers);
+            }
+            catch (Exception exception)
+            {
+                runtime.Dispose();
+                combatRuntime.Dispose();
+                combatRuntime = null;
+                return FailPreparation(
+                    FpgEncounterFailureReason.InvalidRequest,
+                    "Formal cover preparation failed: " + exception.Message,
+                    out error);
+            }
+
             for (int warmupIndex = 0;
                 warmupIndex < warmup.Count;
                 warmupIndex++)
@@ -595,6 +646,12 @@ namespace FPG.Demo.Unity
                     out error);
             }
 
+            roomInstance.RefreshCoverViews(combatRuntime?.Covers);
+            if (configuredPlayerDriver is FpgFormalPlayerTickDriver playerDriver)
+            {
+                playerDriver.TryRefreshPresentationSnapshot(out _);
+            }
+
             ConsumeEnemySkillSequenceFrames();
             ConsumeEnemyVitalsPresentation();
             return true;
@@ -720,19 +777,8 @@ namespace FPG.Demo.Unity
             Array.Clear(enemyVitalsBuffer, 0, enemyVitalsBuffer.Length);
             currentTick = TickIndex.Invalid;
             Phase = FpgEncounterPhase.Preparing;
-            DomainResult started = session.Start(new TickIndex(0L));
-            if (!started.IsSuccess)
-            {
-                return FailRuntime(
-                    FpgEncounterFailureReason.External,
-                    "Formal Session restart Start failed: " + started.RejectReason,
-                    out error);
-            }
-
-            currentTick = new TickIndex(0L);
-            Phase = session.Runtime.Phase;
-            combatStarted = true;
-            ConsumeEnemyVitalsPresentation();
+            combatStarted = false;
+            roomInstance.RefreshCoverViews(combatRuntime.Covers);
             RestartSucceeded?.Invoke();
             error = string.Empty;
             return true;
@@ -769,11 +815,13 @@ namespace FPG.Demo.Unity
             }
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.RoomCleared)
             {
+                PlayerTickDriver?.CancelCoverTraversalForTerminalState();
                 LockExits(true);
                 RaiseRoomCleared(lifecycle.Tick);
             }
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.Defeated)
             {
+                PlayerTickDriver?.CancelCoverTraversalForTerminalState();
                 exitAttackRegistry.Clear();
                 LockExits(true);
                 combatRuntime?.ClearForDefeat();
@@ -782,6 +830,7 @@ namespace FPG.Demo.Unity
             else if (lifecycle.Type == FpgEncounterLifecycleEventType.Failed
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Faulted)
             {
+                PlayerTickDriver?.CancelCoverTraversalForTerminalState();
                 exitAttackRegistry.Clear();
                 LockExits(true);
             }
@@ -1469,6 +1518,7 @@ namespace FPG.Demo.Unity
                 && (session.Runtime.Phase == FpgEncounterPhase.Failed
                     || session.Runtime.Phase == FpgEncounterPhase.Faulted);
             Phase = FpgEncounterPhase.Faulted;
+            PlayerTickDriver?.CancelCoverTraversalForTerminalState();
             DeactivateAndClearExits();
 
             // Session.Fault clears pure encounter/combat state. These Unity
@@ -1656,6 +1706,67 @@ namespace FPG.Demo.Unity
             spawnResolver?.RefreshDistances();
             error = string.Empty;
             return true;
+        }
+
+        public bool TryResolveCoverReachablePose(
+            string coverId,
+            out Pose pose)
+        {
+            if (roomInstance != null
+                && roomInstance.TryResolveCoverReachablePose(coverId, out pose))
+            {
+                return true;
+            }
+
+            pose = default;
+            return false;
+        }
+
+        public bool TryPlacePlayerAtCover(string coverId, out string error)
+        {
+            if (!prepared || roomInstance == null || playerAnchor == null
+                || string.IsNullOrWhiteSpace(coverId)
+                || !roomInstance.TryResolveCoverReachablePose(
+                    coverId,
+                    out Pose pose))
+            {
+                error = $"Formal cover destination '{coverId}' is unavailable.";
+                return false;
+            }
+
+            CharacterController characterController =
+                playerAnchor.GetComponent<CharacterController>();
+            bool controllerWasEnabled = characterController != null
+                && characterController.enabled;
+            if (controllerWasEnabled)
+            {
+                characterController.enabled = false;
+            }
+
+            playerAnchor.SetPositionAndRotation(pose.position, pose.rotation);
+
+            if (controllerWasEnabled)
+            {
+                characterController.enabled = true;
+            }
+
+            if (entrySafetyAnchor != null && entrySafetyAnchor != playerAnchor)
+            {
+                entrySafetyAnchor.SetPositionAndRotation(
+                    pose.position,
+                    pose.rotation);
+            }
+
+            playerAnchor.GetComponent<FpgPlayerBounds>()
+                ?.CaptureInitialSafePosition(out _);
+            spawnResolver?.RefreshDistances();
+            error = string.Empty;
+            return true;
+        }
+
+        public void RefreshCoverViews()
+        {
+            roomInstance?.RefreshCoverViews(combatRuntime?.Covers);
         }
 }
 

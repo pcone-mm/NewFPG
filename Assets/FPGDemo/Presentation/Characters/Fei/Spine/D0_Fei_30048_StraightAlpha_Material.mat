@@ -35,13 +35,13 @@ Material:
     - _OutlineMipLevel: 0
     - _OutlineReferenceTexWidth: 1024
     - _OutlineSmoothness: 1
-    - _OutlineWidth: 3
+    - _OutlineWidth: 1.91
     - _StencilComp: 8
     - _StencilRef: 1
     - _StraightAlphaInput: 1
     - _ThresholdEnd: 0.25
     - _Use8Neighbourhood: 1
     m_Colors:
-    - _OutlineColor: {r: 1, g: 1, b: 0, a: 1}
+    - _OutlineColor: {r: 0.6415094, g: 0.6415094, b: 0.31167677, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

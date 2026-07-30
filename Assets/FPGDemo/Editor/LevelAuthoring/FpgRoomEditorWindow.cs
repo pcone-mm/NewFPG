@@ -19,8 +19,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string SelectedRoomSessionKey = "FPGDemo.RoomAuthoring.SelectedRoomGuid";
         private const string CameraTemplateSessionKey =
             "FPGDemo.RoomAuthoring.CameraTemplateGuid";
-        private const string CoverLocalPositionPropertyName =
-            "coverLocalPosition";
 
         private readonly List<FpgRoomRecord> allRooms = new List<FpgRoomRecord>();
         private readonly List<FpgRoomRecord> filteredRooms = new List<FpgRoomRecord>();
@@ -46,8 +44,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private ObjectField cameraTemplateField;
         private Button applyCameraPreviewButton;
         private Button stopCameraPreviewButton;
-        private Vector3Field coverPositionField;
-        private Button resetCoverPositionButton;
         private Label cameraPreviewStateLabel;
         private ToolbarSearchField searchField;
         private DropdownField groupFilter;
@@ -164,8 +160,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void OnUndoRedo()
         {
-            RefreshCoverPositionField();
-            RefreshCoverPreview();
         }
 
 
@@ -205,8 +199,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             cameraTemplateField = rootVisualElement.Q<ObjectField>("camera-template-field");
             applyCameraPreviewButton = rootVisualElement.Q<Button>("apply-camera-preview-button");
             stopCameraPreviewButton = rootVisualElement.Q<Button>("stop-camera-preview-button");
-            coverPositionField = rootVisualElement.Q<Vector3Field>("cover-position-field");
-            resetCoverPositionButton = rootVisualElement.Q<Button>("reset-cover-position-button");
             cameraPreviewStateLabel = rootVisualElement.Q<Label>("camera-preview-state-label");
 
             markerToolButtons.Clear();
@@ -214,7 +206,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             markerToolButtons[FpgRoomMarkerKind.PlayerEntry] = rootVisualElement.Q<Button>("place-player-button");
             markerToolButtons[FpgRoomMarkerKind.EnemySpawn] = rootVisualElement.Q<Button>("place-enemy-button");
             markerToolButtons[FpgRoomMarkerKind.Destructible] = rootVisualElement.Q<Button>("place-destructible-button");
-            markerToolButtons[FpgRoomMarkerKind.Reachable] = rootVisualElement.Q<Button>("place-reachable-button");
+            markerToolButtons[FpgRoomMarkerKind.Cover] = rootVisualElement.Q<Button>("place-cover-button");
         }
 
         private void ConfigureLists()
@@ -255,8 +247,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             cameraTemplateField.RegisterValueChangedCallback(OnCameraTemplateChanged);
             applyCameraPreviewButton.clicked += ApplyCameraPreview;
             stopCameraPreviewButton.clicked += StopCameraPreview;
-            coverPositionField.RegisterValueChangedCallback(OnCoverPositionChanged);
-            resetCoverPositionButton.clicked += ResetCoverPosition;
 
 
             rootVisualElement.Q<Button>("create-room-button").clicked += CreateRoom;
@@ -280,7 +270,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             BindVisibility("show-player-toggle", FpgRoomMarkerKind.PlayerEntry);
             BindVisibility("show-enemy-toggle", FpgRoomMarkerKind.EnemySpawn);
             BindVisibility("show-destructible-toggle", FpgRoomMarkerKind.Destructible);
-            BindVisibility("show-reachable-toggle", FpgRoomMarkerKind.Reachable);
+            BindVisibility("show-cover-toggle", FpgRoomMarkerKind.Cover);
 
             FloatField snapField = rootVisualElement.Q<FloatField>("snap-field");
             snapField.RegisterValueChangedCallback(evt =>
@@ -307,7 +297,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 ? null
                 : AssetDatabase.LoadAssetAtPath<D0ThreeCProfile>(path);
             cameraTemplateField.SetValueWithoutNotify(selectedCameraTemplate);
-            RefreshCoverPositionField();
             UpdateCameraPreviewControls();
         }
 
@@ -322,7 +311,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 string.IsNullOrEmpty(path)
                     ? string.Empty
                     : AssetDatabase.AssetPathToGUID(path));
-            RefreshCoverPositionField();
             UpdateCameraPreviewControls();
 
             if (sceneTool?.IsCameraPreviewActive != true)
@@ -338,101 +326,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 ApplyCameraPreview();
             }
-        }
-
-        private void OnCoverPositionChanged(ChangeEvent<Vector3> evt)
-        {
-            if (selectedCameraTemplate == null)
-            {
-                RefreshCoverPositionField();
-                return;
-            }
-
-            if (!IsFinite(evt.newValue))
-            {
-                coverPositionField.SetValueWithoutNotify(
-                    selectedCameraTemplate.CoverLocalPosition);
-                UpdateLevelStatus("掩体位置必须是有限数值。");
-                return;
-            }
-
-            ApplyCoverPosition(evt.newValue, "调整掩体位置");
-        }
-
-        private void ResetCoverPosition()
-        {
-            ApplyCoverPosition(
-                D0ThreeCProfile.DefaultCoverLocalPosition,
-                "重置掩体位置");
-        }
-
-        private void ApplyCoverPosition(Vector3 localPosition, string undoName)
-        {
-            if (selectedCameraTemplate == null)
-            {
-                return;
-            }
-
-            SerializedObject profile = new SerializedObject(selectedCameraTemplate);
-            profile.Update();
-            SerializedProperty position = profile.FindProperty(
-                CoverLocalPositionPropertyName);
-            if (position == null)
-            {
-                UpdateLevelStatus("所选 3C 配置缺少掩体位置字段。");
-                return;
-            }
-
-            Undo.RecordObject(selectedCameraTemplate, undoName);
-            position.vector3Value = localPosition;
-            profile.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(selectedCameraTemplate);
-            coverPositionField.SetValueWithoutNotify(localPosition);
-
-            RefreshCoverPreview();
-
-            UpdateLevelStatus($"掩体局部位置：{localPosition}");
-        }
-
-        private void RefreshCoverPreview()
-        {
-            if (selectedCameraTemplate == null
-                || sceneTool?.IsCameraPreviewActive != true)
-            {
-                return;
-            }
-
-            if (!sceneTool.TryRefreshCoverPreview(
-                    selectedCameraTemplate,
-                    out string error))
-            {
-                UpdateLevelStatus("掩体预览更新失败：" + error);
-            }
-        }
-
-        private void RefreshCoverPositionField()
-        {
-            if (coverPositionField == null)
-            {
-                return;
-            }
-
-            coverPositionField.SetValueWithoutNotify(
-                selectedCameraTemplate == null
-                    ? D0ThreeCProfile.DefaultCoverLocalPosition
-                    : selectedCameraTemplate.CoverLocalPosition);
-        }
-
-        private static bool IsFinite(Vector3 value)
-        {
-            return IsFinite(value.x)
-                && IsFinite(value.y)
-                && IsFinite(value.z);
-        }
-
-        private static bool IsFinite(float value)
-        {
-            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private void ApplyCameraPreview()
@@ -667,10 +560,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             bool isPlaying = EditorApplication.isPlayingOrWillChangePlaymode;
             cameraTemplateField?.SetEnabled(!isPlaying);
-            coverPositionField?.SetEnabled(
-                !isPlaying && selectedCameraTemplate != null);
-            resetCoverPositionButton?.SetEnabled(
-                !isPlaying && selectedCameraTemplate != null);
             applyCameraPreviewButton?.SetEnabled(
                 !isPlaying
                 && selectedRoom != null

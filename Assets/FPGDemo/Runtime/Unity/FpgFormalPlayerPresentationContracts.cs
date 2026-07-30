@@ -104,6 +104,51 @@ namespace FPG.Demo.Unity
             TickIndex secondaryChargeStartedTick,
             bool isCoverPeekRequested,
             TickIndex coverPeekStartedTick)
+            : this(
+                tick,
+                playerRuntimeId,
+                encounterPhase,
+                paused,
+                life,
+                maxLife,
+                barrier,
+                maxBarrier,
+                ammo,
+                magazineCapacity,
+                exposureState,
+                weaponState,
+                isSecondaryCharging,
+                secondaryChargeProgress,
+                secondaryChargeStartedTick,
+                isCoverPeekRequested,
+                coverPeekStartedTick,
+                string.Empty,
+                maxBarrier > 0 && barrier <= 0,
+                false)
+        {
+        }
+
+        public FpgFormalPlayerPresentationSnapshot(
+            TickIndex tick,
+            RuntimeId playerRuntimeId,
+            FpgEncounterPhase encounterPhase,
+            bool paused,
+            int life,
+            int maxLife,
+            int barrier,
+            int maxBarrier,
+            int ammo,
+            int magazineCapacity,
+            PlayerExposureState exposureState,
+            WeaponState weaponState,
+            bool isSecondaryCharging,
+            float secondaryChargeProgress,
+            TickIndex secondaryChargeStartedTick,
+            bool isCoverPeekRequested,
+            TickIndex coverPeekStartedTick,
+            string currentCoverId,
+            bool isCoverDestroyed,
+            bool isCoverMoving)
         {
             Tick = tick;
             PlayerRuntimeId = playerRuntimeId;
@@ -130,6 +175,9 @@ namespace FPG.Demo.Unity
             CoverPeekStartedTick = isCoverPeekRequested
                 ? coverPeekStartedTick
                 : TickIndex.Invalid;
+            CurrentCoverId = currentCoverId ?? string.Empty;
+            IsCoverDestroyed = isCoverDestroyed;
+            IsCoverMoving = isCoverMoving;
         }
 
         public static FpgFormalPlayerPresentationSnapshot Unavailable =>
@@ -155,6 +203,11 @@ namespace FPG.Demo.Unity
         public int MaxLife { get; }
         public int Barrier { get; }
         public int MaxBarrier { get; }
+        public int CoverDurability => Barrier;
+        public int MaxCoverDurability => MaxBarrier;
+        public string CurrentCoverId { get; }
+        public bool IsCoverDestroyed { get; }
+        public bool IsCoverMoving { get; }
         public int Ammo { get; }
         public int MagazineCapacity { get; }
         public PlayerExposureState ExposureState { get; }

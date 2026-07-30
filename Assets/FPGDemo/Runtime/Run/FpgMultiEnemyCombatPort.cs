@@ -44,6 +44,7 @@ namespace FPG.Demo.Run
         private readonly QueryCandidate[] playerProjectileAreaSelected;
         private readonly FixedFpgVitalsStream vitalsStream;
         private readonly FixedResolvedDamageFeedbackStream damageFeedbackStream;
+        private FpgCoverRuntime coverRuntime;
         private readonly FixedFpgSkillImpactPresentationStream
             skillImpactPresentationStream;
 
@@ -129,6 +130,9 @@ namespace FPG.Demo.Run
         }
 
         public bool IsPlayerAlive => !player.Combatant.IsDead;
+        public bool CanTargetPlayer => IsPlayerAlive
+            && (coverRuntime == null || coverRuntime.CanBeTargeted);
+        public FpgCoverRuntime Covers => coverRuntime;
         public int EnemyRuntimeCount => enemyCount;
         public int PendingPlayerHitCount => playerHitCommandCount;
         public int PendingAttackCount => attackSchedule.Count;
@@ -143,6 +147,17 @@ namespace FPG.Demo.Run
         public IFpgSkillImpactPresentationView SkillImpactPresentation =>
             skillImpactPresentationStream;
         public int PresentationCallbackFaultCount { get; private set; }
+
+        public DomainResult TryBindCoverRuntime(FpgCoverRuntime covers)
+        {
+            if (coverRuntime != null || covers == null)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            coverRuntime = covers;
+            return DomainResult.Success;
+        }
 
         /// <summary>
         /// Closes a successfully committed immediate action that produced no
@@ -2824,10 +2839,50 @@ namespace FPG.Demo.Run
                         gameplayEventId);
                 }
 
+                if (coverRuntime != null && coverRuntime.IsTraversing)
+                {
+                    return ConsumeStaleImpact(
+                        intent,
+                        skillExecutionId,
+                        gameplayEventId);
+                }
+
+                DefenseSnapshot defense = playerDefense.CreateSnapshot(player);
+                CombatantState coverDefense = coverRuntime?.CurrentDefenseState;
+                if (defense.Exposure == ExposureMode.Withdrawn
+                    && coverDefense != null)
+                {
+                    ImpactResolution coverResolution =
+                        combatKernel.DamageResolver.ResolveCombatant(
+                            intent,
+                            coverDefense,
+                            defense,
+                            false);
+                    if (!coverResolution.Result.IsSuccess)
+                    {
+                        return coverResolution.Result;
+                    }
+
+                    if (coverRuntime.CurrentCoverIsDestroyed)
+                    {
+                        player.Exposure.ForceExposed(
+                            intent.ImpactTick,
+                            out _);
+                    }
+
+                    RecordResolution(
+                        intent,
+                        coverResolution,
+                        skillExecutionId,
+                        gameplayEventId,
+                        publishImmediateContact);
+                    return DomainResult.Success;
+                }
+
                 ImpactResolution resolution = combatKernel.DamageResolver.ResolveCombatant(
                     intent,
                     player.Combatant,
-                    playerDefense.CreateSnapshot(player),
+                    DefenseSnapshot.Exposed,
                     false);
                 if (!resolution.Result.IsSuccess)
                 {

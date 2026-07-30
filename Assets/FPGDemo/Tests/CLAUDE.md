@@ -17,5 +17,6 @@
 ## 验证路由
 
 - 房间复制、Art Scene 与构建列表：`FpgRoomDuplicationContractTests.cs`、`FpgRoomAuthoringSafetyTests.cs`、`FpgRoomArtSceneContractTests.cs`、`BuildSettingsTests.cs`。
+- 独立掩体的领域、房间、prefab 与输入边界：`FpgMultiEnemyCombatTransactionTests.cs`、`FpgRoomDefinitionTests.cs`、`FpgEntityPrefabContractTests.cs`、`UnityBattleInputSourceTests.cs`、`ProjectWideBattleInputAssetTests.cs`。
 - 技能编辑与正式玩家资产：`FpgSkillAuthoringEditorTests.cs`、`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`。
 - 场景加载/回滚仅在需要帧生命周期时使用 `FpgRoomArtSceneLoaderPlayModeTests.cs`；其余合同优先留在 EditMode。

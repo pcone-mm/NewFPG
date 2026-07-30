@@ -128,7 +128,29 @@ namespace FPG.Demo.Unity
         public FpgFormalEnemyAttackScheduler AttackScheduler { get; }
         public IFpgBattleTickSynchronizer Synchronizer { get; }
         public IFpgPlayerRoomSnapshotPort PlayerSnapshotPort { get; }
+        public FpgCoverRuntime Covers { get; private set; }
         public bool IsDisposed => disposed;
+
+        public bool TryBindCovers(FpgCoverRuntime covers, out string error)
+        {
+            if (Covers != null || covers == null)
+            {
+                error = "Formal runtime covers must be bound exactly once.";
+                return false;
+            }
+
+            DomainResult bound = CombatPort.TryBindCoverRuntime(covers);
+            if (!bound.IsSuccess)
+            {
+                error = "Formal combat port rejected cover binding: "
+                    + bound.RejectReason;
+                return false;
+            }
+
+            Covers = covers;
+            error = string.Empty;
+            return true;
+        }
 
         public bool TryBindPlayerTickDriver(
             IFpgFormalPlayerTickDriver driver,
@@ -147,6 +169,7 @@ namespace FPG.Demo.Unity
         public void ClearForRestart()
         {
             ClearPendingShotPresentation();
+            Covers?.Reset();
             playerEntity.SetGameplayCollidersEnabled(true);
             CombatPort.ResetPresentationState(new TickIndex(0L));
             AttackScheduler.Clear();
@@ -312,6 +335,7 @@ namespace FPG.Demo.Unity
             SecondaryTriggerMode secondaryTriggerMode,
             out string error)
         {
+            ReleaseDisposedActiveBundle();
             if (playerBindingLocked)
             {
                 error = "Formal combat factory player binding is locked for the active session.";
@@ -392,7 +416,7 @@ namespace FPG.Demo.Unity
 
         public void ClearPlayerBinding()
         {
-            if (playerBindingLocked && HasActiveRuntime)
+            if (HasActiveRuntime)
             {
                 return;
             }
@@ -414,6 +438,7 @@ namespace FPG.Demo.Unity
             in FpgPlayerRunResourceState state,
             out string error)
         {
+            ReleaseDisposedActiveBundle();
             if (playerBindingLocked || HasActiveRuntime)
             {
                 error = "Player run resources cannot change after runtime creation.";
@@ -448,7 +473,6 @@ namespace FPG.Demo.Unity
             }
 
             if (state.Life > playerDefinition.Life
-                || state.Barrier > playerDefinition.Barrier
                 || state.Ammo > playerDefinition.Weapon.MagazineCapacity)
             {
                 error =
@@ -597,6 +621,17 @@ namespace FPG.Demo.Unity
             projectileProxyPool = null;
         }
 
+        private void ReleaseDisposedActiveBundle()
+        {
+            if (activeBundle == null || !activeBundle.IsDisposed)
+            {
+                return;
+            }
+
+            activeBundle = null;
+            playerBindingLocked = false;
+        }
+
         private DomainResult ImportPlayerRunResources(
             PlayerRuntime player,
             in FpgPlayerRunResourceState state)
@@ -620,6 +655,7 @@ namespace FPG.Demo.Unity
             out string error)
         {
             bundle = null;
+            ReleaseDisposedActiveBundle();
             bool importPlayerRunResources = hasNextPlayerRunResources;
             FpgPlayerRunResourceState playerRunResources =
                 nextPlayerRunResources;
@@ -748,7 +784,7 @@ namespace FPG.Demo.Unity
                         playerRuntimeId,
                         CombatantKind.Player,
                         playerDefinition.Life,
-                        playerDefinition.Barrier,
+                        0,
                         0),
                     new ExposureRuntime(PlayerExposureState.Exposed),
                     new WeaponRuntime(weaponDefinition));

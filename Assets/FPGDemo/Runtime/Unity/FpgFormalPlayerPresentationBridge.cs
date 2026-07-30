@@ -156,6 +156,7 @@ namespace FPG.Demo.Unity
             ConsumePlayerShotPresentation();
             ConsumePlayerProjectilePresentation();
             cameraFeedback?.SetPaused(snapshot.IsPaused);
+            playerTickDriver.CoverTraversalPresenter?.SetPaused(snapshot.IsPaused);
             playerHud?.Refresh(snapshot);
         }
 
@@ -416,7 +417,9 @@ namespace FPG.Demo.Unity
             }
 
             playerEntity.gameObject.SetActive(true);
-            if (playerEntity.VisualRoot != null)
+            if (playerEntity.VisualRoot != null
+                && (playerTickDriver.CoverTraversalPresenter == null
+                    || !playerTickDriver.CoverTraversalPresenter.IsPlaying))
             {
                 playerEntity.VisualRoot.gameObject.SetActive(true);
             }
@@ -436,6 +439,7 @@ namespace FPG.Demo.Unity
                 ApplyDurableActorState(snapshot);
                 actorPresenter.SetPaused(snapshot.IsPaused);
                 cameraFeedback.SetPaused(snapshot.IsPaused);
+                playerTickDriver.CoverTraversalPresenter?.SetPaused(snapshot.IsPaused);
                 playerHud.Refresh(snapshot);
                 UpdateSecondaryChargeFeedback();
             }
@@ -2149,7 +2153,9 @@ namespace FPG.Demo.Unity
                     actorPresenter.PlayHit();
                 }
 
-                if (previous.Barrier > 0 && current.Barrier <= 0
+                if (previous.CurrentCoverId == current.CurrentCoverId
+                    && previous.CoverDurability > 0
+                    && current.CoverDurability <= 0
                     && !traceFlags.BarrierBroken)
                 {
                     actorPresenter.PlayGroggy();
@@ -2326,8 +2332,8 @@ namespace FPG.Demo.Unity
                 fallback.IsPaused,
                 latest.Life,
                 latest.MaxLife,
-                latest.Barrier,
-                latest.MaxBarrier,
+                fallback.CoverDurability,
+                fallback.MaxCoverDurability,
                 fallback.Ammo,
                 fallback.MagazineCapacity,
                 fallback.ExposureState,
@@ -2336,7 +2342,10 @@ namespace FPG.Demo.Unity
                 fallback.SecondaryChargeProgress,
                 fallback.SecondaryChargeStartedTick,
                 fallback.IsCoverPeekRequested,
-                fallback.CoverPeekStartedTick);
+                fallback.CoverPeekStartedTick,
+                fallback.CurrentCoverId,
+                fallback.IsCoverDestroyed,
+                fallback.IsCoverMoving);
         }
 
         private void ResetEventCursors()
@@ -2466,6 +2475,7 @@ namespace FPG.Demo.Unity
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Faulted
                 || lifecycle.Type == FpgEncounterLifecycleEventType.Disposed)
             {
+                playerTickDriver?.CoverTraversalPresenter?.Cancel();
                 ResetCoverPresentation();
                 ClearSecondaryChargeFeedback();
                 ClearPlayerProjectileVisuals();

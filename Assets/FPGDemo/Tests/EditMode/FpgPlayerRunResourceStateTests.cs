@@ -52,7 +52,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void CaptureAndRestore_PreservesCurrentNonZeroBarrier()
+        public void CaptureAndRestore_DropsLegacyBarrierAcrossRooms()
         {
             PlayerRuntime source = CreatePlayer(1);
             Assert.That(
@@ -72,7 +72,7 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(captured.IsSuccess, Is.True);
             Assert.That(state.Life, Is.EqualTo(80));
-            Assert.That(state.Barrier, Is.EqualTo(25));
+            Assert.That(state.Barrier, Is.Zero);
 
             PlayerRuntime target = CreatePlayer(2);
             DomainResult restored =
@@ -84,7 +84,7 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(restored.IsSuccess, Is.True);
             Assert.That(target.Combatant.Life, Is.EqualTo(80));
-            Assert.That(target.Combatant.Barrier, Is.EqualTo(25));
+            Assert.That(target.Combatant.Barrier, Is.Zero);
         }
 
         [Test]

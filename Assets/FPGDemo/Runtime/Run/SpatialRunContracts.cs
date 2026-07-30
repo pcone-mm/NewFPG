@@ -132,7 +132,10 @@ namespace FPG.Demo.Run
     {
         public const int MaxEdgeCommandCount = 3;
 
-        public BattleTickInput(PlayerInputFrame playerInput, AimPoseSnapshot aimPose)
+        public BattleTickInput(
+            PlayerInputFrame playerInput,
+            AimPoseSnapshot aimPose,
+            FpgCoverMoveDirection coverMoveDirection = FpgCoverMoveDirection.None)
         {
             if (playerInput.Tick != aimPose.Tick)
             {
@@ -153,6 +156,14 @@ namespace FPG.Demo.Run
                 }
             }
 
+            if (!Enum.IsDefined(
+                    typeof(FpgCoverMoveDirection),
+                    coverMoveDirection))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(coverMoveDirection));
+            }
+
             Tick = playerInput.Tick;
             AimHeld = playerInput.AimHeld;
             PrimaryHeld = playerInput.PrimaryHeld;
@@ -163,6 +174,7 @@ namespace FPG.Demo.Run
             Edge0 = EdgeCommandCount > 0 ? playerInput.EdgeCommands[0] : default(InputEdgeCommand);
             Edge1 = EdgeCommandCount > 1 ? playerInput.EdgeCommands[1] : default(InputEdgeCommand);
             Edge2 = EdgeCommandCount > 2 ? playerInput.EdgeCommands[2] : default(InputEdgeCommand);
+            CoverMoveDirection = coverMoveDirection;
         }
 
         public TickIndex Tick { get; }
@@ -172,7 +184,13 @@ namespace FPG.Demo.Run
         public bool CancelSecondary { get; }
         public AimPoseSnapshot AimPose { get; }
         public int EdgeCommandCount { get; }
-        public bool IsValid => Tick.IsValid && AimPose.IsValid && Tick == AimPose.Tick;
+        public FpgCoverMoveDirection CoverMoveDirection { get; }
+        public bool IsValid => Tick.IsValid
+            && AimPose.IsValid
+            && Tick == AimPose.Tick
+            && Enum.IsDefined(
+                typeof(FpgCoverMoveDirection),
+                CoverMoveDirection);
         private InputEdgeCommand Edge0 { get; }
         private InputEdgeCommand Edge1 { get; }
         private InputEdgeCommand Edge2 { get; }

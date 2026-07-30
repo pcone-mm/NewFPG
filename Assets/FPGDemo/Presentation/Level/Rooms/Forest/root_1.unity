@@ -311,7 +311,6 @@ GameObject:
   - component: {fileID: 253695779}
   - component: {fileID: 253695778}
   - component: {fileID: 253695777}
-  - component: {fileID: 253695782}
   m_Layer: 1
   m_Name: Forest SunBeam
   m_TagString: Untagged
@@ -328,13 +327,13 @@ Transform:
   m_GameObject: {fileID: 253695775}
   serializedVersion: 2
   m_LocalRotation: {x: 0.3909804, y: -0.25180724, z: 0.112111814, w: 0.8781563}
-  m_LocalPosition: {x: 41.663177, y: 67.5, z: 37.6}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 831555437}
   m_Father: {fileID: 1071963175}
-  m_LocalEulerAnglesHint: {x: 47.771, y: -32.402, z: -0.542}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &253695777
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -423,8 +422,8 @@ MonoBehaviour:
   generatedTipRadius: -1
   generatedSpotAngle: -1
   generatedBaseRadius: -1
-  generatedAreaWidth: 15.7
-  generatedAreaHeight: 15.7
+  generatedAreaWidth: 50
+  generatedAreaHeight: 50
   generatedAreaFrustumAngle: 0
   generatedAreaFrustumMultiplier: 1
   generatedType: 4
@@ -505,14 +504,14 @@ MonoBehaviour:
   profileSync: 1
   useCustomBounds: 0
   bounds:
-    m_Center: {x: 6.2046585, y: -6.8144913, z: 94.34549}
-    m_Extent: {x: 54.955643, y: 84.81984, z: 74.959724}
+    m_Center: {x: -35.45852, y: -74.31449, z: 56.745495}
+    m_Extent: {x: 97.55126, y: 107.77102, z: 114.752594}
   boundsInLocalSpace: 0
   profile: {fileID: 11400000, guid: 76689ac5efe48fd448a48783fd888716, type: 2}
   customRange: 200
   targetCamera: {fileID: 0}
   useCustomSize: 0
-  areaWidth: 15.7
+  areaWidth: 50
   areaHeight: 20
 --- !u!108 &253695781
 Light:
@@ -525,7 +524,7 @@ Light:
   serializedVersion: 12
   m_Type: 4
   m_Color: {r: 1, g: 0.94, b: 0.86, a: 1}
-  m_Intensity: 0.29
+  m_Intensity: 1.2
   m_Range: 200
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -566,7 +565,7 @@ Light:
   m_RenderingLayerMask: 1
   m_Lightmapping: 2
   m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 15.7, y: 20}
+  m_AreaSize: {x: 50, y: 20}
   m_BounceIntensity: 1
   m_ColorTemperature: 6570
   m_UseColorTemperature: 0
@@ -579,35 +578,6 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!114 &253695782
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 253695775}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
-  m_UsePipelineSettings: 1
-  m_AdditionalLightsShadowResolutionTier: 2
-  m_CustomShadowLayers: 0
-  m_LightCookieSize: {x: 1, y: 1}
-  m_LightCookieOffset: {x: 0, y: 0}
-  m_SoftShadowQuality: 0
-  m_RenderingLayersMask:
-    serializedVersion: 0
-    m_Bits: 1
-  m_ShadowRenderingLayersMask:
-    serializedVersion: 0
-    m_Bits: 1
-  m_Version: 4
-  m_LightLayerMask: 1
-  m_ShadowLayerMask: 1
-  m_RenderingLayers: 1
-  m_ShadowRenderingLayers: 1
 --- !u!1 &260497995
 GameObject:
   m_ObjectHideFlags: 0
@@ -722,14 +692,14 @@ Material:
     - _NoiseStrength: 0.48
     - _RayMarchMaxSteps: 180
     m_Colors:
-    - _AreaExtents: {r: 246.48999, g: 20, b: 200, a: 0}
-    - _BoundsCenter: {r: 6.2046585, g: -6.8144913, b: 94.34549, a: 0}
-    - _BoundsExtents: {r: 54.955643, g: 84.81984, b: 74.959724, a: 0}
+    - _AreaExtents: {r: 2500, g: 20, b: 200, a: 0}
+    - _BoundsCenter: {r: -35.45852, g: -74.31449, b: 56.745495, a: 0}
+    - _BoundsExtents: {r: 97.55126, g: 107.77102, b: 114.752594, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _ConeAxis: {r: -70.91704, g: -148.62898, b: 113.49099, a: 40000}
     - _ConeBoundsCenter: {r: 0, g: 0, b: 0, a: 1}
     - _ConeBoundsExtents: {r: 1, g: 1, b: 1, a: 1}
-    - _ConeTipData: {r: 41.663177, g: 67.5, b: 37.6, a: 0}
+    - _ConeTipData: {r: 0, g: 0, b: 0, a: 0}
     - _Cookie2D_Offset: {r: 0, g: 0, b: 0, a: 0}
     - _Cookie2D_SS: {r: 1, g: 1, b: 0, a: 0}
     - _DirectLightData: {r: 1, g: 8, b: 4, a: 0}
@@ -737,119 +707,14 @@ Material:
     - _FallOff: {r: 1, g: 2, b: 1, a: 0}
     - _LightColor: {r: 0.3915, g: 0.28704777, b: 0.168345, a: 0.3915}
     - _MeshBoundsCenter: {r: 0, g: 0, b: 100, a: 0}
-    - _MeshBoundsExtents: {r: 15.7, g: 15.7, b: 100, a: 0}
+    - _MeshBoundsExtents: {r: 50, g: 50, b: 100, a: 0}
     - _RayMarchSettings: {r: 8, g: 0.001, b: 0.8, a: 0.16}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShadowIntensity: {r: 0, g: 1, b: 0, a: 0}
     - _ToLightDir: {r: 0.3545852, g: 0.7431449, b: -0.56745493, a: 0.62}
-    - _WindDirection: {r: 11.07251, g: 3.6908433, b: 1.230278, a: 281.82352}
+    - _WindDirection: {r: 0.55411494, g: 0.1847049, b: 0.06156832, a: 265.7546}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!1 &317801704
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 317801705}
-  - component: {fileID: 317801707}
-  - component: {fileID: 317801706}
-  m_Layer: 0
-  m_Name: MiddleBushLeft (2)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &317801705
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 317801704}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 9.67, y: 3.07, z: 1.95}
-  m_LocalScale: {x: 0.47662693, y: 0.47662693, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 754496905375487588}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &317801706
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 317801704}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
-  viewportOffsetMultiplier: {x: 0.62, y: 0.24}
---- !u!212 &317801707
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 317801704}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: -70
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 4d94fe4e86964ab4f8633c76daf4b887, type: 3}
-  m_Color: {r: 0.88, g: 0.96, b: 0.86, a: 0.82}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 10.91, y: 13.33}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
 --- !u!1 &405864082
 GameObject:
   m_ObjectHideFlags: 0
@@ -977,321 +842,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &474243938
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 474243939}
-  - component: {fileID: 474243941}
-  - component: {fileID: 474243940}
-  m_Layer: 0
-  m_Name: MiddleBushLeft (1)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &474243939
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474243938}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -9.19, y: 3.59, z: 4.89}
-  m_LocalScale: {x: 0.47662693, y: 0.47662693, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 754496905375487588}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &474243940
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474243938}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
-  viewportOffsetMultiplier: {x: 0.62, y: 0.24}
---- !u!212 &474243941
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474243938}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: -70
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 4d94fe4e86964ab4f8633c76daf4b887, type: 3}
-  m_Color: {r: 0.88, g: 0.96, b: 0.86, a: 0.82}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 10.91, y: 13.33}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
---- !u!21 &596914887
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: DustParticle(Clone)
-  m_Shader: {fileID: 4800000, guid: fc2655527708b470d9b23bfe28ede3e9, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - VL_AREA_DISC
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3102
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: ed6dc1204147d451d96326c7fedc6727, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _BumpMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Cookie2D:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _EmissionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MetallicGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _OcclusionMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _SpecGlossMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _AlphaClip: 0
-    - _Blend: 0
-    - _BlendOp: 0
-    - _Border: 0.75
-    - _BumpScale: 1
-    - _CameraFadingEnabled: 0
-    - _CameraFarFadeDistance: 2
-    - _CameraNearFadeDistance: 1
-    - _ColorMode: 0
-    - _Cull: 2
-    - _Cutoff: 0.5
-    - _DistanceFallOff: 1
-    - _DistortionBlend: 0.5
-    - _DistortionEnabled: 0
-    - _DistortionStrength: 1
-    - _DistortionStrengthScaled: 0.1
-    - _DstBlend: 0
-    - _EnvironmentReflections: 1
-    - _FlipbookBlending: 0
-    - _FlipbookMode: 0
-    - _GlossMapScale: 0
-    - _Glossiness: 0
-    - _GlossyReflections: 0
-    - _Metallic: 0
-    - _Mode: 0
-    - _NearClipDistance: 0
-    - _OcclusionStrength: 1
-    - _ParticleDistanceAtten: 324
-    - _QueueOffset: 0
-    - _ReceiveShadows: 1
-    - _Smoothness: 0.5
-    - _SmoothnessTextureChannel: 0
-    - _SoftParticlesEnabled: 0
-    - _SoftParticlesFarFadeDistance: 1
-    - _SoftParticlesNearFadeDistance: 0
-    - _SpecularHighlights: 1
-    - _SrcBlend: 1
-    - _Surface: 0
-    - _WorkflowMode: 1
-    - _ZWrite: 1
-    m_Colors:
-    - _AreaExtents: {r: 246.48999, g: 20, b: 200, a: 0}
-    - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _BaseColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
-    - _BoundsCenter: {r: 6.2046585, g: -6.8144913, b: 94.34549, a: 0}
-    - _BoundsExtents: {r: 54.955643, g: 84.81984, b: 74.959724, a: 0}
-    - _CameraFadeParams: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-    - _ConeAxis: {r: -70.91704, g: -148.62898, b: 113.49099, a: 40000}
-    - _ConeTipData: {r: 41.663177, g: 67.5, b: 37.6, a: 0}
-    - _Cookie2D_Offset: {r: 0, g: 0, b: 0, a: 0}
-    - _Cookie2D_SS: {r: 1, g: 1, b: 0, a: 0}
-    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _ExtraGeoData: {r: -1, g: -0.000025, b: 1, a: 200}
-    - _FallOff: {r: 1, g: 2, b: 1, a: 0}
-    - _ParticleLightColor: {r: 0.0928, g: 0.06804095, b: 0.039904, a: 0.0928}
-    - _ShadowIntensity: {r: 0, g: 1, b: 0, a: 0}
-    - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
-    - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
---- !u!1 &791115776
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 791115777}
-  - component: {fileID: 791115778}
-  m_Layer: 0
-  m_Name: "\u6811\u68395"
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &791115777
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 791115776}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 6.68, y: 2.61, z: 0}
-  m_LocalScale: {x: 0.22807, y: 0.22807, z: 0.22807}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 754496905375487588}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &791115778
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 791115776}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9498b95e40e4c1b47a7fbdaf7958f734, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 39eecf27ed07507449e8bd6bd2e24fe3, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 45.960003, y: 20.780743}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
 --- !u!1 &831555436
 GameObject:
   m_ObjectHideFlags: 0
@@ -1351,7 +901,8 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 596914887}
+  - {fileID: 928228703}
+  - {fileID: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2044,7 +1595,7 @@ ParticleSystem:
     donutRadius: 0.2
     m_Position: {x: 0, y: 0, z: 100}
     m_Rotation: {x: 0, y: 0, z: 0}
-    m_Scale: {x: 31.4, y: 31.4, z: 200}
+    m_Scale: {x: 100, y: 100, z: 200}
     placementMode: 0
     m_MeshMaterialIndex: 0
     m_MeshNormalOffset: 0
@@ -6172,6 +5723,126 @@ Transform:
   - {fileID: 405864084}
   m_Father: {fileID: 1353591680}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &928228703
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: DustParticle(Clone)
+  m_Shader: {fileID: 4800000, guid: fc2655527708b470d9b23bfe28ede3e9, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - VL_AREA_DISC
+  m_InvalidKeywords:
+  - _FLIPBOOKBLENDING_OFF
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3102
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: ed6dc1204147d451d96326c7fedc6727, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Cookie2D:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SpecGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaClip: 0
+    - _Blend: 0
+    - _BlendOp: 0
+    - _Border: 0.1
+    - _BumpScale: 1
+    - _CameraFadingEnabled: 0
+    - _CameraFarFadeDistance: 2
+    - _CameraNearFadeDistance: 1
+    - _ColorMode: 0
+    - _Cull: 2
+    - _Cutoff: 0.5
+    - _DistanceFallOff: 1
+    - _DistortionBlend: 0.5
+    - _DistortionEnabled: 0
+    - _DistortionStrength: 1
+    - _DistortionStrengthScaled: 0.1
+    - _DstBlend: 0
+    - _EnvironmentReflections: 1
+    - _FlipbookBlending: 0
+    - _FlipbookMode: 0
+    - _GlossMapScale: 0
+    - _Glossiness: 0
+    - _GlossyReflections: 0
+    - _Metallic: 0
+    - _Mode: 0
+    - _NearClipDistance: 0
+    - _OcclusionStrength: 1
+    - _ParticleDistanceAtten: 324
+    - _QueueOffset: 0
+    - _ReceiveShadows: 1
+    - _Smoothness: 0.5
+    - _SmoothnessTextureChannel: 0
+    - _SoftParticlesEnabled: 0
+    - _SoftParticlesFarFadeDistance: 1
+    - _SoftParticlesNearFadeDistance: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _Surface: 0
+    - _WorkflowMode: 1
+    - _ZWrite: 1
+    m_Colors:
+    - _AreaExtents: {r: 0, g: 0, b: 0, a: 1}
+    - _BaseColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _BaseColorAddSubDiff: {r: 0, g: 0, b: 0, a: 0}
+    - _BoundsCenter: {r: 0, g: 0, b: 0, a: 1}
+    - _BoundsExtents: {r: 0, g: 0, b: 0, a: 1}
+    - _CameraFadeParams: {r: 0, g: 0, b: 0, a: 0}
+    - _Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _ConeAxis: {r: 0, g: 0, b: 0, a: 0.5}
+    - _ConeTipData: {r: 0, g: 0, b: 0, a: 0.1}
+    - _Cookie2D_Offset: {r: 0, g: 0, b: 0, a: 0}
+    - _Cookie2D_SS: {r: 1, g: 1, b: 0, a: 0}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _ExtraGeoData: {r: 1, g: 0, b: 0, a: 1}
+    - _FallOff: {r: 1, g: 2, b: 1, a: 0}
+    - _ParticleLightColor: {r: 0.384, g: 0.2815488, b: 0.16512, a: 0.384}
+    - _ShadowIntensity: {r: 0, g: 1, b: 0, a: 0}
+    - _SoftParticleFadeParams: {r: 0, g: 0, b: 0, a: 0}
+    - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!43 &982002070
 Mesh:
   m_ObjectHideFlags: 0
@@ -6190,7 +5861,7 @@ Mesh:
     vertexCount: 66
     localAABB:
       m_Center: {x: 0, y: 0, z: 100}
-      m_Extent: {x: 15.7, y: 15.7, z: 100}
+      m_Extent: {x: 50, y: 50, z: 100}
   m_Shapes:
     vertices: []
     shapes: []
@@ -6269,7 +5940,7 @@ Mesh:
       format: 0
       dimension: 0
     m_DataSize: 792
-    _typelessdata: 33337b41000000000000000033337b4100000000000048438d5f7641d9064440000000008d5f7641d9064440000048431a1468419a42c040000000001a1468419a42c040000048437bdd50412b8f0b41000000007bdd50412b8f0b41000048430ea031410ea03141000000000ea031410ea03141000048432a8f0b417cdd5041000000002a8f0b417cdd5041000048439942c0401a146841000000009942c0401a14684100004843d40644408e5f764100000000d40644408e5f764100004843083838b533337b4100000000083838b533337b4100004843d90644c08d5f764100000000d90644c08d5f7641000048439c42c0c01a146841000000009c42c0c01a146841000048432d8f0bc17add5041000000002d8f0bc17add5041000048430ea031c10ea03141000000000ea031c10ea03141000048437cdd50c12a8f0b41000000007cdd50c12a8f0b41000048431c1468c19442c040000000001c1468c19442c040000048438e5f76c1d8064440000000008e5f76c1d80644400000484333337bc10838b8b50000000033337bc10838b8b5000048438d5f76c1e40644c0000000008d5f76c1e40644c0000048431a1468c19942c0c0000000001a1468c19942c0c0000048437add50c12c8f0bc1000000007add50c12c8f0bc1000048430ca031c110a031c1000000000ca031c110a031c100004843278f0bc17edd50c100000000278f0bc17edd50c1000048438f42c0c01d1468c1000000008f42c0c01d1468c100004843dd0644c08d5f76c100000000dd0644c08d5f76c100004843d006493433337bc100000000d006493433337bc100004843df0644408d5f76c100000000df0644408d5f76c1000048439f42c040191468c1000000009f42c040191468c1000048432e8f0b4179dd50c1000000002e8f0b4179dd50c10000484312a031410aa031c10000000012a031410aa031c1000048437bdd50412c8f0bc1000000007bdd50412c8f0bc1000048431b1468419942c0c0000000001b1468419942c0c0000048438e5f7641d40644c0000000008e5f7641d40644c000004843000000000000000000000000000000000000000000004843
+    _typelessdata: 0000484200000000000000000000484200000000000048433428444280121c41000000003428444280121c4100004843a1c63842c912994100000000a1c63842c9129941000048433e4b2642653ade41000000003e4b2642653ade4100004843de6b0d42de6b0d4200000000de6b0d42de6b0d4200004843633ade413f4b264200000000633ade413f4b264200004843c8129941a1c6384200000000c8129941a1c63842000048437b121c4135284442000000007b121c413528444200004843ccab12b60000484200000000ccab12b6000048420000484380121cc1342844420000000080121cc13428444200004843cb1299c1a1c6384200000000cb1299c1a1c6384200004843683adec13e4b264200000000683adec13e4b264200004843de6b0dc2de6b0d4200000000de6b0dc2de6b0d42000048433f4b26c2633ade41000000003f4b26c2633ade4100004843a3c638c2c412994100000000a3c638c2c412994100004843352844c27f121c4100000000352844c27f121c4100004843000048c2ccab92b600000000000048c2ccab92b600004843342844c288121cc100000000342844c288121cc100004843a1c638c2c81299c100000000a1c638c2c81299c1000048433e4b26c2663adec1000000003e4b26c2663adec100004843dc6b0dc2df6b0dc200000000dc6b0dc2df6b0dc2000048435e3adec1414b26c2000000005e3adec1414b26c200004843c11299c1a4c638c200000000c11299c1a4c638c20000484383121cc1342844c20000000083121cc1342844c200004843940d2035000048c200000000940d2035000048c20000484384121c41342844c20000000084121c41342844c200004843cd129941a1c638c200000000cd129941a1c638c200004843693ade413d4b26c200000000693ade413d4b26c200004843e16b0d42db6b0dc200000000e16b0d42db6b0dc2000048433e4b2642663adec1000000003e4b2642663adec100004843a2c63842c81299c100000000a2c63842c81299c100004843352844427b121cc100000000352844427b121cc100004843000000000000000000000000000000000000000000004843
   m_CompressedMesh:
     m_Vertices:
       m_NumItems: 0
@@ -6324,7 +5995,7 @@ Mesh:
     m_UVInfo: 0
   m_LocalAABB:
     m_Center: {x: 0, y: 0, z: 100}
-    m_Extent: {x: 15.7, y: 15.7, z: 100}
+    m_Extent: {x: 50, y: 50, z: 100}
   m_MeshUsageFlags: 0
   m_CookingOptions: 30
   m_BakedConvexCollisionMesh: 
@@ -6511,7 +6182,56 @@ Transform:
   - {fileID: 754496905375487588}
   m_Father: {fileID: 1353591680}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!84 &1263625722
+--- !u!1 &1353591678
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1353591680}
+  - component: {fileID: 1353591679}
+  m_Layer: 0
+  m_Name: __RoomArt
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1353591679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353591678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 033f1a5bafffdf5469ccc53cdcec2f9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomArtRoot
+  roomDefinition: {fileID: 11400000, guid: ca8c6d458baf6834095c3da1e572d971, type: 2}
+  mainDirectionalLight: {fileID: 405864083}
+--- !u!4 &1353591680
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1353591678}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1242139259}
+  - {fileID: 894876649}
+  - {fileID: 1071963175}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!84 &1512343963
 RenderTexture:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -6548,160 +6268,6 @@ RenderTexture:
   m_Dimension: 2
   m_VolumeDepth: 1
   m_ShadowSamplingMode: 2
---- !u!1 &1353591678
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1353591680}
-  - component: {fileID: 1353591679}
-  m_Layer: 0
-  m_Name: __RoomArt
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1353591679
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1353591678}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 033f1a5bafffdf5469ccc53cdcec2f9b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomArtRoot
-  roomDefinition: {fileID: 11400000, guid: bde7957c923a50044aaf470491518496, type: 2}
-  mainDirectionalLight: {fileID: 405864083}
---- !u!4 &1353591680
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1353591678}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1242139259}
-  - {fileID: 894876649}
-  - {fileID: 1071963175}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1947001439
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1947001440}
-  - component: {fileID: 1947001442}
-  - component: {fileID: 1947001441}
-  m_Layer: 0
-  m_Name: MiddleBushLeft (3)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1947001440
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1947001439}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.72, y: 3.07, z: 11.06}
-  m_LocalScale: {x: 0.47662693, y: 0.47662693, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 754496905375487588}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1947001441
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1947001439}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
-  viewportOffsetMultiplier: {x: 0.62, y: 0.24}
---- !u!212 &1947001442
-SpriteRenderer:
-  serializedVersion: 2
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1947001439}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: -70
-  m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 4d94fe4e86964ab4f8633c76daf4b887, type: 3}
-  m_Color: {r: 0.88, g: 0.96, b: 0.86, a: 0.82}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 10.91, y: 13.33}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
 --- !u!1 &2018949963
 GameObject:
   m_ObjectHideFlags: 0
@@ -6808,7 +6374,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NoiseTex:
-        m_Texture: {fileID: 1263625722}
+        m_Texture: {fileID: 1512343963}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -6832,7 +6398,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DetailColor: {r: 0.3795, g: 0.345, b: 0.29325, a: 0}
     - _DetailData: {r: 0.5, g: 4, b: -0.5, a: 0}
-    - _DetailWindDirection: {r: 7.3816867, g: 1.230278, b: 2.460556, a: 0}
+    - _DetailWindDirection: {r: 0.36691883, g: 0.061153162, b: 0.122306325, a: 0}
     - _DistanceData: {r: 0, g: 5.2, b: 0.000001, a: 0.056235775}
     - _FogOfWarCenter: {r: 0, g: 0, b: 0, a: 1}
     - _FogOfWarCenterAdjusted: {r: 0, g: 0, b: 0, a: 1}
@@ -6845,7 +6411,7 @@ Material:
     - _ShadowData: {r: 0.5, g: 0, b: 250, a: 0}
     - _SpecularColor: {r: 0.5, g: 0.5, b: 0.5, a: 0}
     - _SunDir: {r: 0.35458517, g: 0.74314487, b: -0.56745493, a: 0}
-    - _WindDirection: {r: 7.3816867, g: 1.230278, b: 2.460556, a: 0}
+    - _WindDirection: {r: 0.36691883, g: 0.061153162, b: 0.122306325, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &29676085008418660
@@ -6860,6 +6426,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: -8.8, y: -3.15, z: 16}
   viewportOffsetMultiplier: {x: 0.7, y: 0.24}
 --- !u!4 &43431007217527421
 Transform:
@@ -7144,6 +6711,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 0, y: -7.35, z: 27}
   viewportOffsetMultiplier: {x: 0.2, y: 0.07}
 --- !u!114 &532018034500359849
 MonoBehaviour:
@@ -7157,6 +6725,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 8.8, y: -3.25, z: 15}
   viewportOffsetMultiplier: {x: 0.7, y: 0.24}
 --- !u!114 &643245255388004525
 MonoBehaviour:
@@ -7170,6 +6739,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 13.2, y: -4.55, z: 10}
   viewportOffsetMultiplier: {x: 1.05, y: 0.38}
 --- !u!212 &687124225658077211
 SpriteRenderer:
@@ -7250,16 +6820,12 @@ Transform:
   - {fileID: 1005514833421951671}
   - {fileID: 2544210057647973120}
   - {fileID: 8499154751217179089}
-  - {fileID: 474243939}
-  - {fileID: 317801705}
-  - {fileID: 1947001440}
   - {fileID: 2032589226715192450}
   - {fileID: 4117314062162189398}
   - {fileID: 8073779208871777029}
   - {fileID: 5441136717784470317}
   - {fileID: 1738275096016562384}
   - {fileID: 5556753438261309511}
-  - {fileID: 791115777}
   - {fileID: 43431007217527421}
   - {fileID: 1269644962977849786}
   m_Father: {fileID: 1242139259}
@@ -7309,6 +6875,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: -14.1, y: -4.75, z: 11}
   viewportOffsetMultiplier: {x: 1.12, y: 0.4}
 --- !u!4 &1134828239021394003
 Transform:
@@ -7372,6 +6939,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: -9.8, y: -1.5, z: 17}
   viewportOffsetMultiplier: {x: 0.62, y: 0.24}
 --- !u!114 &1430091331436788485
 MonoBehaviour:
@@ -7385,6 +6953,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: -10.2, y: 2, z: 21}
   viewportOffsetMultiplier: {x: 0.44, y: 0.18}
 --- !u!1 &1656933581548751109
 GameObject:
@@ -7449,6 +7018,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 0, y: 4.7, z: 38}
   viewportOffsetMultiplier: {x: 0.03, y: 0.02}
 --- !u!4 &2032589226715192450
 Transform:
@@ -7477,6 +7047,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 10.2, y: 2, z: 21}
   viewportOffsetMultiplier: {x: 0.44, y: 0.18}
 --- !u!1 &2265685885895992584
 GameObject:
@@ -7909,6 +7480,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: -13.2, y: -4.55, z: 10}
   viewportOffsetMultiplier: {x: 1.05, y: 0.38}
 --- !u!212 &3628829230142356316
 SpriteRenderer:
@@ -8342,6 +7914,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 14.1, y: -4.75, z: 11}
   viewportOffsetMultiplier: {x: 1.12, y: 0.4}
 --- !u!1 &5291555394671556105
 GameObject:
@@ -8438,6 +8011,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 0, y: 1, z: 29}
   viewportOffsetMultiplier: {x: 0.14, y: 0.08}
 --- !u!114 &6133463686384215546
 MonoBehaviour:
@@ -8451,6 +8025,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 9.8, y: -1.5, z: 17}
   viewportOffsetMultiplier: {x: 0.62, y: 0.24}
 --- !u!1 &6308516045489615656
 GameObject:
@@ -8541,6 +8116,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5fae777108416c24898770e36e181a4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ForestParallaxLayer
+  baseLocalPosition: {x: 0, y: 1.25, z: 32}
   viewportOffsetMultiplier: {x: 0.08, y: 0.04}
 --- !u!1 &6966397261279955836
 GameObject:
@@ -8697,7 +8273,7 @@ Transform:
   m_GameObject: {fileID: 3786264751936288199}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.12, y: 3.07, z: 7.62}
+  m_LocalPosition: {x: -9.8, y: -1.5, z: 17}
   m_LocalScale: {x: 0.47662693, y: 0.47662693, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

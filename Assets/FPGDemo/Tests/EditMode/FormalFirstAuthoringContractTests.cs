@@ -192,6 +192,21 @@ namespace FPG.Demo.Tests.EditMode
                     Assert.That(
                         formalHosts[0].WorldCamera,
                         Is.SameAs(cameras[0]));
+                    FpgFormalPlayerPresentationBridge presentationBridge =
+                        composers[0].PresentationBridge;
+                    Assert.That(presentationBridge, Is.Not.Null);
+                    Assert.That(
+                        presentationBridge.TargetCamera,
+                        Is.SameAs(cameras[0]));
+                    Assert.That(
+                        presentationBridge.CameraRig,
+                        Is.SameAs(formalHosts[0].CameraRoot));
+                    Assert.That(
+                        presentationBridge.CameraFeedback.TargetCamera,
+                        Is.SameAs(cameras[0]));
+                    Assert.That(
+                        presentationBridge.CameraFeedback.CameraRig,
+                        Is.SameAs(formalHosts[0].CameraRoot));
                     Assert.That(cameras[0].clearFlags, Is.EqualTo(CameraClearFlags.Skybox));
                     List<CombatAimReticle> reticles =
                         FindComponents<CombatAimReticle>(scene);

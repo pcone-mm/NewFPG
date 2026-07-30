@@ -160,6 +160,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case "role": return "出生角色分类";
                 case "destructiblePrefab": return "可破坏物 Prefab";
                 case "prefab": return "Prefab";
+                case "cameraProfile": return "Camera Profile";
                 case "maxDurability": return "最大耐久";
                 case "isStartingCover": return "初始掩体";
                 case "playerReachableLocalPosition": return "玩家到达点位置";

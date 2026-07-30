@@ -336,8 +336,8 @@ namespace FPG.Demo.Unity
         }
 
         /// <summary>
-        /// Called after the director has placed the player at the room entry.
-        /// This is the only point that applies the scene-owned camera rig.
+        /// Called after the host has applied the starting cover's entry Shot.
+        /// CameraFeedback already owns the rig and may be mid-transition.
         /// </summary>
         public bool TryActivate(out string error)
         {
@@ -423,8 +423,10 @@ namespace FPG.Demo.Unity
             {
                 playerEntity.VisualRoot.gameObject.SetActive(true);
             }
-            if (!cameraFeedback.TryApplyFixedSceneRig(playerEntity.transform, out error))
+            if (!cameraFeedback.IsRigApplied
+                || !cameraFeedback.HasCommittedShot)
             {
+                error = "Formal player presentation requires an applied cover camera shot.";
                 return false;
             }
 

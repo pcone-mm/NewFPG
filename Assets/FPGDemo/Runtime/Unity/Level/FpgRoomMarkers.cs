@@ -93,6 +93,10 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private GameObject prefab;
 
+        [D0PlannerField("镜头配置", "玩家抵达该掩体后使用的独立镜头构图配置；正式房间中必填。")]
+        [SerializeField]
+        private FpgCoverCameraProfile cameraProfile;
+
         [D0PlannerField("最大耐久", "进入或重新开始房间时恢复到该值，不跨房间保存。")]
         [SerializeField]
         private int maxDurability = 100;
@@ -110,6 +114,7 @@ namespace FPG.Demo.Unity
         private Vector3 playerReachableLocalEulerAngles;
 
         public GameObject Prefab => prefab;
+        public FpgCoverCameraProfile CameraProfile => cameraProfile;
         public int MaxDurability => maxDurability;
         public bool IsStartingCover => isStartingCover;
         public Vector3 PlayerReachableLocalPosition =>

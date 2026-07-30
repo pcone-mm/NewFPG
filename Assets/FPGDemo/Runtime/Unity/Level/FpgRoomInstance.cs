@@ -204,6 +204,74 @@ namespace FPG.Demo.Unity
             return false;
         }
 
+        public bool TryResolveCoverCameraProfile(
+            string markerId,
+            out FpgCoverCameraProfile profile)
+        {
+            if (roomDefinition != null
+                && !string.IsNullOrWhiteSpace(markerId)
+                && roomDefinition.TryGetCoverSlot(
+                    markerId,
+                    out FpgRoomCoverSlot slot)
+                && slot.CameraProfile != null)
+            {
+                profile = slot.CameraProfile;
+                return true;
+            }
+
+            profile = null;
+            return false;
+        }
+
+        public bool TryResolveCoverCameraShot(
+            string markerId,
+            Pose playerWorldPose,
+            out FpgResolvedCameraShot shot,
+            out string error)
+        {
+            if (!TryResolveCoverCameraProfile(markerId, out var profile))
+            {
+                shot = default;
+                error = $"Cover '{markerId}' has no camera profile.";
+                return false;
+            }
+
+            return FpgFormalCameraPoseUtility.TryResolveShot(
+                playerWorldPose,
+                profile,
+                out shot,
+                out error);
+        }
+
+        public bool TryResolveCoverReachablePoseAndCameraShot(
+            string markerId,
+            out Pose worldPose,
+            out FpgCoverCameraProfile profile,
+            out FpgResolvedCameraShot shot,
+            out string error)
+        {
+            if (!TryResolveCoverReachablePose(markerId, out worldPose))
+            {
+                profile = null;
+                shot = default;
+                error = $"Cover destination '{markerId}' is unavailable.";
+                return false;
+            }
+
+            if (!TryResolveCoverCameraProfile(markerId, out profile))
+            {
+                shot = default;
+                error = $"Cover '{markerId}' has no camera profile.";
+                return false;
+            }
+
+            return FpgFormalCameraPoseUtility.TryResolveShot(
+                worldPose,
+                profile,
+                out shot,
+                out error);
+        }
+
         public bool TryGetMarkerPose(string markerId, out Pose worldPose)
         {
             if (roomDefinition != null

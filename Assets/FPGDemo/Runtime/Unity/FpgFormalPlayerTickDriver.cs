@@ -159,6 +159,7 @@ namespace FPG.Demo.Unity
 
             presentationPaused = isPaused;
             coverTraversalPresenter?.SetPaused(isPaused);
+            cameraFeedback?.SetPaused(isPaused);
             SetAimViewportFrozen(isPaused);
 
             if (inputSource == null)
@@ -362,7 +363,6 @@ namespace FPG.Demo.Unity
             if (traversalPresenter == null
                 || !traversalPresenter.TryConfigure(
                     entity.VisualRoot,
-                    entity.CameraPivot,
                     out error))
             {
                 error = traversalPresenter == null
@@ -422,21 +422,21 @@ namespace FPG.Demo.Unity
             }
 
             error = string.Empty;
-            if (feedback == null || feedback.CameraRig == null
+            if (feedback == null || !feedback.IsPrepared
+                || feedback.CameraRig == null
                 || coverTraversalPresenter == null
                 || playerEntity == null
-                || !coverTraversalPresenter.TryConfigure(
-                    playerEntity.VisualRoot,
-                    feedback.CameraRig,
-                    out error))
+                || feedback.CameraRig == playerEntity.transform
+                || feedback.CameraRig.IsChildOf(playerEntity.transform))
             {
                 error = string.IsNullOrWhiteSpace(error)
-                    ? "Formal cover traversal requires the scene camera rig."
+                    ? "Formal cover traversal requires prepared scene-owned camera feedback."
                     : error;
                 return false;
             }
 
             cameraFeedback = feedback;
+            aimCamera = feedback.TargetCamera;
             error = string.Empty;
             return true;
         }
@@ -445,9 +445,12 @@ namespace FPG.Demo.Unity
         {
             if (!playerConfigured || playerDefinition == null
                 || playerEntity == null || threeCProfile == null
-                || skillExecutionController == null)
+                || skillExecutionController == null
+                || coverTraversalPresenter == null
+                || cameraFeedback == null
+                || !cameraFeedback.IsPrepared)
             {
-                error = "Formal player tick driver must be configured before runtime binding.";
+                error = "Formal player tick driver and scene camera feedback must be configured before runtime binding.";
                 return false;
             }
 
@@ -507,6 +510,7 @@ namespace FPG.Demo.Unity
 
         private void CaptureAimPose()
         {
+            cameraFeedback?.SynchronizeForAimSampling();
             if (!aimFromPointerPosition || aimCamera == null)
             {
                 inputSource.CaptureAimPose(aimAnchor);
@@ -959,6 +963,7 @@ namespace FPG.Demo.Unity
             playerSecondaryTriggerMode = default(SecondaryTriggerMode);
             aimAnchor = null;
             playerRoot = null;
+            cameraFeedback = null;
             SetAimSolution(FpgFormalAimSolution.Idle);
             playerConfigured = false;
             inputSource = null;
@@ -2104,19 +2109,52 @@ namespace FPG.Demo.Unity
 
             bool wasTraversing = covers.IsTraversing;
             Pose completedPose = default;
+            FpgResolvedCameraShot completedShot = default;
+            FpgCoverSnapshot completedSource = default;
+            FpgResolvedCameraShot completedSourceShot = default;
             if (wasTraversing && tick.IsValid
                 && tick >= covers.TraversalEndsTick)
             {
                 FpgCoverSnapshot target = covers.TargetSnapshot;
+                completedSource = covers.CurrentSnapshot;
                 if (coverTraversalPresenter == null
+                    || cameraFeedback == null
                     || encounterDirector == null
                     || !target.IsValid
-                    || !encounterDirector.TryResolveCoverReachablePose(
+                    || !completedSource.IsValid
+                    || !cameraFeedback.HasCommittedShot
+                    || !cameraFeedback.IsTransitioning
+                    || !encounterDirector
+                        .TryResolveCoverReachablePoseAndCameraShot(
                         target.CoverId,
-                        out completedPose))
+                        out completedPose,
+                        out _,
+                        out completedShot,
+                        out _))
                 {
                     covers.CancelTraversal();
                     coverTraversalPresenter?.Cancel();
+                    cameraFeedback?.CancelShotTransition();
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
+                completedSourceShot = cameraFeedback.CommittedShot;
+                if ((!cameraFeedback.TryCommitShotTransition(out _)
+                        && !cameraFeedback.TryApplyImmediateShot(
+                            completedShot,
+                            out _))
+                    || !encounterDirector.TryPlacePlayerAtCover(
+                        target.CoverId,
+                        out _))
+                {
+                    encounterDirector.TryPlacePlayerAtCover(
+                        completedSource.CoverId,
+                        out _);
+                    cameraFeedback.TryApplyImmediateShot(
+                        completedSourceShot,
+                        out _);
+                    covers.CancelTraversal();
+                    coverTraversalPresenter.Cancel();
                     return DomainResult.Rejected(RejectReason.InvalidState);
                 }
             }
@@ -2124,21 +2162,28 @@ namespace FPG.Demo.Unity
             DomainResult advanced = covers.Advance(tick, out bool completed);
             if (!advanced.IsSuccess)
             {
+                if (wasTraversing)
+                {
+                    if (completedSource.IsValid)
+                    {
+                        encounterDirector?.TryPlacePlayerAtCover(
+                            completedSource.CoverId,
+                            out _);
+                        cameraFeedback?.TryApplyImmediateShot(
+                            completedSourceShot,
+                            out _);
+                    }
+
+                    covers.CancelTraversal();
+                    coverTraversalPresenter?.Cancel();
+                    cameraFeedback?.CancelShotTransition();
+                }
                 return advanced;
             }
 
             if (completed)
             {
                 FpgCoverSnapshot current = covers.CurrentSnapshot;
-                if (encounterDirector == null
-                    || !encounterDirector.TryPlacePlayerAtCover(
-                        current.CoverId,
-                        out _))
-                {
-                    coverTraversalPresenter?.Cancel();
-                    return DomainResult.Rejected(RejectReason.InvalidState);
-                }
-
                 coverTraversalPresenter.Complete(completedPose);
 
                 if (current.IsDestroyed)
@@ -2172,21 +2217,37 @@ namespace FPG.Demo.Unity
                 }
 
                 if (coverTraversalPresenter == null
+                    || cameraFeedback == null
+                    || !cameraFeedback.HasCommittedShot
                     || encounterDirector == null
-                    || !encounterDirector.TryResolveCoverReachablePose(
+                    || !encounterDirector
+                        .TryResolveCoverReachablePoseAndCameraShot(
                         source.CoverId,
-                        out Pose sourcePose)
-                    || !encounterDirector.TryResolveCoverReachablePose(
+                        out Pose sourcePose,
+                        out _,
+                        out _,
+                        out _)
+                    || !encounterDirector
+                        .TryResolveCoverReachablePoseAndCameraShot(
                         target.CoverId,
-                        out Pose targetPose)
+                        out Pose targetPose,
+                        out _,
+                        out FpgResolvedCameraShot targetShot,
+                        out _)
                     || !coverTraversalPresenter.TryBegin(
                         sourcePose,
                         targetPose,
+                        threeCProfile.CoverTraversalSeconds,
+                        out _)
+                    || !cameraFeedback.TryBeginShotTransition(
+                        cameraFeedback.CommittedShot,
+                        targetShot,
                         threeCProfile.CoverTraversalSeconds,
                         out _))
                 {
                     covers.CancelTraversal();
                     coverTraversalPresenter?.Cancel();
+                    cameraFeedback?.CancelShotTransition();
                     return DomainResult.Rejected(RejectReason.InvalidState);
                 }
 
@@ -2201,6 +2262,7 @@ namespace FPG.Demo.Unity
                 {
                     covers.CancelTraversal();
                     coverTraversalPresenter.Cancel();
+                    cameraFeedback.CancelShotTransition();
                     return interrupted;
                 }
 
@@ -2452,12 +2514,14 @@ namespace FPG.Demo.Unity
                 {
                     coverTraversalPresenter.Cancel();
                 }
+                cameraFeedback?.CancelShotTransition();
                 return;
             }
 
             bool runtimeTraversing = covers.IsTraversing;
             if (!runtimeTraversing && !presentationPlaying)
             {
+                cameraFeedback?.CancelShotTransition();
                 return;
             }
 
@@ -2486,6 +2550,7 @@ namespace FPG.Demo.Unity
             }
 
             coverTraversalPresenter?.Cancel();
+            cameraFeedback?.CancelShotTransition();
         }
 
         public void ResetRuntimeState()

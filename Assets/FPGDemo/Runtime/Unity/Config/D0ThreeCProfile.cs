@@ -15,7 +15,7 @@ namespace FPG.Demo.Unity
         public static readonly Vector3 DefaultCoverLocalPosition =
             new Vector3(0.30f, 1.075f, 0.25f);
 
-        [D0PlannerSection("3C 配置标识与镜头构图")]
+        [D0PlannerSection("3C 配置标识")]
         [D0PlannerField("3C 配置 ID", "用于场景关联、校验和日志定位的稳定标识，不是战斗数值。创建后保持非空且稳定。")]
         [SerializeField]
         private string profileId = "fei-combatlab-2p5d";
@@ -25,47 +25,9 @@ namespace FPG.Demo.Unity
         private string displayName = "Fei CombatLab 2.5D";
 
         [TextArea]
-        [D0PlannerField("策划说明", "记录镜头、准星、护盾显示和射击反馈的调参意图；运行时不会读取此文本。")]
+        [D0PlannerField("策划说明", "记录准星、护盾显示和射击反馈的调参意图；运行时不会读取此文本。")]
         [SerializeField]
         private string designerNotes;
-
-        [D0PlannerSection("相机构图验收")]
-        [D0PlannerField("固定玩家构图锚点", "标准战斗中 Fei 固定在画面中下方的归一化视口坐标（x、y 均为 0～1）。它是场景构图和试玩验收锚点，不会移动出生点、玩家模型或命中位置。")]
-        [SerializeField]
-        private Vector2 fixedPlayerViewportAnchor = new Vector2(0.5f, 0.22f);
-
-        [D0PlannerField("镜头关注构图点", "标准战斗中 Burstbug 活动区的归一化视口关注点（x、y 均为 0～1）。它用于 CombatLab 构图验收；实际镜头摆位由舞台和相机安装共同确定。")]
-        [SerializeField]
-        private Vector2 cameraFocusViewport = new Vector2(0.5f, 0.56f);
-
-        [D0PlannerSection("相机安装参数")]
-        [D0PlannerField("相机枢轴位置（相对玩家）", "CameraPivot \u76f8\u5bf9 PlayerAnchor \u7684\u5c40\u90e8\u4f4d\u7f6e\u3002Play Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\u5230\u5f53\u524d\u8fd0\u884c\u573a\u666f\uff0c\u4e0b\u6b21\u542f\u52a8\u4e5f\u4f1a\u4ece 3C \u8d44\u4ea7\u8bfb\u53d6\uff1b\u4fee\u6539\u540e\u8bf7\u9a8c\u8bc1\u5c04\u51fb\u3002")]
-        [SerializeField]
-        private Vector3 cameraPivotLocalPosition = new Vector3(0f, 2.1f, -9f);
-
-        [D0PlannerField("相机枢轴旋转（度）", "CameraPivot \u76f8\u5bf9 PlayerAnchor \u7684\u5c40\u90e8\u6b27\u62c9\u89d2\u65cb\u8f6c\u3002Play Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\u5230\u5f53\u524d\u8fd0\u884c\u573a\u666f\uff0c\u4e0b\u6b21\u542f\u52a8\u4e5f\u4f1a\u4ece 3C \u8d44\u4ea7\u8bfb\u53d6\uff1b\u4fee\u6539\u540e\u8bf7\u9a8c\u8bc1\u5c04\u51fb\u3002")]
-        [SerializeField]
-        private Vector3 cameraPivotLocalEulerAngles = new Vector3(-1.85f, 0f, 0f);
-
-        [D0PlannerField("主相机相对枢轴位置", "Main Camera \u6302\u5230 CameraPivot \u540e\u7684\u5c40\u90e8\u4f4d\u7f6e\u3002Play Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\u5230\u5f53\u524d\u8fd0\u884c\u573a\u666f\uff0c\u4e0b\u6b21\u542f\u52a8\u4e5f\u4f1a\u4ece 3C \u8d44\u4ea7\u8bfb\u53d6\uff1b\u901a\u5e38\u4fdd\u6301\u96f6\u503c\u3002")]
-        [SerializeField]
-        private Vector3 cameraLocalPosition = Vector3.zero;
-
-        [D0PlannerField("主相机相对枢轴旋转（度）", "Main Camera \u6302\u5230 CameraPivot \u540e\u7684\u5c40\u90e8\u6b27\u62c9\u89d2\u65cb\u8f6c\u3002Play Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\u5230\u5f53\u524d\u8fd0\u884c\u573a\u666f\uff0c\u4e0b\u6b21\u542f\u52a8\u4e5f\u4f1a\u4ece 3C \u8d44\u4ea7\u8bfb\u53d6\uff1b\u901a\u5e38\u4fdd\u6301\u96f6\u503c\u3002")]
-        [SerializeField]
-        private Vector3 cameraLocalEulerAngles = Vector3.zero;
-
-        [D0PlannerField("相机视野角（度）", "Play Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\u5230\u4e3b\u76f8\u673a\uff0c\u4e0b\u6b21\u542f\u52a8\u4e5f\u4f1a\u4ece 3C \u8d44\u4ea7\u8bfb\u53d6\u3002\u5b83\u4f1a\u6539\u53d8\u5c4f\u5e55\u51c6\u661f\u6362\u7b97\u51fa\u7684\u7784\u51c6\u5c04\u7ebf\uff0c\u5fc5\u987b\u8fde\u540c\u5c04\u51fb\u9a8c\u8bc1\u4e00\u8d77\u68c0\u67e5\u3002")]
-        [SerializeField, Range(1f, 179f)]
-        private float cameraFieldOfView = 34f;
-
-        [D0PlannerField("相机近裁剪距离（世界单位）", "\u76f8\u673a\u5f00\u59cb\u6e32\u67d3\u7684\u6700\u8fd1\u8ddd\u79bb\u3002Play Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\uff1b\u53ea\u5f71\u54cd\u6e32\u67d3\u88c1\u526a\uff0c\u4e0d\u6539\u53d8\u653b\u51fb\u67e5\u8be2\u6700\u8fdc\u8ddd\u79bb\u3001\u547d\u4e2d\u6216\u4f24\u5bb3\u3002")]
-        [SerializeField, Min(0.01f)]
-        private float cameraNearClipPlane = 0.1f;
-
-        [D0PlannerField("相机远裁剪距离（世界单位）", "\u76f8\u673a\u505c\u6b62\u6e32\u67d3\u7684\u6700\u8fdc\u8ddd\u79bb\u3002\u5fc5\u987b\u5927\u4e8e\u8fd1\u88c1\u526a\u8ddd\u79bb\uff1bPlay Mode \u4e2d\u4fee\u6539\u4f1a\u81ea\u52a8\u5e94\u7528\u3002\u53ea\u5f71\u54cd\u6e32\u67d3\u88c1\u526a\uff0c\u4e0d\u6539\u53d8\u653b\u51fb\u67e5\u8be2\u6700\u8fdc\u8ddd\u79bb\u3001\u547d\u4e2d\u6216\u4f24\u5bb3\u3002")]
-        [SerializeField, Min(0.02f)]
-        private float cameraFarClipPlane = 80f;
 
         [D0PlannerSection("自由准星与攻击查询")]
         [D0PlannerField("准星活动安全区域（视口）", "虚拟准星可活动的归一化视口矩形；x、y、宽、高都以 0～1 表示。运行时会把准星限制在此区域内。")]
@@ -135,15 +97,6 @@ namespace FPG.Demo.Unity
         public string ProfileId => profileId;
         public string DisplayName => displayName;
         public string DesignerNotes => designerNotes;
-        public Vector2 FixedPlayerViewportAnchor => fixedPlayerViewportAnchor;
-        public Vector2 CameraFocusViewport => cameraFocusViewport;
-        public Vector3 CameraPivotLocalPosition => cameraPivotLocalPosition;
-        public Vector3 CameraPivotLocalEulerAngles => cameraPivotLocalEulerAngles;
-        public Vector3 CameraLocalPosition => cameraLocalPosition;
-        public Vector3 CameraLocalEulerAngles => cameraLocalEulerAngles;
-        public float CameraFieldOfView => cameraFieldOfView;
-        public float CameraNearClipPlane => cameraNearClipPlane;
-        public float CameraFarClipPlane => cameraFarClipPlane;
         public Rect ReticleSafeViewport => reticleSafeViewport;
         public float ReticleSensitivity => reticleSensitivity;
         public float MaximumAimDistance => maximumAimDistance;
@@ -168,30 +121,13 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (!IsViewportPoint(fixedPlayerViewportAnchor)
-                || !IsViewportPoint(cameraFocusViewport)
-                || !IsValidViewportRect(reticleSafeViewport))
+            if (!IsValidViewportRect(reticleSafeViewport))
             {
-                error = "D0 3C profile requires finite normalized composition and reticle-safe viewport values.";
+                error = "D0 3C profile requires finite normalized reticle-safe viewport values.";
                 return false;
             }
 
-            if (!IsFinite(cameraPivotLocalPosition)
-                || !IsFinite(cameraPivotLocalEulerAngles)
-                || !IsFinite(cameraLocalPosition)
-                || !IsFinite(cameraLocalEulerAngles))
-            {
-                error = "D0 3C profile requires finite camera transform values.";
-                return false;
-            }
-
-            if (!IsFinitePositive(cameraFieldOfView)
-                || cameraFieldOfView <= 1f
-                || cameraFieldOfView >= 179f
-                || !IsFinitePositive(cameraNearClipPlane)
-                || !IsFinitePositive(cameraFarClipPlane)
-                || cameraFarClipPlane <= cameraNearClipPlane
-                || !IsFinitePositive(reticleSensitivity)
+            if (!IsFinitePositive(reticleSensitivity)
                 || !IsFinitePositive(maximumAimDistance)
                 || inputBufferTicks < 1
                 || inputBufferTicks > 32
@@ -208,7 +144,7 @@ namespace FPG.Demo.Unity
                 || !IsFiniteNonNegative(secondaryShotCameraKick)
                 || !IsFinitePositive(shotCameraKickRecoverySeconds))
             {
-                error = "D0 3C profile contains invalid camera or tuning values.";
+                error = "D0 3C profile contains invalid tuning values.";
                 return false;
             }
 
@@ -228,16 +164,6 @@ namespace FPG.Demo.Unity
                 && value.height > 0f
                 && value.xMax <= 1f
                 && value.yMax <= 1f;
-        }
-
-        private static bool IsViewportPoint(Vector2 value)
-        {
-            return IsFinite(value.x)
-                && IsFinite(value.y)
-                && value.x >= 0f
-                && value.x <= 1f
-                && value.y >= 0f
-                && value.y <= 1f;
         }
 
         private static bool IsFinite(Color value)

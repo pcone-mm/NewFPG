@@ -314,6 +314,25 @@ namespace FPG.Demo.Unity
 
                 if (marker is FpgRoomCoverSlot cover)
                 {
+                    if (cover.CameraProfile == null)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.MissingCoverCameraProfile,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' requires a camera profile.");
+                    }
+                    else if (!cover.CameraProfile.TryValidate(
+                        out string cameraProfileError))
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.InvalidCoverCameraProfile,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' has an invalid camera profile: "
+                                + cameraProfileError);
+                    }
+
                     if (cover.Prefab == null)
                     {
                         AddMarkerError(

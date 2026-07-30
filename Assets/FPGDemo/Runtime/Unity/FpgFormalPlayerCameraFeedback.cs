@@ -4,9 +4,9 @@ using UnityEngine;
 namespace FPG.Demo.Unity
 {
     /// <summary>
-    /// Scene-owned formal camera rig. It applies the selected 3C pose only
-    /// after the player has been placed and keeps recoil as a visual-only local
-    /// offset, leaving the deterministic aim origin untouched.
+    /// Owns the complete state of the scene formal camera. Cover composition
+    /// is represented by resolved shots; recoil and shake are presentation-only
+    /// offsets applied after the current base shot every rendered frame.
     /// </summary>
     [DefaultExecutionOrder(920)]
     [DisallowMultipleComponent]
@@ -16,7 +16,6 @@ namespace FPG.Demo.Unity
         [SerializeField] private Camera targetCamera;
 
         private D0ThreeCProfile threeCProfile;
-        private Vector3 baselineLocalPosition;
         private Vector3 authoredRigPosition;
         private Quaternion authoredRigRotation;
         private Vector3 authoredCameraLocalPosition;
@@ -24,17 +23,27 @@ namespace FPG.Demo.Unity
         private float authoredFieldOfView;
         private float authoredNearClipPlane;
         private float authoredFarClipPlane;
+        private bool hasAuthoredPose;
+
+        private FpgResolvedCameraShot committedShot;
+        private FpgResolvedCameraShot currentBaseShot;
+        private FpgResolvedCameraShot transitionSourceShot;
+        private FpgResolvedCameraShot transitionTargetShot;
+        private float transitionDuration;
+        private float transitionElapsed;
+        private bool hasCommittedShot;
+        private bool hasCurrentBaseShot;
+        private bool isTransitioning;
+
         private float currentKick;
-        private Quaternion baselineLocalRotation;
         private CombatCameraShakePresentation shakePresentation;
         private ShakeImpulse[] shakeImpulses = System.Array.Empty<ShakeImpulse>();
         private float shakeClock;
         private Vector3 currentShakePosition;
         private float currentShakeRotation;
-        private bool hasBaseline;
-        private bool hasAuthoredPose;
         private bool rigApplied;
         private bool paused;
+        private int lastSynchronizedFrame = -1;
 
         public Transform CameraRig => cameraRig;
         public Camera TargetCamera => targetCamera;
@@ -42,27 +51,43 @@ namespace FPG.Demo.Unity
         public float CurrentKick => currentKick;
         public float CurrentShakeStrength { get; private set; }
         public int ShakeRejectCount { get; private set; }
-        public bool IsPrepared => threeCProfile != null && hasBaseline;
+        public bool IsPrepared => threeCProfile != null
+            && cameraRig != null
+            && targetCamera != null
+            && shakePresentation != null
+            && shakeImpulses.Length > 0;
         public bool IsRigApplied => rigApplied;
+        public bool HasCommittedShot => hasCommittedShot;
+        public bool IsTransitioning => isTransitioning;
+        public bool IsPaused => paused;
+        public FpgResolvedCameraShot CommittedShot => committedShot;
+        public FpgResolvedCameraShot CurrentBaseShot => currentBaseShot;
+        public FpgResolvedCameraShot TransitionTargetShot =>
+            transitionTargetShot;
+        public float TransitionProgress => !isTransitioning
+            ? 0f
+            : transitionDuration <= 0f
+                ? 1f
+                : Mathf.Clamp01(transitionElapsed / transitionDuration);
 
         /// <summary>
-        /// World-space offset introduced by recoil for diagnostics. Gameplay
-        /// aiming uses the rendered camera ray directly so off-center reticles stay aligned.
+        /// World-space offset introduced by recoil and shake for diagnostics.
+        /// Gameplay aiming continues to use the rendered Camera ray.
         /// </summary>
         public Vector3 CurrentWorldPresentationOffset
         {
             get
             {
-                if (targetCamera == null || !hasBaseline)
+                if (targetCamera == null || cameraRig == null
+                    || !hasCurrentBaseShot)
                 {
                     return Vector3.zero;
                 }
 
-                Transform parent = targetCamera.transform.parent;
-                Vector3 baselineWorldPosition = parent == null
-                    ? baselineLocalPosition
-                    : parent.TransformPoint(baselineLocalPosition);
-                return targetCamera.transform.position - baselineWorldPosition;
+                Vector3 baselineWorldPosition = cameraRig.TransformPoint(
+                    currentBaseShot.CameraLocalPose.position);
+                return targetCamera.transform.position
+                    - baselineWorldPosition;
             }
         }
 
@@ -73,39 +98,43 @@ namespace FPG.Demo.Unity
 
         private void OnDisable()
         {
-            RestoreBaseline();
             currentKick = 0f;
             ClearShakes();
             paused = false;
+            ApplyCurrentShotWithFeedback();
         }
 
         private void LateUpdate()
         {
-            if (!IsPrepared || !rigApplied)
+            SynchronizeForCurrentFrame();
+        }
+
+        public void SynchronizeForAimSampling()
+        {
+            SynchronizeForCurrentFrame();
+        }
+
+        private void SynchronizeForCurrentFrame()
+        {
+            if (!IsPrepared || !rigApplied || !hasCurrentBaseShot)
             {
                 return;
             }
 
-            if (!paused)
+            int frame = Time.frameCount;
+            if (lastSynchronizedFrame != frame)
             {
-                float recovery = threeCProfile.ShotCameraKickRecoverySeconds;
-                if (recovery > 0f)
+                if (!paused)
                 {
-                    float maximumKick = Mathf.Max(
-                        0.001f,
-                        Mathf.Max(
-                            threeCProfile.PrimaryShotCameraKick,
-                            threeCProfile.SecondaryShotCameraKick));
-                    currentKick = Mathf.MoveTowards(
-                        currentKick,
-                        0f,
-                        maximumKick * Time.unscaledDeltaTime / recovery);
+                    AdvanceShotTransition(Time.deltaTime);
+                    AdvanceKick(Time.unscaledDeltaTime);
+                    AdvanceShakes(Time.unscaledDeltaTime);
                 }
 
-                AdvanceShakes(Time.unscaledDeltaTime);
+                lastSynchronizedFrame = frame;
             }
 
-            ApplyCameraLocalOffset();
+            ApplyCurrentShotWithFeedback();
         }
 
         public bool TryPrepare(
@@ -118,7 +147,7 @@ namespace FPG.Demo.Unity
         {
             if (profile == null)
             {
-                error = "Formal camera feedback requires a D0 3C profile.";
+                error = "Formal camera feedback requires a D0 3C profile for recoil settings.";
                 return false;
             }
 
@@ -150,41 +179,44 @@ namespace FPG.Demo.Unity
             cameraRig = nextCameraRig;
             shakePresentation = nextShakePresentation;
             shakeImpulses = new ShakeImpulse[shakeCapacity];
-            rigApplied = false;
+            hasAuthoredPose = false;
+            CaptureAuthoringPose();
+
             currentKick = 0f;
             shakeClock = 0f;
             currentShakePosition = Vector3.zero;
             currentShakeRotation = 0f;
             CurrentShakeStrength = 0f;
             ShakeRejectCount = 0;
+            rigApplied = false;
             paused = false;
-            hasAuthoredPose = false;
-            CaptureAuthoringPose();
-            baselineLocalPosition = profile.CameraLocalPosition;
-            baselineLocalRotation = Quaternion.Euler(
-                profile.CameraLocalEulerAngles);
-            hasBaseline = true;
+            hasCommittedShot = false;
+            hasCurrentBaseShot = false;
+            isTransitioning = false;
+            transitionDuration = 0f;
+            transitionElapsed = 0f;
+            committedShot = default;
+            currentBaseShot = default;
+            transitionSourceShot = default;
+            transitionTargetShot = default;
+            lastSynchronizedFrame = -1;
             error = string.Empty;
             return true;
         }
 
-        /// <summary>
-        /// Applies the fixed rig pose relative to the placed player. The rig
-        /// remains scene-owned; the player entity is never reparented to it.
-        /// </summary>
-        public bool TryApplyFixedSceneRig(
-            Transform playerRoot,
+        public bool TryApplyImmediateShot(
+            in FpgResolvedCameraShot shot,
             out string error)
         {
             if (!IsPrepared)
             {
-                error = "Formal camera feedback must be prepared before applying its rig.";
+                error = "Formal camera feedback must be prepared before applying a shot.";
                 return false;
             }
 
-            if (!FpgFormalCameraPoseUtility.TryApplyFixedPose(
-                    threeCProfile,
-                    playerRoot,
+            if (!shot.TryValidate(out error)
+                || !FpgFormalCameraPoseUtility.TryApplyShot(
+                    shot,
                     cameraRig,
                     targetCamera,
                     out error))
@@ -192,18 +224,169 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            baselineLocalPosition = threeCProfile.CameraLocalPosition;
-            hasBaseline = true;
-            baselineLocalRotation = targetCamera.transform.localRotation;
-            currentKick = 0f;
-            ClearShakes();
+            committedShot = shot;
+            currentBaseShot = shot;
+            transitionSourceShot = default;
+            transitionTargetShot = default;
+            transitionDuration = 0f;
+            transitionElapsed = 0f;
+            hasCommittedShot = true;
+            hasCurrentBaseShot = true;
+            isTransitioning = false;
             rigApplied = true;
-            ApplyCameraLocalOffset();
+            ApplyCurrentShotWithFeedback();
             error = string.Empty;
             return true;
         }
 
-        public void PresentCommittedAction(in FpgFormalPlayerActionEvent action)
+        public bool TryBeginShotTransition(
+            in FpgResolvedCameraShot source,
+            in FpgResolvedCameraShot target,
+            float durationSeconds,
+            out string error)
+        {
+            if (!IsPrepared)
+            {
+                error = "Formal camera feedback must be prepared before starting a shot transition.";
+                return false;
+            }
+
+            if (isTransitioning)
+            {
+                error = "Formal camera shot transition is already active.";
+                return false;
+            }
+
+            if (!source.TryValidate(out error)
+                || !target.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (float.IsNaN(durationSeconds)
+                || float.IsInfinity(durationSeconds)
+                || durationSeconds <= 0f)
+            {
+                error = "Formal camera shot transition requires a finite positive duration.";
+                return false;
+            }
+
+            if (!FpgFormalCameraPoseUtility.TryApplyShot(
+                    source,
+                    cameraRig,
+                    targetCamera,
+                    out error))
+            {
+                return false;
+            }
+
+            committedShot = source;
+            currentBaseShot = source;
+            transitionSourceShot = source;
+            transitionTargetShot = target;
+            transitionDuration = durationSeconds;
+            transitionElapsed = 0f;
+            hasCommittedShot = true;
+            hasCurrentBaseShot = true;
+            isTransitioning = true;
+            rigApplied = true;
+            ApplyCurrentShotWithFeedback();
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryBeginShotTransition(
+            in FpgResolvedCameraShot target,
+            float durationSeconds,
+            out string error)
+        {
+            if (!hasCommittedShot)
+            {
+                error = "Formal camera shot transition requires a committed source shot.";
+                return false;
+            }
+
+            return TryBeginShotTransition(
+                committedShot,
+                target,
+                durationSeconds,
+                out error);
+        }
+
+        public bool TryCommitShotTransition(out string error)
+        {
+            if (!IsPrepared || !isTransitioning)
+            {
+                error = "Formal camera has no active shot transition to commit.";
+                return false;
+            }
+
+            if (!FpgFormalCameraPoseUtility.TryApplyShot(
+                    transitionTargetShot,
+                    cameraRig,
+                    targetCamera,
+                    out error))
+            {
+                return false;
+            }
+
+            currentBaseShot = transitionTargetShot;
+            committedShot = transitionTargetShot;
+            transitionSourceShot = default;
+            transitionTargetShot = default;
+            transitionDuration = 0f;
+            transitionElapsed = 0f;
+            hasCommittedShot = true;
+            hasCurrentBaseShot = true;
+            isTransitioning = false;
+            ApplyCurrentShotWithFeedback();
+            error = string.Empty;
+            return true;
+        }
+
+        public void CancelShotTransition()
+        {
+            isTransitioning = false;
+            transitionSourceShot = default;
+            transitionTargetShot = default;
+            transitionDuration = 0f;
+            transitionElapsed = 0f;
+            if (hasCommittedShot)
+            {
+                currentBaseShot = committedShot;
+                hasCurrentBaseShot = true;
+                rigApplied = true;
+            }
+
+            ApplyCurrentShotWithFeedback();
+        }
+
+        public void AdvanceShotTransition(float deltaTime)
+        {
+            if (!isTransitioning || paused
+                || float.IsNaN(deltaTime)
+                || float.IsInfinity(deltaTime)
+                || deltaTime <= 0f)
+            {
+                return;
+            }
+
+            transitionElapsed = Mathf.Min(
+                transitionDuration,
+                transitionElapsed + deltaTime);
+            float progress = transitionDuration <= 0f
+                ? 1f
+                : transitionElapsed / transitionDuration;
+            float eased = Mathf.SmoothStep(0f, 1f, progress);
+            currentBaseShot = FpgFormalCameraPoseUtility.Interpolate(
+                transitionSourceShot,
+                transitionTargetShot,
+                eased);
+            hasCurrentBaseShot = true;
+        }
+
+        public void PresentCommittedAction(
+            in FpgFormalPlayerActionEvent action)
         {
             if (!IsPrepared || !rigApplied)
             {
@@ -224,7 +407,7 @@ namespace FPG.Demo.Unity
                     break;
             }
 
-            ApplyCameraLocalOffset();
+            ApplyCurrentShotWithFeedback();
         }
 
         public void ResetRuntimeFeedback()
@@ -232,19 +415,11 @@ namespace FPG.Demo.Unity
             currentKick = 0f;
             ClearShakes();
             paused = false;
-            if (rigApplied)
-            {
-                ApplyCameraLocalOffset();
-            }
+            CancelShotTransition();
         }
 
         public void SetPaused(bool nextPaused)
         {
-            if (nextPaused && !paused)
-            {
-                ClearPresentationShake();
-            }
-
             paused = nextPaused;
         }
 
@@ -267,7 +442,9 @@ namespace FPG.Demo.Unity
                 }
 
                 shakeImpulses[index] = new ShakeImpulse(
-                    Mathf.Min(strength, shakePresentation.MaxCombinedStrength),
+                    Mathf.Min(
+                        strength,
+                        shakePresentation.MaxCombinedStrength),
                     duration);
                 return true;
             }
@@ -279,7 +456,7 @@ namespace FPG.Demo.Unity
         public void ClearPresentationShake()
         {
             ClearShakes();
-            ApplyCameraLocalOffset();
+            ApplyCurrentShotWithFeedback();
         }
 
         public bool TryValidate(out string error)
@@ -296,7 +473,14 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (threeCProfile != null && !threeCProfile.TryValidate(out error))
+            if (threeCProfile != null
+                && !threeCProfile.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (hasCurrentBaseShot
+                && !currentBaseShot.TryValidate(out error))
             {
                 return false;
             }
@@ -315,20 +499,32 @@ namespace FPG.Demo.Unity
             threeCProfile = null;
             shakePresentation = null;
             shakeImpulses = System.Array.Empty<ShakeImpulse>();
-            hasBaseline = false;
+            hasCommittedShot = false;
+            hasCurrentBaseShot = false;
+            isTransitioning = false;
+            transitionDuration = 0f;
+            transitionElapsed = 0f;
+            committedShot = default;
+            currentBaseShot = default;
+            transitionSourceShot = default;
+            transitionTargetShot = default;
+            lastSynchronizedFrame = -1;
         }
 
         private void CaptureAuthoringPose()
         {
-            if (targetCamera == null || cameraRig == null || hasAuthoredPose)
+            if (targetCamera == null || cameraRig == null
+                || hasAuthoredPose)
             {
                 return;
             }
 
             authoredRigPosition = cameraRig.position;
             authoredRigRotation = cameraRig.rotation;
-            authoredCameraLocalPosition = targetCamera.transform.localPosition;
-            authoredCameraLocalRotation = targetCamera.transform.localRotation;
+            authoredCameraLocalPosition =
+                targetCamera.transform.localPosition;
+            authoredCameraLocalRotation =
+                targetCamera.transform.localRotation;
             authoredFieldOfView = targetCamera.fieldOfView;
             authoredNearClipPlane = targetCamera.nearClipPlane;
             authoredFarClipPlane = targetCamera.farClipPlane;
@@ -337,40 +533,75 @@ namespace FPG.Demo.Unity
 
         private void RestoreAuthoringPose()
         {
-            if (!hasAuthoredPose || targetCamera == null || cameraRig == null)
+            if (!hasAuthoredPose || targetCamera == null
+                || cameraRig == null)
             {
                 return;
             }
 
-            cameraRig.SetPositionAndRotation(authoredRigPosition, authoredRigRotation);
-            targetCamera.transform.localPosition = authoredCameraLocalPosition;
-            targetCamera.transform.localRotation = authoredCameraLocalRotation;
+            cameraRig.SetPositionAndRotation(
+                authoredRigPosition,
+                authoredRigRotation);
+            targetCamera.transform.localPosition =
+                authoredCameraLocalPosition;
+            targetCamera.transform.localRotation =
+                authoredCameraLocalRotation;
             targetCamera.fieldOfView = authoredFieldOfView;
             targetCamera.nearClipPlane = authoredNearClipPlane;
             targetCamera.farClipPlane = authoredFarClipPlane;
         }
 
-        private void RestoreBaseline()
+        private void ApplyCurrentShotWithFeedback()
         {
-            if (targetCamera != null && hasBaseline)
-            {
-                targetCamera.transform.localPosition = baselineLocalPosition;
-                targetCamera.transform.localRotation = baselineLocalRotation;
-            }
-        }
-
-        private void ApplyCameraLocalOffset()
-        {
-            if (targetCamera == null || !hasBaseline)
+            if (targetCamera == null || cameraRig == null
+                || !hasCurrentBaseShot)
             {
                 return;
             }
 
-            targetCamera.transform.localPosition = baselineLocalPosition
-                + Vector3.back * currentKick
+            if (!FpgFormalCameraPoseUtility.TryApplyShot(
+                    currentBaseShot,
+                    cameraRig,
+                    targetCamera,
+                    out _))
+            {
+                return;
+            }
+
+            Vector3 cameraSpaceOffset = Vector3.back * currentKick
                 + currentShakePosition;
-            targetCamera.transform.localRotation = baselineLocalRotation
+            targetCamera.transform.localPosition =
+                currentBaseShot.CameraLocalPose.position
+                + currentBaseShot.CameraLocalPose.rotation
+                    * cameraSpaceOffset;
+            targetCamera.transform.localRotation =
+                currentBaseShot.CameraLocalPose.rotation
                 * Quaternion.Euler(0f, 0f, currentShakeRotation);
+        }
+
+        private void AdvanceKick(float deltaTime)
+        {
+            if (deltaTime <= 0f || currentKick <= 0f)
+            {
+                return;
+            }
+
+            float recovery = threeCProfile.ShotCameraKickRecoverySeconds;
+            if (recovery <= 0f)
+            {
+                currentKick = 0f;
+                return;
+            }
+
+            float maximumKick = Mathf.Max(
+                0.001f,
+                Mathf.Max(
+                    threeCProfile.PrimaryShotCameraKick,
+                    threeCProfile.SecondaryShotCameraKick));
+            currentKick = Mathf.MoveTowards(
+                currentKick,
+                0f,
+                maximumKick * deltaTime / recovery);
         }
 
         private void AdvanceShakes(float deltaTime)
@@ -392,7 +623,9 @@ namespace FPG.Demo.Unity
 
                 combinedStrength += impulse.Strength
                     * Mathf.Clamp01(impulse.Remaining / impulse.Duration);
-                impulse.Remaining = Mathf.Max(0f, impulse.Remaining - deltaTime);
+                impulse.Remaining = Mathf.Max(
+                    0f,
+                    impulse.Remaining - deltaTime);
                 shakeImpulses[index] = impulse;
             }
 
@@ -430,7 +663,10 @@ namespace FPG.Demo.Unity
         {
             if (shakeImpulses.Length > 0)
             {
-                System.Array.Clear(shakeImpulses, 0, shakeImpulses.Length);
+                System.Array.Clear(
+                    shakeImpulses,
+                    0,
+                    shakeImpulses.Length);
             }
 
             shakeClock = 0f;
@@ -454,7 +690,3 @@ namespace FPG.Demo.Unity
         }
     }
 }
-
-
-
-

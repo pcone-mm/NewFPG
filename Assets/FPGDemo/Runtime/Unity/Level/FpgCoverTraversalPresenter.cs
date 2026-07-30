@@ -2,6 +2,7 @@ using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
+    [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
     public sealed class FpgCoverTraversalPresenter : MonoBehaviour
     {
@@ -10,15 +11,8 @@ namespace FPG.Demo.Unity
 
         private FpgCoverTransitionEffectView transitionEffect;
         private Transform playerVisualRoot;
-        private Transform cameraPivot;
         private Pose sourcePose;
         private Pose targetPose;
-        private Vector3 cameraStartPosition;
-        private Quaternion cameraStartRotation;
-        private Vector3 cameraEndPosition;
-        private Quaternion cameraEndRotation;
-        private Vector3 cameraAuthoredLocalPosition;
-        private Quaternion cameraAuthoredLocalRotation;
         private float duration;
         private float elapsed;
         private bool visualWasActive = true;
@@ -36,24 +30,19 @@ namespace FPG.Demo.Unity
             paused = value;
         }
 
-        public bool TryConfigure(
-            Transform visualRoot,
-            Transform configuredCameraPivot,
-            out string error)
+        public bool TryConfigure(Transform visualRoot, out string error)
         {
             error = string.Empty;
-            if (visualRoot == null || configuredCameraPivot == null
-                || transitionEffectPrefab == null
+            if (visualRoot == null || transitionEffectPrefab == null
                 || !transitionEffectPrefab.TryValidate(out error))
             {
                 error = string.IsNullOrEmpty(error)
-                    ? "Cover traversal presenter requires player visual, camera pivot and a valid effect Prefab."
+                    ? "Cover traversal presenter requires player visual and a valid effect Prefab."
                     : error;
                 return false;
             }
 
             playerVisualRoot = visualRoot;
-            cameraPivot = configuredCameraPivot;
             EnsureEffectInstance();
             error = string.Empty;
             return true;
@@ -65,7 +54,7 @@ namespace FPG.Demo.Unity
             float traversalSeconds,
             out string error)
         {
-            if (IsPlaying || playerVisualRoot == null || cameraPivot == null
+            if (IsPlaying || playerVisualRoot == null
                 || transitionEffect == null
                 || float.IsNaN(traversalSeconds)
                 || float.IsInfinity(traversalSeconds)
@@ -83,18 +72,6 @@ namespace FPG.Demo.Unity
             visualWasActive = playerVisualRoot.gameObject.activeSelf;
             playerVisualRoot.gameObject.SetActive(false);
 
-            cameraAuthoredLocalPosition = cameraPivot.localPosition;
-            cameraAuthoredLocalRotation = cameraPivot.localRotation;
-            cameraStartPosition = cameraPivot.position;
-            cameraStartRotation = cameraPivot.rotation;
-            cameraEndPosition = target.position
-                + target.rotation
-                    * Quaternion.Inverse(source.rotation)
-                    * (cameraStartPosition - source.position);
-            cameraEndRotation = target.rotation
-                * Quaternion.Inverse(source.rotation)
-                * cameraStartRotation;
-
             transitionEffect.Begin(source.position);
             IsPlaying = true;
             error = string.Empty;
@@ -110,7 +87,6 @@ namespace FPG.Demo.Unity
 
             transitionEffect.SetOrbPosition(destination.position);
             transitionEffect.Complete(destination.position);
-            CommitCameraDestination();
             RestorePlayerPresentation();
         }
 
@@ -150,15 +126,6 @@ namespace FPG.Demo.Unity
                 targetPose.position,
                 eased);
             transitionEffect.SetOrbPosition(orbPosition);
-            cameraPivot.SetPositionAndRotation(
-                Vector3.LerpUnclamped(
-                    cameraStartPosition,
-                    cameraEndPosition,
-                    eased),
-                Quaternion.SlerpUnclamped(
-                    cameraStartRotation,
-                    cameraEndRotation,
-                    eased));
         }
 
         private void EnsureEffectInstance()
@@ -180,31 +147,9 @@ namespace FPG.Demo.Unity
                 playerVisualRoot.gameObject.SetActive(visualWasActive);
             }
 
-            if (cameraPivot != null)
-            {
-                cameraPivot.localPosition = cameraAuthoredLocalPosition;
-                cameraPivot.localRotation = cameraAuthoredLocalRotation;
-            }
-
             paused = false;
             IsPlaying = false;
             elapsed = 0f;
-        }
-
-        private void CommitCameraDestination()
-        {
-            if (cameraPivot == null)
-            {
-                return;
-            }
-
-            Transform parent = cameraPivot.parent;
-            cameraAuthoredLocalPosition = parent == null
-                ? cameraEndPosition
-                : parent.InverseTransformPoint(cameraEndPosition);
-            cameraAuthoredLocalRotation = parent == null
-                ? cameraEndRotation
-                : Quaternion.Inverse(parent.rotation) * cameraEndRotation;
         }
     }
 }

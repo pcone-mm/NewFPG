@@ -6,6 +6,16 @@
 
 旧 CombatLab、BattleSessionHost、BattleSceneContext、D0 Stage 和替换 Scenario 不得作为回退路径。
 
+## 正式镜头合同
+
+- `FormalRoom` 只拥有一套正式 Camera Rig 和一台 Camera。切掩体、重开和跨房都复用它，瞄准射线、HUD、体积雾、灯光与 Art Scene 表现绑定不得重绑到临时 Camera。
+- 每个 `FpgRoomCoverSlot` 必须引用有效的 `FpgCoverCameraProfile`。运行时用玩家世界 Pose 与该 Profile 解析不可变 `FpgResolvedCameraShot`；角色 `D0ThreeCProfile` 不再提供静态构图、FOV 或裁剪面兜底。
+- `FpgFormalPlayerCameraFeedback` 是镜头状态的唯一所有者。它先求当前基础 Shot，再叠加后坐与震屏；其他组件不得直接移动 Camera Rig 或在 LateUpdate 后覆盖镜头。
+- 初始入场的源 Shot 使用起始掩体 Profile 和玩家入口 Pose，目标 Shot 使用同一 Profile 和起始掩体到达 Pose。
+- 普通掩体移动同时启动角色过渡表现与 Shot 过渡，二者共用 `D0ThreeCProfile.CoverTraversalSeconds` 和 `SmoothStep`。位置、旋转、FOV 与裁剪面都参与插值。
+- 到达时先提交目标 Shot 和玩家 Pose，再允许下一个战斗 Tick。取消或故障时恢复当前已提交掩体 Shot；暂停同时冻结角色和镜头过渡。
+- 过渡不清空后坐或震屏，它们作为独立增量继续衰减。清理正式运行时恢复 FormalRoom 中 authored Camera Rig 状态。
+
 ## 技能时钟与执行
 
 - `FPG.Skills` 的 60Hz 整数 Tick 时间轴是角色与怪物技能的唯一时序权威，项目 Fixed Timestep 固定为 `1/60`。
@@ -22,7 +32,7 @@
 
 1. Boot 解析角色与房间选择。
 2. FormalRoom 在 inactive staging root 组合玩家、端口、Director、Session 和表现桥。
-3. 所有引用、容量、ID、动画与房间 marker 校验通过后才激活实体。
+3. 所有引用、容量、ID、动画、房间 marker 与掩体镜头 Profile 校验通过后才激活实体。
 4. 清场后 Director 生成出口 offer；确认选择后先捕获玩家 run resources，再释放当前 session 与房间实例。
 5. 目标房间或资源恢复失败时进入 fault，不保留半初始化对象，也不回退旧链。
 
@@ -74,7 +84,7 @@
 
 ## 验证
 
-默认执行 Unity 编译/Console、正式场景依赖闭包、技能资产预检和 EditMode 静态合同检查。玩家技能重点检查双模式 payload 一致、`holdUntilCanceled`、30 Tick 进度、取消不扣弹、后摇抢占和表现清理；事务修改重点检查 `FpgMultiEnemyCombatTransactionTests.cs`、`FpgFormalEnemySkillSchedulerTests.cs` 与 `FpgPlayerSkillExecutionControllerTests.cs`，跨房检查选择模式与玩家资源均被正确恢复。
+默认执行 Unity 编译/Console、正式场景依赖闭包、技能资产预检和 EditMode 静态合同检查。镜头修改重点检查 Profile 校验、Shot 解析/插值、房间硬校验、过渡提交/取消、后坐/震屏叠加以及整房复制的共享拓扑；PlayMode 检查初始入场、左右移动、瞄准射线对齐和跨房 Camera 引用不变。玩家技能重点检查双模式 payload 一致、`holdUntilCanceled`、30 Tick 进度、取消不扣弹、后摇抢占和表现清理；事务修改重点检查 `FpgMultiEnemyCombatTransactionTests.cs`、`FpgFormalEnemySkillSchedulerTests.cs` 与 `FpgPlayerSkillExecutionControllerTests.cs`，跨房检查选择模式与玩家资源均被正确恢复。
 
 PlayMode 的动作观感、命中反馈和完整试玩由人工验收；自动化只验证动画开始、攻击提交、VFX/SFX 与 Combat Trace 使用同一 Execution/Event ID 和 Tick 的可观测合同。
 
@@ -89,3 +99,4 @@ PlayMode 的动作观感、命中反馈和完整试玩由人工验收；自动�
 6. Burstbug、Hudie、Luan 的预警、动作与逻辑事件分别在迁移后的精确 Tick 触发；Luan 保持 ReplaceOwner、OwnerPosition，并由 Tick 71 的空绑定 `SelfDestructOwner` 节点按配置结束 owner。
 7. 每次成功提交的动画、VFX/SFX、Combat Trace 使用相同 Execution ID、Event ID 与 Tick；被取消或失败的事件不产生 Attack/Shot ID。
 8. 观察 60 次 FixedUpdate 约等于一秒，并确认硬打断只取消尚未触发的事件。
+9. 逐个掩体检查 16:9 构图、玩家参考点、场景裁剪、FOV、后坐/震屏和过渡观感；完成、取消、暂停、重开与跨房后 Camera 不跳回旧 3C 构图。

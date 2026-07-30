@@ -10,12 +10,23 @@
             <uie:ToolbarButton name="save-room-button" text="保存关卡" tooltip="保存 RoomDefinition 与当前关卡美术场景" />
             <uie:ToolbarButton name="frame-room-button" text="聚焦" tooltip="在 SceneView 中聚焦所选标记或房间" />
         </uie:Toolbar>
-        <ui:VisualElement class="camera-preview-toolbar">
-            <ui:Label text="&#x6B63;&#x5F0F;&#x955C;&#x5934;" class="toolbar-label" />
-            <uie:ObjectField name="camera-template-field" label="&#x6A21;&#x677F;" class="camera-template-field" />
-            <ui:Button name="apply-camera-preview-button" text="&#x5E94;&#x7528;&#x9884;&#x89C8;" tooltip="&#x5728; 16:9 Game View &#x9884;&#x89C8;&#x5F53;&#x524D;&#x623F;&#x95F4;" />
-            <ui:Button name="stop-camera-preview-button" text="&#x5173;&#x95ED;&#x9884;&#x89C8;" tooltip="&#x79FB;&#x9664;&#x4E34;&#x65F6;&#x955C;&#x5934;&#x5E76;&#x6062;&#x590D; Game View &#x753B;&#x5E45;" />
-            <ui:Label name="camera-preview-state-label" text="&#x672A;&#x542F;&#x7528;" class="camera-preview-state" />
+        <ui:VisualElement class="camera-preview-panel">
+            <ui:VisualElement class="camera-preview-toolbar">
+                <ui:Label text="掩体镜头" class="toolbar-label" />
+                <uie:ObjectField name="camera-template-field" label="镜头模板" class="camera-template-field" />
+                <uie:ObjectField name="preview-character-field" label="预览角色" class="preview-character-field" />
+                <ui:Button name="apply-camera-preview-button" text="开启预览" tooltip="从起始掩体开启临时 16:9 Game View 预览" />
+                <ui:Button name="stop-camera-preview-button" text="关闭预览" tooltip="清理临时预览对象并恢复 Game View 画幅" />
+                <ui:Label name="camera-preview-state-label" text="未启用" class="camera-preview-state" />
+            </ui:VisualElement>
+            <ui:VisualElement class="camera-preview-actions">
+                <ui:Button name="previous-camera-cover-button" text="上一掩体" tooltip="预览上一个掩体镜头" />
+                <ui:Button name="next-camera-cover-button" text="下一掩体" tooltip="预览下一个掩体镜头" />
+                <ui:Button name="preview-camera-transition-button" text="过渡预览" tooltip="从上次查看的掩体重放镜头过渡" />
+                <ui:Button name="capture-scene-view-camera-button" text="捕获 Scene View" tooltip="将当前 Scene View 位姿与镜头参数写入所选掩体配置" />
+                <ui:Button name="restore-camera-template-button" text="恢复模板" tooltip="将当前模板参数复制到所选掩体配置" />
+                <ui:Button name="audit-camera-profiles-button" text="检查孤立配置" tooltip="选择所有未被房间引用的掩体镜头配置" />
+            </ui:VisualElement>
         </ui:VisualElement>
         <ui:VisualElement class="content-split">
             <ui:VisualElement class="browser-pane">

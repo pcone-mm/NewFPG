@@ -19,6 +19,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string SelectedRoomSessionKey = "FPGDemo.RoomAuthoring.SelectedRoomGuid";
         private const string CameraTemplateSessionKey =
             "FPGDemo.RoomAuthoring.CameraTemplateGuid";
+        private const string PreviewCharacterSessionKey =
+            "FPGDemo.RoomAuthoring.PreviewCharacterGuid";
 
         private readonly List<FpgRoomRecord> allRooms = new List<FpgRoomRecord>();
         private readonly List<FpgRoomRecord> filteredRooms = new List<FpgRoomRecord>();
@@ -26,7 +28,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private readonly List<FpgRoomValidationItem> validation = new List<FpgRoomValidationItem>();
 
         private FpgGameViewAspectSession gameViewAspectSession;
-        private D0ThreeCProfile selectedCameraTemplate;
+        private FpgCoverCameraProfile selectedCameraTemplate;
+        private D0CharacterDefinition selectedPreviewCharacter;
         private FpgRoomSceneTool sceneTool;
         private ScriptableObject selectedRoom;
         private SerializedObject serializedRoom;
@@ -42,8 +45,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private int formalPreviewRoomVisitOrdinal;
 
         private ObjectField cameraTemplateField;
+        private ObjectField previewCharacterField;
         private Button applyCameraPreviewButton;
         private Button stopCameraPreviewButton;
+        private Button previousCameraCoverButton;
+        private Button nextCameraCoverButton;
+        private Button previewCameraTransitionButton;
+        private Button captureSceneViewCameraButton;
+        private Button restoreCameraTemplateButton;
         private Label cameraPreviewStateLabel;
         private ToolbarSearchField searchField;
         private DropdownField groupFilter;
@@ -178,6 +187,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             ConfigureLists();
             RegisterCallbacks();
             RestoreCameraTemplateSelection();
+            RestorePreviewCharacterSelection();
             RefreshRoomAssets();
             RestoreRoomSelection();
         }
@@ -197,8 +207,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
             validationSummaryLabel = rootVisualElement.Q<Label>("validation-summary-label");
             statusLabel = rootVisualElement.Q<Label>("status-label");
             cameraTemplateField = rootVisualElement.Q<ObjectField>("camera-template-field");
+            previewCharacterField = rootVisualElement.Q<ObjectField>("preview-character-field");
             applyCameraPreviewButton = rootVisualElement.Q<Button>("apply-camera-preview-button");
             stopCameraPreviewButton = rootVisualElement.Q<Button>("stop-camera-preview-button");
+            previousCameraCoverButton = rootVisualElement.Q<Button>("previous-camera-cover-button");
+            nextCameraCoverButton = rootVisualElement.Q<Button>("next-camera-cover-button");
+            previewCameraTransitionButton = rootVisualElement.Q<Button>("preview-camera-transition-button");
+            captureSceneViewCameraButton = rootVisualElement.Q<Button>("capture-scene-view-camera-button");
+            restoreCameraTemplateButton = rootVisualElement.Q<Button>("restore-camera-template-button");
             cameraPreviewStateLabel = rootVisualElement.Q<Label>("camera-preview-state-label");
 
             markerToolButtons.Clear();
@@ -211,8 +227,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void ConfigureLists()
         {
-            cameraTemplateField.objectType = typeof(D0ThreeCProfile);
+            cameraTemplateField.objectType = typeof(FpgCoverCameraProfile);
             cameraTemplateField.allowSceneObjects = false;
+            previewCharacterField.objectType = typeof(D0CharacterDefinition);
+            previewCharacterField.allowSceneObjects = false;
             UpdateCameraPreviewControls();
 
             statusFilter.choices = new List<string> { "All", "Valid", "Warning", "Error" };
@@ -245,8 +263,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
             markerList.selectionChanged += OnMarkerSelectionChanged;
             validationList.selectionChanged += OnValidationSelectionChanged;
             cameraTemplateField.RegisterValueChangedCallback(OnCameraTemplateChanged);
+            previewCharacterField.RegisterValueChangedCallback(OnPreviewCharacterChanged);
             applyCameraPreviewButton.clicked += ApplyCameraPreview;
             stopCameraPreviewButton.clicked += StopCameraPreview;
+            previousCameraCoverButton.clicked += () => NavigateCameraCover(-1);
+            nextCameraCoverButton.clicked += () => NavigateCameraCover(1);
+            previewCameraTransitionButton.clicked += PreviewCameraTransition;
+            captureSceneViewCameraButton.clicked += CaptureSceneViewCamera;
+            restoreCameraTemplateButton.clicked += RestoreCurrentCameraTemplate;
 
 
             rootVisualElement.Q<Button>("create-room-button").clicked += CreateRoom;
@@ -255,6 +279,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             rootVisualElement.Q<Button>("frame-room-button").clicked += () => sceneTool?.FrameSelection();
             rootVisualElement.Q<Button>("duplicate-marker-button").clicked += () => sceneTool?.DuplicateSelectedMarker();
             rootVisualElement.Q<Button>("delete-marker-button").clicked += () => sceneTool?.DeleteSelectedMarker();
+            rootVisualElement.Q<Button>("audit-camera-profiles-button").clicked += AuditCameraProfiles;
 
             foreach (KeyValuePair<FpgRoomMarkerKind, Button> pair in markerToolButtons)
             {
@@ -295,14 +320,41 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 : AssetDatabase.GUIDToAssetPath(guid);
             selectedCameraTemplate = string.IsNullOrEmpty(path)
                 ? null
-                : AssetDatabase.LoadAssetAtPath<D0ThreeCProfile>(path);
+                : AssetDatabase.LoadAssetAtPath<FpgCoverCameraProfile>(path);
+            if (selectedCameraTemplate == null)
+            {
+                selectedCameraTemplate =
+                    AssetDatabase.LoadAssetAtPath<FpgCoverCameraProfile>(
+                        FpgCoverCameraProfileAuthoring.DefaultTemplatePath);
+            }
             cameraTemplateField.SetValueWithoutNotify(selectedCameraTemplate);
+            sceneTool?.SetCameraTemplate(selectedCameraTemplate);
+            UpdateCameraPreviewControls();
+        }
+
+        private void RestorePreviewCharacterSelection()
+        {
+            string guid = SessionState.GetString(
+                PreviewCharacterSessionKey,
+                string.Empty);
+            string path = string.IsNullOrEmpty(guid)
+                ? string.Empty
+                : AssetDatabase.GUIDToAssetPath(guid);
+            selectedPreviewCharacter = string.IsNullOrEmpty(path)
+                ? FindDefaultPreviewCharacter()
+                : AssetDatabase.LoadAssetAtPath<D0CharacterDefinition>(path);
+            if (selectedPreviewCharacter == null)
+            {
+                selectedPreviewCharacter = FindDefaultPreviewCharacter();
+            }
+
+            previewCharacterField.SetValueWithoutNotify(selectedPreviewCharacter);
             UpdateCameraPreviewControls();
         }
 
         private void OnCameraTemplateChanged(ChangeEvent<UnityEngine.Object> evt)
         {
-            selectedCameraTemplate = evt.newValue as D0ThreeCProfile;
+            selectedCameraTemplate = evt.newValue as FpgCoverCameraProfile;
             string path = selectedCameraTemplate == null
                 ? string.Empty
                 : AssetDatabase.GetAssetPath(selectedCameraTemplate);
@@ -311,18 +363,23 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 string.IsNullOrEmpty(path)
                     ? string.Empty
                     : AssetDatabase.AssetPathToGUID(path));
+            sceneTool?.SetCameraTemplate(selectedCameraTemplate);
             UpdateCameraPreviewControls();
+        }
 
-            if (sceneTool?.IsCameraPreviewActive != true)
-            {
-                return;
-            }
-
-            if (selectedCameraTemplate == null)
-            {
-                StopCameraPreview();
-            }
-            else
+        private void OnPreviewCharacterChanged(ChangeEvent<UnityEngine.Object> evt)
+        {
+            selectedPreviewCharacter = evt.newValue as D0CharacterDefinition;
+            string path = selectedPreviewCharacter == null
+                ? string.Empty
+                : AssetDatabase.GetAssetPath(selectedPreviewCharacter);
+            SessionState.SetString(
+                PreviewCharacterSessionKey,
+                string.IsNullOrEmpty(path)
+                    ? string.Empty
+                    : AssetDatabase.AssetPathToGUID(path));
+            UpdateCameraPreviewControls();
+            if (sceneTool?.IsCameraPreviewActive == true)
             {
                 ApplyCameraPreview();
             }
@@ -338,11 +395,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            if (selectedCameraTemplate == null)
+            if (selectedPreviewCharacter == null)
             {
                 SetCameraPreviewStatus(
                     false,
-                    "\u8bf7\u5148\u9009\u62e9\u955c\u5934\u6a21\u677f\u3002");
+                    "Select a playable character for camera preview.");
                 return;
             }
 
@@ -368,7 +425,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             try
             {
                 if (!sceneTool.TryStartCameraPreview(
-                        selectedCameraTemplate,
+                        selectedPreviewCharacter,
                         out string error))
                 {
                     string restoreError = RestoreGameViewAspect(false);
@@ -397,7 +454,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             SetCameraPreviewStatus(
                 true,
-                $"16:9 Game View | {selectedCameraTemplate.DisplayName}");
+                $"16:9 Game View | {selectedPreviewCharacter.DisplayName}");
         }
 
         private void StopCameraPreview()
@@ -414,6 +471,118 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 string.IsNullOrEmpty(restoreError)
                     ? "\u6b63\u5f0f\u955c\u5934\u9884\u89c8\u5df2\u5173\u95ed\u3002"
                     : restoreError);
+        }
+
+        private void NavigateCameraCover(int offset)
+        {
+            if (sceneTool == null)
+            {
+                UpdateLevelStatus("Room scene tool is unavailable.");
+                return;
+            }
+
+            if (!sceneTool.TrySelectAdjacentCover(offset, out string error))
+            {
+                UpdateLevelStatus(error);
+                return;
+            }
+
+            UpdateLevelStatus("Cover camera preview updated.");
+        }
+
+        private void PreviewCameraTransition()
+        {
+            if (sceneTool == null)
+            {
+                UpdateLevelStatus("Room scene tool is unavailable.");
+                return;
+            }
+
+            if (!sceneTool.TryPreviewCoverTransition(out string error))
+            {
+                UpdateLevelStatus(error);
+                return;
+            }
+
+            UpdateLevelStatus("Cover camera transition preview started.");
+        }
+
+        private void CaptureSceneViewCamera()
+        {
+            if (sceneTool == null)
+            {
+                UpdateLevelStatus("Room scene tool is unavailable.");
+                return;
+            }
+
+            if (!sceneTool.TryCaptureSceneViewCamera(out string error))
+            {
+                UpdateLevelStatus(error);
+                return;
+            }
+
+            QueueCurrentRoomRefresh();
+            UpdateLevelStatus("Captured the Scene View camera into the selected cover profile.");
+        }
+
+        private void RestoreCurrentCameraTemplate()
+        {
+            if (sceneTool == null)
+            {
+                UpdateLevelStatus("Room scene tool is unavailable.");
+                return;
+            }
+
+            if (!sceneTool.TryRestoreCameraTemplate(out string error))
+            {
+                UpdateLevelStatus(error);
+                return;
+            }
+
+            QueueCurrentRoomRefresh();
+            UpdateLevelStatus("Restored the selected cover profile from the camera template.");
+        }
+
+        private void AuditCameraProfiles()
+        {
+            IReadOnlyList<FpgCoverCameraProfile> orphans =
+                FpgCoverCameraProfileAuthoring.FindOrphanProfiles();
+            if (orphans.Count == 0)
+            {
+                EditorUtility.DisplayDialog(
+                    "Camera Profile Audit",
+                    "No orphan cover camera profiles were found.",
+                    "OK");
+                return;
+            }
+
+            Selection.objects = orphans.Cast<UnityEngine.Object>().ToArray();
+            EditorUtility.DisplayDialog(
+                "Camera Profile Audit",
+                $"Found {orphans.Count} orphan cover camera profile(s). They are selected in the Project window; no assets were deleted.",
+                "OK");
+        }
+
+        private static D0CharacterDefinition FindDefaultPreviewCharacter()
+        {
+            string[] guids = AssetDatabase.FindAssets(
+                "t:FpgPlayableCharacterCatalog");
+            Array.Sort(guids, StringComparer.Ordinal);
+            for (int index = 0; index < guids.Length; index++)
+            {
+                FpgPlayableCharacterCatalog catalog =
+                    AssetDatabase.LoadAssetAtPath<FpgPlayableCharacterCatalog>(
+                        AssetDatabase.GUIDToAssetPath(guids[index]));
+                if (catalog != null
+                    && catalog.TryResolveDefault(
+                        out FpgPlayableCharacterSelection selection,
+                        out _))
+                {
+                    return selection.CharacterDefinition;
+                }
+            }
+
+            return null;
         }
 
         private void OnCameraPreviewStateChanged(bool active, string message)
@@ -515,19 +684,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         ? " | Production: Build Settings mismatch"
                         : " | Production: registered";
             string cameraState = sceneTool?.IsCameraPreviewActive == true
-                ? $" | 镜头：16:9 {selectedCameraTemplate?.DisplayName}"
+                ? $" | Camera: 16:9 {selectedPreviewCharacter?.DisplayName}"
                 : string.Empty;
-            string threeCState = selectedCameraTemplate == null
+            string cameraTemplateState = selectedCameraTemplate == null
                 ? string.Empty
                 : EditorUtility.IsDirty(selectedCameraTemplate)
-                    ? " | 3C：未保存"
-                    : " | 3C：已保存";
+                    ? " | Camera Template: unsaved"
+                    : " | Camera Template: saved";
             string prefix = string.IsNullOrWhiteSpace(message)
                 ? string.Empty
                 : message + " | ";
             statusLabel.text =
                 prefix + roomState + " | " + sceneState + cameraState
-                + threeCState + productionState;
+                + cameraTemplateState + productionState;
         }
 
         private void OnSceneDirtied(Scene scene)
@@ -560,14 +729,31 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             bool isPlaying = EditorApplication.isPlayingOrWillChangePlaymode;
             cameraTemplateField?.SetEnabled(!isPlaying);
+            previewCharacterField?.SetEnabled(!isPlaying);
             applyCameraPreviewButton?.SetEnabled(
                 !isPlaying
                 && selectedRoom != null
-                && selectedCameraTemplate != null);
+                && selectedPreviewCharacter != null);
             stopCameraPreviewButton?.SetEnabled(
                 !isPlaying
                 && (sceneTool?.IsCameraPreviewActive == true
                     || gameViewAspectSession != null));
+            bool previewActive = !isPlaying
+                && sceneTool?.IsCameraPreviewActive == true;
+            previousCameraCoverButton?.SetEnabled(previewActive);
+            nextCameraCoverButton?.SetEnabled(previewActive);
+            previewCameraTransitionButton?.SetEnabled(previewActive);
+            captureSceneViewCameraButton?.SetEnabled(previewActive);
+            restoreCameraTemplateButton?.SetEnabled(
+                previewActive && selectedCameraTemplate != null);
+            if (markerToolButtons.TryGetValue(
+                    FpgRoomMarkerKind.Cover,
+                    out Button coverButton))
+            {
+                coverButton.SetEnabled(!isPlaying
+                    && selectedRoom != null
+                    && selectedCameraTemplate != null);
+            }
         }
 
         private string RestoreGameViewAspect(bool logFailure)
@@ -1574,19 +1760,107 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     {
                         EditorUtility.SetDirty(selectedRoom);
                     }
-                    if (handle.Kind == FpgRoomMarkerKind.Destructible)
+                    if (handle.Kind == FpgRoomMarkerKind.Destructible
+                        || handle.Kind == FpgRoomMarkerKind.Cover)
                     {
-                        sceneTool?.RebuildPreview();
+                        sceneTool?.QueuePreviewRefresh();
                     }
                     else if (handle.Kind == FpgRoomMarkerKind.PlayerEntry)
                     {
-                        sceneTool?.TryRefreshCameraPreview(out _);
+                        sceneTool?.QueueCameraPreviewRefresh();
                     }
                     QueueCurrentRoomRefresh();
                     SceneView.RepaintAll();
                 });
                 markerDetails.Add(field);
             }
+
+            BuildCoverCameraDetails(handle);
+        }
+
+        private void BuildCoverCameraDetails(FpgRoomMarkerHandle handle)
+        {
+            if (handle == null || handle.Kind != FpgRoomMarkerKind.Cover
+                || serializedRoom == null)
+            {
+                return;
+            }
+
+            SerializedProperty cover = FpgRoomAuthoringSchema.FindMarkerProperty(
+                serializedRoom,
+                FpgRoomMarkerKind.Cover,
+                handle.Index);
+            FpgCoverCameraProfile profile = cover
+                ?.FindPropertyRelative("cameraProfile")
+                ?.objectReferenceValue as FpgCoverCameraProfile;
+            if (profile == null)
+            {
+                markerDetails.Add(new HelpBox(
+                    "This cover requires a camera profile before preview and runtime start are available.",
+                    HelpBoxMessageType.Error));
+                return;
+            }
+
+            int referenceCount =
+                FpgCoverCameraProfileAuthoring.CountReferences(profile);
+            Label referenceLabel = new Label(
+                $"Camera profile references: {referenceCount}");
+            referenceLabel.AddToClassList("camera-profile-reference-count");
+            markerDetails.Add(referenceLabel);
+            if (referenceCount > 1)
+            {
+                markerDetails.Add(new HelpBox(
+                    "This profile is shared by multiple covers. Edit the asset itself if you want all of them to change.",
+                    HelpBoxMessageType.Warning));
+            }
+
+            markerDetails.Add(new HelpBox(
+                "Edit the camera settings on the profile asset itself. This cover only stores a reference to that asset.",
+                HelpBoxMessageType.Info));
+
+            VisualElement actions = new VisualElement();
+            actions.AddToClassList("camera-profile-actions");
+            if (referenceCount > 1)
+            {
+                Button makeUnique = new Button(() =>
+                {
+                    if (!(selectedRoom is FpgRoomDefinition definition))
+                    {
+                        UpdateLevelStatus("Select a valid room first.");
+                        return;
+                    }
+
+                    if (!FpgCoverCameraProfileAuthoring.TryMakeCoverProfileUnique(
+                            definition,
+                            handle.Index,
+                            out FpgCoverCameraProfile unique,
+                            out string error))
+                    {
+                        UpdateLevelStatus(error);
+                        return;
+                    }
+
+                    Selection.activeObject = unique;
+                    sceneTool?.RebuildPreview();
+                    QueueCurrentRoomRefresh();
+                    UpdateLevelStatus(
+                        $"Created independent camera profile '{unique.name}'.");
+                })
+                {
+                    text = "Create Unique Profile"
+                };
+                actions.Add(makeUnique);
+            }
+
+            actions.Add(new Button(() =>
+            {
+                Selection.activeObject = profile;
+                EditorGUIUtility.PingObject(profile);
+            })
+            {
+                text = "Edit Profile Asset"
+            });
+            markerDetails.Add(actions);
         }
 
         private void RefreshValidation()
@@ -1829,11 +2103,23 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 AssetDatabase.SaveAssetIfDirty(selectedCameraTemplate);
             }
+            HashSet<FpgCoverCameraProfile> cameraProfiles =
+                new HashSet<FpgCoverCameraProfile>();
+            for (int index = 0; index < definition.CoverSlots.Count; index++)
+            {
+                FpgCoverCameraProfile profile =
+                    definition.CoverSlots[index].CameraProfile;
+                if (profile != null && cameraProfiles.Add(profile))
+                {
+                    AssetDatabase.SaveAssetIfDirty(profile);
+                }
+            }
             bool sceneSaved = !artScene.isDirty
                 || EditorSceneManager.SaveScene(artScene);
             if (EditorUtility.IsDirty(selectedRoom)
                 || (selectedCameraTemplate != null
                     && EditorUtility.IsDirty(selectedCameraTemplate))
+                || cameraProfiles.Any(EditorUtility.IsDirty)
                 || !sceneSaved)
             {
                 sceneTool?.RebuildPreview();

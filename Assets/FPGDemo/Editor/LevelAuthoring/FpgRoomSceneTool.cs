@@ -10,9 +10,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
 {
     internal sealed class FpgRoomSceneTool : IDisposable
     {
-        private const string FormalPlayerEntryMarkerId = "player-main";
         private const HideFlags PreviewHideFlags =
             HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor | HideFlags.NotEditable;
+        private const float PositionWriteEpsilon = 0.0005f;
+        private const float RotationWriteEpsilonDegrees = 0.05f;
         private static readonly System.Reflection.PropertyInfo AllowGpuDrivenRenderingProperty =
             typeof(Renderer).GetProperty(
                 "allowGPUDrivenRendering",
@@ -33,13 +34,30 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private FpgRoomArtRoot roomArtRoot;
         private GameObject cameraPreviewRoot;
         private GameObject cameraPreviewPlayer;
+        private Transform cameraPreviewPlayerAnchor;
+        private Transform cameraPreviewRig;
         private Camera cameraPreviewCamera;
-        private D0ThreeCProfile cameraPreviewProfile;
+        private FpgCoverCameraProfile cameraPreviewProfile;
+        private FpgCoverCameraProfile cameraTemplate;
+        private D0CharacterDefinition cameraPreviewCharacter;
+        private D0ThreeCProfile cameraPreviewThreeC;
         private FpgRoomMarkerKind? placementKind;
         private FpgRoomMarkerHandle selectedMarker;
+        private int cameraPreviewCoverIndex = -1;
+        private int previousCameraPreviewCoverIndex = -1;
+        private int cameraPreviewProfileDirtyCount;
+        private int cameraPreviewRoomDirtyCount;
+        private bool cameraTransitionActive;
+        private double cameraTransitionStartedAt;
+        private float cameraTransitionDuration;
+        private FpgResolvedCameraShot cameraTransitionSource;
+        private FpgResolvedCameraShot cameraTransitionTarget;
+        private Pose cameraTransitionSourcePlayerPose;
+        private Pose cameraTransitionTargetPlayerPose;
         private bool cameraPreviewActive;
         private bool disposed;
         private bool previewRefreshQueued;
+        private bool cameraPreviewRefreshQueued;
 
         internal FpgRoomSceneTool()
         {
@@ -49,6 +67,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             SceneView.duringSceneGui += OnSceneGUI;
+            EditorApplication.update += OnEditorUpdate;
             Undo.undoRedoPerformed += OnUndoRedo;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             EditorSceneManager.sceneOpened += OnSceneOpened;
@@ -76,6 +95,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             disposed = true;
             SceneView.duringSceneGui -= OnSceneGUI;
+            EditorApplication.update -= OnEditorUpdate;
             Undo.undoRedoPerformed -= OnUndoRedo;
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorSceneManager.sceneOpened -= OnSceneOpened;
@@ -84,6 +104,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             EditorSceneManager.sceneSaved -= OnSceneSaved;
             cameraPreviewActive = false;
             cameraPreviewProfile = null;
+            cameraPreviewCharacter = null;
             DestroyPreview();
         }
 
@@ -97,12 +118,22 @@ namespace FPG.Demo.Editor.LevelAuthoring
             room = value;
             placementKind = null;
             SetSelectedMarker(null);
+            if (cameraPreviewActive && room != null
+                && !TryChooseInitialCameraCover(out string cameraError))
+            {
+                StopCameraPreviewInternal(cameraError, true);
+            }
             RebuildPreview();
             SceneView.RepaintAll();
         }
 
+        internal void SetCameraTemplate(FpgCoverCameraProfile profile)
+        {
+            cameraTemplate = profile;
+        }
+
         internal bool TryStartCameraPreview(
-            D0ThreeCProfile profile,
+            D0CharacterDefinition character,
             out string error)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -111,11 +142,17 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
-            cameraPreviewProfile = profile;
+            cameraPreviewCharacter = character;
             cameraPreviewActive = false;
+            DestroyCameraPreviewObjects();
             if (previewRoot == null)
             {
                 RebuildPreview();
+            }
+
+            if (!TryChooseInitialCameraCover(out error))
+            {
+                return false;
             }
 
             cameraPreviewActive = true;
@@ -125,7 +162,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
-            CameraPreviewStateChanged?.Invoke(true, "Formal camera preview is active.");
+            CameraPreviewStateChanged?.Invoke(
+                true,
+                $"Cover camera preview is active for cover {cameraPreviewCoverIndex + 1}.");
             return true;
         }
 
@@ -147,7 +186,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return true;
             }
 
-            if (!TryRebuildCameraPreview(out error))
+            if (!TryApplyCurrentCameraShot(out error)
+                && !TryRebuildCameraPreview(out error))
             {
                 StopCameraPreviewInternal(error, true);
                 return false;
@@ -187,19 +227,50 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            Undo.RecordObject(room, "放置房间标记");
+            string markerId = FpgRoomAuthoringSchema.CreateSemanticMarkerId(
+                room,
+                kind);
+            FpgCoverCameraProfile createdCameraProfile = null;
+            if (kind == FpgRoomMarkerKind.Cover)
+            {
+                if (!(room is FpgRoomDefinition definition))
+                {
+                    Debug.LogError(
+                        "A RoomDefinition is required before placing a cover.",
+                        room);
+                    return;
+                }
+
+                if (!FpgCoverCameraProfileAuthoring.TryCloneForCover(
+                        cameraTemplate,
+                        definition,
+                        markerId,
+                        out createdCameraProfile,
+                        out string cameraError))
+                {
+                    Debug.LogError(
+                        string.IsNullOrWhiteSpace(cameraError)
+                            ? "A valid cover camera template is required before placing a cover."
+                            : cameraError,
+                        room);
+                    return;
+                }
+            }
+
+            Undo.RecordObject(room, "鏀剧疆鎴块棿鏍囪");
             SerializedObject serializedRoom = new SerializedObject(room);
             SerializedProperty array = serializedRoom.FindProperty(FpgRoomAuthoringSchema.MarkerArrayName(kind));
             if (array == null || !array.isArray)
             {
-                Debug.LogError($"房间资产缺少标记数组 '{FpgRoomAuthoringSchema.MarkerArrayName(kind)}'。", room);
+                Debug.LogError(
+                    $"Room marker array '{FpgRoomAuthoringSchema.MarkerArrayName(kind)}' is unavailable.",
+                    room);
                 return;
             }
 
             int index = array.arraySize;
             array.InsertArrayElementAtIndex(index);
             SerializedProperty marker = array.GetArrayElementAtIndex(index);
-            string markerId = FpgRoomAuthoringSchema.CreateSemanticMarkerId(room, kind);
             SetString(marker, markerId, "markerId", "id");
             SetString(marker, FpgRoomAuthoringSchema.MarkerKindName(kind) + " " + (index + 1), "displayName", "name");
             FpgRoomAuthoringSchema.SetMarkerPosition(marker, Snap(localPosition));
@@ -229,6 +300,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FpgRoomAuthoringSchema.FindRelative(
                         marker,
                         "maxDurability");
+                SerializedProperty cameraProfile =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "cameraProfile");
                 SerializedProperty startingCover =
                     FpgRoomAuthoringSchema.FindRelative(
                         marker,
@@ -242,6 +317,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         marker,
                         "playerReachableLocalEulerAngles");
                 if (prefab != null) prefab.objectReferenceValue = null;
+                if (cameraProfile != null)
+                {
+                    cameraProfile.objectReferenceValue = createdCameraProfile;
+                }
                 if (durability != null) durability.intValue = 100;
                 if (startingCover != null) startingCover.boolValue = index == 0;
                 if (reachablePosition != null)
@@ -260,7 +339,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             RefreshMarkerVisualization(kind);
             if (kind == FpgRoomMarkerKind.PlayerEntry)
             {
-                TryRefreshCameraPreview(out _);
+                QueueCameraPreviewRefresh();
             }
             RoomChanged?.Invoke();
         }
@@ -272,7 +351,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            Undo.RecordObject(room, "复制房间标记");
+            Undo.RecordObject(room, "澶嶅埗鎴块棿鏍囪");
             SerializedObject serializedRoom = new SerializedObject(room);
             SerializedProperty array = serializedRoom.FindProperty(
                 FpgRoomAuthoringSchema.MarkerArrayName(selectedMarker.Kind));
@@ -282,10 +361,44 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             FpgRoomMarkerKind markerKind = selectedMarker.Kind;
+            string id = FpgRoomAuthoringSchema.CreateSemanticMarkerId(
+                room,
+                markerKind);
+            FpgCoverCameraProfile duplicatedCameraProfile = null;
+            if (markerKind == FpgRoomMarkerKind.Cover)
+            {
+                SerializedProperty sourceCover = array.GetArrayElementAtIndex(
+                    selectedMarker.Index);
+                FpgCoverCameraProfile sourceProfile =
+                    sourceCover.FindPropertyRelative("cameraProfile")
+                        ?.objectReferenceValue as FpgCoverCameraProfile;
+                if (!(room is FpgRoomDefinition definition))
+                {
+                    Debug.LogError(
+                        "A RoomDefinition is required before duplicating a cover.",
+                        room);
+                    return;
+                }
+
+                if (!FpgCoverCameraProfileAuthoring.TryCloneForCover(
+                        sourceProfile,
+                        definition,
+                        id,
+                        out duplicatedCameraProfile,
+                        out string cameraError))
+                {
+                    Debug.LogError(
+                        string.IsNullOrWhiteSpace(cameraError)
+                            ? "The selected cover requires a saved camera profile before it can be duplicated."
+                            : cameraError,
+                        room);
+                    return;
+                }
+            }
+
             int duplicateIndex = selectedMarker.Index;
             array.InsertArrayElementAtIndex(duplicateIndex);
             SerializedProperty duplicate = array.GetArrayElementAtIndex(duplicateIndex);
-            string id = FpgRoomAuthoringSchema.CreateSemanticMarkerId(room, markerKind);
             SetString(duplicate, id, "markerId", "id");
             float duplicateOffset = float.IsNaN(GridSnap) || float.IsInfinity(GridSnap) || GridSnap <= 0f
                 ? 0.5f
@@ -296,6 +409,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 Snap(FpgRoomAuthoringSchema.GetMarkerPosition(duplicate) + offset));
             if (markerKind == FpgRoomMarkerKind.Cover)
             {
+                SerializedProperty cameraProfile =
+                    duplicate.FindPropertyRelative("cameraProfile");
                 SerializedProperty reachablePosition =
                     FpgRoomAuthoringSchema.FindRelative(
                         duplicate,
@@ -304,6 +419,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FpgRoomAuthoringSchema.FindRelative(
                         duplicate,
                         "isStartingCover");
+                if (cameraProfile != null)
+                {
+                    cameraProfile.objectReferenceValue = duplicatedCameraProfile;
+                }
                 if (reachablePosition != null)
                 {
                     reachablePosition.vector3Value =
@@ -322,7 +441,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             RefreshMarkerVisualization(markerKind);
             if (markerKind == FpgRoomMarkerKind.PlayerEntry)
             {
-                TryRefreshCameraPreview(out _);
+                QueueCameraPreviewRefresh();
             }
             RoomChanged?.Invoke();
         }
@@ -334,7 +453,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            Undo.RecordObject(room, "删除房间标记");
+            Undo.RecordObject(room, "鍒犻櫎鎴块棿鏍囪");
             SerializedObject serializedRoom = new SerializedObject(room);
             SerializedProperty array = serializedRoom.FindProperty(
                 FpgRoomAuthoringSchema.MarkerArrayName(selectedMarker.Kind));
@@ -351,7 +470,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             RefreshMarkerVisualization(markerKind);
             if (markerKind == FpgRoomMarkerKind.PlayerEntry)
             {
-                TryRefreshCameraPreview(out _);
+                QueueCameraPreviewRefresh();
             }
             RoomChanged?.Invoke();
         }
@@ -535,6 +654,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             HandlePlacement();
             DrawMarkers();
             DrawSelectedHandle();
+            DrawCameraComposition();
         }
 
         private void HandleKeyboardShortcuts()
@@ -687,7 +807,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         EventType.Repaint);
                     Handles.Label(
                         reachablePosition + Vector3.up * reachableSize * 1.4f,
-                        "玩家到达点");
+                        "Player arrival");
                 }
             }
         }
@@ -730,28 +850,48 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            Undo.RecordObject(room, Tools.current == Tool.Rotate ? "旋转房间标记" : "移动房间标记");
             serializedRoom.Update();
             marker = FpgRoomAuthoringSchema.FindMarkerProperty(serializedRoom, selectedMarker.Kind, selectedMarker.Index);
             if (Tools.current == Tool.Rotate)
             {
+                Quaternion currentRotation =
+                    FpgRoomAuthoringSchema.GetMarkerRotation(marker);
+                if (!HasMeaningfulRotationChange(currentRotation, rotation))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(room, "Rotate Room Marker");
                 FpgRoomAuthoringSchema.SetMarkerRotation(marker, rotation);
             }
             else
             {
-                FpgRoomAuthoringSchema.SetMarkerPosition(marker, Snap(position));
+                Vector3 nextPosition = Snap(position);
+                if (!HasMeaningfulPositionChange(
+                        FpgRoomAuthoringSchema.GetMarkerPosition(marker),
+                        nextPosition))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(room, "Move Room Marker");
+                FpgRoomAuthoringSchema.SetMarkerPosition(marker, nextPosition);
             }
 
-            serializedRoom.ApplyModifiedProperties();
+            if (!serializedRoom.ApplyModifiedProperties())
+            {
+                return;
+            }
+
             EditorUtility.SetDirty(room);
             if (selectedMarker.Kind == FpgRoomMarkerKind.Destructible
                 || selectedMarker.Kind == FpgRoomMarkerKind.Cover)
             {
-                RebuildPreview();
+                QueuePreviewRefresh();
             }
             else if (selectedMarker.Kind == FpgRoomMarkerKind.PlayerEntry)
             {
-                TryRefreshCameraPreview(out _);
+                QueueCameraPreviewRefresh();
             }
 
             RoomChanged?.Invoke();
@@ -793,11 +933,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            Undo.RecordObject(
-                room,
-                Tools.current == Tool.Rotate
-                    ? "旋转玩家到达点"
-                    : "移动玩家到达点");
             serializedRoom.Update();
             marker = FpgRoomAuthoringSchema.FindMarkerProperty(
                 serializedRoom,
@@ -811,16 +946,38 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 "playerReachableLocalEulerAngles");
             if (Tools.current == Tool.Rotate)
             {
+                if (!HasMeaningfulEulerChange(
+                        reachableRotationProperty.vector3Value,
+                        rotation.eulerAngles))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(room, "Rotate Player Arrival");
                 reachableRotationProperty.vector3Value =
                     rotation.eulerAngles;
             }
             else
             {
-                reachablePositionProperty.vector3Value = Snap(position);
+                Vector3 nextPosition = Snap(position);
+                if (!HasMeaningfulPositionChange(
+                        reachablePositionProperty.vector3Value,
+                        nextPosition))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(room, "Move Player Arrival");
+                reachablePositionProperty.vector3Value = nextPosition;
             }
 
-            serializedRoom.ApplyModifiedProperties();
+            if (!serializedRoom.ApplyModifiedProperties())
+            {
+                return;
+            }
+
             EditorUtility.SetDirty(room);
+            QueueCameraPreviewRefresh();
             RoomChanged?.Invoke();
         }
 
@@ -974,7 +1131,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
         }
 
-        private void QueuePreviewRefresh()
+        internal void QueuePreviewRefresh()
         {
             if (disposed || room == null || EditorApplication.isPlayingOrWillChangePlaymode
                 || previewRefreshQueued)
@@ -990,6 +1147,32 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     && !EditorApplication.isPlayingOrWillChangePlaymode)
                 {
                     RebuildPreview();
+                }
+            };
+        }
+
+        internal void QueueCameraPreviewRefresh()
+        {
+            if (disposed || !cameraPreviewActive
+                || EditorApplication.isPlayingOrWillChangePlaymode
+                || cameraPreviewRefreshQueued)
+            {
+                return;
+            }
+
+            cameraPreviewRefreshQueued = true;
+            EditorApplication.delayCall += () =>
+            {
+                cameraPreviewRefreshQueued = false;
+                if (disposed || !cameraPreviewActive
+                    || EditorApplication.isPlayingOrWillChangePlaymode)
+                {
+                    return;
+                }
+
+                if (!TryRefreshCameraPreview(out string error))
+                {
+                    Debug.LogWarning(error, room);
                 }
             };
         }
@@ -1014,6 +1197,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             selectedMarker = marker;
             SelectionChanged?.Invoke(marker);
+            if (cameraPreviewActive
+                && marker != null
+                && marker.Kind == FpgRoomMarkerKind.Cover
+                && marker.Index != cameraPreviewCoverIndex)
+            {
+                previousCameraPreviewCoverIndex = cameraPreviewCoverIndex;
+                cameraPreviewCoverIndex = marker.Index;
+                if (!TryRefreshCameraPreview(out string error))
+                {
+                    Debug.LogWarning(error, room);
+                }
+            }
         }
 
         private Vector3 Snap(Vector3 value)
@@ -1030,6 +1225,31 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 Mathf.Round(value.x / GridSnap) * GridSnap,
                 Mathf.Round(value.y / GridSnap) * GridSnap,
                 Mathf.Round(value.z / GridSnap) * GridSnap);
+        }
+
+        private static bool HasMeaningfulPositionChange(
+            Vector3 current,
+            Vector3 next)
+        {
+            return (current - next).sqrMagnitude
+                > PositionWriteEpsilon * PositionWriteEpsilon;
+        }
+
+        private static bool HasMeaningfulRotationChange(
+            Quaternion current,
+            Quaternion next)
+        {
+            return Quaternion.Angle(current, next)
+                > RotationWriteEpsilonDegrees;
+        }
+
+        private static bool HasMeaningfulEulerChange(
+            Vector3 currentEuler,
+            Vector3 nextEuler)
+        {
+            return HasMeaningfulRotationChange(
+                Quaternion.Euler(currentEuler),
+                Quaternion.Euler(nextEuler));
         }
 
         private static bool IsSameMarker(FpgRoomMarkerHandle left, FpgRoomMarkerHandle right)
@@ -1054,7 +1274,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             GameObject instance = UnityEngine.Object.Instantiate(prefab, parent);
             Vector3 prefabScale = instance.transform.localScale;
-            instance.name = prefab.name + " (房间预览)";
+            instance.name = prefab.name + " (鎴块棿棰勮)";
             instance.transform.localPosition = localPosition;
             instance.transform.localRotation = localRotation;
             instance.transform.localScale = prefabScale;
@@ -1100,29 +1320,26 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return false;
             }
 
-            if (!(room is FpgRoomDefinition definition))
+            if (!(room is FpgRoomDefinition))
             {
-                error = "Formal camera preview requires a valid room definition.";
+                error = "Cover camera preview requires a valid room definition.";
                 return false;
             }
 
-            if (cameraPreviewProfile == null)
+            if (!TryResolvePlayableCharacter(
+                    cameraPreviewCharacter,
+                    out FpgPlayableCharacterSelection selection,
+                    out error)
+                || !TryResolveCoverShot(
+                    cameraPreviewCoverIndex,
+                    out FpgResolvedCameraShot shot,
+                    out Pose playerPose,
+                    out error)
+                || !TryGetCoverProfile(
+                    cameraPreviewCoverIndex,
+                    out FpgCoverCameraProfile profile,
+                    out error))
             {
-                error = "Formal camera preview requires a D0 3C profile.";
-                return false;
-            }
-
-            if (!cameraPreviewProfile.TryValidate(out error))
-            {
-                return false;
-            }
-
-            if (!definition.TryGetPlayerEntryPoint(
-                    FormalPlayerEntryMarkerId,
-                    out FpgRoomPlayerEntryPoint playerEntry))
-            {
-                error = $"Room '{definition.RoomId}' does not contain player entry "
-                    + $"'{FormalPlayerEntryMarkerId}'.";
                 return false;
             }
 
@@ -1146,11 +1363,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 hideFlags = PreviewHideFlags
             };
             ParentPreviewObject(playerAnchor, cameraPreviewRoot.transform);
-            playerAnchor.transform.localPosition = playerEntry.LocalPosition;
-            playerAnchor.transform.localRotation = playerEntry.LocalRotation;
+            cameraPreviewPlayerAnchor = playerAnchor.transform;
+            playerAnchor.transform.SetPositionAndRotation(
+                playerPose.position,
+                playerPose.rotation);
 
             if (!TryCreatePlayerPreview(
-                    cameraPreviewProfile,
+                    selection,
                     playerAnchor.transform,
                     out error))
             {
@@ -1163,6 +1382,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 hideFlags = PreviewHideFlags
             };
             ParentPreviewObject(rig, cameraPreviewRoot.transform);
+            cameraPreviewRig = rig.transform;
 
             GameObject cameraObject = new GameObject("Formal Preview Camera")
             {
@@ -1174,10 +1394,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             ConfigureFormalPreviewCamera(cameraPreviewCamera);
 
-            if (!FpgFormalCameraPoseUtility.TryApplyFixedPose(
-                    cameraPreviewProfile,
-                    playerAnchor.transform,
-                    rig.transform,
+            if (!FpgFormalCameraPoseUtility.TryApplyShot(
+                    shot,
+                    cameraPreviewRig,
                     cameraPreviewCamera,
                     out error))
             {
@@ -1186,31 +1405,203 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             ApplyPreviewFlags(cameraPreviewRoot);
+            cameraPreviewProfile = profile;
+            cameraPreviewThreeC = selection.ThreeCProfile;
+            cameraPreviewProfileDirtyCount = EditorUtility.GetDirtyCount(profile);
+            cameraPreviewRoomDirtyCount = EditorUtility.GetDirtyCount(room);
+            cameraTransitionActive = false;
             cameraPreviewCamera.enabled = true;
             EditorApplication.QueuePlayerLoopUpdate();
             error = string.Empty;
             return true;
         }
 
-        private bool TryCreatePlayerPreview(
-            D0ThreeCProfile profile,
-            Transform playerAnchor,
-            out string error)
+        internal bool TrySelectAdjacentCover(int offset, out string error)
         {
-            if (!TryResolvePlayerEntityPrefab(
+            error = string.Empty;
+            if (!(room is FpgRoomDefinition))
+            {
+                error = "Select a room before navigating cover cameras.";
+                return false;
+            }
+
+            SerializedObject roomData = new SerializedObject(room);
+            SerializedProperty covers = roomData.FindProperty("coverSlots");
+            if (covers == null || !covers.isArray || covers.arraySize == 0)
+            {
+                error = "The selected room has no covers.";
+                return false;
+            }
+
+            int current = cameraPreviewCoverIndex >= 0
+                ? cameraPreviewCoverIndex
+                : FindStartingCoverIndex(covers);
+            int target = (current + offset) % covers.arraySize;
+            if (target < 0)
+            {
+                target += covers.arraySize;
+            }
+
+            FpgRoomMarkerHandle handle = FpgRoomAuthoringSchema.GetMarkers(room)
+                .Find(candidate => candidate.Kind == FpgRoomMarkerKind.Cover
+                    && candidate.Index == target);
+            if (handle == null)
+            {
+                error = $"Could not resolve cover {target}.";
+                return false;
+            }
+
+            SetSelectedMarker(handle);
+            SceneView.RepaintAll();
+            return true;
+        }
+
+        internal bool TryPreviewCoverTransition(out string error)
+        {
+            error = string.Empty;
+            if (!cameraPreviewActive || cameraPreviewCamera == null
+                || cameraPreviewRig == null)
+            {
+                error = "Enable cover camera preview before previewing a transition.";
+                return false;
+            }
+
+            int sourceIndex = previousCameraPreviewCoverIndex;
+            int targetIndex = cameraPreviewCoverIndex;
+            if (sourceIndex < 0 || sourceIndex == targetIndex)
+            {
+                SerializedObject roomData = new SerializedObject(room);
+                SerializedProperty covers = roomData.FindProperty("coverSlots");
+                if (covers == null || covers.arraySize < 2)
+                {
+                    error = "Transition preview requires at least two covers.";
+                    return false;
+                }
+
+                sourceIndex = targetIndex == 0 ? 1 : targetIndex - 1;
+            }
+
+            if (!TryResolveCoverShot(sourceIndex, out cameraTransitionSource,
+                    out cameraTransitionSourcePlayerPose, out error)
+                || !TryResolveCoverShot(targetIndex, out cameraTransitionTarget,
+                    out cameraTransitionTargetPlayerPose, out error))
+            {
+                return false;
+            }
+
+            cameraTransitionDuration = cameraPreviewThreeC == null
+                ? 0.25f
+                : cameraPreviewThreeC.CoverTraversalSeconds;
+            cameraTransitionDuration = Mathf.Max(0.0001f, cameraTransitionDuration);
+            cameraTransitionStartedAt = EditorApplication.timeSinceStartup;
+            cameraTransitionActive = true;
+            if (!FpgFormalCameraPoseUtility.TryApplyShot(
+                    cameraTransitionSource,
+                    cameraPreviewRig,
+                    cameraPreviewCamera,
+                    out error))
+            {
+                cameraTransitionActive = false;
+                return false;
+            }
+
+            cameraPreviewPlayerAnchor?.SetPositionAndRotation(
+                cameraTransitionSourcePlayerPose.position,
+                cameraTransitionSourcePlayerPose.rotation);
+
+            EditorApplication.QueuePlayerLoopUpdate();
+            return true;
+        }
+
+        internal bool TryCaptureSceneViewCamera(out string error)
+        {
+            if (!TryGetActiveCoverProfile(out FpgCoverCameraProfile profile,
+                    out Pose playerPose, out error))
+            {
+                return false;
+            }
+
+            Camera sceneCamera = SceneView.lastActiveSceneView?.camera;
+            if (sceneCamera == null)
+            {
+                error = "A Scene View camera is required.";
+                return false;
+            }
+
+            if (sceneCamera.orthographic)
+            {
+                error = "Switch Scene View to Perspective before capturing a cover camera.";
+                return false;
+            }
+
+            Undo.RecordObject(profile, "Capture Cover Camera From Scene View");
+            SerializedObject data = new SerializedObject(profile);
+            Quaternion inversePlayerRotation = Quaternion.Inverse(
+                playerPose.rotation);
+            data.FindProperty("cameraRigLocalPosition").vector3Value =
+                inversePlayerRotation
+                * (sceneCamera.transform.position - playerPose.position);
+            data.FindProperty("cameraRigLocalEulerAngles").vector3Value =
+                (inversePlayerRotation * sceneCamera.transform.rotation)
+                    .eulerAngles;
+            data.FindProperty("cameraLocalPosition").vector3Value = Vector3.zero;
+            data.FindProperty("cameraLocalEulerAngles").vector3Value = Vector3.zero;
+            data.FindProperty("fieldOfView").floatValue = sceneCamera.fieldOfView;
+            data.FindProperty("nearClipPlane").floatValue =
+                Mathf.Max(0.001f, sceneCamera.nearClipPlane);
+            data.FindProperty("farClipPlane").floatValue = Mathf.Max(
+                sceneCamera.farClipPlane,
+                sceneCamera.nearClipPlane + 0.001f);
+            data.ApplyModifiedProperties();
+            EditorUtility.SetDirty(profile);
+            return TryApplyCurrentCameraShot(out error);
+        }
+
+        internal bool TryRestoreCameraTemplate(out string error)
+        {
+            if (!TryGetActiveCoverProfile(out FpgCoverCameraProfile profile,
+                    out _, out error))
+            {
+                return false;
+            }
+
+            if (cameraTemplate == null)
+            {
+                error = "Select a camera template before restoring it.";
+                return false;
+            }
+
+            if (!FpgCoverCameraProfileAuthoring.TryCopyValues(
+                    cameraTemplate,
                     profile,
-                    out FpgPlayerEntityView entityPrefab,
+                    "Restore Cover Camera Template",
                     out error))
             {
                 return false;
             }
+
+            return TryApplyCurrentCameraShot(out error);
+        }
+
+        private bool TryCreatePlayerPreview(
+            FpgPlayableCharacterSelection selection,
+            Transform playerAnchor,
+            out string error)
+        {
+            if (!selection.TryValidate(out error))
+            {
+                return false;
+            }
+
+            FpgPlayerEntityView entityPrefab =
+                selection.CharacterDefinition.EntityPrefab;
 
             cameraPreviewPlayer = InstantiatePreview(
                 entityPrefab.gameObject,
                 playerAnchor,
                 Vector3.zero,
                 Quaternion.identity);
-            cameraPreviewPlayer.name = entityPrefab.name + " (正式镜头预览)";
+            cameraPreviewPlayer.name = entityPrefab.name + " (姝ｅ紡闀滃ご棰勮)";
 
             foreach (Collider collider in
                      cameraPreviewPlayer.GetComponentsInChildren<Collider>(true))
@@ -1232,7 +1623,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             FpgPlayerBarrierPresentationController peek = playerView?.Barrier;
-            if (peek == null || !peek.TrySetThreeCProfile(profile, out error))
+            if (peek == null
+                || !peek.TrySetThreeCProfile(selection.ThreeCProfile, out error))
             {
                 if (string.IsNullOrWhiteSpace(error))
                 {
@@ -1246,12 +1638,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
             return true;
         }
 
-        private static bool TryResolvePlayerEntityPrefab(
-            D0ThreeCProfile profile,
-            out FpgPlayerEntityView entityPrefab,
+        private static bool TryResolvePlayableCharacter(
+            D0CharacterDefinition character,
+            out FpgPlayableCharacterSelection selection,
             out string error)
         {
-            entityPrefab = null;
+            selection = default;
+            if (character == null)
+            {
+                error = "Select a playable character for camera preview.";
+                return false;
+            }
+
+            bool found = false;
             string[] catalogGuids = AssetDatabase.FindAssets(
                 "t:FpgPlayableCharacterCatalog");
             for (int catalogIndex = 0;
@@ -1268,45 +1667,512 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     continue;
                 }
 
-                IReadOnlyList<FpgPlayableCharacterCatalogEntry> entries =
-                    catalog.Entries;
-                for (int entryIndex = 0;
-                     entryIndex < entries.Count;
-                     entryIndex++)
+                IReadOnlyList<FpgPlayableCharacterCatalogEntry> entries = catalog.Entries;
+                for (int entryIndex = 0; entryIndex < entries.Count; entryIndex++)
                 {
                     FpgPlayableCharacterCatalogEntry entry = entries[entryIndex];
-                    if (entry == null || entry.ThreeCProfile != profile)
+                    if (entry == null || entry.Character != character)
                     {
                         continue;
                     }
 
-                    FpgPlayerEntityView candidate = entry.Character?.EntityPrefab;
-                    if (candidate == null)
+                    if (!entry.TryCreateSelection(
+                            out FpgPlayableCharacterSelection candidate,
+                            out error))
                     {
-                        continue;
-                    }
-
-                    if (entityPrefab != null && entityPrefab != candidate)
-                    {
-                        error =
-                            $"D0 3C profile '{profile.name}' resolves to multiple player entity prefabs.";
-                        entityPrefab = null;
                         return false;
                     }
 
-                    entityPrefab = candidate;
+                    if (found
+                        && (selection.CharacterDefinition
+                                != candidate.CharacterDefinition
+                            || selection.ThreeCProfile
+                                != candidate.ThreeCProfile))
+                    {
+                        error =
+                            $"Playable character '{character.name}' resolves to multiple catalog configurations.";
+                        return false;
+                    }
+
+                    selection = candidate;
+                    found = true;
                 }
             }
 
-            if (entityPrefab == null)
+            if (!found)
             {
                 error =
-                    $"D0 3C profile '{profile.name}' is not linked to a player entity prefab in a playable character catalog.";
+                    $"Character '{character.name}' is not present in a playable character catalog.";
                 return false;
             }
 
             error = string.Empty;
             return true;
+        }
+
+        private bool TryChooseInitialCameraCover(out string error)
+        {
+            SerializedObject roomData = new SerializedObject(room);
+            SerializedProperty covers = roomData.FindProperty("coverSlots");
+            if (covers == null || !covers.isArray || covers.arraySize == 0)
+            {
+                error = "Cover camera preview requires at least one cover.";
+                return false;
+            }
+
+            int startingIndex = FindStartingCoverIndex(covers);
+            if (startingIndex < 0)
+            {
+                error = "Cover camera preview requires exactly one starting cover.";
+                return false;
+            }
+
+            previousCameraPreviewCoverIndex = -1;
+            cameraPreviewCoverIndex = startingIndex;
+            FpgRoomMarkerHandle handle = FpgRoomAuthoringSchema.GetMarkers(room)
+                .Find(candidate => candidate.Kind == FpgRoomMarkerKind.Cover
+                    && candidate.Index == startingIndex);
+            if (handle != null)
+            {
+                SetSelectedMarker(handle);
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static int FindStartingCoverIndex(SerializedProperty covers)
+        {
+            if (covers == null || !covers.isArray)
+            {
+                return -1;
+            }
+
+            int found = -1;
+            for (int index = 0; index < covers.arraySize; index++)
+            {
+                SerializedProperty starting = covers.GetArrayElementAtIndex(index)
+                    .FindPropertyRelative("isStartingCover");
+                if (starting?.boolValue != true)
+                {
+                    continue;
+                }
+
+                if (found >= 0)
+                {
+                    return -1;
+                }
+
+                found = index;
+            }
+
+            return found;
+        }
+
+        private bool TryResolveCoverShot(
+            int coverIndex,
+            out FpgResolvedCameraShot shot,
+            out Pose playerPose,
+            out string error)
+        {
+            shot = default;
+            if (!TryGetCoverData(
+                    coverIndex,
+                    out FpgCoverCameraProfile profile,
+                    out playerPose,
+                    out error))
+            {
+                return false;
+            }
+
+            return FpgFormalCameraPoseUtility.TryResolveShot(
+                playerPose,
+                profile,
+                out shot,
+                out error);
+        }
+
+        private bool TryGetCoverProfile(
+            int coverIndex,
+            out FpgCoverCameraProfile profile,
+            out string error)
+        {
+            return TryGetCoverData(
+                coverIndex,
+                out profile,
+                out _,
+                out error);
+        }
+
+        private bool TryGetActiveCoverProfile(
+            out FpgCoverCameraProfile profile,
+            out Pose playerPose,
+            out string error)
+        {
+            return TryGetCoverData(
+                cameraPreviewCoverIndex,
+                out profile,
+                out playerPose,
+                out error);
+        }
+
+        private bool TryGetCoverData(
+            int coverIndex,
+            out FpgCoverCameraProfile profile,
+            out Pose playerPose,
+            out string error)
+        {
+            profile = null;
+            playerPose = default;
+            if (room == null)
+            {
+                error = "A room is required to resolve a cover camera.";
+                return false;
+            }
+
+            SerializedObject roomData = new SerializedObject(room);
+            SerializedProperty covers = roomData.FindProperty("coverSlots");
+            if (covers == null || !covers.isArray
+                || coverIndex < 0 || coverIndex >= covers.arraySize)
+            {
+                error = $"Cover index {coverIndex} is unavailable.";
+                return false;
+            }
+
+            SerializedProperty cover = covers.GetArrayElementAtIndex(coverIndex);
+            profile = cover.FindPropertyRelative("cameraProfile")
+                ?.objectReferenceValue as FpgCoverCameraProfile;
+            if (profile == null)
+            {
+                error = $"Cover {coverIndex + 1} has no camera profile.";
+                return false;
+            }
+
+            if (!profile.TryValidate(out error))
+            {
+                error = $"Cover {coverIndex + 1} camera profile is invalid: {error}";
+                return false;
+            }
+
+            SerializedProperty position = cover.FindPropertyRelative(
+                "playerReachableLocalPosition");
+            SerializedProperty rotation = cover.FindPropertyRelative(
+                "playerReachableLocalEulerAngles");
+            if (position == null || rotation == null)
+            {
+                error = $"Cover {coverIndex + 1} has no player arrival pose.";
+                return false;
+            }
+
+            playerPose = new Pose(
+                position.vector3Value,
+                Quaternion.Euler(rotation.vector3Value));
+            error = string.Empty;
+            return true;
+        }
+
+        private bool TryApplyCurrentCameraShot(out string error)
+        {
+            if (cameraPreviewRig == null || cameraPreviewCamera == null)
+            {
+                error = "Cover camera preview objects are unavailable.";
+                return false;
+            }
+
+            if (!TryResolveCoverShot(
+                    cameraPreviewCoverIndex,
+                    out FpgResolvedCameraShot shot,
+                    out Pose playerPose,
+                    out error)
+                || !TryGetCoverProfile(
+                    cameraPreviewCoverIndex,
+                    out cameraPreviewProfile,
+                    out error))
+            {
+                return false;
+            }
+
+            cameraTransitionActive = false;
+            cameraPreviewProfileDirtyCount =
+                EditorUtility.GetDirtyCount(cameraPreviewProfile);
+            cameraPreviewRoomDirtyCount = EditorUtility.GetDirtyCount(room);
+            cameraPreviewPlayerAnchor?.SetPositionAndRotation(
+                playerPose.position,
+                playerPose.rotation);
+            bool applied = FpgFormalCameraPoseUtility.TryApplyShot(
+                shot,
+                cameraPreviewRig,
+                cameraPreviewCamera,
+                out error);
+            SceneView.RepaintAll();
+            EditorApplication.QueuePlayerLoopUpdate();
+            return applied;
+        }
+
+        private void OnEditorUpdate()
+        {
+            if (disposed || !cameraPreviewActive
+                || EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            if (cameraTransitionActive)
+            {
+                float linear = (float)((EditorApplication.timeSinceStartup
+                    - cameraTransitionStartedAt) / cameraTransitionDuration);
+                float progress = Mathf.Clamp01(linear);
+                float smooth = progress * progress * (3f - 2f * progress);
+                FpgResolvedCameraShot shot = FpgFormalCameraPoseUtility.Interpolate(
+                    cameraTransitionSource,
+                    cameraTransitionTarget,
+                    smooth);
+                cameraPreviewPlayerAnchor?.SetPositionAndRotation(
+                    Vector3.LerpUnclamped(
+                        cameraTransitionSourcePlayerPose.position,
+                        cameraTransitionTargetPlayerPose.position,
+                        smooth),
+                    Quaternion.SlerpUnclamped(
+                        cameraTransitionSourcePlayerPose.rotation,
+                        cameraTransitionTargetPlayerPose.rotation,
+                        smooth));
+                if (!FpgFormalCameraPoseUtility.TryApplyShot(
+                        shot,
+                        cameraPreviewRig,
+                        cameraPreviewCamera,
+                        out string transitionError))
+                {
+                    cameraTransitionActive = false;
+                    Debug.LogWarning(transitionError, room);
+                }
+                else if (progress >= 1f)
+                {
+                    cameraTransitionActive = false;
+                }
+
+                SceneView.RepaintAll();
+                EditorApplication.QueuePlayerLoopUpdate();
+                return;
+            }
+
+            if (!TryGetCoverProfile(
+                    cameraPreviewCoverIndex,
+                    out FpgCoverCameraProfile currentProfile,
+                    out _))
+            {
+                return;
+            }
+
+            int profileDirtyCount = EditorUtility.GetDirtyCount(currentProfile);
+            int roomDirtyCount = EditorUtility.GetDirtyCount(room);
+            if (currentProfile != cameraPreviewProfile
+                || profileDirtyCount != cameraPreviewProfileDirtyCount
+                || roomDirtyCount != cameraPreviewRoomDirtyCount)
+            {
+                QueueCameraPreviewRefresh();
+            }
+        }
+
+        private void DrawCameraComposition()
+        {
+            if (!cameraPreviewActive || cameraPreviewCamera == null
+                || cameraPreviewRig == null || cameraPreviewProfile == null)
+            {
+                return;
+            }
+
+            DrawCameraFrustum(cameraPreviewCamera);
+            if (TryGetActiveCoverProfile(
+                    out FpgCoverCameraProfile profile,
+                    out Pose playerPose,
+                    out _))
+            {
+                DrawViewportGuides(cameraPreviewCamera, profile, playerPose);
+                if (!cameraTransitionActive)
+                {
+                    DrawCameraProfileHandle(profile, playerPose);
+                }
+            }
+        }
+
+        private static void DrawCameraFrustum(Camera camera)
+        {
+            Vector3[] near = new Vector3[4];
+            Vector3[] far = new Vector3[4];
+            Rect viewport = new Rect(0f, 0f, 1f, 1f);
+            camera.CalculateFrustumCorners(
+                viewport,
+                camera.nearClipPlane,
+                Camera.MonoOrStereoscopicEye.Mono,
+                near);
+            camera.CalculateFrustumCorners(
+                viewport,
+                camera.farClipPlane,
+                Camera.MonoOrStereoscopicEye.Mono,
+                far);
+            for (int index = 0; index < 4; index++)
+            {
+                near[index] = camera.transform.TransformPoint(near[index]);
+                far[index] = camera.transform.TransformPoint(far[index]);
+            }
+
+            Handles.color = new Color(0.2f, 0.8f, 1f, 0.8f);
+            for (int index = 0; index < 4; index++)
+            {
+                int next = (index + 1) % 4;
+                Handles.DrawLine(near[index], near[next]);
+                Handles.DrawLine(far[index], far[next]);
+                Handles.DrawDottedLine(near[index], far[index], 5f);
+            }
+        }
+
+        private static void DrawViewportGuides(
+            Camera camera,
+            FpgCoverCameraProfile profile,
+            Pose playerPose)
+        {
+            float playerDepth = Vector3.Dot(
+                playerPose.position - camera.transform.position,
+                camera.transform.forward);
+            float guideDepth = Mathf.Clamp(
+                playerDepth,
+                camera.nearClipPlane + 0.01f,
+                camera.farClipPlane - 0.01f);
+            Vector2 focus = profile.FocusViewportAnchor;
+            Vector3 horizontalStart = camera.ViewportToWorldPoint(
+                new Vector3(0f, focus.y, guideDepth));
+            Vector3 horizontalEnd = camera.ViewportToWorldPoint(
+                new Vector3(1f, focus.y, guideDepth));
+            Vector3 verticalStart = camera.ViewportToWorldPoint(
+                new Vector3(focus.x, 0f, guideDepth));
+            Vector3 verticalEnd = camera.ViewportToWorldPoint(
+                new Vector3(focus.x, 1f, guideDepth));
+            Handles.color = new Color(1f, 0.72f, 0.18f, 0.85f);
+            Handles.DrawDottedLine(horizontalStart, horizontalEnd, 4f);
+            Handles.DrawDottedLine(verticalStart, verticalEnd, 4f);
+
+            Vector3 playerViewport = camera.WorldToViewportPoint(
+                playerPose.position);
+            Handles.color = new Color(0.3f, 1f, 0.55f, 0.95f);
+            float size = HandleUtility.GetHandleSize(playerPose.position) * 0.07f;
+            Handles.DrawSolidDisc(
+                playerPose.position,
+                camera.transform.forward,
+                size);
+            Handles.Label(
+                playerPose.position + Vector3.up * size * 1.5f,
+                $"Viewport {playerViewport.x:F3}, {playerViewport.y:F3} | Target {profile.PlayerViewportAnchor.x:F3}, {profile.PlayerViewportAnchor.y:F3}");
+        }
+
+        private void DrawCameraProfileHandle(
+            FpgCoverCameraProfile profile,
+            Pose playerPose)
+        {
+            if (!TryResolveCoverShot(
+                    cameraPreviewCoverIndex,
+                    out FpgResolvedCameraShot shot,
+                    out _,
+                    out _))
+            {
+                return;
+            }
+
+            bool editCameraChild = Event.current.shift;
+            Pose pose;
+            if (editCameraChild)
+            {
+                pose = new Pose(
+                    shot.RigWorldPose.position
+                        + shot.RigWorldPose.rotation
+                            * shot.CameraLocalPose.position,
+                    shot.RigWorldPose.rotation
+                        * shot.CameraLocalPose.rotation);
+                Handles.color = new Color(1f, 0.62f, 0.2f, 1f);
+            }
+            else
+            {
+                pose = shot.RigWorldPose;
+                Handles.color = new Color(0.2f, 0.8f, 1f, 1f);
+            }
+
+            Vector3 position = pose.position;
+            Quaternion rotation = pose.rotation;
+            EditorGUI.BeginChangeCheck();
+            if (Tools.current == Tool.Rotate)
+            {
+                rotation = Handles.RotationHandle(rotation, position);
+            }
+            else if (Tools.current == Tool.Move)
+            {
+                position = Handles.PositionHandle(position, rotation);
+            }
+
+            if (!EditorGUI.EndChangeCheck())
+            {
+                return;
+            }
+
+            SerializedObject data = new SerializedObject(profile);
+            if (editCameraChild)
+            {
+                Quaternion inverseRig = Quaternion.Inverse(
+                    shot.RigWorldPose.rotation);
+                SerializedProperty localPosition =
+                    data.FindProperty("cameraLocalPosition");
+                SerializedProperty localEuler =
+                    data.FindProperty("cameraLocalEulerAngles");
+                Vector3 nextLocalPosition =
+                    inverseRig * (position - shot.RigWorldPose.position);
+                Vector3 nextLocalEuler =
+                    (inverseRig * rotation).eulerAngles;
+                if (!HasMeaningfulPositionChange(
+                        localPosition.vector3Value,
+                        nextLocalPosition)
+                    && !HasMeaningfulEulerChange(
+                        localEuler.vector3Value,
+                        nextLocalEuler))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(profile, "Edit Cover Camera Local Pose");
+                localPosition.vector3Value = nextLocalPosition;
+                localEuler.vector3Value = nextLocalEuler;
+            }
+            else
+            {
+                Quaternion inversePlayer = Quaternion.Inverse(
+                    playerPose.rotation);
+                SerializedProperty rigPosition =
+                    data.FindProperty("cameraRigLocalPosition");
+                SerializedProperty rigEuler =
+                    data.FindProperty("cameraRigLocalEulerAngles");
+                Vector3 nextRigPosition =
+                    inversePlayer * (position - playerPose.position);
+                Vector3 nextRigEuler =
+                    (inversePlayer * rotation).eulerAngles;
+                if (!HasMeaningfulPositionChange(
+                        rigPosition.vector3Value,
+                        nextRigPosition)
+                    && !HasMeaningfulEulerChange(
+                        rigEuler.vector3Value,
+                        nextRigEuler))
+                {
+                    return;
+                }
+
+                Undo.RecordObject(profile, "Edit Cover Camera Rig Pose");
+                rigPosition.vector3Value = nextRigPosition;
+                rigEuler.vector3Value = nextRigEuler;
+            }
+
+            if (!data.ApplyModifiedProperties())
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty(profile);
+            TryApplyCurrentCameraShot(out _);
         }
 
         private static void ConfigureFormalPreviewCamera(Camera target)
@@ -1359,6 +2225,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
             bool wasActive = cameraPreviewActive || cameraPreviewRoot != null;
             cameraPreviewActive = false;
             cameraPreviewProfile = null;
+            cameraPreviewCharacter = null;
+            cameraPreviewThreeC = null;
+            cameraPreviewCoverIndex = -1;
+            previousCameraPreviewCoverIndex = -1;
+            cameraTransitionActive = false;
             DestroyCameraPreviewObjects();
             if (notify && wasActive)
             {
@@ -1368,8 +2239,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void DestroyCameraPreviewObjects()
         {
+            ClearSelectionIfInsidePreview(cameraPreviewRoot);
             cameraPreviewPlayer = null;
+            cameraPreviewPlayerAnchor = null;
+            cameraPreviewRig = null;
             cameraPreviewCamera = null;
+            cameraTransitionActive = false;
             if (cameraPreviewRoot != null)
             {
                 cameraPreviewRoot.SetActive(false);
@@ -1384,6 +2259,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             environmentPreview = null;
             if (previewRoot != null)
             {
+                ClearSelectionIfInsidePreview(previewRoot);
                 previewRoot.SetActive(false);
                 UnityEngine.Object.DestroyImmediate(previewRoot);
                 previewRoot = null;
@@ -1392,6 +2268,33 @@ namespace FPG.Demo.Editor.LevelAuthoring
             roomArtRoot = null;
             roomPreviewScene = default;
 
+        }
+
+        private void ClearSelectionIfInsidePreview(GameObject root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Transform rootTransform = root.transform;
+            foreach (GameObject selected in Selection.gameObjects)
+            {
+                if (selected == null)
+                {
+                    continue;
+                }
+
+                Transform selectedTransform = selected.transform;
+                if (selectedTransform == rootTransform
+                    || selectedTransform.IsChildOf(rootTransform))
+                {
+                    Selection.objects = room == null
+                        ? new UnityEngine.Object[0]
+                        : new UnityEngine.Object[] { room };
+                    return;
+                }
+            }
         }
 
         private static void ParentPreviewObject(

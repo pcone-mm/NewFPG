@@ -14,16 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.D0ThreeCProfile
   profileId: fei-formal
   displayName: Fei Formal
-  designerNotes: Formal 2.5D camera, aiming and player presentation profile.
-  fixedPlayerViewportAnchor: {x: 0.5, y: 0.22}
-  cameraFocusViewport: {x: 0.5, y: 0.56}
-  cameraPivotLocalPosition: {x: 0, y: 5.74, z: -9.96}
-  cameraPivotLocalEulerAngles: {x: 0.86, y: 0, z: 0}
-  cameraLocalPosition: {x: 0, y: 0, z: 0}
-  cameraLocalEulerAngles: {x: 0, y: 0, z: 0}
-  cameraFieldOfView: 65
-  cameraNearClipPlane: 0.1
-  cameraFarClipPlane: 80
+  designerNotes: Formal aiming, cover traversal, barrier and combat feedback profile.
+    Static cover composition is owned by FpgCoverCameraProfile assets.
   reticleSafeViewport:
     serializedVersion: 2
     x: 0.08

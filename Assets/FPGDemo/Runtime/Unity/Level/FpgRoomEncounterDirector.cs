@@ -466,6 +466,15 @@ namespace FPG.Demo.Unity
                     out error);
             }
 
+            if (playerDriver is FpgFormalPlayerTickDriver concreteDriver
+                && !concreteDriver.TryValidate(out error))
+            {
+                return FailPreparation(
+                    FpgEncounterFailureReason.InvalidRequest,
+                    error,
+                    out error);
+            }
+
             for (int warmupIndex = 0;
                 warmupIndex < warmup.Count;
                 warmupIndex++)
@@ -731,6 +740,8 @@ namespace FPG.Demo.Unity
                 combatRuntime?.AttackScheduler
                     .ClearPresentationCommitState();
                 TrySetOverheadHealthBarsPaused(true);
+                PlayerTickDriver?.CameraFeedback?.SetPaused(true);
+                PlayerTickDriver?.CoverTraversalPresenter?.SetPaused(true);
             }
             error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
             return result.IsSuccess;
@@ -745,6 +756,8 @@ namespace FPG.Demo.Unity
             {
                 Phase = session.Runtime.Phase;
                 TrySetOverheadHealthBarsPaused(false);
+                PlayerTickDriver?.CameraFeedback?.SetPaused(false);
+                PlayerTickDriver?.CoverTraversalPresenter?.SetPaused(false);
             }
             error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
             return result.IsSuccess;
@@ -1719,6 +1732,58 @@ namespace FPG.Demo.Unity
             }
 
             pose = default;
+            return false;
+        }
+
+        public bool TryResolveCoverCameraShot(
+            string coverId,
+            Pose playerWorldPose,
+            out FpgResolvedCameraShot shot,
+            out string error)
+        {
+            shot = default;
+            error = string.Empty;
+            if (roomInstance != null
+                && roomInstance.TryResolveCoverCameraShot(
+                    coverId,
+                    playerWorldPose,
+                    out shot,
+                    out error))
+            {
+                return true;
+            }
+
+            error = string.IsNullOrWhiteSpace(error)
+                ? $"Formal camera shot for cover '{coverId}' is unavailable."
+                : error;
+            return false;
+        }
+
+        public bool TryResolveCoverReachablePoseAndCameraShot(
+            string coverId,
+            out Pose pose,
+            out FpgCoverCameraProfile profile,
+            out FpgResolvedCameraShot shot,
+            out string error)
+        {
+            pose = default;
+            profile = null;
+            shot = default;
+            error = string.Empty;
+            if (roomInstance != null
+                && roomInstance.TryResolveCoverReachablePoseAndCameraShot(
+                    coverId,
+                    out pose,
+                    out profile,
+                    out shot,
+                    out error))
+            {
+                return true;
+            }
+
+            error = string.IsNullOrWhiteSpace(error)
+                ? $"Formal camera destination for cover '{coverId}' is unavailable."
+                : error;
             return false;
         }
 

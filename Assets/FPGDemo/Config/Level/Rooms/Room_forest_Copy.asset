@@ -62,28 +62,31 @@ MonoBehaviour:
   coverSlots:
   - markerId: cover-left
     displayName: "\u5DE6\u4FA7\u63A9\u4F53"
-    localPosition: {x: -6, y: 1.04, z: 0}
+    localPosition: {x: -6, y: 0.5, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     prefab: {fileID: 911310430394176408, guid: 566c45409080ba344bccc2640d875254, type: 3}
+    cameraProfile: {fileID: 11400000, guid: fc6cabaa291546443bef1d997255c750, type: 2}
     maxDurability: 100
     isStartingCover: 0
-    playerReachableLocalPosition: {x: -6, y: 1.04, z: 0}
+    playerReachableLocalPosition: {x: -6, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
   - markerId: cover-center
     displayName: "\u4E2D\u592E\u63A9\u4F53"
-    localPosition: {x: 0, y: 1.04, z: 0}
+    localPosition: {x: 0, y: 0.5, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     prefab: {fileID: 911310430394176408, guid: 566c45409080ba344bccc2640d875254, type: 3}
+    cameraProfile: {fileID: 11400000, guid: 944a0d8225d38b847b26f071018697f3, type: 2}
     maxDurability: 100
     isStartingCover: 1
-    playerReachableLocalPosition: {x: 0, y: 1.04, z: 0}
+    playerReachableLocalPosition: {x: 0, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
   - markerId: cover-right
     displayName: "\u53F3\u4FA7\u63A9\u4F53"
-    localPosition: {x: 5.5, y: 1.04, z: 0}
+    localPosition: {x: 5.5, y: 0.5, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
     prefab: {fileID: 911310430394176408, guid: 566c45409080ba344bccc2640d875254, type: 3}
+    cameraProfile: {fileID: 11400000, guid: 983c9cd111684dc4585660b9934b1c2d, type: 2}
     maxDurability: 100
     isStartingCover: 0
-    playerReachableLocalPosition: {x: 5.5, y: 1.04, z: 0}
+    playerReachableLocalPosition: {x: 5.5, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}

@@ -31,6 +31,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             string roomAssetPath = string.Empty;
             string artScenePath = string.Empty;
             bool canDeleteCreatedAssets = true;
+            List<string> createdCameraProfilePaths = new List<string>();
 
             if (sourceRoom == null)
             {
@@ -122,6 +123,15 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     artScenePath;
                 roomData.ApplyModifiedPropertiesWithoutUndo();
 
+                if (!FpgCoverCameraProfileAuthoring.TryCloneProfilesForRoomDuplicate(
+                        duplicateRoom,
+                        roomAssetPath,
+                        createdCameraProfilePaths,
+                        out error))
+                {
+                    return false;
+                }
+
                 AssetDatabase.CreateAsset(duplicateRoom, roomAssetPath);
                 AssetDatabase.SaveAssetIfDirty(duplicateRoom);
 
@@ -168,6 +178,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         ref canDeleteCreatedAssets,
                         ref duplicateRoom,
                         ref error);
+                    if (canDeleteCreatedAssets)
+                    {
+                        FpgCoverCameraProfileAuthoring.DeleteCreatedProfiles(
+                            createdCameraProfilePaths);
+                    }
                 }
             }
         }

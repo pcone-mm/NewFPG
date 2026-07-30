@@ -40,7 +40,9 @@ namespace FPG.Demo.Unity
         InvalidCoverReachablePose = 27,
         MissingStartingCover = 28,
         MultipleStartingCovers = 29,
-        OverlappingCoverReachablePosition = 30
+        OverlappingCoverReachablePosition = 30,
+        MissingCoverCameraProfile = 31,
+        InvalidCoverCameraProfile = 32
     }
 
     public sealed class FpgRoomValidationIssue

@@ -88,6 +88,9 @@ namespace FPG.Demo.Tests.EditMode
                     AssetDatabase.DeleteAsset(createdScenePath);
                 }
 
+                AssetDatabase.DeleteAsset(
+                    FpgCoverCameraProfileAuthoring.DefaultProfileRoot
+                    + "/RoomCopy");
                 AssetDatabase.DeleteAsset(folder);
             }
         }

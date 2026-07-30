@@ -56,6 +56,7 @@
 .authoring-split,
 .marker-toolbar,
 .camera-preview-toolbar,
+.camera-preview-actions,
 .visibility-toolbar,
 .marker-actions,
 .validation-header,
@@ -172,15 +173,41 @@
     border-bottom-width: 1px;
     border-bottom-color: var(--line);
     background-color: var(--panel);
+    flex-wrap: wrap;
+}
+
+.camera-preview-panel {
+    background-color: var(--panel);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--line);
+}
+
+.camera-preview-actions {
+    min-height: 30px;
+    align-items: center;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-bottom: 3px;
+    flex-wrap: wrap;
 }
 
 .camera-template-field {
-    width: 330px;
+    width: 280px;
+    margin-right: 6px;
+}
+
+.preview-character-field {
+    width: 250px;
     margin-right: 6px;
 }
 
 .camera-preview-toolbar Button {
     min-width: 76px;
+    margin-right: 4px;
+}
+
+.camera-preview-actions Button {
+    min-width: 78px;
     margin-right: 4px;
 }
 
@@ -247,6 +274,21 @@
 
 .marker-actions Button {
     margin-left: 4px;
+}
+
+.camera-profile-actions {
+    flex-direction: row;
+    margin-top: 4px;
+    margin-bottom: 5px;
+}
+
+.camera-profile-actions Button {
+    margin-right: 4px;
+}
+
+.camera-profile-reference-count {
+    color: var(--muted);
+    margin-top: 5px;
 }
 
 .marker-details-scroll {

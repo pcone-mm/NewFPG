@@ -398,18 +398,36 @@ namespace FPG.Demo.Unity
         {
             FpgCoverTraversalPresenter presenter =
                 director.PlayerTickDriver?.CoverTraversalPresenter;
-            if (presenter == null || !presenter.HasReachedVisualEnd)
+            FpgFormalPlayerCameraFeedback cameraFeedback =
+                director.PlayerTickDriver?.CameraFeedback;
+            if (presenter == null || cameraFeedback == null
+                || !presenter.HasReachedVisualEnd)
             {
+                return;
+            }
+
+            FpgResolvedCameraShot sourceShot = cameraFeedback.CommittedShot;
+            if (!director.TryResolveCoverReachablePoseAndCameraShot(
+                    pendingInitialCoverId,
+                    out Pose pose,
+                    out _,
+                    out FpgResolvedCameraShot targetShot,
+                    out string error)
+                || (!cameraFeedback.TryCommitShotTransition(out error)
+                    && !cameraFeedback.TryApplyImmediateShot(
+                        targetShot,
+                        out error)))
+            {
+                FailInitialCoverTransition(error);
                 return;
             }
 
             if (!director.TryPlacePlayerAtCover(
                     pendingInitialCoverId,
-                    out string error)
-                || !director.TryResolveCoverReachablePose(
-                    pendingInitialCoverId,
-                    out Pose pose))
+                    out error))
             {
+                cameraFeedback.TryApplyImmediateShot(sourceShot, out _);
+                director.TryPlacePlayerAtEntry(playerEntryMarkerId, out _);
                 FailInitialCoverTransition(error);
                 return;
             }
@@ -445,21 +463,11 @@ namespace FPG.Demo.Unity
             FpgCoverTraversalPresenter traversalPresenter =
                 director.PlayerTickDriver?.CoverTraversalPresenter;
             traversalPresenter?.Cancel();
-            if (!director.TryPlacePlayerAtEntry(playerEntryMarkerId, out error))
-            {
-                return false;
-            }
-
             FpgFormalPlayerCameraFeedback cameraFeedback =
                 director.PlayerTickDriver?.CameraFeedback;
-            if (cameraFeedback == null
-                || !cameraFeedback.TryApplyFixedSceneRig(
-                    director.PlayerAnchor,
-                    out error))
+            cameraFeedback?.CancelShotTransition();
+            if (!director.TryPlacePlayerAtEntry(playerEntryMarkerId, out error))
             {
-                error = string.IsNullOrWhiteSpace(error)
-                    ? "Formal cover entry requires the configured camera rig."
-                    : error;
                 return false;
             }
 
@@ -467,20 +475,44 @@ namespace FPG.Demo.Unity
             FpgCoverSnapshot startingCover = covers == null
                 ? default(FpgCoverSnapshot)
                 : covers.CurrentSnapshot;
+            Pose sourcePose = new Pose(
+                director.PlayerAnchor.position,
+                director.PlayerAnchor.rotation);
+            float traversalSeconds = director.PlayerTickDriver == null
+                || director.PlayerTickDriver.ThreeCProfile == null
+                    ? 0f
+                    : director.PlayerTickDriver.ThreeCProfile
+                        .CoverTraversalSeconds;
             if (!startingCover.IsValid
                 || traversalPresenter == null
-                || !director.TryResolveCoverReachablePose(
+                || cameraFeedback == null
+                || !director.TryResolveCoverCameraShot(
                     startingCover.CoverId,
-                    out Pose targetPose)
+                    sourcePose,
+                    out FpgResolvedCameraShot sourceShot,
+                    out error)
+                || !director.TryResolveCoverReachablePoseAndCameraShot(
+                    startingCover.CoverId,
+                    out Pose targetPose,
+                    out _,
+                    out FpgResolvedCameraShot targetShot,
+                    out error)
+                || !cameraFeedback.TryApplyImmediateShot(
+                    sourceShot,
+                    out error)
                 || !traversalPresenter.TryBegin(
-                    new Pose(
-                        director.PlayerAnchor.position,
-                        director.PlayerAnchor.rotation),
+                    sourcePose,
                     targetPose,
-                    director.PlayerTickDriver.ThreeCProfile
-                        .CoverTraversalSeconds,
+                    traversalSeconds,
+                    out error)
+                || !cameraFeedback.TryBeginShotTransition(
+                    sourceShot,
+                    targetShot,
+                    traversalSeconds,
                     out error))
             {
+                traversalPresenter?.Cancel();
+                cameraFeedback?.CancelShotTransition();
                 error = string.IsNullOrWhiteSpace(error)
                     ? "Formal initial cover transition could not start."
                     : error;
@@ -496,6 +528,7 @@ namespace FPG.Demo.Unity
         private void FailInitialCoverTransition(string message)
         {
             director.PlayerTickDriver?.CoverTraversalPresenter?.Cancel();
+            director.PlayerTickDriver?.CameraFeedback?.CancelShotTransition();
             initialCoverTransitionPending = false;
             pendingInitialCoverId = string.Empty;
             prepared = false;

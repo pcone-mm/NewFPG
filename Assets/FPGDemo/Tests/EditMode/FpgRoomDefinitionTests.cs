@@ -163,6 +163,58 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void RoomValidationRequiresValidCoverCameraProfiles()
+        {
+            FpgRoomDefinition clone = Object.Instantiate(
+                LoadRequired<FpgRoomDefinition>(RoomPath));
+            FpgCoverCameraProfile invalidProfile =
+                ScriptableObject.CreateInstance<FpgCoverCameraProfile>();
+            try
+            {
+                SerializedObject serializedRoom = new SerializedObject(clone);
+                SerializedProperty firstCover = serializedRoom
+                    .FindProperty("coverSlots")
+                    .GetArrayElementAtIndex(0);
+                firstCover.FindPropertyRelative("cameraProfile")
+                    .objectReferenceValue = null;
+                serializedRoom.ApplyModifiedPropertiesWithoutUndo();
+
+                FpgRoomValidationIssue missingIssue = AssertRoomIssue(
+                    clone.Validate(),
+                    FpgRoomValidationCode.MissingCoverCameraProfile);
+                Assert.That(missingIssue.MarkerKind,
+                    Is.EqualTo(FpgRoomMarkerKind.Cover));
+                Assert.That(missingIssue.MarkerId,
+                    Is.EqualTo(clone.CoverSlots[0].MarkerId));
+
+                SerializedObject serializedProfile =
+                    new SerializedObject(invalidProfile);
+                serializedProfile.FindProperty("farClipPlane").floatValue = 0.1f;
+                serializedProfile.ApplyModifiedPropertiesWithoutUndo();
+
+                serializedRoom.Update();
+                firstCover = serializedRoom.FindProperty("coverSlots")
+                    .GetArrayElementAtIndex(0);
+                firstCover.FindPropertyRelative("cameraProfile")
+                    .objectReferenceValue = invalidProfile;
+                serializedRoom.ApplyModifiedPropertiesWithoutUndo();
+
+                FpgRoomValidationIssue invalidIssue = AssertRoomIssue(
+                    clone.Validate(),
+                    FpgRoomValidationCode.InvalidCoverCameraProfile);
+                Assert.That(invalidIssue.MarkerKind,
+                    Is.EqualTo(FpgRoomMarkerKind.Cover));
+                Assert.That(invalidIssue.MarkerId,
+                    Is.EqualTo(clone.CoverSlots[0].MarkerId));
+            }
+            finally
+            {
+                Object.DestroyImmediate(invalidProfile);
+                Object.DestroyImmediate(clone);
+            }
+        }
+
+        [Test]
         public void SemanticIdUtilitiesNormalizeAndAvoidCollisions()
         {
             Assert.That(

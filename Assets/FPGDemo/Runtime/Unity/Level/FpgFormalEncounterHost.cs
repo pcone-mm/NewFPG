@@ -399,6 +399,21 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            FpgFormalPlayerPresentationBridge presentationBridge =
+                playerComposer.PresentationBridge;
+            if (presentationBridge == null
+                || presentationBridge.TargetCamera != worldCamera
+                || presentationBridge.CameraRig != cameraRoot
+                || presentationBridge.CameraFeedback == null
+                || presentationBridge.CameraFeedback.TargetCamera
+                    != worldCamera
+                || presentationBridge.CameraFeedback.CameraRig
+                    != cameraRoot)
+            {
+                error = "Formal host, player presentation and camera feedback must share one scene-owned Camera Rig and Camera.";
+                return false;
+            }
+
             if (!(playerInputPort is FpgFormalPlayerTickDriver concretePlayerDriver)
                 || !(combatPortFactory is FpgFormalCombatPortFactory concreteFactory)
                 || playerComposer.ActorsRoot != actorsRoot

@@ -62,9 +62,9 @@ MonoBehaviour:
   coverSlots:
   - markerId: cover-left
     displayName: "\u5DE6\u4FA7\u63A9\u4F53"
-    localPosition: {x: -6, y: 0.5, z: 0}
+    localPosition: {x: -2.66, y: 4.41, z: 1.02}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    prefab: {fileID: 911310430394176408, guid: 566c45409080ba344bccc2640d875254, type: 3}
+    prefab: {fileID: 3376033595176221629, guid: fd72b86d1d8724642948ae0219902bfc, type: 3}
     cameraProfile: {fileID: 11400000, guid: 2c32d1c69d64d3a43a95f0927cd0e1e9, type: 2}
     maxDurability: 100
     isStartingCover: 0

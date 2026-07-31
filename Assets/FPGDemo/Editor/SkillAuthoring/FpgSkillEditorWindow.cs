@@ -21,6 +21,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             "FPGDemo.SkillAuthoring.SelectedAssetPath";
         private const string SelectedSequenceIndexSessionKey =
             "FPGDemo.SkillAuthoring.SelectedSequenceIndex";
+        private const string SelectedEntityFilterSessionKey =
+            "FPGDemo.SkillAuthoring.SelectedEntityGuid";
         private const string PreviewPrefabSessionKey =
             "FPGDemo.SkillAuthoring.PreviewPrefabPath";
         private const int TickRate = FpgSkillRuntimeConstants.TickRate;
@@ -30,6 +32,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             new List<FpgSkillAssetRecord>();
         private readonly List<FpgSkillAssetRecord> filteredAssets =
             new List<FpgSkillAssetRecord>();
+        private readonly List<FpgSkillEntityFilterChoice> entityFilterChoices =
+            new List<FpgSkillEntityFilterChoice>();
         private readonly List<FpgSkillEventRecord> events =
             new List<FpgSkillEventRecord>();
         private readonly List<FpgSkillActivePresentationTrackRecord>
@@ -53,8 +57,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private readonly List<FpgSkillLogEntry> eventLog =
             new List<FpgSkillLogEntry>();
 
+        private FpgSkillBindingSnapshot bindingSnapshot;
         private SerializedObject serializedAsset;
         private UnityEngine.Object selectedAsset;
+        private FpgSkillEntityRecord selectedEntityContext;
+        private string selectedEntityFilterKey =
+            FpgSkillEntityBindingIndex.AllFilterKey;
         private int selectedSequenceIndex;
         private int selectedPresentationTrackIndex = -1;
         private FpgSkillEventKey selectedEventKey;
@@ -80,11 +88,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private float playbackSpeed = 1f;
 
         private ToolbarSearchField assetSearchField;
-        private DropdownField typeFilter;
+        private DropdownField entityFilter;
         private ListView actionAssetList;
         private DropdownField sequenceDropdown;
         private DropdownField previewModeDropdown;
         private ObjectField previewPrefabField;
+        private Button restoreEntityPrefabButton;
         private DropdownField targetCountDropdown;
         private Toggle showGeometryToggle;
         private Label previewTickLabel;
@@ -126,12 +135,25 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         public static void OpenAsset(UnityEngine.Object asset)
         {
-            if (asset != null)
+            if (FpgSkillSerializedAdapter.IsCompatible(asset))
             {
                 string path = AssetDatabase.GetAssetPath(asset);
                 if (!string.IsNullOrWhiteSpace(path))
                 {
                     SessionState.SetString(SelectedAssetSessionKey, path);
+                }
+            }
+            else if (FpgSkillEntityBindingIndex.IsEntityDefinition(asset))
+            {
+                string path = AssetDatabase.GetAssetPath(asset);
+                string guid = string.IsNullOrWhiteSpace(path)
+                    ? string.Empty
+                    : AssetDatabase.AssetPathToGUID(path);
+                if (!string.IsNullOrWhiteSpace(guid))
+                {
+                    SessionState.SetString(
+                        SelectedEntityFilterSessionKey,
+                        guid);
                 }
             }
 
@@ -150,7 +172,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 }
 
                 window.RefreshAssetRecords();
-                window.SelectAsset(asset, false);
+                window.SelectProjectAsset(asset, false);
                 window.Focus();
             };
         }
@@ -205,13 +227,27 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             assetSearchField = rootVisualElement.Q<ToolbarSearchField>(
                 "asset-search-field");
-            typeFilter = rootVisualElement.Q<DropdownField>("type-filter");
+            entityFilter = rootVisualElement.Q<DropdownField>("type-filter");
             actionAssetList = rootVisualElement.Q<ListView>("action-asset-list");
             sequenceDropdown = rootVisualElement.Q<DropdownField>("sequence-dropdown");
             previewModeDropdown = rootVisualElement.Q<DropdownField>(
                 "preview-mode-dropdown");
             previewPrefabField = rootVisualElement.Q<ObjectField>(
                 "preview-prefab-field");
+            restoreEntityPrefabButton = rootVisualElement.Q<Button>(
+                "restore-entity-prefab-button");
+            if (restoreEntityPrefabButton == null)
+            {
+                restoreEntityPrefabButton = new Button
+                {
+                    name = "restore-entity-prefab-button",
+                    text = "↺",
+                    tooltip = "恢复实体 Prefab"
+                };
+                restoreEntityPrefabButton.AddToClassList(
+                    "preview-restore-button");
+                previewPrefabField.parent.Insert(3, restoreEntityPrefabButton);
+            }
             targetCountDropdown = rootVisualElement.Q<DropdownField>(
                 "target-count-dropdown");
             showGeometryToggle = rootVisualElement.Q<Toggle>("show-geometry-toggle");
@@ -303,8 +339,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             previewPrefabField.objectType = typeof(GameObject);
             previewPrefabField.allowSceneObjects = false;
-            typeFilter.choices = new List<string> { "全部", "角色", "怪物", "通用" };
-            typeFilter.SetValueWithoutNotify("全部");
+            entityFilter.label = "实体定义";
+            entityFilter.choices = new List<string> { "全部技能" };
+            entityFilter.SetValueWithoutNotify("全部技能");
 
             speedDropdown.choices = new List<string>
                 { "0.25x", "0.5x", "1x", "2x" };
@@ -327,11 +364,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void RegisterCallbacks()
         {
             assetSearchField.RegisterValueChangedCallback(_ => ApplyAssetFilters());
-            typeFilter.RegisterValueChangedCallback(_ => ApplyAssetFilters());
+            entityFilter.RegisterValueChangedCallback(OnEntityFilterChanged);
             sequenceDropdown.RegisterValueChangedCallback(OnSequenceChanged);
             previewModeDropdown.RegisterValueChangedCallback(
                 OnPreviewModeChanged);
             previewPrefabField.RegisterValueChangedCallback(OnPreviewPrefabChanged);
+            restoreEntityPrefabButton.clicked += RestoreEntityPreviewPrefab;
             targetCountDropdown.RegisterValueChangedCallback(OnTargetCountChanged);
             showGeometryToggle.RegisterValueChangedCallback(evt =>
                 previewView.SetGeometryVisible(evt.newValue));
@@ -377,17 +415,25 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void RestorePreviewPrefab()
         {
             string key = GetPreviewPrefabSessionKey();
-            string path = string.IsNullOrWhiteSpace(key)
-                ? string.Empty
-                : SessionState.GetString(key, string.Empty);
-            GameObject prefab = string.IsNullOrWhiteSpace(path)
+            bool hasOverride = !string.IsNullOrWhiteSpace(key)
+                && SessionState.GetBool(key + ".HasOverride", false);
+            GameObject prefab = selectedEntityContext == null
                 ? null
-                : AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                : selectedEntityContext.PreviewPrefab;
+            if (hasOverride)
+            {
+                string path = SessionState.GetString(key, string.Empty);
+                prefab = string.IsNullOrWhiteSpace(path)
+                    ? null
+                    : AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            }
+
             previewPrefabField?.SetValueWithoutNotify(prefab);
             previewView?.SetPreviewPrefab(prefab);
             measuredAnimationDurationTicks = previewView == null
                 ? -1
                 : previewView.MeasuredAnimationDurationTicks;
+            RefreshPreviewPrefabRestoreButton(hasOverride);
         }
 
         private void OnPreviewPrefabChanged(ChangeEvent<UnityEngine.Object> evt)
@@ -396,6 +442,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
             string key = GetPreviewPrefabSessionKey();
             if (!string.IsNullOrWhiteSpace(key))
             {
+                SessionState.SetBool(key + ".HasOverride", true);
                 SessionState.SetString(
                     key,
                     prefab == null
@@ -407,8 +454,46 @@ namespace FPG.Demo.Editor.SkillAuthoring
             previewView.SetPreviewPrefab(prefab);
             measuredAnimationDurationTicks =
                 previewView.MeasuredAnimationDurationTicks;
+            RefreshPreviewPrefabRestoreButton(true);
             RefreshPreview();
             QueueSerializedRefresh();
+        }
+
+        private void RestoreEntityPreviewPrefab()
+        {
+            string key = GetPreviewPrefabSessionKey();
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                SessionState.SetBool(key + ".HasOverride", false);
+                SessionState.SetString(key, string.Empty);
+            }
+
+            GameObject prefab = selectedEntityContext == null
+                ? null
+                : selectedEntityContext.PreviewPrefab;
+            previewPrefabField?.SetValueWithoutNotify(prefab);
+            previewView?.SetPreviewPrefab(prefab);
+            measuredAnimationDurationTicks = previewView == null
+                ? -1
+                : previewView.MeasuredAnimationDurationTicks;
+            RefreshPreviewPrefabRestoreButton(false);
+            RefreshPreview();
+            QueueSerializedRefresh();
+        }
+
+        private void RefreshPreviewPrefabRestoreButton(bool hasOverride)
+        {
+            if (restoreEntityPrefabButton == null)
+            {
+                return;
+            }
+
+            restoreEntityPrefabButton.SetEnabled(
+                selectedEntityContext != null && hasOverride);
+            restoreEntityPrefabButton.tooltip = selectedEntityContext == null
+                ? "当前技能没有唯一的实体预览上下文"
+                : "恢复 " + selectedEntityContext.DisplayName
+                    + " 的实体 Prefab";
         }
 
         private string GetPreviewPrefabSessionKey()
@@ -422,10 +507,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             string assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
-            return PreviewPrefabSessionKey + "."
-                + (string.IsNullOrWhiteSpace(assetGuid)
+            string skillKey = string.IsNullOrWhiteSpace(assetGuid)
                     ? assetPath.GetHashCode().ToString("X8")
-                    : assetGuid);
+                    : assetGuid;
+            string entityKey = selectedEntityContext == null
+                ? FpgSkillEntityBindingIndex.NoEntityContextKey
+                : selectedEntityContext.Guid;
+            return PreviewPrefabSessionKey + "." + skillKey + "." + entityKey;
         }
 
 
@@ -440,59 +528,180 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void RefreshAssetRecords()
         {
+            if (actionAssetList == null
+                || entityFilter == null
+                || statusLabel == null)
+            {
+                return;
+            }
+
             string selectedPath = selectedAsset == null
                 ? SessionState.GetString(SelectedAssetSessionKey, string.Empty)
                 : AssetDatabase.GetAssetPath(selectedAsset);
+            List<FpgSkillAssetRecord> discovered =
+                FpgSkillSerializedAdapter.FindAssets();
+            bindingSnapshot = FpgSkillEntityBindingIndex.Build(discovered);
             allAssets.Clear();
-            allAssets.AddRange(FpgSkillSerializedAdapter.FindAssets());
-            ApplyAssetFilters();
+            allAssets.AddRange(bindingSnapshot.Skills);
+            RefreshEntityFilterChoices();
+            ApplyAssetFilters(false);
 
+            FpgSkillAssetRecord preferred = null;
             if (!string.IsNullOrWhiteSpace(selectedPath))
             {
-                FpgSkillAssetRecord record = allAssets.FirstOrDefault(candidate =>
+                preferred = allAssets.FirstOrDefault(candidate =>
                     string.Equals(candidate.Path, selectedPath, StringComparison.OrdinalIgnoreCase));
-                if (record != null)
-                {
-                    SelectAsset(record.Asset, false);
-                }
+            }
+
+            if (preferred != null && filteredAssets.Contains(preferred))
+            {
+                SelectAsset(preferred.Asset, false);
+            }
+            else if (filteredAssets.Count > 0)
+            {
+                SelectAsset(filteredAssets[0].Asset, false);
+            }
+            else
+            {
+                ClearSelectedData();
             }
 
             statusLabel.text = allAssets.Count == 0
                 ? "未发现具有 skillId、displayName、sequences 字段的动作资产。"
-                : "已发现 " + allAssets.Count + " 个动作资产。";
+                : "已发现 " + allAssets.Count + " 个技能资产，"
+                    + bindingSnapshot.Entities.Count + " 个实体定义。";
+        }
+
+        private void RefreshEntityFilterChoices()
+        {
+            entityFilterChoices.Clear();
+            entityFilterChoices.AddRange(bindingSnapshot.BuildFilterChoices());
+            string storedKey = SessionState.GetString(
+                SelectedEntityFilterSessionKey,
+                selectedEntityFilterKey);
+            FpgSkillEntityFilterChoice selectedChoice =
+                entityFilterChoices.FirstOrDefault(choice => string.Equals(
+                    choice.Key,
+                    storedKey,
+                    StringComparison.Ordinal))
+                ?? entityFilterChoices[0];
+            selectedEntityFilterKey = selectedChoice.Key;
+            entityFilter.choices = entityFilterChoices
+                .Select(choice => choice.Label)
+                .ToList();
+            entityFilter.SetValueWithoutNotify(selectedChoice.Label);
+            SessionState.SetString(
+                SelectedEntityFilterSessionKey,
+                selectedEntityFilterKey);
+        }
+
+        private void OnEntityFilterChanged(ChangeEvent<string> evt)
+        {
+            FpgSkillEntityFilterChoice choice = entityFilterChoices
+                .FirstOrDefault(candidate => string.Equals(
+                    candidate.Label,
+                    evt.newValue,
+                    StringComparison.Ordinal));
+            if (choice == null)
+            {
+                return;
+            }
+
+            SetEntityFilterKey(choice.Key, false);
+            ApplyAssetFilters(true);
+        }
+
+        private void SetEntityFilterKey(string filterKey, bool applyFilters)
+        {
+            FpgSkillEntityFilterChoice choice = entityFilterChoices
+                .FirstOrDefault(candidate => string.Equals(
+                    candidate.Key,
+                    filterKey,
+                    StringComparison.Ordinal))
+                ?? entityFilterChoices.FirstOrDefault();
+            if (choice == null)
+            {
+                return;
+            }
+
+            selectedEntityFilterKey = choice.Key;
+            entityFilter?.SetValueWithoutNotify(choice.Label);
+            SessionState.SetString(
+                SelectedEntityFilterSessionKey,
+                selectedEntityFilterKey);
+            if (applyFilters)
+            {
+                ApplyAssetFilters(true);
+            }
         }
 
         private void ApplyAssetFilters()
         {
+            ApplyAssetFilters(true);
+        }
+
+        private void ApplyAssetFilters(bool selectFallback)
+        {
             string search = assetSearchField == null
                 ? string.Empty
                 : assetSearchField.value ?? string.Empty;
-            string ownerFilter = typeFilter == null
-                ? "全部"
-                : typeFilter.value ?? "全部";
             filteredAssets.Clear();
-            for (int index = 0; index < allAssets.Count; index++)
+            if (bindingSnapshot != null)
             {
-                FpgSkillAssetRecord record = allAssets[index];
-                if (!string.Equals(ownerFilter, "全部", StringComparison.Ordinal)
-                    && !string.Equals(ownerFilter, record.OwnerType, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(search)
-                    && record.DisplayName.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
-                    && record.SkillId.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
-                    && record.Path.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    continue;
-                }
-
-                filteredAssets.Add(record);
+                filteredAssets.AddRange(bindingSnapshot.FilterSkills(
+                    selectedEntityFilterKey,
+                    search));
             }
 
             actionAssetList?.Rebuild();
-            SelectCurrentAssetInList();
+            FpgSkillAssetRecord selectedRecord = bindingSnapshot == null
+                ? null
+                : bindingSnapshot.FindSkill(selectedAsset);
+            if (selectedRecord != null && filteredAssets.Contains(selectedRecord))
+            {
+                bool contextChanged = UpdateSelectedEntityContext(selectedRecord);
+                SelectCurrentAssetInList();
+                if (contextChanged)
+                {
+                    RestorePreviewPrefab();
+                    RefreshFromSerialized();
+                }
+
+                return;
+            }
+
+            if (!selectFallback)
+            {
+                return;
+            }
+
+            if (filteredAssets.Count > 0)
+            {
+                SelectAsset(filteredAssets[0].Asset, false);
+                return;
+            }
+
+            actionAssetList?.ClearSelection();
+            ClearSelectedData();
+            statusLabel.text = "当前实体工作区没有匹配的技能。";
+        }
+
+        private bool UpdateSelectedEntityContext(FpgSkillAssetRecord skill)
+        {
+            string preferredGuid = bindingSnapshot == null
+                ? null
+                : bindingSnapshot.FindEntity(selectedEntityFilterKey) == null
+                    ? selectedEntityContext?.Guid
+                    : selectedEntityFilterKey;
+            FpgSkillEntityRecord next = bindingSnapshot == null
+                ? null
+                : bindingSnapshot.ResolveContext(skill, preferredGuid);
+            bool changed = !string.Equals(
+                selectedEntityContext?.Guid,
+                next?.Guid,
+                StringComparison.Ordinal);
+            selectedEntityContext = next;
+            return changed;
         }
 
         private void RestoreAssetSelection()
@@ -501,7 +710,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             if (!string.IsNullOrWhiteSpace(path))
             {
                 UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(path);
-                if (FpgSkillSerializedAdapter.IsCompatible(asset))
+                FpgSkillAssetRecord record = bindingSnapshot?.FindSkill(asset);
+                if (record != null && filteredAssets.Contains(record))
                 {
                     SelectAsset(asset, false);
                     return;
@@ -512,18 +722,73 @@ namespace FPG.Demo.Editor.SkillAuthoring
             {
                 SelectAsset(filteredAssets[0].Asset, false);
             }
+            else
+            {
+                ClearSelectedData();
+            }
         }
 
         private void UseProjectSelection()
         {
-            UnityEngine.Object asset = Selection.activeObject;
-            if (!FpgSkillSerializedAdapter.IsCompatible(asset))
+            SelectProjectAsset(Selection.activeObject, true);
+        }
+
+        private void SelectProjectAsset(
+            UnityEngine.Object asset,
+            bool revealInProject)
+        {
+            FpgSkillAssetRecord skill = bindingSnapshot?.FindSkill(asset);
+            if (skill != null)
             {
-                statusLabel.text = "当前选中对象不是可识别的技能时间轴资产。";
+                assetSearchField?.SetValueWithoutNotify(string.Empty);
+                string filterKey = skill.BindingState
+                    == FpgSkillBindingState.Unbound
+                        ? FpgSkillEntityBindingIndex.UnboundFilterKey
+                        : skill.BindingState == FpgSkillBindingState.Conflict
+                            ? FpgSkillEntityBindingIndex.ConflictFilterKey
+                            : skill.Bindings[0].Entity.Guid;
+                SetEntityFilterKey(filterKey, false);
+                ApplyAssetFilters(false);
+                SelectAsset(skill.Asset, revealInProject);
                 return;
             }
 
-            SelectAsset(asset, true);
+            FpgSkillEntityRecord entity = bindingSnapshot?.FindEntity(asset);
+            if (entity != null)
+            {
+                assetSearchField?.SetValueWithoutNotify(string.Empty);
+                SetEntityFilterKey(entity.Guid, true);
+                if (revealInProject)
+                {
+                    Selection.activeObject = entity.Asset;
+                    EditorGUIUtility.PingObject(entity.Asset);
+                }
+
+                if (filteredAssets.Count == 0)
+                {
+                    statusLabel.text = entity.DisplayName + " 当前没有绑定技能。";
+                }
+
+                return;
+            }
+
+            if (FpgSkillSerializedAdapter.IsCompatible(asset)
+                || FpgSkillEntityBindingIndex.IsEntityDefinition(asset))
+            {
+                RefreshAssetRecords();
+                skill = bindingSnapshot?.FindSkill(asset);
+                entity = bindingSnapshot?.FindEntity(asset);
+                if (skill != null || entity != null)
+                {
+                    SelectProjectAsset(asset, revealInProject);
+                    return;
+                }
+            }
+
+            if (statusLabel != null)
+            {
+                statusLabel.text = "当前选中对象不是技能资产或实体定义。";
+            }
         }
 
         private void SelectAsset(
@@ -535,6 +800,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
+            FpgSkillAssetRecord record = bindingSnapshot?.FindSkill(asset);
+            UpdateSelectedEntityContext(record);
             Pause();
             string assetPath = AssetDatabase.GetAssetPath(asset);
             string storedAssetPath = SessionState.GetString(
@@ -757,6 +1024,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 measuredAnimationDurationTicks,
                 previewPrefabField.value as GameObject,
                 includeRuntimeValidation: false));
+            FpgSkillEntityBindingIndex.AppendBindingValidation(
+                bindingSnapshot?.FindSkill(selectedAsset),
+                validation);
             previewCompileError = hasPreviewExecution
                 ? string.Empty
                 : compileError;
@@ -1373,6 +1643,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return;
             }
 
+            FpgSkillAssetRecord record = bindingSnapshot?.FindSkill(selectedAsset);
             bool hasErrors = !hasPreviewExecution || validation.Any(item =>
                 item.Severity == FpgSkillIssueSeverity.Error);
             bool hasWarnings = validation.Any(item =>
@@ -1383,6 +1654,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     ? "有警告"
                     : "可运行";
             statusLabel.text = selectedAsset.name
+                + (record == null
+                    ? string.Empty
+                    : " · " + record.BuildBindingSummary(selectedEntityContext))
                 + " · 序列 " + (selectedSequenceIndex + 1)
                 + " · " + durationTicks + " Tick";
         }
@@ -1557,9 +1831,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void ClearSelectedData()
         {
             previewView?.ClearPresentationPreview();
+            previewView?.SetPreviewPrefab(null);
+            previewPrefabField?.SetValueWithoutNotify(null);
             selectedAsset = null;
+            selectedEntityContext = null;
             serializedAsset = null;
             selectedSequenceIndex = -1;
+            RefreshPreviewPrefabRestoreButton(false);
 
             selectedPresentationTrackIndex = -1;
             selectedEventKey = FpgSkillEventKey.Invalid;
@@ -2799,10 +3077,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             FpgSkillAssetRecord record = filteredAssets[index];
+            FpgSkillEntityRecord context = bindingSnapshot == null
+                ? null
+                : bindingSnapshot.ResolveContext(
+                    record,
+                    bindingSnapshot.FindEntity(selectedEntityFilterKey) == null
+                        ? null
+                        : selectedEntityFilterKey);
+            string bindingSummary = record.BuildBindingSummary(context);
             element.Q<Label>("asset-name").text = record.DisplayName;
-            element.Q<Label>("asset-meta").text = record.SkillId;
-            element.Q<Label>("asset-type").text = record.OwnerType;
-            element.tooltip = record.Path;
+            element.Q<Label>("asset-meta").text = record.SkillId
+                + " · " + bindingSummary;
+            element.Q<Label>("asset-type").text = record.BuildBadgeText(context);
+            element.tooltip = record.Path + "\n" + bindingSummary;
         }
 
         private static VisualElement MakeValidationRow()

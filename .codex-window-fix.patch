@@ -1,0 +1,38 @@
+diff --git a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs
+--- a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs
++++ b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs
+@@ -227,15 +227,26 @@ namespace FPG.Demo.Editor.SkillAuthoring
+         {
+             assetSearchField = rootVisualElement.Q<ToolbarSearchField>(
+                 "asset-search-field");
+-            entityFilter = rootVisualElement.Q<DropdownField>("entity-filter");
++            entityFilter = rootVisualElement.Q<DropdownField>("type-filter");
+             actionAssetList = rootVisualElement.Q<ListView>("action-asset-list");
+             sequenceDropdown = rootVisualElement.Q<DropdownField>("sequence-dropdown");
+             previewModeDropdown = rootVisualElement.Q<DropdownField>(
+                 "preview-mode-dropdown");
+             previewPrefabField = rootVisualElement.Q<ObjectField>(
+                 "preview-prefab-field");
+             restoreEntityPrefabButton = rootVisualElement.Q<Button>(
+                 "restore-entity-prefab-button");
++            if (restoreEntityPrefabButton == null)
++            {
++                restoreEntityPrefabButton = new Button
++                {
++                    name = "restore-entity-prefab-button",
++                    text = "↺",
++                    tooltip = "恢复实体 Prefab"
++                };
++                restoreEntityPrefabButton.AddToClassList(
++                    "preview-restore-button");
++                previewPrefabField.parent.Insert(3, restoreEntityPrefabButton);
++            }
+             targetCountDropdown = rootVisualElement.Q<DropdownField>(
+                 "target-count-dropdown");
+@@ -326,6 +337,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+         private void ConfigureChoices()
+         {
+             previewPrefabField.objectType = typeof(GameObject);
+             previewPrefabField.allowSceneObjects = false;
++            entityFilter.label = "实体定义";
+             entityFilter.choices = new List<string> { "全部技能" };

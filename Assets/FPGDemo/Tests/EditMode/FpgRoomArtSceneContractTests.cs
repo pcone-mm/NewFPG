@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using FPG.Demo.Editor.LevelAuthoring;
 using FPG.Demo.Unity;
 using NUnit.Framework;
@@ -8,6 +9,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace FPG.Demo.Tests.EditMode
 {
@@ -19,6 +21,10 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
         private const string ForestScenePath =
             "Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest.unity";
+        private const string Root1RoomPath =
+            "Assets/FPGDemo/Config/Level/Rooms/root1.asset";
+        private const string Root1ScenePath =
+            "Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest 1_Copy.unity";
         private const string ForestLightingSettingsPath =
             "Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest_LightingSettings.asset";
         private const string FogProfilePath =
@@ -162,7 +168,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void SceneValidatorRejectsForbiddenComponentsAndWrongSun()
+        public void SceneValidatorRejectsGameplayHostsAndAllowsPresentationOptions()
         {
             string folder = CreateTemporaryFolder();
             string scenePath = folder + "/Contract.unity";
@@ -195,12 +201,12 @@ namespace FPG.Demo.Tests.EditMode
                 }
                 GameObject rootObject = scene.GetRootGameObjects()[0];
                 FpgRoomArtRoot root = rootObject.GetComponent<FpgRoomArtRoot>();
-                Light mainLight = root.MainDirectionalLight;
+                Material authoredSkybox = RenderSettings.skybox;
+                Assert.That(authoredSkybox, Is.Not.Null);
 
                 SerializedObject rootData = new SerializedObject(root);
                 rootData.FindProperty("roomDefinition").objectReferenceValue = room;
                 rootData.ApplyModifiedPropertiesWithoutUndo();
-                RenderSettings.sun = mainLight;
                 EditorSceneManager.MarkSceneDirty(scene);
                 Assert.That(EditorSceneManager.SaveScene(scene, scenePath), Is.True);
                 Assert.That(
@@ -210,24 +216,43 @@ namespace FPG.Demo.Tests.EditMode
                     Is.True,
                     validError);
 
-                GameObject cameraObject = new GameObject("Forbidden Camera");
+                GameObject cameraObject = new GameObject("Optional Art Camera");
                 cameraObject.transform.SetParent(rootObject.transform, false);
                 cameraObject.AddComponent<Camera>();
+                cameraObject.AddComponent<AudioListener>();
+                EditorSceneManager.MarkSceneDirty(scene);
+                Assert.That(EditorSceneManager.SaveScene(scene, scenePath), Is.True);
                 Assert.That(
                     FpgRoomArtSceneContractValidator.TryValidateScene(
                         room,
                         out string cameraError),
-                    Is.False);
-                StringAssert.Contains("Camera", cameraError);
+                    Is.True,
+                    cameraError);
                 UnityEngine.Object.DestroyImmediate(cameraObject);
 
-                RenderSettings.sun = null;
+                GameObject hostObject = new GameObject("Forbidden Gameplay Host");
+                hostObject.transform.SetParent(rootObject.transform, false);
+                hostObject.AddComponent<FpgEncounterHost>();
+                EditorSceneManager.MarkSceneDirty(scene);
+                Assert.That(EditorSceneManager.SaveScene(scene, scenePath), Is.True);
                 Assert.That(
                     FpgRoomArtSceneContractValidator.TryValidateScene(
                         room,
-                        out string sunError),
+                        out string hostError),
                     Is.False);
-                StringAssert.Contains("RenderSettings.sun", sunError);
+                StringAssert.Contains(nameof(FpgEncounterHost), hostError);
+                UnityEngine.Object.DestroyImmediate(hostObject);
+
+                RenderSettings.sun = null;
+                EditorSceneManager.MarkSceneDirty(scene);
+                Assert.That(EditorSceneManager.SaveScene(scene, scenePath), Is.True);
+                Assert.That(
+                    FpgRoomArtSceneContractValidator.TryValidateScene(
+                        room,
+                        out string noSunError),
+                    Is.True,
+                    noSunError);
+                Assert.That(RenderSettings.skybox, Is.SameAs(authoredSkybox));
             }
             finally
             {
@@ -244,7 +269,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void ForestSceneOwnsLightingFogSunBeamAndExplicitBinding()
+        public void ForestSceneOwnsLightingFogSunBeamAndAutomaticBinding()
         {
             Scene previousActive = SceneManager.GetActiveScene();
             Scene scene = SceneManager.GetSceneByPath(ForestScenePath);
@@ -270,9 +295,9 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(root, Is.Not.Null);
                 Assert.That(root.RoomDefinition,
                     Is.SameAs(AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(ForestRoomPath)));
-                Assert.That(root.MainDirectionalLight, Is.Not.Null);
-                Assert.That(root.MainDirectionalLight.type, Is.EqualTo(LightType.Directional));
-                Assert.That(RenderSettings.sun, Is.SameAs(root.MainDirectionalLight));
+                Assert.That(RenderSettings.sun, Is.Not.Null);
+                Assert.That(RenderSettings.sun.type, Is.EqualTo(LightType.Directional));
+                Assert.That(RenderSettings.sun.gameObject.scene, Is.EqualTo(scene));
                 Assert.That(
                     AssetDatabase.GetAssetPath(Lightmapping.lightingSettings),
                     Is.EqualTo(ForestLightingSettingsPath));
@@ -309,12 +334,10 @@ namespace FPG.Demo.Tests.EditMode
                     Is.EqualTo(new Vector3(60f, 24f, 41.23f)));
 
                 SerializedObject bindingData = new SerializedObject(binding);
-                Assert.That(
-                    bindingData.FindProperty("fogManager").objectReferenceValue,
-                    Is.Not.Null);
-                Assert.That(bindingData.FindProperty("fogVolumes").arraySize, Is.EqualTo(1));
-                Assert.That(bindingData.FindProperty("volumetricLights").arraySize, Is.EqualTo(1));
-                Assert.That(bindingData.FindProperty("directionalSyncs").arraySize, Is.EqualTo(1));
+                Assert.That(bindingData.FindProperty("fogManager"), Is.Null);
+                Assert.That(bindingData.FindProperty("fogVolumes"), Is.Null);
+                Assert.That(bindingData.FindProperty("volumetricLights"), Is.Null);
+                Assert.That(bindingData.FindProperty("directionalSyncs"), Is.Null);
                 Assert.That(
                     sceneRoots[0].GetComponentsInChildren<Camera>(true),
                     Is.Empty);
@@ -337,7 +360,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void ForestPresentationBindingSynchronizesAndRestoresSunBeam()
+        public void ForestPresentationBindingDiscoversBindsAndClearsReferences()
         {
             Scene previousActive = SceneManager.GetActiveScene();
             Scene scene = SceneManager.GetSceneByPath(ForestScenePath);
@@ -365,29 +388,34 @@ namespace FPG.Demo.Tests.EditMode
                     "FPG.Demo.Unity.FpgVolumetricRoomArtBinding");
                 Assert.That(binding, Is.Not.Null);
 
-                SerializedObject bindingData = new SerializedObject(binding);
-                MonoBehaviour sync = bindingData
-                    .FindProperty("directionalSyncs")
-                    .GetArrayElementAtIndex(0)
-                    .objectReferenceValue as MonoBehaviour;
-                MonoBehaviour volumetricLight = bindingData
-                    .FindProperty("volumetricLights")
-                    .GetArrayElementAtIndex(0)
-                    .objectReferenceValue as MonoBehaviour;
+                MonoBehaviour manager = FindBehaviour(
+                    root.gameObject,
+                    "VolumetricFogAndMist2.VolumetricFogManager");
+                MonoBehaviour fog = FindBehaviour(
+                    root.gameObject,
+                    "VolumetricFogAndMist2.VolumetricFog");
+                MonoBehaviour sync = FindBehaviour(
+                    root.gameObject,
+                    "VolumetricLights.VolumetricLightDirectionalSync");
+                MonoBehaviour volumetricLight = FindBehaviour(
+                    root.gameObject,
+                    "VolumetricLights.VolumetricLight");
+                Assert.That(manager, Is.Not.Null);
+                Assert.That(fog, Is.Not.Null);
                 Assert.That(sync, Is.Not.Null);
                 Assert.That(volumetricLight, Is.Not.Null);
 
-                Transform syncTransform = sync.transform;
-                Light proxyLight = sync.GetComponent<Light>();
-                Assert.That(proxyLight, Is.Not.Null);
-                Vector3 authoredPosition = syncTransform.position;
-                Quaternion authoredRotation = syncTransform.rotation;
-                bool authoredLightEnabled = proxyLight.enabled;
-                Color authoredLightColor = proxyLight.color;
-                float authoredLightIntensity = proxyLight.intensity;
+                SerializedObject managerData = new SerializedObject(manager);
+                SerializedObject fogData = new SerializedObject(fog);
                 SerializedObject syncData = new SerializedObject(sync);
-                UnityEngine.Object authoredFollow = syncData
-                    .FindProperty("follow").objectReferenceValue;
+                SerializedObject volumetricLightData =
+                    new SerializedObject(volumetricLight);
+                bool managerEnabled = manager.enabled;
+                bool fogEnabled = fog.enabled;
+                bool syncEnabled = sync.enabled;
+                bool volumetricLightEnabled = volumetricLight.enabled;
+                Light mainLight = RenderSettings.sun;
+                Assert.That(mainLight, Is.Not.Null);
 
                 cameraObject = new GameObject("Room Art Binding Test Camera")
                 {
@@ -406,61 +434,98 @@ namespace FPG.Demo.Tests.EditMode
                     root.TryBindPresentation(
                         new FpgRoomArtPresentationContext(
                             camera,
-                            root.MainDirectionalLight,
+                            mainLight,
                             null),
                         out string error),
                     Is.True,
                     error);
                 Assert.That(root.IsPresentationBound, Is.True);
 
+                managerData.Update();
+                fogData.Update();
                 syncData.Update();
+                volumetricLightData.Update();
+                Assert.That(
+                    managerData.FindProperty("sun").objectReferenceValue,
+                    Is.SameAs(mainLight));
+                Assert.That(
+                    fogData.FindProperty("updateModeCamera").objectReferenceValue,
+                    Is.SameAs(camera));
+                Assert.That(
+                    fogData.FindProperty("fadeController").objectReferenceValue,
+                    Is.SameAs(camera.transform));
+                Assert.That(
+                    volumetricLightData.FindProperty("targetCamera")
+                        .objectReferenceValue,
+                    Is.SameAs(camera.transform));
+                Assert.That(
+                    syncData.FindProperty("directionalLight").objectReferenceValue,
+                    Is.SameAs(mainLight));
                 Assert.That(
                     syncData.FindProperty("follow").objectReferenceValue,
                     Is.SameAs(camera.transform));
-                float generatedRange = Convert.ToSingle(
-                    volumetricLight.GetType()
-                        .GetField("generatedRange")
-                        .GetValue(volumetricLight));
-                Vector3 expectedPosition = camera.transform.position
-                    - root.MainDirectionalLight.transform.forward
-                    * generatedRange * 0.5f;
+                Assert.That(manager.enabled, Is.EqualTo(managerEnabled));
+                Assert.That(fog.enabled, Is.EqualTo(fogEnabled));
+                Assert.That(sync.enabled, Is.EqualTo(syncEnabled));
                 Assert.That(
-                    Vector3.Distance(syncTransform.position, expectedPosition),
-                    Is.LessThan(0.0001f));
-                Assert.That(
-                    Vector3.Angle(
-                        syncTransform.forward,
-                        root.MainDirectionalLight.transform.forward),
-                    Is.LessThan(0.001f));
-                Assert.That(proxyLight.enabled, Is.False);
+                    volumetricLight.enabled,
+                    Is.EqualTo(volumetricLightEnabled));
 
-                MeshRenderer renderer =
-                    volumetricLight.GetComponent<MeshRenderer>();
-                Assert.That(renderer, Is.Not.Null);
-                Assert.That(renderer.sharedMaterial, Is.Not.Null);
                 Assert.That(
-                    renderer.sharedMaterial.GetColor("_LightColor")
-                        .maxColorComponent,
-                    Is.GreaterThan(0.001f));
-                Assert.That(scene.isDirty, Is.EqualTo(dirtyBeforeBinding));
-
-                root.UnbindPresentation();
-                Assert.That(root.IsPresentationBound, Is.False);
+                    root.TryBindPresentation(
+                        new FpgRoomArtPresentationContext(
+                            camera,
+                            null,
+                            null),
+                        out string noSunError),
+                    Is.True,
+                    noSunError);
+                managerData.Update();
+                fogData.Update();
                 syncData.Update();
                 Assert.That(
+                    managerData.FindProperty("sun").objectReferenceValue,
+                    Is.Null);
+                Assert.That(
+                    fogData.FindProperty("updateModeCamera").objectReferenceValue,
+                    Is.SameAs(camera));
+                Assert.That(
+                    syncData.FindProperty("directionalLight").objectReferenceValue,
+                    Is.Null);
+                Assert.That(
                     syncData.FindProperty("follow").objectReferenceValue,
-                    Is.SameAs(authoredFollow));
+                    Is.SameAs(camera.transform));
+                root.UnbindPresentation();
+                Assert.That(root.IsPresentationBound, Is.False);
+                managerData.Update();
+                fogData.Update();
+                syncData.Update();
+                volumetricLightData.Update();
                 Assert.That(
-                    Vector3.Distance(syncTransform.position, authoredPosition),
-                    Is.LessThan(0.0001f));
+                    managerData.FindProperty("sun").objectReferenceValue,
+                    Is.Null);
                 Assert.That(
-                    Quaternion.Angle(syncTransform.rotation, authoredRotation),
-                    Is.LessThan(0.001f));
-                Assert.That(proxyLight.enabled, Is.EqualTo(authoredLightEnabled));
-                Assert.That(proxyLight.color, Is.EqualTo(authoredLightColor));
+                    fogData.FindProperty("updateModeCamera").objectReferenceValue,
+                    Is.Null);
                 Assert.That(
-                    proxyLight.intensity,
-                    Is.EqualTo(authoredLightIntensity));
+                    fogData.FindProperty("fadeController").objectReferenceValue,
+                    Is.Null);
+                Assert.That(
+                    volumetricLightData.FindProperty("targetCamera")
+                        .objectReferenceValue,
+                    Is.Null);
+                Assert.That(
+                    syncData.FindProperty("directionalLight").objectReferenceValue,
+                    Is.Null);
+                Assert.That(
+                    syncData.FindProperty("follow").objectReferenceValue,
+                    Is.Null);
+                Assert.That(manager.enabled, Is.EqualTo(managerEnabled));
+                Assert.That(fog.enabled, Is.EqualTo(fogEnabled));
+                Assert.That(sync.enabled, Is.EqualTo(syncEnabled));
+                Assert.That(
+                    volumetricLight.enabled,
+                    Is.EqualTo(volumetricLightEnabled));
                 Assert.That(scene.isDirty, Is.EqualTo(dirtyBeforeBinding));
             }
             finally
@@ -479,6 +544,161 @@ namespace FPG.Demo.Tests.EditMode
                 {
                     EditorSceneManager.CloseScene(scene, true);
                 }
+            }
+        }
+
+        [Test]
+        public void Root1CopyPresentationBindsWithoutManualArrays()
+        {
+            FpgRoomDefinition room =
+                AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(Root1RoomPath);
+            Assert.That(room, Is.Not.Null, Root1RoomPath);
+
+            Scene previousActive = SceneManager.GetActiveScene();
+            Scene scene = SceneManager.GetSceneByPath(Root1ScenePath);
+            bool opened = !scene.IsValid() || !scene.isLoaded;
+            if (opened)
+            {
+                scene = EditorSceneManager.OpenScene(
+                    Root1ScenePath,
+                    OpenSceneMode.Additive);
+            }
+
+            GameObject cameraObject = null;
+            FpgRoomArtRoot root = null;
+            try
+            {
+                Assert.That(SceneManager.SetActiveScene(scene), Is.True);
+                Assert.That(
+                    FpgRoomArtRoot.TryResolve(
+                        scene,
+                        room,
+                        out root,
+                        out string resolveError),
+                    Is.True,
+                    resolveError);
+
+                MonoBehaviour binding = FindBehaviour(
+                    root.gameObject,
+                    "FPG.Demo.Unity.FpgVolumetricRoomArtBinding");
+                Assert.That(binding, Is.Not.Null);
+                SerializedObject bindingData = new SerializedObject(binding);
+                Assert.That(bindingData.FindProperty("fogManager"), Is.Null);
+                Assert.That(bindingData.FindProperty("fogVolumes"), Is.Null);
+                Assert.That(bindingData.FindProperty("volumetricLights"), Is.Null);
+                Assert.That(bindingData.FindProperty("directionalSyncs"), Is.Null);
+
+                cameraObject = new GameObject("Root1 Formal Camera")
+                {
+                    hideFlags = HideFlags.HideInHierarchy
+                        | HideFlags.DontSaveInEditor
+                        | HideFlags.NotEditable
+                };
+                Camera camera = cameraObject.AddComponent<Camera>();
+                Assert.That(
+                    root.TryBindPresentation(
+                        new FpgRoomArtPresentationContext(
+                            camera,
+                            RenderSettings.sun,
+                            null),
+                        out string bindError),
+                    Is.True,
+                    bindError);
+                Assert.That(root.IsPresentationBound, Is.True);
+
+                root.UnbindPresentation();
+                Assert.That(root.IsPresentationBound, Is.False);
+            }
+            finally
+            {
+                root?.UnbindPresentation();
+                if (cameraObject != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(cameraObject);
+                }
+                if (previousActive.IsValid() && previousActive.isLoaded
+                    && SceneManager.GetActiveScene() != previousActive)
+                {
+                    SceneManager.SetActiveScene(previousActive);
+                }
+                if (opened && scene.IsValid() && scene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+        }
+
+        [Test]
+        public void PresentationBindingAllowsNoAdaptersAndNoMainLight()
+        {
+            GameObject rootObject = new GameObject("Room Art Without Effects");
+            GameObject cameraObject = new GameObject("Formal Camera");
+            try
+            {
+                FpgRoomArtRoot root = rootObject.AddComponent<FpgRoomArtRoot>();
+                Camera camera = cameraObject.AddComponent<Camera>();
+
+                Assert.That(
+                    root.TryBindPresentation(
+                        new FpgRoomArtPresentationContext(
+                            camera,
+                            null,
+                            null),
+                        out string error),
+                    Is.True,
+                    error);
+                Assert.That(root.IsPresentationBound, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+                UnityEngine.Object.DestroyImmediate(rootObject);
+            }
+        }
+
+        [Test]
+        public void PresentationBindingExceptionDoesNotRejectOtherBindings()
+        {
+            GameObject rootObject = new GameObject("Room Art Binding Isolation");
+            GameObject cameraObject = new GameObject("Formal Camera");
+            try
+            {
+                FpgRoomArtRoot root = rootObject.AddComponent<FpgRoomArtRoot>();
+                ThrowingRoomArtPresentationBinding throwing =
+                    new GameObject("Throwing Binding")
+                        .AddComponent<ThrowingRoomArtPresentationBinding>();
+                throwing.transform.SetParent(rootObject.transform, false);
+                TrackingRoomArtPresentationBinding tracking =
+                    new GameObject("Tracking Binding")
+                        .AddComponent<TrackingRoomArtPresentationBinding>();
+                tracking.transform.SetParent(rootObject.transform, false);
+                Camera camera = cameraObject.AddComponent<Camera>();
+
+                LogAssert.Expect(
+                    LogType.Warning,
+                    new Regex(
+                        "presentation binding 'ThrowingRoomArtPresentationBinding' "
+                        + "threw while binding;.*Expected room art binding failure"));
+                Assert.That(
+                    root.TryBindPresentation(
+                        new FpgRoomArtPresentationContext(
+                            camera,
+                            null,
+                            null),
+                        out string error),
+                    Is.True,
+                    error);
+                Assert.That(throwing.UnbindCount, Is.EqualTo(1));
+                Assert.That(tracking.IsBound, Is.True);
+                Assert.That(root.IsPresentationBound, Is.True);
+
+                root.UnbindPresentation();
+                Assert.That(tracking.IsBound, Is.False);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
+                UnityEngine.Object.DestroyImmediate(rootObject);
             }
         }
 
@@ -521,6 +741,45 @@ namespace FPG.Demo.Tests.EditMode
             artScene.FindPropertyRelative("sceneGuid").stringValue = guid;
             artScene.FindPropertyRelative("scenePath").stringValue = path;
             data.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+
+    public sealed class ThrowingRoomArtPresentationBinding : MonoBehaviour,
+        IFpgRoomArtPresentationBinding
+    {
+        public int UnbindCount { get; private set; }
+
+        public bool TryBind(
+            FpgRoomArtPresentationContext context,
+            out string error)
+        {
+            throw new InvalidOperationException(
+                "Expected room art binding failure");
+        }
+
+        public void Unbind()
+        {
+            UnbindCount++;
+        }
+    }
+
+    public sealed class TrackingRoomArtPresentationBinding : MonoBehaviour,
+        IFpgRoomArtPresentationBinding
+    {
+        public bool IsBound { get; private set; }
+
+        public bool TryBind(
+            FpgRoomArtPresentationContext context,
+            out string error)
+        {
+            IsBound = true;
+            error = string.Empty;
+            return true;
+        }
+
+        public void Unbind()
+        {
+            IsBound = false;
         }
     }
 }

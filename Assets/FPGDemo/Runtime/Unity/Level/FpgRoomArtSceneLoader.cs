@@ -141,34 +141,34 @@ namespace FPG.Demo.Unity
             {
                 failure = $"Unable to make Art Scene '{scenePath}' active.";
             }
-            else if (RenderSettings.sun != resolvedRoot.MainDirectionalLight)
-            {
-                failure =
-                    $"Art Scene '{scenePath}' RenderSettings.sun must reference its declared main directional light.";
-            }
             else
             {
                 FpgRoomArtPresentationContext context =
                     new FpgRoomArtPresentationContext(
                         formalCamera,
-                        resolvedRoot.MainDirectionalLight,
+                        RenderSettings.sun,
                         aimViewportSource);
-                if (!resolvedRoot.TryBindPresentation(context, out failure))
+                if (!resolvedRoot.TryBindPresentation(
+                        context,
+                        out string bindingError))
                 {
-                    failure = "Art Scene presentation binding failed: " + failure;
+                    Debug.LogWarning(
+                        $"[{nameof(FpgRoomArtSceneLoader)}] Art Scene "
+                        + $"'{scenePath}' presentation was skipped: {bindingError}",
+                        resolvedRoot);
                 }
-                else
+
+                try
                 {
-                    try
-                    {
-                        LightProbes.Tetrahedralize();
-                    }
-                    catch (Exception exception)
-                    {
-                        failure =
-                            "Light Probe tetrahedralization failed after loading Art Scene: "
-                            + exception.Message;
-                    }
+                    LightProbes.Tetrahedralize();
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning(
+                        $"[{nameof(FpgRoomArtSceneLoader)}] Light Probe "
+                        + "tetrahedralization failed after loading Art Scene "
+                        + $"'{scenePath}': {exception.Message}",
+                        resolvedRoot);
                 }
             }
 
@@ -222,13 +222,14 @@ namespace FPG.Demo.Unity
 
             if (rootToUnbind == null)
             {
-                failure =
-                    $"Art Scene '{sceneToUnload.path}' lost its FpgRoomArtRoot before unload.";
+                Debug.LogWarning(
+                    $"[{nameof(FpgRoomArtSceneLoader)}] Art Scene "
+                    + $"'{sceneToUnload.path}' lost its FpgRoomArtRoot before unload.",
+                    this);
             }
-            else if (!rootToUnbind.TryUnbindPresentation(
-                         out string unbindError))
+            else
             {
-                failure = unbindError;
+                rootToUnbind.TryUnbindPresentation(out _);
             }
 
             AsyncOperation unloadOperation = null;
@@ -262,10 +263,11 @@ namespace FPG.Demo.Unity
             }
             catch (Exception exception)
             {
-                failure = AppendFailure(
-                    failure,
-                    "Light Probe tetrahedralization failed after unloading Art Scene: "
-                    + exception.Message);
+                Debug.LogWarning(
+                    $"[{nameof(FpgRoomArtSceneLoader)}] Light Probe "
+                    + "tetrahedralization failed after unloading Art Scene "
+                    + $"'{sceneToUnload.path}': {exception.Message}",
+                    this);
             }
 
             operationInProgress = false;

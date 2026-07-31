@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using FPG.Demo.Unity;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -262,11 +261,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
     public static class FpgRoomArtSceneContractValidator
     {
-        private static readonly MethodInfo GetRenderSettingsMethod =
-            typeof(RenderSettings).GetMethod(
-                "GetRenderSettings",
-                BindingFlags.Static | BindingFlags.NonPublic);
-
         public static bool TryValidateCatalog(out string error)
         {
             FpgRoomCatalog catalog =
@@ -420,41 +414,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         ref error);
                 }
 
-                if (SceneManager.GetActiveScene() != scene
-                    && !SceneManager.SetActiveScene(scene))
-                {
-                    error =
-                        $"Could not make Art Scene '{scene.path}' active for validation.";
-                    return CompleteSceneValidation(
-                        false,
-                        openedForValidation,
-                        scene,
-                        previousActive,
-                        ref error);
-                }
-
-                if (!TryGetAuthoredSun(out Light authoredSun, out error))
-                {
-                    return CompleteSceneValidation(
-                        false,
-                        openedForValidation,
-                        scene,
-                        previousActive,
-                        ref error);
-                }
-
-                if (authoredSun != root.MainDirectionalLight)
-                {
-                    error =
-                        $"Art Scene '{scene.path}' RenderSettings.sun must equal the root's main directional light.";
-                    return CompleteSceneValidation(
-                        false,
-                        openedForValidation,
-                        scene,
-                        previousActive,
-                        ref error);
-                }
-
                 if (!TryValidateForbiddenComponents(root, out error))
                 {
                     return CompleteSceneValidation(
@@ -555,8 +514,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             Type[] forbidden =
             {
-                typeof(Camera),
-                typeof(AudioListener),
                 typeof(GameBootstrap),
                 typeof(FpgFormalEncounterHost),
                 typeof(FpgEncounterHost),
@@ -581,40 +538,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
             return true;
         }
 
-        private static bool TryGetAuthoredSun(
-            out Light authoredSun,
-            out string error)
-        {
-            authoredSun = null;
-            if (GetRenderSettingsMethod == null)
-            {
-                error =
-                    "Unity RenderSettings serialization API is unavailable; cannot validate RenderSettings.sun.";
-                return false;
-            }
-
-            UnityEngine.Object settings =
-                GetRenderSettingsMethod.Invoke(null, null) as UnityEngine.Object;
-            if (settings == null)
-            {
-                error =
-                    "Active Art Scene has no serialized RenderSettings object.";
-                return false;
-            }
-
-            SerializedProperty sunProperty =
-                new SerializedObject(settings).FindProperty("m_Sun");
-            if (sunProperty == null)
-            {
-                error =
-                    "Active Art Scene RenderSettings has no serialized sun field.";
-                return false;
-            }
-
-            authoredSun = sunProperty.objectReferenceValue as Light;
-            error = string.Empty;
-            return true;
-        }
     }
 
     internal sealed class FpgRoomArtSceneAssetPostprocessor

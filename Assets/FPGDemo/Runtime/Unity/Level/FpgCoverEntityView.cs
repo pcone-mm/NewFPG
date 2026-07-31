@@ -61,13 +61,25 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            Collider[] colliders = blockingColliders ?? Array.Empty<Collider>();
-            if (colliders.Length == 0)
+            if (intactRoot == destroyedRoot)
             {
-                error = "Cover view requires at least one blocking collider.";
+                error = "Cover view requires distinct intact and destroyed visual roots.";
                 return false;
             }
 
+            if (!IsVisualRootOwnedByView(intactRoot.transform))
+            {
+                error = "Cover view intact visual root must belong to the cover Prefab.";
+                return false;
+            }
+
+            if (!IsVisualRootOwnedByView(destroyedRoot.transform))
+            {
+                error = "Cover view destroyed visual root must belong to the cover Prefab.";
+                return false;
+            }
+
+            Collider[] colliders = blockingColliders ?? Array.Empty<Collider>();
             for (int index = 0; index < colliders.Length; index++)
             {
                 if (colliders[index] == null)
@@ -75,10 +87,32 @@ namespace FPG.Demo.Unity
                     error = $"Cover view blocker entry {index} is missing.";
                     return false;
                 }
+
+                if (!IsOwnedByView(colliders[index].transform))
+                {
+                    error = $"Cover view blocker entry {index} must belong to the cover Prefab.";
+                    return false;
+                }
+
+                if (colliders[index].isTrigger)
+                {
+                    error = $"Cover view blocker entry {index} must not be a Trigger.";
+                    return false;
+                }
             }
 
             error = string.Empty;
             return true;
+        }
+
+        private bool IsOwnedByView(Transform candidate)
+        {
+            return candidate != null && candidate.IsChildOf(transform);
+        }
+
+        private bool IsVisualRootOwnedByView(Transform candidate)
+        {
+            return candidate != transform && IsOwnedByView(candidate);
         }
 
         private void Awake()

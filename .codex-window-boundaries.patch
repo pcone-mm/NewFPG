@@ -1,0 +1,33 @@
+diff --git a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs
+--- a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs
++++ b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEditorWindow.cs
+@@ -528,6 +528,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
+ 
+         private void RefreshAssetRecords()
+         {
++            if (actionAssetList == null
++                || entityFilter == null
++                || statusLabel == null)
++            {
++                return;
++            }
++
+             string selectedPath = selectedAsset == null
+                 ? SessionState.GetString(SelectedAssetSessionKey, string.Empty)
+                 : AssetDatabase.GetAssetPath(selectedAsset);
+@@ -733,6 +740,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+             FpgSkillAssetRecord skill = bindingSnapshot?.FindSkill(asset);
+             if (skill != null)
+             {
++                assetSearchField?.SetValueWithoutNotify(string.Empty);
+                 string filterKey = skill.BindingState
+                     == FpgSkillBindingState.Unbound
+                         ? FpgSkillEntityBindingIndex.UnboundFilterKey
+@@ -747,6 +755,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+             FpgSkillEntityRecord entity = bindingSnapshot?.FindEntity(asset);
+             if (entity != null)
+             {
++                assetSearchField?.SetValueWithoutNotify(string.Empty);
+                 SetEntityFilterKey(entity.Guid, true);
+                 if (revealInProject)
+                 {

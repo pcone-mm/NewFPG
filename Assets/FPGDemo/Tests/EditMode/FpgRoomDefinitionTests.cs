@@ -1,4 +1,5 @@
 using FPG.Demo.Unity;
+using FPG.Demo.Run;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -9,6 +10,14 @@ namespace FPG.Demo.Tests.EditMode
     {
         private const string RoomPath =
             "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
+        private const string Root1RoomPath =
+            "Assets/FPGDemo/Config/Level/Rooms/root1.asset";
+        private const string ForestCopyRoomPath =
+            "Assets/FPGDemo/Config/Level/Rooms/Room_forest_Copy.asset";
+        private const string DefaultCoverPath =
+            "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab";
+        private const string TreeCoverPath =
+            "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_Root1TreeCover.prefab";
 
         [Test]
         public void RoomValidationReportsRequiredReferencesAndNonFiniteMarkerPose()
@@ -262,6 +271,98 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
+        [Test]
+        public void Root1UsesTreeOnlyForLeftCoverAndPreservesSlotRules()
+        {
+            FpgRoomDefinition root1 = LoadRequired<FpgRoomDefinition>(Root1RoomPath);
+            Assert.That(root1.TryValidate(out FpgRoomValidationResult validation),
+                Is.True,
+                validation.FirstError?.Message);
+            Assert.That(root1.CoverSlots.Count, Is.EqualTo(3));
+
+            FpgRoomCoverSlot left = root1.CoverSlots[0];
+            FpgRoomCoverSlot center = root1.CoverSlots[1];
+            FpgRoomCoverSlot right = root1.CoverSlots[2];
+            AssertCoverSlot(
+                left,
+                "cover-left",
+                TreeCoverPath,
+                "Assets/FPGDemo/Config/Level/CameraProfiles/root1/CAM_root1_cover-left.asset",
+                new Vector3(-6f, 0.5f, 0f),
+                false);
+            AssertCoverSlot(
+                center,
+                "cover-center",
+                DefaultCoverPath,
+                "Assets/FPGDemo/Config/Level/CameraProfiles/root1/CAM_root1_cover-center.asset",
+                new Vector3(0f, 0.5f, 0f),
+                true);
+            AssertCoverSlot(
+                right,
+                "cover-right",
+                DefaultCoverPath,
+                "Assets/FPGDemo/Config/Level/CameraProfiles/root1/CAM_root1_cover-right.asset",
+                new Vector3(5.5f, 0.5f, 0f),
+                false);
+        }
+
+        [Test]
+        public void OtherProductionCoverRoomsRemainValidAndUseDefaultStyle()
+        {
+            string[] paths = { RoomPath, ForestCopyRoomPath };
+            for (int pathIndex = 0; pathIndex < paths.Length; pathIndex++)
+            {
+                string path = paths[pathIndex];
+                FpgRoomDefinition room = LoadRequired<FpgRoomDefinition>(path);
+                Assert.That(
+                    room.TryValidate(out FpgRoomValidationResult validation),
+                    Is.True,
+                    path + ": " + validation.FirstError?.Message);
+                for (int coverIndex = 0;
+                    coverIndex < room.CoverSlots.Count;
+                    coverIndex++)
+                {
+                    Assert.That(
+                        AssetDatabase.GetAssetPath(
+                            room.CoverSlots[coverIndex].Prefab),
+                        Is.EqualTo(DefaultCoverPath),
+                        path + ": " + room.CoverSlots[coverIndex].MarkerId);
+                }
+            }
+        }
+
+        [Test]
+        public void Root1TreeCoverAppliesSnapshotsAndReinitializesIntact()
+        {
+            GameObject host = new GameObject("Root1RoomInstanceTestHost");
+            try
+            {
+                FpgRoomDefinition root1 =
+                    LoadRequired<FpgRoomDefinition>(Root1RoomPath);
+                FpgRoomInstance instance = host.AddComponent<FpgRoomInstance>();
+                Assert.That(instance.TryInitialize(root1, out string error),
+                    Is.True,
+                    error);
+                Assert.That(instance.CoverInstances, Has.Count.EqualTo(3));
+                Assert.That(instance.TryGetCoverView("cover-left", out var view),
+                    Is.True);
+
+                AssertTreeCoverState(view, false);
+                view.ApplySnapshot(new FpgCoverSnapshot(
+                    "cover-left", 0, 0, 100, false, false, false));
+                AssertTreeCoverState(view, true);
+
+                Assert.That(instance.TryInitialize(root1, out error), Is.True, error);
+                Assert.That(instance.CoverInstances, Has.Count.EqualTo(3));
+                Assert.That(instance.TryGetCoverView("cover-left", out view), Is.True);
+                AssertTreeCoverState(view, false);
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+            }
+        }
+
         private static FpgRoomValidationIssue AssertRoomIssue(
             FpgRoomValidationResult result,
             FpgRoomValidationCode expectedCode)
@@ -277,6 +378,43 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.Fail($"Expected room validation issue '{expectedCode}'.");
             return null;
+        }
+
+        private static void AssertCoverSlot(
+            FpgRoomCoverSlot slot,
+            string markerId,
+            string prefabPath,
+            string cameraPath,
+            Vector3 localPosition,
+            bool isStartingCover)
+        {
+            Assert.That(slot.MarkerId, Is.EqualTo(markerId));
+            Assert.That(AssetDatabase.GetAssetPath(slot.Prefab), Is.EqualTo(prefabPath));
+            Assert.That(
+                AssetDatabase.GetAssetPath(slot.CameraProfile),
+                Is.EqualTo(cameraPath));
+            Assert.That(slot.LocalPosition, Is.EqualTo(localPosition));
+            Assert.That(slot.LocalEulerAngles, Is.EqualTo(Vector3.zero));
+            Assert.That(slot.PlayerReachableLocalPosition, Is.EqualTo(localPosition));
+            Assert.That(slot.PlayerReachableLocalEulerAngles, Is.EqualTo(Vector3.zero));
+            Assert.That(slot.MaxDurability, Is.EqualTo(100));
+            Assert.That(slot.IsStartingCover, Is.EqualTo(isStartingCover));
+        }
+
+        private static void AssertTreeCoverState(
+            FpgCoverEntityView view,
+            bool destroyed)
+        {
+            SerializedObject serialized = new SerializedObject(view);
+            GameObject intactRoot = serialized.FindProperty("intactRoot")
+                .objectReferenceValue as GameObject;
+            GameObject destroyedRoot = serialized.FindProperty("destroyedRoot")
+                .objectReferenceValue as GameObject;
+            Assert.That(view.IsDestroyed, Is.EqualTo(destroyed));
+            Assert.That(intactRoot.activeSelf, Is.EqualTo(!destroyed));
+            Assert.That(destroyedRoot.activeSelf, Is.EqualTo(destroyed));
+            Assert.That(serialized.FindProperty("blockingColliders").arraySize, Is.EqualTo(0));
+            Assert.That(view.GetComponentsInChildren<Collider>(true), Is.Empty);
         }
 
         private static T LoadRequired<T>(string path) where T : Object

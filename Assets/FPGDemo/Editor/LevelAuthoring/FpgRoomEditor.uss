@@ -162,8 +162,32 @@
 .marker-tool--cover { border-bottom-color: #f1c647; }
 .marker-tool--active { background-color: #39586a; }
 
+.marker-toolbar > .toolbar-spacer {
+    width: 6px;
+    min-width: 6px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
 .snap-field {
-    width: 116px;
+    width: 156px;
+    min-width: 156px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.snap-field > .unity-base-field__label {
+    width: 76px;
+    min-width: 76px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.snap-field > .unity-base-field__input {
+    min-width: 64px;
+    flex-grow: 1;
+    flex-shrink: 1;
 }
 .camera-preview-toolbar {
     min-height: 34px;

@@ -84,6 +84,199 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void FormalEntityBindingIndexMapsEverySkillToConcreteOwner()
+        {
+            List<FpgSkillAssetRecord> skills =
+                FpgSkillSerializedAdapter.FindAssets();
+            FpgSkillBindingSnapshot snapshot =
+                FpgSkillEntityBindingIndex.Build(skills);
+
+            Assert.That(snapshot.Skills, Has.Count.EqualTo(9));
+            Assert.That(snapshot.Entities, Has.Count.EqualTo(4));
+            Assert.That(
+                snapshot.Entities.Select(entity => entity.DisplayName),
+                Is.EqualTo(new[] { "Fei", "Burstbug", "Hudie", "Luan" }));
+            Assert.That(
+                snapshot.Skills.Select(skill => skill.BindingState),
+                Is.All.EqualTo(FpgSkillBindingState.Bound));
+
+            FpgSkillEntityRecord fei = snapshot.Entities.Single(entity =>
+                entity.StableId == "fei");
+            FpgSkillEntityRecord burstbug = snapshot.Entities.Single(entity =>
+                entity.StableId == "burstbug");
+            FpgSkillEntityRecord hudie = snapshot.Entities.Single(entity =>
+                entity.StableId == "hudie");
+            FpgSkillEntityRecord luan = snapshot.Entities.Single(entity =>
+                entity.StableId == "luan");
+
+            Assert.That(fei.Kind, Is.EqualTo(FpgSkillEntityKind.Character));
+            Assert.That(fei.PreviewPrefab, Is.Not.Null);
+            Assert.That(burstbug.PreviewPrefab, Is.Not.Null);
+            Assert.That(hudie.PreviewPrefab, Is.Not.Null);
+            Assert.That(luan.PreviewPrefab, Is.Not.Null);
+            Assert.That(CountSkills(snapshot, fei), Is.EqualTo(4));
+            Assert.That(CountSkills(snapshot, burstbug), Is.EqualTo(3));
+            Assert.That(CountSkills(snapshot, hudie), Is.EqualTo(1));
+            Assert.That(CountSkills(snapshot, luan), Is.EqualTo(1));
+            Assert.That(
+                ReadSlots(snapshot, fei),
+                Is.EquivalentTo(new[]
+                {
+                    "主射",
+                    "瞬发副射",
+                    "蓄力副射",
+                    "换弹"
+                }));
+            Assert.That(
+                ReadSlots(snapshot, burstbug),
+                Is.EqualTo(new[] { "攻击 1", "攻击 2", "攻击 3" }));
+        }
+
+        [Test]
+        public void EntityBindingIndexCoalescesSlotsAndFlagsOwnershipErrors()
+        {
+            FpgPlayerSkillDefinition shared = CreateSkill();
+            FpgPlayerSkillDefinition unbound = CreateSkill();
+            D0WeaponDefinition alphaWeapon = null;
+            D0WeaponDefinition betaWeapon = null;
+            D0CharacterDefinition alpha = null;
+            D0CharacterDefinition beta = null;
+            try
+            {
+                ConfigureSkill(unbound, "player.unbound", "Unbound");
+                alphaWeapon = CreateWeapon(
+                    shared,
+                    immediate: null,
+                    charge: null,
+                    reload: shared);
+                betaWeapon = CreateWeapon(
+                    shared,
+                    immediate: null,
+                    charge: null,
+                    reload: null);
+                alpha = CreateCharacter("alpha", "Alpha", alphaWeapon);
+                beta = CreateCharacter("beta", "Beta", betaWeapon);
+                List<FpgSkillAssetRecord> records = new List<FpgSkillAssetRecord>
+                {
+                    CreateAssetRecord(shared),
+                    CreateAssetRecord(unbound)
+                };
+
+                FpgSkillBindingSnapshot snapshot =
+                    FpgSkillEntityBindingIndex.Build(
+                        records,
+                        new UnityEngine.Object[] { beta, alpha });
+                FpgSkillAssetRecord sharedRecord = snapshot.FindSkill(shared);
+                FpgSkillAssetRecord unboundRecord = snapshot.FindSkill(unbound);
+
+                Assert.That(
+                    snapshot.Entities.Select(entity => entity.DisplayName),
+                    Is.EqualTo(new[] { "Alpha", "Beta" }));
+                Assert.That(
+                    sharedRecord.BindingState,
+                    Is.EqualTo(FpgSkillBindingState.Conflict));
+                Assert.That(sharedRecord.Bindings, Has.Count.EqualTo(2));
+                Assert.That(
+                    sharedRecord.Bindings[0].Slots,
+                    Is.EqualTo(new[] { "主射", "换弹" }));
+                Assert.That(
+                    sharedRecord.Bindings[1].Slots,
+                    Is.EqualTo(new[] { "主射" }));
+                Assert.That(
+                    unboundRecord.BindingState,
+                    Is.EqualTo(FpgSkillBindingState.Unbound));
+
+                List<FpgSkillValidationItem> validation =
+                    new List<FpgSkillValidationItem>();
+                FpgSkillEntityBindingIndex.AppendBindingValidation(
+                    sharedRecord,
+                    validation);
+                FpgSkillEntityBindingIndex.AppendBindingValidation(
+                    unboundRecord,
+                    validation);
+                Assert.That(validation, Has.Count.EqualTo(2));
+                Assert.That(
+                    validation.Select(item => item.Severity),
+                    Is.All.EqualTo(FpgSkillIssueSeverity.Error));
+                Assert.That(
+                    validation.Any(item => item.Message.Contains("跨实体绑定冲突")),
+                    Is.True);
+                Assert.That(
+                    validation.Any(item => item.Message.Contains("未被任何实体定义引用")),
+                    Is.True);
+            }
+            finally
+            {
+                DestroyImmediate(beta);
+                DestroyImmediate(alpha);
+                DestroyImmediate(betaWeapon);
+                DestroyImmediate(alphaWeapon);
+                DestroyImmediate(unbound);
+                DestroyImmediate(shared);
+            }
+        }
+
+        [Test]
+        public void EntityBindingIndexReadsEnemyOrderPrefabAndSearchFields()
+        {
+            FpgEnemyAttackDefinition first = CreateEnemySkill(
+                "enemy.test.first",
+                "First");
+            FpgEnemyAttackDefinition second = CreateEnemySkill(
+                "enemy.test.second",
+                "Second");
+            FpgEnemyDefinition enemy = null;
+            GameObject previewPrefab = new GameObject("Enemy Preview");
+            try
+            {
+                enemy = CreateEnemy(
+                    "search-enemy",
+                    "Search Enemy",
+                    previewPrefab,
+                    first,
+                    second);
+                FpgSkillBindingSnapshot snapshot =
+                    FpgSkillEntityBindingIndex.Build(
+                        new List<FpgSkillAssetRecord>
+                        {
+                            CreateAssetRecord(second),
+                            CreateAssetRecord(first)
+                        },
+                        new UnityEngine.Object[] { enemy });
+                FpgSkillEntityRecord entity = snapshot.Entities.Single();
+
+                Assert.That(entity.Kind, Is.EqualTo(FpgSkillEntityKind.Enemy));
+                Assert.That(entity.PreviewPrefab, Is.SameAs(previewPrefab));
+                Assert.That(
+                    snapshot.FindSkill(first).Bindings.Single().Slots,
+                    Is.EqualTo(new[] { "攻击 1" }));
+                Assert.That(
+                    snapshot.FindSkill(second).Bindings.Single().Slots,
+                    Is.EqualTo(new[] { "攻击 2" }));
+                Assert.That(
+                    snapshot.FilterSkills(entity.Guid, "攻击 2").Single().Asset,
+                    Is.SameAs(second));
+                Assert.That(
+                    snapshot.FilterSkills(
+                        FpgSkillEntityBindingIndex.AllFilterKey,
+                        "search-enemy"),
+                    Has.Count.EqualTo(2));
+                Assert.That(
+                    snapshot.BuildFilterChoices().Any(choice =>
+                        choice.Key == entity.Guid
+                        && choice.Label.Contains("Search Enemy")),
+                    Is.True);
+            }
+            finally
+            {
+                DestroyImmediate(enemy);
+                DestroyImmediate(previewPrefab);
+                DestroyImmediate(second);
+                DestroyImmediate(first);
+            }
+        }
+
+        [Test]
         public void SerializedAdapterReadsHoldAndChargeProgressFields()
         {
             WithSkill((skill, serialized) =>
@@ -730,6 +923,129 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True,
                 error);
             return compiled;
+        }
+
+        private static int CountSkills(
+            FpgSkillBindingSnapshot snapshot,
+            FpgSkillEntityRecord entity)
+        {
+            return snapshot.Skills.Count(skill =>
+                skill.FindBinding(entity.Guid) != null);
+        }
+
+        private static string[] ReadSlots(
+            FpgSkillBindingSnapshot snapshot,
+            FpgSkillEntityRecord entity)
+        {
+            return snapshot.Skills
+                .Select(skill => skill.FindBinding(entity.Guid))
+                .Where(binding => binding != null)
+                .SelectMany(binding => binding.Slots)
+                .ToArray();
+        }
+
+        private static FpgSkillAssetRecord CreateAssetRecord(
+            UnityEngine.Object skill)
+        {
+            SerializedObject serialized = new SerializedObject(skill);
+            return new FpgSkillAssetRecord
+            {
+                Asset = skill,
+                SkillId = serialized.FindProperty("skillId").stringValue,
+                DisplayName = serialized.FindProperty("displayName").stringValue,
+                Path = AssetDatabase.GetAssetPath(skill)
+            };
+        }
+
+        private static D0WeaponDefinition CreateWeapon(
+            FpgPlayerSkillDefinition primary,
+            FpgPlayerSkillDefinition immediate,
+            FpgPlayerSkillDefinition charge,
+            FpgPlayerSkillDefinition reload)
+        {
+            D0WeaponDefinition weapon =
+                ScriptableObject.CreateInstance<D0WeaponDefinition>();
+            SerializedObject serialized = new SerializedObject(weapon);
+            serialized.FindProperty("primarySkill").objectReferenceValue = primary;
+            serialized.FindProperty("immediateSecondarySkill")
+                .objectReferenceValue = immediate;
+            serialized.FindProperty("chargeSecondarySkill")
+                .objectReferenceValue = charge;
+            serialized.FindProperty("reloadSkill").objectReferenceValue = reload;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return weapon;
+        }
+
+        private static D0CharacterDefinition CreateCharacter(
+            string id,
+            string displayName,
+            D0WeaponDefinition weapon)
+        {
+            D0CharacterDefinition character =
+                ScriptableObject.CreateInstance<D0CharacterDefinition>();
+            character.name = displayName;
+            SerializedObject serialized = new SerializedObject(character);
+            serialized.FindProperty("characterId").stringValue = id;
+            serialized.FindProperty("displayName").stringValue = displayName;
+            serialized.FindProperty("weapon").objectReferenceValue = weapon;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return character;
+        }
+
+        private static FpgEnemyAttackDefinition CreateEnemySkill(
+            string id,
+            string displayName)
+        {
+            FpgEnemyAttackDefinition skill =
+                ScriptableObject.CreateInstance<FpgEnemyAttackDefinition>();
+            ConfigureSkill(skill, id, displayName);
+            return skill;
+        }
+
+        private static FpgEnemyDefinition CreateEnemy(
+            string id,
+            string displayName,
+            GameObject previewPrefab,
+            params FpgEnemyAttackDefinition[] attacks)
+        {
+            FpgEnemyDefinition enemy =
+                ScriptableObject.CreateInstance<FpgEnemyDefinition>();
+            enemy.name = displayName;
+            SerializedObject serialized = new SerializedObject(enemy);
+            serialized.FindProperty("enemyDefinitionId").stringValue = id;
+            serialized.FindProperty("displayName").stringValue = displayName;
+            serialized.FindProperty("entityViewPrefab").objectReferenceValue =
+                previewPrefab;
+            SerializedProperty patterns = serialized.FindProperty("attackPatterns");
+            patterns.arraySize = attacks.Length;
+            for (int index = 0; index < attacks.Length; index++)
+            {
+                patterns.GetArrayElementAtIndex(index).objectReferenceValue =
+                    attacks[index];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return enemy;
+        }
+
+        private static void ConfigureSkill(
+            UnityEngine.Object skill,
+            string id,
+            string displayName)
+        {
+            skill.name = displayName;
+            SerializedObject serialized = new SerializedObject(skill);
+            serialized.FindProperty("skillId").stringValue = id;
+            serialized.FindProperty("displayName").stringValue = displayName;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void DestroyImmediate(UnityEngine.Object value)
+        {
+            if (value != null)
+            {
+                UnityEngine.Object.DestroyImmediate(value);
+            }
         }
 
         private static void WithSkill(

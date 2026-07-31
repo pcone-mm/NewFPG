@@ -222,6 +222,15 @@
     margin-left: 10px;
 }
 
+.preview-restore-button {
+    width: 27px;
+    min-width: 27px;
+    height: 22px;
+    margin-left: 3px;
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .animation-length-status {
     margin-left: 10px;
     font-size: 10px;

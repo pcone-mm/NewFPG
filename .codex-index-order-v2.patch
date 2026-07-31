@@ -1,0 +1,121 @@
+diff --git a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEntityBindingIndex.cs b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEntityBindingIndex.cs
+--- a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEntityBindingIndex.cs
++++ b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillEntityBindingIndex.cs
+@@ -45,16 +45,19 @@ namespace FPG.Demo.Editor.SkillAuthoring
+ 
+         public FpgSkillEntityRecord Entity { get; }
+         public IReadOnlyList<string> Slots => slots;
++        public int SortOrder { get; private set; } = int.MaxValue;
+ 
+         public string Summary => Entity.DisplayName + " · "
+             + string.Join(" / ", slots);
+ 
+-        public void AddSlot(string slot)
++        public void AddSlot(string slot, int sortOrder)
+         {
+             if (!string.IsNullOrWhiteSpace(slot) && !slots.Contains(slot))
+             {
+                 slots.Add(slot);
+             }
++
++            SortOrder = Math.Min(SortOrder, sortOrder);
+         }
+     }
+ 
+@@ -298,6 +301,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+         {
+             public UnityEngine.Object Skill;
+             public string Slot;
++            public int Order;
+         }
+ 
+         public static FpgSkillBindingSnapshot Build(
+@@ -353,7 +357,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
+                         continue;
+                     }
+ 
+-                    skill.GetOrAddBinding(entity).AddSlot(reference.Slot);
++                    skill.GetOrAddBinding(entity).AddSlot(
++                        reference.Slot, reference.Order);
+                 }
+             }
+ 
+@@ -546,6 +551,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
+                 return comparison;
+             }
+ 
++            comparison = GetPrimaryBindingOrder(left).CompareTo(
++                GetPrimaryBindingOrder(right));
++            if (comparison != 0)
++            {
++                return comparison;
++            }
++
+             comparison = string.Compare(
+                 left.DisplayName,
+                 right.DisplayName,
+@@ -563,6 +576,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
+                 ? comparison
+                 : string.Compare(left.Path, right.Path, StringComparison.OrdinalIgnoreCase);
+         }
++
++        private static int GetPrimaryBindingOrder(FpgSkillAssetRecord skill)
++        {
++            return skill != null
++                && skill.Bindings.Count > 0
++                    ? skill.Bindings[0].SortOrder
++                    : int.MaxValue;
++        }
+ 
+         private static List<UnityEngine.Object> FindEntityDefinitions()
+         {
+@@ -687,19 +708,23 @@ namespace FPG.Demo.Editor.SkillAuthoring
+             SerializedObject serializedWeapon = new SerializedObject(weapon);
+             AppendReference(
+                 serializedWeapon.FindProperty("primarySkill"),
+                 "主射",
++                0,
+                 references);
+             AppendReference(
+                 serializedWeapon.FindProperty("immediateSecondarySkill"),
+                 "瞬发副射",
++                1,
+                 references);
+             AppendReference(
+                 serializedWeapon.FindProperty("chargeSecondarySkill"),
+                 "蓄力副射",
++                2,
+                 references);
+             AppendReference(
+                 serializedWeapon.FindProperty("reloadSkill"),
+                 "换弹",
++                3,
+                 references);
+         }
+ 
+@@ -718,6 +743,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+                 AppendReference(
+                     attacks.GetArrayElementAtIndex(index),
+                     "攻击 " + (index + 1),
++                    index,
+                     references);
+             }
+         }
+@@ -725,6 +751,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+         private static void AppendReference(
+             SerializedProperty property,
+             string slot,
++            int order,
+             ICollection<SkillReference> references)
+         {
+             UnityEngine.Object skill = property == null
+@@ -736,7 +763,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
+                 references.Add(new SkillReference
+                 {
+                     Skill = skill,
+-                    Slot = slot
++                    Slot = slot,
++                    Order = order
+                 });
+             }
+         }

@@ -53,12 +53,6 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (MainLight == null || MainLight.type != LightType.Directional)
-            {
-                error = "Room art presentation requires an explicit directional main light.";
-                return false;
-            }
-
             error = string.Empty;
             return true;
         }

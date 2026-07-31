@@ -8,14 +8,14 @@
       "url": "https://packages.unity.com"
     },
     "com.besty.unity-skills": {
-      "version": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity",
+      "version": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v2.4.2",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.0.2",
         "com.unity.timeline": "1.7.7"
       },
-      "hash": "c04335936688376529cc393e10d75474ff861dfb"
+      "hash": "e49379b7c3ed8520320bed06b4aa3c1f4dc87e3d"
     },
     "com.coplaydev.unity-mcp": {
       "version": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.1.0",

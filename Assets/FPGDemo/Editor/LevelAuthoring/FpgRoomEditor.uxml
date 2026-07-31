@@ -48,7 +48,7 @@
                     <ui:Button name="place-destructible-button" text="可破坏物" tooltip="在 SceneView 放置可破坏物插槽" class="marker-tool marker-tool--destructible" />
                     <ui:Button name="place-cover-button" text="掩体" tooltip="在 SceneView 放置独立掩体及玩家到达点" class="marker-tool marker-tool--cover" />
                     <ui:VisualElement class="toolbar-spacer" />
-                    <ui:FloatField name="snap-field" label="吸附" value="0.5" class="snap-field" />
+                    <ui:FloatField name="snap-field" label="网格步长" value="0.5" tooltip="Scene View 位置吸附间距，0 表示关闭" class="snap-field" />
                 </ui:VisualElement>
 
                 <ui:VisualElement class="visibility-toolbar">

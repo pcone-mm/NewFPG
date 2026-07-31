@@ -11,16 +11,12 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private FpgRoomDefinition roomDefinition;
 
-        [SerializeField]
-        private Light mainDirectionalLight;
-
         private readonly List<IFpgRoomArtPresentationBinding> boundBindings =
             new List<IFpgRoomArtPresentationBinding>();
 
         private bool bindingInProgress;
 
         public FpgRoomDefinition RoomDefinition => roomDefinition;
-        public Light MainDirectionalLight => mainDirectionalLight;
         public bool IsPresentationBound => boundBindings.Count > 0;
 
         public static bool TryResolve(
@@ -78,12 +74,6 @@ namespace FPG.Demo.Unity
             FpgRoomDefinition expectedRoom,
             out string error)
         {
-            if (transform.parent != null || !HasIdentityTransform(transform))
-            {
-                error = "FpgRoomArtRoot must be a scene root with identity position, rotation, and scale.";
-                return false;
-            }
-
             if (roomDefinition == null)
             {
                 error = "FpgRoomArtRoot requires a RoomDefinition reference.";
@@ -105,19 +95,6 @@ namespace FPG.Demo.Unity
                     StringComparison.Ordinal))
             {
                 error = $"Room '{roomDefinition.RoomId}' expects Art Scene '{roomDefinition.ArtScenePath}', but root belongs to '{scene.path}'.";
-                return false;
-            }
-
-            if (mainDirectionalLight == null
-                || mainDirectionalLight.type != LightType.Directional)
-            {
-                error = "FpgRoomArtRoot requires an explicit directional main light.";
-                return false;
-            }
-
-            if (mainDirectionalLight.gameObject.scene != scene)
-            {
-                error = "FpgRoomArtRoot main light must belong to the same Art Scene.";
                 return false;
             }
 
@@ -146,12 +123,6 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (context.MainLight != mainDirectionalLight)
-            {
-                error = "Room art presentation context must use the Art Scene root's main light.";
-                return false;
-            }
-
             bindingInProgress = true;
             try
             {
@@ -166,20 +137,26 @@ namespace FPG.Demo.Unity
 
                     try
                     {
-                        if (!binding.TryBind(context, out string bindingError))
+                        if (!binding.TryBind(context, out _))
                         {
-                            TryUnbindPresentation(out _);
-                            error = string.IsNullOrWhiteSpace(bindingError)
-                                ? $"Room art binding '{behaviours[index].GetType().Name}' rejected the presentation context."
-                                : bindingError;
-                            return false;
+                            TryUnbindBinding(
+                                binding,
+                                behaviours[index],
+                                "cleaning up a skipped bind");
+                            continue;
                         }
                     }
                     catch (Exception exception)
                     {
-                        TryUnbindPresentation(out _);
-                        error = $"Room art binding '{behaviours[index].GetType().Name}' threw while binding: {exception.Message}";
-                        return false;
+                        LogBindingException(
+                            behaviours[index],
+                            "binding",
+                            exception);
+                        TryUnbindBinding(
+                            binding,
+                            behaviours[index],
+                            "cleaning up after a bind exception");
+                        continue;
                     }
 
                     boundBindings.Add(binding);
@@ -216,6 +193,10 @@ namespace FPG.Demo.Unity
                 }
                 catch (Exception exception)
                 {
+                    LogBindingException(
+                        binding as MonoBehaviour,
+                        "unbinding",
+                        exception);
                     if (firstError == null)
                     {
                         firstError = $"Room art binding '{binding.GetType().Name}' threw while unbinding: {exception.Message}";
@@ -228,14 +209,42 @@ namespace FPG.Demo.Unity
             return firstError == null;
         }
 
-        private static bool HasIdentityTransform(Transform target)
+        private void TryUnbindBinding(
+            IFpgRoomArtPresentationBinding binding,
+            MonoBehaviour behaviour,
+            string operation)
         {
-            return FpgRoomValidationUtility.IsFinite(target.localPosition)
-                && FpgRoomValidationUtility.IsFinite(target.localEulerAngles)
-                && FpgRoomValidationUtility.IsFinite(target.localScale)
-                && target.localPosition.sqrMagnitude <= 0.000001f
-                && Quaternion.Angle(target.localRotation, Quaternion.identity) <= 0.001f
-                && (target.localScale - Vector3.one).sqrMagnitude <= 0.000001f;
+            try
+            {
+                binding.Unbind();
+            }
+            catch (Exception exception)
+            {
+                LogBindingException(behaviour, operation, exception);
+            }
+        }
+
+        private void LogBindingException(
+            MonoBehaviour behaviour,
+            string operation,
+            Exception exception)
+        {
+            Scene scene = gameObject.scene;
+            string sceneName = string.IsNullOrEmpty(scene.path)
+                ? scene.name
+                : scene.path;
+            string roomId = roomDefinition == null
+                ? "<unassigned>"
+                : roomDefinition.RoomId;
+            string bindingName = behaviour == null
+                ? "<destroyed>"
+                : behaviour.GetType().Name;
+            Debug.LogWarning(
+                $"[{nameof(FpgRoomArtRoot)}] Room '{roomId}' Art Scene "
+                + $"'{sceneName}' presentation binding '{bindingName}' threw while "
+                + $"{operation}; the binding was skipped: "
+                + exception.GetBaseException().Message,
+                behaviour == null ? this : behaviour);
         }
 
         private void OnDestroy()

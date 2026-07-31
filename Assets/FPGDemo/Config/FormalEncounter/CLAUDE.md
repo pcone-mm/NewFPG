@@ -3,6 +3,7 @@
 本目录中的 `FPG_*` 资产是正式遭遇的权威真源，不再由 D0 defaults installer 或 CombatLab 迁移生成。
 
 - `Characters/` 保存正式玩家 Character、ThreeC、CombatFeel、Weapon 与 Presentation；`Characters/Skills/` 中的 Primary、Immediate Secondary、Charge Secondary、Reload 是 Fei 的权威技能资产，Weapon 只保留稳定引用。
+- `D0ThreeCProfile` 不再保存静态镜头构图、FOV 或裁剪面；掩体镜头的权威配置位于 `Config/Level/CameraProfiles/`，不得在角色配置中恢复平行兜底。
 - Fei Primary、两种 Secondary 与共享 Enemy 技能表现都使用 `Presentation/Characters/*/VFX/PF_FPG_*` wrapper；正式配置不得直连 `Assets/VFX_Klaus/` 或供应商 Timeline/VFX_Lab demo。wrapper 内部的源材质、网格或 prefab GUID 依赖必须随 `.meta` 保留。
 - `FPG_NormalRoom_*`、`Level1/FPG_L1_01_*`、Enemy/Attack/Behavior/Catalog/Pool 必须成套维护。
 - `FPG_PlayableCharacterCatalog.asset` 是 Boot 与 FormalRoom 共用的角色入口。

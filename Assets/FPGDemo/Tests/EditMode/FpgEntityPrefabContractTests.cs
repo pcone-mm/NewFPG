@@ -130,27 +130,100 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(
                     "Assets/FPGDemo/Presentation/FormalEncounter/VFX/PF_FPG_CoverTransition.prefab"));
 
-            GameObject coverPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab");
-            Assert.That(coverPrefab, Is.Not.Null);
-            Assert.That(coverPrefab.layer, Is.EqualTo(28));
-            FpgCoverEntityView coverView =
-                coverPrefab.GetComponent<FpgCoverEntityView>();
-            Assert.That(coverView, Is.Not.Null);
+            AssertCoverPrefabContract(
+                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab",
+                true);
+            GameObject treeCover = AssertCoverPrefabContract(
+                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_Root1TreeCover.prefab",
+                false);
+
+            FpgCoverEntityView treeView = treeCover.GetComponent<FpgCoverEntityView>();
+            SerializedObject treeSo = new SerializedObject(treeView);
+            GameObject intactRoot = treeSo.FindProperty("intactRoot")
+                .objectReferenceValue as GameObject;
+            GameObject destroyedRoot = treeSo.FindProperty("destroyedRoot")
+                .objectReferenceValue as GameObject;
+            SerializedProperty blockers = treeSo.FindProperty("blockingColliders");
+
+            Assert.That(intactRoot.name, Is.EqualTo("IntactRoot"));
+            Assert.That(destroyedRoot.name, Is.EqualTo("DestroyedRoot"));
+            Transform intactTree = intactRoot.transform.Find("root1_tree1_block");
+            Transform destroyedTree = destroyedRoot.transform.Find(
+                "root1_tree1_block_blood");
+            Assert.That(intactTree, Is.Not.Null);
+            Assert.That(destroyedTree, Is.Not.Null);
+            Assert.That(intactTree.Find("__ShadowCasterProxy"), Is.Not.Null);
             Assert.That(
-                coverView.TryValidate(out string coverError),
-                Is.True,
-                coverError);
-            SerializedObject coverSo = new SerializedObject(coverView);
+                AssetDatabase.GetAssetPath(
+                    intactTree.GetComponent<SpriteRenderer>().sprite),
+                Is.EqualTo(
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block.png"));
             Assert.That(
-                coverSo.FindProperty("intactRoot").objectReferenceValue,
-                Is.Not.Null);
-            Assert.That(
-                coverSo.FindProperty("destroyedRoot").objectReferenceValue,
-                Is.Not.Null);
-            Assert.That(
-                coverSo.FindProperty("blockingColliders").arraySize,
-                Is.GreaterThan(0));
+                AssetDatabase.GetAssetPath(
+                    destroyedTree.GetComponent<SpriteRenderer>().sprite),
+                Is.EqualTo(
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block_blood.png"));
+            Assert.That(blockers.arraySize, Is.EqualTo(0));
+            Assert.That(treeCover.GetComponentsInChildren<Collider>(true), Is.Empty);
+        }
+
+        [Test]
+        public void CoverPrefabValidationRejectsInvalidOwnershipAndTriggerBlockers()
+        {
+            GameObject root = CreateObject("CoverRoot");
+            FpgCoverEntityView view = root.AddComponent<FpgCoverEntityView>();
+            GameObject intact = CreateChild(root.transform, "Intact").gameObject;
+            GameObject destroyed = CreateChild(root.transform, "Destroyed").gameObject;
+            BoxCollider blocker = root.AddComponent<BoxCollider>();
+            SerializedObject serialized = new SerializedObject(view);
+            serialized.FindProperty("intactRoot").objectReferenceValue = intact;
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
+            SerializedProperty blockers = serialized.FindProperty("blockingColliders");
+            blockers.arraySize = 1;
+            blockers.GetArrayElementAtIndex(0).objectReferenceValue = blocker;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.That(view.TryValidate(out string error), Is.True, error);
+
+            serialized.Update();
+            blockers = serialized.FindProperty("blockingColliders");
+            blockers.arraySize = 0;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(view.TryValidate(out error), Is.True, error);
+
+            serialized.Update();
+            blockers = serialized.FindProperty("blockingColliders");
+            blockers.arraySize = 1;
+            blockers.GetArrayElementAtIndex(0).objectReferenceValue = blocker;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            serialized.Update();
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = intact;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(view.TryValidate(out error), Is.False);
+            Assert.That(error, Does.Contain("distinct"));
+
+            serialized.Update();
+            serialized.FindProperty("intactRoot").objectReferenceValue = root;
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(view.TryValidate(out error), Is.False);
+            Assert.That(error, Does.Contain("belong"));
+
+            GameObject external = CreateObject("ExternalVisualRoot");
+            serialized.Update();
+            serialized.FindProperty("intactRoot").objectReferenceValue = intact;
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = external;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            Assert.That(view.TryValidate(out error), Is.False);
+            Assert.That(error, Does.Contain("belong"));
+
+            serialized.Update();
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            blocker.isTrigger = true;
+            Assert.That(view.TryValidate(out error), Is.False);
+            Assert.That(error, Does.Contain("Trigger"));
         }
 
         [Test]
@@ -512,6 +585,34 @@ namespace FPG.Demo.Tests.EditMode
             GameObject value = new GameObject(name);
             createdObjects.Add(value);
             return value;
+        }
+
+        private static GameObject AssertCoverPrefabContract(
+            string path,
+            bool requiresBlockingColliders)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            Assert.That(prefab, Is.Not.Null, path);
+            Assert.That(prefab.layer, Is.EqualTo(28), path);
+            FpgCoverEntityView view = prefab.GetComponent<FpgCoverEntityView>();
+            Assert.That(view, Is.Not.Null, path);
+            Assert.That(view.TryValidate(out string error), Is.True, path + ": " + error);
+
+            SerializedObject serialized = new SerializedObject(view);
+            Assert.That(
+                serialized.FindProperty("intactRoot").objectReferenceValue,
+                Is.Not.Null,
+                path);
+            Assert.That(
+                serialized.FindProperty("destroyedRoot").objectReferenceValue,
+                Is.Not.Null,
+                path);
+            int blockerCount = serialized.FindProperty("blockingColliders").arraySize;
+            Assert.That(
+                blockerCount,
+                requiresBlockingColliders ? Is.GreaterThan(0) : Is.EqualTo(0),
+                path);
+            return prefab;
         }
 
         private Transform CreateChild(Transform parent, string name)

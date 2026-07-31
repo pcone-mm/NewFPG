@@ -1,0 +1,89 @@
+diff --git a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillSerializedAdapter.cs b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillSerializedAdapter.cs
+--- a/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillSerializedAdapter.cs
++++ b/Assets/FPGDemo/Editor/SkillAuthoring/FpgSkillSerializedAdapter.cs
+@@ -43,15 +43,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
+         public int EventCount;
+     }
+ 
+-    internal sealed class FpgSkillAssetRecord
+-    {
+-        public UnityEngine.Object Asset;
+-        public string Path;
+-        public string SkillId;
+-        public string DisplayName;
+-        public string OwnerType;
+-    }
+-
+     internal sealed class FpgSkillActionPreviewRecord
+     {
+         public string Name;
+@@ -260,8 +251,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
+                     Asset = asset,
+                     Path = path,
+                     SkillId = ReadString(serializedObject.FindProperty("skillId"), asset.name),
+-                    DisplayName = ReadString(serializedObject.FindProperty("displayName"), asset.name),
+-                    OwnerType = InferOwnerType(serializedObject)
++                    DisplayName = ReadString(serializedObject.FindProperty("displayName"), asset.name)
+                 });
+             }
+ 
+@@ -3554,31 +3544,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
+             }
+         }
+ 
+-        private static string InferOwnerType(SerializedObject serializedObject)
+-        {
+-            string value = ReadDisplayValue(
+-                serializedObject,
+-                "ownerKind",
+-                "actorKind",
+-                "skillOwnerKind",
+-                "actionType");
+-            string typeName = serializedObject?.targetObject == null
+-                ? string.Empty
+-                : serializedObject.targetObject.GetType().Name;
+-            value = value + " " + typeName;
+-            if (ContainsAny(value, "player", "character", "hero", "角色", "玩家"))
+-            {
+-                return "角色";
+-            }
+-
+-            if (ContainsAny(value, "enemy", "monster", "怪物", "敌人"))
+-            {
+-                return "怪物";
+-            }
+-
+-            return "通用";
+-        }
+-
+         private static bool ContainsAny(string value, params string[] candidates)
+         {
+             if (string.IsNullOrWhiteSpace(value))
+@@ -3597,27 +3562,6 @@ namespace FPG.Demo.Editor.SkillAuthoring
+             return false;
+         }
+ 
+-        private static string ReadDisplayValue(
+-            SerializedObject serializedObject,
+-            params string[] names)
+-        {
+-            if (serializedObject == null)
+-            {
+-                return string.Empty;
+-            }
+-
+-            for (int index = 0; index < names.Length; index++)
+-            {
+-                string value = ReadDisplayValue(serializedObject.FindProperty(names[index]));
+-                if (!string.IsNullOrWhiteSpace(value))
+-                {
+-                    return value;
+-                }
+-            }
+-
+-            return string.Empty;
+-        }
+-
+         private static FpgSkillTargetSource ReadTargetSource(
+             SerializedProperty eventProperty)
+         {

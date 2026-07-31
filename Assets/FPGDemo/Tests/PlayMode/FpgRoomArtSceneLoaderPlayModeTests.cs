@@ -13,6 +13,8 @@ namespace FPG.Demo.Tests.PlayMode
             "Assets/FPGDemo/Scenes/FormalRoom.unity";
         private const string ArtScenePath =
             "Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest.unity";
+        private const string Root1ArtScenePath =
+            "Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest 1_Copy.unity";
 
         [UnityTest]
         public IEnumerator LoaderOwnsLoadUnloadAndFailedLoadRollback()
@@ -49,9 +51,10 @@ namespace FPG.Demo.Tests.PlayMode
                 Assert.That(loader.ActiveArtScene.path, Is.EqualTo(ArtScenePath));
                 Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(loader.ActiveArtScene));
                 Assert.That(loader.ActiveArtRoot.RoomDefinition, Is.SameAs(room));
+                Assert.That(RenderSettings.sun, Is.Not.Null);
                 Assert.That(
-                    RenderSettings.sun,
-                    Is.SameAs(loader.ActiveArtRoot.MainDirectionalLight));
+                    RenderSettings.sun.gameObject.scene,
+                    Is.EqualTo(loader.ActiveArtScene));
                 Assert.That(host.gameObject.scene, Is.EqualTo(formalScene));
                 Assert.That(host.WorldCamera.gameObject.scene, Is.EqualTo(formalScene));
                 Assert.That(loader.gameObject.scene, Is.EqualTo(formalScene));
@@ -239,6 +242,71 @@ namespace FPG.Demo.Tests.PlayMode
             yield return SceneManager.UnloadSceneAsync(formalScene);
         }
 
+        [UnityTest]
+        public IEnumerator FormalLoaderEntersAndExitsRoot1CopyArtScene()
+        {
+            Scene initialScene = SceneManager.GetActiveScene();
+            yield return SceneManager.LoadSceneAsync(
+                FormalScenePath,
+                LoadSceneMode.Additive);
+            Scene formalScene = SceneManager.GetSceneByPath(FormalScenePath);
+            Assert.That(formalScene.IsValid() && formalScene.isLoaded, Is.True);
+            Assert.That(SceneManager.SetActiveScene(formalScene), Is.True);
+
+            FpgFormalEncounterHost host =
+                FindSingle<FpgFormalEncounterHost>(formalScene);
+            Assert.That(host.TryValidateAuthoring(out string hostError), Is.True, hostError);
+
+            yield return SceneManager.LoadSceneAsync(
+                Root1ArtScenePath,
+                LoadSceneMode.Additive);
+            Scene lookupScene = SceneManager.GetSceneByPath(Root1ArtScenePath);
+            Assert.That(lookupScene.IsValid() && lookupScene.isLoaded, Is.True);
+            FpgRoomDefinition room =
+                FindSingle<FpgRoomArtRoot>(lookupScene).RoomDefinition;
+            Assert.That(room, Is.Not.Null);
+            Assert.That(room.ArtScenePath, Is.EqualTo(Root1ArtScenePath));
+            Assert.That(SceneManager.SetActiveScene(formalScene), Is.True);
+            yield return SceneManager.UnloadSceneAsync(lookupScene);
+
+            FpgRoomArtSceneLoader loader = host.RoomArtSceneLoader;
+            bool loaded = false;
+            string loadError = string.Empty;
+            yield return loader.LoadAsync(
+                room,
+                host.WorldCamera,
+                host.AimViewportSource,
+                (succeeded, error) =>
+                {
+                    loaded = succeeded;
+                    loadError = error;
+                });
+            Assert.That(loaded, Is.True, loadError);
+            Assert.That(loader.ActiveArtScene.path, Is.EqualTo(Root1ArtScenePath));
+            Assert.That(loader.ActiveArtRoot.RoomDefinition, Is.SameAs(room));
+
+            bool unloaded = false;
+            string unloadError = string.Empty;
+            yield return loader.UnloadActiveAsync(
+                formalScene,
+                (succeeded, error) =>
+                {
+                    unloaded = succeeded;
+                    unloadError = error;
+                });
+            Assert.That(unloaded, Is.True, unloadError);
+            Assert.That(loader.HasActiveArtScene, Is.False);
+            Assert.That(
+                SceneManager.GetSceneByPath(Root1ArtScenePath).isLoaded,
+                Is.False);
+
+            if (initialScene.IsValid() && initialScene.isLoaded)
+            {
+                SceneManager.SetActiveScene(initialScene);
+            }
+            yield return SceneManager.UnloadSceneAsync(formalScene);
+        }
+
         [UnityTearDown]
         public IEnumerator TearDownLoadedScenes()
         {
@@ -251,6 +319,17 @@ namespace FPG.Demo.Tests.PlayMode
                     SceneManager.SetActiveScene(fallback);
                 }
                 yield return SceneManager.UnloadSceneAsync(artScene);
+            }
+
+            Scene root1ArtScene = SceneManager.GetSceneByPath(Root1ArtScenePath);
+            if (root1ArtScene.IsValid() && root1ArtScene.isLoaded)
+            {
+                Scene fallback = FindFallback(root1ArtScene);
+                if (fallback.IsValid())
+                {
+                    SceneManager.SetActiveScene(fallback);
+                }
+                yield return SceneManager.UnloadSceneAsync(root1ArtScene);
             }
 
             Scene formalScene = SceneManager.GetSceneByPath(FormalScenePath);

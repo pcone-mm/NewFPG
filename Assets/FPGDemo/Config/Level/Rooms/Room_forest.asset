@@ -65,6 +65,8 @@ MonoBehaviour:
     isStartingCover: 0
     playerReachableLocalPosition: {x: -7.5, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
+    playerLeftPeekLocalPosition: {x: -8.85, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: -6.15, y: 0.5, z: 0}
   - markerId: cover-center
     displayName: "\u4E2D\u592E\u63A9\u4F53"
     localPosition: {x: 0, y: 0.5, z: 0}
@@ -75,6 +77,8 @@ MonoBehaviour:
     isStartingCover: 1
     playerReachableLocalPosition: {x: 0, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
+    playerLeftPeekLocalPosition: {x: -1, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: 1, y: 0.5, z: 0}
   - markerId: cover-right
     displayName: "\u53F3\u4FA7\u63A9\u4F53"
     localPosition: {x: 7.5, y: 0.5, z: 0}
@@ -85,3 +89,5 @@ MonoBehaviour:
     isStartingCover: 0
     playerReachableLocalPosition: {x: 7.5, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
+    playerLeftPeekLocalPosition: {x: 6.15, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: 8.85, y: 0.5, z: 0}

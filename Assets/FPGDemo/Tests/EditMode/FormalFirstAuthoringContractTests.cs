@@ -382,7 +382,7 @@ namespace FPG.Demo.Tests.EditMode
         [Test]
         public void FormalSkillAssetsAreV3OnlyAndCompileWithoutRemovedFields()
         {
-            Assert.That(FormalSkillPaths, Has.Length.EqualTo(8));
+            Assert.That(FormalSkillPaths, Has.Length.EqualTo(9));
             for (int pathIndex = 0;
                 pathIndex < FormalSkillPaths.Length;
                 pathIndex++)

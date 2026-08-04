@@ -22,7 +22,6 @@ namespace FPG.Demo.Run
         private readonly PlayerRuntime player;
         private readonly SessionIdAllocator idAllocator;
         private readonly FpgMultiEnemyCombatCapacity capacity;
-        private readonly FpgPlayerDefensePolicy playerDefense;
         private readonly TickDuration defaultGroggyDuration;
         private readonly EnemyBinding[] enemies;
         private readonly FpgPlayerHitCommand[] playerHitCommands;
@@ -45,6 +44,7 @@ namespace FPG.Demo.Run
         private readonly FixedFpgVitalsStream vitalsStream;
         private readonly FixedResolvedDamageFeedbackStream damageFeedbackStream;
         private FpgCoverRuntime coverRuntime;
+        private IFpgCoverGeometryResolver coverGeometryResolver;
         private readonly FixedFpgSkillImpactPresentationStream
             skillImpactPresentationStream;
 
@@ -92,7 +92,6 @@ namespace FPG.Demo.Run
 
             this.capacity = capacity;
             this.defaultGroggyDuration = defaultGroggyDuration;
-            this.playerDefense = playerDefense ?? FpgPlayerDefensePolicy.Default;
             enemies = new EnemyBinding[capacity.EnemyCapacity];
             playerHitCommands = new FpgPlayerHitCommand[capacity.PlayerHitCommandCapacity];
             playerHitDueBuffer = new FpgPlayerHitCommand[capacity.PlayerHitCommandCapacity];
@@ -147,6 +146,8 @@ namespace FPG.Demo.Run
         public IFpgSkillImpactPresentationView SkillImpactPresentation =>
             skillImpactPresentationStream;
         public int PresentationCallbackFaultCount { get; private set; }
+        public bool IsPlayerInvincible { get; set; }
+        public bool IsEnemyAiEnabled { get; set; } = true;
 
         public DomainResult TryBindCoverRuntime(FpgCoverRuntime covers)
         {
@@ -156,6 +157,22 @@ namespace FPG.Demo.Run
             }
 
             coverRuntime = covers;
+            return DomainResult.Success;
+        }
+
+        public DomainResult TryBindCoverRuntime(
+            FpgCoverRuntime covers,
+            IFpgCoverGeometryResolver geometryResolver)
+        {
+            if (coverRuntime != null
+                || covers == null
+                || geometryResolver == null)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            coverRuntime = covers;
+            coverGeometryResolver = geometryResolver;
             return DomainResult.Success;
         }
 
@@ -1051,6 +1068,11 @@ namespace FPG.Demo.Run
 
         public bool CanAttack(RuntimeId ownerRuntimeId)
         {
+            if (!IsEnemyAiEnabled)
+            {
+                return false;
+            }
+
             int index = FindEnemy(ownerRuntimeId);
             if (index < 0)
             {
@@ -1067,6 +1089,11 @@ namespace FPG.Demo.Run
             FpgAttackScheduleRequest request,
             int spawnSequence)
         {
+            if (!IsEnemyAiEnabled)
+            {
+                return false;
+            }
+
             if (CanAttack(request.OwnerRuntimeId))
             {
                 return true;
@@ -1374,6 +1401,12 @@ namespace FPG.Demo.Run
 
         private DomainResult ProcessEnemyAttackDirector(TickIndex tick)
         {
+            if (!IsEnemyAiEnabled)
+            {
+                CancelPendingEnemyAttacksForDisabledAi();
+                return DomainResult.Success;
+            }
+
             int attempts = 0;
             while (attempts++ < attackSchedule.Capacity
                 && attackSchedule.TryDequeueDueForSchedule(
@@ -2236,6 +2269,17 @@ namespace FPG.Demo.Run
 
                         case ProjectileSweepHitKind.EnvironmentBlocked:
                         {
+                            DomainResult coverImpact = QueueCoverImpact(
+                                projectile,
+                                binding,
+                                sweepHit,
+                                tick,
+                                out impactId);
+                            if (!coverImpact.IsSuccess)
+                            {
+                                return coverImpact;
+                            }
+
                             DomainResult blocked = projectile.TryBlock(tick);
                             if (!blocked.IsSuccess)
                             {
@@ -2398,6 +2442,104 @@ namespace FPG.Demo.Run
             }
 
             return DomainResult.Success;
+        }
+
+        private void CancelPendingEnemyAttacksForDisabledAi()
+        {
+            for (int index = 0; index < scheduledPayloads.Length; index++)
+            {
+                ScheduledPayload scheduled = scheduledPayloads[index];
+                if (!scheduled.IsUsed)
+                {
+                    continue;
+                }
+
+                attackSchedule.TryCancel(scheduled.ScheduleSequence);
+                if (scheduled.ProjectileBudgetReservation.IsValid)
+                {
+                    combatKernel.ProjectileBudget.ReleaseReservation(
+                        scheduled.ProjectileBudgetReservation);
+                }
+
+                int reservationIndex = FindEnemySkillCapacityReservation(
+                    scheduled.CapacityReservation);
+                if (reservationIndex >= 0)
+                {
+                    EnemySkillCapacityReservationEntry entry =
+                        enemySkillCapacityReservations[reservationIndex];
+                    RestoreEnemySkillCapacity(ref entry, scheduled.Payload);
+                    enemySkillCapacityReservations[reservationIndex] = entry;
+                }
+
+                scheduledPayloads[index] = default(ScheduledPayload);
+            }
+        }
+
+        private DomainResult QueueCoverImpact(
+            ProjectileRuntime projectile,
+            ProjectileBinding binding,
+            ProjectileSweepHit sweepHit,
+            TickIndex tick,
+            out ImpactId impactId)
+        {
+            impactId = ImpactId.Invalid;
+            if (projectile == null
+                || projectile.Team != Team.Enemy
+                || coverRuntime == null
+                || coverGeometryResolver == null
+                || sweepHit.Kind != ProjectileSweepHitKind.EnvironmentBlocked
+                || !coverGeometryResolver.TryResolveCoverId(
+                    sweepHit.GeometryId,
+                    out string coverId)
+                || !coverRuntime.TryGetIntactDefenseState(
+                    coverId,
+                    out _))
+            {
+                return DomainResult.Success;
+            }
+
+            if (!CanQueueImpacts(1, 1))
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            impactId = idAllocator.NextImpactId();
+            ImpactIntent intent = new ImpactIntent(
+                impactId,
+                projectile.AttackId,
+                ShotId.Invalid,
+                projectile.OwnerId,
+                player.RuntimeId,
+                tick,
+                projectile.Definition.DamageSpec,
+                HitPart.Body,
+                DamageType.Normal,
+                CombatTags.EnemyAttack,
+                impactOrdinal: binding.PresentationOrdinal,
+                spatialContext: new ImpactSpatialContext(
+                    sweepHit.Point,
+                    sweepHit.GeometryId,
+                    QueryTargetKind.EnvironmentBlocker,
+                    HitPart.Body));
+            if (!TryMarkProjectileOriginImpact(impactId))
+            {
+                impactId = ImpactId.Invalid;
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            DomainResult queued = combatKernel.ImpactQueue.TryEnqueue(
+                intent,
+                ImpactPhasePriority.EnemyImpact,
+                projectile.RuntimeId,
+                binding.SkillExecutionId.Value,
+                binding.GameplayEventId);
+            if (!queued.IsSuccess)
+            {
+                RemoveProjectileOriginImpact(impactId);
+                impactId = ImpactId.Invalid;
+            }
+
+            return queued;
         }
 
         private DomainResult AdvancePlayerAreaProjectile(
@@ -2709,6 +2851,17 @@ namespace FPG.Demo.Run
             int gameplayEventId = 0,
             bool publishImmediateContact = false)
         {
+            if (intent.SpatialContext.HasValue
+                && intent.SpatialContext.TargetKind
+                    == QueryTargetKind.EnvironmentBlocker)
+            {
+                return ResolveCoverImpact(
+                    intent,
+                    skillExecutionId,
+                    gameplayEventId,
+                    publishImmediateContact);
+            }
+
             int projectileIndex = FindProjectile(intent.TargetId, includeTerminal: false);
             if (projectileIndex >= 0)
             {
@@ -2847,32 +3000,32 @@ namespace FPG.Demo.Run
                         gameplayEventId);
                 }
 
-                DefenseSnapshot defense = playerDefense.CreateSnapshot(player);
-                CombatantState coverDefense = coverRuntime?.CurrentDefenseState;
-                if (defense.Exposure == ExposureMode.Withdrawn
-                    && coverDefense != null)
+                if (IsPlayerInvincible)
                 {
-                    ImpactResolution coverResolution =
-                        combatKernel.DamageResolver.ResolveCombatant(
-                            intent,
-                            coverDefense,
-                            defense,
-                            false);
-                    if (!coverResolution.Result.IsSuccess)
+                    DomainResult consumed = combatKernel.ImpactLedger.TryConsume(
+                        intent.ImpactId);
+                    if (!consumed.IsSuccess)
                     {
-                        return coverResolution.Result;
+                        return consumed;
                     }
 
-                    if (coverRuntime.CurrentCoverIsDestroyed)
-                    {
-                        player.Exposure.ForceExposed(
-                            intent.ImpactTick,
-                            out _);
-                    }
-
+                    int life = player.Combatant.Life;
+                    ImpactResolution invincibleResolution = ImpactResolution.Accepted(
+                        new DamagePacket(
+                            intent.ImpactId,
+                            DamageChannel.Life,
+                            appliedAmount: 0,
+                            appliedBreakAmount: 0,
+                            valueBefore: life,
+                            valueAfter: life),
+                        perfectRetract: false,
+                        barrierBroken: false,
+                        breakTriggered: false,
+                        death: false,
+                        projectileDestroyed: false);
                     RecordResolution(
                         intent,
-                        coverResolution,
+                        invincibleResolution,
                         skillExecutionId,
                         gameplayEventId,
                         publishImmediateContact);
@@ -2909,6 +3062,58 @@ namespace FPG.Demo.Run
                 intent,
                 skillExecutionId,
                 gameplayEventId);
+        }
+
+        private DomainResult ResolveCoverImpact(
+            ImpactIntent intent,
+            long skillExecutionId,
+            int gameplayEventId,
+            bool publishImmediateContact)
+        {
+            if (coverRuntime == null
+                || coverGeometryResolver == null
+                || !coverGeometryResolver.TryResolveCoverId(
+                    intent.SpatialContext.GeometryId,
+                    out string coverId)
+                || !coverRuntime.TryGetIntactDefenseState(
+                    coverId,
+                    out CombatantState coverDefense))
+            {
+                return ConsumeStaleImpact(
+                    intent,
+                    skillExecutionId,
+                    gameplayEventId);
+            }
+
+            ImpactResolution resolution = combatKernel.DamageResolver.ResolveCombatant(
+                intent,
+                coverDefense,
+                new DefenseSnapshot(
+                    ExposureMode.Withdrawn,
+                    TickIndex.Invalid,
+                    TickDuration.Zero,
+                    DamageSpec.BasisPoints),
+                false);
+            if (!resolution.Result.IsSuccess)
+            {
+                return resolution.Result;
+            }
+
+            if (resolution.BarrierBroken
+                && coverRuntime.IsCurrentCover(coverId))
+            {
+                player.Exposure.ForceExposed(
+                    intent.ImpactTick,
+                    out _);
+            }
+
+            RecordResolution(
+                intent,
+                resolution,
+                skillExecutionId,
+                gameplayEventId,
+                publishImmediateContact);
+            return DomainResult.Success;
         }
 
         private DomainResult ConsumeStaleImpact(

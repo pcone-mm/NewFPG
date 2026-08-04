@@ -64,6 +64,7 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(primaryExecute.AttackEvents.Count, Is.EqualTo(1));
             Assert.That(primaryExecute.AttackEvents[0].Tick, Is.Zero);
             Assert.That(primary.SequenceCooldownTicks, Is.EqualTo(12));
+            Assert.That(primary.UsesSecondaryTriggerMode, Is.False);
 
             Assert.That(
                 immediateSecondary.Sequences.Select(value => value.Kind),
@@ -83,9 +84,11 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 immediateSecondary.SecondaryTriggerMode,
                 Is.EqualTo(SecondaryTriggerMode.ImmediateRepeatWhileHeld));
+            Assert.That(immediateSecondary.UsesSecondaryTriggerMode, Is.True);
             Assert.That(
                 chargeSecondary.SecondaryTriggerMode,
                 Is.EqualTo(SecondaryTriggerMode.ChargeRelease));
+            Assert.That(chargeSecondary.UsesSecondaryTriggerMode, Is.True);
             FpgSkillSequenceDefinition release =
                 FindSequence(chargeSecondary, FpgSkillSequenceKind.Release);
             FpgSkillSequenceDefinition execute =
@@ -125,6 +128,7 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(reloadExecute.DurationTicks, Is.EqualTo(84));
             Assert.That(reloadExecute.ReloadEvents.Count, Is.EqualTo(1));
             Assert.That(reloadExecute.ReloadEvents[0].Tick, Is.EqualTo(40));
+            Assert.That(reload.UsesSecondaryTriggerMode, Is.False);
         }
 
         [Test]

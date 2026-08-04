@@ -83,6 +83,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private string previewCompileError;
         private string lastReportedPreviewFailureSignature;
         private bool refreshQueued;
+        private bool refreshInspectorQueued;
         private double lastUpdateTime;
         private double tickAccumulator;
         private float playbackSpeed = 1f;
@@ -298,6 +299,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
             timelineView = new FpgSkillTimelineView();
             timelineView.PlayheadChanged += OnTimelinePlayheadChanged;
+            timelineView.AllowWithdrawTickChanged +=
+                OnTimelineAllowWithdrawTickChanged;
             timelineView.EventSelectionChanged +=
                 OnTimelineEventSelectionChanged;
             timelineView.EventsTickDeltaChanged +=
@@ -938,6 +941,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private void RefreshFromSerialized(bool refreshInspector)
         {
             refreshQueued = false;
+            refreshInspectorQueued = false;
             if (serializedAsset == null || serializedAsset.targetObject == null)
             {
                 ClearSelectedData();
@@ -1355,6 +1359,10 @@ namespace FPG.Demo.Editor.SkillAuthoring
             timelineView.SetAvailableTracks(availableTracks);
             timelineView.SetPresentationTracks(presentationTrackModels);
             timelineView.SetModel(durationTicks, models, blocks);
+            timelineView.SetAttackTiming(
+                FpgSkillSerializedAdapter.ReadAttackTiming(sequence, events));
+            timelineView.SetAllowWithdrawTick(
+                FpgSkillSerializedAdapter.GetAllowWithdrawTick(sequence));
             timelineView.SetPlayhead(GetSelectedSequenceLocalTick());
             if (selectedAnimationTrack)
             {
@@ -1481,6 +1489,12 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 serializedAsset.FindProperty("displayName"),
                 "显示名称");
             AddAdditionalAssetProperties();
+            if (IsSecondaryTriggerModeApplicable())
+            {
+                inspectorContent.Add(new HelpBox(
+                    "该字段只声明当前副射资产的触发契约；实际使用哪种副射由武器的即时/蓄力技能槽位和角色目录选择决定。",
+                    HelpBoxMessageType.Info));
+            }
 
             SerializedProperty currentSequence =
                 FpgSkillSerializedAdapter.GetSequence(
@@ -1492,9 +1506,73 @@ namespace FPG.Demo.Editor.SkillAuthoring
             AddTypedProperty(
                 currentSequence?.FindPropertyRelative("durationTicks"),
                 "总时长 Tick");
+            AddAttackTimingModeProperty(
+                currentSequence?.FindPropertyRelative("attackTimingMode"));
+            AddTypedProperty(
+                currentSequence?.FindPropertyRelative(
+                    "windupAttackSpeedCoefficient"),
+                "前摇攻速缩放系数");
+            AddTypedProperty(
+                currentSequence?.FindPropertyRelative(
+                    "differentAttackInterruptTick"),
+                "不同攻击可打断 Tick");
+            FpgSkillAttackTimingViewModel timing =
+                FpgSkillSerializedAdapter.ReadAttackTiming(
+                    currentSequence,
+                    events);
+            if (timing.UsesCharacterAttackSpeed)
+            {
+                inspectorContent.Add(new HelpBox(
+                    timing.AttackFrameTick >= 0
+                        ? "攻击帧由第一个攻击事件的第 "
+                            + timing.AttackFrameTick
+                            + " Tick 推导。时间轴展示编排的前摇和后摇；运行时根据攻速快照解析实际 Tick 长度。"
+                        : "角色攻击速度模式需要一个攻击事件来推导攻击帧。",
+                    timing.AttackFrameTick >= 0
+                        ? HelpBoxMessageType.Info
+                        : HelpBoxMessageType.Error));
+                Button setInterruptToAttackFrame = new Button(() =>
+                {
+                    if (timing.AttackFrameTick >= 0
+                        && FpgSkillSerializedAdapter
+                            .SetDifferentAttackInterruptTick(
+                                serializedAsset,
+                                selectedSequenceIndex,
+                                timing.AttackFrameTick))
+                    {
+                        RefreshFromSerialized();
+                    }
+                })
+                {
+                    text = "将打断点设为攻击帧",
+                    tooltip = "将不同攻击可打断标记设为编排的攻击帧。"
+                };
+                setInterruptToAttackFrame.SetEnabled(
+                    timing.AttackFrameTick >= 0);
+                inspectorContent.Add(setInterruptToAttackFrame);
+            }
+            AddTypedProperty(
+                currentSequence?.FindPropertyRelative("allowWithdrawTick"),
+                "允许回掩体 Tick");
+            Button setWithdrawToEnd = new Button(() =>
+            {
+                if (FpgSkillSerializedAdapter.SetAllowWithdrawTick(
+                        serializedAsset,
+                        selectedSequenceIndex,
+                        durationTicks))
+                {
+                    RefreshFromSerialized();
+                }
+            })
+            {
+                text = "将回掩体点设为序列末尾",
+                tooltip = "角色保持暴露直到序列的最后一个 Tick。"
+            };
+            setWithdrawToEnd.SetEnabled(currentSequence != null);
+            inspectorContent.Add(setWithdrawToEnd);
             AddTypedProperty(
                 currentSequence?.FindPropertyRelative("holdUntilCanceled"),
-                "Hold Until Canceled");
+                "持续至取消");
         }
 
         private void AddAdditionalAssetProperties()
@@ -1513,13 +1591,48 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     continue;
                 }
 
-                AddTypedProperty(iterator.Copy(), iterator.displayName);
+                AddTypedProperty(
+                    iterator.Copy(),
+                    GetAdditionalAssetPropertyLabel(
+                        iterator.name,
+                        iterator.displayName));
+            }
+        }
+
+        private static string GetAdditionalAssetPropertyLabel(
+            string propertyName,
+            string fallback)
+        {
+            switch (propertyName)
+            {
+                case "secondaryTriggerMode":
+                    return "副射触发模式";
+
+                case "minimumChargeTicks":
+                    return "最小蓄力 Tick";
+
+                case "sequenceCooldownTicks":
+                    return "序列冷却 Tick";
+
+                case "chargeProgressTicks":
+                    return "蓄力进度 Tick";
+
+                default:
+                    return fallback;
             }
         }
 
         private bool IsAdditionalAssetPropertyApplicable(
             string propertyName)
         {
+            if (string.Equals(
+                    propertyName,
+                    "secondaryTriggerMode",
+                    StringComparison.Ordinal))
+            {
+                return IsSecondaryTriggerModeApplicable();
+            }
+
             if (!string.Equals(
                     propertyName,
                     "minimumChargeTicks",
@@ -1532,11 +1645,68 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 return true;
             }
 
-            return string.Equals(
+            return IsSecondaryTriggerModeApplicable()
+                && string.Equals(
                 GetSerializedEnumName(
                     serializedAsset.FindProperty("secondaryTriggerMode")),
                 "ChargeRelease",
                 StringComparison.Ordinal);
+        }
+
+        private bool IsSecondaryTriggerModeApplicable()
+        {
+            if (serializedAsset == null || serializedAsset.targetObject == null)
+            {
+                return false;
+            }
+
+            SerializedProperty sequences = serializedAsset.FindProperty(
+                "sequences");
+            if (sequences == null || !sequences.isArray)
+            {
+                return false;
+            }
+
+            for (int sequenceIndex = 0;
+                sequenceIndex < sequences.arraySize;
+                sequenceIndex++)
+            {
+                SerializedProperty sequence =
+                    sequences.GetArrayElementAtIndex(sequenceIndex);
+                SerializedProperty projectileEvents =
+                    sequence.FindPropertyRelative("projectileEvents");
+                if (projectileEvents != null
+                    && projectileEvents.isArray
+                    && projectileEvents.arraySize > 0)
+                {
+                    return true;
+                }
+
+                SerializedProperty attackEvents =
+                    sequence.FindPropertyRelative("attackEvents");
+                if (attackEvents == null || !attackEvents.isArray)
+                {
+                    continue;
+                }
+
+                for (int attackIndex = 0;
+                    attackIndex < attackEvents.arraySize;
+                    attackIndex++)
+                {
+                    SerializedProperty mode = attackEvents
+                        .GetArrayElementAtIndex(attackIndex)
+                        .FindPropertyRelative("mode");
+                    if (string.Equals(
+                            GetSerializedEnumName(mode),
+                            "AreaAtFirstSurface",
+                            StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static bool IsEditorOwnedRootProperty(string propertyName)
@@ -1561,7 +1731,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             }
 
             PropertyField field = new PropertyField(property.Copy(), label);
-            field.RegisterCallback<SerializedPropertyChangeEvent>(_ => QueueSerializedRefresh());
+            field.RegisterCallback<SerializedPropertyChangeEvent>(
+                _ => QueueSerializedRefresh(false));
             inspectorContent.Add(field);
             field.Bind(serializedAsset);
         }
@@ -1877,15 +2048,23 @@ namespace FPG.Demo.Editor.SkillAuthoring
             RefreshAssetState();
         }
 
-        private void QueueSerializedRefresh()
+        private void QueueSerializedRefresh(bool refreshInspector = true)
         {
+            refreshInspectorQueued |= refreshInspector;
             if (refreshQueued)
             {
                 return;
             }
 
             refreshQueued = true;
-            EditorApplication.delayCall += RefreshFromSerialized;
+            EditorApplication.delayCall += FlushQueuedSerializedRefresh;
+        }
+
+        private void FlushQueuedSerializedRefresh()
+        {
+            bool shouldRefreshInspector = refreshInspectorQueued;
+            refreshInspectorQueued = false;
+            RefreshFromSerialized(shouldRefreshInspector);
         }
 
         private void OnAnimationDurationMeasured(int duration)
@@ -2107,6 +2286,21 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 PreviewTickForSelectedSequence(tick),
                 true,
                 false);
+        }
+
+        private void OnTimelineAllowWithdrawTickChanged(int tick)
+        {
+            if (serializedAsset == null
+                || !FpgSkillSerializedAdapter.SetAllowWithdrawTick(
+                    serializedAsset,
+                    selectedSequenceIndex,
+                    tick))
+            {
+                RefreshTimeline();
+                return;
+            }
+
+            RefreshFromSerialized();
         }
 
         private void OnTimelineEventSelectionChanged(
@@ -3558,6 +3752,55 @@ namespace FPG.Demo.Editor.SkillAuthoring
             inspectorContent.Add(field);
         }
 
+        private void AddAttackTimingModeProperty(
+            SerializedProperty property)
+        {
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Enum)
+            {
+                return;
+            }
+
+            List<string> labels = new List<string>
+            {
+                "固定冷却",
+                "角色攻击速度"
+            };
+            List<FpgAttackTimingMode> values =
+                new List<FpgAttackTimingMode>
+                {
+                    FpgAttackTimingMode.FixedCooldown,
+                    FpgAttackTimingMode.CharacterAttackSpeed
+                };
+            FpgAttackTimingMode current = Enum.IsDefined(
+                    typeof(FpgAttackTimingMode),
+                    property.enumValueIndex)
+                ? (FpgAttackTimingMode)property.enumValueIndex
+                : FpgAttackTimingMode.FixedCooldown;
+            int selectedIndex = Mathf.Max(0, values.IndexOf(current));
+            DropdownField field = new DropdownField(
+                "攻击时序模式",
+                labels,
+                selectedIndex)
+            {
+                name = "attack-timing-mode-field",
+                tooltip = "固定冷却保持编排时序；角色攻击速度按角色攻速快照解析攻击间隔与前后摇。"
+            };
+            string propertyPath = property.propertyPath;
+            field.RegisterValueChangedCallback(evt =>
+            {
+                int index = labels.IndexOf(evt.newValue);
+                if (index >= 0 && index < values.Count)
+                {
+                    ApplyEnumChoice(
+                        propertyPath,
+                        values[index],
+                        "修改攻击时序模式");
+                }
+            });
+            inspectorContent.Add(field);
+        }
+
         private void AddReadOnlyInspectorValue(
             string label,
             string value,
@@ -4428,6 +4671,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
             SerializedProperty property,
             string label)
         {
+            if (string.Equals(
+                    property.name,
+                    "secondaryTriggerMode",
+                    StringComparison.Ordinal))
+            {
+                AddSecondaryTriggerModeProperty(property, label);
+                return;
+            }
+
             Enum currentValue;
             try
             {
@@ -4461,6 +4713,53 @@ namespace FPG.Demo.Editor.SkillAuthoring
                     propertyPath,
                     evt.newValue,
                     "修改" + label));
+            inspectorContent.Add(field);
+        }
+
+        private void AddSecondaryTriggerModeProperty(
+            SerializedProperty property,
+            string label)
+        {
+            List<string> labels = new List<string>
+            {
+                "蓄力释放",
+                "按住时立即重复"
+            };
+            int selectedIndex = Mathf.Clamp(
+                property.enumValueIndex,
+                0,
+                labels.Count - 1);
+            DropdownField field = new DropdownField(
+                label,
+                labels,
+                selectedIndex);
+            string propertyPath = property.propertyPath;
+            field.RegisterValueChangedCallback(evt =>
+            {
+                int index = labels.IndexOf(evt.newValue);
+                if (index < 0
+                    || serializedAsset == null
+                    || serializedAsset.targetObject == null)
+                {
+                    return;
+                }
+
+                serializedAsset.UpdateIfRequiredOrScript();
+                SerializedProperty current = serializedAsset.FindProperty(
+                    propertyPath);
+                if (current == null
+                    || current.propertyType != SerializedPropertyType.Enum
+                    || current.enumValueIndex == index)
+                {
+                    return;
+                }
+
+                Undo.RecordObject(
+                    serializedAsset.targetObject,
+                    "修改" + label);
+                current.enumValueIndex = index;
+                ApplyInspectorChanges();
+            });
             inspectorContent.Add(field);
         }
 

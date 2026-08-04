@@ -14,18 +14,72 @@ namespace FPG.Demo.Unity
         Reload
     }
 
+    public enum FpgAttackIntentSource
+    {
+        None = 0,
+        PrimaryPressed,
+        SecondaryPressed,
+        HeldRepeat
+    }
+
+    public readonly struct PendingAttackIntent
+    {
+        internal PendingAttackIntent(
+            FpgPlayerSkillSlot slot,
+            FpgSkillSequenceKind sequenceKind,
+            ulong skillGameplayHash,
+            TickIndex issuedTick,
+            TickIndex expiresTick,
+            InputSequence inputSequence,
+            FpgAttackIntentSource source)
+        {
+            Slot = slot;
+            SequenceKind = sequenceKind;
+            SkillGameplayHash = skillGameplayHash;
+            IssuedTick = issuedTick;
+            ExpiresTick = expiresTick;
+            InputSequence = inputSequence;
+            Source = source;
+        }
+
+        public FpgPlayerSkillSlot Slot { get; }
+        public FpgSkillSequenceKind SequenceKind { get; }
+        public ulong SkillGameplayHash { get; }
+        public TickIndex IssuedTick { get; }
+        public TickIndex ExpiresTick { get; }
+        public InputSequence InputSequence { get; }
+        public FpgAttackIntentSource Source { get; }
+        public bool IsValid => (Slot == FpgPlayerSkillSlot.Primary
+                || Slot == FpgPlayerSkillSlot.Secondary)
+            && SequenceKind != FpgSkillSequenceKind.None
+            && SkillGameplayHash != 0UL
+            && IssuedTick.IsValid
+            && ExpiresTick.IsValid
+            && ExpiresTick >= IssuedTick
+            && InputSequence.IsValid
+            && Source != FpgAttackIntentSource.None;
+
+        public bool IsExpiredAt(TickIndex tick)
+        {
+            return IsValid && tick.IsValid && tick > ExpiresTick;
+        }
+    }
+
     public readonly struct FpgPlayerSkillExecutionEvent
     {
         internal FpgPlayerSkillExecutionEvent(
             FpgPlayerSkillSlot slot,
             FpgSkillEventResult runtimeEvent,
             FpgCompiledPlayerSkillAction action,
-            bool hasGameplayAction)
+            bool hasGameplayAction,
+            FpgResolvedSkillTimingSnapshot timing =
+                default(FpgResolvedSkillTimingSnapshot))
         {
             Slot = slot;
             RuntimeEvent = runtimeEvent;
             Action = action;
             HasGameplayAction = hasGameplayAction;
+            Timing = timing;
         }
 
         public FpgPlayerSkillSlot Slot { get; }
@@ -34,6 +88,7 @@ namespace FPG.Demo.Unity
         public FpgSkillEventOutcome Outcome => RuntimeEvent.Outcome;
         public bool HasGameplayAction { get; }
         public FpgCompiledPlayerSkillAction Action { get; }
+        public FpgResolvedSkillTimingSnapshot Timing { get; }
     }
 
     public readonly struct FpgPlayerSkillSequenceFrame
@@ -45,6 +100,25 @@ namespace FPG.Demo.Unity
             TickIndex startTick,
             TickIndex tick,
             FpgSkillExecutionState state)
+            : this(
+                slot,
+                sequence,
+                executionId,
+                startTick,
+                tick,
+                state,
+                default(FpgResolvedSkillTimingSnapshot))
+        {
+        }
+
+        internal FpgPlayerSkillSequenceFrame(
+            FpgPlayerSkillSlot slot,
+            FpgCompiledSkillSequence sequence,
+            SkillExecutionId executionId,
+            TickIndex startTick,
+            TickIndex tick,
+            FpgSkillExecutionState state,
+            FpgResolvedSkillTimingSnapshot timing)
         {
             Slot = slot;
             Sequence = sequence;
@@ -54,6 +128,7 @@ namespace FPG.Demo.Unity
             RelativeTick = checked((int)(tick.Value - startTick.Value));
             State = state;
             ResolvedAnimationId = sequence.ResolveAnimation(executionId);
+            Timing = timing;
         }
 
         public FpgPlayerSkillSlot Slot { get; }
@@ -64,6 +139,7 @@ namespace FPG.Demo.Unity
         public int RelativeTick { get; }
         public FpgSkillExecutionState State { get; }
         public int ResolvedAnimationId { get; }
+        public FpgResolvedSkillTimingSnapshot Timing { get; }
         public bool IsTerminal => State == FpgSkillExecutionState.Completed
             || State == FpgSkillExecutionState.Canceled;
     }
@@ -75,10 +151,39 @@ namespace FPG.Demo.Unity
     /// </summary>
     public sealed class FpgPlayerSkillExecutionController
     {
+        private readonly struct PendingReloadIntent
+        {
+            public PendingReloadIntent(
+                TickIndex issuedTick,
+                TickIndex expiresTick,
+                InputSequence inputSequence)
+            {
+                IssuedTick = issuedTick;
+                ExpiresTick = expiresTick;
+                InputSequence = inputSequence;
+            }
+
+            public TickIndex IssuedTick { get; }
+            public TickIndex ExpiresTick { get; }
+            public InputSequence InputSequence { get; }
+            public bool IsValid => IssuedTick.IsValid
+                && ExpiresTick.IsValid
+                && ExpiresTick >= IssuedTick
+                && InputSequence.IsValid;
+
+            public bool IsExpiredAt(TickIndex tick)
+            {
+                return IsValid && tick.IsValid && tick > ExpiresTick;
+            }
+        }
+
         private readonly FpgCompiledPlayerSkillDefinition primary;
         private readonly FpgCompiledPlayerSkillDefinition secondary;
         private readonly FpgCompiledPlayerSkillDefinition reload;
         private readonly SecondaryTriggerMode secondaryTriggerMode;
+        private readonly FpgAttackSpeedProfile attackSpeedProfile;
+        private readonly IAttackSpeedBonusProvider attackSpeedBonusProvider;
+        private readonly int inputBufferTicks;
         private readonly FpgSkillExecutionRuntime runtime;
         private readonly FpgPlayerSkillExecutionEvent[] results;
         private readonly FpgPlayerSkillSequenceFrame[] sequenceFrames =
@@ -87,17 +192,26 @@ namespace FPG.Demo.Unity
         private FpgCompiledPlayerSkillDefinition activeDefinition;
         private FpgPlayerSkillSlot activeSlot;
         private FpgSkillSequenceKind activeSequenceKind;
+        private FpgResolvedSkillSchedule activeSchedule;
+        private FpgResolvedSkillTimingSnapshot activeTiming;
+        private PendingAttackIntent pendingAttackIntent;
+        private PendingReloadIntent pendingReloadIntent;
         private FpgSkillExecutionIdAllocator executionIds;
         private bool ownsExecutionIds;
         private bool secondaryEndPending;
         private int resultCount;
         private int sequenceFrameCount;
+        private long nextSyntheticInputSequence = 1L;
+        private bool primaryHeldLastTick;
 
         private FpgPlayerSkillExecutionController(
             FpgCompiledPlayerSkillDefinition primary,
             FpgCompiledPlayerSkillDefinition secondary,
             FpgCompiledPlayerSkillDefinition reload,
             SecondaryTriggerMode secondaryTriggerMode,
+            FpgAttackSpeedProfile attackSpeedProfile,
+            IAttackSpeedBonusProvider attackSpeedBonusProvider,
+            int inputBufferTicks,
             int runtimeCapacity,
             int resultCapacity)
         {
@@ -105,6 +219,9 @@ namespace FPG.Demo.Unity
             this.secondary = secondary;
             this.reload = reload;
             this.secondaryTriggerMode = secondaryTriggerMode;
+            this.attackSpeedProfile = attackSpeedProfile;
+            this.attackSpeedBonusProvider = attackSpeedBonusProvider;
+            this.inputBufferTicks = inputBufferTicks;
             executionIds = new FpgSkillExecutionIdAllocator();
             ownsExecutionIds = true;
             runtime = new FpgSkillExecutionRuntime(runtimeCapacity);
@@ -115,17 +232,80 @@ namespace FPG.Demo.Unity
         public FpgPlayerSkillSlot ActiveSlot => activeSlot;
         public FpgSkillSequenceKind ActiveSequenceKind => activeSequenceKind;
         public TickIndex NextTick => runtime.NextTick;
+        public TickIndex ActiveStartTick => runtime.IsRunning
+            ? runtime.StartTick
+            : TickIndex.Invalid;
         public int ResultCount => resultCount;
         public int ResultCapacity => results.Length;
         public int SequenceFrameCount => sequenceFrameCount;
         public TickIndex PlannedLastAttackTick { get; private set; } =
             TickIndex.Invalid;
+        public TickIndex PlannedAllowWithdrawTick { get; private set; } =
+            TickIndex.Invalid;
         public TickIndex ActionLockedUntilTick { get; private set; } =
             TickIndex.Invalid;
         public TickIndex RecastLockedUntilTick { get; private set; } =
             TickIndex.Invalid;
+        public FpgResolvedSkillTimingSnapshot ActiveTiming => activeTiming;
+        public TickIndex AttackFrameTick => activeTiming.IsValid
+            ? activeTiming.AttackFrameTick
+            : TickIndex.Invalid;
+        public TickIndex SameAttackReadyTick => activeTiming.IsValid
+            ? activeTiming.SameAttackReadyTick
+            : TickIndex.Invalid;
+        public TickIndex DifferentAttackInterruptTick => activeTiming.IsValid
+            ? activeTiming.DifferentAttackInterruptTick
+            : TickIndex.Invalid;
+        public FpgAttackPhase AttackPhaseAt(TickIndex tick) =>
+            activeTiming.GetPhase(tick);
+        public bool HasPendingAttackIntent => pendingAttackIntent.IsValid;
+        public PendingAttackIntent PendingAttackIntent => pendingAttackIntent;
+        public bool HasPendingReloadIntent => pendingReloadIntent.IsValid;
         public bool IsSecondaryEndPending => secondaryEndPending;
         public int ChargeProgressTicks => secondary.ChargeProgressTicks;
+        public int ReloadDurationTicks
+        {
+            get
+            {
+                return reload.Timeline.TryGetSequence(
+                    FpgSkillSequenceKind.Execute,
+                    out FpgCompiledSkillSequence sequence)
+                        ? checked(sequence.DurationTicks + 1)
+                        : 0;
+            }
+        }
+
+        public int GetRequiredAmmo(FpgPlayerSkillSlot slot)
+        {
+            FpgCompiledPlayerSkillDefinition definition;
+            FpgSkillSequenceKind sequenceKind;
+            if (slot == FpgPlayerSkillSlot.Primary)
+            {
+                definition = primary;
+                sequenceKind = FpgSkillSequenceKind.Execute;
+            }
+            else if (slot == FpgPlayerSkillSlot.Secondary)
+            {
+                definition = secondary;
+                sequenceKind = secondaryTriggerMode
+                        == SecondaryTriggerMode.ChargeRelease
+                    && secondary.Timeline.TryGetSequence(
+                        FpgSkillSequenceKind.Release,
+                        out _)
+                        ? FpgSkillSequenceKind.Release
+                        : FpgSkillSequenceKind.Execute;
+            }
+            else
+            {
+                return 0;
+            }
+
+            return definition.TryGetSequenceSummary(
+                sequenceKind,
+                out FpgCompiledPlayerSkillSequenceSummary summary)
+                    ? summary.TotalAmmoCost
+                    : 0;
+        }
 
         public bool RequiresExposureAt(TickIndex tick)
         {
@@ -133,8 +313,11 @@ namespace FPG.Demo.Unity
                 || !runtime.IsRunning
                 || !runtime.StartTick.IsValid
                 || tick < runtime.StartTick
-                || !PlannedLastAttackTick.IsValid
-                || tick > PlannedLastAttackTick)
+                || (!PlannedAllowWithdrawTick.IsValid
+                    && !PlannedLastAttackTick.IsValid)
+                || tick > (PlannedAllowWithdrawTick.IsValid
+                    ? PlannedAllowWithdrawTick
+                    : PlannedLastAttackTick))
             {
                 return false;
             }
@@ -183,8 +366,35 @@ namespace FPG.Demo.Unity
             out FpgPlayerSkillExecutionController controller,
             out string error)
         {
+            return TryCreate(
+                primary,
+                secondary,
+                reload,
+                secondaryTriggerMode,
+                new FpgAttackSpeedProfile(1d, 1d, 2.5d),
+                StaticAttackSpeedBonusProvider.Zero,
+                4,
+                out controller,
+                out error);
+        }
+
+        public static bool TryCreate(
+            FpgCompiledPlayerSkillDefinition primary,
+            FpgCompiledPlayerSkillDefinition secondary,
+            FpgCompiledPlayerSkillDefinition reload,
+            SecondaryTriggerMode secondaryTriggerMode,
+            FpgAttackSpeedProfile attackSpeedProfile,
+            IAttackSpeedBonusProvider attackSpeedBonusProvider,
+            int inputBufferTicks,
+            out FpgPlayerSkillExecutionController controller,
+            out string error)
+        {
             controller = null;
             if (primary == null || secondary == null || reload == null
+                || !attackSpeedProfile.IsValid
+                || attackSpeedBonusProvider == null
+                || inputBufferTicks < 0
+                || inputBufferTicks > 32
                 || !Enum.IsDefined(
                     typeof(SecondaryTriggerMode),
                     secondaryTriggerMode)
@@ -255,6 +465,9 @@ namespace FPG.Demo.Unity
                     secondary,
                     reload,
                     secondaryTriggerMode,
+                    attackSpeedProfile,
+                    attackSpeedBonusProvider,
+                    inputBufferTicks,
                     runtimeCapacity,
                     Math.Max(1, resultCapacity));
                 error = string.Empty;
@@ -334,8 +547,31 @@ namespace FPG.Demo.Unity
                 return advanced;
             }
 
+            ExpireCompletedTiming(frame.Tick);
+            ExpirePendingAttackIntent(frame.Tick);
+            ExpirePendingReloadIntent(frame.Tick);
+            bool secondaryEndPendingAtFrameStart = secondaryEndPending;
+            DomainResult currentTick = TickActiveExecution(frame.Tick);
+            if (!currentTick.IsSuccess)
+            {
+                return currentTick;
+            }
+
+            if (frame.PrimaryHeld && !primaryHeldLastTick)
+            {
+                SetPendingAttackIntent(
+                    FpgPlayerSkillSlot.Primary,
+                    primary,
+                    FpgSkillSequenceKind.Execute,
+                    frame.Tick,
+                    NextSyntheticInputSequence(),
+                    FpgAttackIntentSource.PrimaryPressed);
+            }
+            primaryHeldLastTick = frame.PrimaryHeld;
+
             if (frame.CancelSecondary)
             {
+                ClearPendingAttackIntent();
                 bool wasCharging =
                     player.Weapon.State == WeaponState.AltCharging;
                 DomainResult canceled = CancelChargeTimeline(frame.Tick);
@@ -356,7 +592,6 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            bool immediateSecondaryRequested = false;
             for (int commandIndex = 0;
                 commandIndex < frame.EdgeCommandCount;
                 commandIndex++)
@@ -371,23 +606,28 @@ namespace FPG.Demo.Unity
                 switch (command.Type)
                 {
                     case InputEdgeType.SecondaryPressed:
-                        if (secondaryTriggerMode
-                            == SecondaryTriggerMode.ImmediateRepeatWhileHeld)
-                        {
-                            immediateSecondaryRequested = true;
-                        }
-                        else if (!frame.CancelSecondary)
-                        {
-                            handled = TryBeginSecondaryCharge(
-                                frame.Tick,
-                                player);
-                        }
+                        SetPendingAttackIntent(
+                            FpgPlayerSkillSlot.Secondary,
+                            secondary,
+                            ResolveSecondaryPressedSequenceKind(),
+                            frame.Tick,
+                            command.Sequence,
+                            FpgAttackIntentSource.SecondaryPressed);
                         break;
 
                     case InputEdgeType.SecondaryReleased:
                         if (secondaryTriggerMode
                             == SecondaryTriggerMode.ChargeRelease)
                         {
+                            if (pendingAttackIntent.IsValid
+                                && pendingAttackIntent.Slot
+                                    == FpgPlayerSkillSlot.Secondary
+                                && pendingAttackIntent.Source
+                                    == FpgAttackIntentSource.SecondaryPressed)
+                            {
+                                ClearPendingAttackIntent();
+                            }
+
                             handled = TryReleaseSecondaryCharge(
                                 frame.Tick,
                                 player);
@@ -395,15 +635,7 @@ namespace FPG.Demo.Unity
                         break;
 
                     case InputEdgeType.ReloadPressed:
-                        handled = TryStartAction(
-                            FpgPlayerSkillSlot.Reload,
-                            reload,
-                            FpgSkillSequenceKind.Execute,
-                            frame.Tick,
-                            player);
-                        break;
-
-                    default:
+                        SetPendingReloadIntent(frame.Tick, command.Sequence);
                         break;
                 }
 
@@ -413,35 +645,64 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            if (secondaryTriggerMode
+            DomainResult pendingReload = TryConsumePendingReloadIntent(
+                frame.Tick,
+                player,
+                out bool reloadBlocksAttacks);
+            if (!pendingReload.IsSuccess)
+            {
+                return pendingReload;
+            }
+
+            if (reloadBlocksAttacks)
+            {
+                return runtime.IsRunning && runtime.NextTick == frame.Tick
+                    ? TickActiveExecution(frame.Tick)
+                    : DomainResult.Success;
+            }
+
+            DomainResult pending = TryConsumePendingAttackIntent(
+                frame.Tick,
+                player,
+                out bool actionStartedThisTick);
+            if (!pending.IsSuccess)
+            {
+                return pending;
+            }
+
+            bool pendingDifferentAttack = pendingAttackIntent.IsValid
+                && runtime.IsRunning
+                && pendingAttackIntent.Slot != activeSlot;
+            if (!actionStartedThisTick
+                && !pendingDifferentAttack
+                && secondaryTriggerMode
                     == SecondaryTriggerMode.ImmediateRepeatWhileHeld
-                && (frame.SecondaryHeld || immediateSecondaryRequested)
-                && (!runtime.IsRunning
-                    || IsInterruptibleSecondaryEndTimeline()
-                    || IsInterruptibleImmediateSecondaryExecuteTimeline()))
+                && frame.SecondaryHeld)
             {
                 DomainResult started = TryStartAction(
                     FpgPlayerSkillSlot.Secondary,
                     secondary,
                     FpgSkillSequenceKind.Execute,
                     frame.Tick,
-                    player);
+                    player,
+                    out actionStartedThisTick);
                 if (!started.IsSuccess)
                 {
                     return started;
                 }
             }
 
-            if (frame.PrimaryHeld
-                && (!runtime.IsRunning
-                    || IsInterruptibleSecondaryEndTimeline()))
+            if (!actionStartedThisTick
+                && !pendingDifferentAttack
+                && frame.PrimaryHeld)
             {
                 DomainResult started = TryStartAction(
                     FpgPlayerSkillSlot.Primary,
                     primary,
                     FpgSkillSequenceKind.Execute,
                     frame.Tick,
-                    player);
+                    player,
+                    out actionStartedThisTick);
                 if (!started.IsSuccess)
                 {
                     return started;
@@ -451,29 +712,39 @@ namespace FPG.Demo.Unity
             if (!runtime.IsRunning
                 && player.Weapon.State == WeaponState.AltCharging)
             {
-                DomainResult continued = TryStartChargeContinuation(frame.Tick);
+                DomainResult continued =
+                    TryStartChargeContinuation(frame.Tick);
                 if (!continued.IsSuccess)
                 {
                     return continued;
                 }
             }
 
-            if (!runtime.IsRunning && secondaryEndPending)
+            if (!runtime.IsRunning
+                && secondaryEndPending
+                && secondaryEndPendingAtFrameStart)
             {
-                DomainResult end = TryStartSecondaryCancelTimeline(
-                    frame.Tick);
+                DomainResult end =
+                    TryStartSecondaryCancelTimeline(frame.Tick);
                 if (!end.IsSuccess)
                 {
                     return end;
                 }
             }
 
+            return runtime.IsRunning && runtime.NextTick == frame.Tick
+                ? TickActiveExecution(frame.Tick)
+                : DomainResult.Success;
+        }
+
+        private DomainResult TickActiveExecution(TickIndex tick)
+        {
             if (!runtime.IsRunning)
             {
                 return DomainResult.Success;
             }
 
-            FpgSkillRuntimeResult ticked = runtime.Tick(frame.Tick);
+            FpgSkillRuntimeResult ticked = runtime.Tick(tick);
             if (!ticked.IsSuccess)
             {
                 return MapRuntimeFailure(ticked.Error);
@@ -485,36 +756,268 @@ namespace FPG.Demo.Unity
                 return appended;
             }
 
-            DomainResult sequenceFrame = AppendSequenceFrame(frame.Tick);
+            DomainResult sequenceFrame = AppendSequenceFrame(tick);
             if (!sequenceFrame.IsSuccess)
             {
                 return sequenceFrame;
             }
 
-            if (runtime.IsTerminal)
+            if (!runtime.IsTerminal)
             {
-                FpgSkillSequenceKind continuation =
-                    FpgSkillSequenceKind.None;
-                bool hasSecondaryContinuation =
-                    activeSlot == FpgPlayerSkillSlot.Secondary
-                    && runtime.State == FpgSkillExecutionState.Completed
-                    && FpgSecondarySkillLifecycleRules
-                        .TryGetContinuationAfterCompletion(
-                            activeSequenceKind,
-                            out continuation);
-                if (hasSecondaryContinuation
-                    && continuation == FpgSkillSequenceKind.Cancel)
-                {
-                    secondaryEndPending = true;
-                }
-                else if (activeSequenceKind == FpgSkillSequenceKind.Cancel)
-                {
-                    secondaryEndPending = false;
-                }
-                ClearActive();
+                return DomainResult.Success;
+            }
+
+            FpgSkillSequenceKind continuation = FpgSkillSequenceKind.None;
+            bool hasSecondaryContinuation =
+                activeSlot == FpgPlayerSkillSlot.Secondary
+                && runtime.State == FpgSkillExecutionState.Completed
+                && FpgSecondarySkillLifecycleRules
+                    .TryGetContinuationAfterCompletion(
+                        activeSequenceKind,
+                        out continuation);
+            if (hasSecondaryContinuation
+                && continuation == FpgSkillSequenceKind.Cancel)
+            {
+                secondaryEndPending = true;
+            }
+            else if (activeSequenceKind == FpgSkillSequenceKind.Cancel)
+            {
+                secondaryEndPending = false;
+            }
+
+            bool preserveRecoveryTiming = activeTiming.IsValid
+                && activeTiming.SameAttackReadyTick > tick;
+            ClearActive(preserveRecoveryTiming);
+            return DomainResult.Success;
+        }
+
+        private void ExpireCompletedTiming(TickIndex tick)
+        {
+            if (!runtime.IsRunning
+                && activeTiming.IsValid
+                && tick.IsValid
+                && tick >= activeTiming.SameAttackReadyTick)
+            {
+                activeTiming = default(FpgResolvedSkillTimingSnapshot);
+            }
+        }
+
+        private void ExpirePendingAttackIntent(TickIndex tick)
+        {
+            if (pendingAttackIntent.IsExpiredAt(tick))
+            {
+                ClearPendingAttackIntent();
+            }
+        }
+
+        private void ExpirePendingReloadIntent(TickIndex tick)
+        {
+            if (pendingReloadIntent.IsExpiredAt(tick))
+            {
+                ClearPendingReloadIntent();
+            }
+        }
+
+        private void SetPendingAttackIntent(
+            FpgPlayerSkillSlot slot,
+            FpgCompiledPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            TickIndex issuedTick,
+            InputSequence inputSequence,
+            FpgAttackIntentSource source)
+        {
+            if (definition == null || !issuedTick.IsValid
+                || !inputSequence.IsValid)
+            {
+                return;
+            }
+
+            long expiresValue = issuedTick.Value > long.MaxValue
+                    - inputBufferTicks
+                ? long.MaxValue
+                : issuedTick.Value + inputBufferTicks;
+            pendingAttackIntent = new PendingAttackIntent(
+                slot,
+                sequenceKind,
+                definition.GameplayHash,
+                issuedTick,
+                new TickIndex(expiresValue),
+                inputSequence,
+                source);
+        }
+
+        private InputSequence NextSyntheticInputSequence()
+        {
+            long value = nextSyntheticInputSequence;
+            nextSyntheticInputSequence = value == long.MaxValue
+                ? 1L
+                : value + 1L;
+            return new InputSequence(value);
+        }
+
+        private void SetPendingReloadIntent(
+            TickIndex issuedTick,
+            InputSequence inputSequence)
+        {
+            if (!issuedTick.IsValid || !inputSequence.IsValid)
+            {
+                return;
+            }
+
+            long expiresValue = issuedTick.Value > long.MaxValue
+                    - inputBufferTicks
+                ? long.MaxValue
+                : issuedTick.Value + inputBufferTicks;
+            pendingReloadIntent = new PendingReloadIntent(
+                issuedTick,
+                new TickIndex(expiresValue),
+                inputSequence);
+        }
+
+        private DomainResult TryConsumePendingReloadIntent(
+            TickIndex tick,
+            PlayerRuntime player,
+            out bool blocksAttacks)
+        {
+            blocksAttacks = false;
+            ExpirePendingReloadIntent(tick);
+            if (!pendingReloadIntent.IsValid)
+            {
+                return DomainResult.Success;
+            }
+
+            if (reload == null)
+            {
+                ClearPendingReloadIntent();
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            if (player.Weapon.State == WeaponState.Reloading
+                || runtime.IsRunning
+                    && activeSlot == FpgPlayerSkillSlot.Reload
+                || player.Weapon.Magazine.Ammo
+                    >= player.Weapon.Magazine.Capacity)
+            {
+                ClearPendingReloadIntent();
+                return DomainResult.Success;
+            }
+
+            blocksAttacks = true;
+            DomainResult result = TryStartAction(
+                FpgPlayerSkillSlot.Reload,
+                reload,
+                FpgSkillSequenceKind.Execute,
+                tick,
+                player,
+                out bool actionStarted);
+            if (!result.IsSuccess)
+            {
+                ClearPendingReloadIntent();
+                return result;
+            }
+
+            if (actionStarted)
+            {
+                ClearPendingReloadIntent();
+                ClearPendingAttackIntent();
             }
 
             return DomainResult.Success;
+        }
+
+        private FpgSkillSequenceKind ResolveSecondaryPressedSequenceKind()
+        {
+            if (secondaryTriggerMode
+                == SecondaryTriggerMode.ImmediateRepeatWhileHeld)
+            {
+                return FpgSkillSequenceKind.Execute;
+            }
+
+            return secondary.Timeline.TryGetSequence(
+                FpgSkillSequenceKind.ChargeEnter,
+                out _)
+                    ? FpgSkillSequenceKind.ChargeEnter
+                    : FpgSkillSequenceKind.ChargeLoop;
+        }
+
+        private DomainResult TryConsumePendingAttackIntent(
+            TickIndex tick,
+            PlayerRuntime player,
+            out bool actionStarted)
+        {
+            actionStarted = false;
+            ExpirePendingAttackIntent(tick);
+            if (!pendingAttackIntent.IsValid)
+            {
+                return DomainResult.Success;
+            }
+
+            FpgCompiledPlayerSkillDefinition definition =
+                pendingAttackIntent.Slot == FpgPlayerSkillSlot.Primary
+                    ? primary
+                    : pendingAttackIntent.Slot
+                        == FpgPlayerSkillSlot.Secondary
+                            ? secondary
+                            : null;
+            if (definition == null
+                || definition.GameplayHash
+                    != pendingAttackIntent.SkillGameplayHash)
+            {
+                ClearPendingAttackIntent();
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            int requiredAmmo = GetRequiredAmmo(pendingAttackIntent.Slot);
+            bool insufficientAmmo =
+                requiredAmmo > player.Weapon.Magazine.Ammo;
+
+            bool differentActiveAttack = runtime.IsRunning
+                && (activeSlot != pendingAttackIntent.Slot
+                    || !ReferenceEquals(activeDefinition, definition)
+                    || activeSequenceKind
+                        != pendingAttackIntent.SequenceKind);
+            if (differentActiveAttack
+                && !IsInterruptibleSecondaryEndTimeline()
+                && !activeTiming.CanInterruptWithDifferentAttackAt(tick))
+            {
+                if (insufficientAmmo)
+                {
+                    ClearPendingAttackIntent();
+                }
+
+                return DomainResult.Success;
+            }
+
+            DomainResult result;
+            if (pendingAttackIntent.Slot == FpgPlayerSkillSlot.Secondary
+                && secondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
+                && pendingAttackIntent.Source
+                    == FpgAttackIntentSource.SecondaryPressed)
+            {
+                result = TryBeginSecondaryCharge(tick, player);
+                actionStarted = result.IsSuccess
+                    && player.Weapon.State == WeaponState.AltCharging
+                    && runtime.IsRunning
+                    && activeSlot == FpgPlayerSkillSlot.Secondary
+                    && runtime.StartTick == tick;
+            }
+            else
+            {
+                result = TryStartAction(
+                    pendingAttackIntent.Slot,
+                    definition,
+                    pendingAttackIntent.SequenceKind,
+                    tick,
+                    player,
+                    out actionStarted);
+            }
+
+            if (actionStarted || !result.IsSuccess || insufficientAmmo)
+            {
+                ClearPendingAttackIntent();
+            }
+
+            return result;
         }
 
         public DomainResult HardInterrupt(
@@ -554,6 +1057,7 @@ namespace FPG.Demo.Unity
 
             ClearActive();
             secondaryEndPending = false;
+            ClearPendingInputIntents();
             if (wasRunning)
             {
                 ApplyInterruptedWeaponState(
@@ -591,12 +1095,14 @@ namespace FPG.Demo.Unity
                         frame.ExecutionId,
                         frame.StartTick,
                         frame.Tick,
-                        FpgSkillExecutionState.Canceled);
+                        FpgSkillExecutionState.Canceled,
+                        frame.Timing);
             }
 
             runtime.Reset();
             ClearActive();
             secondaryEndPending = false;
+            ClearPendingInputIntents();
             ClearEventResults();
             if (weapon != null)
             {
@@ -613,14 +1119,34 @@ namespace FPG.Demo.Unity
             runtime.Reset();
             ClearActive();
             secondaryEndPending = false;
+            ClearPendingInputIntents();
             ClearFrameResults();
             if (ownsExecutionIds)
             {
                 executionIds.Reset();
             }
             PlannedLastAttackTick = TickIndex.Invalid;
+            PlannedAllowWithdrawTick = TickIndex.Invalid;
             ActionLockedUntilTick = TickIndex.Invalid;
             RecastLockedUntilTick = TickIndex.Invalid;
+            primaryHeldLastTick = false;
+            nextSyntheticInputSequence = 1L;
+        }
+
+        public void ClearPendingAttackIntent()
+        {
+            pendingAttackIntent = default(PendingAttackIntent);
+        }
+
+        public void ClearPendingInputIntents()
+        {
+            ClearPendingAttackIntent();
+            ClearPendingReloadIntent();
+        }
+
+        private void ClearPendingReloadIntent()
+        {
+            pendingReloadIntent = default(PendingReloadIntent);
         }
 
         private DomainResult TryBeginSecondaryCharge(
@@ -641,18 +1167,48 @@ namespace FPG.Demo.Unity
             bool canInterruptSecondaryEnd =
                 IsInterruptibleSecondaryEndTimeline()
                 || secondaryEndPending;
+            bool canInterruptDifferentAttack = runtime.IsRunning
+                && activeTiming.CanInterruptWithDifferentAttackAt(tick)
+                && (activeSlot != FpgPlayerSkillSlot.Secondary
+                    || activeSequenceKind != kind);
+            bool canInterruptCurrent = canInterruptSecondaryEnd
+                || canInterruptDifferentAttack;
+            if (!TryResolveSchedule(
+                    secondary,
+                    kind,
+                    tick,
+                    player.RuntimeId,
+                    out FpgResolvedSkillSchedule schedule))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            DomainResult preflight = PrepareTimelineStart(
+                schedule,
+                tick,
+                runtime.IsRunning && canInterruptCurrent,
+                out SkillExecutionId executionId);
+            if (!preflight.IsSuccess)
+            {
+                return preflight;
+            }
+
             WeaponRuntimeSnapshot weaponSnapshot =
                 player.Weapon.CaptureRoomSnapshot();
             DomainResult begin = player.Weapon.TryBeginSkillSecondaryCharge(
                 tick,
                 player.Exposure,
-                canInterruptSecondaryEnd);
+                canInterruptCurrent);
             if (!begin.IsSuccess)
             {
                 return DomainResult.Success;
             }
 
-            DomainResult interrupted = InterruptSecondaryEndTimeline(tick);
+            DomainResult interrupted = canInterruptSecondaryEnd
+                ? InterruptSecondaryEndTimeline(tick)
+                : InterruptActiveTimeline(
+                    tick,
+                    runtime.IsRunning && canInterruptCurrent);
             if (!interrupted.IsSuccess)
             {
                 player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
@@ -663,7 +1219,9 @@ namespace FPG.Demo.Unity
                 FpgPlayerSkillSlot.Secondary,
                 secondary,
                 kind,
-                tick);
+                tick,
+                schedule,
+                executionId);
             if (!started.IsSuccess)
             {
                 player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
@@ -757,25 +1315,65 @@ namespace FPG.Demo.Unity
             TickIndex tick,
             PlayerRuntime player)
         {
+            return TryStartAction(
+                slot,
+                definition,
+                sequenceKind,
+                tick,
+                player,
+                out _);
+        }
+
+        private DomainResult TryStartAction(
+            FpgPlayerSkillSlot slot,
+            FpgCompiledPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            TickIndex tick,
+            PlayerRuntime player,
+            out bool actionStarted)
+        {
+            actionStarted = false;
             bool canInterruptSecondaryEnd =
                 slot != FpgPlayerSkillSlot.Reload
                 && (IsInterruptibleSecondaryEndTimeline()
                     || secondaryEndPending);
-            bool canRestartImmediateSecondary =
-                slot == FpgPlayerSkillSlot.Secondary
+            bool sameActiveAction = runtime.IsRunning
+                && activeSlot == slot
+                && ReferenceEquals(activeDefinition, definition)
+                && activeSequenceKind == sequenceKind;
+            bool canRestartAttackSpeedAction = sameActiveAction
+                && activeTiming.UsesCharacterAttackSpeed
+                && activeTiming.IsSameAttackReadyAt(tick)
+                && HasReachedWeaponRecastBoundary(slot, tick, player.Weapon);
+            bool canRestartImmediateSecondary = sameActiveAction
+                && slot == FpgPlayerSkillSlot.Secondary
                 && sequenceKind == FpgSkillSequenceKind.Execute
                 && IsInterruptibleImmediateSecondaryExecuteTimeline();
+            bool canInterruptReloadAfterAttack =
+                slot == FpgPlayerSkillSlot.Reload
+                && CanReloadInterruptAttackAt(tick, player.Weapon);
+            bool canInterruptDifferentAttack = runtime.IsRunning
+                && slot != FpgPlayerSkillSlot.Reload
+                && !sameActiveAction
+                && activeTiming.CanInterruptWithDifferentAttackAt(tick);
             bool canInterruptActiveTimeline = canInterruptSecondaryEnd
-                || canRestartImmediateSecondary;
+                || canRestartAttackSpeedAction
+                || canRestartImmediateSecondary
+                || canInterruptDifferentAttack
+                || runtime.IsRunning && canInterruptReloadAfterAttack;
             if (runtime.IsRunning && !canInterruptActiveTimeline)
             {
                 return DomainResult.Success;
             }
 
-            // A live Execute can only repeat after a successful gameplay commit
-            // has established the authoritative secondary recast boundary.
-            if (canRestartImmediateSecondary
-                && !player.Weapon.SecondaryRecastLockedUntilTick.IsValid)
+            if (definition.TryGetTimingDefinition(
+                    sequenceKind,
+                    out FpgCompiledSkillTimingDefinition targetTiming)
+                && !targetTiming.IsFixed
+                && IsBeforeWeaponRecastBoundary(
+                    slot,
+                    tick,
+                    player.Weapon))
             {
                 return DomainResult.Success;
             }
@@ -785,9 +1383,25 @@ namespace FPG.Demo.Unity
                     out FpgCompiledSkillSequence sequence)
                 || !definition.TryGetSequenceSummary(
                     sequenceKind,
-                    out FpgCompiledPlayerSkillSequenceSummary summary))
+                    out FpgCompiledPlayerSkillSequenceSummary summary)
+                || !TryResolveSchedule(
+                    definition,
+                    sequenceKind,
+                    tick,
+                    player.RuntimeId,
+                    out FpgResolvedSkillSchedule schedule))
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            DomainResult preflight = PrepareTimelineStart(
+                schedule,
+                tick,
+                runtime.IsRunning && canInterruptActiveTimeline,
+                out SkillExecutionId executionId);
+            if (!preflight.IsSuccess)
+            {
+                return preflight;
             }
 
             WeaponSkillActionKind actionKind = slot == FpgPlayerSkillSlot.Primary
@@ -799,7 +1413,7 @@ namespace FPG.Demo.Unity
             TickIndex recastLockedUntil;
             try
             {
-                int sequenceLock = checked(sequence.DurationTicks + 1);
+                int sequenceLock = checked(schedule.DurationTicks + 1);
                 int cooldownLock = summary.LastAttackTick < 0
                     ? 0
                     : checked(
@@ -807,9 +1421,11 @@ namespace FPG.Demo.Unity
                         + definition.SequenceCooldownTicks);
                 int lockOffset = Math.Max(1, sequenceLock);
                 lockedUntil = new TickIndex(checked(tick.Value + lockOffset));
-                recastLockedUntil = summary.LastAttackTick < 0
-                    ? TickIndex.Invalid
-                    : new TickIndex(checked(tick.Value + cooldownLock));
+                recastLockedUntil = schedule.Timing.UsesCharacterAttackSpeed
+                    ? schedule.Timing.SameAttackReadyTick
+                    : summary.LastAttackTick < 0
+                        ? TickIndex.Invalid
+                        : new TickIndex(checked(tick.Value + cooldownLock));
             }
             catch (OverflowException)
             {
@@ -824,15 +1440,24 @@ namespace FPG.Demo.Unity
                 lockedUntil,
                 summary.TotalAmmoCost,
                 player.Exposure,
-                canInterruptActiveTimeline);
+                canInterruptActiveTimeline
+                    || canInterruptReloadAfterAttack);
             if (!begin.IsSuccess)
             {
                 return DomainResult.Success;
             }
 
-            DomainResult interrupted = canRestartImmediateSecondary
-                ? InterruptImmediateSecondaryExecuteTimeline(tick)
-                : InterruptSecondaryEndTimeline(tick);
+            DomainResult interrupted;
+            if (canInterruptSecondaryEnd)
+            {
+                interrupted = InterruptSecondaryEndTimeline(tick);
+            }
+            else
+            {
+                interrupted = InterruptActiveTimeline(
+                    tick,
+                    runtime.IsRunning && canInterruptActiveTimeline);
+            }
             if (!interrupted.IsSuccess)
             {
                 player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
@@ -843,7 +1468,9 @@ namespace FPG.Demo.Unity
                 slot,
                 definition,
                 sequenceKind,
-                tick);
+                tick,
+                schedule,
+                executionId);
             if (!started.IsSuccess)
             {
                 player.Weapon.RestoreRoomSnapshot(weaponSnapshot);
@@ -852,10 +1479,67 @@ namespace FPG.Demo.Unity
 
             ActionLockedUntilTick = lockedUntil;
             RecastLockedUntilTick = recastLockedUntil;
-            PlannedLastAttackTick = summary.LastAttackTick < 0
-                ? TickIndex.Invalid
-                : new TickIndex(tick.Value + summary.LastAttackTick);
+            PlannedLastAttackTick = schedule.Timing.UsesCharacterAttackSpeed
+                ? schedule.Timing.AttackFrameTick
+                : summary.LastAttackTick < 0
+                    ? TickIndex.Invalid
+                    : new TickIndex(tick.Value + summary.LastAttackTick);
+            PlannedAllowWithdrawTick = sequence.AllowWithdrawTick < 0
+                ? PlannedLastAttackTick
+                : new TickIndex(
+                    checked(tick.Value + sequence.AllowWithdrawTick));
+            actionStarted = true;
             return DomainResult.Success;
+        }
+
+        private bool CanReloadInterruptAttackAt(
+            TickIndex tick,
+            WeaponRuntime weapon)
+        {
+            if (!tick.IsValid || !PlannedLastAttackTick.IsValid
+                || tick <= PlannedLastAttackTick || weapon == null)
+            {
+                return false;
+            }
+
+            if (runtime.IsRunning)
+            {
+                return activeSlot == FpgPlayerSkillSlot.Primary
+                        && activeSequenceKind == FpgSkillSequenceKind.Execute
+                    || activeSlot == FpgPlayerSkillSlot.Secondary
+                        && (activeSequenceKind == FpgSkillSequenceKind.Execute
+                            || activeSequenceKind
+                                == FpgSkillSequenceKind.Release);
+            }
+
+            return weapon.State == WeaponState.PrimaryRecovery
+                || weapon.State == WeaponState.AltRecovery;
+        }
+
+        private static bool HasReachedWeaponRecastBoundary(
+            FpgPlayerSkillSlot slot,
+            TickIndex tick,
+            WeaponRuntime weapon)
+        {
+            TickIndex boundary = slot == FpgPlayerSkillSlot.Primary
+                ? weapon.PrimaryRecastLockedUntilTick
+                : slot == FpgPlayerSkillSlot.Secondary
+                    ? weapon.SecondaryRecastLockedUntilTick
+                    : TickIndex.Invalid;
+            return boundary.IsValid && tick >= boundary;
+        }
+
+        private static bool IsBeforeWeaponRecastBoundary(
+            FpgPlayerSkillSlot slot,
+            TickIndex tick,
+            WeaponRuntime weapon)
+        {
+            TickIndex boundary = slot == FpgPlayerSkillSlot.Primary
+                ? weapon.PrimaryRecastLockedUntilTick
+                : slot == FpgPlayerSkillSlot.Secondary
+                    ? weapon.SecondaryRecastLockedUntilTick
+                    : TickIndex.Invalid;
+            return boundary.IsValid && tick < boundary;
         }
 
         private bool IsInterruptibleSecondaryEndTimeline()
@@ -876,10 +1560,12 @@ namespace FPG.Demo.Unity
 
         private DomainResult InterruptSecondaryEndTimeline(TickIndex tick)
         {
-            secondaryEndPending = false;
-            return InterruptActiveTimeline(
+            bool wasPending = secondaryEndPending;
+            DomainResult interrupted = InterruptActiveTimeline(
                 tick,
                 IsInterruptibleSecondaryEndTimeline());
+            secondaryEndPending = interrupted.IsSuccess ? false : wasPending;
+            return interrupted;
         }
 
         private DomainResult InterruptImmediateSecondaryExecuteTimeline(
@@ -950,26 +1636,79 @@ namespace FPG.Demo.Unity
             FpgSkillSequenceKind sequenceKind,
             TickIndex tick)
         {
+            if (!TryResolveSchedule(
+                    definition,
+                    sequenceKind,
+                    tick,
+                    RuntimeId.Invalid,
+                    out FpgResolvedSkillSchedule schedule))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            return StartTimeline(
+                slot,
+                definition,
+                sequenceKind,
+                tick,
+                schedule);
+        }
+
+        private DomainResult StartTimeline(
+            FpgPlayerSkillSlot slot,
+            FpgCompiledPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            TickIndex tick,
+            FpgResolvedSkillSchedule schedule)
+        {
+            DomainResult preflight = PrepareTimelineStart(
+                schedule,
+                tick,
+                allowReplacingRunning: false,
+                out SkillExecutionId executionId);
+            return preflight.IsSuccess
+                ? StartTimeline(
+                    slot,
+                    definition,
+                    sequenceKind,
+                    tick,
+                    schedule,
+                    executionId)
+                : preflight;
+        }
+
+        private DomainResult StartTimeline(
+            FpgPlayerSkillSlot slot,
+            FpgCompiledPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            TickIndex tick,
+            FpgResolvedSkillSchedule schedule,
+            SkillExecutionId executionId)
+        {
             if (!definition.Timeline.TryGetSequence(
                     sequenceKind,
                     out FpgCompiledSkillSequence sequence)
-                || executionIds == null)
+                || schedule == null
+                || !schedule.IsValid
+                || schedule.Sequence.GameplayHash != sequence.GameplayHash
+                || schedule.Timing.StartTick != tick
+                || executionIds == null
+                || !executionId.IsValid)
             {
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
-            SkillExecutionId executionId;
-            try
+            FpgSkillRuntimeResult validation = runtime.ValidateStart(
+                schedule,
+                executionId,
+                tick);
+            if (!validation.IsSuccess)
             {
-                executionId = executionIds.Peek();
-            }
-            catch (OverflowException)
-            {
-                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+                return MapRuntimeFailure(validation.Error);
             }
 
             FpgSkillRuntimeResult started = runtime.Start(
-                sequence,
+                schedule,
                 executionId,
                 tick);
             if (!started.IsSuccess)
@@ -990,7 +1729,84 @@ namespace FPG.Demo.Unity
             activeSlot = slot;
             activeDefinition = definition;
             activeSequenceKind = sequenceKind;
+            activeSchedule = schedule;
+            activeTiming = schedule.Timing;
             return DomainResult.Success;
+        }
+
+        private DomainResult PrepareTimelineStart(
+            FpgResolvedSkillSchedule schedule,
+            TickIndex tick,
+            bool allowReplacingRunning,
+            out SkillExecutionId executionId)
+        {
+            executionId = SkillExecutionId.Invalid;
+            if (executionIds == null)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            try
+            {
+                executionId = executionIds.Peek();
+            }
+            catch (OverflowException)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            FpgSkillRuntimeResult validation = runtime.ValidateStart(
+                schedule,
+                executionId,
+                tick,
+                allowReplacingRunning);
+            return validation.IsSuccess
+                ? DomainResult.Success
+                : MapRuntimeFailure(validation.Error);
+        }
+
+        private bool TryResolveSchedule(
+            FpgCompiledPlayerSkillDefinition definition,
+            FpgSkillSequenceKind sequenceKind,
+            TickIndex tick,
+            RuntimeId ownerId,
+            out FpgResolvedSkillSchedule schedule)
+        {
+            schedule = null;
+            if (definition == null
+                || !definition.Timeline.TryGetSequence(
+                    sequenceKind,
+                    out FpgCompiledSkillSequence sequence)
+                || !definition.TryGetTimingDefinition(
+                    sequenceKind,
+                    out FpgCompiledSkillTimingDefinition timingDefinition))
+            {
+                return false;
+            }
+
+            double bonusAttackSpeed = 0d;
+            if (!timingDefinition.IsFixed)
+            {
+                try
+                {
+                    bonusAttackSpeed = attackSpeedBonusProvider
+                        .GetBonusAttackSpeed(ownerId, tick);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+
+            return FpgAttackTimingResolver.TryResolve(
+                sequence,
+                timingDefinition,
+                definition.SequenceCooldownTicks,
+                attackSpeedProfile,
+                bonusAttackSpeed,
+                tick,
+                out schedule,
+                out _);
         }
 
         private DomainResult CancelChargeTimeline(TickIndex tick)
@@ -1044,7 +1860,8 @@ namespace FPG.Demo.Unity
                     activeSlot,
                     runtimeEvent,
                     payload,
-                    hasPayload);
+                    hasPayload,
+                    activeTiming);
             }
 
             return DomainResult.Success;
@@ -1073,7 +1890,8 @@ namespace FPG.Demo.Unity
                         runtime.ExecutionId,
                         runtime.StartTick,
                         tick,
-                        runtime.State);
+                        runtime.State,
+                        activeTiming);
                 return DomainResult.Success;
             }
             catch (OverflowException)
@@ -1082,11 +1900,16 @@ namespace FPG.Demo.Unity
             }
         }
 
-        private void ClearActive()
+        private void ClearActive(bool preserveTiming = false)
         {
             activeDefinition = null;
             activeSlot = FpgPlayerSkillSlot.None;
             activeSequenceKind = FpgSkillSequenceKind.None;
+            activeSchedule = null;
+            if (!preserveTiming)
+            {
+                activeTiming = default(FpgResolvedSkillTimingSnapshot);
+            }
         }
 
         private void ClearEventResults()

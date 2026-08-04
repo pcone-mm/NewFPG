@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -20,6 +21,10 @@ namespace FPG.Demo.Unity
         private Transform aimAnchor;
 
         [SerializeField]
+        [Tooltip("Primary muzzle socket shared by authoritative shots and trajectory presentation. It may follow a Spine bone at runtime.")]
+        private Transform shotOrigin;
+
+        [SerializeField]
         private Transform groundAnchor;
 
         [SerializeField]
@@ -31,6 +36,9 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private FpgPlayerBarrierPresentationController barrier;
 
+        [SerializeField]
+        private FpgPlayerFacingController facingController;
+
         public CharacterController CharacterController => characterController != null
             ? characterController
             : GetComponent<CharacterController>();
@@ -40,6 +48,7 @@ namespace FPG.Demo.Unity
             : GetComponent<FpgPlayerBounds>();
         public FpgPlayerBounds PlayerBounds => Bounds;
         public Transform AimAnchor => aimAnchor;
+        public Transform ShotOrigin => shotOrigin;
         public Transform GroundAnchor => groundAnchor;
         public Transform CameraPivot => cameraPivot;
         public Collider BodyHitbox => bodyHitbox;
@@ -48,11 +57,32 @@ namespace FPG.Demo.Unity
             ? barrier
             : GetComponentInChildren<FpgPlayerBarrierPresentationController>(true);
         public FpgPlayerBarrierPresentationController BarrierPresentation => Barrier;
+        public FpgPlayerFacingController FacingController => facingController != null
+            ? facingController
+            : GetComponent<FpgPlayerFacingController>();
+        public Transform FacingRoot => FacingController == null
+            ? null
+            : FacingController.FacingRoot;
 
         public bool TryResolvePresentationSocket(
             string socketId,
             out Transform anchor)
         {
+            if (ShotOrigin != null
+                && (string.IsNullOrEmpty(socketId)
+                    || string.Equals(
+                        socketId,
+                        D0ActorSocketRegistry.PrimaryMuzzleId,
+                        StringComparison.Ordinal)
+                    || string.Equals(
+                        socketId,
+                        D0ActorSocketRegistry.SecondaryMuzzleId,
+                        StringComparison.Ordinal)))
+            {
+                anchor = ShotOrigin;
+                return true;
+            }
+
             FpgPlayerBarrierPresentationController cover = Barrier;
             if (cover != null
                 && cover.TryResolvePresentationSocket(socketId, out anchor))
@@ -93,6 +123,28 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (ShotOrigin == null || !ShotOrigin.IsChildOf(transform))
+            {
+                error = "Player entity requires a ShotOrigin below the entity root.";
+                return false;
+            }
+
+            if (!SocketRegistry.TryResolve(
+                    D0ActorSocketRegistry.PrimaryMuzzleId,
+                    out Transform primaryMuzzle,
+                    out D0ActorSocketBinding primaryMuzzleBinding)
+                || primaryMuzzle != ShotOrigin)
+            {
+                error = "Player ShotOrigin must use the registered primary muzzle socket.";
+                return false;
+            }
+
+            if (!primaryMuzzleBinding.FollowsSpineBone)
+            {
+                error = "Player primary muzzle ShotOrigin must follow a Spine bone.";
+                return false;
+            }
+
             if (GroundAnchor == null || !GroundAnchor.IsChildOf(transform))
             {
                 error = "Player entity requires a GroundAnchor below the entity root.";
@@ -122,27 +174,68 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            FpgPlayerFacingController facing = FacingController;
+            if (facing == null || facing.transform != transform
+                || !facing.TryValidate(out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Player entity requires a valid FpgPlayerFacingController on the entity root."
+                    : error;
+                return false;
+            }
+
             Transform peekRoot = Barrier.PeekRoot;
+            Transform facingRoot = facing.FacingRoot;
+            Transform presentationSockets =
+                Barrier.PrimaryPresentationMuzzle == null
+                    ? null
+                    : Barrier.PrimaryPresentationMuzzle.parent;
+            if (facingRoot == null || facingRoot.parent != peekRoot
+                || facingRoot.localPosition != Vector3.zero
+                || facingRoot.localRotation != Quaternion.identity
+                || facingRoot.localScale != Vector3.one)
+            {
+                error = "Player FacingRoot must be a direct child of PeekRoot with an identity authored pose.";
+                return false;
+            }
+
+            if (VisualRoot == null || VisualRoot.parent != facingRoot
+                || presentationSockets == null
+                || presentationSockets.parent != facingRoot
+                || Barrier.SecondaryPresentationMuzzle == null
+                || Barrier.SecondaryPresentationMuzzle.parent
+                    != presentationSockets
+                || facingRoot.childCount != 2
+                || (facingRoot.GetChild(0) != VisualRoot
+                    && facingRoot.GetChild(1) != VisualRoot)
+                || (facingRoot.GetChild(0) != presentationSockets
+                    && facingRoot.GetChild(1) != presentationSockets))
+            {
+                error = "Player FacingRoot must contain only VisualRoot and PresentationSockets as direct children.";
+                return false;
+            }
             if (VisualRoot == peekRoot || !VisualRoot.IsChildOf(peekRoot))
             {
                 error = "Player entity VisualRoot must be below the cover PeekRoot.";
                 return false;
             }
 
-            if (GameplayAnchor.IsChildOf(peekRoot)
-                || AimAnchor.IsChildOf(peekRoot)
-                || GroundAnchor.IsChildOf(peekRoot)
-                || CameraPivot.IsChildOf(peekRoot)
-                || SocketRegistry.transform.IsChildOf(peekRoot))
+            if (GameplayAnchor.IsChildOf(facingRoot)
+                || AimAnchor.IsChildOf(facingRoot)
+                || ShotOrigin.IsChildOf(facingRoot)
+                || GroundAnchor.IsChildOf(facingRoot)
+                || CameraPivot.IsChildOf(facingRoot)
+                || SocketRegistry.transform.IsChildOf(facingRoot))
             {
-                error = "Player gameplay anchors and authoritative sockets must remain outside PeekRoot.";
+                error = "Player gameplay anchors and authoritative sockets must remain outside FacingRoot.";
                 return false;
             }
 
-            if (AimAnchor == GroundAnchor || AimAnchor == CameraPivot
-                || GroundAnchor == CameraPivot)
+            if (AimAnchor == ShotOrigin || AimAnchor == GroundAnchor
+                || AimAnchor == CameraPivot || ShotOrigin == GroundAnchor
+                || ShotOrigin == CameraPivot || GroundAnchor == CameraPivot)
             {
-                error = "Player entity AimAnchor, GroundAnchor and CameraPivot must be distinct Transforms.";
+                error = "Player entity AimAnchor, ShotOrigin, GroundAnchor and CameraPivot must be distinct Transforms.";
                 return false;
             }
 

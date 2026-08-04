@@ -151,7 +151,14 @@ namespace FPG.Demo.Unity
                 traceFlags);
             actorPresenter?.SetPaused(snapshot.IsPaused);
             EvaluateActiveSkillAnimation();
+            if (playerEntity != null
+                && !playerEntity.TryRefreshSpineSocketFollowers(out _))
+            {
+                SkillPresentationFaultCount++;
+            }
+
             ConsumeActivePresentations();
+            UpdateAimIndicatorFeedback();
             UpdateSecondaryChargeFeedback();
             ConsumePlayerShotPresentation();
             ConsumePlayerProjectilePresentation();
@@ -259,8 +266,42 @@ namespace FPG.Demo.Unity
 
                 return false;
             }
-            if (!barrier.TryBindFormalSource(this, out error))
+            if (!barrier.TryBindFormalSource(
+                    this,
+                    encounterDirector.RoomInstance,
+                    out error))
             {
+                return false;
+            }
+
+            CombatAimReticle aimReticle = ResolveAimReticle();
+            if (aimReticle == null
+                || !aimReticle.TrySetAimIndicatorPresentation(
+                    definition.Weapon.AimIndicator,
+                    nextSelection.CombatFeelProfile,
+                    targetCamera,
+                    out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Formal player presentation requires the selected weapon aim indicator."
+                    : error;
+                return false;
+            }
+
+            FpgPlayerFacingController facing =
+                nextPlayerEntity.FacingController;
+            if (facing == null
+                || !facing.TryPrepare(
+                    encounterDirector,
+                    aimReticle,
+                    playerTickDriver,
+                    nextPlayerEntity,
+                    nextSelection.ThreeCProfile,
+                    out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Formal player presentation requires a prepared facing controller."
+                    : error;
                 return false;
             }
 
@@ -270,6 +311,43 @@ namespace FPG.Demo.Unity
             snapshot = FpgFormalPlayerPresentationSnapshot.Unavailable;
             ResetEventCursors();
             prepared = true;
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryApplyShootingPreview(
+            in FpgShootingTuningSnapshot tuning,
+            out string error)
+        {
+            error = string.Empty;
+            if (!prepared || !tuning.TryValidate(out error)
+                || !tuning.MatchesSelection(selection))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Shooting presentation preview does not match the active player."
+                    : error;
+                return false;
+            }
+
+            CombatAimReticle aimReticle = ResolveAimReticle();
+            if (aimReticle == null
+                || !aimReticle.TryApplyShootingPreview(tuning, out error)
+                || playerEntity == null
+                || playerEntity.FacingController == null
+                || !playerEntity.FacingController.TryApplyShootingPreview(
+                    tuning,
+                    out error)
+                || cameraFeedback == null
+                || !cameraFeedback.TryApplyShootingPreview(
+                    tuning,
+                    out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Shooting presentation preview could not be applied."
+                    : error;
+                return false;
+            }
+
             error = string.Empty;
             return true;
         }
@@ -434,6 +512,7 @@ namespace FPG.Demo.Unity
             observedTrace = runtime.CombatKernel.Trace;
             nextCombatEventOrdinal = observedTrace.TotalEventCount;
             active = true;
+            playerEntity.FacingController.SetPresentationActive(true);
             skillVfxWorld?.BeginCombat();
             if (playerTickDriver.TryRefreshPresentationSnapshot(out snapshot))
             {
@@ -443,6 +522,7 @@ namespace FPG.Demo.Unity
                 cameraFeedback.SetPaused(snapshot.IsPaused);
                 playerTickDriver.CoverTraversalPresenter?.SetPaused(snapshot.IsPaused);
                 playerHud.Refresh(snapshot);
+                UpdateAimIndicatorFeedback();
                 UpdateSecondaryChargeFeedback();
             }
 
@@ -487,6 +567,7 @@ namespace FPG.Demo.Unity
         {
             Unsubscribe();
             ResetCoverPresentation();
+            ClearAimIndicatorFeedback();
             ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.EndCombat();
@@ -495,6 +576,7 @@ namespace FPG.Demo.Unity
             {
                 playerEntity.Barrier.UnbindFormalSource();
             }
+            playerEntity?.FacingController?.Clear();
 
             actorPresenter?.SetPaused(false);
             actorPresenter?.ClearAndReturnToIdle();
@@ -706,10 +788,13 @@ namespace FPG.Demo.Unity
                     - sequenceEvent.StartTick.Value;
             }
 
+            int resolvedDurationTicks = sequenceEvent.Timing.IsValid
+                ? sequenceEvent.Timing.ResolvedDurationTicks
+                : sequenceEvent.CompiledSequence.DurationTicks;
             int relativeTick = (int)Math.Max(
                 0L,
                 Math.Min(
-                    sequenceEvent.CompiledSequence.DurationTicks,
+                    resolvedDurationTicks,
                     relativeValue));
             double interpolation = sequenceEvent.IsTerminal
                 ? 0d
@@ -721,6 +806,7 @@ namespace FPG.Demo.Unity
                     sequenceEvent.ExecutionId,
                     sequenceEvent.AnimationName,
                     sequenceEvent.CompiledSequence,
+                    sequenceEvent.Timing,
                     relativeTick,
                     interpolation,
                     out _))
@@ -882,13 +968,29 @@ namespace FPG.Demo.Unity
                 snapshot.SecondaryChargeProgress);
         }
 
-        private void UpdateSecondaryChargeFeedback()
+        private CombatAimReticle ResolveAimReticle()
         {
-            bool visible = ShouldShowSecondaryChargeFeedback();
-            CombatAimReticle reticle = playerTickDriver == null
+            return playerTickDriver == null
                 ? null
                 : playerTickDriver.AimViewportSourceComponent
                     as CombatAimReticle;
+        }
+
+        private void UpdateAimIndicatorFeedback()
+        {
+            ResolveAimReticle()?.SetFormalPresentation(snapshot);
+        }
+
+        private void ClearAimIndicatorFeedback()
+        {
+            ResolveAimReticle()?.SetFormalPresentation(
+                FpgFormalPlayerPresentationSnapshot.Unavailable);
+        }
+
+        private void UpdateSecondaryChargeFeedback()
+        {
+            bool visible = ShouldShowSecondaryChargeFeedback();
+            CombatAimReticle reticle = ResolveAimReticle();
             reticle?.SetChargeProgress(
                 visible,
                 visible ? snapshot.SecondaryChargeProgress : 0f);
@@ -942,20 +1044,14 @@ namespace FPG.Demo.Unity
 
         private void ClearSecondaryChargeFeedback()
         {
-            CombatAimReticle reticle = playerTickDriver == null
-                ? null
-                : playerTickDriver.AimViewportSourceComponent
-                    as CombatAimReticle;
+            CombatAimReticle reticle = ResolveAimReticle();
             reticle?.SetChargeProgress(false, 0f);
             ReleaseSecondaryChargeVfx();
         }
 
         private void SuspendSecondaryChargeFeedback()
         {
-            CombatAimReticle reticle = playerTickDriver == null
-                ? null
-                : playerTickDriver.AimViewportSourceComponent
-                    as CombatAimReticle;
+            CombatAimReticle reticle = ResolveAimReticle();
             reticle?.SetChargeProgress(false, 0f);
             ReleaseSecondaryChargeVfx(clearBinding: false);
         }
@@ -2347,7 +2443,13 @@ namespace FPG.Demo.Unity
                 fallback.CoverPeekStartedTick,
                 fallback.CurrentCoverId,
                 fallback.IsCoverDestroyed,
-                fallback.IsCoverMoving);
+                fallback.IsCoverMoving,
+                fallback.AimIndicatorBaseState,
+                fallback.ReloadProgress01,
+                fallback.PrimarySpreadTangent,
+                fallback.SecondaryAreaRadius,
+                fallback.FrozenAimVersion,
+                fallback.CoverPeekDirection);
         }
 
         private void ResetEventCursors()
@@ -2400,7 +2502,9 @@ namespace FPG.Demo.Unity
             }
 
             Subscribe();
+            playerEntity?.FacingController?.SetPresentationActive(true);
             ResetCoverPresentation();
+            ClearAimIndicatorFeedback();
             ClearSecondaryChargeFeedback();
             skillVfxWorld?.BeginCombat();
             actorPresenter?.ClearAndReturnToIdle();
@@ -2419,8 +2523,10 @@ namespace FPG.Demo.Unity
 
         private void OnDisable()
         {
+            playerEntity?.FacingController?.SetPresentationActive(false);
             Unsubscribe();
             ResetCoverPresentation();
+            ClearAimIndicatorFeedback();
             ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.EndCombat();
@@ -2479,6 +2585,7 @@ namespace FPG.Demo.Unity
             {
                 playerTickDriver?.CoverTraversalPresenter?.Cancel();
                 ResetCoverPresentation();
+                ClearAimIndicatorFeedback();
                 ClearSecondaryChargeFeedback();
                 ClearPlayerProjectileVisuals();
                 skillVfxWorld?.ClearActive();
@@ -2494,7 +2601,9 @@ namespace FPG.Demo.Unity
 
             actorPresenter?.SetPaused(false);
             actorPresenter?.ClearAndReturnToIdle();
+            playerEntity?.FacingController?.ResetToAuthoredFacing();
             ResetCoverPresentation();
+            ClearAimIndicatorFeedback();
             ClearSecondaryChargeFeedback();
             ClearPlayerProjectileVisuals();
             skillVfxWorld?.ClearActive();

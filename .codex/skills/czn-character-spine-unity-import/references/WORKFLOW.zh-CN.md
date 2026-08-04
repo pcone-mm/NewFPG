@@ -44,7 +44,7 @@ Assets/Imported/CZN/<Label>/
    └─ SkillCompositions/{Skills,Timelines,Generated}/
 ```
 
-原始提取物和第三方角色资源应保持 local-only；通用脚本、流程文档和不含游戏载荷的模板才适合进入版本控制。
+原始提取物和第三方角色资源应保持 local-only；通用脚本、skill reference 和不含游戏载荷的模板才适合进入版本控制。
 
 ## 3. 阶段 A：角色识别与依赖审计
 
@@ -206,13 +206,12 @@ AnimationState.ClearTracks()
 
 ## 9. 每个角色的交付物
 
-- `Assets/Imported/CZN/<Label>/README.md`；
+- `Assets/Imported/CZN/<Label>/README.md`，作为资产本地的使用与交付说明；
 - main/BattleReady/代表性 VFX Prefab；
 - 模型预览场景和技能组合预览场景；
 - `SkillCompositions/Skills` 与 `Timelines`；
 - import、转换、Spine CLI、Unity 集成、技能组合和 unresolved 报告；
 - `External/CZN/<Label>/SpineProjects` 下可打开的 Spine 项目；
-- `Docs/Workflow/<Label>_Spine_Unity_Guide.zh-CN.md`；
 - 至少一张模型截图和一张代表技能中帧截图；
 - 许可证/分发限制和 local-only 路径说明。
 

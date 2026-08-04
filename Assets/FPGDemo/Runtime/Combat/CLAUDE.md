@@ -11,9 +11,11 @@
 
 - 固定容量、预算和 `SkillExecutionId`/`GameplayEventId` correlation 在提交前完整预检；失败时不得部分入队、部分扣除或留下半终态。
 - 候选排序必须与输入枚举顺序无关；trace digest、稳定 ID 和 projectile terminal commit 是兼容合同。
+- `ImpactSpatialContext` 可把带有效 `GeometryId` 的 `EnvironmentBlocker + HitPart.Body` 作为合法终态接触，但它不是 combatant damage target；GeometryId 到 CoverId 的解析与掩体耐久提交属于 Run/Unity Level 上层端口。
 - 新机制通过端口接入空间查询和世界状态，不读取 `UnityEngine`、Scene、MonoBehaviour 或 ScriptableObject。
 
 ## 验证
 
 - target ordering/area 容量检查 `TargetSelectorTests.cs`；伤害与 impact 检查 `CombatDamageTests.cs`。
 - projectile 预算和终态检查 `ProjectileThreatTests.cs`；程序集边界检查 `AssemblyBoundaryTests.cs`。
+- 环境阻挡、GeometryId 与掩体提交的原子性检查 `FpgMultiEnemyCombatTransactionTests.cs`。

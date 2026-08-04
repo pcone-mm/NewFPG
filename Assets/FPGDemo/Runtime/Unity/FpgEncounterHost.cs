@@ -114,6 +114,16 @@ namespace FPG.Demo.Unity
             return TryPrepareAndStartInternal(
                 false,
                 default(FpgEncounterStartRequest),
+                FpgEncounterRuntimeMode.Formal,
+                out error);
+        }
+
+        public bool TryPrepareAndStartSandbox(out string error)
+        {
+            return TryPrepareAndStartInternal(
+                false,
+                default(FpgEncounterStartRequest),
+                FpgEncounterRuntimeMode.BattleTestSandbox,
                 out error);
         }
 
@@ -126,12 +136,17 @@ namespace FPG.Demo.Unity
                 return Fail(error, out error);
             }
 
-            return TryPrepareAndStartInternal(true, startRequest, out error);
+            return TryPrepareAndStartInternal(
+                true,
+                startRequest,
+                FpgEncounterRuntimeMode.Formal,
+                out error);
         }
 
         private bool TryPrepareAndStartInternal(
             bool hasExplicitRequest,
             in FpgEncounterStartRequest startRequest,
+            FpgEncounterRuntimeMode mode,
             out string error)
         {
             prepared = false;
@@ -198,8 +213,14 @@ namespace FPG.Demo.Unity
                     effectiveProfile,
                     overrideData,
                     effectiveRunContext);
-                FpgEncounterPlanGenerationResult generated =
-                    FpgEncounterPlanGenerator.Generate(request);
+                FpgEncounterPlanGenerationResult generated = mode == FpgEncounterRuntimeMode.BattleTestSandbox
+                    ? new FpgEncounterPlanGenerationResult(
+                        DomainResult.Success,
+                        FpgEncounterPlanGenerator.CreateBattleTestSandbox(
+                            request.RoomDefinition.RoomDefinitionId,
+                            request.RunContext),
+                        string.Empty)
+                    : FpgEncounterPlanGenerator.Generate(request);
                 if (!generated.IsSuccess)
                 {
                     return Fail(generated.Error, out error);
@@ -241,7 +262,8 @@ namespace FPG.Demo.Unity
                         request,
                         Plan,
                         enemyCatalog,
-                        out error);
+                        out error,
+                        mode);
                 }
                 finally
                 {
@@ -479,10 +501,11 @@ namespace FPG.Demo.Unity
                 director.PlayerAnchor.position,
                 director.PlayerAnchor.rotation);
             float traversalSeconds = director.PlayerTickDriver == null
-                || director.PlayerTickDriver.ThreeCProfile == null
+                || director.PlayerTickDriver.EffectiveCoverTraversalSeconds
+                    <= 0f
                     ? 0f
-                    : director.PlayerTickDriver.ThreeCProfile
-                        .CoverTraversalSeconds;
+                    : director.PlayerTickDriver
+                        .EffectiveCoverTraversalSeconds;
             if (!startingCover.IsValid
                 || traversalPresenter == null
                 || cameraFeedback == null

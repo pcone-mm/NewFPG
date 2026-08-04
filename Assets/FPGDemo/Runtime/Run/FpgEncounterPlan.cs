@@ -218,5 +218,45 @@ namespace FPG.Demo.Run
         {
             return FpgEncounterPlanAlgorithm.Generate(request);
         }
+
+        public static FpgEncounterPlan CreateBattleTestSandbox(
+            string roomDefinitionId,
+            FpgEncounterRunContext runContext)
+        {
+            if (string.IsNullOrWhiteSpace(roomDefinitionId))
+            {
+                throw new ArgumentException(
+                    "Sandbox plans require a room definition id.",
+                    nameof(roomDefinitionId));
+            }
+
+            if (!runContext.IsValid)
+            {
+                throw new ArgumentException(
+                    "Sandbox plans require a valid run context.",
+                    nameof(runContext));
+            }
+
+            FpgEncounterWavePlan emptyWave = new FpgEncounterWavePlan(
+                waveIndex: 0,
+                budget: 0,
+                requestedBudget: 0,
+                clipped: false,
+                entries: Array.Empty<FpgSpawnEntry>(),
+                diagnostic: "BattleTest sandbox wave.");
+            return new FpgEncounterPlan(
+                roomDefinitionId,
+                runContext,
+                totalBudget: 0,
+                waves: new[] { emptyWave },
+                diagnostics: new[] { "BattleTest sandbox plan has no authored wave entries." },
+                digest: StableHash.Combine(
+                    runContext.DeriveSeed(0x424154544C455354UL),
+                    0x53414E44424F5855UL,
+                    0UL,
+                    0UL),
+                themeEnemyDefinitionId: string.Empty,
+                waveLayoutId: "battle-test-sandbox");
+        }
     }
 }

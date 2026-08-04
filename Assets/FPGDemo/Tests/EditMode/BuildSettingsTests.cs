@@ -52,6 +52,25 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void ProductionSceneListExcludesBattleTest()
+        {
+            Assert.That(
+                FpgProductionSceneList.TryBuild(
+                    out string[] productionScenes,
+                    out string error),
+                Is.True,
+                error);
+            Assert.That(
+                productionScenes,
+                Does.Not.Contain(
+                    FpgBattleTestDevelopmentSceneList.BattleTestScenePath));
+            Assert.That(
+                AssetDatabase.LoadAssetAtPath<SceneAsset>(
+                    FpgBattleTestDevelopmentSceneList.BattleTestScenePath),
+                Is.Not.Null);
+        }
+
+        [Test]
         public void SceneListValidationRejectsDisabledReorderedAndMissingEntries()
         {
             string[] expected =

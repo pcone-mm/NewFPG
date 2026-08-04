@@ -15,7 +15,8 @@ namespace FPG.Demo.Combat
             QueryTargetKind targetKind,
             HitPart hitPart)
         {
-            if (!IsValidTarget(targetKind, hitPart))
+            if (targetKind == QueryTargetKind.EnvironmentBlocker
+                || !IsValidTarget(targetKind, hitPart))
             {
                 throw new ArgumentException(
                     "Impact spatial context requires a valid damage target.");
@@ -64,11 +65,12 @@ namespace FPG.Demo.Combat
         {
             return Enum.IsDefined(typeof(QueryTargetKind), targetKind)
                 && Enum.IsDefined(typeof(HitPart), hitPart)
-                && (targetKind == QueryTargetKind.Combatant
-                    || targetKind == QueryTargetKind.Projectile)
-                && (targetKind == QueryTargetKind.Projectile
-                    ? hitPart == HitPart.Projectile
-                    : hitPart != HitPart.Projectile);
+                && (targetKind == QueryTargetKind.EnvironmentBlocker
+                    ? hitPart == HitPart.Body
+                    : targetKind == QueryTargetKind.Projectile
+                        ? hitPart == HitPart.Projectile
+                        : targetKind == QueryTargetKind.Combatant
+                            && hitPart != HitPart.Projectile);
         }
     }
 }

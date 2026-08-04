@@ -7,6 +7,7 @@
 `Boot -> FormalRoom -> room-forest -> FpgEncounterHost/FpgFormalEncounterHost -> FpgRoomEncounterDirector -> FpgEncounterSession`
 
 - `Boot.unity` 与 `FormalRoom.unity` 是固定为 index 0/1 的入口/Host 场景；`FpgProductionSceneList` 还会按 room ID 追加 catalog 中的 Art Scene，它们只由 FormalRoom additive 加载，不是第二套入口。
+- `Assets/InitTestScene/BattleTest.unity` 只在 Editor/Development 中先启动空沙盒，再 additive 复用 `FormalRoom` 与 catalog Art Scene；它不改变上述生产入口，也不得进入 Release。
 - `BattleSession` 若仍保留，只是无 Unity host 的纯领域兼容代码，不是正式运行入口。
 - 正式资产仍引用的 `D0CharacterDefinition`、`D0ThreeCProfile`、`D0ActorPresentationDefinition`、`D0WeaponDefinition`、`D0ActorSocketRegistry`、`D0ForestParallax*` 是序列化/GUID 兼容合同，不代表第二条主线。
 
@@ -18,7 +19,7 @@
 - `Presentation/FormalEncounter` 保存正式 Entity/HUD/出口 prefab；`Presentation/Level` 保存房间 Art Scene 与环境资源；`Presentation/Characters/*/Spine` 保存运行时渲染依赖，`Presentation/Characters/*/VFX` 保存项目自有特效 wrapper。
 - 正式技能配置只引用 `Presentation/Characters/*/VFX/PF_FPG_*` wrapper；wrapper 可保留对 `Assets/VFX_Klaus/` 源材质、网格或 prefab 的显式 GUID 依赖，但不得引用供应商 `Timeline/` 或 `VFX_Lab/` demo。
 - `SourceArt/CZN` 与 `Assets/Imported/CZN` 保存 CZN 源输入；项目负责人已确认这些素材可进入公开仓库。
-- `Editor/` 保存发布构建、正式实体 Inspector 和共享 Editor-only 工具；`Editor/LevelAuthoring` 维护房间编辑、Art Scene 合同、正式预览与验证，进入后先读对应局部指南。
+- `Editor/` 保存构建、正式实体 Inspector 和共享 Editor-only 工具；`Editor/LevelAuthoring` 维护房间编辑、Art Scene 合同、正式预览与 BattleTest 路由，`Editor/CombatTuning` 维护射击调参工作台，进入后先读对应局部指南。
 - `Editor/SkillAuthoring` 保存纯 V3 技能时间轴、校验和隔离预览工具；常规配置修改从 `FPG Demo/Skill Editor` 进入，并先看该目录局部指南。
 - `Integrations/` 隔离项目对第三方运行时 API 的直接适配；当前体积雾/体积光绑定不得扩散到纯领域程序集或 `FPG.Unity` asmdef。
 
@@ -36,4 +37,5 @@
 - Build 入口与 catalog Art Scene 顺序检查 `BuildSettingsTests.cs`；正式 authoring 检查 `FormalFirstAuthoringContractTests.cs`。
 - 房间与出口检查 `FpgRoomDefinitionTests.cs`、`FpgExitRoomRefreshRuleTests.cs`、`FpgRoomExitRuntimeTests.cs`。
 - Art Scene 合同与加载回滚检查 `FpgRoomArtSceneContractTests.cs`、`FpgRoomArtSceneLoaderPlayModeTests.cs`。
+- BattleTest/GM 检查 `BuildSettingsTests.cs`、`FpgBattleGmCommandParserTests.cs`、`FpgBattleTestSandboxRuntimeTests.cs` 与 `FpgBattleTestPlayModeTests.cs`；射击调参检查 `FpgShootingTuningSnapshotTests.cs`、`FpgShootingContractsTests.cs`。
 - 默认不新增测试、不批量运行 EditMode/PlayMode；只有用户明确要求时才运行。

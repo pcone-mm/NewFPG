@@ -226,7 +226,104 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void CoverGateAllowsPrimaryOnTheSameTickWhenPeekIsComplete()
+        public void AcceptedPrimaryLatchesFacingAndRejectsMidCycleSideChanges()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                FpgResolvedAimContext leftAim = CreateValidAimContext(0.25f);
+                SetPrivateField(fixture.Driver, "liveAimContext", leftAim);
+                SetPrivateField(fixture.Driver, "liveAttackAimContext", leftAim);
+
+                GateCoverInput(
+                    fixture,
+                    0L,
+                    aimHeld: false,
+                    primaryHeld: true,
+                    aimOriginX: 0);
+
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.True);
+                Assert.That(
+                    fixture.Driver.CoverPeekDirection,
+                    Is.EqualTo(FpgPlayerFacingDirection.Left));
+
+                FpgResolvedAimContext rightAim = CreateValidAimContext(0.75f);
+                SetPrivateField(fixture.Driver, "liveAimContext", rightAim);
+                SetPrivateField(fixture.Driver, "liveAttackAimContext", rightAim);
+                GateCoverInput(
+                    fixture,
+                    1L,
+                    aimHeld: false,
+                    primaryHeld: true,
+                    aimOriginX: 1);
+
+                Assert.That(
+                    fixture.Driver.CoverPeekDirection,
+                    Is.EqualTo(FpgPlayerFacingDirection.Left));
+            }
+        }
+
+        [Test]
+        public void AcceptedSecondaryChargeStartsWithCurrentFacingDirection()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                FpgResolvedAimContext leftAim = CreateValidAimContext(0.25f);
+                SetPrivateField(fixture.Driver, "liveAimContext", leftAim);
+                SetPrivateField(fixture.Driver, "liveAttackAimContext", leftAim);
+                InputEdgeCommand[] edges =
+                {
+                    new InputEdgeCommand(
+                        new InputSequence(1L),
+                        InputEdgeType.SecondaryPressed)
+                };
+
+                GateCoverInput(
+                    fixture,
+                    0L,
+                    aimHeld: false,
+                    primaryHeld: false,
+                    aimOriginX: 0,
+                    edgeCommands: edges);
+
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.True);
+                Assert.That(
+                    fixture.Driver.CoverPeekDirection,
+                    Is.EqualTo(FpgPlayerFacingDirection.Left));
+            }
+        }
+
+        [Test]
+        public void RejectedAttackDoesNotLatchFacingOrStartPeek()
+        {
+            FpgCompiledPlayerSkillDefinition unaffordablePrimary =
+                CreatePrimary(
+                    durationTicks: 0,
+                    cooldownTicks: 0,
+                    ammoCost: 9,
+                    Event(10, 0, 101));
+            using (CoverGateFixture fixture =
+                CreateCoverGateFixture(unaffordablePrimary))
+            {
+                FpgResolvedAimContext leftAim = CreateValidAimContext(0.25f);
+                SetPrivateField(fixture.Driver, "liveAimContext", leftAim);
+                SetPrivateField(fixture.Driver, "liveAttackAimContext", leftAim);
+
+                GateCoverInput(
+                    fixture,
+                    0L,
+                    aimHeld: false,
+                    primaryHeld: true,
+                    aimOriginX: 0);
+
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+                Assert.That(
+                    fixture.Driver.CoverPeekDirection,
+                    Is.EqualTo(FpgPlayerFacingDirection.Right));
+            }
+        }
+
+        [Test]
+        public void CoverGateAimOnlyDoesNotPrechargePrimaryPeek()
         {
             using (CoverGateFixture fixture = CreateCoverGateFixture())
             {
@@ -238,26 +335,59 @@ namespace FPG.Demo.Tests.EditMode
                         aimHeld: true,
                         primaryHeld: false,
                         aimOriginX: checked((int)tick));
+                    Assert.That(
+                        fixture.Driver.PrimaryAttackAvailability.Ready,
+                        Is.True);
+                    Assert.That(aiming.Frame.PrimaryHeld, Is.False);
+                    Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+                    Assert.That(
+                        fixture.Driver.CoverPeekStartedTick.IsValid,
+                        Is.False);
                     ProcessGatedFrame(fixture, aiming);
                 }
 
-                CoverGateResult readyAttack = GateCoverInput(
+                CoverGateResult attackStarted = GateCoverInput(
                     fixture,
                     5L,
                     aimHeld: true,
                     primaryHeld: true,
                     aimOriginX: 50);
+                Assert.That(attackStarted.Frame.PrimaryHeld, Is.False);
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.True);
+                Assert.That(
+                    fixture.Driver.CoverPeekStartedTick,
+                    Is.EqualTo(new TickIndex(5L)));
+                ProcessGatedFrame(fixture, attackStarted);
+
+                for (long tick = 6L; tick < 10L; tick++)
+                {
+                    CoverGateResult peeking = GateCoverInput(
+                        fixture,
+                        tick,
+                        aimHeld: true,
+                        primaryHeld: true,
+                        aimOriginX: checked((int)tick));
+                    Assert.That(peeking.Frame.PrimaryHeld, Is.False);
+                    ProcessGatedFrame(fixture, peeking);
+                }
+
+                CoverGateResult readyAttack = GateCoverInput(
+                    fixture,
+                    10L,
+                    aimHeld: true,
+                    primaryHeld: true,
+                    aimOriginX: 100);
                 Assert.That(readyAttack.Frame.PrimaryHeld, Is.True);
                 ProcessGatedFrame(fixture, readyAttack);
 
                 Assert.That(fixture.Controller.ResultCount, Is.EqualTo(1));
                 Assert.That(fixture.Controller.GetResult(0).RuntimeEvent.Tick,
-                    Is.EqualTo(new TickIndex(5L)));
+                    Is.EqualTo(new TickIndex(10L)));
             }
         }
 
         [Test]
-        public void CoverGateQuickReleaseFiresOnceWithReleaseTickAim()
+        public void CoverGateQuickReleaseFiresOnceWithFrozenPressAim()
         {
             using (CoverGateFixture fixture = CreateCoverGateFixture())
             {
@@ -309,12 +439,9 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(fired.TickInput.AimPose.Tick,
                     Is.EqualTo(new TickIndex(5L)));
                 Assert.That(fired.TickInput.AimPose.Origin,
-                    Is.EqualTo(new SpatialVectorKey(
-                        ReleaseAimOriginX,
-                        0,
-                        0)));
+                    Is.EqualTo(SpatialVectorKey.Zero));
                 Assert.That(fired.TickInput.AimPose.PoseVersion,
-                    Is.EqualTo(2L));
+                    Is.EqualTo(1L));
                 ProcessGatedFrame(fixture, fired);
                 totalPrimaryEvents += CountResults(
                     fixture.Controller,
@@ -337,49 +464,265 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void CoverGateReloadClearsPendingPrimary()
+        public void PlayerTickAutoReloadsHeldPrimaryOnceAndRestartsFiveTickPeek()
         {
             using (CoverGateFixture fixture = CreateCoverGateFixture())
             {
-                CoverGateResult pressed = GateCoverInput(
-                    fixture,
-                    0L,
-                    aimHeld: false,
-                    primaryHeld: true,
-                    aimOriginX: 0);
-                ProcessGatedFrame(fixture, pressed);
-                Assert.That(fixture.Controller.ResultCount, Is.Zero);
-
-                InputEdgeCommand[] reloadEdges =
+                FpgResolvedAimContext leftAim = CreateValidAimContext(0.25f);
+                SetPrivateField(fixture.Driver, "liveAimContext", leftAim);
+                SetPrivateField(fixture.Driver, "liveAttackAimContext", leftAim);
+                Assert.That(
+                    fixture.Player.Weapon.Magazine.RestoreAmmo(0).IsSuccess,
+                    Is.True);
+                int reloadStartedCount = 0;
+                int primaryReleaseCount = 0;
+                fixture.Driver.ActionCommitted += action =>
                 {
-                    new InputEdgeCommand(
-                        new InputSequence(1L),
-                        InputEdgeType.ReloadPressed)
+                    if (action.Type == FpgFormalPlayerActionType.ReloadStarted)
+                    {
+                        reloadStartedCount++;
+                    }
+                    else if (action.Type
+                        == FpgFormalPlayerActionType.PrimaryReleaseCommitted)
+                    {
+                        primaryReleaseCount++;
+                    }
                 };
-                CoverGateResult reload = GateCoverInput(
+
+                ProcessFormalPlayerTick(
                     fixture,
-                    1L,
-                    aimHeld: false,
-                    primaryHeld: false,
-                    aimOriginX: 1,
-                    edgeCommands: reloadEdges);
-                ProcessGatedFrame(fixture, reload);
+                    tickValue: 0L,
+                    primaryHeld: true);
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Reloading));
+                Assert.That(fixture.Controller.ActiveSlot,
+                    Is.EqualTo(FpgPlayerSkillSlot.Reload));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Withdrawn));
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 1L,
+                    primaryHeld: true);
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Reloading));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Withdrawn));
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 2L,
+                    primaryHeld: true);
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Ready));
+                Assert.That(fixture.Player.Weapon.Magazine.Ammo,
+                    Is.EqualTo(fixture.Player.Weapon.Magazine.Capacity));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Withdrawn));
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+                Assert.That(reloadStartedCount, Is.EqualTo(1));
+                Assert.That(
+                    fixture.Runtime.SkillExecutionIds.Peek().Value,
+                    Is.EqualTo(2L));
+                Assert.That(primaryReleaseCount, Is.Zero);
+
+                for (long tick = 3L; tick < 8L; tick++)
+                {
+                    ProcessFormalPlayerTick(
+                        fixture,
+                        tick,
+                        primaryHeld: true);
+                    Assert.That(fixture.Driver.IsCoverPeekRequested, Is.True);
+                    Assert.That(
+                        fixture.Driver.CoverPeekStartedTick,
+                        Is.EqualTo(new TickIndex(3L)));
+                    Assert.That(fixture.Player.Exposure.State,
+                        Is.EqualTo(PlayerExposureState.Withdrawn));
+                    Assert.That(
+                        fixture.Driver.CoverPeekDirection,
+                        Is.EqualTo(FpgPlayerFacingDirection.Left));
+                    Assert.That(primaryReleaseCount, Is.Zero);
+                }
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 8L,
+                    primaryHeld: true);
+
+                Assert.That(fixture.Driver.CoverPeekStartedTick,
+                    Is.EqualTo(new TickIndex(3L)));
+                Assert.That(primaryReleaseCount, Is.EqualTo(1));
+                Assert.That(fixture.ShotSink.SuccessfulQueryCount,
+                    Is.EqualTo(1));
+                Assert.That(fixture.ShotSink.CommittedShotCount,
+                    Is.EqualTo(1));
+                Assert.That(fixture.Player.Weapon.Magazine.Ammo,
+                    Is.EqualTo(fixture.Player.Weapon.Magazine.Capacity - 1));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Exposed));
+                Assert.That(reloadStartedCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void PlayerTickSecondaryReleaseDuringAutoReloadCancelsQueuedPeek()
+        {
+            using (CoverGateFixture fixture = CreateCoverGateFixture())
+            {
+                Assert.That(
+                    fixture.Player.Weapon.Magazine.RestoreAmmo(0).IsSuccess,
+                    Is.True);
+                int reloadStartedCount = 0;
+                int secondaryChargeStartedCount = 0;
+                int secondaryReleaseCount = 0;
+                fixture.Driver.ActionCommitted += action =>
+                {
+                    switch (action.Type)
+                    {
+                        case FpgFormalPlayerActionType.ReloadStarted:
+                            reloadStartedCount++;
+                            break;
+                        case FpgFormalPlayerActionType.SecondaryChargeStarted:
+                            secondaryChargeStartedCount++;
+                            break;
+                        case FpgFormalPlayerActionType.SecondaryReleaseCommitted:
+                            secondaryReleaseCount++;
+                            break;
+                    }
+                };
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 0L,
+                    secondaryHeld: true,
+                    secondaryPressed: true);
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Reloading));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Withdrawn));
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 1L,
+                    secondaryReleased: true);
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Reloading));
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+
+                ProcessFormalPlayerTick(fixture, tickValue: 2L);
+                ProcessFormalPlayerTick(fixture, tickValue: 3L);
+
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Ready));
+                Assert.That(fixture.Player.Weapon.Magazine.Ammo,
+                    Is.EqualTo(fixture.Player.Weapon.Magazine.Capacity));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Withdrawn));
                 Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
                 Assert.That(fixture.Driver.CoverPeekStartedTick.IsValid,
                     Is.False);
+                Assert.That(
+                    fixture.Driver.CoverPeekDirection,
+                    Is.EqualTo(FpgPlayerFacingDirection.Right));
+                Assert.That(fixture.Controller.IsExecuting, Is.False);
+                Assert.That(reloadStartedCount, Is.EqualTo(1));
+                Assert.That(
+                    fixture.Runtime.SkillExecutionIds.Peek().Value,
+                    Is.EqualTo(2L));
+                Assert.That(secondaryChargeStartedCount, Is.Zero);
+                Assert.That(secondaryReleaseCount, Is.Zero);
+                Assert.That(fixture.ShotSink.SuccessfulQueryCount, Is.Zero);
+                Assert.That(fixture.ShotSink.CommittedShotCount, Is.Zero);
+            }
+        }
 
-                for (long tick = 2L; tick <= 5L; tick++)
+        [Test]
+        public void PlayerTickFinalAvailabilityFailureHasNoReleaseSideEffects()
+        {
+            FpgCompiledPlayerSkillDefinition delayedPrimary = CreatePrimary(
+                durationTicks: 1,
+                cooldownTicks: 0,
+                ammoCost: 1,
+                Event(10, 1, 101));
+            using (CoverGateFixture fixture =
+                CreateCoverGateFixture(delayedPrimary))
+            {
+                int primaryReleaseCount = 0;
+                fixture.Driver.ActionCommitted += action =>
                 {
-                    CoverGateResult following = GateCoverInput(
+                    if (action.Type
+                        == FpgFormalPlayerActionType.PrimaryReleaseCommitted)
+                    {
+                        primaryReleaseCount++;
+                    }
+                };
+                AttackShotReservation reservationBefore =
+                    fixture.Runtime.IdAllocator.ReserveAttackAndShot();
+
+                for (long tick = 0L; tick < 5L; tick++)
+                {
+                    ProcessFormalPlayerTick(
                         fixture,
                         tick,
-                        aimHeld: false,
-                        primaryHeld: false,
-                        aimOriginX: checked((int)tick));
-                    Assert.That(following.Frame.PrimaryHeld, Is.False);
-                    ProcessGatedFrame(fixture, following);
-                    Assert.That(fixture.Controller.ResultCount, Is.Zero);
+                        primaryHeld: true);
                 }
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 5L,
+                    primaryHeld: true);
+                Assert.That(fixture.Controller.IsExecuting, Is.True);
+                Assert.That(fixture.Controller.ActiveSlot,
+                    Is.EqualTo(FpgPlayerSkillSlot.Primary));
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.PrimaryRecovery));
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Exposed));
+                Assert.That(primaryReleaseCount, Is.Zero);
+
+                int ammoBeforeRejectedCommit =
+                    fixture.Player.Weapon.Magazine.Ammo;
+                fixture.Player.Weapon.Magazine.ConsumeValidated(
+                    ammoBeforeRejectedCommit);
+                Assert.That(fixture.Player.Weapon.Magazine.Ammo, Is.Zero);
+
+                ProcessFormalPlayerTick(
+                    fixture,
+                    tickValue: 6L,
+                    primaryHeld: true);
+
+                AttackShotReservation reservationAfter =
+                    fixture.Runtime.IdAllocator.ReserveAttackAndShot();
+                Assert.That(fixture.Controller.IsExecuting, Is.False);
+                Assert.That(fixture.Controller.ResultCount, Is.Zero);
+                Assert.That(fixture.Player.Weapon.State,
+                    Is.EqualTo(WeaponState.Ready));
+                Assert.That(fixture.Player.Weapon.StateUntilTick.IsValid,
+                    Is.False);
+                Assert.That(
+                    fixture.Player.Weapon.PrimaryRecastLockedUntilTick.IsValid,
+                    Is.False);
+                Assert.That(fixture.Player.Weapon.Magazine.Ammo, Is.Zero);
+                Assert.That(fixture.Player.Exposure.State,
+                    Is.EqualTo(PlayerExposureState.Withdrawn));
+                Assert.That(fixture.Driver.IsCoverPeekRequested, Is.False);
+                Assert.That(
+                    fixture.Driver.PrimaryAttackAvailability.Reason,
+                    Is.EqualTo(FpgAttackUnavailableReason.NotEnoughAmmo));
+                Assert.That(primaryReleaseCount, Is.Zero);
+                Assert.That(fixture.ShotSink.SuccessfulQueryCount, Is.Zero);
+                Assert.That(fixture.ShotSink.CommittedShotCount, Is.Zero);
+                Assert.That(fixture.ShotSink.DiscardedShotCount, Is.Zero);
+                Assert.That(fixture.Runtime.CombatPort.PendingPlayerHitCount,
+                    Is.Zero);
+                Assert.That(fixture.Runtime.CombatKernel.Trace.Count, Is.Zero);
+                Assert.That(reservationAfter.AttackId,
+                    Is.EqualTo(reservationBefore.AttackId));
+                Assert.That(reservationAfter.ShotId,
+                    Is.EqualTo(reservationBefore.ShotId));
             }
         }
 
@@ -757,21 +1100,27 @@ namespace FPG.Demo.Tests.EditMode
                     secondaryHeld: true),
                 player).IsSuccess, Is.True);
             Assert.That(controller.ResultCount, Is.EqualTo(1));
-            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(3));
             Assert.That(
                 controller.GetSequenceFrame(0).ExecutionId,
                 Is.EqualTo(firstExecution));
             Assert.That(
                 controller.GetSequenceFrame(0).State,
-                Is.EqualTo(FpgSkillExecutionState.Canceled));
+                Is.EqualTo(FpgSkillExecutionState.Running));
             Assert.That(
                 controller.GetSequenceFrame(1).ExecutionId,
-                Is.Not.EqualTo(firstExecution));
-            Assert.That(
-                controller.GetSequenceFrame(1).StartTick,
-                Is.EqualTo(new TickIndex(30L)));
+                Is.EqualTo(firstExecution));
             Assert.That(
                 controller.GetSequenceFrame(1).State,
+                Is.EqualTo(FpgSkillExecutionState.Canceled));
+            Assert.That(
+                controller.GetSequenceFrame(2).ExecutionId,
+                Is.Not.EqualTo(firstExecution));
+            Assert.That(
+                controller.GetSequenceFrame(2).StartTick,
+                Is.EqualTo(new TickIndex(30L)));
+            Assert.That(
+                controller.GetSequenceFrame(2).State,
                 Is.EqualTo(FpgSkillExecutionState.Running));
             CommitSecondaryEvent(
                 controller.GetResult(0),
@@ -1114,12 +1463,16 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(FpgPlayerSkillSlot.Primary));
             Assert.That(controller.ActiveSequenceKind,
                 Is.EqualTo(FpgSkillSequenceKind.Execute));
-            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(3));
             Assert.That(controller.GetSequenceFrame(0).ExecutionId,
                 Is.EqualTo(cancelExecution));
             Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
+            Assert.That(controller.GetSequenceFrame(1).ExecutionId,
+                Is.EqualTo(cancelExecution));
+            Assert.That(controller.GetSequenceFrame(1).State,
                 Is.EqualTo(FpgSkillExecutionState.Canceled));
-            Assert.That(controller.GetSequenceFrame(1).Slot,
+            Assert.That(controller.GetSequenceFrame(2).Slot,
                 Is.EqualTo(FpgPlayerSkillSlot.Primary));
         }
 
@@ -1191,12 +1544,16 @@ namespace FPG.Demo.Tests.EditMode
                 player).IsSuccess, Is.True);
             Assert.That(controller.ActiveSlot,
                 Is.EqualTo(FpgPlayerSkillSlot.None));
-            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(3));
             Assert.That(controller.GetSequenceFrame(0).ExecutionId,
                 Is.EqualTo(cancelExecution));
             Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
+            Assert.That(controller.GetSequenceFrame(1).ExecutionId,
+                Is.EqualTo(cancelExecution));
+            Assert.That(controller.GetSequenceFrame(1).State,
                 Is.EqualTo(FpgSkillExecutionState.Canceled));
-            Assert.That(controller.GetSequenceFrame(1).Slot,
+            Assert.That(controller.GetSequenceFrame(2).Slot,
                 Is.EqualTo(FpgPlayerSkillSlot.Primary));
         }
 
@@ -1299,12 +1656,16 @@ namespace FPG.Demo.Tests.EditMode
                 player).IsSuccess, Is.True);
             Assert.That(player.Weapon.State,
                 Is.EqualTo(WeaponState.AltCharging));
-            Assert.That(controller.SequenceFrameCount, Is.EqualTo(2));
+            Assert.That(controller.SequenceFrameCount, Is.EqualTo(3));
             Assert.That(controller.GetSequenceFrame(0).ExecutionId,
                 Is.EqualTo(cancelExecution));
             Assert.That(controller.GetSequenceFrame(0).State,
+                Is.EqualTo(FpgSkillExecutionState.Running));
+            Assert.That(controller.GetSequenceFrame(1).ExecutionId,
+                Is.EqualTo(cancelExecution));
+            Assert.That(controller.GetSequenceFrame(1).State,
                 Is.EqualTo(FpgSkillExecutionState.Canceled));
-            Assert.That(controller.GetSequenceFrame(1).Sequence.Kind,
+            Assert.That(controller.GetSequenceFrame(2).Sequence.Kind,
                 Is.EqualTo(FpgSkillSequenceKind.ChargeEnter));
         }
 
@@ -1499,20 +1860,29 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(sequence.ResolveAnimation(second.ExecutionId)));
         }
 
-        private static CoverGateFixture CreateCoverGateFixture()
+        private static CoverGateFixture CreateCoverGateFixture(
+            FpgCompiledPlayerSkillDefinition primary = null)
         {
             FpgPlayerSkillExecutionController controller = CreateController(
-                CreatePrimary(
+                primary ?? CreatePrimary(
                     durationTicks: 0,
                     cooldownTicks: 0,
                     ammoCost: 1,
-                    Event(10, 0, 101)));
+                    Event(10, 0, 101)),
+                CreateChargeSecondary());
             PlayerRuntime player = CreatePlayer(magazineCapacity: 8);
             GameObject owner = new GameObject("CoverPeekGateTest");
+            CombatKernel combatKernel = null;
             try
             {
                 FpgFormalPlayerTickDriver driver =
                     owner.AddComponent<FpgFormalPlayerTickDriver>();
+                FpgRoomEncounterDirector director =
+                    owner.AddComponent<FpgRoomEncounterDirector>();
+                SetPrivateField(
+                    director,
+                    "<Phase>k__BackingField",
+                    FpgEncounterPhase.Combat);
                 SetPrivateField(
                     driver,
                     "playerSecondaryTriggerMode",
@@ -1521,17 +1891,163 @@ namespace FPG.Demo.Tests.EditMode
                     driver,
                     "skillExecutionController",
                     controller);
+                SetPrivateField(driver, "encounterDirector", director);
+                SetPrivateField(
+                    driver,
+                    "liveAimContext",
+                    CreateValidAimContext());
+                SetPrivateField(
+                    driver,
+                    "liveAttackAimContext",
+                    CreateValidAimContext());
+                SetPrivateField(
+                    driver,
+                    "attackQuerySettings",
+                    UnityAttackQuerySettings.Default);
+                UnityBattleInputSource inputSource =
+                    new UnityBattleInputSource();
+                inputSource.SetAimPose(new AimPoseSnapshot(
+                    new TickIndex(0L),
+                    SpatialVectorKey.Zero,
+                    new SpatialVectorKey(
+                        0,
+                        0,
+                        SpatialContract.DirectionUnits),
+                    new SpatialVectorKey(
+                        SpatialContract.DirectionUnits,
+                        0,
+                        0),
+                    new SpatialVectorKey(
+                        0,
+                        SpatialContract.DirectionUnits,
+                        0),
+                    poseVersion: 1L));
+                SetPrivateField(driver, "inputSource", inputSource);
+                SetPrivateField(driver, "playerConfigured", true);
+                FpgFormalCombatRuntimeBundle combatRuntime =
+                    CreateReadyCombatRuntime(
+                        owner,
+                        player,
+                        out combatKernel,
+                        out CountingPlayerShotPresentationSink shotSink);
+                SetPrivateField(director, "combatRuntime", combatRuntime);
                 return new CoverGateFixture(
                     owner,
                     driver,
+                    director,
                     controller,
-                    player);
+                    player,
+                    combatRuntime,
+                    combatKernel,
+                    shotSink);
             }
             catch
             {
+                combatKernel?.Dispose();
                 UnityEngine.Object.DestroyImmediate(owner);
                 throw;
             }
+        }
+
+        private static FpgFormalCombatRuntimeBundle CreateReadyCombatRuntime(
+            GameObject owner,
+            PlayerRuntime player,
+            out CombatKernel combatKernel,
+            out CountingPlayerShotPresentationSink shotSink)
+        {
+            SessionIdAllocator ids = new SessionIdAllocator();
+            combatKernel = new CombatKernel(
+                projectileBudgetCapacity: 2,
+                impactCapacity: 16,
+                shotTargetCapacity: 16,
+                impactQueueCapacity: 16,
+                traceCapacity: 32,
+                projectileReservationCapacity: 2);
+            HitboxRegistry registry = owner.AddComponent<HitboxRegistry>();
+            Assert.That(registry.TryInitialize(out string registryError),
+                Is.True,
+                registryError);
+            shotSink = new CountingPlayerShotPresentationSink();
+            UnityAttackQueryPort attackQueryPort = new UnityAttackQueryPort(
+                registry,
+                UnityAttackQuerySettings.Default,
+                new EmptyPhysicsQueryBackend(),
+                shotSink);
+            FpgMultiEnemyCombatPort combatPort =
+                new FpgMultiEnemyCombatPort(
+                    combatKernel,
+                    player,
+                    ids,
+                    new FpgMultiEnemyCombatCapacity(
+                        enemyCapacity: 1,
+                        playerHitCommandCapacity: 8,
+                        attackScheduleCapacity: 2,
+                        projectileCapacity: 2,
+                        threatAdvanceCapacity: 2,
+                        perEnemyThreatCapacity: 1,
+                        summonCapacity: 1,
+                        maxTotalSummons: 0,
+                        maxSummonRecursionDepth: 0,
+                        vitalsEventCapacity: 8,
+                        damageFeedbackCapacity: 8,
+                        skillImpactPresentationCapacity: 8),
+                    new TickDuration(2),
+                    new FpgEmptyProjectileWorldPort(),
+                    new RejectingSummonSink(),
+                    playerProjectileAreaQueryPort: attackQueryPort);
+            ConstructorInfo[] constructors =
+                typeof(FpgFormalCombatRuntimeBundle).GetConstructors(
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(constructors, Has.Length.EqualTo(1));
+            return (FpgFormalCombatRuntimeBundle)constructors[0].Invoke(
+                new object[]
+                {
+                    ids,
+                    new FpgEncounterRunContext(
+                        123UL,
+                        "player-tick-driver-tests",
+                        0,
+                        FpgEncounterRunContext.BasisPointsOne,
+                        0),
+                    new FpgSkillExecutionIdAllocator(),
+                    combatKernel,
+                    player,
+                    combatPort,
+                    null,
+                    null,
+                    null,
+                    shotSink,
+                    attackQueryPort,
+                    null,
+                    null,
+                    null,
+                    registry,
+                    null,
+                    null
+                });
+        }
+
+        private static FpgResolvedAimContext CreateValidAimContext(
+            float viewportX = 0.5f)
+        {
+            return new FpgResolvedAimContext(
+                new Vector2(viewportX, 0.5f),
+                Vector3.zero,
+                Vector3.forward,
+                Vector3.forward * 10f,
+                Vector3.zero,
+                Vector3.forward,
+                Vector3.forward * 10f,
+                FpgResolvedAimTargetType.None,
+                RuntimeId.Invalid,
+                QueryTargetKind.EnvironmentBlocker,
+                HitPart.Body,
+                GeometryId.Invalid,
+                string.Empty,
+                string.Empty,
+                version: 1L,
+                frozenVersion: 0L,
+                distance: 10f);
         }
 
         private static CoverGateResult GateCoverInput(
@@ -1591,6 +2107,32 @@ namespace FPG.Demo.Tests.EditMode
                 fixture.Player).IsSuccess, Is.True);
         }
 
+        private static void ProcessFormalPlayerTick(
+            CoverGateFixture fixture,
+            long tickValue,
+            bool primaryHeld = false,
+            bool secondaryHeld = false,
+            bool secondaryPressed = false,
+            bool secondaryReleased = false)
+        {
+            fixture.Driver.Capture(new UnityInputSnapshot(
+                aimHeld: false,
+                primaryHeld: primaryHeld,
+                secondaryPressed: secondaryPressed,
+                secondaryReleased: secondaryReleased,
+                reloadPressed: false,
+                pausePressed: false,
+                restartPressed: false,
+                secondaryHeld: secondaryHeld));
+            DomainResult result = fixture.Driver.ProcessPlayerTick(
+                new TickIndex(tickValue),
+                fixture.Runtime);
+            Assert.That(
+                result.IsSuccess,
+                Is.True,
+                $"Formal player tick {tickValue} was rejected: {result.RejectReason}.");
+        }
+
         private static int CountResults(
             FpgPlayerSkillExecutionController controller,
             FpgPlayerSkillSlot slot)
@@ -1619,31 +2161,138 @@ namespace FPG.Demo.Tests.EditMode
             field.SetValue(target, value);
         }
 
+        private static T GetPrivateField<T>(
+            object target,
+            string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, "Could not find field " + fieldName + ".");
+            return (T)field.GetValue(target);
+        }
+
         private sealed class CoverGateFixture : IDisposable
         {
             public CoverGateFixture(
                 GameObject owner,
                 FpgFormalPlayerTickDriver driver,
+                FpgRoomEncounterDirector director,
                 FpgPlayerSkillExecutionController controller,
-                PlayerRuntime player)
+                PlayerRuntime player,
+                FpgFormalCombatRuntimeBundle runtime,
+                CombatKernel combatKernel,
+                CountingPlayerShotPresentationSink shotSink)
             {
                 Owner = owner;
                 Driver = driver;
+                Director = director;
                 Controller = controller;
                 Player = player;
+                Runtime = runtime;
+                CombatKernel = combatKernel;
+                ShotSink = shotSink;
             }
 
             public GameObject Owner { get; }
             public FpgFormalPlayerTickDriver Driver { get; }
+            public FpgRoomEncounterDirector Director { get; }
             public FpgPlayerSkillExecutionController Controller { get; }
             public PlayerRuntime Player { get; }
+            public FpgFormalCombatRuntimeBundle Runtime { get; }
+            public CombatKernel CombatKernel { get; }
+            public CountingPlayerShotPresentationSink ShotSink { get; }
 
             public void Dispose()
             {
                 if (Owner != null)
                 {
+                    SetPrivateField(Director, "combatRuntime", null);
+                    CombatKernel?.Dispose();
                     UnityEngine.Object.DestroyImmediate(Owner);
                 }
+            }
+        }
+
+        private sealed class EmptyPhysicsQueryBackend :
+            IUnityPhysicsQueryBackend
+        {
+            public int Capacity => SpatialContract.AttackQueryCandidateCapacity;
+
+            public void SyncTransforms()
+            {
+            }
+
+            public NonAllocPhysicsQueryResult RaycastNonAlloc(
+                Vector3 origin,
+                Vector3 direction,
+                UnityPhysicsHit[] output,
+                float maxDistance,
+                int layerMask,
+                QueryTriggerInteraction triggerInteraction)
+            {
+                return new NonAllocPhysicsQueryResult(0, false);
+            }
+
+            public NonAllocPhysicsQueryResult SphereCastNonAlloc(
+                Vector3 origin,
+                float radius,
+                Vector3 direction,
+                UnityPhysicsHit[] output,
+                float maxDistance,
+                int layerMask,
+                QueryTriggerInteraction triggerInteraction)
+            {
+                return new NonAllocPhysicsQueryResult(0, false);
+            }
+
+            public NonAllocPhysicsQueryResult OverlapSphereNonAlloc(
+                Vector3 position,
+                float radius,
+                Collider[] output,
+                int layerMask,
+                QueryTriggerInteraction triggerInteraction)
+            {
+                return new NonAllocPhysicsQueryResult(0, false);
+            }
+        }
+
+        private sealed class CountingPlayerShotPresentationSink :
+            IPlayerShotQueryCaptureSink,
+            ICommittedPlayerShotPresentationSink,
+            IUncommittedPlayerShotPresentationSink
+        {
+            public int SuccessfulQueryCount { get; private set; }
+            public int CommittedShotCount { get; private set; }
+            public int DiscardedShotCount { get; private set; }
+
+            public bool TryCaptureSuccessfulQuery(
+                in PlayerShotQueryCapture capture)
+            {
+                SuccessfulQueryCount++;
+                return true;
+            }
+
+            public void PublishCommittedShot(
+                AttackId attackId,
+                WeaponReleaseKind releaseKind)
+            {
+                CommittedShotCount++;
+            }
+
+            public void DiscardUncommittedShot(AttackId attackId)
+            {
+                DiscardedShotCount++;
+            }
+        }
+
+        private sealed class RejectingSummonSink : IFpgSummonRequestSink
+        {
+            public FpgSummonQueueAck TryQueueSummon(
+                FpgSummonRequest request,
+                TickIndex tick)
+            {
+                return FpgSummonQueueAck.Rejected(RejectReason.InvalidState);
             }
         }
 

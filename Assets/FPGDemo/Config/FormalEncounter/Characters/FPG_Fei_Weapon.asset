@@ -36,3 +36,21 @@ MonoBehaviour:
     hitMarkerArcDegrees: 24
     hitExpansion: 4
     hitDuration: 0.2
+    normalColor: {r: 1, g: 1, b: 1, a: 1}
+    enemyColor: {r: 0.22, g: 0.68, b: 1, a: 1}
+    unavailableColor: {r: 0.65, g: 0.68, b: 0.72, a: 0.72}
+    currentCoverBlockedColor: {r: 1, g: 0.24, b: 0.18, a: 1}
+    reloadColor: {r: 1, g: 1, b: 1, a: 1}
+    crosshairGap: 4
+    crosshairArmLength: 7
+    crosshairThickness: 1.5
+    prohibitedRadius: 14
+    prohibitedThickness: 2
+    primarySpreadColor: {r: 1, g: 1, b: 1, a: 0.34}
+    primarySpreadThickness: 1
+    secondaryRangeColor: {r: 0.22, g: 0.72, b: 1, a: 0.52}
+    secondaryRangeThickness: 1.5
+    secondaryReferenceDistance: 20
+    reloadRadius: 21
+    reloadThickness: 2
+    reloadSpinDegreesPerSecond: 90

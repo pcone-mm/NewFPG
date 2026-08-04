@@ -11,7 +11,7 @@
 ## 工作规则
 
 - 变更贴图、shader、材质或 prefab 时同步 `.meta`，通过 Inspector 或 Prefab Mode 显式编辑，不要手改 YAML 结构。
-- 不要把这组演示资源挪进 `Assets/Scripts/`、`Assets/Settings/` 或 `Assets/Prefabs/` 的其他武器线。
+- 不要为这组保留演示重建已删除的 `Assets/Scripts/` 或 `Assets/Prefabs/` 旧边界，也不要把它混入项目级 `Assets/Settings/`。正式采用时先做 GUID 审计，再按上级指南进入 `Assets/FPGDemo/SourceArt/`、`Presentation/` 或 `Config/` 的对应边界。
 - 若修改浮空逻辑或预览，打开示例 Prefab 确认引用完整且不会改写其他武器资产。
 
 ## 验证

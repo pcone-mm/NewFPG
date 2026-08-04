@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
+using FPG.Demo.Player;
 using FPG.Demo.Run;
 using FPG.Demo.Skills;
 using FPG.Demo.Unity;
@@ -15,6 +16,29 @@ namespace FPG.Demo.Tests.EditMode
 {
     public sealed class FpgSkillPresentationRuntimeTests
     {
+        [Test]
+        public void PresentationSourceContinuesAfterSubscriberFailure()
+        {
+            FpgFormalPlayerPresentationSource source =
+                new FpgFormalPlayerPresentationSource();
+            int deliveredSequence = 0;
+            source.ActionCommitted += _ =>
+                throw new InvalidOperationException("Expected test failure.");
+            source.ActionCommitted += action =>
+                deliveredSequence = (int)action.Sequence;
+
+            Assert.DoesNotThrow(() => source.PublishAction(
+                new TickIndex(1L),
+                FpgFormalPlayerActionType.PrimaryReleaseCommitted,
+                WeaponReleaseKind.Primary,
+                new AttackId(2L),
+                WeaponState.Ready,
+                WeaponState.PrimaryRecovery,
+                8,
+                7));
+            Assert.That(deliveredSequence, Is.EqualTo(1));
+        }
+
         [Test]
         public void CommitCacheRetainsSuccessUntilExecutionRelease()
         {

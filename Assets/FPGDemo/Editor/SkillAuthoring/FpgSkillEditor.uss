@@ -648,6 +648,99 @@
     background-color: #f0d45f;
 }
 
+.timeline-attack-phase {
+    position: absolute;
+    top: 29px;
+    bottom: 0;
+    flex-direction: row;
+    align-items: flex-end;
+    padding-left: 4px;
+    padding-bottom: 3px;
+    overflow: hidden;
+}
+
+.timeline-attack-phase--windup {
+    background-color: rgba(103, 156, 211, 0.15);
+    border-right-width: 1px;
+    border-right-color: rgba(149, 206, 255, 0.72);
+}
+
+.timeline-attack-phase--recovery {
+    background-color: rgba(223, 162, 80, 0.10);
+}
+
+.timeline-attack-phase__label {
+    color: rgba(235, 239, 243, 0.72);
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.timeline-attack-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+}
+
+.timeline-attack-marker__line {
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+}
+
+.timeline-attack-marker__cap {
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    color: #ffffff;
+    font-size: 8px;
+    -unity-text-align: middle-center;
+}
+
+.timeline-attack-marker--attack-frame .timeline-attack-marker__line,
+.timeline-attack-marker--attack-frame .timeline-attack-marker__cap {
+    background-color: #4ea6d8;
+}
+
+.timeline-attack-marker--interrupt .timeline-attack-marker__line,
+.timeline-attack-marker--interrupt .timeline-attack-marker__cap {
+    background-color: #b57ad3;
+}
+
+.timeline-withdraw-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+}
+
+.timeline-withdraw-marker__line {
+    position: absolute;
+    left: 5px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e86d5a;
+}
+
+.timeline-withdraw-marker__cap {
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    background-color: #e86d5a;
+    color: #ffffff;
+    font-size: 8px;
+    -unity-text-align: middle-center;
+}
+
 
 .timeline-block {
     position: absolute;

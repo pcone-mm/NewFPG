@@ -537,6 +537,26 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(runtime.State, Is.EqualTo(FpgSkillExecutionState.Idle));
         }
 
+        [Test]
+        public void LegacyStartReportsIdentityScheduleTickOverflow()
+        {
+            FpgCompiledSkillSequence sequence = Sequence(
+                0,
+                PayloadEvent(1, 0));
+            FpgSkillExecutionRuntime runtime = new FpgSkillExecutionRuntime(1);
+
+            FpgSkillRuntimeResult result = runtime.Start(
+                sequence,
+                new SkillExecutionId(1L),
+                new TickIndex(long.MaxValue));
+
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(
+                result.Error,
+                Is.EqualTo(FpgSkillRuntimeError.TickRangeOverflow));
+            Assert.That(runtime.State, Is.EqualTo(FpgSkillExecutionState.Idle));
+        }
+
         private static FpgCompiledSkillSequence Sequence(
             int durationTicks,
             params FpgCompiledSkillEvent[] events)

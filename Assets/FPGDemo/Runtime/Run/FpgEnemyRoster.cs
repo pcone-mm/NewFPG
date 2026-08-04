@@ -24,7 +24,8 @@ namespace FPG.Demo.Run
         public int WaveIndex { get; private set; }
         public FpgSpawnPlacement Placement { get; private set; }
         public string SpawnPointId => Placement.IsValid
-            && Placement.RequiresRoomReservation
+            && (Placement.RequiresRoomReservation
+                || Placement.Kind == FpgSpawnPlacementKind.SandboxRoomPoint)
             ? Placement.RoomPointId
             : string.Empty;
         public FpgEnemyRole Role { get; private set; }

@@ -24,7 +24,7 @@ namespace FPG.Demo.Unity
         private string designerNotes;
 
         [D0PlannerSection("瞄准与射击手感")]
-        [D0PlannerTechnicalField("D0 瞄准距离以 3C 配置为准；此镜像字段仅用于兼容校验。")]
+        [D0PlannerField("攻击查询最远距离（世界单位）", "主射与副射共同使用的权威弹道查询距离。修改后需要通过射击手感工作台重建战斗；它不等同于相机裁剪距离。")]
         [SerializeField, Min(0.01f)]
         private float maximumAimDistance = 50f;
 
@@ -119,7 +119,7 @@ namespace FPG.Demo.Unity
             try
             {
                 settings = new UnityAttackQuerySettings(
-                    threeCProfile.MaximumAimDistance,
+                    maximumAimDistance,
                     primaryBaseSpreadTangent,
                     secondaryAreaRadius,
                     technicalSettings.HitboxLayerMask,
@@ -161,7 +161,7 @@ namespace FPG.Demo.Unity
             try
             {
                 settings = new UnityAttackQuerySettings(
-                    threeCProfile.MaximumAimDistance,
+                    maximumAimDistance,
                     primaryBaseSpreadTangent,
                     secondaryAreaRadius,
                     technicalSettings.HitboxLayerMask,

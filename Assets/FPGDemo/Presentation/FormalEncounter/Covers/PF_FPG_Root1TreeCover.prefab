@@ -113,7 +113,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgCoverEntityView
   intactRoot: {fileID: 2085289641040419814}
   destroyedRoot: {fileID: 1710609685683897306}
-  blockingColliders: []
+  legacyBlockingColliders:
+  - {fileID: 0}
 --- !u!1 &3693225870998251339
 GameObject:
   m_ObjectHideFlags: 0
@@ -216,6 +217,7 @@ GameObject:
   - component: {fileID: 7702400776682220747}
   - component: {fileID: 733422078235411850}
   - component: {fileID: 4787020400106943810}
+  - component: {fileID: 89912926351238793}
   m_Layer: 28
   m_Name: __ShadowCasterProxy
   m_TagString: Untagged
@@ -295,6 +297,28 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &89912926351238793
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6240860034199637404}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 4300000, guid: 39bfd218080169549bbbf37dde38142c, type: 2}
 --- !u!1 &7114295575923978936
 GameObject:
   m_ObjectHideFlags: 0

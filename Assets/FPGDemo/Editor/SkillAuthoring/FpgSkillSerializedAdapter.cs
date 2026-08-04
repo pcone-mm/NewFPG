@@ -171,6 +171,28 @@ namespace FPG.Demo.Editor.SkillAuthoring
         public int Tick = -1;
     }
 
+    internal readonly struct FpgSkillAttackTimingViewModel
+    {
+        public FpgSkillAttackTimingViewModel(
+            FpgAttackTimingMode mode,
+            float windupAttackSpeedCoefficient,
+            int attackFrameTick,
+            int differentAttackInterruptTick)
+        {
+            Mode = mode;
+            WindupAttackSpeedCoefficient = windupAttackSpeedCoefficient;
+            AttackFrameTick = attackFrameTick;
+            DifferentAttackInterruptTick = differentAttackInterruptTick;
+        }
+
+        public FpgAttackTimingMode Mode { get; }
+        public float WindupAttackSpeedCoefficient { get; }
+        public int AttackFrameTick { get; }
+        public int DifferentAttackInterruptTick { get; }
+        public bool UsesCharacterAttackSpeed =>
+            Mode == FpgAttackTimingMode.CharacterAttackSpeed;
+    }
+
     internal sealed class FpgSkillCompiledTriggerRecord
     {
         public int CompiledEventId;
@@ -509,6 +531,141 @@ namespace FPG.Demo.Editor.SkillAuthoring
         {
             SerializedProperty property = FindFirstRelative(sequence, DurationNames);
             return ReadInt(property, 120, 0);
+        }
+
+        public static int GetAllowWithdrawTick(SerializedProperty sequence)
+        {
+            SerializedProperty property = sequence?.FindPropertyRelative(
+                "allowWithdrawTick");
+            return ReadInt(property, -1, -1);
+        }
+
+        public static bool SetAllowWithdrawTick(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            int tick)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null)
+            {
+                return false;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            SerializedProperty property = sequence?.FindPropertyRelative(
+                "allowWithdrawTick");
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Integer)
+            {
+                return false;
+            }
+
+            int duration = GetDurationTicks(sequence);
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Move allow-withdraw marker");
+            property.intValue = Mathf.Clamp(tick, -1, duration);
+            Apply(serializedObject);
+            return true;
+        }
+
+        public static FpgAttackTimingMode GetAttackTimingMode(
+            SerializedProperty sequence)
+        {
+            SerializedProperty property = sequence?.FindPropertyRelative(
+                "attackTimingMode");
+            int value = property != null
+                && property.propertyType == SerializedPropertyType.Enum
+                    ? property.intValue
+                    : (int)FpgAttackTimingMode.FixedCooldown;
+            return Enum.IsDefined(typeof(FpgAttackTimingMode), value)
+                ? (FpgAttackTimingMode)value
+                : FpgAttackTimingMode.FixedCooldown;
+        }
+
+        public static float GetWindupAttackSpeedCoefficient(
+            SerializedProperty sequence)
+        {
+            return Mathf.Clamp01(ReadFloat(
+                sequence?.FindPropertyRelative(
+                    "windupAttackSpeedCoefficient"),
+                1f));
+        }
+
+        public static int GetDifferentAttackInterruptTick(
+            SerializedProperty sequence)
+        {
+            return ReadInt(
+                sequence?.FindPropertyRelative(
+                    "differentAttackInterruptTick"),
+                -1,
+                -1);
+        }
+
+        public static bool SetDifferentAttackInterruptTick(
+            SerializedObject serializedObject,
+            int sequenceIndex,
+            int tick)
+        {
+            if (serializedObject == null
+                || serializedObject.targetObject == null)
+            {
+                return false;
+            }
+
+            serializedObject.UpdateIfRequiredOrScript();
+            SerializedProperty sequence = GetSequence(
+                serializedObject,
+                sequenceIndex);
+            SerializedProperty property = sequence?.FindPropertyRelative(
+                "differentAttackInterruptTick");
+            if (property == null
+                || property.propertyType != SerializedPropertyType.Integer)
+            {
+                return false;
+            }
+
+            Undo.RecordObject(
+                serializedObject.targetObject,
+                "Move different-attack interrupt marker");
+            property.intValue = Mathf.Clamp(
+                tick,
+                -1,
+                GetDurationTicks(sequence));
+            Apply(serializedObject);
+            return true;
+        }
+
+        public static FpgSkillAttackTimingViewModel ReadAttackTiming(
+            SerializedProperty sequence,
+            IList<FpgSkillEventRecord> events)
+        {
+            int attackFrameTick = -1;
+            if (events != null)
+            {
+                for (int index = 0; index < events.Count; index++)
+                {
+                    FpgSkillEventRecord record = events[index];
+                    if (record != null
+                        && record.Track
+                            == FpgSkillEventTrackKind.GameplayAction
+                        && record.Key.ActionKind == FpgSkillActionKind.Attack)
+                    {
+                        attackFrameTick = attackFrameTick < 0
+                            ? record.Tick
+                            : Mathf.Min(attackFrameTick, record.Tick);
+                    }
+                }
+            }
+
+            return new FpgSkillAttackTimingViewModel(
+                GetAttackTimingMode(sequence),
+                GetWindupAttackSpeedCoefficient(sequence),
+                attackFrameTick,
+                GetDifferentAttackInterruptTick(sequence));
         }
 
         public static int GetChargeProgressTicks(

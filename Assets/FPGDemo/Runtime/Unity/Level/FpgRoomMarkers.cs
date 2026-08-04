@@ -109,9 +109,17 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private Vector3 playerReachableLocalPosition;
 
-        [D0PlannerField("玩家到达点旋转", "玩家抵达该掩体节点后的房间局部朝向。")]
+        [D0PlannerField("玩家到达点朝向", "玩家抵达该掩体节点后的房间局部朝向。")]
         [SerializeField]
         private Vector3 playerReachableLocalEulerAngles;
+
+        [D0PlannerField("玩家左侧探身点位置", "玩家从当前掩体向左探身时使用的房间局部表现位置。")]
+        [SerializeField]
+        private Vector3 playerLeftPeekLocalPosition;
+
+        [D0PlannerField("玩家右侧探身点位置", "玩家从当前掩体向右探身时使用的房间局部表现位置。")]
+        [SerializeField]
+        private Vector3 playerRightPeekLocalPosition;
 
         public GameObject Prefab => prefab;
         public FpgCoverCameraProfile CameraProfile => cameraProfile;
@@ -123,6 +131,10 @@ namespace FPG.Demo.Unity
             playerReachableLocalEulerAngles;
         public Quaternion PlayerReachableLocalRotation =>
             Quaternion.Euler(playerReachableLocalEulerAngles);
+        public Vector3 PlayerLeftPeekLocalPosition =>
+            playerLeftPeekLocalPosition;
+        public Vector3 PlayerRightPeekLocalPosition =>
+            playerRightPeekLocalPosition;
         public Pose PlayerReachableLocalPose => new Pose(
             playerReachableLocalPosition,
             PlayerReachableLocalRotation);
@@ -132,5 +144,25 @@ namespace FPG.Demo.Unity
             FpgRoomValidationUtility.IsFinite(playerReachableLocalPosition)
             && FpgRoomValidationUtility.IsFinite(
                 playerReachableLocalEulerAngles);
+        internal bool HasValidPeekPositions
+        {
+            get
+            {
+                const float MinimumDistanceSquared = 0.000001f;
+                return FpgRoomValidationUtility.IsFinite(
+                        playerLeftPeekLocalPosition)
+                    && FpgRoomValidationUtility.IsFinite(
+                        playerRightPeekLocalPosition)
+                    && (playerLeftPeekLocalPosition
+                        - playerRightPeekLocalPosition).sqrMagnitude
+                        > MinimumDistanceSquared
+                    && (playerLeftPeekLocalPosition
+                        - playerReachableLocalPosition).sqrMagnitude
+                        > MinimumDistanceSquared
+                    && (playerRightPeekLocalPosition
+                        - playerReachableLocalPosition).sqrMagnitude
+                        > MinimumDistanceSquared;
+            }
+        }
     }
 }

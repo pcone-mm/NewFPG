@@ -73,6 +73,7 @@ namespace FPG.Demo.Unity
 
         public FpgEncounterPhase Phase { get; private set; } = FpgEncounterPhase.None;
         public FpgEncounterPlan Plan => encounterPlan;
+        public FpgRoomDefinition RoomDefinition => roomDefinition;
         public FpgEncounterRunContext RunContext => request.RunContext;
         public TickIndex CurrentTick => currentTick;
         public FpgEncounterSession Session => session;
@@ -83,6 +84,7 @@ namespace FPG.Demo.Unity
                 as IFpgFormalCombatPortFactory)
             as IFpgFormalPlayerRunResourceImportPort;
         public FpgPlayerEntityView ConfiguredPlayerEntity => configuredPlayerEntity;
+        public FpgRoomInstance RoomInstance => roomInstance;
         public Transform PlayerAnchor => playerAnchor;
         public bool HasPlayerBinding => playerBindingConfigured
             && configuredPlayerEntity != null
@@ -246,7 +248,8 @@ namespace FPG.Demo.Unity
             FpgRoomRunRequest nextRequest,
             FpgEncounterPlan nextPlan,
             FpgEnemyDefinitionCatalog nextEnemyCatalog,
-            out string error)
+            out string error,
+            FpgEncounterRuntimeMode mode = FpgEncounterRuntimeMode.Formal)
         {
             if (disposed)
             {
@@ -284,6 +287,14 @@ namespace FPG.Demo.Unity
             }
 
             profile = nextRequest.EncounterProfile.Data;
+            if (!Enum.IsDefined(typeof(FpgEncounterRuntimeMode), mode))
+            {
+                return FailPreparation(
+                    FpgEncounterFailureReason.InvalidRequest,
+                    "Encounter runtime mode is invalid.",
+                    out error);
+            }
+
             if (!factory.TryValidateCapacity(profile, preflight.Requirements, out error))
             {
                 return FailPreparation(FpgEncounterFailureReason.EntityCapacity, error, out error);
@@ -320,6 +331,7 @@ namespace FPG.Demo.Unity
 
             if (!TryBuildWarmupRequests(
                     preflight.Requirements,
+                    mode == FpgEncounterRuntimeMode.BattleTestSandbox,
                     out List<FpgEnemyPoolWarmupRequest> warmup,
                     out int requiredAttackPatterns,
                     out int requiredConcurrentHitboxes,
@@ -339,8 +351,19 @@ namespace FPG.Demo.Unity
             }
 
             FpgEncounterCapacityRequirements requirements = preflight.Requirements;
-            if (enemyEntityPool.Capacity < requirements.EntityPoolSlots
-                || combatantAnchorMap.Capacity < requirements.EntitySlots + 1
+            int runtimeEntityCapacity = mode == FpgEncounterRuntimeMode.BattleTestSandbox
+                ? Math.Min(
+                    profile.EnemyRosterCapacity,
+                    Math.Min(
+                        enemyEntityPool.Capacity,
+                        combatantAnchorMap.Capacity - 1))
+                : requirements.EntitySlots;
+            if (runtimeEntityCapacity <= 0
+                || enemyEntityPool.Capacity < requirements.EntityPoolSlots
+                || combatantAnchorMap.Capacity
+                    < (mode == FpgEncounterRuntimeMode.BattleTestSandbox
+                        ? runtimeEntityCapacity + 1
+                        : requirements.EntitySlots + 1)
                 || profile.HitboxCapacity < requiredConcurrentHitboxes
                 || formalHitboxRegistry.Capacity < requiredConcurrentHitboxes)
             {
@@ -358,7 +381,9 @@ namespace FPG.Demo.Unity
             }
 
             TryPrewarmOverheadHealthBars(
-                requirements.SimultaneousCombatants,
+                mode == FpgEncounterRuntimeMode.BattleTestSandbox
+                    ? runtimeEntityCapacity
+                    : requirements.SimultaneousCombatants,
                 overheadHealthBarCamera);
 
             spawnResolver = new FpgRoomSpawnPointResolver(
@@ -380,7 +405,7 @@ namespace FPG.Demo.Unity
                 combatantAnchorMap,
                 nextEnemyCatalog,
                 spawnResolver,
-                requirements.EntitySlots,
+                runtimeEntityCapacity,
                 formalHitboxRegistry,
                 overheadHealthBarPool,
                 presentationLeaseTicks);
@@ -402,7 +427,8 @@ namespace FPG.Demo.Unity
                 spawnResolver,
                 entityPort,
                 summonLedger: summonLedger,
-                spawnQueueCapacity: Math.Max(1, requirements.EntitySlots));
+                spawnQueueCapacity: Math.Max(1, runtimeEntityCapacity),
+                mode: mode);
             if (!factory.TryCreate(
                     idAllocator,
                     runtime,
@@ -415,6 +441,20 @@ namespace FPG.Demo.Unity
             {
                 runtime.Dispose();
                 return FailPreparation(FpgEncounterFailureReason.External, error, out error);
+            }
+
+            if (!roomInstance.TryRegisterCoverBlockers(
+                    combatRuntime.StaticHitboxRegistry,
+                    combatRuntime.AttackQueryPort.Settings,
+                    out error))
+            {
+                runtime.Dispose();
+                combatRuntime.Dispose();
+                combatRuntime = null;
+                return FailPreparation(
+                    FpgEncounterFailureReason.InvalidRequest,
+                    error,
+                    out error);
             }
 
             try
@@ -441,14 +481,17 @@ namespace FPG.Demo.Unity
 
                 float traversalSeconds = factory is FpgFormalCombatPortFactory
                         concreteFactory
-                    && concreteFactory.PlayerThreeCProfile != null
-                        ? concreteFactory.PlayerThreeCProfile.CoverTraversalSeconds
+                    && concreteFactory.EffectiveCoverTraversalSeconds > 0f
+                        ? concreteFactory.EffectiveCoverTraversalSeconds
                         : 0.25f;
                 FpgCoverRuntime covers = new FpgCoverRuntime(
                     combatRuntime.Player.RuntimeId,
                     coverDefinitions,
                     TickDuration.FromSeconds(traversalSeconds));
-                if (!combatRuntime.TryBindCovers(covers, out error))
+                if (!combatRuntime.TryBindCovers(
+                        covers,
+                        roomInstance,
+                        out error))
                 {
                     throw new InvalidOperationException(error);
                 }
@@ -725,6 +768,29 @@ namespace FPG.Demo.Unity
             DomainResult result = session == null
                 ? DomainResult.Rejected(RejectReason.InvalidState)
                 : session.MarkEnemyDead(runtimeId, currentTick);
+            error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
+            return result.IsSuccess;
+        }
+
+        public bool TryQueueExternalSpawn(
+            string enemyDefinitionId,
+            string spawnPointId,
+            out RuntimeId runtimeId,
+            out string error)
+        {
+            runtimeId = RuntimeId.Invalid;
+            if (session == null
+                || session.Runtime.Mode != FpgEncounterRuntimeMode.BattleTestSandbox)
+            {
+                error = "External GM spawns require a running BattleTest sandbox session.";
+                return false;
+            }
+
+            DomainResult result = session.TryQueueExternalSpawn(
+                enemyDefinitionId,
+                FpgSpawnPlacement.ForSandboxRoomPoint(spawnPointId),
+                currentTick,
+                out runtimeId);
             error = result.IsSuccess ? string.Empty : result.RejectReason.ToString();
             return result.IsSuccess;
         }
@@ -1085,6 +1151,7 @@ namespace FPG.Demo.Unity
         private bool TryBuildWarmupRequests(
 
             FpgEncounterCapacityRequirements requirements,
+            bool sandboxMode,
             out List<FpgEnemyPoolWarmupRequest> warmup,
             out int requiredAttackPatterns,
             out int requiredConcurrentHitboxes,
@@ -1093,6 +1160,16 @@ namespace FPG.Demo.Unity
         {
             IReadOnlyList<FpgEnemyPoolCapacityRequirement> poolRequirements =
                 requirements.EnemyPoolRequirements;
+            if (sandboxMode)
+            {
+                return TryBuildSandboxWarmupRequests(
+                    out warmup,
+                    out requiredAttackPatterns,
+                    out requiredConcurrentHitboxes,
+                    out maxHitPartsPerEntity,
+                    out error);
+            }
+
             if (poolRequirements == null || poolRequirements.Count == 0)
             {
                 warmup = null;
@@ -1717,6 +1794,69 @@ namespace FPG.Demo.Unity
                 playerAnchor.GetComponent<FpgPlayerBounds>();
             playerBounds?.CaptureInitialSafePosition(out _);
             spawnResolver?.RefreshDistances();
+            error = string.Empty;
+            return true;
+        }
+
+        private bool TryBuildSandboxWarmupRequests(
+            out List<FpgEnemyPoolWarmupRequest> warmup,
+            out int requiredAttackPatterns,
+            out int requiredConcurrentHitboxes,
+            out int maxHitPartsPerEntity,
+            out string error)
+        {
+            warmup = new List<FpgEnemyPoolWarmupRequest>();
+            requiredAttackPatterns = 0;
+            requiredConcurrentHitboxes = 0;
+            maxHitPartsPerEntity = 0;
+            if (enemyCatalog == null || enemyCatalog.Definitions.Count == 0)
+            {
+                error = "BattleTest sandbox requires at least one catalog enemy definition.";
+                return false;
+            }
+
+            int availableSlots = Math.Min(
+                enemyEntityPool.Capacity,
+                profile.EntityPoolCapacity);
+            if (availableSlots < enemyCatalog.Definitions.Count)
+            {
+                error = "BattleTest sandbox entity pool cannot prewarm every catalog definition.";
+                return false;
+            }
+
+            int remainingSlots = availableSlots;
+            int remainingDefinitions = enemyCatalog.Definitions.Count;
+            for (int index = 0; index < enemyCatalog.Definitions.Count; index++)
+            {
+                FpgEnemyDefinition definition = enemyCatalog.Definitions[index];
+                if (definition == null)
+                {
+                    error = "BattleTest sandbox catalog contains a missing enemy definition.";
+                    return false;
+                }
+
+                IFpgFormalEnemyEntityBinder binder = definition.EntityPrefab == null
+                    ? null
+                    : definition.EntityPrefab.GetComponent<IFpgFormalEnemyEntityBinder>();
+                if (binder == null || binder.HitPartCount <= 0)
+                {
+                    error = "BattleTest sandbox enemy '" + definition.EnemyDefinitionId
+                        + "' has no preflight-readable formal hitbox binder.";
+                    return false;
+                }
+
+                int count = 1 + (remainingSlots - remainingDefinitions)
+                    / Math.Max(1, remainingDefinitions);
+                remainingSlots -= count;
+                remainingDefinitions--;
+                warmup.Add(new FpgEnemyPoolWarmupRequest(definition, count));
+                maxHitPartsPerEntity = Math.Max(maxHitPartsPerEntity, binder.HitPartCount);
+                requiredAttackPatterns = checked(
+                    requiredAttackPatterns + definition.AttackPatternCount * count);
+                requiredConcurrentHitboxes = checked(
+                    requiredConcurrentHitboxes + binder.HitPartCount * count);
+            }
+
             error = string.Empty;
             return true;
         }

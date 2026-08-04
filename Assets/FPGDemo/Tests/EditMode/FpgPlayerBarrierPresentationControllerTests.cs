@@ -7,12 +7,16 @@ using FPG.Demo.Player;
 using FPG.Demo.Run;
 using FPG.Demo.Unity;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace FPG.Demo.Tests.EditMode
 {
     public sealed class FpgPlayerBarrierPresentationControllerTests
     {
+        private const string RoomPath =
+            "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
+
         private readonly List<UnityEngine.Object> createdObjects =
             new List<UnityEngine.Object>();
 
@@ -92,7 +96,8 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(0.5f).Within(0.0001f));
             Assert.That(
                 fixture.PeekRoot.localPosition.x,
-                Is.EqualTo(authoredPosition.x + 0.675f).Within(0.0001f));
+                Is.EqualTo(Mathf.Lerp(authoredPosition.x, 1.35f, 0.5f))
+                    .Within(0.0001f));
 
             fixture.Controller.ApplyCommittedSnapshot(
                 CreateSnapshot(
@@ -104,7 +109,58 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(fixture.Controller.CurrentPeekProgress, Is.EqualTo(1f));
             Assert.That(
                 fixture.PeekRoot.localPosition,
-                Is.EqualTo(authoredPosition + new Vector3(1.35f, 0f, 0f)));
+                Is.EqualTo(new Vector3(1.35f, 0f, 0f)));
+        }
+
+        [Test]
+        public void PeekUsesLockedLeftTargetUntilSmoothRetractionCompletes()
+        {
+            ControllerFixture fixture = CreateControllerFixture();
+            Vector3 authoredPosition = fixture.PeekRoot.localPosition;
+            SetField(fixture.Controller, "retractTransitionSeconds", 0.08f);
+
+            fixture.Controller.ApplyCommittedSnapshot(
+                CreateSnapshot(
+                    tick: 5L,
+                    peekRequested: true,
+                    peekStartedTick: 0L,
+                    direction: FpgPlayerFacingDirection.Left),
+                0f);
+
+            Assert.That(fixture.Controller.CurrentPeekProgress, Is.EqualTo(1f));
+            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.True);
+            Assert.That(
+                fixture.Controller.SelectedPeekDirection,
+                Is.EqualTo(FpgPlayerFacingDirection.Left));
+            Assert.That(
+                fixture.PeekRoot.localPosition,
+                Is.EqualTo(new Vector3(-1.35f, 0f, 0f)));
+
+            fixture.Controller.ApplyCommittedSnapshot(
+                CreateSnapshot(tick: 6L),
+                0.04f);
+
+            Assert.That(
+                fixture.Controller.CurrentPeekProgress,
+                Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.True);
+            Assert.That(
+                fixture.Controller.SelectedPeekDirection,
+                Is.EqualTo(FpgPlayerFacingDirection.Left));
+            Assert.That(
+                fixture.PeekRoot.localPosition,
+                Is.EqualTo(Vector3.LerpUnclamped(
+                    authoredPosition,
+                    new Vector3(-1.35f, 0f, 0f),
+                    0.5f)));
+
+            fixture.Controller.ApplyCommittedSnapshot(
+                CreateSnapshot(tick: 7L),
+                0.04f);
+
+            Assert.That(fixture.Controller.CurrentPeekProgress, Is.Zero);
+            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.False);
+            Assert.That(fixture.PeekRoot.localPosition, Is.EqualTo(authoredPosition));
         }
 
         [Test]
@@ -130,6 +186,34 @@ namespace FPG.Demo.Tests.EditMode
                     fixture.PeekRoot.localPosition,
                     Is.EqualTo(authoredPosition));
             }
+        }
+
+        [Test]
+        public void PreviewPeekOffsetResolvesBothSidesWithoutLockingTheCycle()
+        {
+            ControllerFixture fixture = CreateControllerFixture();
+
+            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.False);
+            Assert.That(
+                fixture.Controller.TryGetPreviewPeekWorldOffset(
+                    "cover-center",
+                    FpgPlayerFacingDirection.Left,
+                    out Vector3 leftOffset),
+                Is.True);
+            Assert.That(
+                fixture.Controller.TryGetPreviewPeekWorldOffset(
+                    "cover-center",
+                    FpgPlayerFacingDirection.Right,
+                    out Vector3 rightOffset),
+                Is.True);
+
+            Assert.That(
+                fixture.PeekRoot.position + leftOffset,
+                Is.EqualTo(new Vector3(-1.35f, 0.5f, 0f)));
+            Assert.That(
+                fixture.PeekRoot.position + rightOffset,
+                Is.EqualTo(new Vector3(1.35f, 0.5f, 0f)));
+            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.False);
         }
 
         [Test]
@@ -251,9 +335,41 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(error, Does.Contain("Collider"));
         }
 
+        [Test]
+        public void FormalBindingAllowsRoomInitializationDuringEncounterPreparation()
+        {
+            GameObject entity = Track(new GameObject("PlayerEntity"));
+            Transform peekRoot = CreateChild(entity.transform, "PeekRoot");
+            FpgPlayerBarrierPresentationController controller =
+                entity.AddComponent<FpgPlayerBarrierPresentationController>();
+            SetField(controller, "peekRoot", peekRoot);
+            controller.ResetPresentation();
+
+            GameObject roomHost = Track(new GameObject("RoomInstance"));
+            FpgRoomInstance roomInstance =
+                roomHost.AddComponent<FpgRoomInstance>();
+
+            Assert.That(roomInstance.IsInitialized, Is.False);
+            Assert.That(
+                controller.TryBindFormalSource(
+                    new FpgFormalPlayerPresentationSource(),
+                    roomInstance,
+                    out string bindingError),
+                Is.True,
+                bindingError);
+            Assert.That(
+                controller.TrySelectPeekTarget(
+                    "cover-center",
+                    FpgPlayerFacingDirection.Right,
+                    out string selectionError),
+                Is.False);
+            Assert.That(selectionError, Does.Contain("could not resolve"));
+        }
+
         private ControllerFixture CreateControllerFixture()
         {
             GameObject entity = Track(new GameObject("PlayerEntity"));
+            entity.transform.position = new Vector3(0f, 0.5f, 0f);
             Transform peekRoot = CreateChild(entity.transform, "PeekRoot");
             peekRoot.localPosition = new Vector3(0.2f, 0f, 0f);
             Transform primaryMuzzle = CreateChild(
@@ -269,6 +385,32 @@ namespace FPG.Demo.Tests.EditMode
             SetField(controller, "peekRoot", peekRoot);
             SetField(controller, "primaryPresentationMuzzle", primaryMuzzle);
             SetField(controller, "secondaryPresentationMuzzle", secondaryMuzzle);
+            controller.ResetPresentation();
+
+            GameObject roomHost = Track(new GameObject("RoomInstance"));
+            FpgRoomInstance roomInstance =
+                roomHost.AddComponent<FpgRoomInstance>();
+            FpgRoomDefinition room =
+                AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(RoomPath);
+            Assert.That(room, Is.Not.Null, RoomPath);
+            Assert.That(
+                roomInstance.TryInitialize(room, out string roomError),
+                Is.True,
+                roomError);
+            Assert.That(
+                controller.TryBindFormalSource(
+                    new FpgFormalPlayerPresentationSource(),
+                    roomInstance,
+                    out string bindingError),
+                Is.True,
+                bindingError);
+            Assert.That(
+                controller.TrySelectPeekTarget(
+                    "cover-center",
+                    FpgPlayerFacingDirection.Right,
+                    out string selectionError),
+                Is.True,
+                selectionError);
             controller.ResetPresentation();
 
             Assert.That(controller.TryValidate(out string error), Is.True, error);
@@ -314,7 +456,10 @@ namespace FPG.Demo.Tests.EditMode
             PlayerExposureState exposureState = PlayerExposureState.Withdrawn,
             WeaponState weaponState = WeaponState.Ready,
             bool peekRequested = false,
-            long peekStartedTick = -1L)
+            long peekStartedTick = -1L,
+            string coverId = "cover-center",
+            FpgPlayerFacingDirection direction =
+                FpgPlayerFacingDirection.Right)
         {
             return new FpgFormalPlayerPresentationSnapshot(
                 new TickIndex(tick),
@@ -333,7 +478,16 @@ namespace FPG.Demo.Tests.EditMode
                 0f,
                 TickIndex.Invalid,
                 peekRequested,
-                new TickIndex(peekStartedTick));
+                new TickIndex(peekStartedTick),
+                coverId,
+                false,
+                false,
+                FpgAimIndicatorBaseState.Normal,
+                0f,
+                0f,
+                0f,
+                0L,
+                direction);
         }
 
         private readonly struct ControllerFixture

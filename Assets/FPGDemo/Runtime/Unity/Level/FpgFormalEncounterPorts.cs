@@ -1003,6 +1003,7 @@ namespace FPG.Demo.Unity
             switch (placement.Kind)
             {
                 case FpgSpawnPlacementKind.EncounterSpawnPoint:
+                case FpgSpawnPlacementKind.SandboxRoomPoint:
                     if (!resolver.TryGetWorldPose(
                             placement.RoomPointId,
                             out pose))

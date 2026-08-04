@@ -12,7 +12,8 @@ namespace FPG.Demo.Unity
     /// </summary>
     [DefaultExecutionOrder(-10000)]
     [DisallowMultipleComponent]
-    public sealed class FpgFormalEncounterHost : MonoBehaviour
+    public sealed class FpgFormalEncounterHost : MonoBehaviour,
+        IFpgShootingTuningPreviewHost
     {
         [Header("Scene Roots")]
         [SerializeField]
@@ -64,8 +65,17 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private MonoBehaviour combatPortFactory;
 
+        [Header("Development Diagnostics")]
+        [SerializeField]
+        private bool enableShootingDiagnostics = true;
+
         private bool disposed;
         private string portBindingError = string.Empty;
+        private bool hasLastValidShootingSnapshot;
+        private FpgShootingTuningSnapshot lastValidShootingSnapshot;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private FpgShootingDevelopmentPanel shootingDevelopmentPanel;
+#endif
 
         public Transform ActorsRoot => actorsRoot;
         public Transform CameraRoot => cameraRoot;
@@ -109,6 +119,7 @@ namespace FPG.Demo.Unity
 
         private void Awake()
         {
+            FpgShootingTuningRuntimeRegistry.Register(this);
             if (encounterHost == null)
             {
                 TryGetComponent(out encounterHost);
@@ -128,6 +139,21 @@ namespace FPG.Demo.Unity
                         : portBindingError;
                 }
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (enableShootingDiagnostics)
+            {
+                shootingDevelopmentPanel =
+                    GetComponent<FpgShootingDevelopmentPanel>();
+                if (shootingDevelopmentPanel == null)
+                {
+                    shootingDevelopmentPanel = gameObject
+                        .AddComponent<FpgShootingDevelopmentPanel>();
+                }
+
+                shootingDevelopmentPanel.TryConfigure(this, out _);
+            }
+#endif
         }
 
         public bool TryComposePlayer(
@@ -235,6 +261,19 @@ namespace FPG.Demo.Unity
             return encounterHost.TryPrepareAndStart(out error);
         }
 
+        public bool TryPrepareAndStartSandbox(out string error)
+        {
+            if (disposed || encounterHost == null)
+            {
+                error = disposed
+                    ? "Formal encounter host has been disposed."
+                    : "Formal encounter host has no encounter runtime host.";
+                return false;
+            }
+
+            return encounterHost.TryPrepareAndStartSandbox(out error);
+        }
+
         public bool TryPrepareAndStart(
             in FpgEncounterStartRequest startRequest,
             out string error)
@@ -271,6 +310,226 @@ namespace FPG.Demo.Unity
                 ? string.Empty
                 : result.RejectReason.ToString();
             return result.IsSuccess;
+        }
+
+        public bool TryGetShootingTuning(
+            out FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            snapshot = default(FpgShootingTuningSnapshot);
+            if (disposed || playerComposer == null
+                || !playerComposer.IsComposed)
+            {
+                error = disposed
+                    ? "Formal encounter host has been disposed."
+                    : "Shooting tuning requires a composed player.";
+                return false;
+            }
+
+            FpgFormalPlayerTickDriver driver =
+                playerComposer.PlayerTickDriver;
+            if (driver != null && driver.HasShootingPreview)
+            {
+                snapshot = driver.ShootingPreview;
+                error = string.Empty;
+                return true;
+            }
+
+            return FpgShootingTuningSnapshot.TryCapture(
+                playerComposer.ActiveSelection,
+                out snapshot,
+                out error);
+        }
+
+        public bool TryGetShootingDiagnostics(
+            out FpgShootingDiagnosticsSnapshot snapshot,
+            out string error)
+        {
+            snapshot = default(FpgShootingDiagnosticsSnapshot);
+            if (disposed || playerComposer == null
+                || !playerComposer.IsComposed
+                || playerComposer.PlayerTickDriver == null)
+            {
+                error = disposed
+                    ? "Formal encounter host has been disposed."
+                    : "Shooting diagnostics require a composed player.";
+                return false;
+            }
+
+            return playerComposer.PlayerTickDriver
+                .TryGetShootingDiagnostics(out snapshot, out error);
+        }
+
+        public bool TryApplyShootingLivePreview(
+            in FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            error = string.Empty;
+            if (disposed || playerComposer == null
+                || !playerComposer.IsComposed
+                || !snapshot.TryValidate(out error)
+                || !snapshot.MatchesSelection(
+                    playerComposer.ActiveSelection))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Shooting live preview does not match the active player."
+                    : error;
+                return false;
+            }
+
+            if (!TryGetShootingTuning(
+                    out FpgShootingTuningSnapshot previousSnapshot,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!hasLastValidShootingSnapshot
+                && !FpgShootingTuningSnapshot.TryCapture(
+                    playerComposer.ActiveSelection,
+                    out lastValidShootingSnapshot,
+                    out error))
+            {
+                return false;
+            }
+
+            hasLastValidShootingSnapshot = true;
+            FpgFormalPlayerTickDriver driver =
+                playerComposer.PlayerTickDriver;
+            FpgFormalPlayerPresentationBridge presentation =
+                playerComposer.PresentationBridge;
+            if (!driver.TryApplyShootingPreview(snapshot, out error))
+            {
+                return false;
+            }
+
+            if (!presentation.TryApplyShootingPreview(snapshot, out error))
+            {
+                string previewError = error;
+                bool driverRestored = driver.TryApplyShootingPreview(
+                    previousSnapshot,
+                    out string driverRestoreError);
+                bool presentationRestored = presentation
+                    .TryApplyShootingPreview(
+                        previousSnapshot,
+                        out string presentationRestoreError);
+                if (!driverRestored || !presentationRestored)
+                {
+                    error = previewError
+                        + " Live-preview rollback failed: "
+                        + (driverRestored
+                            ? presentationRestoreError
+                            : driverRestoreError);
+                }
+                else
+                {
+                    error = previewError;
+                }
+
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryApplyShootingPreviewAndRebuild(
+            in FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            if (disposed || playerComposer == null
+                || !playerComposer.IsComposed)
+            {
+                error = disposed
+                    ? "Formal encounter host has been disposed."
+                    : "Shooting preview rebuild requires a composed player.";
+                return false;
+            }
+
+            FpgPlayableCharacterSelection selection =
+                playerComposer.ActiveSelection;
+            if (!snapshot.TryValidate(out error)
+                || !snapshot.MatchesSelection(selection)
+                || !snapshot.TryCreateAttackQuerySettings(
+                    playerComposer.CombatPortFactory
+                        .AttackQueryTechnicalSettings,
+                    out _,
+                    out error)
+                || !snapshot.TryCreateWeaponDefinition(out _, out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Shooting preview failed preflight validation."
+                    : error;
+                return false;
+            }
+
+            FpgShootingTuningSnapshot rollbackSnapshot;
+            if (hasLastValidShootingSnapshot)
+            {
+                rollbackSnapshot = lastValidShootingSnapshot;
+            }
+            else if (!FpgShootingTuningSnapshot.TryCapture(
+                         selection,
+                         out rollbackSnapshot,
+                         out error))
+            {
+                return false;
+            }
+
+            if (TryRebuildShootingPreview(
+                    selection,
+                    snapshot,
+                    out error))
+            {
+                lastValidShootingSnapshot = snapshot;
+                hasLastValidShootingSnapshot = true;
+                return true;
+            }
+
+            string previewError = error;
+            if (!TryRebuildShootingPreview(
+                    selection,
+                    rollbackSnapshot,
+                    out string rollbackError))
+            {
+                error = previewError
+                    + " Rollback also failed: "
+                    + rollbackError;
+                return false;
+            }
+
+            lastValidShootingSnapshot = rollbackSnapshot;
+            hasLastValidShootingSnapshot = true;
+            error = previewError;
+            return false;
+        }
+
+        private bool TryRebuildShootingPreview(
+            in FpgPlayableCharacterSelection selection,
+            in FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            error = string.Empty;
+            StopAndClear();
+            FpgFormalCombatPortFactory factory =
+                playerComposer.CombatPortFactory;
+            if (factory == null
+                || !factory.TrySetShootingPreview(snapshot, out error)
+                || !TryComposePlayer(selection, out error)
+                || !TryApplyShootingLivePreview(snapshot, out error)
+                || !TryValidate(out error)
+                || !TryPrepareAndStart(out error)
+                || !TryActivatePlayerPresentation(out error))
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Shooting preview combat rebuild failed."
+                    : error;
+                return false;
+            }
+
+            SetPresentationEnabled(true);
+            error = string.Empty;
+            return true;
         }
 
         public void StopAndClear()
@@ -479,6 +738,7 @@ namespace FPG.Demo.Unity
                 return;
             }
 
+            FpgShootingTuningRuntimeRegistry.Unregister(this);
             ClearPlayerComposition();
             disposed = true;
             if (encounterDirector != null)

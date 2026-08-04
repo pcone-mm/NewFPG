@@ -382,6 +382,15 @@ namespace FPG.Demo.Unity
                             marker,
                             $"Cover slot '{marker.MarkerId}' requires a finite player reachable pose.");
                     }
+
+                    if (!cover.HasValidPeekPositions)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.InvalidCoverPeekPositions,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' requires finite, distinct left/right peek positions that differ from the reachable position.");
+                    }
                 }
             }
         }

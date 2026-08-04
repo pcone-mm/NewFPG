@@ -28,6 +28,8 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Runtime/Unity/Config/FpgEnemyBehaviorDefinition.cs";
         private const string PresentationProfilePath =
             "Assets/FPGDemo/Config/FormalEncounter/FPG_CombatPresentationProfile.asset";
+        private const string WeaponDefinitionPath =
+            "Assets/FPGDemo/Config/FormalEncounter/Characters/FPG_Fei_Weapon.asset";
         private const string HitTipArtRoot =
             "Assets/FPGDemo/Presentation/HUD/HitTip";
         private const string HitTipNormalBackgroundPath =
@@ -97,83 +99,72 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void FormalReticlePulseStateFreezesWhilePausedAndReturnsToAimState()
+        public void FormalWeaponReticleFeedbackFreezesWhilePaused()
         {
             GameObject root = new GameObject("FormalReticle", typeof(RectTransform));
+            GameObject cameraObject = new GameObject(
+                "FormalReticleCamera",
+                typeof(Camera));
             root.SetActive(false);
             try
             {
                 CombatAimReticle reticle = root.AddComponent<CombatAimReticle>();
-                GameObject stroke = new GameObject(
-                    "Horizontal",
-                    typeof(RectTransform),
-                    typeof(Image));
-                stroke.transform.SetParent(root.transform, false);
-                RectTransform horizontal = (RectTransform)stroke.transform;
-                horizontal.sizeDelta = new Vector2(30f, 2f);
-                GameObject verticalObject = new GameObject(
-                    "Vertical",
-                    typeof(RectTransform),
-                    typeof(Image));
-                verticalObject.transform.SetParent(root.transform, false);
-                RectTransform vertical =
-                    (RectTransform)verticalObject.transform;
-                vertical.sizeDelta = new Vector2(2f, 30f);
-                CombatPresentationProfile profile =
-                    AssetDatabase.LoadAssetAtPath<CombatPresentationProfile>(
-                        PresentationProfilePath);
+                D0WeaponDefinition weapon =
+                    AssetDatabase.LoadAssetAtPath<D0WeaponDefinition>(
+                        WeaponDefinitionPath);
+                D0CombatFeelProfile combatFeel =
+                    AssetDatabase.LoadAssetAtPath<D0CombatFeelProfile>(
+                        CombatFeelProfilePath);
+                Camera camera = cameraObject.GetComponent<Camera>();
 
-                Assert.That(profile, Is.Not.Null, PresentationProfilePath);
+                Assert.That(weapon, Is.Not.Null, WeaponDefinitionPath);
+                Assert.That(combatFeel, Is.Not.Null, CombatFeelProfilePath);
                 Assert.That(
-                    reticle.TrySetPresentationProfile(profile, out string error),
+                    reticle.TrySetAimIndicatorPresentation(
+                        weapon.AimIndicator,
+                        combatFeel,
+                        camera,
+                        out string error),
                     Is.True,
                     error);
                 reticle.SetTargetState(FpgReticleTargetState.Hittable);
-                AssertReticleGeometry(
-                    (RectTransform)root.transform,
-                    horizontal,
-                    vertical,
-                    profile.FormalReticle.HittableSize);
+                Assert.That(
+                    reticle.BaseState,
+                    Is.EqualTo(FpgAimIndicatorBaseState.Enemy));
 
                 reticle.PresentShot();
-                AssertReticleGeometry(
-                    (RectTransform)root.transform,
-                    horizontal,
-                    vertical,
-                    profile.FormalReticle.ShotPulseSize);
-                float shotRemaining = reticle.PulseTimeRemaining;
+                float shotRemaining = reticle.ShotTimeRemaining;
+                Assert.That(reticle.IsShotFeedbackActive, Is.True);
                 Assert.That(
-                    reticle.PulseState,
-                    Is.EqualTo(FpgReticlePulseState.Shot));
+                    reticle.LayeredGraphic.ShotAlpha,
+                    Is.GreaterThan(0f));
                 reticle.AdvanceFeedback(shotRemaining, true);
-                Assert.That(reticle.PulseTimeRemaining, Is.EqualTo(shotRemaining));
+                Assert.That(reticle.ShotTimeRemaining, Is.EqualTo(shotRemaining));
 
-                reticle.PresentHit();
+                reticle.PresentHit(1L);
+                Assert.That(reticle.IsShotFeedbackActive, Is.True);
+                Assert.That(reticle.IsHitFeedbackActive, Is.True);
                 Assert.That(
-                    reticle.PulseState,
-                    Is.EqualTo(FpgReticlePulseState.Hit));
-                AssertReticleGeometry(
-                    (RectTransform)root.transform,
-                    horizontal,
-                    vertical,
-                    profile.FormalReticle.HitPulseSize);
+                    reticle.LayeredGraphic.ShotAlpha,
+                    Is.GreaterThan(0f));
+                Assert.That(reticle.LayeredGraphic.HitAlpha, Is.GreaterThan(0f));
                 reticle.AdvanceFeedback(
-                    profile.FormalReticle.HitPulseDuration,
+                    Mathf.Max(
+                        weapon.AimIndicator.ShotDuration,
+                        weapon.AimIndicator.HitDuration),
                     false);
-                Assert.That(
-                    reticle.PulseState,
-                    Is.EqualTo(FpgReticlePulseState.None));
+                Assert.That(reticle.IsShotFeedbackActive, Is.False);
+                Assert.That(reticle.IsHitFeedbackActive, Is.False);
                 Assert.That(
                     reticle.TargetState,
                     Is.EqualTo(FpgReticleTargetState.Hittable));
-                AssertReticleGeometry(
-                    (RectTransform)root.transform,
-                    horizontal,
-                    vertical,
-                    profile.FormalReticle.HittableSize);
+                Assert.That(
+                    reticle.BaseState,
+                    Is.EqualTo(FpgAimIndicatorBaseState.Enemy));
             }
             finally
             {
+                UnityEngine.Object.DestroyImmediate(cameraObject);
                 UnityEngine.Object.DestroyImmediate(root);
             }
         }
@@ -483,12 +474,19 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void FormalPresentationProfileExplicitlySerializesFormalSystems()
+        public void FormalReticleCompatibilityIsHiddenAndWeaponOwnsItsStyle()
         {
             string yaml = File.ReadAllText(PresentationProfilePath);
             Assert.That(yaml, Does.Contain("formalHudResources:"));
             Assert.That(yaml, Does.Contain("formalDamagePopup:"));
             Assert.That(yaml, Does.Contain("formalReticle:"));
+            FieldInfo legacyReticle = typeof(CombatPresentationProfile).GetField(
+                "formalReticle",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(legacyReticle, Is.Not.Null);
+            Assert.That(
+                legacyReticle.GetCustomAttribute<HideInInspector>(),
+                Is.Not.Null);
 
             CombatPresentationProfile profile =
                 AssetDatabase.LoadAssetAtPath<CombatPresentationProfile>(
@@ -498,6 +496,17 @@ namespace FPG.Demo.Tests.EditMode
                 profile.TryValidateStatic(out string error),
                 Is.True,
                 error);
+
+            string weaponYaml = File.ReadAllText(WeaponDefinitionPath);
+            Assert.That(weaponYaml, Does.Contain("aimIndicator:"));
+            D0WeaponDefinition weapon =
+                AssetDatabase.LoadAssetAtPath<D0WeaponDefinition>(
+                    WeaponDefinitionPath);
+            Assert.That(weapon, Is.Not.Null, WeaponDefinitionPath);
+            Assert.That(
+                weapon.TryValidatePresentation(out string weaponError),
+                Is.True,
+                weaponError);
         }
 
         [Test]
@@ -588,17 +597,34 @@ namespace FPG.Demo.Tests.EditMode
                     typeof(RectTransform),
                     typeof(CombatAimReticle));
                 reticleObject.transform.SetParent(root.transform, false);
+                GameObject cameraObject = new GameObject(
+                    "ReticleCamera",
+                    typeof(Camera));
+                cameraObject.transform.SetParent(root.transform, false);
                 CombatAimReticle reticle =
                     reticleObject.GetComponent<CombatAimReticle>();
                 CombatPresentationProfile profile =
                     AssetDatabase.LoadAssetAtPath<CombatPresentationProfile>(
                         PresentationProfilePath);
+                D0WeaponDefinition weapon =
+                    AssetDatabase.LoadAssetAtPath<D0WeaponDefinition>(
+                        WeaponDefinitionPath);
+                D0CombatFeelProfile combatFeel =
+                    AssetDatabase.LoadAssetAtPath<D0CombatFeelProfile>(
+                        CombatFeelProfilePath);
+                Assert.That(weapon, Is.Not.Null, WeaponDefinitionPath);
+                Assert.That(combatFeel, Is.Not.Null, CombatFeelProfilePath);
                 Assert.That(
-                    reticle.TrySetPresentationProfile(profile, out string error),
+                    reticle.TrySetAimIndicatorPresentation(
+                        weapon.AimIndicator,
+                        combatFeel,
+                        cameraObject.GetComponent<Camera>(),
+                        out string error),
                     Is.True,
                     error);
                 reticle.SetTargetState(FpgReticleTargetState.Blocked);
-                reticle.PresentHit();
+                reticle.PresentHit(1L);
+                Assert.That(reticle.IsHitFeedbackActive, Is.True);
 
                 popup = CreateDamagePopup();
                 Assert.That(
@@ -672,6 +698,7 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(
                     reticle.PulseState,
                     Is.EqualTo(FpgReticlePulseState.None));
+                Assert.That(reticle.IsHitFeedbackActive, Is.False);
                 Assert.That(
                     reticle.TargetState,
                     Is.EqualTo(FpgReticleTargetState.Idle));
@@ -838,7 +865,7 @@ namespace FPG.Demo.Tests.EditMode
                         error);
                     Assert.That(
                         composed.MaxDistance,
-                        Is.EqualTo(threeC.MaximumAimDistance));
+                        Is.EqualTo(feel.MaximumAimDistance));
                     Assert.That(
                         composed.PrimarySpreadTangent,
                         Is.EqualTo(feel.PrimaryBaseSpreadTangent));
@@ -981,25 +1008,6 @@ namespace FPG.Demo.Tests.EditMode
                 typeof(Text));
             value.transform.SetParent(parent, false);
             return value.GetComponent<Text>();
-        }
-
-        private static void AssertReticleGeometry(
-            RectTransform root,
-            RectTransform horizontal,
-            RectTransform vertical,
-            float configuredSize)
-        {
-            Canvas.ForceUpdateCanvases();
-            Assert.That(root.sizeDelta.x, Is.EqualTo(configuredSize));
-            Assert.That(root.sizeDelta.y, Is.EqualTo(configuredSize));
-            Assert.That(
-                horizontal.rect.width,
-                Is.EqualTo(configuredSize).Within(0.001f));
-            Assert.That(horizontal.rect.height, Is.EqualTo(2f).Within(0.001f));
-            Assert.That(vertical.rect.width, Is.EqualTo(2f).Within(0.001f));
-            Assert.That(
-                vertical.rect.height,
-                Is.EqualTo(configuredSize).Within(0.001f));
         }
 
         private static void AssertHudOrderUsesExistingSlots(

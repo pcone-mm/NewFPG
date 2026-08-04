@@ -51,8 +51,27 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
+
         [Test]
-        public void FormalEnemyHitboxDebugDefaultsRemainBackwardCompatible()
+        public void PlayerFacingExecutionOrderFollowsReticleBeforeAimSampling()
+        {
+            DefaultExecutionOrder reticleOrder =
+                typeof(CombatAimReticle).GetCustomAttribute<
+                    DefaultExecutionOrder>();
+            DefaultExecutionOrder facingOrder =
+                typeof(FpgPlayerFacingController).GetCustomAttribute<
+                    DefaultExecutionOrder>();
+
+            Assert.That(reticleOrder, Is.Not.Null);
+            Assert.That(facingOrder, Is.Not.Null);
+            Assert.That(reticleOrder.order, Is.EqualTo(-500));
+            Assert.That(facingOrder.order, Is.EqualTo(-400));
+            Assert.That(facingOrder.order, Is.LessThan(0));
+        }
+
+
+        [Test]
+        public void FormalEnemyHitboxFollowOffsetsRemainFinite()
         {
             string[] enemyPaths =
             {
@@ -79,10 +98,6 @@ namespace FPG.Demo.Tests.EditMode
                             out D0EnemyHitboxFollowSettings settings),
                         Is.True,
                         enemyPaths[pathIndex]);
-                    Assert.That(settings.PositionOffset, Is.EqualTo(Vector3.zero));
-                    Assert.That(
-                        settings.RotationOffsetEuler,
-                        Is.EqualTo(Vector3.zero));
                     Assert.That(settings.HasFiniteOffsets, Is.True);
                 }
             }
@@ -98,14 +113,29 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(cover, Is.Not.Null);
             Assert.That(cover.transform, Is.SameAs(player.transform));
             Assert.That(cover.PeekRoot.parent, Is.SameAs(player.transform));
-            Assert.That(player.VisualRoot.parent, Is.SameAs(cover.PeekRoot));
+            Assert.That(player.FacingController, Is.Not.Null);
+            Assert.That(player.FacingController.transform, Is.SameAs(player.transform));
+            Assert.That(player.FacingRoot.parent, Is.SameAs(cover.PeekRoot));
+            Assert.That(player.FacingRoot.localPosition, Is.EqualTo(Vector3.zero));
+            Assert.That(player.FacingRoot.localRotation, Is.EqualTo(Quaternion.identity));
+            Assert.That(player.FacingRoot.localScale, Is.EqualTo(Vector3.one));
+            Assert.That(player.FacingRoot.childCount, Is.EqualTo(2));
+            Assert.That(player.VisualRoot.parent, Is.SameAs(player.FacingRoot));
+            Assert.That(
+                cover.PrimaryPresentationMuzzle.parent.parent,
+                Is.SameAs(player.FacingRoot));
+            Assert.That(
+                cover.SecondaryPresentationMuzzle.parent,
+                Is.SameAs(cover.PrimaryPresentationMuzzle.parent));
             Assert.That(cover.CoverVisualRoot, Is.Null);
             Assert.That(cover.CoverRenderer, Is.Null);
             Assert.That(player.transform.Find("CoverRoot"), Is.Null);
             Assert.That(player.transform.Find("CoverWall"), Is.Null);
+            Assert.That(cover.HasSelectedPeekTarget, Is.False);
+            Assert.That(cover.CurrentPeekLocalOffset, Is.EqualTo(Vector3.zero));
             Assert.That(
-                cover.PeekLocalOffset,
-                Is.EqualTo(new Vector3(1.35f, 0f, 0f)));
+                new SerializedObject(cover).FindProperty("peekLocalOffset"),
+                Is.Null);
             Assert.That(
                 cover.PrimaryPresentationMuzzle.IsChildOf(cover.PeekRoot),
                 Is.True);
@@ -131,11 +161,9 @@ namespace FPG.Demo.Tests.EditMode
                     "Assets/FPGDemo/Presentation/FormalEncounter/VFX/PF_FPG_CoverTransition.prefab"));
 
             AssertCoverPrefabContract(
-                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab",
-                true);
+                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab");
             GameObject treeCover = AssertCoverPrefabContract(
-                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_Root1TreeCover.prefab",
-                false);
+                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_Root1TreeCover.prefab");
 
             FpgCoverEntityView treeView = treeCover.GetComponent<FpgCoverEntityView>();
             SerializedObject treeSo = new SerializedObject(treeView);
@@ -143,8 +171,6 @@ namespace FPG.Demo.Tests.EditMode
                 .objectReferenceValue as GameObject;
             GameObject destroyedRoot = treeSo.FindProperty("destroyedRoot")
                 .objectReferenceValue as GameObject;
-            SerializedProperty blockers = treeSo.FindProperty("blockingColliders");
-
             Assert.That(intactRoot.name, Is.EqualTo("IntactRoot"));
             Assert.That(destroyedRoot.name, Is.EqualTo("DestroyedRoot"));
             Transform intactTree = intactRoot.transform.Find("root1_tree1_block");
@@ -152,7 +178,8 @@ namespace FPG.Demo.Tests.EditMode
                 "root1_tree1_block_blood");
             Assert.That(intactTree, Is.Not.Null);
             Assert.That(destroyedTree, Is.Not.Null);
-            Assert.That(intactTree.Find("__ShadowCasterProxy"), Is.Not.Null);
+            Transform shadowProxy = intactTree.Find("__ShadowCasterProxy");
+            Assert.That(shadowProxy, Is.Not.Null);
             Assert.That(
                 AssetDatabase.GetAssetPath(
                     intactTree.GetComponent<SpriteRenderer>().sprite),
@@ -163,8 +190,18 @@ namespace FPG.Demo.Tests.EditMode
                     destroyedTree.GetComponent<SpriteRenderer>().sprite),
                 Is.EqualTo(
                     "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block_blood.png"));
-            Assert.That(blockers.arraySize, Is.EqualTo(0));
-            Assert.That(treeCover.GetComponentsInChildren<Collider>(true), Is.Empty);
+            MeshFilter shadowMesh = shadowProxy.GetComponent<MeshFilter>();
+            MeshCollider shadowCollider = shadowProxy.GetComponent<MeshCollider>();
+            Assert.That(shadowMesh, Is.Not.Null);
+            Assert.That(shadowMesh.sharedMesh, Is.Not.Null);
+            Assert.That(shadowCollider, Is.Not.Null);
+            Assert.That(shadowCollider.sharedMesh, Is.SameAs(shadowMesh.sharedMesh));
+            Assert.That(shadowCollider.convex, Is.False);
+            Assert.That(treeView.BlockingColliderCount, Is.EqualTo(1));
+            Assert.That(
+                treeView.TryGetBlockingCollider(0, out Collider blocker),
+                Is.True);
+            Assert.That(blocker, Is.SameAs(shadowCollider));
         }
 
         [Test]
@@ -174,28 +211,20 @@ namespace FPG.Demo.Tests.EditMode
             FpgCoverEntityView view = root.AddComponent<FpgCoverEntityView>();
             GameObject intact = CreateChild(root.transform, "Intact").gameObject;
             GameObject destroyed = CreateChild(root.transform, "Destroyed").gameObject;
-            BoxCollider blocker = root.AddComponent<BoxCollider>();
+            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            createdObjects.Add(visual);
+            visual.name = "VisualMesh";
+            visual.transform.SetParent(intact.transform, false);
+            UnityEngine.Object.DestroyImmediate(visual.GetComponent<BoxCollider>());
+            MeshFilter meshFilter = visual.GetComponent<MeshFilter>();
+            MeshCollider blocker = visual.AddComponent<MeshCollider>();
+            blocker.sharedMesh = meshFilter.sharedMesh;
             SerializedObject serialized = new SerializedObject(view);
             serialized.FindProperty("intactRoot").objectReferenceValue = intact;
             serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
-            SerializedProperty blockers = serialized.FindProperty("blockingColliders");
-            blockers.arraySize = 1;
-            blockers.GetArrayElementAtIndex(0).objectReferenceValue = blocker;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             Assert.That(view.TryValidate(out string error), Is.True, error);
-
-            serialized.Update();
-            blockers = serialized.FindProperty("blockingColliders");
-            blockers.arraySize = 0;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            Assert.That(view.TryValidate(out error), Is.True, error);
-
-            serialized.Update();
-            blockers = serialized.FindProperty("blockingColliders");
-            blockers.arraySize = 1;
-            blockers.GetArrayElementAtIndex(0).objectReferenceValue = blocker;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
 
             serialized.Update();
             serialized.FindProperty("destroyedRoot").objectReferenceValue = intact;
@@ -221,9 +250,94 @@ namespace FPG.Demo.Tests.EditMode
             serialized.Update();
             serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+            blocker.convex = true;
             blocker.isTrigger = true;
             Assert.That(view.TryValidate(out error), Is.False);
             Assert.That(error, Does.Contain("Trigger"));
+
+            blocker.isTrigger = false;
+            blocker.convex = false;
+            blocker.sharedMesh = null;
+            Assert.That(view.TryValidate(out error), Is.False);
+            Assert.That(error, Does.Contain("MeshFilter mesh"));
+        }
+
+        [Test]
+        public void CoverBlockersPreferShadowProxyOverRenderableVisualMeshes()
+        {
+            GameObject root = CreateObject("CoverRoot");
+            FpgCoverEntityView view = root.AddComponent<FpgCoverEntityView>();
+            GameObject intact = CreateChild(root.transform, "Intact").gameObject;
+            GameObject destroyed = CreateChild(root.transform, "Destroyed").gameObject;
+
+            GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            createdObjects.Add(visual);
+            visual.name = "VisualMesh";
+            visual.transform.SetParent(intact.transform, false);
+            UnityEngine.Object.DestroyImmediate(visual.GetComponent<BoxCollider>());
+
+            GameObject shadowProxy = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            createdObjects.Add(shadowProxy);
+            shadowProxy.name = "__ShadowCasterProxy";
+            shadowProxy.transform.SetParent(intact.transform, false);
+            UnityEngine.Object.DestroyImmediate(
+                shadowProxy.GetComponent<BoxCollider>());
+            MeshFilter shadowMesh = shadowProxy.GetComponent<MeshFilter>();
+            MeshCollider shadowCollider = shadowProxy.AddComponent<MeshCollider>();
+            shadowCollider.sharedMesh = shadowMesh.sharedMesh;
+
+            SerializedObject serialized = new SerializedObject(view);
+            serialized.FindProperty("intactRoot").objectReferenceValue = intact;
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.That(view.TryValidate(out string error), Is.True, error);
+            Assert.That(view.BlockingColliderCount, Is.EqualTo(1));
+            Assert.That(
+                view.TryGetBlockingCollider(0, out Collider blocker),
+                Is.True);
+            Assert.That(blocker, Is.SameAs(shadowCollider));
+
+            shadowMesh.sharedMesh = null;
+            Assert.That(view.TryValidate(out error), Is.False);
+            Assert.That(error, Does.Contain("non-empty shared Mesh"));
+        }
+
+        [Test]
+        public void CoverBlockersIncludeEveryRenderableVisualMeshWithoutProxy()
+        {
+            GameObject root = CreateObject("CoverRoot");
+            FpgCoverEntityView view = root.AddComponent<FpgCoverEntityView>();
+            GameObject intact = CreateChild(root.transform, "Intact").gameObject;
+            GameObject destroyed = CreateChild(root.transform, "Destroyed").gameObject;
+            MeshCollider[] expected = new MeshCollider[2];
+            for (int index = 0; index < expected.Length; index++)
+            {
+                GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                createdObjects.Add(visual);
+                visual.name = $"VisualMesh_{index}";
+                visual.transform.SetParent(intact.transform, false);
+                UnityEngine.Object.DestroyImmediate(
+                    visual.GetComponent<BoxCollider>());
+                MeshFilter meshFilter = visual.GetComponent<MeshFilter>();
+                expected[index] = visual.AddComponent<MeshCollider>();
+                expected[index].sharedMesh = meshFilter.sharedMesh;
+            }
+
+            SerializedObject serialized = new SerializedObject(view);
+            serialized.FindProperty("intactRoot").objectReferenceValue = intact;
+            serialized.FindProperty("destroyedRoot").objectReferenceValue = destroyed;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.That(view.TryValidate(out string error), Is.True, error);
+            Assert.That(view.BlockingColliderCount, Is.EqualTo(expected.Length));
+            for (int index = 0; index < expected.Length; index++)
+            {
+                Assert.That(
+                    view.TryGetBlockingCollider(index, out Collider blocker),
+                    Is.True);
+                Assert.That(blocker, Is.SameAs(expected[index]));
+            }
         }
 
         [Test]
@@ -360,12 +474,17 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True);
             Vector3 authoredLocalPosition = offsetBody.transform.localPosition;
             Quaternion authoredLocalRotation = offsetBody.transform.localRotation;
+            Assert.That(
+                offset.TryGetHitPartFollowSettings(
+                    0,
+                    out D0EnemyHitboxFollowSettings authoredFollow),
+                Is.True);
             var serializedOffset = new SerializedObject(offset);
             Vector3 extraOffset = new Vector3(0f, 0f, 0.4f);
             serializedOffset.FindProperty("hitPartFollowSettings")
                 .GetArrayElementAtIndex(0)
                 .FindPropertyRelative("positionOffset")
-                .vector3Value = extraOffset;
+                .vector3Value = authoredFollow.PositionOffset + extraOffset;
             serializedOffset.ApplyModifiedPropertiesWithoutUndo();
 
             try
@@ -436,8 +555,8 @@ namespace FPG.Demo.Tests.EditMode
                 Is.True);
             Assert.That(
                 presentationMuzzle,
-                Is.SameAs(player.Barrier.PrimaryPresentationMuzzle));
-            Assert.That(presentationMuzzle, Is.Not.SameAs(authoritativeMuzzle));
+                Is.SameAs(player.ShotOrigin));
+            Assert.That(presentationMuzzle, Is.SameAs(authoritativeMuzzle));
             Assert.That(
                 player.TryResolvePresentationSocket(
                     D0ActorSocketRegistry.DefaultAttackOriginId,
@@ -454,6 +573,46 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(player.TryValidate(out error), Is.False);
             Assert.That(error, Does.Contain("CameraPivot"));
         }
+
+
+        [Test]
+        public void PlayerFacingYawKeepsSpineShotOriginFiniteAtSampleAngles()
+        {
+            const string path =
+                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab";
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            Assert.That(prefab, Is.Not.Null, path);
+            GameObject instance =
+                PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            Assert.That(instance, Is.Not.Null);
+            createdObjects.Add(instance);
+
+            FpgPlayerEntityView player =
+                instance.GetComponent<FpgPlayerEntityView>();
+            Assert.That(player, Is.Not.Null);
+            player.SkeletonAnimation.Initialize(false);
+            Assert.That(
+                player.TryBindSpineSocketFollowers(out string bindError),
+                Is.True,
+                bindError);
+
+            float[] sampleAngles = { 0f, 45f, 90f, 135f, 180f };
+            for (int index = 0; index < sampleAngles.Length; index++)
+            {
+                player.FacingRoot.localRotation =
+                    Quaternion.AngleAxis(sampleAngles[index], Vector3.up);
+                player.SkeletonAnimation.Skeleton.SetToSetupPose();
+                player.SkeletonAnimation.Skeleton.UpdateWorldTransform();
+                Assert.That(
+                    player.TryRefreshSpineSocketFollowers(
+                        out string refreshError),
+                    Is.True,
+                    sampleAngles[index] + ": " + refreshError);
+                AssertFinite(player.ShotOrigin.position, sampleAngles[index]);
+                AssertFinite(player.ShotOrigin.rotation, sampleAngles[index]);
+            }
+        }
+
 
         [Test]
         public void SpineSocketFollowerRejectsMissingBindingBeforeRuntime()
@@ -499,24 +658,38 @@ namespace FPG.Demo.Tests.EditMode
             FpgPlayerBounds bounds = root.AddComponent<FpgPlayerBounds>();
             Transform gameplay = CreateChild(root.transform, "GameplayRoot");
             Transform peekRoot = CreateChild(root.transform, "PeekRoot");
-            Transform visual = CreateChild(peekRoot, "VisualRoot");
+            Transform facingRoot = CreateChild(peekRoot, "FacingRoot");
+            Transform visual = CreateChild(facingRoot, "VisualRoot");
+            Transform presentationSockets = CreateChild(
+                facingRoot,
+                "PresentationSockets");
             Transform primaryPresentationMuzzle = CreateChild(
-                peekRoot,
+                presentationSockets,
                 "PrimaryPresentationMuzzle");
             Transform secondaryPresentationMuzzle = CreateChild(
-                peekRoot,
+                presentationSockets,
                 "SecondaryPresentationMuzzle");
             FpgPlayerBarrierPresentationController barrier =
                 root.AddComponent<
                     FpgPlayerBarrierPresentationController>();
+            FpgPlayerFacingController facing =
+                root.AddComponent<FpgPlayerFacingController>();
             Transform socketsRoot = CreateChild(root.transform, "Sockets");
             D0ActorSocketRegistry sockets = socketsRoot.gameObject.AddComponent<D0ActorSocketRegistry>();
             Transform primaryMuzzle = CreateChild(socketsRoot, "PrimaryMuzzle");
             Transform secondaryMuzzle = CreateChild(socketsRoot, "SecondaryMuzzle");
             Transform attackOrigin = CreateChild(socketsRoot, "AttackOrigin");
             Actor2DPresenter presenter = root.AddComponent<Actor2DPresenter>();
-            SkeletonAnimation skeleton = visual.gameObject.AddComponent<SkeletonAnimation>();
+            SkeletonAnimation skeleton =
+                visual.gameObject.AddComponent<SkeletonAnimation>();
+            FpgPlayerEntityView authoredPlayer =
+                LoadEntity<FpgPlayerEntityView>(
+                    "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab");
+            skeleton.skeletonDataAsset =
+                authoredPlayer.SkeletonAnimation.skeletonDataAsset;
+            skeleton.Initialize(false);
             Transform aim = CreateChild(root.transform, "AimAnchor");
+            Transform shotOrigin = primaryMuzzle;
             Transform ground = CreateChild(root.transform, "GroundAnchor");
             Transform camera = CreateChild(root.transform, "CameraPivot");
             Transform bodyTransform = CreateChild(gameplay, "BodyHitbox");
@@ -525,7 +698,9 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 sockets.TryRegister(
                     D0ActorSocketRegistry.PrimaryMuzzleId,
-                    primaryMuzzle,
+                    shotOrigin,
+                    D0ActorSocketFollowMode.SpineBone,
+                    "l_hand",
                     out string socketError),
                 Is.True,
                 socketError);
@@ -563,12 +738,32 @@ namespace FPG.Demo.Tests.EditMode
             SetField(player, "characterController", characterController);
             SetField(player, "bounds", bounds);
             SetField(player, "aimAnchor", aim);
+            SetField(player, "shotOrigin", shotOrigin);
             SetField(player, "groundAnchor", ground);
             SetField(player, "cameraPivot", camera);
             SetField(player, "bodyHitbox", body);
             SetField(player, "barrier", barrier);
+            SetField(facing, "facingRoot", facingRoot);
+            SetField(player, "facingController", facing);
             return player;
         }
+
+
+        private static void AssertFinite(Vector3 value, float angle)
+        {
+            Assert.That(float.IsNaN(value.x) || float.IsInfinity(value.x), Is.False, angle.ToString());
+            Assert.That(float.IsNaN(value.y) || float.IsInfinity(value.y), Is.False, angle.ToString());
+            Assert.That(float.IsNaN(value.z) || float.IsInfinity(value.z), Is.False, angle.ToString());
+        }
+
+        private static void AssertFinite(Quaternion value, float angle)
+        {
+            Assert.That(float.IsNaN(value.x) || float.IsInfinity(value.x), Is.False, angle.ToString());
+            Assert.That(float.IsNaN(value.y) || float.IsInfinity(value.y), Is.False, angle.ToString());
+            Assert.That(float.IsNaN(value.z) || float.IsInfinity(value.z), Is.False, angle.ToString());
+            Assert.That(float.IsNaN(value.w) || float.IsInfinity(value.w), Is.False, angle.ToString());
+        }
+
 
         private static T LoadEntity<T>(string path)
             where T : Component
@@ -587,9 +782,7 @@ namespace FPG.Demo.Tests.EditMode
             return value;
         }
 
-        private static GameObject AssertCoverPrefabContract(
-            string path,
-            bool requiresBlockingColliders)
+        private static GameObject AssertCoverPrefabContract(string path)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             Assert.That(prefab, Is.Not.Null, path);
@@ -607,11 +800,20 @@ namespace FPG.Demo.Tests.EditMode
                 serialized.FindProperty("destroyedRoot").objectReferenceValue,
                 Is.Not.Null,
                 path);
-            int blockerCount = serialized.FindProperty("blockingColliders").arraySize;
-            Assert.That(
-                blockerCount,
-                requiresBlockingColliders ? Is.GreaterThan(0) : Is.EqualTo(0),
-                path);
+            Assert.That(view.BlockingColliderCount, Is.GreaterThan(0), path);
+            for (int index = 0; index < view.BlockingColliderCount; index++)
+            {
+                Assert.That(
+                    view.TryGetBlockingCollider(index, out Collider collider),
+                    Is.True,
+                    path);
+                MeshCollider meshCollider = collider as MeshCollider;
+                Assert.That(meshCollider, Is.Not.Null, path);
+                MeshFilter meshFilter = collider.GetComponent<MeshFilter>();
+                Assert.That(meshFilter, Is.Not.Null, path);
+                Assert.That(meshCollider.sharedMesh, Is.SameAs(meshFilter.sharedMesh), path);
+            }
+
             return prefab;
         }
 

@@ -40,6 +40,7 @@ namespace FPG.Demo.Skills
     {
         private readonly FpgSkillEventResult[] resultBuffer;
         private FpgCompiledSkillSequence sequence;
+        private FpgResolvedSkillSchedule schedule;
         private SkillExecutionId executionId;
         private TickIndex startTick;
         private TickIndex nextTick;
@@ -82,36 +83,147 @@ namespace FPG.Demo.Skills
 
         public int ResultCount => resultCount;
 
-        public int RemainingEventCount => sequence.EventCount - nextEventIndex;
+        public int RemainingEventCount => (schedule == null
+            ? sequence.EventCount
+            : schedule.EventCount) - nextEventIndex;
 
         public FpgSkillRuntimeResult Start(
             FpgCompiledSkillSequence compiledSequence,
             SkillExecutionId newExecutionId,
             TickIndex newStartTick)
         {
-            ClearResults();
-
-            if (State == FpgSkillExecutionState.Running)
+            if (!compiledSequence.IsValid || !newStartTick.IsValid)
             {
-                return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.AlreadyRunning, State);
+                return StartInternal(
+                    compiledSequence,
+                    null,
+                    newExecutionId,
+                    newStartTick);
+            }
+
+            try
+            {
+                return Start(
+                    FpgResolvedSkillSchedule.CreateIdentity(
+                        compiledSequence,
+                        newStartTick),
+                    newExecutionId,
+                    newStartTick);
+            }
+            catch (OverflowException)
+            {
+                ClearResults();
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.TickRangeOverflow,
+                    State);
+            }
+        }
+
+        public FpgSkillRuntimeResult Start(
+            FpgResolvedSkillSchedule resolvedSchedule,
+            SkillExecutionId newExecutionId,
+            TickIndex newStartTick)
+        {
+            return StartInternal(
+                resolvedSchedule == null
+                    ? default(FpgCompiledSkillSequence)
+                    : resolvedSchedule.Sequence,
+                resolvedSchedule,
+                newExecutionId,
+                newStartTick);
+        }
+
+        public FpgSkillRuntimeResult ValidateStart(
+            FpgResolvedSkillSchedule resolvedSchedule,
+            SkillExecutionId newExecutionId,
+            TickIndex newStartTick,
+            bool allowReplacingRunning = false)
+        {
+            return ValidateStartInternal(
+                resolvedSchedule == null
+                    ? default(FpgCompiledSkillSequence)
+                    : resolvedSchedule.Sequence,
+                resolvedSchedule,
+                newExecutionId,
+                newStartTick,
+                allowReplacingRunning);
+        }
+
+        private FpgSkillRuntimeResult StartInternal(
+            FpgCompiledSkillSequence compiledSequence,
+            FpgResolvedSkillSchedule resolvedSchedule,
+            SkillExecutionId newExecutionId,
+            TickIndex newStartTick)
+        {
+            ClearResults();
+            FpgSkillRuntimeResult validation = ValidateStartInternal(
+                compiledSequence,
+                resolvedSchedule,
+                newExecutionId,
+                newStartTick,
+                allowReplacingRunning: false);
+            if (!validation.IsSuccess)
+            {
+                return validation;
+            }
+
+            sequence = compiledSequence;
+            schedule = resolvedSchedule;
+            executionId = newExecutionId;
+            startTick = newStartTick;
+            nextTick = newStartTick;
+            nextEventIndex = 0;
+            State = FpgSkillExecutionState.Running;
+            return FpgSkillRuntimeResult.Success(State, 0);
+        }
+
+        private FpgSkillRuntimeResult ValidateStartInternal(
+            FpgCompiledSkillSequence compiledSequence,
+            FpgResolvedSkillSchedule resolvedSchedule,
+            SkillExecutionId newExecutionId,
+            TickIndex newStartTick,
+            bool allowReplacingRunning)
+        {
+            if (State == FpgSkillExecutionState.Running
+                && !allowReplacingRunning)
+            {
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.AlreadyRunning,
+                    State);
             }
 
             if (!newExecutionId.IsValid)
             {
-                return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.InvalidExecutionId, State);
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.InvalidExecutionId,
+                    State);
             }
 
             if (!compiledSequence.IsValid)
             {
-                return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.InvalidSequence, State);
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.InvalidSequence,
+                    State);
             }
 
             if (!newStartTick.IsValid)
             {
-                return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.InvalidTick, State);
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.InvalidTick,
+                    State);
             }
 
-            long requiredEndOffset = compiledSequence.DurationTicks;
+            if (resolvedSchedule == null || !resolvedSchedule.IsValid
+                || resolvedSchedule.Sequence.GameplayHash
+                    != compiledSequence.GameplayHash
+                || resolvedSchedule.Timing.StartTick != newStartTick)
+            {
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.InvalidSequence,
+                    State);
+            }
+
+            long requiredEndOffset = resolvedSchedule.DurationTicks;
             if (compiledSequence.HoldUntilCanceled)
             {
                 requiredEndOffset = checked(requiredEndOffset + 1L);
@@ -119,20 +231,18 @@ namespace FPG.Demo.Skills
 
             if (newStartTick.Value > long.MaxValue - requiredEndOffset)
             {
-                return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.TickRangeOverflow, State);
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.TickRangeOverflow,
+                    State);
             }
 
-            if (compiledSequence.EventCount > resultBuffer.Length)
+            if (resolvedSchedule.EventCount > resultBuffer.Length)
             {
-                return FpgSkillRuntimeResult.Rejected(FpgSkillRuntimeError.ResultCapacityExceeded, State);
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.ResultCapacityExceeded,
+                    State);
             }
 
-            sequence = compiledSequence;
-            executionId = newExecutionId;
-            startTick = newStartTick;
-            nextTick = newStartTick;
-            nextEventIndex = 0;
-            State = FpgSkillExecutionState.Running;
             return FpgSkillRuntimeResult.Success(State, 0);
         }
 
@@ -147,7 +257,7 @@ namespace FPG.Demo.Skills
 
             long relativeTick = tick.Value - startTick.Value;
             if (sequence.HoldUntilCanceled
-                && relativeTick >= sequence.DurationTicks
+                && relativeTick >= schedule.DurationTicks
                 && tick.Value == long.MaxValue)
             {
                 return FpgSkillRuntimeResult.Rejected(
@@ -155,16 +265,19 @@ namespace FPG.Demo.Skills
                     State);
             }
 
-            if (relativeTick <= sequence.DurationTicks)
+            if (relativeTick <= schedule.DurationTicks)
             {
-                int authoredTick = checked((int)relativeTick);
-                while (nextEventIndex < sequence.EventCount)
+                int resolvedTick = checked((int)relativeTick);
+                while (nextEventIndex < schedule.EventCount)
                 {
-                    FpgCompiledSkillEvent skillEvent = sequence.GetEvent(nextEventIndex);
-                    if (skillEvent.Tick != authoredTick)
+                    if (schedule.GetResolvedTick(nextEventIndex)
+                        != resolvedTick)
                     {
                         break;
                     }
+
+                    FpgCompiledSkillEvent skillEvent =
+                        schedule.GetEvent(nextEventIndex);
 
                     resultBuffer[resultCount++] = new FpgSkillEventResult(
                         executionId,
@@ -177,7 +290,7 @@ namespace FPG.Demo.Skills
                 }
             }
 
-            if (relativeTick == sequence.DurationTicks
+            if (relativeTick == schedule.DurationTicks
                 && !sequence.HoldUntilCanceled)
             {
                 State = FpgSkillExecutionState.Completed;
@@ -194,16 +307,46 @@ namespace FPG.Demo.Skills
         public FpgSkillRuntimeResult CancelRemaining(TickIndex tick)
         {
             ClearResults();
-            FpgSkillRuntimeResult readiness = ValidateRunningTick(tick);
-            if (!readiness.IsSuccess)
+            if (State == FpgSkillExecutionState.Completed
+                || State == FpgSkillExecutionState.Canceled)
             {
-                return readiness;
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.AlreadyTerminal,
+                    State);
             }
 
-            while (nextEventIndex < sequence.EventCount)
+            if (State != FpgSkillExecutionState.Running)
             {
-                FpgCompiledSkillEvent skillEvent = sequence.GetEvent(nextEventIndex++);
-                TickIndex scheduledTick = new TickIndex(startTick.Value + skillEvent.Tick);
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.NotRunning,
+                    State);
+            }
+
+            if (!tick.IsValid)
+            {
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.InvalidTick,
+                    State);
+            }
+
+            bool isNextTick = tick == nextTick;
+            bool wasProcessedThisTick = nextTick.IsValid
+                && tick.Value < long.MaxValue
+                && nextTick.Value == tick.Value + 1L;
+            if (!isNextTick && !wasProcessedThisTick)
+            {
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.WrongTick,
+                    State);
+            }
+
+            while (nextEventIndex < schedule.EventCount)
+            {
+                int resolvedTick = schedule.GetResolvedTick(nextEventIndex);
+                FpgCompiledSkillEvent skillEvent =
+                    schedule.GetEvent(nextEventIndex++);
+                TickIndex scheduledTick = new TickIndex(
+                    startTick.Value + resolvedTick);
                 resultBuffer[resultCount++] = new FpgSkillEventResult(
                     executionId,
                     sequence.Kind,
@@ -247,6 +390,7 @@ namespace FPG.Demo.Skills
         public void Reset()
         {
             sequence = default(FpgCompiledSkillSequence);
+            schedule = null;
             executionId = SkillExecutionId.Invalid;
             startTick = TickIndex.Invalid;
             nextTick = TickIndex.Invalid;

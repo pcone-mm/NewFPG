@@ -1,12 +1,19 @@
 using System;
 using System.Collections.Generic;
+using FPG.Demo.Combat;
+using FPG.Demo.Core;
+using FPG.Demo.Run;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
     [DisallowMultipleComponent]
-    public sealed class FpgRoomInstance : MonoBehaviour
+    public sealed class FpgRoomInstance : MonoBehaviour, IFpgCoverGeometryResolver
     {
+        private const int CoverGeometryDomain = 1 << 29;
+        private const uint FnvOffsetBasis = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+
         private readonly List<GameObject> ownedInstances = new List<GameObject>();
         private readonly List<GameObject> destructibleInstances = new List<GameObject>();
         private readonly Dictionary<string, GameObject> destructiblesBySlotId =
@@ -14,6 +21,12 @@ namespace FPG.Demo.Unity
         private readonly List<GameObject> coverInstances = new List<GameObject>();
         private readonly Dictionary<string, FpgCoverEntityView> coversBySlotId =
             new Dictionary<string, FpgCoverEntityView>(StringComparer.Ordinal);
+        private readonly Dictionary<int, string> coverIdByGeometryId =
+            new Dictionary<int, string>();
+        private readonly List<Collider> registeredCoverBlockers =
+            new List<Collider>();
+
+        private HitboxRegistry coverHitboxRegistry;
 
         private FpgRoomDefinition roomDefinition;
         public FpgRoomDefinition RoomDefinition => roomDefinition;
@@ -95,6 +108,7 @@ namespace FPG.Demo.Unity
 
         public void Clear()
         {
+            UnregisterCoverBlockers();
             roomDefinition = null;
             destructibleInstances.Clear();
             destructiblesBySlotId.Clear();
@@ -107,6 +121,196 @@ namespace FPG.Demo.Unity
             }
 
             ownedInstances.Clear();
+        }
+
+        public bool TryRegisterCoverBlockers(
+            HitboxRegistry registry,
+            UnityAttackQuerySettings settings,
+            out string error)
+        {
+            if (!IsInitialized || registry == null
+                || !registry.IsReadyForQueries || !settings.IsValid)
+            {
+                error = "Room cover blockers require an initialized room, registry and query settings.";
+                return false;
+            }
+
+            UnregisterCoverBlockers();
+            IReadOnlyList<FpgRoomCoverSlot> slots = roomDefinition.CoverSlots;
+            int blockerCount = 0;
+            HashSet<int> colliderIds = new HashSet<int>();
+            HashSet<int> geometryIds = new HashSet<int>();
+            for (int slotIndex = 0; slotIndex < slots.Count; slotIndex++)
+            {
+                FpgRoomCoverSlot slot = slots[slotIndex];
+                if (!TryGetCoverView(
+                        slot.MarkerId,
+                        out FpgCoverEntityView view))
+                {
+                    error = $"Cover '{slot.MarkerId}' is missing its runtime view.";
+                    return false;
+                }
+
+                if (!view.TryValidate(out string viewError))
+                {
+                    error = $"Cover '{slot.MarkerId}' is invalid: {viewError}";
+                    return false;
+                }
+
+                for (int colliderIndex = 0;
+                    colliderIndex < view.BlockingColliderCount;
+                    colliderIndex++)
+                {
+                    if (!view.TryGetBlockingCollider(
+                            colliderIndex,
+                            out Collider collider))
+                    {
+                        error = $"Cover '{slot.MarkerId}' blocker {colliderIndex} is missing.";
+                        return false;
+                    }
+
+                    int layer = collider.gameObject.layer;
+                    if (layer < 0 || layer >= 32
+                        || (settings.BlockerLayerMask & (1 << layer)) == 0)
+                    {
+                        error = $"Cover '{slot.MarkerId}' blocker {colliderIndex} uses the wrong physics layer.";
+                        return false;
+                    }
+
+                    GeometryId geometryId = DeriveCoverGeometryId(
+                        roomDefinition.RoomId,
+                        slot.MarkerId,
+                        colliderIndex);
+                    if (!geometryId.IsValid
+                        || !colliderIds.Add(collider.GetInstanceID())
+                        || !geometryIds.Add(geometryId.Value)
+                        || registry.TryResolve(collider, out _)
+                        || registry.TryResolve(geometryId, out _))
+                    {
+                        error = $"Cover '{slot.MarkerId}' blocker {colliderIndex} duplicates a Collider or GeometryId.";
+                        return false;
+                    }
+
+                    blockerCount++;
+                }
+            }
+
+            if (slots.Count == 0 || blockerCount == 0)
+            {
+                error = "Room requires at least one registered cover blocker.";
+                return false;
+            }
+
+            coverHitboxRegistry = registry;
+            for (int slotIndex = 0; slotIndex < slots.Count; slotIndex++)
+            {
+                FpgRoomCoverSlot slot = slots[slotIndex];
+                TryGetCoverView(slot.MarkerId, out FpgCoverEntityView view);
+                for (int colliderIndex = 0;
+                    colliderIndex < view.BlockingColliderCount;
+                    colliderIndex++)
+                {
+                    view.TryGetBlockingCollider(colliderIndex, out Collider collider);
+                    GeometryId geometryId = DeriveCoverGeometryId(
+                        roomDefinition.RoomId,
+                        slot.MarkerId,
+                        colliderIndex);
+                    DomainResult registered = registry.Register(
+                        new HitboxBinding(
+                            collider,
+                            HitboxTargetReference.Environment,
+                            QueryTargetKind.EnvironmentBlocker,
+                            HitPart.Body,
+                            geometryId));
+                    if (!registered.IsSuccess)
+                    {
+                        UnregisterCoverBlockers();
+                        error = $"Cover '{slot.MarkerId}' blocker {colliderIndex} registration failed: {registered.RejectReason}.";
+                        return false;
+                    }
+
+                    registeredCoverBlockers.Add(collider);
+                    coverIdByGeometryId.Add(geometryId.Value, slot.MarkerId);
+                }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryResolveCoverId(
+            GeometryId geometryId,
+            out string coverId)
+        {
+            if (geometryId.IsValid
+                && coverIdByGeometryId.TryGetValue(
+                    geometryId.Value,
+                    out coverId))
+            {
+                return true;
+            }
+
+            coverId = string.Empty;
+            return false;
+        }
+
+        public static GeometryId DeriveCoverGeometryId(
+            string roomId,
+            string markerId,
+            int colliderOrdinal)
+        {
+            if (string.IsNullOrWhiteSpace(roomId)
+                || string.IsNullOrWhiteSpace(markerId)
+                || colliderOrdinal < 0)
+            {
+                return GeometryId.Invalid;
+            }
+
+            uint hash = FnvOffsetBasis;
+            AppendStableHash(ref hash, roomId);
+            AppendStableHash(ref hash, markerId);
+            unchecked
+            {
+                hash = (hash ^ (uint)colliderOrdinal) * FnvPrime;
+            }
+
+            return new GeometryId(
+                CoverGeometryDomain | (int)(hash & (CoverGeometryDomain - 1)));
+        }
+
+        private void UnregisterCoverBlockers()
+        {
+            if (coverHitboxRegistry != null)
+            {
+                for (int index = registeredCoverBlockers.Count - 1;
+                    index >= 0;
+                    index--)
+                {
+                    Collider collider = registeredCoverBlockers[index];
+                    if (collider != null
+                        && coverHitboxRegistry.TryResolve(collider, out _))
+                    {
+                        coverHitboxRegistry.Unregister(collider);
+                    }
+                }
+            }
+
+            coverHitboxRegistry = null;
+            registeredCoverBlockers.Clear();
+            coverIdByGeometryId.Clear();
+        }
+
+        private static void AppendStableHash(ref uint hash, string value)
+        {
+            unchecked
+            {
+                for (int index = 0; index < value.Length; index++)
+                {
+                    char character = value[index];
+                    hash = (hash ^ (byte)character) * FnvPrime;
+                    hash = (hash ^ (byte)(character >> 8)) * FnvPrime;
+                }
+            }
         }
 
         public bool TryGetPlayerEntryPoint(
@@ -201,6 +405,29 @@ namespace FPG.Demo.Unity
             }
 
             worldPose = default;
+            return false;
+        }
+
+        public bool TryResolveCoverPeekPosition(
+            string markerId,
+            FpgPlayerFacingDirection direction,
+            out Vector3 worldPosition)
+        {
+            if (roomDefinition != null
+                && Enum.IsDefined(typeof(FpgPlayerFacingDirection), direction)
+                && roomDefinition.TryGetCoverSlot(
+                    markerId,
+                    out FpgRoomCoverSlot slot))
+            {
+                Vector3 localPosition = direction
+                    == FpgPlayerFacingDirection.Left
+                        ? slot.PlayerLeftPeekLocalPosition
+                        : slot.PlayerRightPeekLocalPosition;
+                worldPosition = transform.TransformPoint(localPosition);
+                return FpgRoomValidationUtility.IsFinite(worldPosition);
+            }
+
+            worldPosition = default(Vector3);
             return false;
         }
 

@@ -227,6 +227,7 @@ namespace FPG.Demo.Unity
         private readonly FpgCompiledPlayerProjectileAction[] projectileActions;
         private readonly FpgCompiledPlayerReloadAction[] reloadActions;
         private readonly FpgCompiledPlayerSkillSequenceSummary[] sequenceSummaries;
+        private readonly FpgCompiledSkillTimingDefinition[] sequenceTimings;
 
         public FpgCompiledPlayerSkillDefinition(
             FpgCompiledSkillDefinition timeline,
@@ -234,7 +235,8 @@ namespace FPG.Demo.Unity
             FpgCompiledPlayerAttackAction[] attackActions,
             FpgCompiledPlayerProjectileAction[] projectileActions,
             FpgCompiledPlayerReloadAction[] reloadActions,
-            int chargeProgressTicks = 30)
+            int chargeProgressTicks = 30,
+            FpgCompiledSkillTimingDefinition[] sequenceTimings = null)
         {
             Timeline = timeline ?? throw new ArgumentNullException(nameof(timeline));
             if (sequenceCooldownTicks < 0)
@@ -270,6 +272,9 @@ namespace FPG.Demo.Unity
             SequenceCooldownTicks = sequenceCooldownTicks;
             ChargeProgressTicks = chargeProgressTicks;
             sequenceSummaries = BuildSequenceSummaries(timeline);
+            this.sequenceTimings = CopySequenceTimings(
+                timeline,
+                sequenceTimings);
             MaximumImpactCount = ComputeMaximumImpactCount(
                 this.attackActions,
                 this.projectileActions);
@@ -283,6 +288,8 @@ namespace FPG.Demo.Unity
                 this.projectileActions,
                 this.reloadActions);
             PresentationHash = timeline.PresentationHash;
+            TimingContractHash = ComputeTimingContractHash(
+                this.sequenceTimings);
         }
 
         public FpgCompiledSkillDefinition Timeline { get; }
@@ -303,6 +310,7 @@ namespace FPG.Demo.Unity
         public int MaximumPelletCount { get; }
         public ulong GameplayHash { get; }
         public ulong PresentationHash { get; }
+        public ulong TimingContractHash { get; }
 
         public int ExecuteAmmoCost => TryGetSequenceSummary(
             FpgSkillSequenceKind.Execute,
@@ -388,6 +396,23 @@ namespace FPG.Demo.Unity
             }
 
             summary = default(FpgCompiledPlayerSkillSequenceSummary);
+            return false;
+        }
+
+        public bool TryGetTimingDefinition(
+            FpgSkillSequenceKind kind,
+            out FpgCompiledSkillTimingDefinition timing)
+        {
+            for (int index = 0; index < sequenceTimings.Length; index++)
+            {
+                if (Timeline.GetSequence(index).Kind == kind)
+                {
+                    timing = sequenceTimings[index];
+                    return true;
+                }
+            }
+
+            timing = FpgCompiledSkillTimingDefinition.Fixed;
             return false;
         }
 
@@ -662,6 +687,49 @@ namespace FPG.Demo.Unity
                 unchecked((ulong)(int)action.AllowedTargetKinds));
         }
 
+        private static FpgCompiledSkillTimingDefinition[] CopySequenceTimings(
+            FpgCompiledSkillDefinition timeline,
+            FpgCompiledSkillTimingDefinition[] values)
+        {
+            int count = timeline.SequenceCount;
+            FpgCompiledSkillTimingDefinition[] copy =
+                new FpgCompiledSkillTimingDefinition[count];
+            if (values == null)
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    copy[index] = FpgCompiledSkillTimingDefinition.Fixed;
+                }
+
+                return copy;
+            }
+
+            if (values.Length != count)
+            {
+                throw new ArgumentException(
+                    "Compiled skill timing count must match the timeline sequence count.",
+                    nameof(values));
+            }
+
+            Array.Copy(values, copy, count);
+            return copy;
+        }
+
+        private static ulong ComputeTimingContractHash(
+            FpgCompiledSkillTimingDefinition[] values)
+        {
+            ulong hash = StableHash.Mix(0x4650475F50544D31UL);
+            hash = StableHash.Append(hash, unchecked((ulong)values.Length));
+            for (int index = 0; index < values.Length; index++)
+            {
+                hash = StableHash.Append(
+                    hash,
+                    values[index].TimingContractHash);
+            }
+
+            return hash;
+        }
+
     }
 
     [CreateAssetMenu(
@@ -669,22 +737,27 @@ namespace FPG.Demo.Unity
         menuName = "FPG Demo/Skills/Player Skill")]
     public sealed class FpgPlayerSkillDefinition : FpgSkillTimelineDefinition
     {
-        [Header("Player Skill Activation")]
+        [Header("玩家技能激活")]
+        [InspectorName("副射触发模式")]
         [SerializeField]
         private SecondaryTriggerMode secondaryTriggerMode =
             SecondaryTriggerMode.ChargeRelease;
 
+        [InspectorName("最小蓄力 Tick")]
         [SerializeField, Min(0)]
         private int minimumChargeTicks;
 
+        [InspectorName("序列冷却 Tick")]
         [SerializeField, Min(0)]
         private int sequenceCooldownTicks;
 
+        [InspectorName("蓄力进度 Tick")]
         [SerializeField, Min(0)]
         private int chargeProgressTicks = 30;
 
         public SecondaryTriggerMode SecondaryTriggerMode =>
             secondaryTriggerMode;
+        public bool UsesSecondaryTriggerMode => HasSecondaryPayload();
         public int MinimumChargeTicks => minimumChargeTicks;
         public int SequenceCooldownTicks => sequenceCooldownTicks;
         public int ChargeProgressTicks => chargeProgressTicks;
@@ -710,13 +783,21 @@ namespace FPG.Demo.Unity
                     out FpgCompiledPlayerAttackAction[] attacks,
                     out FpgCompiledPlayerProjectileAction[] projectiles,
                     out FpgCompiledPlayerReloadAction[] reloads);
+                FpgCompiledSkillTimingDefinition[] timings =
+                    new FpgCompiledSkillTimingDefinition[Sequences.Count];
+                for (int index = 0; index < Sequences.Count; index++)
+                {
+                    timings[index] = Sequences[index].CompileTiming();
+                }
+
                 definition = new FpgCompiledPlayerSkillDefinition(
                     timeline,
                     sequenceCooldownTicks,
                     attacks,
                     projectiles,
                     reloads,
-                    chargeProgressTicks);
+                    chargeProgressTicks,
+                    timings);
 
                 error = string.Empty;
                 return true;
@@ -913,6 +994,39 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            for (int sequenceIndex = 0;
+                sequenceIndex < Sequences.Count;
+                sequenceIndex++)
+            {
+                FpgSkillSequenceDefinition sequence = Sequences[sequenceIndex];
+                int lastAttackTick = -1;
+                for (int eventIndex = 0;
+                    eventIndex < sequence.AttackEvents.Count;
+                    eventIndex++)
+                {
+                    lastAttackTick = Math.Max(
+                        lastAttackTick,
+                        sequence.AttackEvents[eventIndex].Tick);
+                }
+
+                for (int eventIndex = 0;
+                    eventIndex < sequence.ProjectileEvents.Count;
+                    eventIndex++)
+                {
+                    lastAttackTick = Math.Max(
+                        lastAttackTick,
+                        sequence.ProjectileEvents[eventIndex].Tick);
+                }
+
+                if (lastAttackTick >= 0
+                    && (sequence.AllowWithdrawTick < 0
+                        || sequence.AllowWithdrawTick <= lastAttackTick))
+                {
+                    error = $"Player skill '{SkillId}' sequence '{sequence.Kind}' requires AllowWithdrawTick after its final attack event.";
+                    return false;
+                }
+            }
+
             if (isChargedAreaSkill
                 && (!HasSequence(FpgSkillSequenceKind.ChargeEnter)
                     || !HasSequence(FpgSkillSequenceKind.ChargeLoop)
@@ -936,11 +1050,17 @@ namespace FPG.Demo.Unity
 
         private bool IsChargeReleaseAreaOrProjectileSkill()
         {
-            if (secondaryTriggerMode != SecondaryTriggerMode.ChargeRelease)
+            if (secondaryTriggerMode != SecondaryTriggerMode.ChargeRelease
+                || !UsesSecondaryTriggerMode)
             {
                 return false;
             }
 
+            return true;
+        }
+
+        private bool HasSecondaryPayload()
+        {
             for (int sequenceIndex = 0;
                 sequenceIndex < Sequences.Count;
                 sequenceIndex++)

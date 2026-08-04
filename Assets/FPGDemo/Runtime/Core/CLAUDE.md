@@ -5,7 +5,7 @@
 ## 职责边界
 
 - `TickIndex/TickDuration` 与 `GameplayClock` 定义 60Hz 时间、债务、暂停和 prepare/commit/rollback 时钟合同。
-- `SessionIds` 拥有 runtime/attack/shot/projectile/impact 等单调 ID；只有成功 commit 才推进需要事务保护的 ID。
+- `SessionIds.cs` 拥有 runtime/attack/shot/projectile/impact 等单调 ID；只有成功 commit 才推进需要事务保护的 ID。
 - `StableHash`、`DeterministicRandomV1` 与 `SpatialContract` 定义跨程序集重放格式；Unity Vector、Transform、Physics 与浮点空间推断不进入这里。
 - `SpatialVectorKey` 是毫米级量化位置，方向与距离按 `SpatialContract` 常量解释；当前 `SpatialContract.Version=3`。
 

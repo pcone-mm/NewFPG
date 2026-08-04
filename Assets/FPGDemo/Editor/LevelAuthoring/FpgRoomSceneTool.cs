@@ -316,6 +316,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FpgRoomAuthoringSchema.FindRelative(
                         marker,
                         "playerReachableLocalEulerAngles");
+                SerializedProperty leftPeekPosition =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "playerLeftPeekLocalPosition");
+                SerializedProperty rightPeekPosition =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        marker,
+                        "playerRightPeekLocalPosition");
                 if (prefab != null) prefab.objectReferenceValue = null;
                 if (cameraProfile != null)
                 {
@@ -330,6 +338,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 if (reachableRotation != null)
                 {
                     reachableRotation.vector3Value = localRotation.eulerAngles;
+                }
+                Vector3 reachable = Snap(localPosition);
+                if (leftPeekPosition != null)
+                {
+                    leftPeekPosition.vector3Value = Snap(
+                        reachable
+                        + localRotation * new Vector3(-1.35f, 0f, 0f));
+                }
+                if (rightPeekPosition != null)
+                {
+                    rightPeekPosition.vector3Value = Snap(
+                        reachable
+                        + localRotation * new Vector3(1.35f, 0f, 0f));
                 }
             }
 
@@ -415,6 +436,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     FpgRoomAuthoringSchema.FindRelative(
                         duplicate,
                         "playerReachableLocalPosition");
+                SerializedProperty leftPeekPosition =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        duplicate,
+                        "playerLeftPeekLocalPosition");
+                SerializedProperty rightPeekPosition =
+                    FpgRoomAuthoringSchema.FindRelative(
+                        duplicate,
+                        "playerRightPeekLocalPosition");
                 SerializedProperty startingCover =
                     FpgRoomAuthoringSchema.FindRelative(
                         duplicate,
@@ -426,7 +455,17 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 if (reachablePosition != null)
                 {
                     reachablePosition.vector3Value =
-                        Snap(reachablePosition.vector3Value + offset);
+                        reachablePosition.vector3Value + offset;
+                }
+                if (leftPeekPosition != null)
+                {
+                    leftPeekPosition.vector3Value =
+                        leftPeekPosition.vector3Value + offset;
+                }
+                if (rightPeekPosition != null)
+                {
+                    rightPeekPosition.vector3Value =
+                        rightPeekPosition.vector3Value + offset;
                 }
 
                 if (startingCover != null)
@@ -773,8 +812,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         FpgRoomAuthoringSchema.FindRelative(
                             marker,
                             "playerReachableLocalEulerAngles");
+                    SerializedProperty leftPeekPositionProperty =
+                        FpgRoomAuthoringSchema.FindRelative(
+                            marker,
+                            "playerLeftPeekLocalPosition");
+                    SerializedProperty rightPeekPositionProperty =
+                        FpgRoomAuthoringSchema.FindRelative(
+                            marker,
+                            "playerRightPeekLocalPosition");
                     if (reachablePositionProperty == null
-                        || reachableRotationProperty == null)
+                        || reachableRotationProperty == null
+                        || leftPeekPositionProperty == null
+                        || rightPeekPositionProperty == null)
                     {
                         continue;
                     }
@@ -807,9 +856,49 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         EventType.Repaint);
                     Handles.Label(
                         reachablePosition + Vector3.up * reachableSize * 1.4f,
-                        "Player arrival");
+                        "玩家到达点");
+                    DrawCoverPeekMarker(
+                        handle,
+                        isSelected,
+                        reachablePosition,
+                        leftPeekPositionProperty.vector3Value,
+                        "左侧探身点",
+                        new Color(0.2f, 0.82f, 0.42f));
+                    DrawCoverPeekMarker(
+                        handle,
+                        isSelected,
+                        reachablePosition,
+                        rightPeekPositionProperty.vector3Value,
+                        "右侧探身点",
+                        new Color(0.95f, 0.38f, 0.24f));
                 }
             }
+        }
+
+        private void DrawCoverPeekMarker(
+            FpgRoomMarkerHandle handle,
+            bool isSelected,
+            Vector3 reachablePosition,
+            Vector3 peekPosition,
+            string label,
+            Color color)
+        {
+            float size = HandleUtility.GetHandleSize(peekPosition) * 0.085f;
+            Handles.color = isSelected ? Color.Lerp(color, Color.white, 0.35f) : color;
+            Handles.DrawDottedLine(reachablePosition, peekPosition, 3f);
+            if (Handles.Button(
+                    peekPosition,
+                    Quaternion.identity,
+                    size,
+                    size * 1.2f,
+                    Handles.SphereHandleCap))
+            {
+                SetSelectedMarker(handle);
+            }
+
+            Handles.Label(
+                peekPosition + Vector3.up * size * 1.4f,
+                label);
         }
 
         private void DrawSelectedHandle()
@@ -831,6 +920,16 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (selectedMarker.Kind == FpgRoomMarkerKind.Cover)
             {
                 DrawSelectedCoverReachableHandle(serializedRoom, marker);
+                DrawSelectedCoverPeekHandle(
+                    serializedRoom,
+                    marker,
+                    "playerLeftPeekLocalPosition",
+                    "移动玩家左侧探身点");
+                DrawSelectedCoverPeekHandle(
+                    serializedRoom,
+                    marker,
+                    "playerRightPeekLocalPosition",
+                    "移动玩家右侧探身点");
             }
 
             Vector3 position = FpgRoomAuthoringSchema.GetMarkerPosition(marker);
@@ -953,7 +1052,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return;
                 }
 
-                Undo.RecordObject(room, "Rotate Player Arrival");
+                Undo.RecordObject(room, "旋转玩家到达点");
                 reachableRotationProperty.vector3Value =
                     rotation.eulerAngles;
             }
@@ -967,7 +1066,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return;
                 }
 
-                Undo.RecordObject(room, "Move Player Arrival");
+                Undo.RecordObject(room, "移动玩家到达点");
                 reachablePositionProperty.vector3Value = nextPosition;
             }
 
@@ -978,6 +1077,60 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             EditorUtility.SetDirty(room);
             QueueCameraPreviewRefresh();
+            RoomChanged?.Invoke();
+        }
+
+        private void DrawSelectedCoverPeekHandle(
+            SerializedObject serializedRoom,
+            SerializedProperty marker,
+            string propertyName,
+            string undoName)
+        {
+            if (Tools.current == Tool.Rotate)
+            {
+                return;
+            }
+
+            SerializedProperty positionProperty =
+                FpgRoomAuthoringSchema.FindRelative(marker, propertyName);
+            if (positionProperty == null)
+            {
+                return;
+            }
+
+            Vector3 position = positionProperty.vector3Value;
+            EditorGUI.BeginChangeCheck();
+            position = Handles.PositionHandle(position, Quaternion.identity);
+            if (!EditorGUI.EndChangeCheck())
+            {
+                return;
+            }
+
+            serializedRoom.Update();
+            marker = FpgRoomAuthoringSchema.FindMarkerProperty(
+                serializedRoom,
+                selectedMarker.Kind,
+                selectedMarker.Index);
+            positionProperty = FpgRoomAuthoringSchema.FindRelative(
+                marker,
+                propertyName);
+            Vector3 nextPosition = Snap(position);
+            if (positionProperty == null
+                || !HasMeaningfulPositionChange(
+                    positionProperty.vector3Value,
+                    nextPosition))
+            {
+                return;
+            }
+
+            Undo.RecordObject(room, undoName);
+            positionProperty.vector3Value = nextPosition;
+            if (!serializedRoom.ApplyModifiedProperties())
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty(room);
             RoomChanged?.Invoke();
         }
 

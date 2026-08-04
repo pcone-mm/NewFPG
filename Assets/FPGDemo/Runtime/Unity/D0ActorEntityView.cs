@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Spine;
 using Spine.Unity;
 using UnityEngine;
 
@@ -39,6 +41,10 @@ namespace FPG.Demo.Unity
 
         [NonSerialized]
         private Vector3[] authoredLocalScales = Array.Empty<Vector3>();
+
+        [NonSerialized]
+        private D0SpineSocketFollower[] runtimeSocketFollowers =
+            Array.Empty<D0SpineSocketFollower>();
 
         public Transform GameplayAnchor => gameplayAnchor;
         public Transform VisualRoot => visualRoot;
@@ -125,6 +131,11 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!TryValidateSpineSocketBindings(out error))
+            {
+                return false;
+            }
+
             error = string.Empty;
             return true;
         }
@@ -139,6 +150,75 @@ namespace FPG.Demo.Unity
 
             anchor = null;
             return false;
+        }
+
+        public bool TryBindSpineSocketFollowers(out string error)
+        {
+            D0ActorSocketRegistry registry = SocketRegistry;
+            SkeletonAnimation spine = SkeletonAnimation;
+            if (registry == null || spine == null)
+            {
+                error = "Actor Spine socket binding requires a registry and SkeletonAnimation.";
+                return false;
+            }
+
+            var followers = new List<D0SpineSocketFollower>();
+            IReadOnlyList<D0ActorSocketBinding> bindings = registry.Bindings;
+            for (int index = 0; index < bindings.Count; index++)
+            {
+                D0ActorSocketBinding binding = bindings[index];
+                if (binding == null || !binding.FollowsSpineBone)
+                {
+                    continue;
+                }
+
+                D0SpineSocketFollower follower =
+                    binding.Anchor.GetComponent<D0SpineSocketFollower>();
+                if (follower == null)
+                {
+                    follower = binding.Anchor.gameObject
+                        .AddComponent<D0SpineSocketFollower>();
+                }
+
+                if (!follower.TryConfigurePreservingCurrentPose(
+                        spine,
+                        binding.Anchor,
+                        binding.BoneName,
+                        true,
+                        out error))
+                {
+                    error = $"Actor socket '{binding.SocketId}' could not bind to Spine bone '{binding.BoneName}': {error}";
+                    return false;
+                }
+
+                followers.Add(follower);
+            }
+
+            runtimeSocketFollowers = followers.ToArray();
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryRefreshSpineSocketFollowers(out string error)
+        {
+            D0SpineSocketFollower[] followers = runtimeSocketFollowers;
+            for (int index = 0; index < followers.Length; index++)
+            {
+                D0SpineSocketFollower follower = followers[index];
+                if (follower == null)
+                {
+                    error = "Actor Spine socket follower is unavailable.";
+                    return false;
+                }
+
+                if (!follower.TryRefresh(out error))
+                {
+                    return false;
+                }
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         /// <summary>
@@ -233,6 +313,50 @@ namespace FPG.Demo.Unity
             return visualRoot == null
                 ? null
                 : visualRoot.GetComponentInChildren<SkeletonAnimation>(true);
+        }
+
+        private bool TryValidateSpineSocketBindings(out string error)
+        {
+            IReadOnlyList<D0ActorSocketBinding> bindings = SocketRegistry.Bindings;
+            bool needsSpineBone = false;
+            for (int index = 0; index < bindings.Count; index++)
+            {
+                if (bindings[index] != null && bindings[index].FollowsSpineBone)
+                {
+                    needsSpineBone = true;
+                    break;
+                }
+            }
+
+            if (!needsSpineBone)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            SkeletonDataAsset dataAsset = SkeletonAnimation.SkeletonDataAsset;
+            SkeletonData skeletonData = dataAsset == null
+                ? null
+                : dataAsset.GetSkeletonData(false);
+            if (skeletonData == null)
+            {
+                error = "Actor Spine socket binding requires readable SkeletonData.";
+                return false;
+            }
+
+            for (int index = 0; index < bindings.Count; index++)
+            {
+                D0ActorSocketBinding binding = bindings[index];
+                if (binding != null && binding.FollowsSpineBone
+                    && skeletonData.FindBone(binding.BoneName) == null)
+                {
+                    error = $"Actor socket '{binding.SocketId}' cannot find Spine bone '{binding.BoneName}'.";
+                    return false;
+                }
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         private static bool IsDescendantOrSelf(Transform candidate, Transform root)

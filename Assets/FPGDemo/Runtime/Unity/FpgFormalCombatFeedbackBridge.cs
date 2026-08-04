@@ -222,7 +222,7 @@ namespace FPG.Demo.Unity
                     continue;
                 }
 
-                TryPresentReticleHit();
+                TryPresentReticleHit(feedback.AttackId);
                 TryPresent(feedback);
             }
         }
@@ -1579,11 +1579,12 @@ namespace FPG.Demo.Unity
                     out _);
         }
 
-        private void TryPresentReticleHit()
+        private void TryPresentReticleHit(AttackId attackId)
         {
             try
             {
-                aimReticle?.PresentHit();
+                aimReticle?.PresentHit(
+                    attackId.IsValid ? attackId.Value : 0L);
             }
             catch (Exception)
             {

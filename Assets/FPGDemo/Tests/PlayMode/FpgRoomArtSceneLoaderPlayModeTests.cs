@@ -266,7 +266,7 @@ namespace FPG.Demo.Tests.PlayMode
                 FindSingle<FpgRoomArtRoot>(lookupScene).RoomDefinition;
             Assert.That(room, Is.Not.Null);
             Assert.That(room.ArtScenePath, Is.EqualTo(Root1ArtScenePath));
-            Assert.That(SceneManager.SetActiveScene(formalScene), Is.True);
+            Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(formalScene));
             yield return SceneManager.UnloadSceneAsync(lookupScene);
 
             FpgRoomArtSceneLoader loader = host.RoomArtSceneLoader;

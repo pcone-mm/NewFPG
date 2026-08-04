@@ -304,6 +304,25 @@ namespace FPG.Demo.Run
             return QueueSummon(request, tick);
         }
 
+        public DomainResult TryQueueExternalSpawn(
+            string enemyDefinitionId,
+            FpgSpawnPlacement placement,
+            TickIndex tick,
+            out RuntimeId runtimeId)
+        {
+            runtimeId = RuntimeId.Invalid;
+            if (State != FpgEncounterSessionState.Running)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            return runtime.TryQueueExternalSpawn(
+                enemyDefinitionId,
+                placement,
+                tick,
+                out runtimeId);
+        }
+
         public DomainResult MarkEnemyDead(RuntimeId runtimeId, TickIndex tick)
         {
             if (State != FpgEncounterSessionState.Running && State != FpgEncounterSessionState.Paused)

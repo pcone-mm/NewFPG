@@ -128,6 +128,7 @@ namespace FPG.Demo.Unity
         public FpgFormalEnemyAttackScheduler AttackScheduler { get; }
         public IFpgBattleTickSynchronizer Synchronizer { get; }
         public IFpgPlayerRoomSnapshotPort PlayerSnapshotPort { get; }
+        public HitboxRegistry StaticHitboxRegistry => staticHitboxRegistry;
         public FpgCoverRuntime Covers { get; private set; }
         public bool IsDisposed => disposed;
 
@@ -140,6 +141,32 @@ namespace FPG.Demo.Unity
             }
 
             DomainResult bound = CombatPort.TryBindCoverRuntime(covers);
+            if (!bound.IsSuccess)
+            {
+                error = "Formal combat port rejected cover binding: "
+                    + bound.RejectReason;
+                return false;
+            }
+
+            Covers = covers;
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryBindCovers(
+            FpgCoverRuntime covers,
+            IFpgCoverGeometryResolver geometryResolver,
+            out string error)
+        {
+            if (Covers != null || covers == null || geometryResolver == null)
+            {
+                error = "Formal runtime covers and their geometry resolver must be bound exactly once.";
+                return false;
+            }
+
+            DomainResult bound = CombatPort.TryBindCoverRuntime(
+                covers,
+                geometryResolver);
             if (!bound.IsSuccess)
             {
                 error = "Formal combat port rejected cover binding: "
@@ -182,7 +209,7 @@ namespace FPG.Demo.Unity
             if (!anchorMap.TryRegister(
                     Player.RuntimeId,
                     playerEntity.GameplayAnchor,
-                    playerEntity.AimAnchor,
+                    playerEntity.ShotOrigin,
                     playerEntity.GameplayAnchor,
                     playerEntity.gameObject,
                     playerEntity.SocketRegistry,
@@ -258,6 +285,8 @@ namespace FPG.Demo.Unity
         [NonSerialized] private SecondaryTriggerMode playerSecondaryTriggerMode;
         [NonSerialized] private UnityAttackQuerySettings runtimeAttackQuerySettings;
         [NonSerialized] private int playerMaximumAttackImpactCount;
+        [NonSerialized] private bool hasShootingPreview;
+        [NonSerialized] private FpgShootingTuningSnapshot shootingPreview;
         [NonSerialized] private bool hasNextPlayerRunResources;
         [NonSerialized] private FpgPlayerRunResourceState nextPlayerRunResources;
 
@@ -326,6 +355,66 @@ namespace FPG.Demo.Unity
         public bool HasActiveRuntime => activeBundle != null
             && !activeBundle.IsDisposed;
         public bool HasNextPlayerRunResources => hasNextPlayerRunResources;
+        public bool HasShootingPreview => hasShootingPreview;
+        public FpgShootingTuningSnapshot ShootingPreview => shootingPreview;
+        public float EffectiveCoverTraversalSeconds => hasShootingPreview
+            ? shootingPreview.CoverTraversalSeconds
+            : playerThreeCProfile == null
+                ? 0f
+                : playerThreeCProfile.CoverTraversalSeconds;
+
+        public bool TrySetShootingPreview(
+            in FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            ReleaseDisposedActiveBundle();
+            if (playerBindingLocked || HasActiveRuntime)
+            {
+                error = "Shooting preview cannot change while a combat runtime is active.";
+                return false;
+            }
+
+            if (!snapshot.TryValidate(out error)
+                || !snapshot.TryCreateAttackQuerySettings(
+                    attackQueryTechnicalSettings,
+                    out _,
+                    out error)
+                || !snapshot.TryCreateWeaponDefinition(out _, out error))
+            {
+                return false;
+            }
+
+            if (playerBindingConfigured
+                && (!ReferenceEquals(playerDefinition, snapshot.Character)
+                    || !ReferenceEquals(
+                        playerThreeCProfile,
+                        snapshot.ThreeCProfile)
+                    || !ReferenceEquals(
+                        playerCombatFeelProfile,
+                        snapshot.CombatFeelProfile)
+                    || playerSecondaryTriggerMode
+                        != snapshot.SecondaryTriggerMode))
+            {
+                error = "Shooting preview does not match the configured player selection.";
+                return false;
+            }
+
+            shootingPreview = snapshot;
+            hasShootingPreview = true;
+            error = string.Empty;
+            return true;
+        }
+
+        public void ClearShootingPreview()
+        {
+            if (playerBindingLocked || HasActiveRuntime)
+            {
+                return;
+            }
+
+            shootingPreview = default(FpgShootingTuningSnapshot);
+            hasShootingPreview = false;
+        }
 
         public bool TryConfigurePlayer(
             D0CharacterDefinition definition,
@@ -375,6 +464,34 @@ namespace FPG.Demo.Unity
                     out error))
             {
                 return false;
+            }
+
+            if (hasShootingPreview)
+            {
+                if (!ReferenceEquals(definition, shootingPreview.Character)
+                    || !ReferenceEquals(
+                        threeCProfile,
+                        shootingPreview.ThreeCProfile)
+                    || !ReferenceEquals(
+                        combatFeelProfile,
+                        shootingPreview.CombatFeelProfile)
+                    || secondaryTriggerMode
+                        != shootingPreview.SecondaryTriggerMode)
+                {
+                    error = "Shooting preview does not match the player binding.";
+                    return false;
+                }
+
+                if (!shootingPreview.TryCreateWeaponDefinition(
+                        out configuredWeapon,
+                        out error)
+                    || !shootingPreview.TryCreateAttackQuerySettings(
+                        attackQueryTechnicalSettings,
+                        out composedQuerySettings,
+                        out error))
+                {
+                    return false;
+                }
             }
 
             if (!entity.gameObject.scene.IsValid()
@@ -429,6 +546,8 @@ namespace FPG.Demo.Unity
             playerSecondaryTriggerMode = default(SecondaryTriggerMode);
             runtimeAttackQuerySettings = default(UnityAttackQuerySettings);
             playerMaximumAttackImpactCount = 0;
+            shootingPreview = default(FpgShootingTuningSnapshot);
+            hasShootingPreview = false;
             ClearNextPlayerRunResources();
             playerBindingConfigured = false;
             playerBindingLocked = false;
@@ -686,6 +805,14 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (hasShootingPreview
+                && !shootingPreview.TryCreateWeaponDefinition(
+                    out weaponDefinition,
+                    out error))
+            {
+                return false;
+            }
+
             if (weaponDefinition.SecondaryTriggerMode
                     != playerSecondaryTriggerMode
                 || weaponDefinition.MaximumAttackImpactCount
@@ -724,7 +851,7 @@ namespace FPG.Demo.Unity
             if (!anchorMap.TryRegister(
                     playerRuntimeId,
                     playerEntity.GameplayAnchor,
-                    playerEntity.AimAnchor,
+                    playerEntity.ShotOrigin,
                     playerEntity.GameplayAnchor,
                     playerEntity.gameObject,
                     playerEntity.SocketRegistry,

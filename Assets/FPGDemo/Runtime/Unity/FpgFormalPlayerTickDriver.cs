@@ -15,17 +15,21 @@ namespace FPG.Demo.Unity
     /// single-enemy BattleSession.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class FpgFormalPlayerTickDriver : MonoBehaviour, IFpgFormalPlayerTickDriver
+    public sealed class FpgFormalPlayerTickDriver : MonoBehaviour,
+        IFpgFormalPlayerTickDriver,
+        IFpgShootingDiagnosticsProvider,
+        IFpgPlayerFacingActionSource
     {
         private const ulong PlayerAttackRandomDomain = 0x4650475F504C4159UL;
-        private const int CoverPeekGateTickCount = 5;
-        // Five gated ticks plus the ready tick, drained in InputSequence order.
+        private const int MaximumCoverPeekGateTickCount = 32;
         private const int CoverPeekPendingEdgeCapacity =
-            BattleTickInput.MaxEdgeCommandCount * (CoverPeekGateTickCount + 1);
+            BattleTickInput.MaxEdgeCommandCount
+                * (MaximumCoverPeekGateTickCount + 1);
 
         [Header("Formal Runtime")]
         [SerializeField] private FpgRoomEncounterDirector encounterDirector = null;
         [SerializeField] private Transform aimAnchor = null;
+        [SerializeField] private Transform shotOrigin = null;
         [SerializeField]
         [Tooltip("Optional formal-room camera used to aim through the configured viewport.")]
         private Camera aimCamera = null;
@@ -79,11 +83,28 @@ namespace FPG.Demo.Unity
         private long nextCommandSequence;
         private RejectReason captureFault = RejectReason.None;
         private FpgFormalAimSolution aimSolution = FpgFormalAimSolution.Idle;
+        private FpgResolvedAimContext liveAimContext =
+            FpgResolvedAimContext.Invalid;
+        private FpgResolvedAimContext liveAttackAimContext =
+            FpgResolvedAimContext.Invalid;
+        private FpgResolvedAimContext frozenAimContext =
+            FpgResolvedAimContext.Invalid;
+        private FpgAttackAvailability primaryAttackAvailability;
+        private FpgAttackAvailability secondaryAttackAvailability;
+        private UnityAttackQuerySettings attackQuerySettings;
+        private bool hasShootingPreview;
+        private FpgShootingTuningSnapshot shootingPreview;
+        private TickIndex reloadPresentationStartTick = TickIndex.Invalid;
+        private long nextAimContextVersion = 1L;
+        private int coverPeekGateTickCount = 5;
+        private FpgPlayerSkillSlot queuedAttackAfterReload =
+            FpgPlayerSkillSlot.None;
         private bool playerConfigured;
         private bool runtimeObserved;
         private bool roomInteractionArmed;
         private bool reloadCompletionActionPublishedThisTick;
         private bool presentationPaused;
+        private bool lifecycleAimViewportFrozen;
         private bool isCoverPeekRequested;
         private bool coverPeekPrimaryPending;
         private bool coverPeekAimFrozen;
@@ -91,9 +112,12 @@ namespace FPG.Demo.Unity
         private int coverPeekPendingEdgeCount;
         private TickIndex coverPeekStartedTick = TickIndex.Invalid;
         private AimPoseSnapshot coverPeekFrozenAimPose;
+        private FpgPlayerFacingDirection coverPeekDirection =
+            FpgPlayerFacingDirection.Right;
 
         public FpgRoomEncounterDirector EncounterDirector => encounterDirector;
         public Transform AimAnchor => aimAnchor;
+        public Transform ShotOrigin => shotOrigin;
         public MonoBehaviour AimViewportSourceComponent => aimViewportSource;
         public ICombatAimViewportSource AimViewportSource =>
             aimViewportSource as ICombatAimViewportSource;
@@ -101,6 +125,13 @@ namespace FPG.Demo.Unity
         public D0CharacterDefinition PlayerDefinition => playerDefinition;
         public FpgPlayerEntityView PlayerEntity => playerEntity;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
+        public bool HasShootingPreview => hasShootingPreview;
+        public FpgShootingTuningSnapshot ShootingPreview => shootingPreview;
+        public float EffectiveCoverTraversalSeconds => hasShootingPreview
+            ? shootingPreview.CoverTraversalSeconds
+            : threeCProfile == null
+                ? 0f
+                : threeCProfile.CoverTraversalSeconds;
         public SecondaryTriggerMode PlayerSecondaryTriggerMode =>
             playerSecondaryTriggerMode;
         public bool IsPlayerConfigured => playerConfigured;
@@ -108,11 +139,54 @@ namespace FPG.Demo.Unity
             && captureFault != RejectReason.None;
         public TickIndex LastProcessedTick => lastProcessedTick;
         public FpgFormalAimSolution AimSolution => aimSolution;
+        public FpgResolvedAimContext LiveAimContext => liveAimContext;
+        public FpgResolvedAimContext ResolvedAimContext =>
+            frozenAimContext.IsFrozen
+                ? frozenAimContext
+                : liveAttackAimContext.IsValid
+                    ? liveAttackAimContext
+                    : liveAimContext;
+        public FpgAttackAvailability PrimaryAttackAvailability =>
+            primaryAttackAvailability;
+        public FpgAttackAvailability SecondaryAttackAvailability =>
+            secondaryAttackAvailability;
         public int AimPreviewFaultCount { get; private set; }
         public int AimPresentationFaultCount { get; private set; }
         public int SkillPresentationFaultCount { get; private set; }
         public bool IsCoverPeekRequested => isCoverPeekRequested;
         public TickIndex CoverPeekStartedTick => coverPeekStartedTick;
+        public FpgPlayerFacingDirection CoverPeekDirection =>
+            coverPeekDirection;
+        public bool CanUpdateFacingFromReticle
+        {
+            get
+            {
+                FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                    ? null
+                    : encounterDirector.CombatRuntime;
+                Actor2DPresenter actor = playerEntity == null
+                    ? null
+                    : playerEntity.ActorPresenter;
+                FpgEncounterPhase phase = encounterDirector == null
+                    ? FpgEncounterPhase.None
+                    : encounterDirector.Phase;
+                return playerConfigured
+                    && runtime != null
+                    && !runtime.IsDisposed
+                    && runtime.Player != null
+                    && !runtime.Player.Combatant.IsDead
+                    && (runtime.Covers == null || !runtime.Covers.IsTraversing)
+                    && skillExecutionController != null
+                    && !skillExecutionController.IsExecuting
+                    && coverTraversalPresenter != null
+                    && !coverTraversalPresenter.IsPlaying
+                    && actor != null
+                    && actor.IsFacingIdle
+                    && encounterDirector != null
+                    && !encounterDirector.IsPaused
+                    && IsFacingPhase(phase);
+            }
+        }
         public FpgFormalPlayerPresentationSource PresentationSource =>
             presentationSource;
         public FpgCoverTraversalPresenter CoverTraversalPresenter =>
@@ -175,7 +249,7 @@ namespace FPG.Demo.Unity
             {
                 inputSource.ConsumeRestartPressed();
                 inputSource.ConsumePausePressed();
-                inputSource.ClearGameplayInput();
+                ClearGameplayInputAndPendingAttackIntent();
                 ClearCoverPeekGate();
                 coverTraversalPresenter?.SetPaused(false);
                 return;
@@ -185,14 +259,14 @@ namespace FPG.Demo.Unity
             {
                 if (!projectWideBattleInputAdapter.TryCapture(inputSource))
                 {
-                    inputSource.ClearGameplayInput();
+                    ClearGameplayInputAndPendingAttackIntent();
                     ClearCoverPeekGate();
                     captureFault = RejectReason.InvalidState;
                     return;
                 }
             }
 
-            if (aimAnchor == null)
+            if (aimAnchor == null || shotOrigin == null)
             {
                 captureFault = RejectReason.InvalidState;
                 return;
@@ -234,7 +308,7 @@ namespace FPG.Demo.Unity
                     && phase != FpgEncounterPhase.WaveDelay
                     && phase != FpgEncounterPhase.Paused)
                 {
-                    inputSource.ClearGameplayInput();
+                    ClearGameplayInputAndPendingAttackIntent();
                     ClearCoverPeekGate();
                     return;
                 }
@@ -249,14 +323,14 @@ namespace FPG.Demo.Unity
                     return;
                 }
 
-                inputSource.ClearGameplayInput();
+                ClearGameplayInputAndPendingAttackIntent();
                 ClearCoverPeekGate();
                 coverTraversalPresenter?.SetPaused(encounterDirector.IsPaused);
                 SetAimViewportFrozen(encounterDirector.IsPaused);
             }
             else if (encounterDirector != null && encounterDirector.IsPaused)
             {
-                inputSource.ClearGameplayInput();
+                ClearGameplayInputAndPendingAttackIntent();
                 ClearCoverPeekGate();
                 SetAimViewportFrozen(true);
             }
@@ -340,15 +414,18 @@ namespace FPG.Demo.Unity
                     compiledSecondary,
                     compiledReload,
                     secondaryTriggerMode,
+                    definition.AttackSpeedProfile,
+                    StaticAttackSpeedBonusProvider.Zero,
+                    profile.InputBufferTicks,
                     out FpgPlayerSkillExecutionController controller,
                     out error))
             {
                 return false;
             }
 
-            if (entity.AimAnchor == null)
+            if (entity.AimAnchor == null || entity.ShotOrigin == null)
             {
-                error = "Formal player entity has no aim anchor.";
+                error = "Formal player entity has no aim anchor or shot origin.";
                 return false;
             }
 
@@ -399,12 +476,18 @@ namespace FPG.Demo.Unity
             threeCProfile = profile;
             playerSecondaryTriggerMode = secondaryTriggerMode;
             aimAnchor = entity.AimAnchor;
+            shotOrigin = entity.ShotOrigin;
             playerRoot = entity.transform;
             coverTraversalPresenter = traversalPresenter;
-            aimDistance = profile.MaximumAimDistance;
+            attackQuerySettings = querySettings;
+            aimDistance = querySettings.MaxDistance;
             aimLayerMask = querySettings.HitboxLayerMask
                 | querySettings.BlockerLayerMask;
             inputBufferTicks = profile.InputBufferTicks;
+            coverPeekGateTickCount = Mathf.Clamp(
+                TickDuration.FromSeconds(profile.PeekTransitionSeconds).Value,
+                0,
+                MaximumCoverPeekGateTickCount);
             playerConfigured = true;
             ResetRuntimeState();
             error = string.Empty;
@@ -454,9 +537,10 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (encounterDirector == null || aimAnchor == null)
+            if (encounterDirector == null || aimAnchor == null
+                || shotOrigin == null)
             {
-                error = "Formal player tick driver requires explicit director and aim anchor references.";
+                error = "Formal player tick driver requires explicit director, aim anchor and shot origin references.";
                 return false;
             }
 
@@ -498,6 +582,12 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (shotOrigin != playerRoot && !shotOrigin.IsChildOf(playerRoot))
+            {
+                error = "Formal shot origin must belong to the configured player root.";
+                return false;
+            }
+
             if (inputBufferTicks < 1 || inputBufferTicks > 32)
             {
                 error = "Formal player tick driver input buffer must be between 1 and 32 ticks.";
@@ -510,14 +600,13 @@ namespace FPG.Demo.Unity
 
         private void CaptureAimPose()
         {
-            cameraFeedback?.SynchronizeForAimSampling();
-            if (!aimFromPointerPosition || aimCamera == null)
+            if (playerEntity != null
+                && !playerEntity.TryRefreshSpineSocketFollowers(out string socketError))
             {
-                inputSource.CaptureAimPose(aimAnchor);
-                UpdateAimSolution(aimAnchor.position, aimAnchor.forward);
-                return;
+                throw new InvalidOperationException(socketError);
             }
 
+            cameraFeedback?.SynchronizeForAimSampling();
             Vector2 viewport = CombatAimViewportMath.Center;
             ICombatAimViewportSource viewportSource = AimViewportSource;
             if (viewportSource != null
@@ -529,79 +618,190 @@ namespace FPG.Demo.Unity
                     Mathf.Clamp01(suppliedViewport.y));
             }
 
-            Ray cameraRay = aimCamera.ViewportPointToRay(
-                new Vector3(viewport.x, viewport.y, 0f));
-
-            Vector3 targetPoint = cameraRay.GetPoint(aimDistance);
-            float nearestDistance = float.PositiveInfinity;
-            int hitCount = Physics.RaycastNonAlloc(
-                cameraRay,
-                aimRaycastBuffer,
-                aimDistance,
-                aimLayerMask,
-                QueryTriggerInteraction.Collide);
-            for (int index = 0; index < hitCount; index++)
+            Vector3 cameraOrigin;
+            Vector3 cameraDirection;
+            Vector3 referenceUp;
+            if (aimFromPointerPosition && aimCamera != null)
             {
-                RaycastHit hit = aimRaycastBuffer[index];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null)
-                {
-                    continue;
-                }
-
-                Transform hitTransform = hitCollider.transform;
-                if (playerRoot != null
-                    && (hitTransform == playerRoot || hitTransform.IsChildOf(playerRoot)))
-                {
-                    continue;
-                }
-
-                if (hit.distance < nearestDistance)
-                {
-                    nearestDistance = hit.distance;
-                    targetPoint = hit.point;
-                }
+                Ray cameraRay = aimCamera.ViewportPointToRay(
+                    new Vector3(viewport.x, viewport.y, 0f));
+                cameraOrigin = cameraRay.origin;
+                cameraDirection = cameraRay.direction;
+                referenceUp = aimCamera.transform.up;
+            }
+            else
+            {
+                cameraOrigin = aimAnchor.position;
+                cameraDirection = aimAnchor.forward;
+                referenceUp = aimAnchor.up;
             }
 
-            Vector3 aimDirection = targetPoint - aimAnchor.position;
-            if (aimDirection.sqrMagnitude <= 0.000001f)
-            {
-                aimDirection = aimAnchor.forward;
-            }
-
-            inputSource.CaptureAimPose(
-                aimAnchor.position,
-                aimDirection,
-                aimCamera.transform.up);
-            UpdateAimSolution(aimAnchor.position, aimDirection);
-        }
-
-        private void UpdateAimSolution(Vector3 origin, Vector3 direction)
-        {
             FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
                 ? null
                 : encounterDirector.CombatRuntime;
             if (runtime == null || runtime.IsDisposed
                 || runtime.AttackQueryPort == null)
             {
+                Vector3 targetPoint = cameraOrigin
+                    + cameraDirection.normalized * aimDistance;
+                Vector3 direction = targetPoint - shotOrigin.position;
+                if (direction.sqrMagnitude <= 0.000001f)
+                {
+                    direction = shotOrigin.forward;
+                }
+
+                inputSource.CaptureAimPose(
+                    shotOrigin.position,
+                    direction,
+                    referenceUp);
+                liveAimContext = FpgResolvedAimContext.Invalid;
+                liveAttackAimContext = FpgResolvedAimContext.Invalid;
                 SetAimSolution(FpgFormalAimSolution.Idle);
                 return;
             }
 
-            DomainResult solved = runtime.AttackQueryPort.SolveAim(
-                origin,
-                direction,
+            FpgCoverSnapshot cover = runtime.Covers == null
+                ? default(FpgCoverSnapshot)
+                : runtime.Covers.CurrentSnapshot;
+            DomainResult solved = runtime.AttackQueryPort.ResolveAimContext(
+                viewport,
+                cameraOrigin,
+                cameraDirection,
+                shotOrigin.position,
                 runtime.Player.RuntimeId,
                 Team.Player,
-                runtime.Player.Weapon.Definition.PrimaryAllowedTargetKinds,
-                out FpgFormalAimSolution next);
+                runtime.Player.Weapon.Definition.PrimaryAllowedTargetKinds
+                    | runtime.Player.Weapon.Definition.SecondaryAllowedTargetKinds,
+                cover.IsValid ? cover.CoverId : string.Empty,
+                encounterDirector.RoomInstance,
+                NextAimContextVersion(),
+                out FpgResolvedAimContext next);
             if (!solved.IsSuccess)
             {
                 AimPreviewFaultCount++;
-                next = FpgFormalAimSolution.Idle;
+                liveAimContext = FpgResolvedAimContext.Invalid;
+                liveAttackAimContext = FpgResolvedAimContext.Invalid;
+                inputSource.CaptureAimPose(
+                    shotOrigin.position,
+                    shotOrigin.forward,
+                    referenceUp);
+                if (!frozenAimContext.IsFrozen)
+                {
+                    SetAimSolution(FpgFormalAimSolution.Idle);
+                }
+                return;
             }
 
-            SetAimSolution(next);
+            liveAimContext = next;
+            inputSource.CaptureAimPose(
+                next.ShotOrigin,
+                next.CenterDirection,
+                referenceUp);
+
+            Vector3 previewShotOrigin = ResolveAttackPreviewShotOrigin(
+                next.ReticleViewport);
+            liveAttackAimContext = next;
+            if ((previewShotOrigin - next.ShotOrigin).sqrMagnitude
+                > 0.0000001f)
+            {
+                DomainResult previewSolved = runtime.AttackQueryPort.ResolveAimContext(
+                    next.ReticleViewport,
+                    next.CameraOrigin,
+                    next.CameraDirection,
+                    previewShotOrigin,
+                    runtime.Player.RuntimeId,
+                    Team.Player,
+                    runtime.Player.Weapon.Definition.PrimaryAllowedTargetKinds
+                        | runtime.Player.Weapon.Definition.SecondaryAllowedTargetKinds,
+                    cover.IsValid ? cover.CoverId : string.Empty,
+                    encounterDirector.RoomInstance,
+                    NextAimContextVersion(),
+                    out FpgResolvedAimContext previewContext);
+                if (!previewSolved.IsSuccess)
+                {
+                    AimPreviewFaultCount++;
+                    liveAttackAimContext = FpgResolvedAimContext.Invalid;
+                }
+                else
+                {
+                    liveAttackAimContext = previewContext;
+                }
+            }
+
+            if (frozenAimContext.IsFrozen)
+            {
+                DomainResult rebased = runtime.AttackQueryPort.ResolveFrozenAimShotOrigin(
+                    frozenAimContext,
+                    ResolveAttackPreviewShotOrigin(
+                        frozenAimContext.ReticleViewport),
+                    runtime.Player.RuntimeId,
+                    Team.Player,
+                    runtime.Player.Weapon.Definition.PrimaryAllowedTargetKinds
+                        | runtime.Player.Weapon.Definition.SecondaryAllowedTargetKinds,
+                    cover.IsValid ? cover.CoverId : string.Empty,
+                    encounterDirector.RoomInstance,
+                    out FpgResolvedAimContext rebasedContext);
+                if (!rebased.IsSuccess)
+                {
+                    throw new InvalidOperationException(
+                        "Frozen aim could not be rebased to the current Spine ShotOrigin.");
+                }
+
+                frozenAimContext = rebasedContext;
+                SetAimSolution(
+                    frozenAimContext.IsReticleEnemy
+                        || frozenAimContext.IsCurrentCoverBlocked
+                        ? FpgFormalAimSolution.FromContext(frozenAimContext)
+                        : FpgFormalAimSolution.Idle);
+            }
+            else
+            {
+                SetAimSolution(
+                    liveAttackAimContext.IsReticleEnemy
+                        || liveAttackAimContext.IsCurrentCoverBlocked
+                        ? FpgFormalAimSolution.FromContext(liveAttackAimContext)
+                        : FpgFormalAimSolution.Idle);
+            }
+        }
+
+        private Vector3 ResolveAttackPreviewShotOrigin(
+            Vector2 reticleViewport)
+        {
+            if (playerEntity == null || playerEntity.ShotOrigin == null)
+            {
+                return shotOrigin == null ? Vector3.zero : shotOrigin.position;
+            }
+
+            FpgPlayerBarrierPresentationController barrier =
+                playerEntity.Barrier;
+            FpgCoverRuntime covers = encounterDirector?.CombatRuntime?.Covers;
+            FpgCoverSnapshot cover = covers == null
+                ? default(FpgCoverSnapshot)
+                : covers.CurrentSnapshot;
+            if (!cover.IsValid || cover.IsDestroyed
+                || barrier == null
+                || !barrier.TryGetPreviewPeekWorldOffset(
+                    cover.CoverId,
+                    barrier.HasSelectedPeekTarget
+                        ? barrier.SelectedPeekDirection
+                        : FpgPlayerFacingController.ResolveDirection(
+                            reticleViewport.x),
+                    out Vector3 remainingWorldOffset))
+            {
+                return playerEntity.ShotOrigin.position;
+            }
+
+            return playerEntity.ShotOrigin.position
+                + remainingWorldOffset;
+        }
+
+        private long NextAimContextVersion()
+        {
+            long result = nextAimContextVersion;
+            nextAimContextVersion = nextAimContextVersion == long.MaxValue
+                ? 1L
+                : nextAimContextVersion + 1L;
+            return result;
         }
 
         private void SetAimSolution(in FpgFormalAimSolution next)
@@ -628,6 +828,7 @@ namespace FPG.Demo.Unity
 
             try
             {
+                reticle.SetResolvedAimContext(ResolvedAimContext);
                 reticle.SetTargetState(state);
             }
             catch (Exception)
@@ -664,6 +865,7 @@ namespace FPG.Demo.Unity
         public void BeginRoomInteraction()
         {
             ClearCoverPeekGate();
+            skillExecutionController?.ClearPendingInputIntents();
             roomInteractionArmed = inputSource == null
                 || !inputSource.PrimaryHeld && !inputSource.SecondaryHeld;
             WeaponRuntime weapon =
@@ -741,12 +943,16 @@ namespace FPG.Demo.Unity
                 return DomainResult.Success;
             }
 
+            UpdateReloadAttackQueue(runtime, tick);
+
             BattleTickInput tickInput = inputSource.GetTickInput(tick);
             if (!tickInput.IsValid || tickInput.Tick != tick)
             {
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
+            PlayerInputFrame capturedFrame =
+                tickInput.CopyToPlayerInputFrame(edgeBuffer);
             DomainResult coverMovement = ProcessCoverMovement(
                 tickInput,
                 tick,
@@ -757,7 +963,7 @@ namespace FPG.Demo.Unity
                 return coverMovement;
             }
 
-            PlayerInputFrame frame = tickInput.CopyToPlayerInputFrame(edgeBuffer);
+            PlayerInputFrame frame = capturedFrame;
             DomainResult gated = TryBuildCoverGatedInput(
                 tickInput,
                 frame,
@@ -791,6 +997,13 @@ namespace FPG.Demo.Unity
             {
                 ClearCoverPeekGate();
                 return skill;
+            }
+
+            if (stateAtTickStart != WeaponState.Reloading
+                && runtime.Player.Weapon.State == WeaponState.Reloading)
+            {
+                SnapFacingForReloadStart();
+                ClearCoverPeekGate();
             }
 
             PublishActivePresentations(requiresGameplayCommit: false);
@@ -898,6 +1111,12 @@ namespace FPG.Demo.Unity
                 return skill;
             }
 
+            if (stateAtTickStart != WeaponState.Reloading
+                && runtime.Player.Weapon.State == WeaponState.Reloading)
+            {
+                SnapFacingForReloadStart();
+            }
+
             PublishActivePresentations(requiresGameplayCommit: false);
 
             DomainResult events = ProcessSkillEvents(
@@ -943,6 +1162,71 @@ namespace FPG.Demo.Unity
             return presentationSource.TryGetPlayerPresentationSnapshot(out snapshot);
         }
 
+        public bool TryGetShootingDiagnostics(
+            out FpgShootingDiagnosticsSnapshot snapshot,
+            out string error)
+        {
+            snapshot = default(FpgShootingDiagnosticsSnapshot);
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            if (!playerConfigured || runtime == null || runtime.IsDisposed
+                || runtime.Player == null || runtime.Player.Weapon == null)
+            {
+                error = "Shooting diagnostics require an active formal player runtime.";
+                return false;
+            }
+
+            if (!presentationSource.TryGetPlayerPresentationSnapshot(
+                    out FpgFormalPlayerPresentationSnapshot presentation)
+                && !TryRefreshPresentationSnapshot(out presentation))
+            {
+                error = "Shooting diagnostics require a valid player presentation snapshot.";
+                return false;
+            }
+
+            FpgResolvedAimContext aim = ResolvedAimContext;
+            if (!presentation.Tick.IsValid || !aim.IsValid)
+            {
+                error = !presentation.Tick.IsValid
+                    ? "Shooting diagnostics are waiting for the first simulation tick."
+                    : "Shooting diagnostics require a resolved aim context.";
+                return false;
+            }
+
+            try
+            {
+                snapshot = new FpgShootingDiagnosticsSnapshot(
+                    presentation.Tick.Value,
+                    presentation.Ammo,
+                    presentation.MagazineCapacity,
+                    presentation.WeaponState,
+                    presentation.AimIndicatorBaseState,
+                    presentation.ExposureState,
+                    presentation.ReloadProgress01,
+                    presentation.IsCoverPeekRequested,
+                    presentation.IsCoverPeekRequested
+                        ? presentation.CoverPeekStartedTick.Value
+                        : FpgShootingDiagnosticsSnapshot.UnavailableTick,
+                    runtime.Player.Weapon.Definition.PrimaryPayloadCount,
+                    presentation.PrimarySpreadTangent,
+                    liveAimContext,
+                    aim,
+                    primaryAttackAvailability,
+                    secondaryAttackAvailability);
+            }
+            catch (ArgumentException exception)
+            {
+                snapshot = default(FpgShootingDiagnosticsSnapshot);
+                error = "Shooting diagnostics snapshot is invalid: "
+                    + exception.Message;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
         /// <summary>
         /// IFpgFormalPlayerTickDriver restart hook. This clears tick-local state
         /// but intentionally retains the one-shot player composition.
@@ -961,13 +1245,321 @@ namespace FPG.Demo.Unity
             playerEntity = null;
             threeCProfile = null;
             playerSecondaryTriggerMode = default(SecondaryTriggerMode);
+            attackQuerySettings = default(UnityAttackQuerySettings);
+            ClearShootingPreview();
             aimAnchor = null;
+            shotOrigin = null;
             playerRoot = null;
             cameraFeedback = null;
             SetAimSolution(FpgFormalAimSolution.Idle);
             playerConfigured = false;
             inputSource = null;
             presentationSource.Clear();
+        }
+
+        private void UpdateReloadAttackQueue(
+            FpgFormalCombatRuntimeBundle runtime,
+            TickIndex tick)
+        {
+            if (runtime == null || runtime.IsDisposed || inputSource == null
+                || skillExecutionController == null)
+            {
+                queuedAttackAfterReload = FpgPlayerSkillSlot.None;
+                return;
+            }
+
+            WeaponRuntime weapon = runtime.Player.Weapon;
+            bool reloadActive = weapon.State == WeaponState.Reloading
+                || skillExecutionController.IsExecuting
+                    && skillExecutionController.ActiveSlot
+                        == FpgPlayerSkillSlot.Reload;
+            if (reloadActive)
+            {
+                queuedAttackAfterReload = inputSource.SecondaryHeld
+                    ? FpgPlayerSkillSlot.Secondary
+                    : inputSource.PrimaryHeld
+                        ? FpgPlayerSkillSlot.Primary
+                        : FpgPlayerSkillSlot.None;
+                return;
+            }
+
+            if (queuedAttackAfterReload == FpgPlayerSkillSlot.Secondary)
+            {
+                if (!inputSource.SecondaryHeld)
+                {
+                    queuedAttackAfterReload = FpgPlayerSkillSlot.None;
+                }
+                else if (!skillExecutionController.IsExecuting
+                    && ResolveAttackAvailability(
+                        FpgPlayerSkillSlot.Secondary,
+                        runtime,
+                        tick,
+                        liveAttackAimContext).Ready
+                    && inputSource.TryEnqueueSyntheticEdge(
+                        InputEdgeType.SecondaryPressed))
+                {
+                    queuedAttackAfterReload = FpgPlayerSkillSlot.None;
+                }
+            }
+            else if (queuedAttackAfterReload == FpgPlayerSkillSlot.Primary
+                && (!inputSource.PrimaryHeld
+                    || weapon.Magazine.Ammo
+                        >= skillExecutionController.GetRequiredAmmo(
+                            FpgPlayerSkillSlot.Primary)))
+            {
+                queuedAttackAfterReload = FpgPlayerSkillSlot.None;
+            }
+
+            if (queuedAttackAfterReload != FpgPlayerSkillSlot.None
+                || skillExecutionController.IsExecuting
+                || weapon.State != WeaponState.Ready)
+            {
+                return;
+            }
+
+            bool secondaryPressedThisTick =
+                inputSource.HasQueuedGameplayEdge(InputEdgeType.SecondaryPressed);
+            FpgPlayerSkillSlot requestedSlot = inputSource.PrimaryHeld
+                ? FpgPlayerSkillSlot.Primary
+                : inputSource.SecondaryHeld || secondaryPressedThisTick
+                    ? FpgPlayerSkillSlot.Secondary
+                    : FpgPlayerSkillSlot.None;
+            if (requestedSlot == FpgPlayerSkillSlot.None)
+            {
+                return;
+            }
+
+            FpgAttackAvailability availability = ResolveAttackAvailability(
+                requestedSlot,
+                runtime,
+                tick,
+                liveAttackAimContext);
+            if (availability.ShouldAutoReload
+                && inputSource.TryEnqueueSyntheticEdge(
+                    InputEdgeType.ReloadPressed))
+            {
+                queuedAttackAfterReload = requestedSlot;
+            }
+        }
+
+        private FpgAttackAvailability ResolveAttackAvailability(
+            FpgPlayerSkillSlot slot,
+            FpgFormalCombatRuntimeBundle runtime,
+            TickIndex tick,
+            in FpgResolvedAimContext aim,
+            bool finalCommit = false)
+        {
+            if (runtime == null || runtime.IsDisposed
+                || runtime.Player == null
+                || skillExecutionController == null)
+            {
+                return FpgAttackAvailability.Resolve(
+                    slot,
+                    false,
+                    false,
+                    false,
+                    false,
+                    WeaponState.Disabled,
+                    TickIndex.Invalid,
+                    tick,
+                    0,
+                    0,
+                    aim,
+                    finalCommit);
+            }
+
+            PlayerRuntime player = runtime.Player;
+            WeaponRuntime weapon = player.Weapon;
+            FpgCoverSnapshot cover = runtime.Covers == null
+                ? default(FpgCoverSnapshot)
+                : runtime.Covers.CurrentSnapshot;
+            FpgResolvedAimContext currentAim = aim.WithCurrentCover(
+                cover.IsValid ? cover.CoverId : string.Empty);
+            TickIndex recast = slot == FpgPlayerSkillSlot.Primary
+                ? weapon.PrimaryRecastLockedUntilTick
+                : weapon.SecondaryRecastLockedUntilTick;
+            FpgEncounterPhase phase = encounterDirector == null
+                ? FpgEncounterPhase.None
+                : encounterDirector.Phase;
+            bool encounterActive = encounterDirector != null
+                && !encounterDirector.IsPaused
+                && phase != FpgEncounterPhase.None
+                && phase != FpgEncounterPhase.Preparing
+                && phase != FpgEncounterPhase.Cleared
+                && phase != FpgEncounterPhase.Defeated
+                && phase != FpgEncounterPhase.Failed
+                && phase != FpgEncounterPhase.Faulted
+                && phase != FpgEncounterPhase.Disposed;
+            return FpgAttackAvailability.Resolve(
+                slot,
+                true,
+                player.Combatant.IsDead,
+                encounterActive,
+                runtime.Covers != null && runtime.Covers.IsTraversing,
+                weapon.State,
+                recast,
+                tick,
+                weapon.Magazine.Ammo,
+                skillExecutionController.GetRequiredAmmo(slot),
+                currentAim,
+                finalCommit);
+        }
+
+        private FpgPlayerFacingDirection ResolveAcceptedAttackDirection(
+            in FpgResolvedAimContext aim)
+        {
+            if (aim.IsValid)
+            {
+                return FpgPlayerFacingController.ResolveDirection(
+                    aim.ReticleViewport.x);
+            }
+
+            FpgPlayerBarrierPresentationController barrier =
+                playerEntity == null ? null : playerEntity.Barrier;
+            if (barrier != null && barrier.HasSelectedPeekTarget)
+            {
+                return barrier.SelectedPeekDirection;
+            }
+
+            FpgPlayerFacingController facing = playerEntity == null
+                ? null
+                : playerEntity.FacingController;
+            return facing != null && facing.IsPrepared
+                ? facing.TargetDirection
+                : coverPeekDirection;
+        }
+
+        private void SnapFacingForReloadStart()
+        {
+            FpgPlayerFacingController facing = playerEntity == null
+                ? null
+                : playerEntity.FacingController;
+            if (facing == null || !facing.IsPrepared
+                || !facing.IsPresentationActive)
+            {
+                return;
+            }
+
+            if (!facing.TryForceDirection(facing.TargetDirection, out _))
+            {
+                AimPresentationFaultCount++;
+            }
+        }
+
+        private DomainResult TryCommitCoverPeekDirection(
+            FpgPlayerSkillSlot slot,
+            FpgPlayerFacingDirection direction,
+            in AimPoseSnapshot sourceAimPose,
+            TickIndex tick,
+            FpgFormalCombatRuntimeBundle runtime,
+            out AimPoseSnapshot committedAimPose,
+            out bool accepted)
+        {
+            committedAimPose = sourceAimPose;
+            accepted = false;
+            if (!sourceAimPose.IsValid || !tick.IsValid
+                || runtime == null || runtime.IsDisposed
+                || slot == FpgPlayerSkillSlot.None
+                || !Enum.IsDefined(
+                    typeof(FpgPlayerFacingDirection),
+                    direction))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            // Low-level controller fixtures intentionally omit the composed
+            // entity. Production composition validates all three components.
+            if (playerEntity == null)
+            {
+                coverPeekDirection = direction;
+                accepted = true;
+                return DomainResult.Success;
+            }
+
+            FpgPlayerFacingController facing =
+                playerEntity.FacingController;
+            FpgPlayerBarrierPresentationController barrier =
+                playerEntity.Barrier;
+            FpgCoverSnapshot cover = runtime.Covers == null
+                ? default(FpgCoverSnapshot)
+                : runtime.Covers.CurrentSnapshot;
+            FpgPlayerPeekPresentationState previousPeek =
+                barrier == null
+                    ? default(FpgPlayerPeekPresentationState)
+                    : barrier.CapturePeekState();
+            if (facing == null || !facing.IsPrepared
+                || !facing.IsPresentationActive
+                || barrier == null || !cover.IsValid
+                || !barrier.TrySelectPeekTarget(
+                    cover.CoverId,
+                    direction,
+                    out _))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            FpgPlayerFacingTransitionState previousFacing =
+                facing.CaptureTransitionState();
+            if (!facing.TryForceDirection(direction, out _))
+            {
+                barrier.RestorePeekState(previousPeek);
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            try
+            {
+                CaptureAimPose();
+            }
+            catch (Exception)
+            {
+                facing.RestoreTransitionState(previousFacing);
+                barrier.RestorePeekState(previousPeek);
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            FpgResolvedAimContext finalAim = liveAttackAimContext;
+            FpgAttackAvailability finalAvailability =
+                ResolveAttackAvailability(
+                    slot,
+                    runtime,
+                    tick,
+                    finalAim);
+            if (!finalAvailability.Ready
+                || !TryCreateRebasedAimPose(
+                    tick,
+                    finalAim,
+                    sourceAimPose,
+                    out committedAimPose))
+            {
+                facing.RestoreTransitionState(previousFacing);
+                barrier.RestorePeekState(previousPeek);
+                try
+                {
+                    CaptureAimPose();
+                }
+                catch (Exception)
+                {
+                    return DomainResult.Rejected(
+                        RejectReason.InvariantFault);
+                }
+
+                primaryAttackAvailability = ResolveAttackAvailability(
+                    FpgPlayerSkillSlot.Primary,
+                    runtime,
+                    tick,
+                    liveAttackAimContext);
+                secondaryAttackAvailability = ResolveAttackAvailability(
+                    FpgPlayerSkillSlot.Secondary,
+                    runtime,
+                    tick,
+                    liveAttackAimContext);
+                committedAimPose = sourceAimPose;
+                return DomainResult.Success;
+            }
+
+            coverPeekDirection = direction;
+            accepted = true;
+            return DomainResult.Success;
         }
 
         private DomainResult TryBuildCoverGatedInput(
@@ -980,7 +1572,7 @@ namespace FPG.Demo.Unity
         {
             gatedTickInput = capturedTickInput;
             gatedFrame = capturedFrame;
-            if (capturedFrame.HasReloadInput || capturedFrame.CancelSecondary)
+            if (capturedFrame.CancelSecondary)
             {
                 ClearCoverPeekGate();
                 return DomainResult.Success;
@@ -990,31 +1582,134 @@ namespace FPG.Demo.Unity
                 && skillExecutionController.RequiresExposureAt(tick);
             if (useFrozenAimForActiveAttack
                 && !activeSkillRequiresExposure
-                && !HasPendingCoverAttack)
+                && !HasPendingCoverAttack
+                && player.Weapon.State != WeaponState.AltCharging)
             {
                 useFrozenAimForActiveAttack = false;
                 coverPeekAimFrozen = false;
                 coverPeekFrozenAimPose = default(AimPoseSnapshot);
+                frozenAimContext = FpgResolvedAimContext.Invalid;
+                RefreshAimViewportFreeze();
             }
 
-            bool hasLiveAimIntent = capturedFrame.AimHeld
-                || capturedFrame.PrimaryHeld
-                || capturedFrame.SecondaryHeld;
-            bool peekRequested = hasLiveAimIntent
-                || capturedFrame.HasSecondaryInput
+            FpgResolvedAimContext availabilityAim = frozenAimContext.IsFrozen
+                ? frozenAimContext
+                : liveAttackAimContext;
+            FpgFormalCombatRuntimeBundle runtime = encounterDirector == null
+                ? null
+                : encounterDirector.CombatRuntime;
+            primaryAttackAvailability = ResolveAttackAvailability(
+                FpgPlayerSkillSlot.Primary,
+                runtime,
+                tick,
+                availabilityAim);
+            secondaryAttackAvailability = ResolveAttackAvailability(
+                FpgPlayerSkillSlot.Secondary,
+                runtime,
+                tick,
+                availabilityAim);
+
+            bool hasPrimaryIntent = capturedFrame.PrimaryHeld;
+            bool hasSecondaryIntent = capturedFrame.SecondaryHeld
+                || capturedFrame.HasSecondaryInput;
+            bool reloadHasPriority = capturedFrame.HasReloadInput
+                || skillExecutionController != null
+                    && skillExecutionController.HasPendingReloadIntent;
+            bool secondaryAlreadyActive = player.Weapon.State
+                == WeaponState.AltCharging;
+            bool canStartPrimary = !reloadHasPriority && hasPrimaryIntent
+                && primaryAttackAvailability.Ready;
+            bool canStartSecondary = !reloadHasPriority && hasSecondaryIntent
+                && (secondaryAttackAvailability.Ready
+                    || secondaryAlreadyActive);
+            if (!isCoverPeekRequested
+                && (canStartPrimary || canStartSecondary))
+            {
+                FpgPlayerSkillSlot startingSlot = ResolveStartingAttackSlot(
+                    capturedFrame,
+                    canStartPrimary,
+                    canStartSecondary);
+                FpgPlayerFacingDirection startingDirection =
+                    ResolveAcceptedAttackDirection(availabilityAim);
+                DomainResult facingCommit =
+                    TryCommitCoverPeekDirection(
+                        startingSlot,
+                        startingDirection,
+                        capturedTickInput.AimPose,
+                        tick,
+                        runtime,
+                        out AimPoseSnapshot committedAimPose,
+                        out bool facingAccepted);
+                if (!facingCommit.IsSuccess)
+                {
+                    return facingCommit;
+                }
+
+                if (facingAccepted)
+                {
+                    capturedTickInput = new BattleTickInput(
+                        capturedFrame,
+                        committedAimPose);
+                    availabilityAim = liveAttackAimContext.IsValid
+                        ? liveAttackAimContext
+                        : availabilityAim;
+                    primaryAttackAvailability = ResolveAttackAvailability(
+                        FpgPlayerSkillSlot.Primary,
+                        runtime,
+                        tick,
+                        availabilityAim);
+                    secondaryAttackAvailability = ResolveAttackAvailability(
+                        FpgPlayerSkillSlot.Secondary,
+                        runtime,
+                        tick,
+                        availabilityAim);
+                    canStartPrimary = hasPrimaryIntent
+                        && primaryAttackAvailability.Ready;
+                    canStartSecondary = hasSecondaryIntent
+                        && (secondaryAttackAvailability.Ready
+                            || secondaryAlreadyActive);
+                }
+                else
+                {
+                    canStartPrimary = false;
+                    canStartSecondary = false;
+                }
+            }
+            bool continueHeldPrimary = hasPrimaryIntent
+                && player.Weapon.State == WeaponState.PrimaryRecovery
+                && skillExecutionController != null
+                && skillExecutionController.IsExecuting
+                && skillExecutionController.ActiveSlot
+                    == FpgPlayerSkillSlot.Primary
+                && skillExecutionController.ActiveSequenceKind
+                    == FpgSkillSequenceKind.Execute
+                && skillExecutionController.ActiveTiming.IsValid
+                && skillExecutionController.ActiveTiming
+                    .UsesCharacterAttackSpeed;
+            bool peekRequested = canStartPrimary
+                || continueHeldPrimary
+                || canStartSecondary
                 || activeSkillRequiresExposure
-                || player.Weapon.State == WeaponState.AltCharging
+                || secondaryAlreadyActive
                 || HasPendingCoverAttack
                 || useFrozenAimForActiveAttack;
             if (!peekRequested)
             {
                 ClearCoverPeekGate();
+                gatedFrame = FilterAttackInputs(
+                    capturedFrame,
+                    tick,
+                    preserveReload: true);
+                gatedTickInput = new BattleTickInput(
+                    gatedFrame,
+                    capturedTickInput.AimPose);
                 return DomainResult.Success;
             }
 
             if (!coverPeekStartedTick.IsValid)
             {
                 coverPeekStartedTick = tick;
+                FreezeCoverPeekAim(capturedTickInput.AimPose);
             }
             isCoverPeekRequested = true;
 
@@ -1025,51 +1720,35 @@ namespace FPG.Demo.Unity
                     InputEdgeType.SecondaryReleased);
             bool attackStillHeld = capturedFrame.PrimaryHeld
                 || capturedFrame.SecondaryHeld;
-            if (attackReleasedThisTick)
-            {
-                if (!coverPeekAimFrozen)
-                {
-                    FreezeCoverPeekAim(capturedTickInput.AimPose);
-                }
-            }
-            else if (attackStillHeld && !useFrozenAimForActiveAttack)
-            {
-                coverPeekAimFrozen = false;
-                coverPeekFrozenAimPose = default(AimPoseSnapshot);
-            }
-            else if (!attackStillHeld
-                && HasPendingCoverAttack
+            if ((attackReleasedThisTick || !attackStillHeld
+                    && HasPendingCoverAttack)
                 && !coverPeekAimFrozen)
             {
                 FreezeCoverPeekAim(capturedTickInput.AimPose);
             }
 
             bool fullyPeeked = tick.Value - coverPeekStartedTick.Value
-                >= CoverPeekGateTickCount;
+                >= coverPeekGateTickCount;
             int frameEdgeCount = 0;
             bool deliveredPendingAttack = false;
             if (!fullyPeeked)
             {
-                coverPeekPrimaryPending |= capturedFrame.PrimaryHeld;
-                bool queueFollowingSecondaryEdge =
-                    coverPeekPendingEdgeCount > 0;
+                coverPeekPrimaryPending |= canStartPrimary;
                 for (int index = 0;
                     index < capturedFrame.EdgeCommandCount;
                     index++)
                 {
                     InputEdgeCommand edge = capturedFrame.EdgeCommands[index];
-                    bool queueEdge = playerSecondaryTriggerMode
-                            == SecondaryTriggerMode.ImmediateRepeatWhileHeld
-                        || queueFollowingSecondaryEdge
-                        || edge.Type == InputEdgeType.SecondaryReleased;
-                    if (queueEdge)
+                    if (edge.Type == InputEdgeType.SecondaryPressed
+                        || edge.Type == InputEdgeType.SecondaryReleased)
                     {
-                        if (!TryEnqueueCoverPeekEdge(edge))
+                        if ((canStartSecondary || secondaryAlreadyActive
+                                || coverPeekPendingEdgeCount > 0)
+                            && !TryEnqueueCoverPeekEdge(edge))
                         {
                             return DomainResult.Rejected(
                                 RejectReason.BufferCapacity);
                         }
-                        queueFollowingSecondaryEdge = true;
                     }
                     else
                     {
@@ -1103,11 +1782,12 @@ namespace FPG.Demo.Unity
             }
 
             bool gatedPrimaryHeld = fullyPeeked
-                && (capturedFrame.PrimaryHeld || coverPeekPrimaryPending);
+                && (canStartPrimary
+                    || continueHeldPrimary
+                    || coverPeekPrimaryPending);
             bool gatedSecondaryHeld = fullyPeeked
-                ? capturedFrame.SecondaryHeld
-                : playerSecondaryTriggerMode == SecondaryTriggerMode.ChargeRelease
-                    && capturedFrame.SecondaryHeld;
+                && (canStartSecondary || secondaryAlreadyActive)
+                && capturedFrame.SecondaryHeld;
             if (fullyPeeked)
             {
                 coverPeekPrimaryPending = false;
@@ -1122,7 +1802,7 @@ namespace FPG.Demo.Unity
 
             gatedFrame = new PlayerInputFrame(
                 tick,
-                aimHeld: true,
+                aimHeld: capturedFrame.AimHeld,
                 primaryHeld: gatedPrimaryHeld,
                 edgeCommands: frameEdgeCount == 0
                     ? null
@@ -1135,11 +1815,77 @@ namespace FPG.Demo.Unity
             if ((useFrozenAimForActiveAttack || deliveredPendingAttack)
                 && coverPeekAimFrozen)
             {
-                gatedAimPose = RetickAimPose(coverPeekFrozenAimPose, tick);
+                if (!TryCreateRebasedAimPose(
+                        tick,
+                        frozenAimContext,
+                        coverPeekFrozenAimPose,
+                        out gatedAimPose))
+                {
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
                 useFrozenAimForActiveAttack = true;
             }
             gatedTickInput = new BattleTickInput(gatedFrame, gatedAimPose);
             return DomainResult.Success;
+        }
+
+        private FpgPlayerSkillSlot ResolveStartingAttackSlot(
+            in PlayerInputFrame frame,
+            bool canStartPrimary,
+            bool canStartSecondary)
+        {
+            bool hasCurrentSecondaryEdge = ContainsInputEdge(
+                    frame,
+                    InputEdgeType.SecondaryPressed)
+                || ContainsInputEdge(frame, InputEdgeType.SecondaryReleased);
+            if (canStartSecondary && hasCurrentSecondaryEdge)
+            {
+                return FpgPlayerSkillSlot.Secondary;
+            }
+
+            if (skillExecutionController != null
+                && skillExecutionController.HasPendingAttackIntent)
+            {
+                FpgPlayerSkillSlot pendingSlot =
+                    skillExecutionController.PendingAttackIntent.Slot;
+                if (pendingSlot == FpgPlayerSkillSlot.Primary
+                    && canStartPrimary
+                    || pendingSlot == FpgPlayerSkillSlot.Secondary
+                        && canStartSecondary)
+                {
+                    return pendingSlot;
+                }
+            }
+
+            return canStartPrimary
+                ? FpgPlayerSkillSlot.Primary
+                : FpgPlayerSkillSlot.Secondary;
+        }
+
+        private PlayerInputFrame FilterAttackInputs(
+            PlayerInputFrame frame,
+            TickIndex tick,
+            bool preserveReload)
+        {
+            int count = 0;
+            for (int index = 0; index < frame.EdgeCommandCount; index++)
+            {
+                InputEdgeCommand edge = frame.EdgeCommands[index];
+                if (preserveReload && edge.Type == InputEdgeType.ReloadPressed)
+                {
+                    coverPeekFrameEdges[count++] = edge;
+                }
+            }
+
+            return new PlayerInputFrame(
+                tick,
+                frame.AimHeld,
+                primaryHeld: false,
+                edgeCommands: count == 0 ? null : coverPeekFrameEdges,
+                edgeCommandCount: count,
+                cancelSecondary: frame.CancelSecondary,
+                secondaryHeld: false);
         }
 
         private bool HasPendingCoverAttack => coverPeekPrimaryPending
@@ -1171,6 +1917,53 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        public bool TryApplyShootingPreview(
+            in FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            if (!playerConfigured || playerDefinition == null
+                || threeCProfile == null)
+            {
+                error = "Shooting preview requires a configured formal player.";
+                return false;
+            }
+
+            if (!snapshot.TryValidate(out error)
+                || !ReferenceEquals(playerDefinition, snapshot.Character)
+                || !ReferenceEquals(threeCProfile, snapshot.ThreeCProfile)
+                || playerSecondaryTriggerMode
+                    != snapshot.SecondaryTriggerMode)
+            {
+                error = string.IsNullOrWhiteSpace(error)
+                    ? "Shooting preview does not match the configured player."
+                    : error;
+                return false;
+            }
+
+            if (aimViewportSource is CombatAimReticle reticle
+                && !reticle.TryApplyShootingPreview(snapshot, out error))
+            {
+                return false;
+            }
+
+            shootingPreview = snapshot;
+            hasShootingPreview = true;
+            inputBufferTicks = snapshot.InputBufferTicks;
+            coverPeekGateTickCount = Mathf.Clamp(
+                TickDuration.FromSeconds(snapshot.PeekTransitionSeconds).Value,
+                0,
+                MaximumCoverPeekGateTickCount);
+            inputSource?.ConfigureInputBufferTicks(inputBufferTicks);
+            error = string.Empty;
+            return true;
+        }
+
+        public void ClearShootingPreview()
+        {
+            shootingPreview = default(FpgShootingTuningSnapshot);
+            hasShootingPreview = false;
+        }
+
         private int DrainCoverPeekEdges(
             InputEdgeCommand[] destination,
             int destinationCapacity)
@@ -1199,13 +1992,30 @@ namespace FPG.Demo.Unity
 
         private void FreezeCoverPeekAim(AimPoseSnapshot aimPose)
         {
-            if (!aimPose.IsValid)
+            if (!aimPose.IsValid || !liveAttackAimContext.IsValid)
             {
                 return;
             }
 
             coverPeekFrozenAimPose = aimPose;
             coverPeekAimFrozen = true;
+            useFrozenAimForActiveAttack = true;
+            frozenAimContext = liveAttackAimContext.Freeze();
+            if (TryCreateRebasedAimPose(
+                    aimPose.Tick,
+                    frozenAimContext,
+                    aimPose,
+                    out AimPoseSnapshot rebasedPose))
+            {
+                coverPeekFrozenAimPose = rebasedPose;
+            }
+
+            RefreshAimViewportFreeze();
+            SetAimSolution(
+                frozenAimContext.IsReticleEnemy
+                    || frozenAimContext.IsCurrentCoverBlocked
+                    ? FpgFormalAimSolution.FromContext(frozenAimContext)
+                    : FpgFormalAimSolution.Idle);
         }
 
         private static AimPoseSnapshot RetickAimPose(
@@ -1221,10 +2031,45 @@ namespace FPG.Demo.Unity
                 aimPose.PoseVersion);
         }
 
+        private static bool TryCreateRebasedAimPose(
+            TickIndex tick,
+            in FpgResolvedAimContext context,
+            in AimPoseSnapshot sourcePose,
+            out AimPoseSnapshot pose)
+        {
+            pose = default(AimPoseSnapshot);
+            if (!tick.IsValid || !context.IsValid || !sourcePose.IsValid)
+            {
+                return false;
+            }
+
+            Vector3 referenceUp = new Vector3(
+                sourcePose.Up.X / (float)SpatialContract.DirectionUnits,
+                sourcePose.Up.Y / (float)SpatialContract.DirectionUnits,
+                sourcePose.Up.Z / (float)SpatialContract.DirectionUnits);
+            Vector3 forward = context.CenterDirection.normalized;
+            if (!TryQuantizePosition(context.ShotOrigin, out SpatialVectorKey origin)
+                || !TryQuantizeDirection(forward, referenceUp, out SpatialVectorKey quantizedForward, out SpatialVectorKey right, out SpatialVectorKey up))
+            {
+                return false;
+            }
+
+            pose = new AimPoseSnapshot(
+                tick,
+                origin,
+                quantizedForward,
+                right,
+                up,
+                sourcePose.PoseVersion);
+            return pose.IsValid;
+        }
+
         private void FinishCoverPeekTick(TickIndex tick)
         {
+            WeaponRuntime weapon = encounterDirector?.CombatRuntime?.Player?.Weapon;
             if (!useFrozenAimForActiveAttack
-                || skillExecutionController.RequiresExposureAt(tick))
+                || skillExecutionController.RequiresExposureAt(tick)
+                || weapon?.State == WeaponState.AltCharging)
             {
                 return;
             }
@@ -1234,6 +2079,8 @@ namespace FPG.Demo.Unity
             {
                 coverPeekAimFrozen = false;
                 coverPeekFrozenAimPose = default(AimPoseSnapshot);
+                frozenAimContext = FpgResolvedAimContext.Invalid;
+                RefreshAimViewportFreeze();
             }
         }
 
@@ -1254,6 +2101,21 @@ namespace FPG.Demo.Unity
             coverPeekPendingEdgeCount = 0;
             coverPeekStartedTick = TickIndex.Invalid;
             coverPeekFrozenAimPose = default(AimPoseSnapshot);
+            coverPeekDirection = FpgPlayerFacingDirection.Right;
+            frozenAimContext = FpgResolvedAimContext.Invalid;
+            RefreshAimViewportFreeze();
+            FpgResolvedAimContext currentAim =
+                liveAttackAimContext.IsValid
+                    ? liveAttackAimContext
+                    : liveAimContext;
+            if (currentAim.IsValid)
+            {
+                SetAimSolution(
+                    currentAim.IsReticleEnemy
+                        || currentAim.IsCurrentCoverBlocked
+                        ? FpgFormalAimSolution.FromContext(currentAim)
+                        : FpgFormalAimSolution.Idle);
+            }
         }
 
         private PlayerInputFrame FilterRoomInteractionFrame(
@@ -1373,6 +2235,50 @@ namespace FPG.Demo.Unity
                     skillEvent.Slot == FpgPlayerSkillSlot.Primary
                         ? WeaponReleaseKind.Primary
                         : WeaponReleaseKind.Secondary;
+                FpgResolvedAimContext commitAim =
+                    liveAttackAimContext.Freeze();
+                FpgAttackAvailability finalAvailability =
+                    ResolveAttackAvailability(
+                        skillEvent.Slot,
+                        runtime,
+                        tick,
+                        commitAim,
+                        finalCommit: true);
+                if (!finalAvailability.Ready)
+                {
+                    skillExecutionController.AbortAfterProcessedTick(
+                        runtime.Player.Weapon);
+                    ClearCoverPeekGate();
+                    bool currentCoverDepleted = runtime.Covers
+                        ?.CurrentCoverIsDestroyed
+                        ?? runtime.Player.Combatant.Barrier <= 0;
+                    DomainResult withdrawn = runtime.Player.Exposure
+                        .ApplyCombatPosture(
+                            shouldExpose: currentCoverDepleted,
+                            currentTick: tick,
+                            barrierDepleted: currentCoverDepleted,
+                            changed: out _);
+                    if (!withdrawn.IsSuccess
+                        && withdrawn.RejectReason
+                            != RejectReason.BarrierDepleted)
+                    {
+                        return withdrawn;
+                    }
+
+                    return DomainResult.Success;
+                }
+
+                if (!TryCreateRebasedAimPose(
+                        tick,
+                        commitAim,
+                        tickInput.AimPose,
+                        out AimPoseSnapshot commitAimPose))
+                {
+                    skillExecutionController.AbortAfterProcessedTick(
+                        runtime.Player.Weapon);
+                    return DomainResult.Rejected(RejectReason.InvalidState);
+                }
+
                 WeaponSkillReleaseSpec releaseSpec =
                     new WeaponSkillReleaseSpec(
                         releaseKind,
@@ -1407,8 +2313,11 @@ namespace FPG.Demo.Unity
                 BattleTickInput eventTickInput;
                 try
                 {
+                    BattleTickInput commitTickInput = new BattleTickInput(
+                        tickInput.CopyToPlayerInputFrame(edgeBuffer),
+                        commitAimPose);
                     eventTickInput = ApplySkillOffset(
-                        tickInput,
+                        commitTickInput,
                         skillEvent.Event.Offset);
                 }
                 catch (Exception exception) when (
@@ -1738,23 +2647,12 @@ namespace FPG.Demo.Unity
             TickIndex tick,
             in FpgPlayerSkillExecutionEvent skillEvent)
         {
-            FpgPlayerSkillDefinition authored =
-                ResolveAuthoredSkill(skillEvent.Slot);
-            if (playerEntity == null
-                || !FpgPlayerSkillGameplayEventResolver.TryResolveSocketName(
-                    authored,
-                    skillEvent.RuntimeEvent.SequenceKind,
-                    skillEvent.Event,
-                    out string socketName)
-                || !FpgPlayerSkillPresentationResolver.TryResolvePresentationSource(
-                    playerEntity,
-                    socketName,
-                    out Transform muzzle)
-                || muzzle == null
-                || !TryQuantizePosition(muzzle.position, out SpatialVectorKey start))
+            if (!tickInput.AimPose.IsValid)
             {
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
+
+            SpatialVectorKey start = tickInput.AimPose.Origin;
 
             DomainResult aimed = runtime.AttackQueryPort.TryGetAimRangeEndpoint(
                 tickInput,
@@ -1804,7 +2702,8 @@ namespace FPG.Demo.Unity
 
             DomainResult committed = runtime.Player.Weapon.CommitPreparedSkillRelease(
                 weaponRelease,
-                runtime.IdAllocator);
+                runtime.IdAllocator,
+                ResolveResolvedRecastReadyTick(skillEvent.Timing));
             if (committed.IsSuccess)
             {
                 return DomainResult.Success;
@@ -1924,7 +2823,8 @@ namespace FPG.Demo.Unity
 
             DomainResult committed = runtime.Player.Weapon.CommitPreparedSkillRelease(
                 weaponRelease,
-                runtime.IdAllocator);
+                runtime.IdAllocator,
+                ResolveResolvedRecastReadyTick(skillEvent.Timing));
             if (!committed.IsSuccess)
             {
                 runtime.CombatPort.TryCompensatePlayerHitBatch(
@@ -2036,7 +2936,8 @@ namespace FPG.Demo.Unity
             DomainResult committed =
                 runtime.Player.Weapon.CommitPreparedSkillRelease(
                     weaponRelease,
-                    runtime.IdAllocator);
+                    runtime.IdAllocator,
+                    ResolveResolvedRecastReadyTick(skillEvent.Timing));
             if (!committed.IsSuccess)
             {
                 return DomainResult.Rejected(RejectReason.InvariantFault);
@@ -2062,9 +2963,18 @@ namespace FPG.Demo.Unity
             key = default(SpatialVectorKey);
             if (!IsFinite(position.x) || !IsFinite(position.y)
                 || !IsFinite(position.z)
-                || !TryQuantizeAxis(position.x, out int x)
-                || !TryQuantizeAxis(position.y, out int y)
-                || !TryQuantizeAxis(position.z, out int z))
+                || !TryQuantizeAxis(
+                    position.x,
+                    SpatialContract.PositionUnitsPerMeter,
+                    out int x)
+                || !TryQuantizeAxis(
+                    position.y,
+                    SpatialContract.PositionUnitsPerMeter,
+                    out int y)
+                || !TryQuantizeAxis(
+                    position.z,
+                    SpatialContract.PositionUnitsPerMeter,
+                    out int z))
             {
                 return false;
             }
@@ -2073,9 +2983,87 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        private static bool TryQuantizeDirection(
+            Vector3 forward,
+            Vector3 referenceUp,
+            out SpatialVectorKey quantizedForward,
+            out SpatialVectorKey quantizedRight,
+            out SpatialVectorKey quantizedUp)
+        {
+            quantizedForward = default(SpatialVectorKey);
+            quantizedRight = default(SpatialVectorKey);
+            quantizedUp = default(SpatialVectorKey);
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            Vector3 normalizedForward = forward.normalized;
+            Vector3 normalizedUp = referenceUp.sqrMagnitude <= 0.000001f
+                ? Vector3.up
+                : referenceUp.normalized;
+            Vector3 right = Vector3.Cross(normalizedUp, normalizedForward);
+            if (right.sqrMagnitude <= 0.000001f)
+            {
+                Vector3 fallbackUp = Mathf.Abs(normalizedForward.y) < 0.99f
+                    ? Vector3.up
+                    : Vector3.forward;
+                right = Vector3.Cross(fallbackUp, normalizedForward);
+            }
+
+            if (right.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            right.Normalize();
+            Vector3 up = Vector3.Cross(normalizedForward, right).normalized;
+            return TryQuantizeDirectionVector(
+                       normalizedForward,
+                       out quantizedForward)
+                && TryQuantizeDirectionVector(right, out quantizedRight)
+                && TryQuantizeDirectionVector(up, out quantizedUp);
+        }
+
+        private static bool TryQuantizeDirectionVector(
+            Vector3 value,
+            out SpatialVectorKey key)
+        {
+            key = default(SpatialVectorKey);
+            if (!TryQuantizeAxis(
+                    value.x,
+                    SpatialContract.DirectionUnits,
+                    out int x)
+                || !TryQuantizeAxis(
+                    value.y,
+                    SpatialContract.DirectionUnits,
+                    out int y)
+                || !TryQuantizeAxis(
+                    value.z,
+                    SpatialContract.DirectionUnits,
+                    out int z))
+            {
+                return false;
+            }
+
+            key = new SpatialVectorKey(x, y, z);
+            return !key.IsZero;
+        }
+
         private static bool TryQuantizeAxis(float value, out int key)
         {
-            double scaled = value * SpatialContract.PositionUnitsPerMeter;
+            return TryQuantizeAxis(
+                value,
+                SpatialContract.PositionUnitsPerMeter,
+                out key);
+        }
+
+        private static bool TryQuantizeAxis(
+            float value,
+            int unitsPerValue,
+            out int key)
+        {
+            double scaled = value * unitsPerValue;
             if (double.IsNaN(scaled) || double.IsInfinity(scaled)
                 || scaled > int.MaxValue || scaled < int.MinValue)
             {
@@ -2252,7 +3240,7 @@ namespace FPG.Demo.Unity
                 }
 
                 ClearCoverPeekGate();
-                inputSource.ClearGameplayInput();
+                ClearGameplayInputAndPendingAttackIntent();
                 weaponRelease.Reset();
                 DomainResult interrupted =
                     skillExecutionController.HardInterrupt(
@@ -2308,11 +3296,10 @@ namespace FPG.Demo.Unity
                 && (!player.Weapon.StateUntilTick.IsValid
                     || tick < player.Weapon.StateUntilTick);
             bool reloadRequestsWithdrawn = !coverDepleted
-                && (reloadKeepsWithdrawn || frame.HasReloadInput);
+                && reloadKeepsWithdrawn;
             bool shouldExpose = coverDepleted || !reloadRequestsWithdrawn
                 && !frame.CancelSecondary
                 && (activeSkillRequiresExposure
-                    || frame.AimHeld
                     || frame.PrimaryHeld
                     || frame.HasSecondaryInput
                     || player.Weapon.State == WeaponState.AltCharging);
@@ -2355,6 +3342,12 @@ namespace FPG.Demo.Unity
                     ammoAfter);
             }
 
+            if (stateBefore == WeaponState.Reloading
+                && stateAfter != WeaponState.Reloading)
+            {
+                reloadPresentationStartTick = TickIndex.Invalid;
+            }
+
             if (stateBefore == WeaponState.AltCharging
                 && stateAfter != WeaponState.AltCharging
                 && stateAfter != WeaponState.AltRecovery)
@@ -2373,6 +3366,7 @@ namespace FPG.Demo.Unity
             if (stateBefore != WeaponState.Reloading
                 && stateAfter == WeaponState.Reloading)
             {
+                reloadPresentationStartTick = tick;
                 PublishAction(
                     tick,
                     FpgFormalPlayerActionType.ReloadStarted,
@@ -2464,13 +3458,47 @@ namespace FPG.Demo.Unity
             FpgCoverSnapshot cover = runtime.Covers == null
                 ? default(FpgCoverSnapshot)
                 : runtime.Covers.CurrentSnapshot;
+            FpgResolvedAimContext resolvedAim = ResolvedAimContext.WithCurrentCover(
+                cover.IsValid ? cover.CoverId : string.Empty);
+            primaryAttackAvailability = ResolveAttackAvailability(
+                FpgPlayerSkillSlot.Primary,
+                runtime,
+                tick,
+                resolvedAim);
+            secondaryAttackAvailability = ResolveAttackAvailability(
+                FpgPlayerSkillSlot.Secondary,
+                runtime,
+                tick,
+                resolvedAim);
+            FpgEncounterPhase phase = encounterDirector == null
+                ? FpgEncounterPhase.None
+                : encounterDirector.Phase;
+            bool reticleHidden = player.Combatant.IsDead
+                || encounterDirector == null
+                || encounterDirector.IsPaused
+                || phase == FpgEncounterPhase.None
+                || phase == FpgEncounterPhase.Preparing
+                || phase == FpgEncounterPhase.Cleared
+                || phase == FpgEncounterPhase.Defeated
+                || phase == FpgEncounterPhase.Failed
+                || phase == FpgEncounterPhase.Faulted
+                || phase == FpgEncounterPhase.Disposed;
+            FpgAimIndicatorBaseState aimIndicatorBaseState =
+                CombatAimReticle.ResolveBaseState(
+                    reticleHidden,
+                    player.Weapon.State == WeaponState.Reloading,
+                    resolvedAim.IsCurrentCoverBlocked,
+                    !primaryAttackAvailability.Ready
+                        && !secondaryAttackAvailability.Ready,
+                    resolvedAim.IsReticleEnemy);
+            float reloadProgress01 = ResolveReloadProgress01(
+                player.Weapon.State,
+                tick);
             presentationSource.PublishSnapshot(
                 new FpgFormalPlayerPresentationSnapshot(
                     tick,
                     player.RuntimeId,
-                    encounterDirector == null
-                        ? FpgEncounterPhase.None
-                        : encounterDirector.Phase,
+                    phase,
                     encounterDirector != null && encounterDirector.IsPaused,
                     player.Combatant.Life,
                     player.Combatant.MaxLife,
@@ -2495,7 +3523,61 @@ namespace FPG.Demo.Unity
                         : TickIndex.Invalid,
                     cover.IsValid ? cover.CoverId : string.Empty,
                     cover.IsValid && cover.IsDestroyed,
-                    runtime.Covers != null && runtime.Covers.IsTraversing));
+                    runtime.Covers != null && runtime.Covers.IsTraversing,
+                    aimIndicatorBaseState,
+                    reloadProgress01,
+                    attackQuerySettings.PrimarySpreadTangent,
+                    attackQuerySettings.SecondaryAreaRadius,
+                    frozenAimContext.IsFrozen
+                        ? frozenAimContext.FrozenVersion
+                        : 0L,
+                    coverPeekDirection));
+        }
+
+        private float ResolveReloadProgress01(
+            WeaponState weaponState,
+            TickIndex tick)
+        {
+            if (weaponState != WeaponState.Reloading
+                || skillExecutionController == null || !tick.IsValid)
+            {
+                return 0f;
+            }
+
+            int durationTicks = skillExecutionController.ReloadDurationTicks;
+            if (durationTicks <= 0)
+            {
+                return 0f;
+            }
+
+            if (!reloadPresentationStartTick.IsValid
+                && skillExecutionController.IsExecuting
+                && skillExecutionController.ActiveSlot == FpgPlayerSkillSlot.Reload
+                && skillExecutionController.ActiveStartTick.IsValid)
+            {
+                reloadPresentationStartTick =
+                    skillExecutionController.ActiveStartTick;
+            }
+
+            return CalculateReloadProgress01(
+                reloadPresentationStartTick,
+                tick,
+                durationTicks);
+        }
+
+        public static float CalculateReloadProgress01(
+            TickIndex reloadStartTick,
+            TickIndex currentTick,
+            int durationTicks)
+        {
+            if (!reloadStartTick.IsValid || !currentTick.IsValid
+                || currentTick < reloadStartTick || durationTicks <= 0)
+            {
+                return 0f;
+            }
+
+            long elapsedTicks = currentTick.Value - reloadStartTick.Value + 1L;
+            return Mathf.Clamp01((float)elapsedTicks / durationTicks);
         }
 
         public void CancelCoverTraversalForTerminalState()
@@ -2570,11 +3652,20 @@ namespace FPG.Demo.Unity
             AimPresentationFaultCount = 0;
             SkillPresentationFaultCount = 0;
             aimSolution = FpgFormalAimSolution.Idle;
+            liveAimContext = FpgResolvedAimContext.Invalid;
+            liveAttackAimContext = FpgResolvedAimContext.Invalid;
+            frozenAimContext = FpgResolvedAimContext.Invalid;
+            primaryAttackAvailability = default(FpgAttackAvailability);
+            secondaryAttackAvailability = default(FpgAttackAvailability);
+            reloadPresentationStartTick = TickIndex.Invalid;
+            nextAimContextVersion = 1L;
+            queuedAttackAfterReload = FpgPlayerSkillSlot.None;
             presentationSource.Clear();
             presentationCommitCache.Clear();
             roomInteractionArmed = false;
             reloadCompletionActionPublishedThisTick = false;
             presentationPaused = false;
+            lifecycleAimViewportFrozen = false;
             cameraFeedback?.ResetRuntimeFeedback();
             if (aimViewportSource is CombatAimReticle reticle)
             {
@@ -2591,7 +3682,7 @@ namespace FPG.Demo.Unity
             inputSource = new UnityBattleInputSource();
             inputSource.ConfigureInputBufferTicks(Mathf.Clamp(inputBufferTicks, 1, 32));
             captureFault = RejectReason.None;
-            if (!playerConfigured || aimAnchor == null)
+            if (!playerConfigured || aimAnchor == null || shotOrigin == null)
             {
                 return;
             }
@@ -2608,9 +3699,18 @@ namespace FPG.Demo.Unity
 
         private void SetAimViewportFrozen(bool frozen)
         {
+            lifecycleAimViewportFrozen = frozen;
+            RefreshAimViewportFreeze();
+        }
+
+        private void RefreshAimViewportFreeze()
+        {
             if (aimViewportSource is CombatAimReticle reticle)
             {
-                reticle.SetInputFrozen(frozen);
+                // Attack events snapshot the latest live aim when they commit.
+                // Only lifecycle states such as pause/overlays freeze viewport
+                // input itself.
+                reticle.SetInputFrozen(lifecycleAimViewportFrozen);
             }
         }
 
@@ -2620,18 +3720,40 @@ namespace FPG.Demo.Unity
                 && !float.IsNaN(value.y) && !float.IsInfinity(value.y);
         }
 
+        private static bool IsFacingPhase(FpgEncounterPhase phase)
+        {
+            return phase == FpgEncounterPhase.Warning
+                || phase == FpgEncounterPhase.Spawning
+                || phase == FpgEncounterPhase.Combat
+                || phase == FpgEncounterPhase.WaveDelay;
+        }
+
+        private void ClearGameplayInputAndPendingAttackIntent()
+        {
+            inputSource?.ClearGameplayInput();
+            skillExecutionController?.ClearPendingInputIntents();
+        }
+
+        private static TickIndex ResolveResolvedRecastReadyTick(
+            in FpgResolvedSkillTimingSnapshot timing)
+        {
+            return timing.IsValid && timing.UsesCharacterAttackSpeed
+                ? timing.SameAttackReadyTick
+                : TickIndex.Invalid;
+        }
+
         private void OnApplicationFocus(bool hasFocus)
         {
             if (!hasFocus)
             {
-                inputSource?.ClearGameplayInput();
+                ClearGameplayInputAndPendingAttackIntent();
                 ClearCoverPeekGate();
             }
         }
 
         private void OnDisable()
         {
-            inputSource?.ClearGameplayInput();
+            ClearGameplayInputAndPendingAttackIntent();
             ClearCoverPeekGate();
             SetAimSolution(FpgFormalAimSolution.Idle);
             SetAimViewportFrozen(false);

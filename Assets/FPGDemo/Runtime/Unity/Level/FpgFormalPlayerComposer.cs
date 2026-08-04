@@ -222,6 +222,18 @@ namespace FPG.Demo.Unity
                         out error);
                 }
 
+                if (!stagedEntity.TryBindSpineSocketFollowers(out error))
+                {
+                    return FailComposition(
+                        stagedEntity,
+                        factoryTouched,
+                        driverTouched,
+                        directorTouched,
+                        bridgeTouched,
+                        error,
+                        out error);
+                }
+
                 factoryTouched = true;
                 if (!combatPortFactory.TryConfigurePlayer(
                         definition,
@@ -330,6 +342,16 @@ namespace FPG.Demo.Unity
             }
 
             activeEntity.gameObject.SetActive(true);
+            if (!activeEntity.TryRefreshSpineSocketFollowers(out error))
+            {
+                string activationError = string.IsNullOrWhiteSpace(error)
+                    ? "Formal player Spine socket activation failed."
+                    : error;
+                ClearPlayerComposition();
+                error = activationError;
+                return false;
+            }
+
             if (presentationBridge != null
                 && !presentationBridge.TryActivate(out error))
             {

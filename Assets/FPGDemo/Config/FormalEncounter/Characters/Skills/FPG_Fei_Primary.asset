@@ -20,10 +20,15 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 40
+    allowWithdrawTick: 40
+    attackTimingMode: 1
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: 35
     alternateAnimations:
     - attack_play2
     mainAnimation: attack_play1
     loop: 0
+    holdUntilCanceled: 0
     animationPlaybackMode: 0
     animationStartTick: 0
     animationEndTick: 40
@@ -45,7 +50,7 @@ MonoBehaviour:
       additionalPenetrationCount: 0
       areaCombatantLimit: 4
       areaProjectileLimit: 4
-      allowedTargetKinds: 3
+      allowedTargetKinds: -1
       threatDefinitionId: 0
       boundTargetPolicy: 0
       delayTicks: 0
@@ -57,6 +62,7 @@ MonoBehaviour:
     projectileEvents: []
     reloadEvents: []
     summonEvents: []
+    selfDestructOwnerEvents: []
     activePresentationTracks:
     - trackId: track.fei.primary.active
       displayName: Active Presentation
@@ -78,6 +84,7 @@ MonoBehaviour:
   secondaryTriggerMode: 0
   minimumChargeTicks: 0
   sequenceCooldownTicks: 12
+  chargeProgressTicks: 30
   references:
     version: 2
     RefIds:

@@ -20,9 +20,14 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 84
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: 80
     alternateAnimations: []
     mainAnimation: u1_buff_play
     loop: 0
+    holdUntilCanceled: 0
     animationPlaybackMode: 0
     animationStartTick: 0
     animationEndTick: 84
@@ -38,11 +43,13 @@ MonoBehaviour:
       targetOffset: {x: 0, y: 0, z: 0}
       successAnimationName: u1_buff_ready
     summonEvents: []
+    selfDestructOwnerEvents: []
     activePresentationTracks: []
     warnings: []
   secondaryTriggerMode: 0
   minimumChargeTicks: 0
   sequenceCooldownTicks: 0
+  chargeProgressTicks: 30
   references:
     version: 2
     RefIds: []

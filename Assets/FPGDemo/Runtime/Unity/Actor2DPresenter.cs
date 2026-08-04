@@ -76,6 +76,32 @@ namespace FPG.Demo.Unity
         public bool HasActiveSkillAnimation => activeSkillExecutionId.IsValid;
         public SkillExecutionId ActiveSkillExecutionId =>
             activeSkillExecutionId;
+        public bool IsFacingIdle
+        {
+            get
+            {
+                if (!initialized || !playerActor
+                    || AnimationState != D0ActorAnimationState.Idle
+                    || HasActiveSkillAnimation
+                    || skeletonAnimation == null
+                    || skeletonAnimation.AnimationState == null)
+                {
+                    return false;
+                }
+
+                PlayerActorPresentationDefinition presentation =
+                    ActivePlayerPresentation;
+                TrackEntry current = skeletonAnimation.AnimationState.GetCurrent(
+                    MainTrack);
+                return presentation != null
+                    && current != null
+                    && current.Animation != null
+                    && string.Equals(
+                        current.Animation.Name,
+                        presentation.IdleAnimation,
+                        StringComparison.Ordinal);
+            }
+        }
 
         public bool TryConfigureRuntime(
             SkeletonAnimation nextSkeletonAnimation,
@@ -376,6 +402,61 @@ namespace FPG.Demo.Unity
             if (!skillAnimationEvaluator.TryEvaluate(
                     animationName,
                     sequence,
+                    relativeTick,
+                    interpolation,
+                    out error))
+            {
+                return false;
+            }
+
+            CurrentAnimationName = animationName;
+            return true;
+        }
+
+        public bool TryEvaluateSkillAnimation(
+            SkillExecutionId executionId,
+            string animationName,
+            FpgCompiledSkillSequence sequence,
+            FpgResolvedSkillTimingSnapshot timing,
+            int relativeTick,
+            double interpolation,
+            out string error)
+        {
+            int durationTicks = timing.IsValid
+                ? timing.ResolvedDurationTicks
+                : sequence.DurationTicks;
+            if (!EnsureInitialized() || !playerActor || IsTerminal
+                || !executionId.IsValid
+                || string.IsNullOrWhiteSpace(animationName)
+                || !sequence.IsValid
+                || relativeTick < 0
+                || relativeTick > durationTicks
+                || double.IsNaN(interpolation)
+                || double.IsInfinity(interpolation)
+                || interpolation < 0d
+                || interpolation >= 1d)
+            {
+                error =
+                    "Player skill animation evaluation requires a valid execution, compiled sequence, resolved timing and absolute tick.";
+                return false;
+            }
+
+            if (presentationPaused)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            if (activeSkillExecutionId != executionId)
+            {
+                skillAnimationEvaluator.Reset();
+                activeSkillExecutionId = executionId;
+            }
+
+            if (!skillAnimationEvaluator.TryEvaluate(
+                    animationName,
+                    sequence,
+                    timing,
                     relativeTick,
                     interpolation,
                     out error))

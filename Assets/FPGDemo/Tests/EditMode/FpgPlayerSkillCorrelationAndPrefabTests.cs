@@ -221,7 +221,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void NonEmptyMissingSocketDoesNotFallbackToAimAnchor()
+        public void NonEmptyMissingSocketDoesNotFallbackToShotOrigin()
         {
             FpgPlayerEntityView entity = LoadCharacter().EntityPrefab;
 
@@ -239,7 +239,7 @@ namespace FPG.Demo.Tests.EditMode
                     string.Empty,
                     out Transform defaultSource),
                 Is.True);
-            Assert.That(defaultSource, Is.SameAs(entity.AimAnchor));
+            Assert.That(defaultSource, Is.SameAs(entity.ShotOrigin));
         }
 
         private static D0CharacterDefinition LoadCharacter()

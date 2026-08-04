@@ -58,6 +58,46 @@ namespace FPG.Demo.Unity
                 candidate.ImpactPointKey,
                 candidate.DistanceKey);
         }
+
+        internal static FpgFormalAimSolution FromContext(
+            in FpgResolvedAimContext context)
+        {
+            if (!context.IsValid || !context.HasSurface)
+            {
+                return Idle;
+            }
+
+            return new FpgFormalAimSolution(
+                context.TargetType == FpgResolvedAimTargetType.Environment
+                    ? FpgAimSolutionKind.Blocked
+                    : FpgAimSolutionKind.Hittable,
+                context.TargetId,
+                context.TargetKind,
+                context.HitPart,
+                context.GeometryId,
+                QuantizePosition(context.SurfacePoint),
+                QuantizeDistance(context.Distance));
+        }
+
+        private static SpatialVectorKey QuantizePosition(Vector3 value)
+        {
+            return new SpatialVectorKey(
+                Quantize(value.x, SpatialContract.PositionUnitsPerMeter),
+                Quantize(value.y, SpatialContract.PositionUnitsPerMeter),
+                Quantize(value.z, SpatialContract.PositionUnitsPerMeter));
+        }
+
+        private static int QuantizeDistance(float value)
+        {
+            return Quantize(value, SpatialContract.DistanceUnitsPerMeter);
+        }
+
+        private static int Quantize(float value, int units)
+        {
+            return checked((int)Math.Round(
+                value * units,
+                MidpointRounding.AwayFromZero));
+        }
     }
 
     [Serializable]
@@ -158,6 +198,8 @@ namespace FPG.Demo.Unity
         IPlayerProjectileAreaQueryPort
     {
         private const int UInt24Max = 0xFFFFFF;
+        private const float AimIntentEndpointTolerance =
+            2f / SpatialContract.PositionUnitsPerMeter;
 
         private readonly HitboxRegistry registry;
         private readonly IFpgFormalHitboxLookup formalHitboxLookup;
@@ -244,6 +286,7 @@ namespace FPG.Demo.Unity
         /// This counter never affects a query result or combat transaction.
         /// </summary>
         public int PresentationCaptureFaultCount { get; private set; }
+        public UnityAttackQuerySettings Settings => settings;
 
         /// <summary>
         /// Resolves the current formal reticle state through the same registry,
@@ -258,10 +301,30 @@ namespace FPG.Demo.Unity
             AttackTargetKinds allowedTargetKinds,
             out FpgFormalAimSolution solution)
         {
+            return SolveAim(
+                origin,
+                direction,
+                settings.MaxDistance,
+                ownerId,
+                ownerTeam,
+                allowedTargetKinds,
+                out solution);
+        }
+
+        public DomainResult SolveAim(
+            Vector3 origin,
+            Vector3 direction,
+            float maxDistance,
+            RuntimeId ownerId,
+            Team ownerTeam,
+            AttackTargetKinds allowedTargetKinds,
+            out FpgFormalAimSolution solution)
+        {
             solution = FpgFormalAimSolution.Idle;
             if (!IsHitboxLookupReady || !settings.IsValid
                 || !ownerId.IsValid || ownerTeam == Team.Neutral
                 || !IsFinite(origin) || !IsUsableDirection(direction)
+                || !IsFinite(maxDistance) || maxDistance <= 0f
                 || allowedTargetKinds == AttackTargetKinds.None
                 || (allowedTargetKinds & ~AttackSnapshot.DefaultAllowedTargetKinds)
                     != AttackTargetKinds.None)
@@ -275,7 +338,7 @@ namespace FPG.Demo.Unity
                 origin,
                 direction,
                 hitBuffer,
-                settings.MaxDistance,
+                Math.Min(maxDistance, settings.MaxDistance),
                 settings.PhysicsLayerMask,
                 QueryTriggerInteraction.Collide);
             DomainResult validated = ValidateBatch(
@@ -312,6 +375,202 @@ namespace FPG.Demo.Unity
             }
 
             return DomainResult.Success;
+        }
+
+        public DomainResult ResolveAimContext(
+            Vector2 reticleViewport,
+            Vector3 cameraOrigin,
+            Vector3 cameraDirection,
+            Vector3 shotOrigin,
+            RuntimeId ownerId,
+            Team ownerTeam,
+            AttackTargetKinds allowedTargetKinds,
+            string currentCoverId,
+            IFpgCoverGeometryResolver coverGeometryResolver,
+            long version,
+            out FpgResolvedAimContext context)
+        {
+            context = FpgResolvedAimContext.Invalid;
+            if (version <= 0 || !IsFinite(reticleViewport)
+                || !IsFinite(cameraOrigin)
+                || !IsUsableDirection(cameraDirection)
+                || !IsFinite(shotOrigin))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            Vector3 normalizedCameraDirection = cameraDirection.normalized;
+            DomainResult cameraSolved = SolveAim(
+                cameraOrigin,
+                normalizedCameraDirection,
+                settings.MaxDistance,
+                ownerId,
+                ownerTeam,
+                allowedTargetKinds,
+                out FpgFormalAimSolution cameraSolution);
+            if (!cameraSolved.IsSuccess)
+            {
+                return cameraSolved;
+            }
+
+            Vector3 targetPoint = cameraSolution.HasSurface
+                ? ToPosition(cameraSolution.ImpactPointKey)
+                : cameraOrigin + normalizedCameraDirection * settings.MaxDistance;
+            Vector3 centerDirection = targetPoint - shotOrigin;
+            if (!IsUsableDirection(centerDirection))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            float intentDistance = centerDirection.magnitude;
+            centerDirection /= intentDistance;
+            float unobstructedDistance = Math.Min(
+                intentDistance,
+                settings.MaxDistance);
+            float queryDistance = Math.Min(
+                intentDistance + AimIntentEndpointTolerance,
+                settings.MaxDistance);
+            DomainResult shotSolved = SolveAim(
+                shotOrigin,
+                centerDirection,
+                queryDistance,
+                ownerId,
+                ownerTeam,
+                allowedTargetKinds,
+                out FpgFormalAimSolution shotSolution);
+            if (!shotSolved.IsSuccess)
+            {
+                return shotSolved;
+            }
+
+            Vector3 surfacePoint = shotSolution.HasSurface
+                ? ToPosition(shotSolution.ImpactPointKey)
+                : shotOrigin + centerDirection * unobstructedDistance;
+            string targetCoverId = string.Empty;
+            if (shotSolution.GeometryId.IsValid && coverGeometryResolver != null)
+            {
+                coverGeometryResolver.TryResolveCoverId(
+                    shotSolution.GeometryId,
+                    out targetCoverId);
+            }
+
+            FpgResolvedAimTargetType reticleTargetType =
+                ResolveAimTargetType(cameraSolution);
+            FpgResolvedAimTargetType targetType =
+                ResolveAimTargetType(shotSolution);
+            context = new FpgResolvedAimContext(
+                reticleViewport,
+                cameraOrigin,
+                normalizedCameraDirection,
+                targetPoint,
+                shotOrigin,
+                centerDirection,
+                surfacePoint,
+                reticleTargetType,
+                cameraSolution.TargetId,
+                cameraSolution.TargetKind,
+                cameraSolution.HitPart,
+                cameraSolution.GeometryId,
+                targetType,
+                shotSolution.TargetId,
+                shotSolution.TargetKind,
+                shotSolution.HitPart,
+                shotSolution.GeometryId,
+                targetCoverId,
+                currentCoverId,
+                version,
+                0L,
+                Vector3.Distance(shotOrigin, surfacePoint));
+            return context.IsValid
+                ? DomainResult.Success
+                : DomainResult.Rejected(RejectReason.InvalidState);
+        }
+
+        public DomainResult ResolveFrozenAimShotOrigin(
+            in FpgResolvedAimContext frozenContext,
+            Vector3 shotOrigin,
+            RuntimeId ownerId,
+            Team ownerTeam,
+            AttackTargetKinds allowedTargetKinds,
+            string currentCoverId,
+            IFpgCoverGeometryResolver coverGeometryResolver,
+            out FpgResolvedAimContext context)
+        {
+            context = FpgResolvedAimContext.Invalid;
+            if (!frozenContext.IsFrozen
+                || !IsFinite(shotOrigin))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            Vector3 centerDirection = frozenContext.TargetPoint - shotOrigin;
+            if (!IsUsableDirection(centerDirection))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            centerDirection.Normalize();
+            float intentDistance = Vector3.Distance(
+                frozenContext.TargetPoint,
+                shotOrigin);
+            float unobstructedDistance = Math.Min(
+                intentDistance,
+                settings.MaxDistance);
+            float queryDistance = Math.Min(
+                intentDistance + AimIntentEndpointTolerance,
+                settings.MaxDistance);
+            DomainResult shotSolved = SolveAim(
+                shotOrigin,
+                centerDirection,
+                queryDistance,
+                ownerId,
+                ownerTeam,
+                allowedTargetKinds,
+                out FpgFormalAimSolution shotSolution);
+            if (!shotSolved.IsSuccess)
+            {
+                return shotSolved;
+            }
+
+            Vector3 surfacePoint = shotSolution.HasSurface
+                ? ToPosition(shotSolution.ImpactPointKey)
+                : shotOrigin + centerDirection * unobstructedDistance;
+            string targetCoverId = string.Empty;
+            if (shotSolution.GeometryId.IsValid && coverGeometryResolver != null)
+            {
+                coverGeometryResolver.TryResolveCoverId(
+                    shotSolution.GeometryId,
+                    out targetCoverId);
+            }
+
+            FpgResolvedAimTargetType targetType =
+                ResolveAimTargetType(shotSolution);
+            context = new FpgResolvedAimContext(
+                frozenContext.ReticleViewport,
+                frozenContext.CameraOrigin,
+                frozenContext.CameraDirection,
+                frozenContext.TargetPoint,
+                shotOrigin,
+                centerDirection,
+                surfacePoint,
+                frozenContext.ReticleTargetType,
+                frozenContext.ReticleTargetId,
+                frozenContext.ReticleTargetKind,
+                frozenContext.ReticleHitPart,
+                frozenContext.ReticleGeometryId,
+                targetType,
+                shotSolution.TargetId,
+                shotSolution.TargetKind,
+                shotSolution.HitPart,
+                shotSolution.GeometryId,
+                targetCoverId,
+                currentCoverId,
+                frozenContext.Version,
+                frozenContext.FrozenVersion,
+                Vector3.Distance(shotOrigin, surfacePoint));
+            return context.IsValid
+                ? DomainResult.Success
+                : DomainResult.Rejected(RejectReason.InvalidState);
         }
 
         /// <summary>
@@ -1179,6 +1438,27 @@ namespace FPG.Demo.Unity
             return new Vector3(key.X * scale, key.Y * scale, key.Z * scale);
         }
 
+        private static FpgResolvedAimTargetType ResolveAimTargetType(
+            in FpgFormalAimSolution solution)
+        {
+            if (!solution.HasSurface)
+            {
+                return FpgResolvedAimTargetType.None;
+            }
+
+            switch (solution.TargetKind)
+            {
+                case QueryTargetKind.Combatant:
+                    return FpgResolvedAimTargetType.Enemy;
+                case QueryTargetKind.Projectile:
+                    return FpgResolvedAimTargetType.Projectile;
+                case QueryTargetKind.EnvironmentBlocker:
+                    return FpgResolvedAimTargetType.Environment;
+                default:
+                    return FpgResolvedAimTargetType.None;
+            }
+        }
+
         private static Vector3 ToDirection(SpatialVectorKey key)
         {
             float scale = 1f / SpatialContract.DirectionUnits;
@@ -1317,6 +1597,11 @@ namespace FPG.Demo.Unity
         private static bool IsFinite(Vector3 value)
         {
             return IsFinite(value.x) && IsFinite(value.y) && IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Vector2 value)
+        {
+            return IsFinite(value.x) && IsFinite(value.y);
         }
 
         private static bool IsFinite(float value)

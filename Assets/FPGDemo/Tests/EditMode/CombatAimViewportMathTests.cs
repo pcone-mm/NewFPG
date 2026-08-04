@@ -53,6 +53,63 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void MouseDeltaUsesAuthoredReferenceResolutionInsteadOfOutputResolution()
+        {
+            Vector2 referenceResolution = new Vector2(1920f, 1080f);
+            Vector2 rawDelta = new Vector2(96f, -54f);
+
+            Vector2 at1080p = CombatAimViewportMath.ApplyMouseDelta(
+                CombatAimViewportMath.Center,
+                rawDelta,
+                referenceResolution,
+                1f);
+            Vector2 at4k = CombatAimViewportMath.ApplyMouseDelta(
+                CombatAimViewportMath.Center,
+                rawDelta,
+                referenceResolution,
+                1f);
+
+            Assert.That(at4k, Is.EqualTo(at1080p));
+            Assert.That(at1080p, Is.EqualTo(new Vector2(0.55f, 0.45f)));
+        }
+
+        [TestCase(30)]
+        [TestCase(60)]
+        [TestCase(120)]
+        public void GamepadViewportSpeedIsFrameRateIndependent(int frameRate)
+        {
+            Vector2 value = CombatAimViewportMath.Center;
+            float deltaTime = 1f / frameRate;
+            for (int frame = 0; frame < frameRate; frame++)
+            {
+                value = CombatAimViewportMath.ApplyGamepadInput(
+                    value,
+                    Vector2.right,
+                    maximumViewportSpeed: 0.2f,
+                    radialDeadzone: 0f,
+                    responseExponent: 1f,
+                    deltaTime);
+            }
+
+            Assert.That(value.x, Is.EqualTo(0.7f).Within(0.0001f));
+            Assert.That(value.y, Is.EqualTo(0.5f).Within(0.0001f));
+        }
+
+        [Test]
+        public void GamepadRadialDeadzoneSuppressesDrift()
+        {
+            Vector2 value = CombatAimViewportMath.ApplyGamepadInput(
+                CombatAimViewportMath.Center,
+                new Vector2(0.1f, 0.1f),
+                maximumViewportSpeed: 1f,
+                radialDeadzone: 0.2f,
+                responseExponent: 1.5f,
+                deltaTime: 1f);
+
+            Assert.That(value, Is.EqualTo(CombatAimViewportMath.Center));
+        }
+
+        [Test]
         public void ScreenPointUsesAbsoluteViewportSpaceAndPreservesLastValidValue()
         {
             Vector2 moved = CombatAimViewportMath.ApplyScreenPoint(

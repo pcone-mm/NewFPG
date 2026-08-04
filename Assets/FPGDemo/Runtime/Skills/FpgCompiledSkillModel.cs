@@ -405,7 +405,8 @@ namespace FPG.Demo.Skills
             int[] alternateAnimations,
             FpgCompiledSkillEvent[] events,
             FpgCompiledSkillActionPresentation[] actionPresentations,
-            bool holdUntilCanceled = false)
+            bool holdUntilCanceled = false,
+            int allowWithdrawTick = -1)
         {
             FpgSkillValidationResult validation = FpgSkillCompiler.ValidateSequence(
                 kind,
@@ -432,6 +433,12 @@ namespace FPG.Demo.Skills
 
             Kind = kind;
             DurationTicks = durationTicks;
+            if (allowWithdrawTick < -1 || allowWithdrawTick > durationTicks)
+            {
+                throw new ArgumentOutOfRangeException(nameof(allowWithdrawTick));
+            }
+
+            AllowWithdrawTick = allowWithdrawTick;
             MainAnimation = mainAnimation;
             Loop = loop;
             HoldUntilCanceled = holdUntilCanceled;
@@ -451,7 +458,8 @@ namespace FPG.Demo.Skills
                 durationTicks,
                 loop,
                 holdUntilCanceled,
-                this.events);
+                this.events,
+                allowWithdrawTick);
             PresentationHash =
                 FpgSkillCompiler.ComputeSequencePresentationHash(
                     kind,
@@ -467,6 +475,12 @@ namespace FPG.Demo.Skills
         public FpgSkillSequenceKind Kind { get; }
 
         public int DurationTicks { get; }
+
+        /// <summary>
+        /// Inclusive final tick at which an attack sequence keeps the player
+        /// exposed. -1 is reserved for non-attack sequences.
+        /// </summary>
+        public int AllowWithdrawTick { get; }
 
         public int MainAnimation { get; }
 
@@ -504,6 +518,8 @@ namespace FPG.Demo.Skills
 
         public bool IsValid => Kind != FpgSkillSequenceKind.None
             && DurationTicks >= 0
+            && AllowWithdrawTick >= -1
+            && AllowWithdrawTick <= DurationTicks
             && MainAnimation > 0
             && Enum.IsDefined(
                 typeof(FpgSkillAnimationPlaybackMode),
@@ -1388,7 +1404,8 @@ namespace FPG.Demo.Skills
             int durationTicks,
             bool loop,
             bool holdUntilCanceled,
-            FpgCompiledSkillEvent[] events)
+            FpgCompiledSkillEvent[] events,
+            int allowWithdrawTick = -1)
         {
             ulong hash = StableHash.Append(
                 StableHash.Mix(SequenceHashSeed),
@@ -1397,6 +1414,9 @@ namespace FPG.Demo.Skills
             hash = StableHash.Append(hash, unchecked((ulong)durationTicks));
             hash = StableHash.Append(hash, loop ? 1UL : 0UL);
             hash = StableHash.Append(hash, holdUntilCanceled ? 1UL : 0UL);
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)allowWithdrawTick));
 
             int gameplayEventCount = 0;
             for (int index = 0; index < events.Length; index++)

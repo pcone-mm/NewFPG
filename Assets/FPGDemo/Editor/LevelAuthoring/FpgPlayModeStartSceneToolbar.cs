@@ -1,5 +1,6 @@
 #if UNITY_6000_3_OR_NEWER
 using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.Overlays;
 using UnityEditor.SceneManagement;
@@ -18,6 +19,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
             "FPG.Demo.PlayModeStartSceneToolbar.StartOption";
         private const string MainToolbarWindowTypeName =
             "UnityEditor.MainToolbarWindow";
+        private const string PlayModeTestScenePrefix =
+            "Assets/InitTestScene";
+        private const string TestRunnerApiTypeName =
+            "UnityEditor.TestTools.TestRunner.Api.TestRunnerApi, UnityEditor.TestRunner";
         private const int MaxToolbarDisplayAttempts = 10;
 
         private static StartOption selectedOption;
@@ -30,13 +35,15 @@ namespace FPG.Demo.Editor.LevelAuthoring
             EditorApplication.delayCall += EnsureToolbarDisplayed;
             EditorSceneManager.activeSceneChangedInEditMode +=
                 OnActiveSceneChangedInEditMode;
+            EditorSceneManager.sceneSaved += OnSceneSaved;
             EditorApplication.projectChanged += RefreshToolbar;
         }
 
         private enum StartOption
         {
             Boot = 0,
-            CurrentScene = 1
+            CurrentScene = 1,
+            BattleTest = 2
         }
 
         [MainToolbarElement(
@@ -73,6 +80,19 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 new GUIContent("Current Scene"),
                 selectedOption == StartOption.CurrentScene,
                 () => Select(StartOption.CurrentScene));
+
+            if (LoadBattleTestScene() != null)
+            {
+                menu.AddItem(
+                    new GUIContent("Battle Test"),
+                    selectedOption == StartOption.BattleTest,
+                    () => Select(StartOption.BattleTest));
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Battle Test (Missing)"));
+            }
+
             menu.DropDown(dropdownRect);
         }
 
@@ -96,19 +116,38 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private static void ApplySelectedOption()
         {
+            if (IsTestRunActive())
+            {
+                EditorSceneManager.playModeStartScene = null;
+                return;
+            }
+
+            if (selectedOption != StartOption.BattleTest
+                && IsPlayModeTestBootstrapScene(
+                    SceneManager.GetActiveScene()))
+            {
+                EditorSceneManager.playModeStartScene = null;
+                return;
+            }
+
             if (selectedOption == StartOption.CurrentScene)
             {
                 EditorSceneManager.playModeStartScene = null;
                 return;
             }
 
-            SceneAsset bootScene = LoadBootScene();
-            EditorSceneManager.playModeStartScene = bootScene;
-            if (bootScene == null)
+            SceneAsset startScene = selectedOption == StartOption.BattleTest
+                ? LoadBattleTestScene()
+                : LoadBootScene();
+            EditorSceneManager.playModeStartScene = startScene;
+            if (startScene == null)
             {
                 Debug.LogError(
-                    "Play Mode could not use the Boot start scene because "
-                    + $"'{FpgProductionSceneList.BootScenePath}' is missing.");
+                    "Play Mode could not use the selected start scene because '"
+                    + (selectedOption == StartOption.BattleTest
+                        ? FpgBattleTestDevelopmentSceneList.BattleTestScenePath
+                        : FpgProductionSceneList.BootScenePath)
+                    + "' is missing.");
             }
         }
 
@@ -118,11 +157,23 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 FpgProductionSceneList.BootScenePath);
         }
 
+        private static SceneAsset LoadBattleTestScene()
+        {
+            return AssetDatabase.LoadAssetAtPath<SceneAsset>(
+                FpgBattleTestDevelopmentSceneList.BattleTestScenePath);
+        }
+
         private static string GetToolbarText()
         {
-            return selectedOption == StartOption.Boot
-                ? "Boot"
-                : "Current Scene";
+            switch (selectedOption)
+            {
+                case StartOption.Boot:
+                    return "Boot";
+                case StartOption.BattleTest:
+                    return "Battle Test";
+                default:
+                    return "Current Scene";
+            }
         }
 
         private static string GetTooltip()
@@ -130,6 +181,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (selectedOption == StartOption.Boot)
             {
                 return "Play Mode start scene: Boot";
+            }
+
+            if (selectedOption == StartOption.BattleTest)
+            {
+                return "Play Mode start scene: Battle Test";
             }
 
             Scene activeScene = SceneManager.GetActiveScene();
@@ -143,7 +199,54 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Scene previousScene,
             Scene newScene)
         {
+            ApplySelectedOption();
             RefreshToolbar();
+        }
+
+        private static void OnSceneSaved(Scene scene)
+        {
+            if (selectedOption != StartOption.BattleTest
+                && IsPlayModeTestBootstrapScene(scene))
+            {
+                EditorSceneManager.playModeStartScene = null;
+            }
+        }
+
+        private static bool IsPlayModeTestBootstrapScene(Scene scene)
+        {
+            if (!scene.IsValid() || string.IsNullOrEmpty(scene.path))
+            {
+                return false;
+            }
+
+            string normalizedPath = scene.path.Replace('\\', '/');
+            return normalizedPath.StartsWith(
+                    PlayModeTestScenePrefix,
+                    StringComparison.Ordinal)
+                && normalizedPath.EndsWith(
+                    ".unity",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsTestRunActive()
+        {
+            Type apiType = Type.GetType(TestRunnerApiTypeName, false);
+            MethodInfo method = apiType?.GetMethod(
+                "IsRunActive",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            if (method == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                return method.Invoke(null, null) is bool active && active;
+            }
+            catch (TargetInvocationException)
+            {
+                return false;
+            }
         }
 
         private static void RefreshToolbar()

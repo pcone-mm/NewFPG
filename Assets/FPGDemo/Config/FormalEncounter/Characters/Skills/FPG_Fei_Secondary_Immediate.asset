@@ -20,6 +20,7 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 60
+    allowWithdrawTick: 60
     alternateAnimations: []
     mainAnimation: defense_play
     loop: 0

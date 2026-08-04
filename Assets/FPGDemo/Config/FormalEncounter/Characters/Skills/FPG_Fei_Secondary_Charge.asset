@@ -20,6 +20,10 @@ MonoBehaviour:
   sequences:
   - kind: 2
     durationTicks: 28
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: u4_attack_ready
     loop: 0
@@ -53,6 +57,10 @@ MonoBehaviour:
     warnings: []
   - kind: 3
     durationTicks: 0
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: u4_attack_ready
     loop: 1
@@ -70,6 +78,10 @@ MonoBehaviour:
     warnings: []
   - kind: 4
     durationTicks: 52
+    allowWithdrawTick: 52
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: u4_attack_play
     loop: 0
@@ -132,6 +144,10 @@ MonoBehaviour:
     warnings: []
   - kind: 5
     durationTicks: 28
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: u4_attack_end
     loop: 0

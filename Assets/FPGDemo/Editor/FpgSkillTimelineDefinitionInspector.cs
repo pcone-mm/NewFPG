@@ -1,4 +1,5 @@
 using FPG.Demo.Editor.SkillAuthoring;
+using FPG.Demo.Player;
 using FPG.Demo.Skills;
 using FPG.Demo.Unity;
 using UnityEditor;
@@ -18,20 +19,38 @@ namespace FPG.Demo.Editor
             using (new EditorGUI.DisabledScope(true))
             {
                 EditorGUILayout.ObjectField(
-                    "Script",
+                    "脚本",
                     MonoScript.FromScriptableObject(skill),
                     typeof(MonoScript),
                     false);
             }
 
             serializedObject.Update();
-            DrawPropertiesExcluding(serializedObject, "m_Script");
+            if (skill is FpgPlayerSkillDefinition player)
+            {
+                if (player.UsesSecondaryTriggerMode)
+                {
+                    DrawPlayerSkillActivationProperties();
+                }
+
+                DrawPropertiesExcluding(
+                    serializedObject,
+                    "m_Script",
+                    "secondaryTriggerMode",
+                    "minimumChargeTicks",
+                    "sequenceCooldownTicks",
+                    "chargeProgressTicks");
+            }
+            else
+            {
+                DrawPropertiesExcluding(serializedObject, "m_Script");
+            }
             serializedObject.ApplyModifiedProperties();
 
             EditorGUILayout.Space();
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(
-                "Unified Skill Timeline",
+                "统一技能时间轴",
                 EditorStyles.boldLabel);
 
             if (TryCompileSkill(
@@ -41,9 +60,9 @@ namespace FPG.Demo.Editor
                     out string error))
             {
                 EditorGUILayout.HelpBox(
-                    "60 Hz validation passed. Sequences: "
+                    "60 Hz 校验通过。序列数："
                         + sequenceCount
-                        + " | Gameplay hash: 0x"
+                        + " | Gameplay 哈希：0x"
                         + gameplayHash.ToString("X16"),
                     MessageType.Info);
             }
@@ -51,17 +70,68 @@ namespace FPG.Demo.Editor
             {
                 EditorGUILayout.HelpBox(
                     string.IsNullOrWhiteSpace(error)
-                        ? "Skill validation failed."
+                        ? "技能校验失败。"
                         : error,
                     MessageType.Error);
             }
 
-            if (GUILayout.Button("Open Skill Editor"))
+            if (GUILayout.Button("打开技能编辑器"))
             {
                 FpgSkillEditorWindow.OpenAsset(skill);
             }
 
             EditorGUILayout.EndVertical();
+        }
+
+        private void DrawPlayerSkillActivationProperties()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField(
+                "玩家技能激活",
+                EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "该模式只声明副射技能资产的触发契约；实际启用的副射由武器槽位和角色目录中的模式选择决定。",
+                MessageType.Info);
+
+            SerializedProperty mode = serializedObject.FindProperty(
+                "secondaryTriggerMode");
+            if (mode != null)
+            {
+                EditorGUI.BeginChangeCheck();
+                int selectedIndex = EditorGUILayout.Popup(
+                    new GUIContent("副射触发模式"),
+                    Mathf.Clamp(mode.enumValueIndex, 0, 1),
+                    new[] { "蓄力释放", "按住时立即重复" });
+                if (EditorGUI.EndChangeCheck())
+                {
+                    mode.enumValueIndex = selectedIndex;
+                }
+            }
+
+            DrawLocalizedActivationProperty(
+                "minimumChargeTicks",
+                "最小蓄力 Tick");
+            DrawLocalizedActivationProperty(
+                "sequenceCooldownTicks",
+                "序列冷却 Tick");
+            DrawLocalizedActivationProperty(
+                "chargeProgressTicks",
+                "蓄力进度 Tick");
+        }
+
+        private void DrawLocalizedActivationProperty(
+            string propertyName,
+            string label)
+        {
+            SerializedProperty property = serializedObject.FindProperty(
+                propertyName);
+            if (property != null)
+            {
+                EditorGUILayout.PropertyField(
+                    property,
+                    new GUIContent(label),
+                    includeChildren: false);
+            }
         }
 
         private static bool TryCompileSkill(
@@ -116,6 +186,36 @@ namespace FPG.Demo.Editor
 
             FpgSkillEditorWindow.OpenAsset(skill);
             return true;
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(SecondaryTriggerMode))]
+    internal sealed class SecondaryTriggerModeDrawer : PropertyDrawer
+    {
+        private static readonly string[] Labels =
+        {
+            "蓄力释放",
+            "按住时立即重复"
+        };
+
+        public override void OnGUI(
+            Rect position,
+            SerializedProperty property,
+            GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+            EditorGUI.BeginChangeCheck();
+            int selectedIndex = EditorGUI.Popup(
+                position,
+                label.text,
+                Mathf.Clamp(property.enumValueIndex, 0, Labels.Length - 1),
+                Labels);
+            if (EditorGUI.EndChangeCheck())
+            {
+                property.enumValueIndex = selectedIndex;
+            }
+
+            EditorGUI.EndProperty();
         }
     }
 }

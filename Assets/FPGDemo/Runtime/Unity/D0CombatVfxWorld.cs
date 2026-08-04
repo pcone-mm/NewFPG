@@ -138,6 +138,7 @@ namespace FPG.Demo.Unity
         public int HotPathInstantiateCount { get; private set; }
         public int HotPathDestroyCount { get; private set; }
         public int AcquireRejectCount { get; private set; }
+        public int RecycledInstanceCount { get; private set; }
         public int ReleaseCount { get; private set; }
 
         public bool TrySetGlobalActiveCapacity(
@@ -456,11 +457,12 @@ namespace FPG.Demo.Unity
                 || !runtimePools.TryGetValue(key, out RuntimePool pool)
                 || !pool.TryAcquire(
                     worldPosition,
-                        worldRotation,
-                        worldScale,
-                        presentationTime,
-                        holdUntilRelease,
-                        out RuntimeSlot slot))
+                    worldRotation,
+                    worldScale,
+                    presentationTime,
+                    holdUntilRelease,
+                    out RuntimeSlot slot,
+                    out bool recycled))
             {
                 AcquireRejectCount++;
                 return false;
@@ -468,7 +470,15 @@ namespace FPG.Demo.Unity
 
             instance = slot.Instance;
             slotsByObject[instance] = slot;
-            ActiveInstanceCount++;
+            if (recycled)
+            {
+                RecycledInstanceCount++;
+            }
+            else
+            {
+                ActiveInstanceCount++;
+            }
+
             return true;
         }
 
@@ -667,6 +677,7 @@ namespace FPG.Demo.Unity
         private sealed class RuntimePool
         {
             private readonly List<RuntimeSlot> slots = new List<RuntimeSlot>();
+            private long nextActivationSequence;
 
             public RuntimePool(D0CombatVfxPoolDefinition definition)
             {
@@ -688,7 +699,8 @@ namespace FPG.Demo.Unity
                 Vector3 worldScale,
                 float now,
                 bool holdUntilRelease,
-                out RuntimeSlot slot)
+                out RuntimeSlot slot,
+                out bool recycled)
             {
                 for (int index = 0; index < slots.Count; index++)
                 {
@@ -703,12 +715,44 @@ namespace FPG.Demo.Unity
                         worldRotation,
                         worldScale,
                         now,
-                        holdUntilRelease);
+                        holdUntilRelease,
+                        NextActivationSequence());
                     slot = candidate;
+                    recycled = false;
+                    return true;
+                }
+
+                RuntimeSlot oldest = null;
+                for (int index = 0; index < slots.Count; index++)
+                {
+                    RuntimeSlot candidate = slots[index];
+                    if (!candidate.Active || candidate.Held
+                        || (oldest != null
+                            && candidate.ActivationSequence
+                                >= oldest.ActivationSequence))
+                    {
+                        continue;
+                    }
+
+                    oldest = candidate;
+                }
+
+                if (oldest != null)
+                {
+                    oldest.Activate(
+                        worldPosition,
+                        worldRotation,
+                        worldScale,
+                        now,
+                        holdUntilRelease,
+                        NextActivationSequence());
+                    slot = oldest;
+                    recycled = true;
                     return true;
                 }
 
                 slot = null;
+                recycled = false;
                 return false;
             }
 
@@ -734,6 +778,16 @@ namespace FPG.Demo.Unity
                         owner.OnSlotExpired(slot);
                     }
                 }
+
+                nextActivationSequence = 0L;
+            }
+
+            private long NextActivationSequence()
+            {
+                nextActivationSequence = nextActivationSequence == long.MaxValue
+                    ? 1L
+                    : nextActivationSequence + 1L;
+                return nextActivationSequence;
             }
         }
 
@@ -755,14 +809,21 @@ namespace FPG.Demo.Unity
             public bool Active { get; private set; }
             public bool Held { get; private set; }
             public float ExpireAt { get; private set; }
+            public long ActivationSequence { get; private set; }
 
             public void Activate(
                 Vector3 position,
                 Quaternion rotation,
                 Vector3 scale,
                 float now,
-                bool holdUntilRelease)
+                bool holdUntilRelease,
+                long activationSequence)
             {
+                if (Active)
+                {
+                    Instance.SetActive(false);
+                }
+
                 Transform target = Instance.transform;
                 target.SetPositionAndRotation(position, rotation);
                 target.localScale = scale;
@@ -770,6 +831,7 @@ namespace FPG.Demo.Unity
                 ExpireAt = holdUntilRelease
                     ? float.PositiveInfinity
                     : now + duration;
+                ActivationSequence = activationSequence;
                 Active = true;
                 Instance.SetActive(true);
                 for (int index = 0; index < particleSystems.Length; index++)
@@ -790,6 +852,7 @@ namespace FPG.Demo.Unity
                 Active = false;
                 Held = false;
                 ExpireAt = 0f;
+                ActivationSequence = 0L;
                 if (Instance != null)
                 {
                     for (int index = 0; index < particleSystems.Length; index++)

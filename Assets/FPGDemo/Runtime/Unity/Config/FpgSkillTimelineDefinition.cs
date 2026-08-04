@@ -79,6 +79,23 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0)]
         private int durationTicks;
 
+        [InspectorName("允许回掩体 Tick")]
+        [SerializeField, Min(-1)]
+        private int allowWithdrawTick = -1;
+
+        [InspectorName("攻击时序模式")]
+        [SerializeField]
+        private FpgAttackTimingMode attackTimingMode =
+            FpgAttackTimingMode.FixedCooldown;
+
+        [InspectorName("前摇攻速缩放系数")]
+        [SerializeField, Range(0f, 1f)]
+        private float windupAttackSpeedCoefficient = 1f;
+
+        [InspectorName("不同攻击可打断 Tick")]
+        [SerializeField, Min(-1)]
+        private int differentAttackInterruptTick = -1;
+
         [SerializeField]
         private string[] alternateAnimations = Array.Empty<string>();
 
@@ -135,6 +152,12 @@ namespace FPG.Demo.Unity
 
         public FpgSkillSequenceKind Kind => kind;
         public int DurationTicks => durationTicks;
+        public int AllowWithdrawTick => allowWithdrawTick;
+        public FpgAttackTimingMode AttackTimingMode => attackTimingMode;
+        public float WindupAttackSpeedCoefficient =>
+            windupAttackSpeedCoefficient;
+        public int DifferentAttackInterruptTick =>
+            differentAttackInterruptTick;
         public IReadOnlyList<string> AlternateAnimations =>
             alternateAnimations ?? Array.Empty<string>();
         public string MainAnimation => mainAnimation;
@@ -192,6 +215,17 @@ namespace FPG.Demo.Unity
             if (!Enum.IsDefined(typeof(FpgSkillSequenceKind), kind)
                 || kind == FpgSkillSequenceKind.None
                 || durationTicks < 0
+                || allowWithdrawTick < -1
+                || allowWithdrawTick > durationTicks
+                || !Enum.IsDefined(
+                    typeof(FpgAttackTimingMode),
+                    attackTimingMode)
+                || float.IsNaN(windupAttackSpeedCoefficient)
+                || float.IsInfinity(windupAttackSpeedCoefficient)
+                || windupAttackSpeedCoefficient < 0f
+                || windupAttackSpeedCoefficient > 1f
+                || differentAttackInterruptTick < -1
+                || differentAttackInterruptTick > durationTicks
                 || string.IsNullOrWhiteSpace(mainAnimation))
             {
                 error = "Skill sequence requires a valid kind, duration and main animation.";
@@ -201,6 +235,13 @@ namespace FPG.Demo.Unity
             if (holdUntilCanceled && HasGameplayActions)
             {
                 error = $"Skill sequence '{kind}' cannot hold until canceled while containing gameplay actions.";
+                return false;
+            }
+
+            if (attackTimingMode
+                    == FpgAttackTimingMode.CharacterAttackSpeed
+                && !TryValidateCharacterAttackSpeedTiming(out error))
+            {
                 return false;
             }
 
@@ -587,7 +628,8 @@ namespace FPG.Demo.Unity
                 compiledVariants,
                 compiled,
                 actionPresentations,
-                holdUntilCanceled);
+                holdUntilCanceled,
+                allowWithdrawTick);
         }
 
         private static int CountActionPresentations<TAction>(TAction[] values)
@@ -800,6 +842,38 @@ namespace FPG.Demo.Unity
                         $"Summon action '{boundEventId}' cannot drive more than one self-destruct action.";
                     return false;
                 }
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        internal FpgCompiledSkillTimingDefinition CompileTiming()
+        {
+            FpgSkillAttackEventDefinition[] attacks = attackEvents
+                ?? Array.Empty<FpgSkillAttackEventDefinition>();
+            int authoredAttackFrameTick = attacks.Length == 0
+                ? -1
+                : attacks[0].Tick;
+            return new FpgCompiledSkillTimingDefinition(
+                attackTimingMode,
+                windupAttackSpeedCoefficient,
+                differentAttackInterruptTick,
+                authoredAttackFrameTick);
+        }
+
+        private bool TryValidateCharacterAttackSpeedTiming(out string error)
+        {
+            FpgSkillAttackEventDefinition[] attacks = attackEvents
+                ?? Array.Empty<FpgSkillAttackEventDefinition>();
+            int otherGameplayCount = (projectileEvents?.Length ?? 0)
+                + (reloadEvents?.Length ?? 0)
+                + (summonEvents?.Length ?? 0)
+                + (selfDestructOwnerEvents?.Length ?? 0);
+            if (attacks.Length != 1 || otherGameplayCount != 0)
+            {
+                error = $"Skill sequence '{kind}' uses character attack speed and must contain exactly one attack event and no other gameplay actions.";
+                return false;
             }
 
             error = string.Empty;

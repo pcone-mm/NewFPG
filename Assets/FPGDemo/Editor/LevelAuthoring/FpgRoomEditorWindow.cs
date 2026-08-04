@@ -34,6 +34,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private ScriptableObject selectedRoom;
         private SerializedObject serializedRoom;
         private bool refreshQueued;
+        private bool rebuildMarkerDetailsQueued;
         private bool suppressRoomSelectionChanged;
 
         private FpgEncounterProfile formalPreviewProfile;
@@ -101,6 +102,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private void OnDisable()
         {
             EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
+            EditorApplication.delayCall -= FlushCurrentRoomRefresh;
+            refreshQueued = false;
+            rebuildMarkerDetailsQueued = false;
 
             AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
             EditorApplication.quitting -= OnEditorQuitting;
@@ -116,6 +120,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private void OnBeforeAssemblyReload()
         {
             EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
+            EditorApplication.delayCall -= FlushCurrentRoomRefresh;
+            refreshQueued = false;
+            rebuildMarkerDetailsQueued = false;
 
             RestoreGameViewAspect(true);
             DisposeSceneTool();
@@ -995,7 +1002,22 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             if (ReferenceEquals(selectedRoom, room))
             {
-                serializedRoom?.Update();
+                bool rebuildBindings = roomDetails != null
+                    && (roomDetails.childCount == 0
+                        || room != null
+                        && (serializedRoom == null
+                            || serializedRoom.targetObject != room));
+                if (rebuildBindings)
+                {
+                    serializedRoom = room == null
+                        ? null
+                        : new SerializedObject(room);
+                }
+                else
+                {
+                    serializedRoom?.Update();
+                }
+
                 if (sceneTool?.Room != room)
                 {
                     sceneTool?.SetRoom(room);
@@ -1003,6 +1025,15 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 else
                 {
                     sceneTool?.RebuildPreview();
+                }
+
+                if (rebuildBindings)
+                {
+                    RebuildRoomDetails();
+                    RefreshMarkers();
+                    RefreshValidation();
+                    RestoreRoomListSelection(room);
+                    UpdateCameraPreviewControls();
                 }
 
                 UpdateLevelStatus();
@@ -1671,7 +1702,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             UpdateLevelStatus(statusMessage);
         }
 
-        private void RefreshMarkers()
+        private void RefreshMarkers(bool rebuildDetails = true)
         {
             FpgRoomMarkerHandle keep = sceneTool?.SelectedMarker;
             markers.Clear();
@@ -1686,7 +1717,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
             }
 
-            RebuildMarkerDetails(sceneTool?.SelectedMarker);
+            if (rebuildDetails)
+            {
+                RebuildMarkerDetails(sceneTool?.SelectedMarker);
+            }
         }
 
         private void OnMarkerSelectionChanged(IEnumerable<object> selection)
@@ -1743,6 +1777,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             SerializedProperty end = marker.GetEndProperty();
             int childDepth = marker.depth + 1;
             bool enterChildren = true;
+            bool coverPoseDetailsAdded = false;
             while (iterator.NextVisible(enterChildren) && !SerializedProperty.EqualContents(iterator, end))
             {
                 enterChildren = false;
@@ -1752,30 +1787,118 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
 
                 SerializedProperty child = iterator.Copy();
-                PropertyField field = new PropertyField(child, FpgRoomAuthoringSchema.ChinesePropertyName(child.name));
-                field.BindProperty(child);
-                field.RegisterCallback<SerializedPropertyChangeEvent>(evt =>
+                if (handle.Kind == FpgRoomMarkerKind.Cover
+                    && !coverPoseDetailsAdded
+                    && child.name == "prefab")
                 {
-                    if (serializedRoom != null && serializedRoom.hasModifiedProperties)
-                    {
-                        EditorUtility.SetDirty(selectedRoom);
-                    }
-                    if (handle.Kind == FpgRoomMarkerKind.Destructible
-                        || handle.Kind == FpgRoomMarkerKind.Cover)
-                    {
-                        sceneTool?.QueuePreviewRefresh();
-                    }
-                    else if (handle.Kind == FpgRoomMarkerKind.PlayerEntry)
-                    {
-                        sceneTool?.QueueCameraPreviewRefresh();
-                    }
-                    QueueCurrentRoomRefresh();
-                    SceneView.RepaintAll();
-                });
-                markerDetails.Add(field);
+                    BuildCoverPlayerPoseDetails(marker, handle);
+                    coverPoseDetailsAdded = true;
+                }
+
+                if (handle.Kind == FpgRoomMarkerKind.Cover
+                    && IsCoverPlayerPoseProperty(child.name))
+                {
+                    continue;
+                }
+
+                AddMarkerPropertyField(
+                    markerDetails,
+                    child,
+                    FpgRoomAuthoringSchema.ChinesePropertyName(child.name),
+                    handle);
+            }
+
+            if (handle.Kind == FpgRoomMarkerKind.Cover
+                && !coverPoseDetailsAdded)
+            {
+                BuildCoverPlayerPoseDetails(marker, handle);
             }
 
             BuildCoverCameraDetails(handle);
+        }
+
+        private static bool IsCoverPlayerPoseProperty(string propertyName)
+        {
+            return propertyName == "playerReachableLocalPosition"
+                || propertyName == "playerReachableLocalEulerAngles"
+                || propertyName == "playerLeftPeekLocalPosition"
+                || propertyName == "playerRightPeekLocalPosition";
+        }
+
+        private void BuildCoverPlayerPoseDetails(
+            SerializedProperty cover,
+            FpgRoomMarkerHandle handle)
+        {
+            VisualElement arrivalGroup = CreateMarkerDetailGroup("玩家到达点");
+            AddMarkerPropertyField(
+                arrivalGroup,
+                cover.FindPropertyRelative("playerReachableLocalPosition"),
+                "位置",
+                handle);
+            AddMarkerPropertyField(
+                arrivalGroup,
+                cover.FindPropertyRelative("playerReachableLocalEulerAngles"),
+                "朝向",
+                handle);
+            markerDetails.Add(arrivalGroup);
+
+            VisualElement peekGroup = CreateMarkerDetailGroup("玩家探身点");
+            AddMarkerPropertyField(
+                peekGroup,
+                cover.FindPropertyRelative("playerLeftPeekLocalPosition"),
+                "左侧位置",
+                handle);
+            AddMarkerPropertyField(
+                peekGroup,
+                cover.FindPropertyRelative("playerRightPeekLocalPosition"),
+                "右侧位置",
+                handle);
+            markerDetails.Add(peekGroup);
+        }
+
+        private static VisualElement CreateMarkerDetailGroup(string title)
+        {
+            VisualElement group = new VisualElement();
+            group.AddToClassList("marker-detail-group");
+            Label heading = new Label(title);
+            heading.AddToClassList("marker-detail-group__title");
+            group.Add(heading);
+            return group;
+        }
+
+        private void AddMarkerPropertyField(
+            VisualElement container,
+            SerializedProperty property,
+            string label,
+            FpgRoomMarkerHandle handle)
+        {
+            if (property == null)
+            {
+                return;
+            }
+
+            SerializedProperty boundProperty = property.Copy();
+            PropertyField field = new PropertyField(boundProperty, label);
+            field.BindProperty(boundProperty);
+            field.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
+            {
+                if (serializedRoom != null && serializedRoom.hasModifiedProperties)
+                {
+                    EditorUtility.SetDirty(selectedRoom);
+                }
+                if (handle.Kind == FpgRoomMarkerKind.Destructible
+                    || handle.Kind == FpgRoomMarkerKind.Cover)
+                {
+                    sceneTool?.QueuePreviewRefresh();
+                }
+                else if (handle.Kind == FpgRoomMarkerKind.PlayerEntry)
+                {
+                    sceneTool?.QueueCameraPreviewRefresh();
+                }
+                QueueCurrentRoomRefresh(false);
+                SceneView.RepaintAll();
+            });
+            container.Add(field);
         }
 
         private void BuildCoverCameraDetails(FpgRoomMarkerHandle handle)
@@ -1957,27 +2080,37 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void QueueCurrentRoomRefresh()
         {
+            QueueCurrentRoomRefresh(true);
+        }
+
+        private void QueueCurrentRoomRefresh(bool rebuildMarkerDetails)
+        {
+            rebuildMarkerDetailsQueued |= rebuildMarkerDetails;
             if (refreshQueued)
             {
                 return;
             }
 
             refreshQueued = true;
-            EditorApplication.delayCall += () =>
-            {
-                refreshQueued = false;
-                if (this == null)
-                {
-                    return;
-                }
+            EditorApplication.delayCall += FlushCurrentRoomRefresh;
+        }
 
-                serializedRoom?.Update();
-                RefreshMarkers();
-                RefreshRoomAssets();
-                RefreshValidation();
-                UpdateLevelStatus();
-                Repaint();
-            };
+        private void FlushCurrentRoomRefresh()
+        {
+            bool shouldRebuildMarkerDetails = rebuildMarkerDetailsQueued;
+            refreshQueued = false;
+            rebuildMarkerDetailsQueued = false;
+            if (this == null)
+            {
+                return;
+            }
+
+            serializedRoom?.Update();
+            RefreshMarkers(shouldRebuildMarkerDetails);
+            RefreshRoomAssets();
+            RefreshValidation();
+            UpdateLevelStatus();
+            Repaint();
         }
 
         private void OnProjectChanged()

@@ -199,22 +199,8 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            try
-            {
-                settings = new UnityAttackQuerySettings(
-                    threeCProfile.MaximumAimDistance,
-                    settings.PrimarySpreadTangent,
-                    settings.SecondaryAreaRadius,
-                    settings.HitboxLayerMask,
-                    settings.BlockerLayerMask);
-                error = string.Empty;
-                return true;
-            }
-            catch (ArgumentException exception)
-            {
-                error = exception.Message;
-                return false;
-            }
+            error = string.Empty;
+            return true;
         }
 
         public bool TryValidate(out string error)

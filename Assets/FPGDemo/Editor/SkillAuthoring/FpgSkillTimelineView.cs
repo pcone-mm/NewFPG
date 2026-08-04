@@ -132,6 +132,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             new FpgSkillEventSelection();
 
         private VisualElement playhead;
+        private VisualElement allowWithdrawMarker;
+        private FpgSkillAttackTimingViewModel attackTiming;
         private VisualElement creationPreview;
         private EventDragState eventDrag;
         private EventRangeDragState eventRangeDrag;
@@ -139,7 +141,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
         private ScrubDragState scrubDrag;
         private CreationDragState creationDrag;
         private PanDragState panDrag;
+        private AllowWithdrawDragState allowWithdrawDrag;
         private int durationTicks = 120;
+        private int allowWithdrawTick = -1;
         private int playheadTick;
         private FpgSkillTimelineBlockKind selectedBlockKind;
         private int selectedBlockIndex = -1;
@@ -174,6 +178,7 @@ namespace FPG.Demo.Editor.SkillAuthoring
         }
 
         public event Action<int> PlayheadChanged;
+        public event Action<int> AllowWithdrawTickChanged;
         public event Action<IReadOnlyList<FpgSkillEventKey>>
             EventSelectionChanged;
         public event Action<IReadOnlyList<FpgSkillEventKey>, int>
@@ -201,7 +206,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
             || creationDrag != null
             || eventDrag != null
             || eventRangeDrag != null
-            || blockDrag != null;
+            || blockDrag != null
+            || allowWithdrawDrag != null;
         public FpgSkillEventKey SelectedEventKey => selection.PrimaryEventKey;
         public IReadOnlyList<FpgSkillEventKey> SelectedEventKeys =>
             selection.Items;
@@ -298,6 +304,27 @@ namespace FPG.Demo.Editor.SkillAuthoring
             pixelsPerTick = Mathf.Clamp(nextPixelsPerTick, 4f, 28f);
             Rebuild();
             FrameTick(playheadTick);
+        }
+
+        public void SetAllowWithdrawTick(int tick)
+        {
+            int normalized = tick < 0
+                ? -1
+                : Mathf.Clamp(tick, 0, durationTicks);
+            if (allowWithdrawTick == normalized)
+            {
+                UpdateAllowWithdrawMarkerPosition();
+                return;
+            }
+
+            allowWithdrawTick = normalized;
+            Rebuild();
+        }
+
+        public void SetAttackTiming(FpgSkillAttackTimingViewModel timing)
+        {
+            attackTiming = timing;
+            Rebuild();
         }
 
         public void SetPlayhead(int tick, bool notify = false)
@@ -507,6 +534,8 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 canvas.Add(separator);
             }
 
+            AddAttackTimingPhases();
+
             for (int index = 0; index < blocks.Count; index++)
             {
                 AddBlockElement(blocks[index]);
@@ -517,6 +546,9 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 AddEventElement(events[index]);
             }
 
+            AddAttackTimingMarkers();
+            AddAllowWithdrawMarker();
+
             playhead = new VisualElement();
             playhead.AddToClassList("timeline-playhead");
             playhead.pickingMode = PickingMode.Ignore;
@@ -526,6 +558,231 @@ namespace FPG.Demo.Editor.SkillAuthoring
             playhead.Add(cap);
             canvas.Add(playhead);
             UpdatePlayheadPosition();
+        }
+
+        private void AddAttackTimingPhases()
+        {
+            if (!attackTiming.UsesCharacterAttackSpeed
+                || attackTiming.AttackFrameTick < 0)
+            {
+                return;
+            }
+
+            int attackFrameTick = Mathf.Clamp(
+                attackTiming.AttackFrameTick,
+                0,
+                durationTicks);
+            AddAttackTimingPhase(
+                "timeline-attack-phase--windup",
+                "前摇",
+                0,
+                attackFrameTick,
+                "受攻速缩放的前摇；攻击事件在前摇结束时触发。");
+            AddAttackTimingPhase(
+                "timeline-attack-phase--recovery",
+                "后摇",
+                attackFrameTick,
+                durationTicks,
+                "攻击帧后的后摇；相同攻击需等到解析后的攻击间隔结束才能再次施放。");
+        }
+
+        private void AddAttackTimingPhase(
+            string phaseClass,
+            string label,
+            int startTick,
+            int endTick,
+            string tooltip)
+        {
+            if (endTick <= startTick)
+            {
+                return;
+            }
+
+            VisualElement phase = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore,
+                tooltip = tooltip
+            };
+            phase.AddToClassList("timeline-attack-phase");
+            phase.AddToClassList(phaseClass);
+            phase.style.left = TimelineOrigin + startTick * pixelsPerTick;
+            phase.style.width = Mathf.Max(
+                1f,
+                (endTick - startTick) * pixelsPerTick);
+            canvas.Add(phase);
+
+            if ((endTick - startTick) * pixelsPerTick < 54f)
+            {
+                return;
+            }
+
+            Label phaseLabel = new Label(label)
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            phaseLabel.AddToClassList("timeline-attack-phase__label");
+            phase.Add(phaseLabel);
+        }
+
+        private void AddAttackTimingMarkers()
+        {
+            if (attackTiming.UsesCharacterAttackSpeed
+                && attackTiming.AttackFrameTick >= 0)
+            {
+                AddAttackTimingMarker(
+                    "attack-frame-marker",
+                    "攻",
+                    attackTiming.AttackFrameTick,
+                    "timeline-attack-marker--attack-frame",
+                    "攻击帧：Gameplay 攻击事件在解析后的这个时间点触发。");
+            }
+
+            if (attackTiming.DifferentAttackInterruptTick >= 0)
+            {
+                AddAttackTimingMarker(
+                    "different-attack-interrupt-marker",
+                    "断",
+                    attackTiming.DifferentAttackInterruptTick,
+                    "timeline-attack-marker--interrupt",
+                    "从此 Tick 起，其他攻击可以打断当前序列。");
+            }
+        }
+
+        private void AddAttackTimingMarker(
+            string name,
+            string label,
+            int tick,
+            string markerClass,
+            string tooltip)
+        {
+            int normalizedTick = Mathf.Clamp(tick, 0, durationTicks);
+            VisualElement marker = new VisualElement
+            {
+                name = name,
+                pickingMode = PickingMode.Ignore,
+                tooltip = tooltip
+            };
+            marker.AddToClassList("timeline-attack-marker");
+            marker.AddToClassList(markerClass);
+            marker.style.left = TimelineOrigin
+                + normalizedTick * pixelsPerTick - 6f;
+
+            VisualElement line = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            line.AddToClassList("timeline-attack-marker__line");
+            marker.Add(line);
+
+            Label cap = new Label(label)
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            cap.AddToClassList("timeline-attack-marker__cap");
+            marker.Add(cap);
+            canvas.Add(marker);
+        }
+
+        private void AddAllowWithdrawMarker()
+        {
+            allowWithdrawMarker = null;
+            if (allowWithdrawTick < 0)
+            {
+                return;
+            }
+
+            VisualElement marker = new VisualElement
+            {
+                name = "allow-withdraw-marker",
+                pickingMode = PickingMode.Position,
+                tooltip = "允许从此 Tick 后撤招，拖动可调整。"
+            };
+            marker.AddToClassList("timeline-withdraw-marker");
+
+            VisualElement line = new VisualElement
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            line.AddToClassList("timeline-withdraw-marker__line");
+            marker.Add(line);
+
+            Label cap = new Label("退")
+            {
+                pickingMode = PickingMode.Ignore
+            };
+            cap.AddToClassList("timeline-withdraw-marker__cap");
+            marker.Add(cap);
+
+            marker.RegisterCallback<PointerDownEvent>(
+                OnAllowWithdrawPointerDown);
+            allowWithdrawMarker = marker;
+            canvas.Add(marker);
+            UpdateAllowWithdrawMarkerPosition();
+        }
+
+        private void OnAllowWithdrawPointerDown(PointerDownEvent evt)
+        {
+            if (evt.button != 0 || allowWithdrawMarker == null)
+            {
+                return;
+            }
+
+            allowWithdrawDrag = new AllowWithdrawDragState
+            {
+                PointerId = evt.pointerId,
+                StartTick = allowWithdrawTick,
+                CurrentTick = allowWithdrawTick
+            };
+            canvas.CapturePointer(evt.pointerId);
+            Focus();
+            evt.StopImmediatePropagation();
+        }
+
+        private void ContinueAllowWithdrawDrag(PointerMoveEvent evt)
+        {
+            if (allowWithdrawDrag == null
+                || allowWithdrawDrag.PointerId != evt.pointerId
+                || !canvas.HasPointerCapture(evt.pointerId))
+            {
+                return;
+            }
+
+            allowWithdrawDrag.CurrentTick = PositionToTick(
+                canvas.WorldToLocal(evt.position).x);
+            allowWithdrawTick = allowWithdrawDrag.CurrentTick;
+            UpdateAllowWithdrawMarkerPosition();
+        }
+
+        private void EndAllowWithdrawDrag(PointerUpEvent evt)
+        {
+            if (allowWithdrawDrag == null
+                || allowWithdrawDrag.PointerId != evt.pointerId)
+            {
+                return;
+            }
+
+            int startTick = allowWithdrawDrag.StartTick;
+            int nextTick = allowWithdrawDrag.CurrentTick;
+            allowWithdrawDrag = null;
+            ReleaseCanvasPointer(evt.pointerId);
+
+            if (nextTick != startTick)
+            {
+                AllowWithdrawTickChanged?.Invoke(nextTick);
+            }
+            else
+            {
+                UpdateAllowWithdrawMarkerPosition();
+            }
+        }
+
+        private void UpdateAllowWithdrawMarkerPosition()
+        {
+            if (allowWithdrawMarker != null && allowWithdrawTick >= 0)
+            {
+                allowWithdrawMarker.style.left = TimelineOrigin
+                    + allowWithdrawTick * pixelsPerTick - 6f;
+            }
         }
 
         private void AddBlockElement(
@@ -858,6 +1115,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void OnCanvasPointerMove(PointerMoveEvent evt)
         {
+            if (allowWithdrawDrag != null
+                && allowWithdrawDrag.PointerId == evt.pointerId
+                && canvas.HasPointerCapture(evt.pointerId))
+            {
+                ContinueAllowWithdrawDrag(evt);
+                evt.StopPropagation();
+                return;
+            }
+
             if (eventRangeDrag != null
                 && eventRangeDrag.PointerId == evt.pointerId
                 && canvas.HasPointerCapture(evt.pointerId))
@@ -921,6 +1187,14 @@ namespace FPG.Demo.Editor.SkillAuthoring
 
         private void OnCanvasPointerUp(PointerUpEvent evt)
         {
+            if (allowWithdrawDrag != null
+                && allowWithdrawDrag.PointerId == evt.pointerId)
+            {
+                EndAllowWithdrawDrag(evt);
+                evt.StopPropagation();
+                return;
+            }
+
             if (eventRangeDrag != null
                 && eventRangeDrag.PointerId == evt.pointerId)
             {
@@ -1566,6 +1840,15 @@ namespace FPG.Demo.Editor.SkillAuthoring
                 handled = true;
             }
 
+            if (allowWithdrawDrag != null
+                && allowWithdrawDrag.PointerId == pointerId)
+            {
+                allowWithdrawTick = allowWithdrawDrag.StartTick;
+                allowWithdrawDrag = null;
+                UpdateAllowWithdrawMarkerPosition();
+                handled = true;
+            }
+
             if (releasePointer)
             {
                 ReleaseCanvasPointer(pointerId);
@@ -2188,6 +2471,13 @@ namespace FPG.Demo.Editor.SkillAuthoring
             public int PointerId;
             public float StartWorldX;
             public float StartScrollValue;
+        }
+
+        private sealed class AllowWithdrawDragState
+        {
+            public int PointerId;
+            public int StartTick;
+            public int CurrentTick;
         }
     }
 }

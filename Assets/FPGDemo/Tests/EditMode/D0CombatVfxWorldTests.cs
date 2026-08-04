@@ -97,7 +97,64 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
-                        [Test]
+        [Test]
+        public void AcquireRecyclesOldestTransientInstanceWhenPoolIsFull()
+        {
+            GameObject root = new GameObject("D0CombatVfxRecycleTestRoot");
+            GameObject prefab = new GameObject("D0CombatVfxRecycleTestPrefab");
+            try
+            {
+                D0CombatVfxWorld world = root.AddComponent<D0CombatVfxWorld>();
+                D0CombatVfxAssetReference reference =
+                    new D0CombatVfxAssetReference(
+                        "test.recycled",
+                        prefab,
+                        1,
+                        10f,
+                        "presentation",
+                        0,
+                        D0CombatVfxCategory.SkillPresentation);
+                Assert.That(
+                    world.TryPrepareForScenario(
+                        new[] { reference },
+                        out string error),
+                    Is.True,
+                    error);
+                world.BeginCombat();
+
+                Assert.That(
+                    world.TryAcquire(
+                        "test.recycled",
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out GameObject first),
+                    Is.True);
+                Assert.That(
+                    world.TryAcquire(
+                        "test.recycled",
+                        Vector3.one,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out GameObject second),
+                    Is.True);
+
+                Assert.That(second, Is.SameAs(first));
+                Assert.That(second.transform.position, Is.EqualTo(Vector3.one));
+                Assert.That(world.ActiveInstanceCount, Is.EqualTo(1));
+                Assert.That(world.RecycledInstanceCount, Is.EqualTo(1));
+                Assert.That(world.AcquireRejectCount, Is.Zero);
+                Assert.That(world.HotPathInstantiateCount, Is.Zero);
+                Assert.That(world.HotPathDestroyCount, Is.Zero);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(prefab);
+            }
+        }
+
+        [Test]
         public void HeldInstancesIgnoreDurationAndReleaseExplicitly()
         {
             GameObject root = new GameObject("D0CombatVfxHeldTestRoot");
@@ -133,6 +190,15 @@ namespace FPG.Demo.Tests.EditMode
                 world.Advance(5f);
                 Assert.That(instance.activeSelf, Is.True);
                 Assert.That(world.ActiveInstanceCount, Is.EqualTo(1));
+                Assert.That(
+                    world.TryAcquire(
+                        "test.flight",
+                        Vector3.one,
+                        Quaternion.identity,
+                        Vector3.one,
+                        out _),
+                    Is.False);
+                Assert.That(world.RecycledInstanceCount, Is.Zero);
 
                 Assert.That(world.TryRelease(instance), Is.True);
                 Assert.That(instance.activeSelf, Is.False);

@@ -232,7 +232,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void AimWithdrawalRequestsOneSecondaryCancellationFrame()
+        public void AimWithdrawalDoesNotCancelIndependentSecondaryInput()
         {
             UnityBattleInputSource source = new UnityBattleInputSource();
             source.Capture(new UnityInputSnapshot(
@@ -258,12 +258,12 @@ namespace FPG.Demo.Tests.EditMode
             PlayerInputFrame following = source.GetFrame(new TickIndex(2));
 
             Assert.That(withdrawn.AimHeld, Is.False);
-            Assert.That(withdrawn.CancelSecondary, Is.True);
+            Assert.That(withdrawn.CancelSecondary, Is.False);
             Assert.That(following.CancelSecondary, Is.False);
         }
 
 [Test]
-        public void SharedAimSecondaryReleaseWinsOverAimWithdrawal()
+        public void SecondaryReleaseRemainsIndependentFromAimWithdrawal()
         {
             UnityBattleInputSource source = new UnityBattleInputSource();
             source.Capture(new UnityInputSnapshot(
@@ -302,7 +302,7 @@ namespace FPG.Demo.Tests.EditMode
 
 
         [Test]
-        public void AimWithdrawalCancellationSurvivesBattleTickInputRoundTrip()
+        public void AimWithdrawalDoesNotInjectCancellationIntoBattleTickInput()
         {
             UnityBattleInputSource source = new UnityBattleInputSource();
             source.Capture(new UnityInputSnapshot(
@@ -329,8 +329,8 @@ namespace FPG.Demo.Tests.EditMode
             PlayerInputFrame frame = tickInput.CopyToPlayerInputFrame(
                 new InputEdgeCommand[BattleTickInput.MaxEdgeCommandCount]);
 
-            Assert.That(tickInput.CancelSecondary, Is.True);
-            Assert.That(frame.CancelSecondary, Is.True);
+            Assert.That(tickInput.CancelSecondary, Is.False);
+            Assert.That(frame.CancelSecondary, Is.False);
         }
 
         [Test]

@@ -710,7 +710,6 @@ namespace FPG.Demo.Player
             }
 
             bool recoveryInterruptAllowed = allowRecoveryInterrupt
-                && actionKind != WeaponSkillActionKind.Reload
                 && (State == WeaponState.PrimaryRecovery
                     || State == WeaponState.AltRecovery);
             if (State != WeaponState.Ready && !recoveryInterruptAllowed)
@@ -937,6 +936,22 @@ namespace FPG.Demo.Player
             WeaponReleaseBuffer output,
             SessionIdAllocator idAllocator)
         {
+            return CommitPreparedSkillRelease(
+                output,
+                idAllocator,
+                TickIndex.Invalid);
+        }
+
+        /// <summary>
+        /// Commits a prepared skill release. Attack-speed sequences may supply
+        /// their start-to-start ready boundary; fixed-cooldown callers leave it
+        /// invalid and retain the authored weapon recovery rule.
+        /// </summary>
+        public DomainResult CommitPreparedSkillRelease(
+            WeaponReleaseBuffer output,
+            SessionIdAllocator idAllocator,
+            TickIndex resolvedReadyTick)
+        {
             if (output == null)
             {
                 throw new ArgumentNullException(nameof(output));
@@ -959,6 +974,12 @@ namespace FPG.Demo.Player
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
+            if (resolvedReadyTick.IsValid
+                && resolvedReadyTick <= output.Attack.ReleaseTick)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
             if (!idAllocator.Commit(output.PreparedReservation))
             {
                 return DomainResult.Rejected(RejectReason.InvariantFault);
@@ -966,10 +987,12 @@ namespace FPG.Demo.Player
 
             Magazine.ConsumeValidated(output.Attack.AmmoCost);
             output.MarkCommitted();
-            TickIndex recastUntil = output.Attack.ReleaseTick
-                + (output.Kind == WeaponReleaseKind.Primary
-                    ? definition.PrimaryInterval
-                    : definition.SecondaryRecovery);
+            TickIndex recastUntil = resolvedReadyTick.IsValid
+                ? resolvedReadyTick
+                : output.Attack.ReleaseTick
+                    + (output.Kind == WeaponReleaseKind.Primary
+                        ? definition.PrimaryInterval
+                        : definition.SecondaryRecovery);
             if (output.Kind == WeaponReleaseKind.Primary)
             {
                 primaryRecastLockedUntilTick = recastUntil;

@@ -216,10 +216,15 @@ namespace FPG.Demo.Unity
         [Tooltip("Visual-only prefab used by Boot. It must not contain a D0 actor Entity.")]
         private GameObject selectionPreviewPrefab;
 
+        [Header("副射模式选择")]
+        [InspectorName("可用副射模式")]
+        [Tooltip("角色在进入战斗前可选择的副射触发模式。每个模式必须能在武器的对应副射技能槽位中解析到有效技能。")]
         [SerializeField]
         private SecondaryTriggerMode[] supportedSecondaryModes =
             Array.Empty<SecondaryTriggerMode>();
 
+        [InspectorName("默认副射模式")]
+        [Tooltip("未进行额外选择时使用的副射模式；必须包含在可用副射模式中。")]
         [SerializeField]
         private SecondaryTriggerMode defaultSecondaryMode =
             SecondaryTriggerMode.ImmediateRepeatWhileHeld;

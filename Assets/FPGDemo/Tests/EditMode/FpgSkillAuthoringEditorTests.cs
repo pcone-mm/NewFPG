@@ -720,6 +720,40 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void AllowWithdrawMarkerReflectsAuthoredTickAndSupportsUndo()
+        {
+            WithSkill((skill, serialized) =>
+            {
+                Assert.That(
+                    FpgSkillSerializedAdapter.SetAllowWithdrawTick(
+                        serialized,
+                        0,
+                        18),
+                    Is.True);
+                Assert.That(
+                    FpgSkillSerializedAdapter.GetAllowWithdrawTick(
+                        FpgSkillSerializedAdapter.GetSequence(serialized, 0)),
+                    Is.EqualTo(18));
+
+                FpgSkillTimelineView timeline = new FpgSkillTimelineView();
+                timeline.SetModel(
+                    30,
+                    System.Array.Empty<FpgSkillTimelineEventViewModel>());
+                timeline.SetAllowWithdrawTick(18);
+                Assert.That(
+                    timeline.Q<VisualElement>("allow-withdraw-marker"),
+                    Is.Not.Null);
+
+                Undo.PerformUndo();
+                serialized.UpdateIfRequiredOrScript();
+                Assert.That(
+                    FpgSkillSerializedAdapter.GetAllowWithdrawTick(
+                        FpgSkillSerializedAdapter.GetSequence(serialized, 0)),
+                    Is.EqualTo(-1));
+            });
+        }
+
+        [Test]
         public void PresentationBindingRejectsEarlyOrMissingActionAndAllowsDelay()
         {
             WithSkill((skill, serialized) =>
@@ -778,6 +812,12 @@ namespace FPG.Demo.Tests.EditMode
                     3,
                     FpgSkillActionKind.Attack,
                     (int)FpgSkillAttackMode.PelletRays);
+                Assert.That(
+                    FpgSkillSerializedAdapter.SetAllowWithdrawTick(
+                        serialized,
+                        0,
+                        30),
+                    Is.True);
                 int firstTrack = FpgSkillSerializedAdapter
                     .AddActivePresentationTrack(serialized, 0);
                 int secondTrack = FpgSkillSerializedAdapter

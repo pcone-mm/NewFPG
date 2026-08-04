@@ -16,6 +16,8 @@ namespace FPG.Demo.Unity
         [SerializeField] private Camera targetCamera;
 
         private D0ThreeCProfile threeCProfile;
+        private bool hasShootingPreview;
+        private FpgShootingTuningSnapshot shootingPreview;
         private Vector3 authoredRigPosition;
         private Quaternion authoredRigRotation;
         private Vector3 authoredCameraLocalPosition;
@@ -49,6 +51,22 @@ namespace FPG.Demo.Unity
         public Camera TargetCamera => targetCamera;
         public D0ThreeCProfile ThreeCProfile => threeCProfile;
         public float CurrentKick => currentKick;
+        public float EffectivePrimaryShotCameraKick => hasShootingPreview
+            ? shootingPreview.PrimaryCameraKick
+            : threeCProfile == null
+                ? 0f
+                : threeCProfile.PrimaryShotCameraKick;
+        public float EffectiveSecondaryShotCameraKick => hasShootingPreview
+            ? shootingPreview.SecondaryCameraKick
+            : threeCProfile == null
+                ? 0f
+                : threeCProfile.SecondaryShotCameraKick;
+        public float EffectiveShotCameraKickRecoverySeconds =>
+            hasShootingPreview
+                ? shootingPreview.CameraKickRecoverySeconds
+                : threeCProfile == null
+                    ? 0f
+                    : threeCProfile.ShotCameraKickRecoverySeconds;
         public float CurrentShakeStrength { get; private set; }
         public int ShakeRejectCount { get; private set; }
         public bool IsPrepared => threeCProfile != null
@@ -202,6 +220,36 @@ namespace FPG.Demo.Unity
             lastSynchronizedFrame = -1;
             error = string.Empty;
             return true;
+        }
+
+        public bool TryApplyShootingPreview(
+            in FpgShootingTuningSnapshot snapshot,
+            out string error)
+        {
+            if (!snapshot.TryValidate(out error))
+            {
+                return false;
+            }
+
+            if (threeCProfile != null
+                && !ReferenceEquals(
+                    threeCProfile,
+                    snapshot.ThreeCProfile))
+            {
+                error = "Camera shooting preview does not match the active 3C profile.";
+                return false;
+            }
+
+            shootingPreview = snapshot;
+            hasShootingPreview = true;
+            error = string.Empty;
+            return true;
+        }
+
+        public void ClearShootingPreview()
+        {
+            shootingPreview = default(FpgShootingTuningSnapshot);
+            hasShootingPreview = false;
         }
 
         public bool TryApplyImmediateShot(
@@ -398,12 +446,12 @@ namespace FPG.Demo.Unity
                 case FpgFormalPlayerActionType.PrimaryReleaseCommitted:
                     currentKick = Mathf.Max(
                         currentKick,
-                        threeCProfile.PrimaryShotCameraKick);
+                        EffectivePrimaryShotCameraKick);
                     break;
                 case FpgFormalPlayerActionType.SecondaryReleaseCommitted:
                     currentKick = Mathf.Max(
                         currentKick,
-                        threeCProfile.SecondaryShotCameraKick);
+                        EffectiveSecondaryShotCameraKick);
                     break;
             }
 
@@ -497,6 +545,7 @@ namespace FPG.Demo.Unity
             rigApplied = false;
             paused = false;
             threeCProfile = null;
+            ClearShootingPreview();
             shakePresentation = null;
             shakeImpulses = System.Array.Empty<ShakeImpulse>();
             hasCommittedShot = false;
@@ -586,7 +635,7 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            float recovery = threeCProfile.ShotCameraKickRecoverySeconds;
+            float recovery = EffectiveShotCameraKickRecoverySeconds;
             if (recovery <= 0f)
             {
                 currentKick = 0f;
@@ -596,8 +645,8 @@ namespace FPG.Demo.Unity
             float maximumKick = Mathf.Max(
                 0.001f,
                 Mathf.Max(
-                    threeCProfile.PrimaryShotCameraKick,
-                    threeCProfile.SecondaryShotCameraKick));
+                    EffectivePrimaryShotCameraKick,
+                    EffectiveSecondaryShotCameraKick));
             currentKick = Mathf.MoveTowards(
                 currentKick,
                 0f,

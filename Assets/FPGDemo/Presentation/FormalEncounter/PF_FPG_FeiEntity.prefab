@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 10000015}
   - component: {fileID: 3975961540838027529}
   - component: {fileID: 8889522064755063661}
+  - component: {fileID: 1142947740995990779}
   m_Layer: 0
   m_Name: PF_FPG_FeiEntity
   m_TagString: Untagged
@@ -63,10 +64,12 @@ MonoBehaviour:
   characterController: {fileID: 10000011}
   bounds: {fileID: 10000013}
   aimAnchor: {fileID: 10000401}
+  shotOrigin: {fileID: 10000311}
   groundAnchor: {fileID: 10000501}
   cameraPivot: {fileID: 10000601}
   bodyHitbox: {fileID: 10000104}
   barrier: {fileID: 3975961540838027529}
+  facingController: {fileID: 1142947740995990779}
 --- !u!143 &10000011
 CharacterController:
   m_ObjectHideFlags: 0
@@ -145,9 +148,8 @@ MonoBehaviour:
   coverRenderer: {fileID: 0}
   primaryPresentationMuzzle: {fileID: 1346181462602781906}
   secondaryPresentationMuzzle: {fileID: 6881757460690167765}
-  peekLocalOffset: {x: 1.35, y: 0, z: 0}
   peekTransitionSeconds: 0.08
-  retractTransitionSeconds: 0
+  retractTransitionSeconds: 0.1
   lineMaterial: {fileID: 0}
   fadeInSeconds: 0.18
   fadeOutSeconds: 0.12
@@ -166,6 +168,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgCoverTraversalPresenter
   transitionEffectPrefab: {fileID: 3148827873122418831, guid: b691204f3f494034a8ccba00255a44d9, type: 3}
+--- !u!114 &1142947740995990779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 10000000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bf6b301a46fdfd14fb41ea46b9b5c5e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgPlayerFacingController
+  facingRoot: {fileID: 4921144305924263858}
 --- !u!1 &10000100
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,7 +298,7 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 55472925283187404}
-  m_Father: {fileID: 5353226551796689532}
+  m_Father: {fileID: 4921144305924263858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &10000300
 GameObject:
@@ -334,8 +349,8 @@ MonoBehaviour:
   bindings:
   - socketId: weapon.primary.muzzle
     anchor: {fileID: 10000311}
-    followMode: 0
-    boneName: 
+    followMode: 1
+    boneName: l_hand
   - socketId: weapon.secondary.muzzle
     anchor: {fileID: 10000321}
     followMode: 0
@@ -623,6 +638,39 @@ MonoBehaviour:
   _animationName: b_idle
   loop: 1
   timeScale: 1
+--- !u!1 &4198732412726539369
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4921144305924263858}
+  m_Layer: 0
+  m_Name: FacingRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4921144305924263858
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4198732412726539369}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 10000201}
+  - {fileID: 9049901915211752467}
+  m_Father: {fileID: 5353226551796689532}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6198298048646307826
 GameObject:
   m_ObjectHideFlags: 0
@@ -685,7 +733,7 @@ Transform:
   m_Children:
   - {fileID: 1346181462602781906}
   - {fileID: 6881757460690167765}
-  m_Father: {fileID: 5353226551796689532}
+  m_Father: {fileID: 4921144305924263858}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6884880235974080120
 GameObject:
@@ -747,7 +795,6 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 10000201}
-  - {fileID: 9049901915211752467}
+  - {fileID: 4921144305924263858}
   m_Father: {fileID: 10000001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

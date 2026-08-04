@@ -49,14 +49,14 @@ description: Recover a CZN (Chaos Zero Nightmare / 卡厄斯梦境) character's 
    - Sample one frame before and after every cue boundary, including marker and camera-zoom boundaries. For replay regressions, compare deterministic slot/attachment/type/mesh-vertex signatures at a representative visible frame, not only aggregate attachment counts.
 
 7. Hand off.
-   - Create a character-specific Chinese usage guide from `references/CHARACTER-HANDOFF-TEMPLATE.zh-CN.md`.
+   - Update `Assets/Imported/CZN/<Label>/README.md` from `references/CHARACTER-HANDOFF-TEMPLATE.zh-CN.md`; keep detailed evidence in the adjacent `Metadata/` directory instead of creating a parallel project-level workflow guide.
    - Report exact scene, prefab, Spine project, SkillSequence/Timeline, metadata, validation, approximation, licensing, and replay-test locations.
 
 ## Existing references
 
 - Detailed reusable procedure: `references/WORKFLOW.zh-CN.md`
 - Deliverable template: `references/CHARACTER-HANDOFF-TEMPLATE.zh-CN.md`
-- Proven sample: `Docs/Workflow/Heidemarie_30093_Spine_Unity_Guide.zh-CN.md`
+- Proven sample: `Assets/Imported/CZN/Heidemarie_30093/README.md` and its adjacent `Metadata/` reports
 - Extract/convert tools: `Tools/CznResourcePipeline`
 - SCSP1U format limits: `Tools/CznResourcePipeline/SCSP1U_NOTES.md`
 

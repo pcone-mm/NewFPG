@@ -1,3 +1,5 @@
+using FPG.Demo.Combat;
+using FPG.Demo.Core;
 using FPG.Demo.Unity;
 using FPG.Demo.Run;
 using NUnit.Framework;
@@ -14,6 +16,8 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/Level/Rooms/root1.asset";
         private const string ForestCopyRoomPath =
             "Assets/FPGDemo/Config/Level/Rooms/Room_forest_Copy.asset";
+        private const string RoomCatalogPath =
+            "Assets/FPGDemo/Config/Level/FPG_RoomCatalog.asset";
         private const string DefaultCoverPath =
             "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab";
         private const string TreeCoverPath =
@@ -149,6 +153,9 @@ namespace FPG.Demo.Tests.EditMode
                 first.FindPropertyRelative("playerReachableLocalPosition")
                     .vector3Value = second.FindPropertyRelative(
                         "playerReachableLocalPosition").vector3Value;
+                first.FindPropertyRelative("playerLeftPeekLocalPosition")
+                    .vector3Value = first.FindPropertyRelative(
+                        "playerRightPeekLocalPosition").vector3Value;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
                 FpgRoomValidationResult validation = clone.Validate();
@@ -164,6 +171,19 @@ namespace FPG.Demo.Tests.EditMode
                 AssertRoomIssue(
                     validation,
                     FpgRoomValidationCode.OverlappingCoverReachablePosition);
+                AssertRoomIssue(
+                    validation,
+                    FpgRoomValidationCode.InvalidCoverPeekPositions);
+
+                serialized.Update();
+                first = serialized.FindProperty("coverSlots")
+                    .GetArrayElementAtIndex(0);
+                first.FindPropertyRelative("playerLeftPeekLocalPosition")
+                    .vector3Value = new Vector3(float.NaN, 0f, 0f);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                AssertRoomIssue(
+                    clone.Validate(),
+                    FpgRoomValidationCode.InvalidCoverPeekPositions);
             }
             finally
             {
@@ -264,6 +284,38 @@ namespace FPG.Demo.Tests.EditMode
                 Assert.That(
                     host.GetComponentsInChildren<FpgCoverEntityView>(true),
                     Has.Length.EqualTo(3));
+
+                host.transform.SetPositionAndRotation(
+                    new Vector3(3f, 2f, -4f),
+                    Quaternion.Euler(0f, 30f, 0f));
+                FpgRoomCoverSlot center = instance.RoomDefinition.CoverSlots[1];
+                Assert.That(
+                    instance.TryResolveCoverPeekPosition(
+                        center.MarkerId,
+                        FpgPlayerFacingDirection.Left,
+                        out Vector3 leftWorld),
+                    Is.True);
+                Assert.That(
+                    leftWorld,
+                    Is.EqualTo(host.transform.TransformPoint(
+                        center.PlayerLeftPeekLocalPosition)));
+                Assert.That(
+                    instance.TryResolveCoverPeekPosition(
+                        center.MarkerId,
+                        FpgPlayerFacingDirection.Right,
+                        out Vector3 rightWorld),
+                    Is.True);
+                Assert.That(
+                    rightWorld,
+                    Is.EqualTo(host.transform.TransformPoint(
+                        center.PlayerRightPeekLocalPosition)));
+                Assert.That(leftWorld, Is.Not.EqualTo(rightWorld));
+                Assert.That(
+                    instance.TryResolveCoverPeekPosition(
+                        center.MarkerId,
+                        (FpgPlayerFacingDirection)99,
+                        out _),
+                    Is.False);
             }
             finally
             {
@@ -288,7 +340,10 @@ namespace FPG.Demo.Tests.EditMode
                 "cover-left",
                 TreeCoverPath,
                 "Assets/FPGDemo/Config/Level/CameraProfiles/root1/CAM_root1_cover-left.asset",
+                new Vector3(-2.66f, 4.41f, 1.02f),
                 new Vector3(-6f, 0.5f, 0f),
+                new Vector3(-7.35f, 0.5f, 0f),
+                new Vector3(-4.65f, 0.5f, 0f),
                 false);
             AssertCoverSlot(
                 center,
@@ -296,6 +351,9 @@ namespace FPG.Demo.Tests.EditMode
                 DefaultCoverPath,
                 "Assets/FPGDemo/Config/Level/CameraProfiles/root1/CAM_root1_cover-center.asset",
                 new Vector3(0f, 0.5f, 0f),
+                new Vector3(0f, 0.5f, 0f),
+                new Vector3(-1.35f, 0.5f, 0f),
+                new Vector3(1.35f, 0.5f, 0f),
                 true);
             AssertCoverSlot(
                 right,
@@ -303,6 +361,9 @@ namespace FPG.Demo.Tests.EditMode
                 DefaultCoverPath,
                 "Assets/FPGDemo/Config/Level/CameraProfiles/root1/CAM_root1_cover-right.asset",
                 new Vector3(5.5f, 0.5f, 0f),
+                new Vector3(5.5f, 0.5f, 0f),
+                new Vector3(4.15f, 0.5f, 0f),
+                new Vector3(6.85f, 0.5f, 0f),
                 false);
         }
 
@@ -322,11 +383,26 @@ namespace FPG.Demo.Tests.EditMode
                     coverIndex < room.CoverSlots.Count;
                     coverIndex++)
                 {
+                    FpgRoomCoverSlot cover = room.CoverSlots[coverIndex];
                     Assert.That(
                         AssetDatabase.GetAssetPath(
-                            room.CoverSlots[coverIndex].Prefab),
+                            cover.Prefab),
                         Is.EqualTo(DefaultCoverPath),
-                        path + ": " + room.CoverSlots[coverIndex].MarkerId);
+                        path + ": " + cover.MarkerId);
+                    Assert.That(
+                        cover.PlayerLeftPeekLocalPosition,
+                        Is.EqualTo(
+                            cover.PlayerReachableLocalPosition
+                            + cover.PlayerReachableLocalRotation
+                            * new Vector3(-1.35f, 0f, 0f)),
+                        path + ": " + cover.MarkerId);
+                    Assert.That(
+                        cover.PlayerRightPeekLocalPosition,
+                        Is.EqualTo(
+                            cover.PlayerReachableLocalPosition
+                            + cover.PlayerReachableLocalRotation
+                            * new Vector3(1.35f, 0f, 0f)),
+                        path + ": " + cover.MarkerId);
                 }
             }
         }
@@ -363,6 +439,166 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
+        [Test]
+        public void EveryCatalogCoverRegistersItsMeshBlockersAndResolvesCoverId()
+        {
+            FpgRoomCatalog catalog =
+                LoadRequired<FpgRoomCatalog>(RoomCatalogPath);
+            Assert.That(catalog.Rooms, Is.Not.Empty);
+            Assert.That(
+                catalog.TryValidate(out string catalogError),
+                Is.True,
+                catalogError);
+
+            for (int roomIndex = 0; roomIndex < catalog.Rooms.Count; roomIndex++)
+            {
+                FpgRoomDefinition definition = catalog.Rooms[roomIndex];
+                GameObject host = new GameObject(
+                    $"CatalogCoverRegistration_{definition.name}");
+                GameObject registryObject = new GameObject(
+                    $"CatalogHitboxRegistry_{definition.name}");
+                try
+                {
+                    FpgRoomInstance instance =
+                        host.AddComponent<FpgRoomInstance>();
+                    HitboxRegistry registry =
+                        registryObject.AddComponent<HitboxRegistry>();
+                    Assert.That(
+                        registry.TryInitialize(out string registryError),
+                        Is.True,
+                        definition.name + ": " + registryError);
+                    Assert.That(
+                        instance.TryInitialize(definition, out string roomError),
+                        Is.True,
+                        definition.name + ": " + roomError);
+                    Assert.That(
+                        instance.TryRegisterCoverBlockers(
+                            registry,
+                            UnityAttackQuerySettings.Default,
+                            out string registrationError),
+                        Is.True,
+                        definition.name + ": " + registrationError);
+
+                    int expectedBlockerCount = 0;
+                    for (int slotIndex = 0;
+                        slotIndex < definition.CoverSlots.Count;
+                        slotIndex++)
+                    {
+                        FpgRoomCoverSlot slot = definition.CoverSlots[slotIndex];
+                        Assert.That(
+                            instance.TryGetCoverView(
+                                slot.MarkerId,
+                                out FpgCoverEntityView view),
+                            Is.True,
+                            definition.name + ": " + slot.MarkerId);
+                        for (int blockerIndex = 0;
+                            blockerIndex < view.BlockingColliderCount;
+                            blockerIndex++)
+                        {
+                            expectedBlockerCount++;
+                            Assert.That(
+                                view.TryGetBlockingCollider(
+                                    blockerIndex,
+                                    out Collider blocker),
+                                Is.True,
+                                definition.name + ": " + slot.MarkerId);
+                            MeshCollider meshCollider = blocker as MeshCollider;
+                            Assert.That(meshCollider, Is.Not.Null);
+                            AssertMeshColliderCanBeRaycast(
+                                meshCollider,
+                                definition.name + ": " + slot.MarkerId);
+
+                            GeometryId geometryId =
+                                FpgRoomInstance.DeriveCoverGeometryId(
+                                    definition.RoomId,
+                                    slot.MarkerId,
+                                    blockerIndex);
+                            Assert.That(
+                                registry.TryResolve(
+                                    geometryId,
+                                    out RegisteredHitbox registered),
+                                Is.True,
+                                definition.name + ": " + slot.MarkerId);
+                            Assert.That(registered.Collider, Is.SameAs(blocker));
+                            Assert.That(
+                                registered.TargetKind,
+                                Is.EqualTo(QueryTargetKind.EnvironmentBlocker));
+                            Assert.That(
+                                instance.TryResolveCoverId(
+                                    geometryId,
+                                    out string coverId),
+                                Is.True,
+                                definition.name + ": " + slot.MarkerId);
+                            Assert.That(coverId, Is.EqualTo(slot.MarkerId));
+                        }
+                    }
+
+                    Assert.That(expectedBlockerCount, Is.GreaterThan(0));
+                    Assert.That(registry.Count, Is.EqualTo(expectedBlockerCount));
+                }
+                finally
+                {
+                    Object.DestroyImmediate(host);
+                    Object.DestroyImmediate(registryObject);
+                }
+            }
+        }
+
+        private static void AssertMeshColliderCanBeRaycast(
+            MeshCollider collider,
+            string context)
+        {
+            Mesh mesh = collider.sharedMesh;
+            Assert.That(mesh, Is.Not.Null, context);
+            Vector3[] vertices = mesh.vertices;
+            int[] triangles = mesh.triangles;
+            Assert.That(vertices, Is.Not.Empty, context);
+            Assert.That(triangles.Length, Is.GreaterThanOrEqualTo(3), context);
+
+            Vector3 first = default(Vector3);
+            Vector3 second = default(Vector3);
+            Vector3 third = default(Vector3);
+            Vector3 normal = default(Vector3);
+            float largestTriangleAreaSquared = 0f;
+            for (int index = 0; index + 2 < triangles.Length; index += 3)
+            {
+                Vector3 candidateFirst = collider.transform.TransformPoint(
+                    vertices[triangles[index]]);
+                Vector3 candidateSecond = collider.transform.TransformPoint(
+                    vertices[triangles[index + 1]]);
+                Vector3 candidateThird = collider.transform.TransformPoint(
+                    vertices[triangles[index + 2]]);
+                Vector3 candidateNormal = Vector3.Cross(
+                    candidateSecond - candidateFirst,
+                    candidateThird - candidateFirst);
+                if (candidateNormal.sqrMagnitude <= largestTriangleAreaSquared)
+                {
+                    continue;
+                }
+
+                first = candidateFirst;
+                second = candidateSecond;
+                third = candidateThird;
+                normal = candidateNormal;
+                largestTriangleAreaSquared = candidateNormal.sqrMagnitude;
+            }
+
+            Assert.That(
+                largestTriangleAreaSquared,
+                Is.GreaterThan(0.000000000001f),
+                context);
+            normal.Normalize();
+
+            Vector3 triangleCenter = (first + second + third) / 3f;
+            Ray ray = new Ray(triangleCenter + normal, -normal);
+            Physics.SyncTransforms();
+            Assert.That(
+                collider.Raycast(ray, out RaycastHit hit, 2f),
+                Is.True,
+                context);
+            Assert.That(hit.collider, Is.SameAs(collider), context);
+        }
+
         private static FpgRoomValidationIssue AssertRoomIssue(
             FpgRoomValidationResult result,
             FpgRoomValidationCode expectedCode)
@@ -386,6 +622,9 @@ namespace FPG.Demo.Tests.EditMode
             string prefabPath,
             string cameraPath,
             Vector3 localPosition,
+            Vector3 playerReachableLocalPosition,
+            Vector3 playerLeftPeekLocalPosition,
+            Vector3 playerRightPeekLocalPosition,
             bool isStartingCover)
         {
             Assert.That(slot.MarkerId, Is.EqualTo(markerId));
@@ -395,8 +634,16 @@ namespace FPG.Demo.Tests.EditMode
                 Is.EqualTo(cameraPath));
             Assert.That(slot.LocalPosition, Is.EqualTo(localPosition));
             Assert.That(slot.LocalEulerAngles, Is.EqualTo(Vector3.zero));
-            Assert.That(slot.PlayerReachableLocalPosition, Is.EqualTo(localPosition));
+            Assert.That(
+                slot.PlayerReachableLocalPosition,
+                Is.EqualTo(playerReachableLocalPosition));
             Assert.That(slot.PlayerReachableLocalEulerAngles, Is.EqualTo(Vector3.zero));
+            Assert.That(
+                slot.PlayerLeftPeekLocalPosition,
+                Is.EqualTo(playerLeftPeekLocalPosition));
+            Assert.That(
+                slot.PlayerRightPeekLocalPosition,
+                Is.EqualTo(playerRightPeekLocalPosition));
             Assert.That(slot.MaxDurability, Is.EqualTo(100));
             Assert.That(slot.IsStartingCover, Is.EqualTo(isStartingCover));
         }
@@ -413,8 +660,12 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(view.IsDestroyed, Is.EqualTo(destroyed));
             Assert.That(intactRoot.activeSelf, Is.EqualTo(!destroyed));
             Assert.That(destroyedRoot.activeSelf, Is.EqualTo(destroyed));
-            Assert.That(serialized.FindProperty("blockingColliders").arraySize, Is.EqualTo(0));
-            Assert.That(view.GetComponentsInChildren<Collider>(true), Is.Empty);
+            Assert.That(view.BlockingColliderCount, Is.EqualTo(1));
+            Assert.That(
+                view.TryGetBlockingCollider(0, out Collider blocker),
+                Is.True);
+            Assert.That(blocker, Is.TypeOf<MeshCollider>());
+            Assert.That(blocker.enabled, Is.EqualTo(!destroyed));
         }
 
         private static T LoadRequired<T>(string path) where T : Object

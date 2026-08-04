@@ -1,4 +1,5 @@
 using UnityEngine;
+using FPG.Demo.Skills;
 
 namespace FPG.Demo.Unity
 {
@@ -30,6 +31,19 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(1)]
         private int barrier = 100;
 
+        [D0PlannerSection("攻击时序")]
+        [D0PlannerField("基础攻击速度", "应用额外攻速前，每秒可发动的攻击次数。")]
+        [SerializeField, Min(0.0001f)]
+        private float baseAttackSpeed = 1f;
+
+        [D0PlannerField("攻速收益系数", "额外攻速乘以该系数后再加到基础攻击速度。")]
+        [SerializeField, Min(0f)]
+        private float attackSpeedRatio = 1f;
+
+        [D0PlannerField("攻击速度上限", "采用攻速规则的序列每秒最多可发动的攻击次数。")]
+        [SerializeField, Min(0.0001f)]
+        private float attackSpeedCap = 2.5f;
+
         [D0PlannerSection("关联资产")]
         [D0PlannerField("武器配置", "该角色使用的武器资产。Fei 的主射与副射在同一资产中作为两种独立攻击配置，并共享弹匣。")]
         [SerializeField]
@@ -47,6 +61,14 @@ namespace FPG.Demo.Unity
         public string DisplayName => displayName;
         public int Life => life;
         public int Barrier => barrier;
+        public float BaseAttackSpeed => baseAttackSpeed;
+        public float AttackSpeedRatio => attackSpeedRatio;
+        public float AttackSpeedCap => attackSpeedCap;
+        public FpgAttackSpeedProfile AttackSpeedProfile =>
+            new FpgAttackSpeedProfile(
+                baseAttackSpeed,
+                attackSpeedRatio,
+                attackSpeedCap);
         public D0WeaponDefinition Weapon => weapon;
         public FpgPlayerEntityView EntityPrefab => entityPrefab;
         public D0ActorPresentationDefinition ActorPresentation => actorPresentation;
@@ -62,6 +84,12 @@ namespace FPG.Demo.Unity
             if (life <= 0 || barrier <= 0)
             {
                 error = "Character life and barrier must be positive.";
+                return false;
+            }
+
+            if (!AttackSpeedProfile.IsValid)
+            {
+                error = "Character attack speed requires finite positive base/cap values, a non-negative ratio, and a cap at least as high as base attack speed.";
                 return false;
             }
 

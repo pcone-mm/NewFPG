@@ -2,6 +2,8 @@
 
 本目录只保存 FPGDemo 正式入口与 Host 场景。正式入口固定为 `Boot -> FormalRoom`，房间 Art Scene 位于 `Presentation/Level/Rooms/` 并由 FormalRoom additive 加载；不要重新引入根项目旧场景或 CombatLab。
 
+`Assets/InitTestScene/BattleTest.unity` 位于本目录之外，是 Editor/Development harness；它可 additive 复用 FormalRoom，但不属于生产场景清单或 Release 入口。
+
 ## 场景合同
 
 - `Boot.unity` 与 `FormalRoom.unity` 分别固定为 build index 0 和 1；`FpgProductionSceneList` 按 room ID 排序后追加 catalog 中全部 Art Scene。
@@ -15,5 +17,6 @@
 ## 验证
 
 - 修改入口、catalog 或 Art Scene 后检查 `Assets/FPGDemo/Tests/EditMode/BuildSettingsTests.cs` 与 `FpgRoomArtSceneContractTests.cs`。
+- 修改 BattleTest 路由时同时检查 `FpgBattleTestPlayModeTests.cs`，并确认生产清单仍排除该场景。
 - 修改 Boot 选择或 FormalRoom authoring 后检查 `Assets/FPGDemo/Tests/EditMode/FormalFirstAuthoringContractTests.cs` 与 `FpgBootSecondaryModeSelectionTests.cs`。
 - 默认只执行 Unity 编译与 Console 检查；批量 EditMode/PlayMode 测试需用户明确要求。

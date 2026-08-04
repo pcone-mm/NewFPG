@@ -4,6 +4,29 @@ using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
+    internal readonly struct FpgPlayerPeekPresentationState
+    {
+        public FpgPlayerPeekPresentationState(
+            string coverId,
+            FpgPlayerFacingDirection direction,
+            Vector3 localPosition,
+            float progress,
+            bool hasTarget)
+        {
+            CoverId = coverId ?? string.Empty;
+            Direction = direction;
+            LocalPosition = localPosition;
+            Progress = progress;
+            HasTarget = hasTarget;
+        }
+
+        public string CoverId { get; }
+        public FpgPlayerFacingDirection Direction { get; }
+        public Vector3 LocalPosition { get; }
+        public float Progress { get; }
+        public bool HasTarget { get; }
+    }
+
     /// <summary>
     /// Presentation-only peek pose for Fei. The historical class name remains
     /// as a prefab compatibility boundary; independent room cover owns visuals,
@@ -16,6 +39,7 @@ namespace FPG.Demo.Unity
         private const int OutlinePointCount = 4;
 
         private IFpgFormalPlayerPresentationSource formalSource;
+        private FpgRoomInstance roomInstance;
 
         [Header("Cover branches")]
         [SerializeField]
@@ -35,9 +59,6 @@ namespace FPG.Demo.Unity
         private Transform secondaryPresentationMuzzle;
 
         [Header("Peek pose")]
-        [SerializeField]
-        private Vector3 peekLocalOffset = new Vector3(1.35f, 0f, 0f);
-
         [SerializeField, Min(0f)]
         private float peekTransitionSeconds = 0.08f;
 
@@ -66,8 +87,13 @@ namespace FPG.Demo.Unity
         private LineRenderer lineRenderer;
         private Transform capturedPeekRoot;
         private Vector3 authoredPeekLocalPosition;
+        private Vector3 selectedPeekLocalPosition;
+        private string selectedPeekCoverId = string.Empty;
+        private FpgPlayerFacingDirection selectedPeekDirection =
+            FpgPlayerFacingDirection.Right;
         private float currentOpacity;
         private float currentPeekProgress;
+        private bool hasSelectedPeekTarget;
         private bool coverMeshVisible;
         private int lastAppliedFrame = -1;
 
@@ -82,7 +108,12 @@ namespace FPG.Demo.Unity
         public Renderer CoverRenderer => coverRenderer;
         public Transform PrimaryPresentationMuzzle => primaryPresentationMuzzle;
         public Transform SecondaryPresentationMuzzle => secondaryPresentationMuzzle;
-        public Vector3 PeekLocalOffset => peekLocalOffset;
+        public bool HasSelectedPeekTarget => hasSelectedPeekTarget;
+        public FpgPlayerFacingDirection SelectedPeekDirection =>
+            selectedPeekDirection;
+        public Vector3 CurrentPeekLocalOffset => hasSelectedPeekTarget
+            ? selectedPeekLocalPosition - authoredPeekLocalPosition
+            : Vector3.zero;
 
         public static bool ShouldShowBarrier(
             in FpgFormalPlayerPresentationSnapshot snapshot)
@@ -101,15 +132,17 @@ namespace FPG.Demo.Unity
         /// </summary>
         public bool TryBindFormalSource(
             IFpgFormalPlayerPresentationSource nextSource,
+            FpgRoomInstance nextRoomInstance,
             out string error)
         {
-            if (nextSource == null)
+            if (nextSource == null || nextRoomInstance == null)
             {
-                error = "D0 player cover formal binding requires a presentation source.";
+                error = "D0 player cover formal binding requires a presentation source and room instance.";
                 return false;
             }
 
             formalSource = nextSource;
+            roomInstance = nextRoomInstance;
             ResetPresentation();
             error = string.Empty;
             return true;
@@ -118,7 +151,108 @@ namespace FPG.Demo.Unity
         public void UnbindFormalSource()
         {
             formalSource = null;
+            roomInstance = null;
             ResetPresentation();
+        }
+
+        public bool TrySelectPeekTarget(
+            string coverId,
+            FpgPlayerFacingDirection direction,
+            out string error)
+        {
+            if (!TryResolvePeekLocalPosition(
+                    coverId,
+                    direction,
+                    out Vector3 localPosition,
+                    out error))
+            {
+                return false;
+            }
+
+            selectedPeekCoverId = coverId;
+            selectedPeekDirection = direction;
+            selectedPeekLocalPosition = localPosition;
+            hasSelectedPeekTarget = true;
+            SetPeekProgress(currentPeekProgress);
+            error = string.Empty;
+            return true;
+        }
+
+        public bool TryGetPreviewPeekWorldOffset(
+            string coverId,
+            FpgPlayerFacingDirection direction,
+            out Vector3 offset)
+        {
+            if (hasSelectedPeekTarget)
+            {
+                return TryGetRemainingPeekWorldOffset(out offset);
+            }
+
+            offset = Vector3.zero;
+            if (!TryResolvePeekLocalPosition(
+                    coverId,
+                    direction,
+                    out Vector3 targetLocalPosition,
+                    out _))
+            {
+                return false;
+            }
+
+            offset = peekRoot.parent.TransformVector(
+                targetLocalPosition - peekRoot.localPosition);
+            return IsFinite(offset);
+        }
+
+        internal FpgPlayerPeekPresentationState CapturePeekState()
+        {
+            EnsureAuthoredPeekPoseCaptured();
+            return new FpgPlayerPeekPresentationState(
+                selectedPeekCoverId,
+                selectedPeekDirection,
+                selectedPeekLocalPosition,
+                currentPeekProgress,
+                hasSelectedPeekTarget);
+        }
+
+        internal void RestorePeekState(
+            in FpgPlayerPeekPresentationState state)
+        {
+            if (!EnsureAuthoredPeekPoseCaptured())
+            {
+                return;
+            }
+
+            if (state.HasTarget)
+            {
+                selectedPeekCoverId = state.CoverId;
+                selectedPeekDirection = state.Direction;
+                selectedPeekLocalPosition = state.LocalPosition;
+                hasSelectedPeekTarget = true;
+            }
+            else
+            {
+                ClearSelectedPeekTarget();
+            }
+
+            SetPeekProgress(state.Progress);
+        }
+
+        public bool TryGetRemainingPeekWorldOffset(out Vector3 offset)
+        {
+            offset = Vector3.zero;
+            if (!hasSelectedPeekTarget || peekRoot == null
+                || peekRoot.parent == null)
+            {
+                return false;
+            }
+
+            float easedProgress = Mathf.SmoothStep(
+                0f,
+                1f,
+                currentPeekProgress);
+            offset = peekRoot.parent.TransformVector(
+                CurrentPeekLocalOffset * (1f - easedProgress));
+            return IsFinite(offset);
         }
 
         public bool TrySetThreeCProfile(D0ThreeCProfile profile, out string error)
@@ -195,13 +329,6 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (!IsFinite(peekLocalOffset)
-                || peekLocalOffset.sqrMagnitude <= 0.000001f)
-            {
-                error = "D0 player peek local offset must be finite and non-zero.";
-                return false;
-            }
-
             if (!IsFinite(peekTransitionSeconds)
                 || !IsFinite(retractTransitionSeconds)
                 || peekTransitionSeconds < 0f
@@ -245,6 +372,23 @@ namespace FPG.Demo.Unity
 
             SetCoverMeshVisible(false);
             SetOpacity(0f);
+            if (snapshot.IsCoverPeekRequested
+                && (!hasSelectedPeekTarget
+                    || !string.Equals(
+                        selectedPeekCoverId,
+                        snapshot.CurrentCoverId,
+                        StringComparison.Ordinal)
+                    || selectedPeekDirection
+                        != snapshot.CoverPeekDirection)
+                && !TrySelectPeekTarget(
+                    snapshot.CurrentCoverId,
+                    snapshot.CoverPeekDirection,
+                    out _))
+            {
+                ResetPresentation();
+                return;
+            }
+
             AdvancePeek(snapshot, SanitizeDeltaTime(deltaTime));
         }
 
@@ -252,6 +396,7 @@ namespace FPG.Demo.Unity
         {
             EnsureAuthoredPeekPoseCaptured();
             SetPeekProgress(0f);
+            ClearSelectedPeekTarget();
             SetCoverMeshVisible(false);
             SetOpacity(0f);
         }
@@ -290,6 +435,23 @@ namespace FPG.Demo.Unity
             float deltaTime)
         {
             if (!snapshot.IsCoverPeekRequested)
+            {
+                float nextProgress = retractTransitionSeconds <= 0f
+                    ? 0f
+                    : Mathf.MoveTowards(
+                        currentPeekProgress,
+                        0f,
+                        deltaTime / retractTransitionSeconds);
+                SetPeekProgress(nextProgress);
+                if (nextProgress <= 0f)
+                {
+                    ClearSelectedPeekTarget();
+                }
+
+                return;
+            }
+
+            if (!hasSelectedPeekTarget)
             {
                 SetPeekProgress(0f);
                 return;
@@ -334,8 +496,10 @@ namespace FPG.Demo.Unity
                 0f,
                 1f,
                 currentPeekProgress);
-            peekRoot.localPosition = authoredPeekLocalPosition
-                + peekLocalOffset * easedProgress;
+            peekRoot.localPosition = Vector3.LerpUnclamped(
+                authoredPeekLocalPosition,
+                selectedPeekLocalPosition,
+                easedProgress);
         }
 
         private bool EnsureAuthoredPeekPoseCaptured()
@@ -350,9 +514,56 @@ namespace FPG.Demo.Unity
             {
                 capturedPeekRoot = peekRoot;
                 authoredPeekLocalPosition = peekRoot.localPosition;
+                selectedPeekLocalPosition = authoredPeekLocalPosition;
                 currentPeekProgress = 0f;
+                hasSelectedPeekTarget = false;
             }
 
+            return true;
+        }
+
+        private void ClearSelectedPeekTarget()
+        {
+            selectedPeekCoverId = string.Empty;
+            selectedPeekDirection = FpgPlayerFacingDirection.Right;
+            selectedPeekLocalPosition = authoredPeekLocalPosition;
+            hasSelectedPeekTarget = false;
+        }
+
+        private bool TryResolvePeekLocalPosition(
+            string coverId,
+            FpgPlayerFacingDirection direction,
+            out Vector3 localPosition,
+            out string error)
+        {
+            localPosition = default(Vector3);
+            if (!EnsureAuthoredPeekPoseCaptured()
+                || peekRoot.parent == null
+                || roomInstance == null
+                || string.IsNullOrWhiteSpace(coverId)
+                || !Enum.IsDefined(
+                    typeof(FpgPlayerFacingDirection),
+                    direction)
+                || !roomInstance.TryResolveCoverPeekPosition(
+                    coverId,
+                    direction,
+                    out Vector3 worldPosition))
+            {
+                error = "D0 player cover presentation could not resolve the selected cover peek target.";
+                return false;
+            }
+
+            localPosition = peekRoot.parent.InverseTransformPoint(
+                worldPosition);
+            if (!IsFinite(localPosition)
+                || (localPosition - authoredPeekLocalPosition).sqrMagnitude
+                    <= 0.000001f)
+            {
+                error = "D0 player cover peek target must be finite and differ from the authored withdrawn pose.";
+                return false;
+            }
+
+            error = string.Empty;
             return true;
         }
 

@@ -359,7 +359,7 @@ namespace FPG.Demo.Unity
         private FpgDamagePopupPresentation formalDamagePopup =
             new FpgDamagePopupPresentation();
 
-        [SerializeField]
+        [SerializeField, HideInInspector]
         private FpgReticlePresentation formalReticle =
             new FpgReticlePresentation();
 
@@ -378,6 +378,7 @@ namespace FPG.Demo.Unity
         public CombatPresentationPoolCapacities PoolCapacities => poolCapacities;
         public CombatCameraShakePresentation CameraShake => cameraShake;
         public FpgDamagePopupPresentation FormalDamagePopup => formalDamagePopup;
+        [Obsolete("Formal reticle styling is owned by D0WeaponDefinition.AimIndicator.")]
         public FpgReticlePresentation FormalReticle => formalReticle;
         public int FormalHudResourceCount =>
             formalHudResources == null ? 0 : formalHudResources.Length;
@@ -497,9 +498,7 @@ namespace FPG.Demo.Unity
                 || !TryValidateHitDefinitions(out error)
                 || !TryValidateFormalHudResources(out error)
                 || formalDamagePopup == null
-                || !formalDamagePopup.TryValidate(out error)
-                || formalReticle == null
-                || !formalReticle.TryValidate(out error))
+                || !formalDamagePopup.TryValidate(out error))
             {
                 if (string.IsNullOrEmpty(error))
                 {

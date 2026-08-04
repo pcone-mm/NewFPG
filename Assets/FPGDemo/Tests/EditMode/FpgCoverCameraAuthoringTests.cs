@@ -192,6 +192,96 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void DuplicateCoverOffsetsReachableAndBothPeekPositions()
+        {
+            const string SourceRoomPath =
+                "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
+            string roomPath = temporaryFolder + "/MarkerRoom.asset";
+            string profileFolder = CameraRoot + "/MarkerRoom";
+            IDisposable tool = null;
+            try
+            {
+                FpgRoomDefinition sourceRoom =
+                    AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(
+                        SourceRoomPath);
+                Assert.That(sourceRoom, Is.Not.Null, SourceRoomPath);
+                FpgRoomDefinition room =
+                    UnityEngine.Object.Instantiate(sourceRoom);
+                room.name = "MarkerRoom";
+                AssetDatabase.CreateAsset(room, roomPath);
+                FpgRoomCoverSlot source = room.CoverSlots[0];
+                Vector3 sourceMarkerPosition = source.LocalPosition;
+                Vector3 sourceReachable = source.PlayerReachableLocalPosition;
+                Vector3 sourceLeft = source.PlayerLeftPeekLocalPosition;
+                Vector3 sourceRight = source.PlayerRightPeekLocalPosition;
+
+                Type toolType = typeof(FpgCoverCameraProfileAuthoring).Assembly
+                    .GetType(
+                        "FPG.Demo.Editor.LevelAuthoring.FpgRoomSceneTool",
+                        true);
+                Type handleType = typeof(FpgCoverCameraProfileAuthoring).Assembly
+                    .GetType(
+                        "FPG.Demo.Editor.LevelAuthoring.FpgRoomMarkerHandle",
+                        true);
+                tool = Activator.CreateInstance(toolType, true) as IDisposable;
+                Assert.That(tool, Is.Not.Null);
+                ConstructorInfo[] handleConstructors =
+                    handleType.GetConstructors(
+                        BindingFlags.Instance
+                        | BindingFlags.Public
+                        | BindingFlags.NonPublic);
+                Assert.That(handleConstructors, Has.Length.EqualTo(1));
+                Type markerKindType = handleConstructors[0]
+                    .GetParameters()[0]
+                    .ParameterType;
+                object handle = handleConstructors[0].Invoke(
+                    new object[]
+                    {
+                        Enum.ToObject(
+                            markerKindType,
+                            (int)FPG.Demo.Unity.FpgRoomMarkerKind.Cover),
+                        0,
+                        source.MarkerId,
+                        source.DisplayName
+                    });
+                SetPrivateField(tool, "room", room);
+                SetPrivateField(tool, "selectedMarker", handle);
+                PropertyInfo gridSnap = toolType.GetProperty(
+                    "GridSnap",
+                    BindingFlags.Instance
+                    | BindingFlags.Public
+                    | BindingFlags.NonPublic);
+                Assert.That(gridSnap, Is.Not.Null);
+                gridSnap.SetValue(tool, 0.5f);
+
+                InvokePrivate(tool, "DuplicateSelectedMarker");
+
+                Assert.That(room.CoverSlots.Count, Is.EqualTo(4));
+                FpgRoomCoverSlot duplicate = room.CoverSlots[0];
+                Vector3 offset = new Vector3(0.5f, 0f, 0f);
+                Assert.That(duplicate.MarkerId, Is.Not.EqualTo(source.MarkerId));
+                Assert.That(
+                    duplicate.LocalPosition,
+                    Is.EqualTo(sourceMarkerPosition + offset));
+                Assert.That(
+                    duplicate.PlayerReachableLocalPosition,
+                    Is.EqualTo(sourceReachable + offset));
+                Assert.That(
+                    duplicate.PlayerLeftPeekLocalPosition,
+                    Is.EqualTo(sourceLeft + offset));
+                Assert.That(
+                    duplicate.PlayerRightPeekLocalPosition,
+                    Is.EqualTo(sourceRight + offset));
+                Assert.That(duplicate.IsStartingCover, Is.False);
+            }
+            finally
+            {
+                tool?.Dispose();
+                AssetDatabase.DeleteAsset(profileFolder);
+            }
+        }
+
+        [Test]
         public void FormalThreeCNoLongerSerializesStaticCameraComposition()
         {
             D0ThreeCProfile threeC =

@@ -17,6 +17,9 @@ MonoBehaviour:
   designerNotes: Formal playable character definition.
   life: 100
   barrier: 100
+  baseAttackSpeed: 2.5
+  attackSpeedRatio: 1
+  attackSpeedCap: 2.5
   weapon: {fileID: 11400000, guid: 9526fd3a019f81d48a2cee166b4012a0, type: 2}
   entityPrefab: {fileID: 10000010, guid: e8f2a7c4d9b1465e8f3a2c7d1b6e904f, type: 3}
   actorPresentation: {fileID: 11400000, guid: 17df914550c874e439282db1d0ea9d7f, type: 2}

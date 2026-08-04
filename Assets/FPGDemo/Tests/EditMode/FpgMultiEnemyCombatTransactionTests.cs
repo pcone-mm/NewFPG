@@ -252,6 +252,74 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void PlayerInvincibilityConsumesImpactWithoutLifeLoss()
+        {
+            PortFixture fixture = new PortFixture(1, 4, 2);
+            RuntimeId enemyId = fixture.RegisterEnemy(100);
+            fixture.Port.IsPlayerInvincible = true;
+            fixture.QueueEnemyImpact(enemyId, 1L, 0L, 75);
+
+            DomainResult processed = fixture.Port.Process(
+                FpgBattleTickPhase.ImpactResolution,
+                new TickIndex(0L),
+                new FpgEnemyRoster(1));
+
+            Assert.That(processed.IsSuccess, Is.True);
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(100));
+            Assert.That(fixture.Player.Combatant.IsDead, Is.False);
+            Assert.That(fixture.Kernel.ImpactLedger.Count, Is.EqualTo(1));
+            Assert.That(fixture.Kernel.ImpactQueue.Count, Is.Zero);
+        }
+
+        [Test]
+        public void DisabledEnemyAiCancelsQueuedAttackWithoutKillingOwner()
+        {
+            PortFixture fixture = new PortFixture(1, 4, 2);
+            RuntimeId ownerId = fixture.RegisterEnemy(100);
+            FpgEnemyAttackCommand command = new FpgEnemyAttackCommand(
+                new FpgAttackScheduleRequest(
+                    ownerId,
+                    new TickIndex(0L),
+                    priority: 0,
+                    scheduleSequence: 0L,
+                    attackPatternId: "gm-ai-test",
+                    skillExecutionId: new SkillExecutionId(1L),
+                    gameplayEventId: 1),
+                spawnSequence: 0,
+                FpgEnemyAttackPayload.ForSelfDestructOwner(-1L),
+                FpgEnemySkillCapacityReservation.Invalid,
+                default(ReservationToken));
+            Assert.That(
+                fixture.Port.TrySubmitEnemyAttack(command).IsSuccess,
+                Is.True);
+            Assert.That(fixture.Port.PendingAttackCount, Is.EqualTo(1));
+
+            fixture.Port.IsEnemyAiEnabled = false;
+            DomainResult processed = fixture.Port.Process(
+                FpgBattleTickPhase.EnemyAttackDirector,
+                new TickIndex(0L),
+                new FpgEnemyRoster(1));
+
+            Assert.That(processed.IsSuccess, Is.True);
+            Assert.That(fixture.Port.PendingAttackCount, Is.Zero);
+            Assert.That(fixture.Port.CanAttack(ownerId), Is.False);
+            Assert.That(
+                fixture.Port.TryGetEnemyRuntime(ownerId, out var owner),
+                Is.True);
+            Assert.That(owner.Combatant.IsDead, Is.False);
+
+            fixture.Port.IsEnemyAiEnabled = true;
+            Assert.That(fixture.Port.CanAttack(ownerId), Is.True);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.EnemyAttackDirector,
+                    new TickIndex(1L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+            Assert.That(owner.Combatant.IsDead, Is.False);
+        }
+
+        [Test]
         public void HealthChangedSubscriberFailureIsDiagnosticOnly()
         {
             PortFixture fixture = new PortFixture(
@@ -563,7 +631,7 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void PlayerDamageRoutesToCurrentCoverOnlyWhileWithdrawn()
+        public void PlayerTargetedImpactDamagesPlayerWithoutDamagingCover()
         {
             PortFixture fixture = new PortFixture(2, 8, 4);
             RuntimeId enemyId = fixture.RegisterEnemy(100);
@@ -583,8 +651,8 @@ namespace FPG.Demo.Tests.EditMode
                     new TickIndex(0L),
                     new FpgEnemyRoster(1)).IsSuccess,
                 Is.True);
-            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(100));
-            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(75));
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(75));
+            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(100));
 
             fixture.Player.Exposure.ForceExposed(new TickIndex(1L), out _);
             fixture.QueueEnemyImpact(enemyId, 2L, 1L, 25);
@@ -594,28 +662,67 @@ namespace FPG.Demo.Tests.EditMode
                     new TickIndex(1L),
                     new FpgEnemyRoster(1)).IsSuccess,
                 Is.True);
-            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(75));
-            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(75));
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(50));
+            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(100));
+
+        }
+
+        [Test]
+        public void EnvironmentColliderImpactDamagesMappedCoverInsteadOfPlayer()
+        {
+            PortFixture fixture = new PortFixture(2, 8, 4);
+            RuntimeId enemyId = fixture.RegisterEnemy(100);
+            CoverGeometryResolver resolver = new CoverGeometryResolver();
+            FpgCoverRuntime covers = fixture.BindDefaultCovers(resolver);
+            GeometryId rightCoverGeometry = new GeometryId(7001);
+            resolver.GeometryId = rightCoverGeometry;
+            resolver.CoverId = "right";
+
+            fixture.QueueEnvironmentImpact(
+                enemyId,
+                1L,
+                new TickIndex(0L),
+                rightCoverGeometry,
+                25);
+            Assert.That(
+                fixture.Port.Process(
+                    FpgBattleTickPhase.ImpactResolution,
+                    new TickIndex(0L),
+                    new FpgEnemyRoster(1)).IsSuccess,
+                Is.True);
+
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(100));
+            Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(100));
+            Assert.That(covers.GetSnapshot(2).Durability, Is.EqualTo(75));
 
             Assert.That(
                 fixture.Player.Exposure.ApplyCombatPosture(
                     false,
-                    new TickIndex(2L),
+                    new TickIndex(1L),
                     false,
                     out _).IsSuccess,
                 Is.True);
-            fixture.QueueEnemyImpact(enemyId, 3L, 2L, 100);
+            resolver.GeometryId = new GeometryId(7002);
+            resolver.CoverId = "center";
+            fixture.QueueEnvironmentImpact(
+                enemyId,
+                2L,
+                new TickIndex(1L),
+                resolver.GeometryId,
+                100);
+
             Assert.That(
                 fixture.Port.Process(
                     FpgBattleTickPhase.ImpactResolution,
-                    new TickIndex(2L),
+                    new TickIndex(1L),
                     new FpgEnemyRoster(1)).IsSuccess,
                 Is.True);
+
             Assert.That(covers.CurrentSnapshot.IsDestroyed, Is.True);
             Assert.That(
                 fixture.Player.Exposure.State,
                 Is.EqualTo(PlayerExposureState.Exposed));
-            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(75));
+            Assert.That(fixture.Player.Combatant.Life, Is.EqualTo(100));
         }
 
         [Test]
@@ -826,6 +933,12 @@ namespace FPG.Demo.Tests.EditMode
 
             public FpgCoverRuntime BindDefaultCovers()
             {
+                return BindDefaultCovers(null);
+            }
+
+            public FpgCoverRuntime BindDefaultCovers(
+                IFpgCoverGeometryResolver geometryResolver)
+            {
                 FpgCoverRuntime covers = new FpgCoverRuntime(
                     PlayerId,
                     new[]
@@ -835,7 +948,10 @@ namespace FPG.Demo.Tests.EditMode
                         new FpgCoverNodeDefinition("right", 1, 100, false)
                     },
                     new TickDuration(2));
-                Assert.That(Port.TryBindCoverRuntime(covers).IsSuccess, Is.True);
+                DomainResult bound = geometryResolver == null
+                    ? Port.TryBindCoverRuntime(covers)
+                    : Port.TryBindCoverRuntime(covers, geometryResolver);
+                Assert.That(bound.IsSuccess, Is.True);
                 return covers;
             }
 
@@ -856,6 +972,37 @@ namespace FPG.Demo.Tests.EditMode
                     HitPart.Body,
                     DamageType.Normal,
                     CombatTags.EnemyAttack);
+                Assert.That(
+                    Kernel.ImpactQueue.TryEnqueue(
+                        intent,
+                        ImpactPhasePriority.EnemyImpact,
+                        enemyId).IsSuccess,
+                    Is.True);
+            }
+
+            public void QueueEnvironmentImpact(
+                RuntimeId enemyId,
+                long impactId,
+                TickIndex tick,
+                GeometryId geometryId,
+                int damage)
+            {
+                ImpactIntent intent = new ImpactIntent(
+                    new ImpactId(impactId),
+                    new AttackId(impactId),
+                    ShotId.Invalid,
+                    enemyId,
+                    PlayerId,
+                    tick,
+                    new DamageSpec(damage, 0),
+                    HitPart.Body,
+                    DamageType.Normal,
+                    CombatTags.EnemyAttack,
+                    spatialContext: new ImpactSpatialContext(
+                        SpatialVectorKey.Zero,
+                        geometryId,
+                        QueryTargetKind.EnvironmentBlocker,
+                        HitPart.Body));
                 Assert.That(
                     Kernel.ImpactQueue.TryEnqueue(
                         intent,
@@ -914,6 +1061,28 @@ namespace FPG.Demo.Tests.EditMode
                     new DamageSpec(2, 0),
                     new TickDuration(2),
                     4);
+            }
+        }
+
+        private sealed class CoverGeometryResolver : IFpgCoverGeometryResolver
+        {
+            public GeometryId GeometryId { get; set; }
+            public string CoverId { get; set; }
+
+            public bool TryResolveCoverId(
+                GeometryId geometryId,
+                out string coverId)
+            {
+                if (geometryId == GeometryId
+                    && geometryId.IsValid
+                    && !string.IsNullOrEmpty(CoverId))
+                {
+                    coverId = CoverId;
+                    return true;
+                }
+
+                coverId = string.Empty;
+                return false;
             }
         }
 

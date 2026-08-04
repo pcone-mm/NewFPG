@@ -10,10 +10,12 @@
 ## 工作规则
 
 - ammo、稳定 ID、recovery 和发射状态只在显式 commit 后推进；prepare 失败、取消或放弃不得产生部分消费。
+- CharacterAttackSpeed 攻击只在 release commit 时把 resolved same-attack ready tick 写入对应 primary/secondary recast lock；ready tick 必须晚于 release。preflight 失败或中断回滚不得提前清除该锁，room snapshot 必须连同两槽 recast lock 一起恢复；FixedCooldown 保留 authored recovery 规则。
 - Secondary 开始前先验证弹药与当前状态；被拒绝的输入不能启动技能或表现时间轴。
 - 修改 weapon 状态机时保持 tick 顺序、拒绝原因与回滚行为确定，不在 Unity 适配层复制另一套资源规则。
 
 ## 验证
 
 - 武器 prepare/commit、弹药、恢复和回滚检查 `WeaponRuntimeTests.cs`。
+- resolved ready lock、snapshot restore 与 pre-commit rollback 检查 `FpgAttackTimingHashAndWeaponSnapshotTests.cs`。
 - 玩家技能启动/拒绝桥接检查 `FpgPlayerSkillExecutionControllerTests.cs`；程序集边界检查 `AssemblyBoundaryTests.cs`。

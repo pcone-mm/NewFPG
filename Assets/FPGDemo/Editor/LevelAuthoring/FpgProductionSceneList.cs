@@ -5,6 +5,7 @@ using FPG.Demo.Unity;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEngine.SceneManagement;
 
 namespace FPG.Demo.Editor.LevelAuthoring
 {
@@ -198,12 +199,51 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         public void OnPreprocessBuild(BuildReport report)
         {
+            bool isBattleTestDevelopmentBuild = report != null
+                && (report.summary.options & BuildOptions.Development) != 0
+                && FpgBattleTestDevelopmentSceneList.ContainsBattleTest(
+                    EditorBuildSettings.scenes);
+            string settingsError;
+            bool buildSettingsValid = isBattleTestDevelopmentBuild
+                ? FpgBattleTestDevelopmentSceneList
+                    .TryValidateEditorBuildSettings(out settingsError)
+                : FpgProductionSceneList.TryValidateEditorBuildSettings(
+                    out settingsError);
             if (!FpgRoomArtSceneContractValidator.TryValidateCatalog(
                     out string error)
-                || !FpgProductionSceneList.TryValidateEditorBuildSettings(
-                    out error))
+                || !buildSettingsValid)
             {
-                throw new BuildFailedException(error);
+                throw new BuildFailedException(
+                    string.IsNullOrWhiteSpace(error)
+                        ? settingsError
+                        : error);
+            }
+        }
+    }
+
+    internal sealed class FpgBattleTestReleaseSceneGuard
+        : IProcessSceneWithReport
+    {
+        public int callbackOrder => -2000;
+
+        public void OnProcessScene(Scene scene, BuildReport report)
+        {
+            if (report == null)
+            {
+                return;
+            }
+
+            bool isDevelopmentBuild = report != null
+                && (report.summary.options & BuildOptions.Development) != 0;
+            if (!isDevelopmentBuild
+                && scene.IsValid()
+                && string.Equals(
+                    scene.path,
+                    FpgBattleTestDevelopmentSceneList.BattleTestScenePath,
+                    StringComparison.Ordinal))
+            {
+                throw new BuildFailedException(
+                    "Release builds must not contain the BattleTest scene.");
             }
         }
     }

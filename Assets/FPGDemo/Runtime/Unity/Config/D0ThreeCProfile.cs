@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace FPG.Demo.Unity
 {
@@ -34,15 +35,41 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private Rect reticleSafeViewport = new Rect(0.08f, 0.12f, 0.84f, 0.76f);
 
-        [D0PlannerField("准星移动灵敏度", "鼠标或指针驱动虚拟准星时使用的倍率。数值越大，同样输入带来的准星位移越大。")]
+        [D0PlannerField("鼠标准星灵敏度", "鼠标驱动虚拟准星时使用的倍率。数值越大，同样的参考分辨率像素位移带来的准星位移越大；不影响手柄速度。")]
+        [FormerlySerializedAs("reticleSensitivity")]
         [SerializeField, Min(0.01f)]
-        private float reticleSensitivity = 1f;
+        private float mouseReticleSensitivity = 1f;
 
-        [D0PlannerField("攻击查询最远距离（世界单位）", "\u4e3b\u5c04\u548c\u526f\u5c04\u5171\u7528\u7684\u7a7a\u95f4\u67e5\u8be2\u6700\u8fdc\u8ddd\u79bb\u3002D0 3C \u662f\u552f\u4e00\u751f\u6548\u6765\u6e90\uff1b\u4fee\u6539\u540e\u70b9\u51fb\u201c\u91cd\u542f\u6218\u6597\u5e76\u5e94\u7528\u5168\u90e8\u201d\uff08\u6216\u6309 F5\uff09\u91cd\u5efa\u67e5\u8be2\u4f1a\u8bdd\u3002\u5b83\u4e0d\u662f\u76f8\u673a\u88c1\u526a\u8ddd\u79bb\u3002")]
+        [D0PlannerField("鼠标参考分辨率", "鼠标位移会按此固定分辨率换算为视口位移，使 1080p 与 4K 输出下的瞄准速度保持一致。单位为像素，必须大于 0。")]
+        [SerializeField]
+        private Vector2 mouseReferenceResolution = new Vector2(1920f, 1080f);
+
+        [D0PlannerField("手柄最大视口速度", "摇杆满幅输入时准星每秒移动的归一化视口距离；运行时会乘帧时间，因此 30/60/120 FPS 下速度一致。")]
         [SerializeField, Min(0.01f)]
+        private float gamepadReticleSpeed = 0.65f;
+
+        [D0PlannerField("手柄径向死区", "摇杆幅度低于此归一化值时不移动准星，也不会抢占本帧最后有效输入设备。范围为 0 到 0.95。")]
+        [SerializeField, Range(0f, 0.95f)]
+        private float gamepadReticleDeadzone = 0.15f;
+
+        [D0PlannerField("手柄响应曲线指数", "大于 1 时增强摇杆中心附近的精细控制，同时保留满幅输入的最大速度。")]
+        [SerializeField, Min(0.1f)]
+        private float gamepadReticleResponseExponent = 1.6f;
+
+        [D0PlannerSection("角色朝向")]
+        [D0PlannerField("转向延迟（秒）", "准星稳定进入另一半屏幕后，角色开始转向前等待的时间。攻击按下会绕过此延迟。")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float facingFlipDelaySeconds = 0.05f;
+
+        [D0PlannerField("转向耗时（秒）", "角色通过 Y 轴旋转 180 度完成左右转向的时间。设置为 0 时在延迟结束后立即完成。")]
+        [SerializeField, Range(0f, 0.5f)]
+        private float facingFlipDurationSeconds = 0.08f;
+
+        // Kept only so existing ThreeC assets deserialize without data loss.
+        [SerializeField, HideInInspector]
         private float maximumAimDistance = 50f;
 
-        [D0PlannerField("输入缓冲时长（Tick）", "\u64cd\u4f5c\u8bf7\u6c42\u53ef\u5728\u5171\u4eab\u6b66\u5668\u53d8\u4e3a\u53ef\u6267\u884c\u524d\u4fdd\u7559\u7684\u6700\u957f\u65f6\u957f\u3002\u5f53\u524d\u8303\u56f4\u4e3a 1\uFF5E32 Tick\uff1b\u4fee\u6539\u540e\u70b9\u51fb\u201c\u91cd\u542f\u6218\u6597\u5e76\u5e94\u7528\u5168\u90e8\u201d\uff08\u6216\u6309 F5\uff09\u91cd\u5efa\u8f93\u5165\u6e90\u3002")]
+        [D0PlannerField("输入缓冲时长（Tick）", "攻击输入可在武器恢复可用前保留的最长时间，范围为 1 到 32 Tick。结构预览必须在射击手感工作台点击“应用预览并重建战斗”；F5 只按当前已生效配置重开。")]
         [SerializeField, Range(1, 32)]
         private int inputBufferTicks = 4;
 
@@ -98,7 +125,17 @@ namespace FPG.Demo.Unity
         public string DisplayName => displayName;
         public string DesignerNotes => designerNotes;
         public Rect ReticleSafeViewport => reticleSafeViewport;
-        public float ReticleSensitivity => reticleSensitivity;
+        public float ReticleSensitivity => mouseReticleSensitivity;
+        public float MouseReticleSensitivity => mouseReticleSensitivity;
+        public Vector2 MouseReferenceResolution => mouseReferenceResolution;
+        public float GamepadReticleSpeed => gamepadReticleSpeed;
+        public float GamepadReticleDeadzone => gamepadReticleDeadzone;
+        public float GamepadReticleResponseExponent =>
+            gamepadReticleResponseExponent;
+        public float FacingFlipDelaySeconds => facingFlipDelaySeconds;
+        public float FacingFlipDurationSeconds => facingFlipDurationSeconds;
+
+        [System.Obsolete("Attack-query distance is owned by D0CombatFeelProfile.MaximumAimDistance.")]
         public float MaximumAimDistance => maximumAimDistance;
         public int InputBufferTicks => inputBufferTicks;
         public float PeekTransitionSeconds => peekTransitionSeconds;
@@ -127,14 +164,21 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (!IsFinitePositive(reticleSensitivity)
-                || !IsFinitePositive(maximumAimDistance)
+            if (!IsFinitePositive(mouseReticleSensitivity)
+                || !IsFinitePositive(mouseReferenceResolution.x)
+                || !IsFinitePositive(mouseReferenceResolution.y)
+                || !IsFinitePositive(gamepadReticleSpeed)
+                || !IsFiniteNonNegative(gamepadReticleDeadzone)
+                || gamepadReticleDeadzone >= 1f
+                || !IsFinitePositive(gamepadReticleResponseExponent)
+                || !IsFiniteNonNegative(facingFlipDelaySeconds)
+                || !IsFiniteNonNegative(facingFlipDurationSeconds)
+
                 || inputBufferTicks < 1
                 || inputBufferTicks > 32
                 || !IsFiniteNonNegative(peekTransitionSeconds)
                 || !IsFiniteNonNegative(retractTransitionSeconds)
                 || !IsFinitePositive(coverTraversalSeconds)
-                || !IsFinite(coverLocalPosition)
                 || !IsFinitePositive(barrierFadeInSeconds)
                 || !IsFinitePositive(barrierFadeOutSeconds)
                 || !IsFiniteNonNegative(barrierMaximumOpacity)

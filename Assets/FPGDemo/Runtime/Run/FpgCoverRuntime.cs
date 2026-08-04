@@ -4,6 +4,11 @@ using FPG.Demo.Core;
 
 namespace FPG.Demo.Run
 {
+    public interface IFpgCoverGeometryResolver
+    {
+        bool TryResolveCoverId(GeometryId geometryId, out string coverId);
+    }
+
     public enum FpgCoverMoveDirection
     {
         None = 0,
@@ -212,6 +217,31 @@ namespace FPG.Demo.Run
 
             snapshot = CreateSnapshot(index);
             return true;
+        }
+
+        public bool TryGetIntactDefenseState(
+            string coverId,
+            out CombatantState defenseState)
+        {
+            int index = FindById(coverId);
+            if (index < 0 || durabilityStates[index].Barrier <= 0)
+            {
+                defenseState = null;
+                return false;
+            }
+
+            defenseState = durabilityStates[index];
+            return true;
+        }
+
+        public bool IsCurrentCover(string coverId)
+        {
+            return currentIndex >= 0
+                && currentIndex < definitions.Length
+                && string.Equals(
+                    definitions[currentIndex].CoverId,
+                    coverId,
+                    StringComparison.Ordinal);
         }
 
         public DomainResult TryBeginMove(

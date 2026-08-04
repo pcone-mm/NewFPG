@@ -392,6 +392,7 @@ namespace FPG.Demo.Tests.EditMode
             int authoredOrdinal,
             int tick)
         {
+            ConfigureAllowWithdrawAfter(sequence, tick);
             SerializedProperty attack = AddElement(sequence, "attackEvents");
             ConfigureActionHeader(
                 attack,
@@ -416,6 +417,7 @@ namespace FPG.Demo.Tests.EditMode
             int authoredOrdinal,
             int tick)
         {
+            ConfigureAllowWithdrawAfter(sequence, tick);
             SerializedProperty action = AddElement(
                 sequence,
                 "projectileEvents");
@@ -441,6 +443,23 @@ namespace FPG.Demo.Tests.EditMode
             action.FindPropertyRelative("areaProjectileLimit").intValue = 3;
             action.FindPropertyRelative("allowedTargetKinds").intValue =
                 (int)WeaponDefinition.PlayerAttackTargetKinds;
+        }
+
+        private static void ConfigureAllowWithdrawAfter(
+            SerializedProperty sequence,
+            int attackTick)
+        {
+            int allowWithdrawTick = checked(attackTick + 1);
+            SerializedProperty duration = sequence.FindPropertyRelative(
+                "durationTicks");
+            duration.intValue = Mathf.Max(
+                duration.intValue,
+                allowWithdrawTick);
+            SerializedProperty allowWithdraw = sequence.FindPropertyRelative(
+                "allowWithdrawTick");
+            allowWithdraw.intValue = Mathf.Max(
+                allowWithdraw.intValue,
+                allowWithdrawTick);
         }
 
         private static void ConfigureReload(

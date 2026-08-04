@@ -165,6 +165,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case "isStartingCover": return "初始掩体";
                 case "playerReachableLocalPosition": return "玩家到达点位置";
                 case "playerReachableLocalEulerAngles": return "玩家到达点朝向";
+                case "playerLeftPeekLocalPosition": return "玩家左侧探身点位置";
+                case "playerRightPeekLocalPosition": return "玩家右侧探身点位置";
                 default: return ObjectNames.NicifyVariableName(propertyName);
             }
         }

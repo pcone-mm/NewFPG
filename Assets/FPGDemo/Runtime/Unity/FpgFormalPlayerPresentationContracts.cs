@@ -10,6 +10,16 @@ using UnityEngine;
 
 namespace FPG.Demo.Unity
 {
+    public enum FpgAimIndicatorBaseState
+    {
+        Normal = 0,
+        Enemy,
+        Unavailable,
+        CurrentCoverBlocked,
+        Reloading,
+        Hidden
+    }
+
     /// <summary>
     /// Durable presentation state for the formal player. The struct contains
     /// only read-model values; no presentation component can mutate combat
@@ -149,6 +159,69 @@ namespace FPG.Demo.Unity
             string currentCoverId,
             bool isCoverDestroyed,
             bool isCoverMoving)
+            : this(
+                tick,
+                playerRuntimeId,
+                encounterPhase,
+                paused,
+                life,
+                maxLife,
+                barrier,
+                maxBarrier,
+                ammo,
+                magazineCapacity,
+                exposureState,
+                weaponState,
+                isSecondaryCharging,
+                secondaryChargeProgress,
+                secondaryChargeStartedTick,
+                isCoverPeekRequested,
+                coverPeekStartedTick,
+                currentCoverId,
+                isCoverDestroyed,
+                isCoverMoving,
+                ResolveLegacyAimIndicatorState(
+                    playerRuntimeId,
+                    encounterPhase,
+                    paused,
+                    life,
+                    maxLife,
+                    weaponState),
+                0f,
+                0f,
+                0f,
+                0L)
+        {
+        }
+
+        public FpgFormalPlayerPresentationSnapshot(
+            TickIndex tick,
+            RuntimeId playerRuntimeId,
+            FpgEncounterPhase encounterPhase,
+            bool paused,
+            int life,
+            int maxLife,
+            int barrier,
+            int maxBarrier,
+            int ammo,
+            int magazineCapacity,
+            PlayerExposureState exposureState,
+            WeaponState weaponState,
+            bool isSecondaryCharging,
+            float secondaryChargeProgress,
+            TickIndex secondaryChargeStartedTick,
+            bool isCoverPeekRequested,
+            TickIndex coverPeekStartedTick,
+            string currentCoverId,
+            bool isCoverDestroyed,
+            bool isCoverMoving,
+            FpgAimIndicatorBaseState aimIndicatorBaseState,
+            float reloadProgress01,
+            float primarySpreadTangent,
+            float secondaryAreaRadius,
+            long frozenAimVersion,
+            FpgPlayerFacingDirection coverPeekDirection =
+                FpgPlayerFacingDirection.Right)
         {
             Tick = tick;
             PlayerRuntimeId = playerRuntimeId;
@@ -178,6 +251,30 @@ namespace FPG.Demo.Unity
             CurrentCoverId = currentCoverId ?? string.Empty;
             IsCoverDestroyed = isCoverDestroyed;
             IsCoverMoving = isCoverMoving;
+            AimIndicatorBaseState = Enum.IsDefined(
+                typeof(FpgAimIndicatorBaseState),
+                aimIndicatorBaseState)
+                    ? aimIndicatorBaseState
+                    : FpgAimIndicatorBaseState.Hidden;
+            ReloadProgress01 = weaponState == WeaponState.Reloading
+                && IsFinite(reloadProgress01)
+                    ? Mathf.Clamp01(reloadProgress01)
+                    : 0f;
+            PrimarySpreadTangent = IsFinite(primarySpreadTangent)
+                ? Mathf.Max(0f, primarySpreadTangent)
+                : 0f;
+            SecondaryAreaRadius = IsFinite(secondaryAreaRadius)
+                ? Mathf.Max(0f, secondaryAreaRadius)
+                : 0f;
+            FrozenAimVersion = frozenAimVersion > 0L
+                ? frozenAimVersion
+                : 0L;
+            CoverPeekDirection = isCoverPeekRequested
+                && Enum.IsDefined(
+                    typeof(FpgPlayerFacingDirection),
+                    coverPeekDirection)
+                    ? coverPeekDirection
+                    : FpgPlayerFacingDirection.Right;
         }
 
         public static FpgFormalPlayerPresentationSnapshot Unavailable =>
@@ -217,6 +314,13 @@ namespace FPG.Demo.Unity
         public TickIndex SecondaryChargeStartedTick { get; }
         public bool IsCoverPeekRequested { get; }
         public TickIndex CoverPeekStartedTick { get; }
+        public FpgPlayerFacingDirection CoverPeekDirection { get; }
+        public FpgAimIndicatorBaseState AimIndicatorBaseState { get; }
+        public float ReloadProgress01 { get; }
+        public float PrimarySpreadTangent { get; }
+        public float SecondaryAreaRadius { get; }
+        public long FrozenAimVersion { get; }
+        public bool IsAimFrozen => FrozenAimVersion > 0L;
 
         public bool IsValid => PlayerRuntimeId.IsValid
             && MaxLife > 0
@@ -275,6 +379,41 @@ namespace FPG.Demo.Unity
 
                 return FpgFormalPlayerPresentationState.Active;
             }
+        }
+
+        private static FpgAimIndicatorBaseState ResolveLegacyAimIndicatorState(
+            RuntimeId playerRuntimeId,
+            FpgEncounterPhase encounterPhase,
+            bool paused,
+            int life,
+            int maxLife,
+            WeaponState weaponState)
+        {
+            if (!playerRuntimeId.IsValid || maxLife <= 0 || life <= 0 || paused
+                || encounterPhase == FpgEncounterPhase.None
+                || encounterPhase == FpgEncounterPhase.Preparing
+                || encounterPhase == FpgEncounterPhase.Cleared
+                || encounterPhase == FpgEncounterPhase.Defeated
+                || encounterPhase == FpgEncounterPhase.Failed
+                || encounterPhase == FpgEncounterPhase.Faulted
+                || encounterPhase == FpgEncounterPhase.Disposed)
+            {
+                return FpgAimIndicatorBaseState.Hidden;
+            }
+
+            if (weaponState == WeaponState.Reloading)
+            {
+                return FpgAimIndicatorBaseState.Reloading;
+            }
+
+            return weaponState == WeaponState.Disabled
+                ? FpgAimIndicatorBaseState.Unavailable
+                : FpgAimIndicatorBaseState.Normal;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 
@@ -395,6 +534,7 @@ namespace FPG.Demo.Unity
             RelativeTick = frame.RelativeTick;
             State = frame.State;
             ResolvedAnimationId = frame.ResolvedAnimationId;
+            Timing = frame.Timing;
             AnimationName = animationName ?? string.Empty;
         }
 
@@ -408,6 +548,7 @@ namespace FPG.Demo.Unity
         public int RelativeTick { get; }
         public FpgSkillExecutionState State { get; }
         public int ResolvedAnimationId { get; }
+        public FpgResolvedSkillTimingSnapshot Timing { get; }
         public string AnimationName { get; }
         public bool IsTerminal => State == FpgSkillExecutionState.Completed
             || State == FpgSkillExecutionState.Canceled;
@@ -591,13 +732,27 @@ namespace FPG.Demo.Unity
 
             if (!string.IsNullOrEmpty(socketName))
             {
+                if (entity.ShotOrigin != null
+                    && (string.Equals(
+                            socketName,
+                            D0ActorSocketRegistry.PrimaryMuzzleId,
+                            StringComparison.Ordinal)
+                        || string.Equals(
+                            socketName,
+                            D0ActorSocketRegistry.SecondaryMuzzleId,
+                            StringComparison.Ordinal)))
+                {
+                    source = entity.ShotOrigin;
+                    return true;
+                }
+
                 D0ActorSocketRegistry registry = entity.SocketRegistry;
                 return registry != null
                     && registry.TryResolve(socketName, out source);
             }
 
-            source = entity.AimAnchor != null
-                ? entity.AimAnchor
+            source = entity.ShotOrigin != null
+                ? entity.ShotOrigin
                 : entity.transform;
             return source != null;
         }
@@ -986,11 +1141,39 @@ namespace FPG.Demo.Unity
             FpgFormalPlayerPresentationSnapshot.Unavailable;
         private long nextActionSequence;
         private long nextSkillPresentationSequence;
+        private readonly FaultIsolatedSubscriberSet<FpgFormalPlayerActionEvent>
+            actionSubscribers =
+                new FaultIsolatedSubscriberSet<FpgFormalPlayerActionEvent>();
+        private readonly
+            FaultIsolatedSubscriberSet<FpgFormalPlayerSkillSequenceEvent>
+                skillSequenceSubscribers =
+                    new FaultIsolatedSubscriberSet<
+                        FpgFormalPlayerSkillSequenceEvent>();
+        private readonly
+            FaultIsolatedSubscriberSet<FpgFormalPlayerActivePresentationEvent>
+                activePresentationSubscribers =
+                    new FaultIsolatedSubscriberSet<
+                        FpgFormalPlayerActivePresentationEvent>();
 
-        public event Action<FpgFormalPlayerActionEvent> ActionCommitted;
-        public event Action<FpgFormalPlayerSkillSequenceEvent> SkillSequenceAdvanced;
+        public event Action<FpgFormalPlayerActionEvent> ActionCommitted
+        {
+            add => actionSubscribers.Add(value);
+            remove => actionSubscribers.Remove(value);
+        }
+
+        public event Action<FpgFormalPlayerSkillSequenceEvent>
+            SkillSequenceAdvanced
+        {
+            add => skillSequenceSubscribers.Add(value);
+            remove => skillSequenceSubscribers.Remove(value);
+        }
+
         public event Action<FpgFormalPlayerActivePresentationEvent>
-            ActivePresentationCommitted;
+            ActivePresentationCommitted
+        {
+            add => activePresentationSubscribers.Add(value);
+            remove => activePresentationSubscribers.Remove(value);
+        }
 
         public bool HasSnapshot => snapshot.IsValid;
 
@@ -1058,15 +1241,7 @@ namespace FPG.Demo.Unity
                 skillExecutionId,
                 gameplayEventId);
 
-            // Presentation must never turn an animation/UI exception into a
-            // deterministic combat failure.
-            try
-            {
-                ActionCommitted?.Invoke(action);
-            }
-            catch (Exception)
-            {
-            }
+            actionSubscribers.Publish(action);
         }
 
         public void PublishSkillSequence(
@@ -1079,13 +1254,7 @@ namespace FPG.Demo.Unity
                     sequence,
                     frame,
                     animationName);
-            try
-            {
-                SkillSequenceAdvanced?.Invoke(sequenceEvent);
-            }
-            catch (Exception)
-            {
-            }
+            skillSequenceSubscribers.Publish(sequenceEvent);
         }
 
         public void PublishActivePresentation(
@@ -1096,13 +1265,7 @@ namespace FPG.Demo.Unity
                 new FpgFormalPlayerActivePresentationEvent(
                     sequence,
                     skillEvent);
-            try
-            {
-                ActivePresentationCommitted?.Invoke(presentationEvent);
-            }
-            catch (Exception)
-            {
-            }
+            activePresentationSubscribers.Publish(presentationEvent);
         }
 
         public void Clear()
@@ -1119,6 +1282,81 @@ namespace FPG.Demo.Unity
                 : nextSkillPresentationSequence + 1L;
             nextSkillPresentationSequence = sequence;
             return sequence;
+        }
+
+        private sealed class FaultIsolatedSubscriberSet<T>
+        {
+            private Action<T>[] subscribers = Array.Empty<Action<T>>();
+
+            public void Add(Action<T> subscriber)
+            {
+                if (subscriber == null)
+                {
+                    return;
+                }
+
+                Action<T>[] next = new Action<T>[subscribers.Length + 1];
+                Array.Copy(subscribers, next, subscribers.Length);
+                next[next.Length - 1] = subscriber;
+                subscribers = next;
+            }
+
+            public void Remove(Action<T> subscriber)
+            {
+                if (subscriber == null)
+                {
+                    return;
+                }
+
+                for (int index = subscribers.Length - 1; index >= 0; index--)
+                {
+                    if (subscribers[index] != subscriber)
+                    {
+                        continue;
+                    }
+
+                    if (subscribers.Length == 1)
+                    {
+                        subscribers = Array.Empty<Action<T>>();
+                        return;
+                    }
+
+                    Action<T>[] next = new Action<T>[subscribers.Length - 1];
+                    if (index > 0)
+                    {
+                        Array.Copy(subscribers, 0, next, 0, index);
+                    }
+
+                    if (index < next.Length)
+                    {
+                        Array.Copy(
+                            subscribers,
+                            index + 1,
+                            next,
+                            index,
+                            next.Length - index);
+                    }
+
+                    subscribers = next;
+                    return;
+                }
+            }
+
+            public void Publish(T value)
+            {
+                Action<T>[] snapshot = subscribers;
+                for (int index = 0; index < snapshot.Length; index++)
+                {
+                    // One presentation failure must not starve later views.
+                    try
+                    {
+                        snapshot[index](value);
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
         }
     }
 }

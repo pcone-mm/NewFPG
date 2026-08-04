@@ -320,6 +320,19 @@
     min-height: 90px;
 }
 
+.marker-detail-group {
+    margin-top: 6px;
+    padding-top: 5px;
+    border-top-width: 1px;
+    border-top-color: var(--line);
+}
+
+.marker-detail-group__title {
+    margin-bottom: 3px;
+    color: var(--text);
+    -unity-font-style: bold;
+}
+
 .validation-pane {
     height: 150px;
     min-height: 100px;

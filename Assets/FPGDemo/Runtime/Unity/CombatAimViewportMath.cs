@@ -82,6 +82,59 @@ namespace FPG.Demo.Unity
             return ClampToSafeArea(safeCurrent + viewportDelta, safeArea);
         }
 
+        public static Vector2 ApplyGamepadInput(
+            Vector2 currentViewport,
+            Vector2 stick,
+            float maximumViewportSpeed,
+            float radialDeadzone,
+            float responseExponent,
+            float deltaTime)
+        {
+            return ApplyGamepadInput(
+                currentViewport,
+                stick,
+                maximumViewportSpeed,
+                radialDeadzone,
+                responseExponent,
+                deltaTime,
+                DefaultSafeArea);
+        }
+
+        public static Vector2 ApplyGamepadInput(
+            Vector2 currentViewport,
+            Vector2 stick,
+            float maximumViewportSpeed,
+            float radialDeadzone,
+            float responseExponent,
+            float deltaTime,
+            Rect safeArea)
+        {
+            Vector2 safeCurrent = ClampToSafeArea(currentViewport, safeArea);
+            if (!IsFinite(stick) || !IsFinite(maximumViewportSpeed)
+                || !IsFinite(radialDeadzone) || !IsFinite(responseExponent)
+                || !IsFinite(deltaTime) || maximumViewportSpeed <= 0f
+                || radialDeadzone < 0f || radialDeadzone >= 1f
+                || responseExponent <= 0f || deltaTime <= 0f)
+            {
+                return safeCurrent;
+            }
+
+            float magnitude = Mathf.Clamp01(stick.magnitude);
+            if (magnitude <= radialDeadzone)
+            {
+                return safeCurrent;
+            }
+
+            float normalizedMagnitude = (magnitude - radialDeadzone)
+                / (1f - radialDeadzone);
+            float response = Mathf.Pow(
+                normalizedMagnitude,
+                responseExponent);
+            Vector2 viewportDelta = stick.normalized
+                * (response * maximumViewportSpeed * deltaTime);
+            return ClampToSafeArea(safeCurrent + viewportDelta, safeArea);
+        }
+
         public static Vector2 ApplyScreenPoint(
             Vector2 currentViewport,
             Vector2 screenPointPixels,

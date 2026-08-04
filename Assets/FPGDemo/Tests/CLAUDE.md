@@ -17,7 +17,12 @@
 ## 验证路由
 
 - 房间复制、Art Scene 与构建列表：`FpgRoomDuplicationContractTests.cs`、`FpgRoomAuthoringSafetyTests.cs`、`FpgRoomArtSceneContractTests.cs`、`BuildSettingsTests.cs`。
-- 独立掩体的领域、房间、prefab 与输入边界：`FpgMultiEnemyCombatTransactionTests.cs`、`FpgRoomDefinitionTests.cs`、`FpgEntityPrefabContractTests.cs`、`UnityBattleInputSourceTests.cs`、`ProjectWideBattleInputAssetTests.cs`。
+- 独立掩体的领域、房间、prefab、探身表现与输入边界：`FpgMultiEnemyCombatTransactionTests.cs`、`FpgRoomDefinitionTests.cs`、`FpgEntityPrefabContractTests.cs`、`FpgPlayerBarrierPresentationControllerTests.cs`、`FpgPlayerSkillExecutionControllerTests.cs`、`UnityBattleInputSourceTests.cs`、`ProjectWideBattleInputAssetTests.cs`。
 - 掩体镜头配置、authoring、Shot 解析与过渡状态：`FpgCoverCameraProfileTests.cs`、`FpgCoverCameraAuthoringTests.cs`、`FpgFormalCameraPoseUtilityTests.cs`、`FpgFormalPlayerCameraFeedbackTests.cs`。
-- 技能实体绑定、编辑与正式玩家资产：`FpgSkillAuthoringEditorTests.cs`、`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`。
+- 技能实体绑定、编辑、正式玩家资产与 inclusive 暴露边界：`FpgSkillAuthoringEditorTests.cs`、`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgPlayerSkillExecutionControllerTests.cs`。
+- 攻速解析、resolved schedule/hash、武器快照与 Fei 连射/打断集成：`FpgAttackTimingTests.cs`、`FpgAttackTimingHashAndWeaponSnapshotTests.cs`、`FpgFeiAttackSpeedIntegrationTests.cs`。
+- 技能表现 registry、VFX 池与清理生命周期：`FpgSkillPresentationRuntimeTests.cs`、`D0CombatVfxWorldTests.cs`。
+- 射击配置投影、玩家朝向、瞄准/掩体几何和分层准星：`FpgShootingTuningSnapshotTests.cs`、`FpgEntityPrefabContractTests.cs`、`FpgShootingContractsTests.cs`、`FpgLayeredAimIndicatorTests.cs`、`CombatAimViewportMathTests.cs`。
+- BattleTest 的纯 GM 语法、沙盒 external spawn、Editor 窗口与场景生命周期：`FpgBattleGmCommandParserTests.cs`、`FpgBattleTestSandboxRuntimeTests.cs`、`FpgBattleGmEditorWindowTests.cs`、`FpgBattleTestPlayModeTests.cs`。PlayMode fixture 必须卸载 BattleTest/FormalRoom/Art Scene 并恢复原 active scene。
+- `BuildSettingsTests.cs` 同时保证生产清单排除 BattleTest；Development 构建临时改写 global/active scene list 的测试或工具必须在 `finally` 恢复。
 - 场景加载/回滚仅在需要帧生命周期时使用 `FpgRoomArtSceneLoaderPlayModeTests.cs`；其余合同优先留在 EditMode。

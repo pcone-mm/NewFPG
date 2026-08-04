@@ -23,6 +23,33 @@ namespace FPG.Demo.Unity
             double interpolation,
             out string error)
         {
+            return TryEvaluate(
+                nextAnimationName,
+                sequence,
+                default(FpgResolvedSkillTimingSnapshot),
+                relativeTick,
+                interpolation,
+                out error);
+        }
+
+        public bool TryEvaluate(
+            string nextAnimationName,
+            FpgCompiledSkillSequence sequence,
+            FpgResolvedSkillTimingSnapshot timing,
+            int relativeTick,
+            double interpolation,
+            out string error)
+        {
+            if (timing.IsValid
+                && (timing.SourceGameplayHash != sequence.GameplayHash
+                    || relativeTick < 0
+                    || relativeTick > timing.ResolvedDurationTicks))
+            {
+                error =
+                    "Resolved Spine skill evaluation requires timing from the same compiled sequence.";
+                return false;
+            }
+
             if (skeletonAnimation == null
                 || skeletonAnimation.AnimationState == null
                 || skeletonAnimation.Skeleton == null
@@ -59,6 +86,7 @@ namespace FPG.Demo.Unity
 
             double seconds = FpgSkillAnimationTime.EvaluateSeconds(
                 sequence,
+                timing,
                 relativeTick,
                 interpolation,
                 animation.Duration);

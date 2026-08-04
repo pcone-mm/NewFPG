@@ -23,7 +23,14 @@ namespace FPG.Demo.Run
     public enum FpgSpawnPlacementKind
     {
         EncounterSpawnPoint = 0,
-        OwnerPosition = 1
+        OwnerPosition = 1,
+        SandboxRoomPoint = 2
+    }
+
+    public enum FpgEncounterRuntimeMode
+    {
+        Formal = 0,
+        BattleTestSandbox = 1
     }
 
     /// <summary>
@@ -51,8 +58,11 @@ namespace FPG.Demo.Run
             && (Kind == FpgSpawnPlacementKind.EncounterSpawnPoint
                 ? !string.IsNullOrWhiteSpace(RoomPointId)
                     && !SourceRuntimeId.IsValid
-                : SourceRuntimeId.IsValid
-                    && string.IsNullOrEmpty(RoomPointId));
+                : Kind == FpgSpawnPlacementKind.SandboxRoomPoint
+                    ? !string.IsNullOrWhiteSpace(RoomPointId)
+                        && !SourceRuntimeId.IsValid
+                    : SourceRuntimeId.IsValid
+                        && string.IsNullOrEmpty(RoomPointId));
 
         public static FpgSpawnPlacement ForEncounterPoint(string roomPointId)
         {
@@ -68,6 +78,14 @@ namespace FPG.Demo.Run
                 FpgSpawnPlacementKind.OwnerPosition,
                 string.Empty,
                 ownerRuntimeId);
+        }
+
+        public static FpgSpawnPlacement ForSandboxRoomPoint(string roomPointId)
+        {
+            return new FpgSpawnPlacement(
+                FpgSpawnPlacementKind.SandboxRoomPoint,
+                roomPointId,
+                RuntimeId.Invalid);
         }
 
         public bool Equals(FpgSpawnPlacement other)
@@ -227,6 +245,7 @@ namespace FPG.Demo.Run
         private readonly IFpgEncounterSpawnPointResolver spawnPointResolver;
         private readonly IFpgEncounterEntityPort entityPort;
         private readonly Action<FpgEncounterLifecycleEvent> eventSink;
+        private readonly FpgEncounterRuntimeMode mode;
         private int waveEntryCursor;
         private int currentWaveIndex;
         private int spawnAttempt;
@@ -252,7 +271,8 @@ namespace FPG.Demo.Run
             IFpgEncounterEntityPort entityPort = null,
             Action<FpgEncounterLifecycleEvent> eventSink = null,
             FpgSummonLedger summonLedger = null,
-            int spawnQueueCapacity = 0)
+            int spawnQueueCapacity = 0,
+            FpgEncounterRuntimeMode mode = FpgEncounterRuntimeMode.Formal)
         {
             if (spawnQueueCapacity < 0)
             {
@@ -268,6 +288,12 @@ namespace FPG.Demo.Run
             this.entityPort = entityPort ?? NullFpgEncounterEntityPort.Instance;
             this.eventSink = eventSink;
             this.summonLedger = summonLedger;
+            if (!Enum.IsDefined(typeof(FpgEncounterRuntimeMode), mode))
+            {
+                throw new ArgumentOutOfRangeException(nameof(mode));
+            }
+
+            this.mode = mode;
             int defaultQueueCapacity = plan.EntryCount;
             if (summonLedger != null)
             {
@@ -284,6 +310,7 @@ namespace FPG.Demo.Run
         }
 
         public FpgEncounterPlan Plan => plan;
+        public FpgEncounterRuntimeMode Mode => mode;
         public FpgEnemyRoster Roster => roster;
         public FpgSummonLedger SummonLedger => summonLedger;
         public FpgEncounterPhase Phase => phase;
@@ -335,7 +362,18 @@ namespace FPG.Demo.Run
             pauseStartedTick = TickIndex.Invalid;
             currentWaveIndex = 0;
             waveEntryCursor = 0;
-            waveEntriesIssued = false;
+            waveEntriesIssued = mode == FpgEncounterRuntimeMode.BattleTestSandbox;
+            if (mode == FpgEncounterRuntimeMode.BattleTestSandbox)
+            {
+                phase = FpgEncounterPhase.Combat;
+                Emit(new FpgEncounterLifecycleEvent(
+                    FpgEncounterLifecycleEventType.Started,
+                    tick,
+                    phase,
+                    waveIndex: currentWaveIndex));
+                return DomainResult.Success;
+            }
+
             nextQueueTick = tick + new TickDuration(profile.WarningDurationTicks);
             phase = profile.WarningDurationTicks > 0
                 ? FpgEncounterPhase.Warning
@@ -543,10 +581,84 @@ namespace FPG.Demo.Run
                 0,
                 request.OccupancyMode,
                 placement,
-                out FpgSpawnPreparationStage ignoredStage);
+                out FpgSpawnPreparationStage ignoredStage,
+                out RuntimeId ignoredRuntimeId);
             if (!prepared.IsSuccess)
             {
                 summonLedger.TryRollback(request);
+                return prepared;
+            }
+
+            dynamicSpawnSequenceCursor++;
+            return DomainResult.Success;
+        }
+
+        public DomainResult TryQueueExternalSpawn(
+            string enemyDefinitionId,
+            FpgSpawnPlacement placement,
+            TickIndex tick,
+            out RuntimeId runtimeId)
+        {
+            runtimeId = RuntimeId.Invalid;
+            if (mode != FpgEncounterRuntimeMode.BattleTestSandbox)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (phase != FpgEncounterPhase.Combat
+                || !tick.IsValid
+                || currentTick.IsValid && tick < currentTick)
+            {
+                return DomainResult.Rejected(
+                    !tick.IsValid || currentTick.IsValid && tick < currentTick
+                        ? RejectReason.WrongTick
+                        : RejectReason.InvalidState);
+            }
+
+            if (!placement.IsValid
+                || placement.Kind != FpgSpawnPlacementKind.SandboxRoomPoint)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            if (dynamicSpawnSequenceCursor < 0
+                || dynamicSpawnSequenceCursor >= int.MaxValue)
+            {
+                return DomainResult.Rejected(RejectReason.BufferCapacity);
+            }
+
+            if (!definitionCatalog.TryGet(
+                    enemyDefinitionId,
+                    out FpgEnemyDefinitionData definition)
+                || definition == null)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            int spawnSequence = dynamicSpawnSequenceCursor;
+            FpgSpawnEntry entry = new FpgSpawnEntry(
+                "gm-r" + spawnSequence,
+                definition.EnemyDefinitionId,
+                currentWaveIndex,
+                spawnSequence,
+                definition.SpawnCost,
+                definition.CapWeight,
+                definition.Role,
+                forced: true,
+                themeEnemy: false,
+                overBudget: true);
+            DomainResult prepared = TryPrepareAndQueueEntry(
+                entry,
+                tick,
+                0,
+                FpgSummonOccupancyMode.AdditionalEntity,
+                placement,
+                out FpgSpawnPreparationStage ignoredStage,
+                out runtimeId,
+                bypassConcurrentCap: true);
+            if (!prepared.IsSuccess)
+            {
+                runtimeId = RuntimeId.Invalid;
                 return prepared;
             }
 
@@ -793,7 +905,9 @@ namespace FPG.Demo.Run
                 attempt,
                 FpgSummonOccupancyMode.AdditionalEntity,
                 default(FpgSpawnPlacement),
-                out failureStage);
+                out failureStage,
+                out _,
+                bypassConcurrentCap: false);
         }
 
         private DomainResult TryPrepareAndQueueEntry(
@@ -802,8 +916,11 @@ namespace FPG.Demo.Run
             int attempt,
             FpgSummonOccupancyMode occupancyMode,
             FpgSpawnPlacement requestedPlacement,
-            out FpgSpawnPreparationStage failureStage)
+            out FpgSpawnPreparationStage failureStage,
+            out RuntimeId preparedRuntimeId,
+            bool bypassConcurrentCap = false)
         {
+            preparedRuntimeId = RuntimeId.Invalid;
             failureStage = FpgSpawnPreparationStage.None;
             if (!Enum.IsDefined(typeof(FpgSummonOccupancyMode), occupancyMode))
             {
@@ -811,7 +928,8 @@ namespace FPG.Demo.Run
                 return DomainResult.Rejected(RejectReason.InvalidDefinition);
             }
 
-            if (occupancyMode == FpgSummonOccupancyMode.AdditionalEntity
+            if (!bypassConcurrentCap
+                && occupancyMode == FpgSummonOccupancyMode.AdditionalEntity
                 && (roster.ReservedCapWeight + entry.CapWeight > profile.MaxConcurrentCapWeight
                     || roster.LivingCount >= profile.MaxConcurrentEntities))
             {
@@ -847,6 +965,7 @@ namespace FPG.Demo.Run
             }
 
             RuntimeId runtimeId = idAllocator.NextRuntimeId();
+            preparedRuntimeId = runtimeId;
             TickIndex warningUntil = tick + new TickDuration(profile.WarningDurationTicks);
             DomainResult reserve = roster.TryReserve(
                 entry,
@@ -860,6 +979,7 @@ namespace FPG.Demo.Run
             {
                 ReleasePlacement(placement, runtimeId);
                 failureStage = FpgSpawnPreparationStage.Roster;
+                preparedRuntimeId = RuntimeId.Invalid;
                 return reserve;
             }
 
@@ -870,6 +990,7 @@ namespace FPG.Demo.Run
                 roster.TryRelease(runtimeId);
                 ReleasePlacement(placement, runtimeId);
                 failureStage = FpgSpawnPreparationStage.Entity;
+                preparedRuntimeId = RuntimeId.Invalid;
                 return prepared;
             }
 
@@ -885,6 +1006,7 @@ namespace FPG.Demo.Run
                 roster.TryRelease(runtimeId);
                 ReleasePlacement(placement, runtimeId);
                 failureStage = FpgSpawnPreparationStage.Queue;
+                preparedRuntimeId = RuntimeId.Invalid;
                 return enqueue;
             }
 
@@ -934,6 +1056,11 @@ namespace FPG.Demo.Run
 
         private void TryCompleteWaveOrRoom(TickIndex tick)
         {
+            if (mode == FpgEncounterRuntimeMode.BattleTestSandbox)
+            {
+                return;
+            }
+
             if ((phase != FpgEncounterPhase.Spawning
                     && phase != FpgEncounterPhase.Combat)
                 || !waveEntriesIssued

@@ -80,6 +80,67 @@ namespace FPG.Demo.Unity
         public bool PrimaryHeld => primaryHeld;
         public bool SecondaryHeld => secondaryHeld;
 
+        public bool HasQueuedGameplayEdge(InputEdgeType type)
+        {
+            if (!Enum.IsDefined(typeof(InputEdgeType), type))
+            {
+                return false;
+            }
+
+            for (int offset = 0; offset < gameplayEdgeCount; offset++)
+            {
+                int index = gameplayEdgeHead + offset;
+                if (index >= gameplayEdgeQueueCapacity)
+                {
+                    index -= gameplayEdgeQueueCapacity;
+                }
+
+                if (gameplayEdgeQueue[index].Type == type)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryEnqueueSyntheticEdge(InputEdgeType type)
+        {
+            if (!Enum.IsDefined(typeof(InputEdgeType), type))
+            {
+                return false;
+            }
+
+            for (int offset = 0; offset < gameplayEdgeCount; offset++)
+            {
+                int index = gameplayEdgeHead + offset;
+                if (index >= gameplayEdgeQueueCapacity)
+                {
+                    index -= gameplayEdgeQueueCapacity;
+                }
+
+                if (gameplayEdgeQueue[index].Type == type)
+                {
+                    return true;
+                }
+            }
+
+            if (gameplayEdgeCount == gameplayEdgeQueueCapacity)
+            {
+                return false;
+            }
+
+            int tail = gameplayEdgeHead + gameplayEdgeCount;
+            if (tail >= gameplayEdgeQueueCapacity)
+            {
+                tail -= gameplayEdgeQueueCapacity;
+            }
+
+            gameplayEdgeQueue[tail] = NextEdge(type);
+            gameplayEdgeCount++;
+            return true;
+        }
+
         /// <summary>
         /// Limits the preallocated edge backlog to a planner-authored number of
         /// simulation ticks. Storage remains fixed at the worst-case D0 budget,
@@ -101,6 +162,9 @@ namespace FPG.Demo.Unity
         {
             Keyboard keyboard = Keyboard.current;
             Mouse mouse = Mouse.current;
+            // RMB is the sole secondary contract. Aim remains a presentation
+            // alias for the same control, so the fallback path must match the
+            // project-wide InputAction map exactly.
             bool secondaryPressed =
                 mouse != null && mouse.rightButton.wasPressedThisFrame;
             bool secondaryReleased =
@@ -130,17 +194,9 @@ namespace FPG.Demo.Unity
 
         public void Capture(UnityInputSnapshot snapshot)
         {
-            bool aimWasHeld = aimHeld;
             aimHeld = snapshot.AimHeld;
             primaryHeld = snapshot.PrimaryHeld;
             secondaryHeld = snapshot.SecondaryHeld;
-            // When Aim and Secondary share one physical control, the release
-            // edge must commit the charged attack instead of also cancelling it.
-            // A pure aim withdrawal still requests one cancellation tick.
-            if (aimWasHeld && !aimHeld && !snapshot.SecondaryReleased)
-            {
-                cancelSecondaryOnNextFrame = true;
-            }
 
             EnqueueGameplayEdge(
                 snapshot.SecondaryPressed,

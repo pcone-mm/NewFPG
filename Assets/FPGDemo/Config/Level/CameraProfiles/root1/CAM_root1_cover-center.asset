@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgCoverCameraProfile
   designerNotes: Independent cover camera for room-forest / cover-center. Migrated
     from FPG_Fei_ThreeC.
-  cameraRigLocalPosition: {x: 0, y: 2.5, z: -4.35}
+  cameraRigLocalPosition: {x: 0, y: 2.5, z: -4.69}
   cameraRigLocalEulerAngles: {x: 0.86, y: 0, z: 0}
   cameraLocalPosition: {x: 0, y: 0, z: 0}
   cameraLocalEulerAngles: {x: 0, y: 0, z: 0}

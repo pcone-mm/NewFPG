@@ -599,6 +599,10 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(root.Q("reset-cover-position-button"), Is.Null);
             Assert.That(root.Q("place-cover-button"), Is.Not.Null);
             Assert.That(root.Q("show-cover-toggle"), Is.Not.Null);
+            Toggle markerHandlesToggle =
+                root.Q<Toggle>("show-marker-handles-toggle");
+            Assert.That(markerHandlesToggle, Is.Not.Null);
+            Assert.That(markerHandlesToggle.value, Is.False);
         }
 
         private static List<T> FindComponents<T>(Scene scene)

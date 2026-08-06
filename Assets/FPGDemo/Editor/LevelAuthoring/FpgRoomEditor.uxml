@@ -58,6 +58,7 @@
                     <ui:Toggle name="show-enemy-toggle" label="敌人" value="true" />
                     <ui:Toggle name="show-destructible-toggle" label="可破坏物" value="true" />
                     <ui:Toggle name="show-cover-toggle" label="掩体" value="true" />
+                    <ui:Toggle name="show-marker-handles-toggle" label="编辑手柄" value="false" tooltip="在 Scene View 中显示所选玩法标记的位移或旋转编辑手柄" />
                 </ui:VisualElement>
 
                 <ui:VisualElement class="authoring-split">

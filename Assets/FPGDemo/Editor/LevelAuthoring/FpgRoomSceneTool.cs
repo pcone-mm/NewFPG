@@ -55,6 +55,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private Pose cameraTransitionSourcePlayerPose;
         private Pose cameraTransitionTargetPlayerPose;
         private bool cameraPreviewActive;
+        private bool showSelectedMarkerHandles;
         private bool disposed;
         private bool previewRefreshQueued;
         private bool cameraPreviewRefreshQueued;
@@ -84,6 +85,20 @@ namespace FPG.Demo.Editor.LevelAuthoring
         internal FpgRoomMarkerHandle SelectedMarker => selectedMarker;
         internal FpgRoomMarkerKind? PlacementKind => placementKind;
         internal bool IsCameraPreviewActive => cameraPreviewActive;
+        internal bool ShowSelectedMarkerHandles
+        {
+            get => showSelectedMarkerHandles;
+            set
+            {
+                if (showSelectedMarkerHandles == value)
+                {
+                    return;
+                }
+
+                showSelectedMarkerHandles = value;
+                SceneView.RepaintAll();
+            }
+        }
         internal float GridSnap { get; set; } = 0.5f;
 
         public void Dispose()
@@ -692,7 +707,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
             HandleKeyboardShortcuts();
             HandlePlacement();
             DrawMarkers();
-            DrawSelectedHandle();
+            if (ShouldDrawSelectedHandle())
+            {
+                DrawSelectedHandle();
+            }
             DrawCameraComposition();
         }
 
@@ -1078,6 +1096,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
             EditorUtility.SetDirty(room);
             QueueCameraPreviewRefresh();
             RoomChanged?.Invoke();
+        }
+
+        private bool ShouldDrawSelectedHandle()
+        {
+            return showSelectedMarkerHandles
+                && selectedMarker != null
+                && visibility.TryGetValue(selectedMarker.Kind, out bool visible)
+                && visible;
         }
 
         private void DrawSelectedCoverPeekHandle(

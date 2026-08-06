@@ -304,6 +304,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
             BindVisibility("show-destructible-toggle", FpgRoomMarkerKind.Destructible);
             BindVisibility("show-cover-toggle", FpgRoomMarkerKind.Cover);
 
+            Toggle markerHandlesToggle =
+                rootVisualElement.Q<Toggle>("show-marker-handles-toggle");
+            markerHandlesToggle.SetValueWithoutNotify(
+                sceneTool?.ShowSelectedMarkerHandles == true);
+            markerHandlesToggle.RegisterValueChangedCallback(evt =>
+            {
+                if (sceneTool != null)
+                {
+                    sceneTool.ShowSelectedMarkerHandles = evt.newValue;
+                }
+            });
+
             FloatField snapField = rootVisualElement.Q<FloatField>("snap-field");
             snapField.RegisterValueChangedCallback(evt =>
             {

@@ -917,7 +917,6 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - VL_NOISE
-  - VL_SHADOWS
   - VL_SPOT
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -993,7 +992,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShadowIntensity: {r: 0.7, g: 0.3, b: 0, a: 0}
     - _ToLightDir: {r: -0.43018165, g: 0.8732118, b: 0.22900876, a: 0}
-    - _WindDirection: {r: 17.639034, g: 11.759365, b: 0, a: 174.28558}
+    - _WindDirection: {r: 1.2305745, g: 0.8203831, b: 0, a: 161.30687}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &600726625
@@ -1445,7 +1444,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShadowIntensity: {r: 0, g: 1, b: 0, a: 0}
     - _ToLightDir: {r: -0, g: -0, b: -1, a: 0}
-    - _WindDirection: {r: 17.639034, g: 11.759365, b: 0, a: 174.28558}
+    - _WindDirection: {r: 1.2305745, g: 0.8203831, b: 0, a: 161.30687}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!43 &818850972
@@ -1688,7 +1687,7 @@ RenderTexture:
   m_TextureSettings:
     serializedVersion: 2
     m_FilterMode: 1
-    m_Aniso: 1
+    m_Aniso: 0
     m_MipBias: 0
     m_WrapU: 1
     m_WrapV: 1
@@ -1742,14 +1741,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8238d9b99430c4149bbd94a889f1dad5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPG.Demo.Unity.FpgVolumetricRoomArtBinding
-  fogManager: {fileID: 1146853796}
-  fogVolumes:
-  - {fileID: 76674485457683954}
-  volumetricLights:
-  - {fileID: 459783423}
-  - {fileID: 1588379830}
-  - {fileID: 1777189128}
-  directionalSyncs: []
 --- !u!43 &1107541502
 Mesh:
   m_ObjectHideFlags: 0
@@ -2126,6 +2117,43 @@ Transform:
   - {fileID: 33234642}
   m_Father: {fileID: 1353591680}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!84 &1348911415
+RenderTexture:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: 
+  m_ImageContentsHash:
+    serializedVersion: 2
+    Hash: 00000000000000000000000000000000
+  m_IsAlphaChannelOptional: 0
+  serializedVersion: 6
+  m_Width: 256
+  m_Height: 256
+  m_AntiAliasing: 1
+  m_MipCount: -1
+  m_DepthStencilFormat: 0
+  m_ColorFormat: 8
+  m_MipMap: 0
+  m_GenerateMips: 1
+  m_SRGB: 0
+  m_UseDynamicScale: 0
+  m_UseDynamicScaleExplicit: 0
+  m_BindMS: 0
+  m_EnableCompatibleFormat: 1
+  m_EnableRandomWrite: 0
+  m_TextureSettings:
+    serializedVersion: 2
+    m_FilterMode: 1
+    m_Aniso: 1
+    m_MipBias: 0
+    m_WrapU: 0
+    m_WrapV: 0
+    m_WrapW: 0
+  m_Dimension: 2
+  m_VolumeDepth: 1
+  m_ShadowSamplingMode: 2
 --- !u!1 &1353591678
 GameObject:
   m_ObjectHideFlags: 0
@@ -2156,7 +2184,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomArtRoot
   roomDefinition: {fileID: 11400000, guid: 59388094cecaf864986145504f473a97, type: 2}
-  mainDirectionalLight: {fileID: 405864083}
 --- !u!4 &1353591680
 Transform:
   m_ObjectHideFlags: 0
@@ -2188,7 +2215,6 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - VL_NOISE
-  - VL_SHADOWS
   - VL_SPOT
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -2264,7 +2290,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShadowIntensity: {r: 0.7, g: 0.3, b: 0, a: 0}
     - _ToLightDir: {r: -0.10027614, g: 0.85649526, b: 0.5063208, a: 0}
-    - _WindDirection: {r: 17.639034, g: 11.759365, b: 0, a: 174.28558}
+    - _WindDirection: {r: 1.2305745, g: 0.8203831, b: 0, a: 161.30687}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &1390217514
@@ -2538,43 +2564,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1503198923}
   m_Mesh: {fileID: 4300000, guid: 7767032e48f89d84687ac562431a0af4, type: 2}
---- !u!84 &1514821892
-RenderTexture:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  m_ImageContentsHash:
-    serializedVersion: 2
-    Hash: 00000000000000000000000000000000
-  m_IsAlphaChannelOptional: 0
-  serializedVersion: 6
-  m_Width: 256
-  m_Height: 256
-  m_AntiAliasing: 1
-  m_MipCount: -1
-  m_DepthStencilFormat: 0
-  m_ColorFormat: 8
-  m_MipMap: 0
-  m_GenerateMips: 1
-  m_SRGB: 0
-  m_UseDynamicScale: 0
-  m_UseDynamicScaleExplicit: 0
-  m_BindMS: 0
-  m_EnableCompatibleFormat: 1
-  m_EnableRandomWrite: 0
-  m_TextureSettings:
-    serializedVersion: 2
-    m_FilterMode: 1
-    m_Aniso: 1
-    m_MipBias: 0
-    m_WrapU: 0
-    m_WrapV: 0
-    m_WrapW: 0
-  m_Dimension: 2
-  m_VolumeDepth: 1
-  m_ShadowSamplingMode: 2
 --- !u!43 &1577603563
 Mesh:
   m_ObjectHideFlags: 0
@@ -3733,7 +3722,7 @@ RenderTexture:
   m_TextureSettings:
     serializedVersion: 2
     m_FilterMode: 1
-    m_Aniso: 1
+    m_Aniso: 0
     m_MipBias: 0
     m_WrapU: 1
     m_WrapV: 1
@@ -3847,7 +3836,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NoiseTex:
-        m_Texture: {fileID: 1514821892}
+        m_Texture: {fileID: 1348911415}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -3871,7 +3860,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DetailColor: {r: 0.3795, g: 0.345, b: 0.29325, a: 0}
     - _DetailData: {r: 0.5, g: 4, b: -0.5, a: 0}
-    - _DetailWindDirection: {r: 7.055599, g: 1.1759368, b: 2.3518736, a: 0}
+    - _DetailWindDirection: {r: 0.49223012, g: 0.08203828, b: 0.16407657, a: 0}
     - _DistanceData: {r: 0, g: 5.2, b: 0.000001, a: 0.056235775}
     - _FogOfWarCenter: {r: 0, g: 0, b: 0, a: 1}
     - _FogOfWarCenterAdjusted: {r: 0, g: 0, b: 0, a: 1}
@@ -3884,7 +3873,7 @@ Material:
     - _ShadowData: {r: 0.5, g: 0, b: 250, a: 0}
     - _SpecularColor: {r: 0.5, g: 0.5, b: 0.5, a: 0}
     - _SunDir: {r: 0.35458517, g: 0.74314487, b: -0.56745493, a: 0}
-    - _WindDirection: {r: 7.055599, g: 1.1759368, b: 2.3518736, a: 0}
+    - _WindDirection: {r: 0.49223012, g: 0.08203828, b: 0.16407657, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &2124124568

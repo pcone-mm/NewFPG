@@ -241,7 +241,22 @@
 }
 
 .visibility-toolbar Toggle {
-    margin-right: 8px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-right: 14px;
+}
+
+.visibility-toolbar Toggle > .unity-base-field__label {
+    width: auto;
+    min-width: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-right: 5px;
+}
+
+.visibility-toolbar Toggle > .unity-base-field__input {
+    flex-grow: 0;
+    flex-shrink: 0;
 }
 
 

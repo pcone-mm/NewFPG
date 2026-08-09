@@ -74,25 +74,25 @@ MonoBehaviour:
     playerRightPeekLocalPosition: {x: -4.65, y: 0.5, z: 0}
   - markerId: cover-center
     displayName: "\u4E2D\u592E\u63A9\u4F53"
-    localPosition: {x: 0, y: 0.5, z: 0}
+    localPosition: {x: 0, y: 0, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    prefab: {fileID: 911310430394176408, guid: 566c45409080ba344bccc2640d875254, type: 3}
+    prefab: {fileID: 3376033595176221629, guid: 97054e1e80d65ae4193de9b8f3c7af2f, type: 3}
     cameraProfile: {fileID: 11400000, guid: 83066b92bf6ae9a48a335ff5c38b4360, type: 2}
     maxDurability: 100
     isStartingCover: 1
     playerReachableLocalPosition: {x: 0, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
-    playerLeftPeekLocalPosition: {x: -1.35, y: 0.5, z: 0}
-    playerRightPeekLocalPosition: {x: 1.35, y: 0.5, z: 0}
+    playerLeftPeekLocalPosition: {x: -1, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: 1, y: 0.5, z: 0}
   - markerId: cover-right
     displayName: "\u53F3\u4FA7\u63A9\u4F53"
-    localPosition: {x: 5.5, y: 0.5, z: 0}
+    localPosition: {x: 4.33, y: 0.48, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
-    prefab: {fileID: 911310430394176408, guid: 566c45409080ba344bccc2640d875254, type: 3}
+    prefab: {fileID: 3376033595176221629, guid: 4cc39e1d325723a4d83c91f28c05b960, type: 3}
     cameraProfile: {fileID: 11400000, guid: d19b3bcc9e9243d48b55549f1aa59568, type: 2}
     maxDurability: 100
     isStartingCover: 0
-    playerReachableLocalPosition: {x: 5.5, y: 0.5, z: 0}
+    playerReachableLocalPosition: {x: 4.69, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
-    playerLeftPeekLocalPosition: {x: 4.15, y: 0.5, z: 0}
-    playerRightPeekLocalPosition: {x: 6.85, y: 0.5, z: 0}
+    playerLeftPeekLocalPosition: {x: 2.82, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: 6.55, y: 0.5, z: 0}

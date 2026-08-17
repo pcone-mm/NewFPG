@@ -80,6 +80,43 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Active: 1
   ignoreOverlayCamera: 1
+--- !u!114 &-613335217044710296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31ec43bb34e3ff542892e0b797881487, type: 3}
+  m_Name: ScreenSpaceReflection
+  m_EditorClassIdentifier: 
+  m_Active: 0
+  depthPyramidCS: {fileID: 7200000, guid: f16d03b7874a24f418713cda8a6ca007, type: 3}
+  screenSpaceReflectionsCS: {fileID: 7200000, guid: f0f28b04d94cb664398e3e0cac4dc8a6, type: 3}
+  resolveShader: {fileID: 4800000, guid: a4489dfb62c35df4a92c3cff7cd5eca6, type: 3}
+  renderingPath: 2
+--- !u!114 &-260247859166969022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12fb73196c9f4fea830d8b7ad8192f29, type: 3}
+  m_Name: URP Screen Space Reflection
+  m_EditorClassIdentifier: SSR::URPSSR.URPScreenSpaceReflection
+  m_Active: 0
+  SSRPass: 2
+  HizOnly: 0
+  SsrStepSize: 0.0804
+  RenderCompositeResult: 1
+  SSRNativeScaleValue: 1
+  Intensity: 1
+  _hizShader: {fileID: 0}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -111,7 +148,9 @@ MonoBehaviour:
   - {fileID: -9043834294878958407}
   - {fileID: 1200613158617965520}
   - {fileID: -8420769150473506501}
-  m_RendererFeatureMap: ad6b866f10d7b46cb3a60f816373968957998cfca027b9cdb98c3e06a0d87d82d06315804e6fa9103b7175a2126b238b
+  - {fileID: -260247859166969022}
+  - {fileID: -613335217044710296}
+  m_RendererFeatureMap: ad6b866f10d7b46cb3a60f816373968957998cfca027b9cdb98c3e06a0d87d82d06315804e6fa9103b7175a2126b238b4203cc70f36963fc681cd0a3defe7cf7
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}

@@ -1,0 +1,1221 @@
+{
+  "lineages": {
+    "ember": {
+      "name": "铸火",
+      "mark": "炎",
+      "color": "#df5d43",
+      "summary": "弹匣 / 换弹"
+    },
+    "veil": {
+      "name": "潜鳞",
+      "mark": "翎",
+      "color": "#4fbda4",
+      "summary": "掩体 / 弱点"
+    },
+    "storm": {
+      "name": "震霄",
+      "mark": "霆",
+      "color": "#d6c06b",
+      "summary": "蓄力 / 爆发"
+    },
+    "ward": {
+      "name": "镇岳",
+      "mark": "岳",
+      "color": "#d8e5e2",
+      "summary": "承伤 / 掩体破坏"
+    }
+  },
+  "spiritualItems": [
+    {
+      "id": "ember_repeat_bow",
+      "name": "试制·连珠弩",
+      "description": "扩充弹匣并提高主射伤害。",
+      "rarity": "common",
+      "form": "weapon",
+      "factionTags": ["ember", "solar"],
+      "keywords": [
+        "弹匣",
+        "主射"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "magazine",
+          "value": 2
+        },
+        {
+          "handler": "statAdd",
+          "stat": "primaryDamage",
+          "value": 2
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "weapon"
+      ]
+    },
+    {
+      "id": "ember_cinder_case",
+      "name": "试制·余烬匣",
+      "description": "换弹更快，完成换弹时获得短促爆发。",
+      "rarity": "common",
+      "form": "relic",
+      "factionTags": ["ember", "solar"],
+      "keywords": [
+        "换弹",
+        "爆发"
+      ],
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "reloadSpeed",
+          "value": 1.18
+        },
+        {
+          "handler": "eventDamage",
+          "event": "reload",
+          "value": 8
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "dailyRelic"
+      ]
+    },
+    {
+      "id": "ember_last_spark",
+      "name": "试制·末火签",
+      "description": "弹匣末弹追加伤害。",
+      "rarity": "rare",
+      "form": "charm",
+      "factionTags": ["ember", "thunder"],
+      "keywords": [
+        "末弹",
+        "爆发"
+      ],
+      "effects": [
+        {
+          "handler": "eventDamage",
+          "event": "lastShot",
+          "value": 16
+        },
+        {
+          "handler": "statAdd",
+          "stat": "primaryDamage",
+          "value": 3
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "ornament"
+      ]
+    },
+    {
+      "id": "ember_forge_heart",
+      "name": "试制·铸心炉",
+      "description": "射速提高，换弹修复当前掩体。",
+      "rarity": "mythic",
+      "form": "relic",
+      "factionTags": ["ember", "solar"],
+      "keywords": [
+        "射速",
+        "换弹"
+      ],
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "fireRate",
+          "value": 1.2
+        },
+        {
+          "handler": "eventCover",
+          "event": "reload",
+          "value": 10
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "mythicArtifact"
+      ]
+    },
+    {
+      "id": "veil_sight_leaf",
+      "name": "试制·照隙叶",
+      "description": "提高弱点倍率。",
+      "rarity": "common",
+      "form": "charm",
+      "factionTags": ["veil", "wind"],
+      "keywords": [
+        "弱点"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "weakpointMultiplier",
+          "value": 0.22
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "herb"
+      ]
+    },
+    {
+      "id": "veil_hidden_scale",
+      "name": "试制·藏鳞甲",
+      "description": "掩体后的伤害减免提高。",
+      "rarity": "common",
+      "form": "armor",
+      "factionTags": ["veil", "earth"],
+      "keywords": [
+        "掩体",
+        "防御"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "coverReduction",
+          "value": 0.08
+        },
+        {
+          "handler": "statAdd",
+          "stat": "coverMax",
+          "value": 8
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "ore"
+      ]
+    },
+    {
+      "id": "veil_hunter_pin",
+      "name": "试制·猎影针",
+      "description": "命中弱点时追加伤害。",
+      "rarity": "rare",
+      "form": "weapon",
+      "factionTags": ["veil", "wind"],
+      "keywords": [
+        "弱点",
+        "追加伤害"
+      ],
+      "effects": [
+        {
+          "handler": "eventDamage",
+          "event": "weakpoint",
+          "value": 12
+        },
+        {
+          "handler": "statAdd",
+          "stat": "primaryDamage",
+          "value": 2
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "weapon"
+      ]
+    },
+    {
+      "id": "veil_step_feather",
+      "name": "试制·回身翎",
+      "description": "移动到新掩体时补充弹药。",
+      "rarity": "mythic",
+      "form": "charm",
+      "factionTags": ["veil", "wind"],
+      "keywords": [
+        "出掩体",
+        "弹药"
+      ],
+      "effects": [
+        {
+          "handler": "eventAmmo",
+          "event": "leaveCover",
+          "value": 2
+        },
+        {
+          "handler": "statAdd",
+          "stat": "weakpointMultiplier",
+          "value": 0.18
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "ornament"
+      ]
+    },
+    {
+      "id": "storm_charge_core",
+      "name": "试制·鸣雷核",
+      "description": "提高蓄力射击伤害。",
+      "rarity": "common",
+      "form": "weapon",
+      "factionTags": ["storm", "thunder"],
+      "keywords": [
+        "蓄力",
+        "副射"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "secondaryDamage",
+          "value": 8
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "ore"
+      ]
+    },
+    {
+      "id": "storm_echo_bell",
+      "name": "试制·回响铃",
+      "description": "蓄力释放时产生额外震击。",
+      "rarity": "common",
+      "form": "relic",
+      "factionTags": ["storm", "thunder"],
+      "keywords": [
+        "蓄力",
+        "范围"
+      ],
+      "effects": [
+        {
+          "handler": "eventDamage",
+          "event": "charge",
+          "value": 10
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "instrument"
+      ]
+    },
+    {
+      "id": "storm_breaker_tusk",
+      "name": "试制·破云牙",
+      "description": "副射与弱点伤害共同提高。",
+      "rarity": "rare",
+      "form": "weapon",
+      "factionTags": ["storm", "thunder"],
+      "keywords": [
+        "副射",
+        "弱点"
+      ],
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "secondaryDamage",
+          "value": 1.18
+        },
+        {
+          "handler": "statAdd",
+          "stat": "weakpointMultiplier",
+          "value": 0.12
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "deceasedRelic"
+      ]
+    },
+    {
+      "id": "storm_sky_drum",
+      "name": "试制·震天鼓",
+      "description": "蓄力爆发并加快射击节奏。",
+      "rarity": "mythic",
+      "form": "relic",
+      "factionTags": ["storm", "thunder"],
+      "keywords": [
+        "蓄力",
+        "射速"
+      ],
+      "effects": [
+        {
+          "handler": "eventDamage",
+          "event": "charge",
+          "value": 20
+        },
+        {
+          "handler": "statMultiply",
+          "stat": "fireRate",
+          "value": 1.12
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "instrument"
+      ]
+    },
+    {
+      "id": "ward_jade_plate",
+      "name": "试制·守山璧",
+      "description": "提高每个掩体的耐久上限。",
+      "rarity": "common",
+      "form": "armor",
+      "factionTags": ["ward", "earth"],
+      "keywords": [
+        "掩体耐久"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "coverMax",
+          "value": 22
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "ore"
+      ]
+    },
+    {
+      "id": "ward_root_guard",
+      "name": "试制·盘根护",
+      "description": "降低承受伤害。",
+      "rarity": "common",
+      "form": "armor",
+      "factionTags": ["ward", "earth"],
+      "keywords": [
+        "承伤",
+        "防御"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "damageReduction",
+          "value": 0.07
+        },
+        {
+          "handler": "statAdd",
+          "stat": "lifeMax",
+          "value": 10
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "jianmuBranch"
+      ]
+    },
+    {
+      "id": "ward_shatter_seal",
+      "name": "试制·裂甲印",
+      "description": "当前掩体被破坏时反击并恢复少量耐久。",
+      "rarity": "rare",
+      "form": "charm",
+      "factionTags": ["ward", "earth"],
+      "keywords": [
+        "掩体破坏",
+        "反击"
+      ],
+      "effects": [
+        {
+          "handler": "eventDamage",
+          "event": "coverBreak",
+          "value": 18
+        },
+        {
+          "handler": "eventCover",
+          "event": "coverBreak",
+          "value": 8
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "ritualVessel"
+      ]
+    },
+    {
+      "id": "ward_mountain_bell",
+      "name": "试制·不动钟",
+      "description": "大幅提高生存并强化掩体破坏反击。",
+      "rarity": "mythic",
+      "form": "relic",
+      "factionTags": ["ward", "earth"],
+      "keywords": [
+        "掩体耐久",
+        "掩体破坏"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "coverMax",
+          "value": 18
+        },
+        {
+          "handler": "eventDamage",
+          "event": "coverBreak",
+          "value": 24
+        }
+      ],
+      "testOnly": true,
+      "itemTypeTags": [
+        "mythicArtifact"
+      ]
+    }
+  ],
+  "blessings": [
+    {
+      "id": "blessing_houyi",
+      "name": "试制神眷·贯日",
+      "deity": "后羿",
+      "description": "主射与弱点伤害提高。",
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "primaryDamage",
+          "value": 1.18
+        },
+        {
+          "handler": "statAdd",
+          "stat": "weakpointMultiplier",
+          "value": 0.2
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "blessing_nuwa",
+      "name": "试制神眷·补天",
+      "deity": "女娲",
+      "description": "提高生命与每个掩体的耐久。",
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "lifeMax",
+          "value": 20
+        },
+        {
+          "handler": "statAdd",
+          "stat": "coverMax",
+          "value": 20
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "blessing_leigong",
+      "name": "试制神眷·雷行",
+      "deity": "雷公",
+      "description": "副射伤害与射速提高。",
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "secondaryDamage",
+          "value": 1.22
+        },
+        {
+          "handler": "statMultiply",
+          "stat": "fireRate",
+          "value": 1.08
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "blessing_xihe",
+      "name": "试制神眷·曦轮",
+      "deity": "羲和",
+      "description": "弹匣扩大，灵气获取加快。",
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "magazine",
+          "value": 3
+        },
+        {
+          "handler": "statMultiply",
+          "stat": "auraGain",
+          "value": 1.18
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "blessing_xuanwu",
+      "name": "试制神眷·玄御",
+      "deity": "玄武",
+      "description": "伤害减免与掩体防护提高。",
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "damageReduction",
+          "value": 0.1
+        },
+        {
+          "handler": "statAdd",
+          "stat": "coverReduction",
+          "value": 0.1
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "blessing_fengbo",
+      "name": "试制神眷·御风",
+      "deity": "风伯",
+      "description": "换弹和移动掩体后的节奏更快。",
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "reloadSpeed",
+          "value": 1.22
+        },
+        {
+          "handler": "eventAmmo",
+          "event": "leaveCover",
+          "value": 1
+        }
+      ],
+      "testOnly": true
+    }
+  ],
+  "enchantments": [
+    {
+      "id": "enchant_quick",
+      "name": "试制灵蕴·疾羽",
+      "description": "射速提高。",
+      "compatibleForms": [
+        "weapon",
+        "charm"
+      ],
+      "effects": [
+        {
+          "handler": "statMultiply",
+          "stat": "fireRate",
+          "value": 1.12
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "enchant_deep",
+      "name": "试制灵蕴·沉息",
+      "description": "副射伤害提高。",
+      "compatibleForms": [
+        "weapon",
+        "relic"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "secondaryDamage",
+          "value": 7
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "enchant_shell",
+      "name": "试制灵蕴·玉壳",
+      "description": "掩体耐久上限提高。",
+      "compatibleForms": [
+        "armor",
+        "relic"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "coverMax",
+          "value": 14
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "enchant_hunt",
+      "name": "试制灵蕴·寻隙",
+      "description": "弱点倍率提高。",
+      "compatibleForms": [
+        "weapon",
+        "charm"
+      ],
+      "effects": [
+        {
+          "handler": "statAdd",
+          "stat": "weakpointMultiplier",
+          "value": 0.16
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "enchant_return",
+      "name": "试制灵蕴·回澜",
+      "description": "换弹时修复当前掩体。",
+      "compatibleForms": [
+        "relic",
+        "armor"
+      ],
+      "effects": [
+        {
+          "handler": "eventCover",
+          "event": "reload",
+          "value": 8
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "enchant_spark",
+      "name": "试制灵蕴·迸星",
+      "description": "末弹追加伤害。",
+      "compatibleForms": [
+        "weapon",
+        "charm"
+      ],
+      "effects": [
+        {
+          "handler": "eventDamage",
+          "event": "lastShot",
+          "value": 11
+        }
+      ],
+      "testOnly": true
+    }
+  ],
+  "synergies": [
+    {
+      "lineage": "ember",
+      "name": "铸火成礼",
+      "description": "围绕弹匣和换弹形成连续火力。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "火续",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "magazine",
+              "value": 2
+            },
+            {
+              "handler": "statMultiply",
+              "stat": "reloadSpeed",
+              "value": 1.1
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "炉心",
+          "effects": [
+            {
+              "handler": "eventDamage",
+              "event": "reload",
+              "value": 18
+            },
+            {
+              "handler": "statMultiply",
+              "stat": "primaryDamage",
+              "value": 1.12
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "lineage": "veil",
+      "name": "潜鳞成礼",
+      "description": "借掩体寻找弱点。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "藏锋",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "coverReduction",
+              "value": 0.1
+            },
+            {
+              "handler": "statAdd",
+              "stat": "weakpointMultiplier",
+              "value": 0.15
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "见隙",
+          "effects": [
+            {
+              "handler": "eventDamage",
+              "event": "weakpoint",
+              "value": 20
+            },
+            {
+              "handler": "eventAmmo",
+              "event": "leaveCover",
+              "value": 2
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "lineage": "storm",
+      "name": "震霄成礼",
+      "description": "积蓄力量后倾泻爆发。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "鸣霆",
+          "effects": [
+            {
+              "handler": "statMultiply",
+              "stat": "secondaryDamage",
+              "value": 1.15
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "天鼓",
+          "effects": [
+            {
+              "handler": "eventDamage",
+              "event": "charge",
+              "value": 28
+            },
+            {
+              "handler": "statMultiply",
+              "stat": "fireRate",
+              "value": 1.1
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "lineage": "ward",
+      "name": "镇岳成礼",
+      "description": "承伤和掩体破坏转化为反攻机会。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "负山",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "coverMax",
+              "value": 18
+            },
+            {
+              "handler": "statAdd",
+              "stat": "damageReduction",
+              "value": 0.05
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "岳崩",
+          "effects": [
+            {
+              "handler": "eventDamage",
+              "event": "coverBreak",
+              "value": 32
+            },
+            {
+              "handler": "eventCover",
+              "event": "coverBreak",
+              "value": 12
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    }
+  ],
+  "itemTypeMeta": {
+    "weapon": {
+      "name": "武器",
+      "mark": "刃",
+      "color": "#cf533f",
+      "summary": "直接改变攻击方式的兵刃与发射器"
+    },
+    "tome": {
+      "name": "书卷",
+      "mark": "卷",
+      "color": "#c5a36d",
+      "summary": "记录法门与战术的纸本"
+    },
+    "mirror": {
+      "name": "铜镜",
+      "mark": "镜",
+      "color": "#9eb7ba",
+      "summary": "映照弱点与护持的镜器"
+    },
+    "ornament": {
+      "name": "佩饰",
+      "mark": "佩",
+      "color": "#d7a3bd",
+      "summary": "随身佩戴的护符与饰物"
+    },
+    "instrument": {
+      "name": "乐器",
+      "mark": "乐",
+      "color": "#d6c06b",
+      "summary": "以声势引动战斗节奏"
+    },
+    "ritualVessel": {
+      "name": "礼器",
+      "mark": "礼",
+      "color": "#b99a63",
+      "summary": "承载仪式与神意的器皿"
+    },
+    "herb": {
+      "name": "香草",
+      "mark": "草",
+      "color": "#75bd91",
+      "summary": "植物、药草与自然灵性"
+    },
+    "wineVessel": {
+      "name": "酒器",
+      "mark": "酒",
+      "color": "#bf7d69",
+      "summary": "盛放灵酒与祝祷之物"
+    },
+    "dailyRelic": {
+      "name": "旧物",
+      "mark": "旧",
+      "color": "#a8aaa0",
+      "summary": "日常生活遗留的旧物投影"
+    },
+    "deceasedRelic": {
+      "name": "遗物",
+      "mark": "遗",
+      "color": "#9c89a9",
+      "summary": "亡者遗物留下的灵性投影"
+    },
+    "jianmuFruit": {
+      "name": "建木果实",
+      "mark": "果",
+      "color": "#8fc477",
+      "summary": "建木孕育的果实与种核"
+    },
+    "jianmuBranch": {
+      "name": "建木枝叶",
+      "mark": "枝",
+      "color": "#4fbda4",
+      "summary": "建木枝叶与木灵脉络"
+    },
+    "ore": {
+      "name": "矿石",
+      "mark": "矿",
+      "color": "#8da7c0",
+      "summary": "山川矿脉凝结的硬质灵材"
+    },
+    "mythicArtifact": {
+      "name": "神话器具",
+      "mark": "神",
+      "color": "#d6b668",
+      "summary": "神话传承中的器具与法宝"
+    },
+    "oddity": {
+      "name": "奇异造物",
+      "mark": "异",
+      "color": "#79c1bd",
+      "summary": "无法归类的奇异造物"
+    }
+  },
+  "mythologyMeta": {
+    "solar": {
+      "name": "日曜",
+      "mark": "日",
+      "color": "#e2b65e",
+      "summary": "光明、日轮与贯日之力"
+    },
+    "earth": {
+      "name": "厚土",
+      "mark": "土",
+      "color": "#91b9a9",
+      "summary": "大地、山岳与补天之力"
+    },
+    "thunder": {
+      "name": "雷霆",
+      "mark": "雷",
+      "color": "#d6c06b",
+      "summary": "雷火、爆发与震荡之力"
+    },
+    "wind": {
+      "name": "长风",
+      "mark": "风",
+      "color": "#75b9d0",
+      "summary": "移动、换位与迅疾之力"
+    },
+    "water": {
+      "name": "玄水",
+      "mark": "水",
+      "color": "#6da5c9",
+      "summary": "寒水、护持与回流之力"
+    },
+    "nether": {
+      "name": "幽冥",
+      "mark": "冥",
+      "color": "#9c89a9",
+      "summary": "亡者、余魂与终结之力"
+    }
+  },
+  "tagSynergies": [
+    {
+      "id": "tag_weapon",
+      "kind": "itemType",
+      "tag": "weapon",
+      "name": "武器共鸣",
+      "description": "武器类灵物达到数量后强化主射。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "primaryDamage",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "statMultiply",
+              "stat": "primaryDamage",
+              "value": 1.1
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_instrument",
+      "kind": "itemType",
+      "tag": "instrument",
+      "name": "乐器共鸣",
+      "description": "乐器类灵物叠加蓄力爆发。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "secondaryDamage",
+              "value": 4
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "eventDamage",
+              "event": "charge",
+              "value": 10
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_ore",
+      "kind": "itemType",
+      "tag": "ore",
+      "name": "矿脉共鸣",
+      "description": "矿石类灵物提高掩体承伤能力。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "coverMax",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "damageReduction",
+              "value": 0.04
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_mythic_artifact",
+      "kind": "itemType",
+      "tag": "mythicArtifact",
+      "name": "神具共鸣",
+      "description": "神话器具类灵物强化弱点打击。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "weakpointMultiplier",
+              "value": 0.1
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "statMultiply",
+              "stat": "secondaryDamage",
+              "value": 1.1
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_solar",
+      "kind": "mythology",
+      "tag": "solar",
+      "name": "日曜神流",
+      "description": "日曜流派扩充弹匣并强化主射。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "magazine",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "statMultiply",
+              "stat": "primaryDamage",
+              "value": 1.1
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_earth",
+      "kind": "mythology",
+      "tag": "earth",
+      "name": "厚土神流",
+      "description": "厚土流派提高掩体耐久与减伤。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "coverMax",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "damageReduction",
+              "value": 0.05
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_thunder",
+      "kind": "mythology",
+      "tag": "thunder",
+      "name": "雷霆神流",
+      "description": "雷霆流派强化副射与蓄力爆发。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statAdd",
+              "stat": "secondaryDamage",
+              "value": 4
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "eventDamage",
+              "event": "charge",
+              "value": 12
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    },
+    {
+      "id": "tag_wind",
+      "kind": "mythology",
+      "tag": "wind",
+      "name": "长风神流",
+      "description": "长风流派提高射击节奏并奖励换位。",
+      "thresholds": [
+        {
+          "count": 2,
+          "label": "初成",
+          "effects": [
+            {
+              "handler": "statMultiply",
+              "stat": "fireRate",
+              "value": 1.08
+            }
+          ]
+        },
+        {
+          "count": 4,
+          "label": "盛成",
+          "effects": [
+            {
+              "handler": "eventAmmo",
+              "event": "leaveCover",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "testOnly": true
+    }
+  ]
+}

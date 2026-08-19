@@ -487,11 +487,65 @@ export class GameRenderer {
     });
   }
 
+  private createDamageNumber(event: CombatFeedbackEvent, elapsedSeconds: number): void {
+    if (!event.to || !event.value || event.value <= 0) return;
+    const weakpoint = Boolean(event.weakpoint);
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 128;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.font = `800 ${weakpoint ? 76 : 64}px "Noto Sans SC", "Microsoft YaHei", sans-serif`;
+    context.lineJoin = "round";
+    context.strokeStyle = "rgba(6, 13, 11, 0.96)";
+    context.lineWidth = weakpoint ? 14 : 12;
+    const label = String(Math.round(event.value));
+    context.strokeText(label, canvas.width / 2, canvas.height / 2);
+    context.fillStyle = weakpoint ? "#ffe28a" : "#ecf8f4";
+    context.fillText(label, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    }));
+    const baseScale = weakpoint ? 2.35 : 1.85;
+    const startY = event.worldY ?? 2.2;
+    const feedbackSerial = Number.parseInt(event.id.slice(event.id.lastIndexOf("-") + 1), 10) || 0;
+    const laneOffset = ((feedbackSerial % 5) - 2) * 0.34;
+    const verticalOffset = ((feedbackSerial % 3) - 1) * 0.16;
+    const horizontalDrift = ((event.id.charCodeAt(event.id.length - 1) % 5) - 2) * 0.12;
+    const baseX = event.to.x + laneOffset;
+    sprite.position.set(baseX, startY + verticalOffset, event.to.z - 0.08);
+    sprite.scale.set(baseScale, baseScale * 0.5, 1);
+    sprite.renderOrder = 20;
+    this.addTransient(sprite, elapsedSeconds, this.reducedMotion ? 0.62 : 0.9, (progress) => {
+      const pop = progress < 0.18
+        ? THREE.MathUtils.lerp(0.55, 1.16, progress / 0.18)
+        : THREE.MathUtils.lerp(1.16, 1, (progress - 0.18) / 0.82);
+      sprite.scale.set(baseScale * pop, baseScale * 0.5 * pop, 1);
+      sprite.position.y = startY + verticalOffset + (this.reducedMotion ? 0.25 : 1.05) * progress;
+      sprite.position.x = baseX + (this.reducedMotion ? 0 : horizontalDrift * progress);
+      (sprite.material as THREE.SpriteMaterial).opacity = progress < 0.62 ? 1 : 1 - (progress - 0.62) / 0.38;
+    });
+  }
+
   private consumeFeedback(events: readonly CombatFeedbackEvent[], elapsedSeconds: number): void {
     for (const event of events) {
       if (this.handledFeedbackIds.has(event.id)) continue;
       this.handledFeedbackIds.add(event.id);
-      if (event.type === "primary" && event.from && event.to) {
+      if (event.type === "enemyDamage") {
+        this.createDamageNumber(event, elapsedSeconds);
+      } else if (event.type === "primary" && event.from && event.to) {
         const tracerMaterialOpacity = event.hit ? 0.95 : 0.55;
         const tracer = this.createLine(
           new THREE.Vector3(event.from.x, 1.25, event.from.z + 0.7),
@@ -578,6 +632,12 @@ export class GameRenderer {
       }
       this.scene.remove(effect.object);
       effect.object.traverse((child) => {
+        if (child instanceof THREE.Sprite) {
+          const spriteMaterial = child.material as THREE.SpriteMaterial;
+          spriteMaterial.map?.dispose();
+          spriteMaterial.dispose();
+          return;
+        }
         const renderable = child as THREE.Mesh;
         renderable.geometry?.dispose();
         const childMaterial = renderable.material as THREE.Material | THREE.Material[] | undefined;

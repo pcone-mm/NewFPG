@@ -81,7 +81,7 @@ function addEvent(state: RunState, type: string, data: AnalyticsEvent["data"]): 
   state.analytics.push({ tick: state.combat?.tick ?? 0, type, data });
 }
 
-function damageEnemy(state: RunState, target: EnemyState, rawDamage: number, rng: SeededRng): void {
+function damageEnemy(state: RunState, target: EnemyState, rawDamage: number, rng: SeededRng, weakpoint = false): void {
   const combat = state.combat!;
   let damage = rawDamage;
   if (target.shield > 0) {
@@ -91,6 +91,13 @@ function damageEnemy(state: RunState, target: EnemyState, rawDamage: number, rng
   }
   if (damage > 0) target.hp -= damage;
   combat.damageDealt += rawDamage;
+  pushCombatFeedback(combat, {
+    type: "enemyDamage",
+    to: { ...target.position },
+    value: Math.round(rawDamage),
+    weakpoint,
+    worldY: target.type === "boss" ? 3.8 : target.type === "elite" ? 2.75 : 2.2,
+  });
   if (target.hp > 0) return;
   target.hp = 0;
   const aura = target.type === "boss" ? 0 : target.type === "elite" ? 45 : 22;
@@ -122,7 +129,7 @@ export function firePrimary(state: RunState, build: ResolvedCombatBuild, rng: Se
     damage = build.primaryDamage * (weakpoint ? build.weakpointMultiplier : 1);
     if (weakpoint) damage += build.eventDamage.weakpoint ?? 0;
     if (combat.ammo === 0) damage += build.eventDamage.lastShot ?? 0;
-    damageEnemy(state, candidate.target, damage, rng);
+    damageEnemy(state, candidate.target, damage, rng, weakpoint);
     addEvent(state, "shotHit", { weakpoint, damage: Math.round(damage) });
   } else addEvent(state, "shotMiss", {});
   pushCombatFeedback(combat, {

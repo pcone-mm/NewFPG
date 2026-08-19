@@ -240,6 +240,38 @@ describe("combat and persistence", () => {
     expect(combat.feedbackEvents.some((event) => event.type === "reloadStart")).toBe(true);
   });
 
+  it("emits positioned damage-number feedback for primary and secondary hits", () => {
+    const controller = beginCombat("damage-number-feedback-test");
+    const snapshot = controller.getSnapshot();
+    const state = snapshot.state as RunState;
+    const combat = state.combat;
+    if (!combat) throw new Error("Combat missing");
+    combat.spawnQueue = [];
+    combat.enemies = [
+      { id: "damage-target-a", type: "ranged", position: { x: 0, z: 10 }, hp: 200, maxHp: 200, shield: 0, attackCooldown: 999, spawnTick: 0 },
+      { id: "damage-target-b", type: "melee", position: { x: 1.2, z: 10 }, hp: 200, maxHp: 200, shield: 0, attackCooldown: 999, spawnTick: 0 },
+    ];
+    combat.aim = { x: 0, z: 10 };
+
+    controller.dispatchAction({ type: "primary" });
+    const primaryNumber = combat.feedbackEvents.find((event) => event.type === "enemyDamage");
+    expect(primaryNumber).toMatchObject({
+      to: { x: 0, z: 10 },
+      value: Math.round(snapshot.build.primaryDamage * snapshot.build.weakpointMultiplier),
+      weakpoint: true,
+    });
+
+    combat.isCharging = true;
+    combat.chargeTicks = 75;
+    combat.fireCooldown = 0;
+    const damageNumbersBefore = combat.feedbackEvents.filter((event) => event.type === "enemyDamage").length;
+    controller.dispatchAction({ type: "secondaryRelease" });
+    const secondaryNumbers = combat.feedbackEvents.filter((event) => event.type === "enemyDamage").slice(damageNumbersBefore);
+    expect(secondaryNumbers).toHaveLength(2);
+    expect(secondaryNumbers.map((event) => event.to)).toEqual(expect.arrayContaining([{ x: 0, z: 10 }, { x: 1.2, z: 10 }]));
+    expect(secondaryNumbers.every((event) => event.value === Math.round(snapshot.build.secondaryDamage * 1.2))).toBe(true);
+  });
+
   it("moves the temporary boss through 70% and 35% phase thresholds", () => {
     const controller = new GameController();
     controller.startNewRun("boss-phase-test");

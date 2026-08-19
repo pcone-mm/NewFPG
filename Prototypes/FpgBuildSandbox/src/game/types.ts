@@ -161,7 +161,7 @@ export interface ProjectileState {
   lifeTicks: number;
 }
 
-export type CombatFeedbackType = "primary" | "secondary" | "coverMove" | "coverHit" | "reloadStart" | "reloadComplete" | "playerHit";
+export type CombatFeedbackType = "primary" | "secondary" | "enemyDamage" | "coverMove" | "coverHit" | "reloadStart" | "reloadComplete" | "playerHit";
 
 export interface CombatFeedbackEvent {
   id: string;
@@ -173,6 +173,7 @@ export interface CombatFeedbackEvent {
   weakpoint?: boolean;
   value?: number;
   charge?: number;
+  worldY?: number;
 }
 
 export interface CombatState {

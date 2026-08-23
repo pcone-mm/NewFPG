@@ -21,9 +21,9 @@ namespace FPG.Demo.Tests.EditMode
 
         private static readonly string[] FormalEnemyPrefabPaths =
         {
-            "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_BurstbugEntity.prefab",
-            "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_LuanEntity.prefab",
-            "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_HudieEntity.prefab"
+            "Assets/FPGDemo/Presentation/Characters/Enemies/Burstbug/Prefabs/PF_FPG_BurstbugEntity.prefab",
+            "Assets/FPGDemo/Presentation/Characters/Enemies/Luan/Prefabs/PF_FPG_LuanEntity.prefab",
+            "Assets/FPGDemo/Presentation/Characters/Enemies/Hudie/Prefabs/PF_FPG_HudieEntity.prefab"
         };
 
         [Test]

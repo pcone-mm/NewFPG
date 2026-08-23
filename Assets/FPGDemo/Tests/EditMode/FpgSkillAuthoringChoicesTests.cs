@@ -12,7 +12,7 @@ namespace FPG.Demo.Tests.EditMode
     public sealed class FpgSkillAuthoringChoicesTests
     {
         private const string FeiPrefabPath =
-            "Assets/FPGDemo/Presentation/Characters/Fei/Spine/"
+            "Assets/FPGDemo/Presentation/Characters/Players/Fei/Spine/"
             + "D0_Fei_30048_StraightAlpha.prefab";
 
         private static readonly HashSet<string> FormalFallbackAnimations =

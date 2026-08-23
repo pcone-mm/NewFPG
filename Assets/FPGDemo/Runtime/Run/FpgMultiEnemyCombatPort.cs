@@ -2483,17 +2483,22 @@ namespace FPG.Demo.Run
             out ImpactId impactId)
         {
             impactId = ImpactId.Invalid;
-            if (projectile == null
-                || projectile.Team != Team.Enemy
-                || coverRuntime == null
-                || coverGeometryResolver == null
-                || sweepHit.Kind != ProjectileSweepHitKind.EnvironmentBlocked
-                || !coverGeometryResolver.TryResolveCoverId(
+            bool validProjectile = projectile != null && projectile.Team == Team.Enemy;
+            bool hasCoverRuntime = coverRuntime != null;
+            bool hasGeometryResolver = coverGeometryResolver != null;
+            bool isEnvironmentHit = sweepHit.Kind == ProjectileSweepHitKind.EnvironmentBlocked;
+            string coverId = string.Empty;
+            bool resolvedCover = hasGeometryResolver
+                && coverGeometryResolver.TryResolveCoverId(
                     sweepHit.GeometryId,
-                    out string coverId)
-                || !coverRuntime.TryGetIntactDefenseState(
+                    out coverId);
+            bool intactCover = resolvedCover
+                && hasCoverRuntime
+                && coverRuntime.TryGetIntactDefenseState(
                     coverId,
-                    out _))
+                    out _);
+            if (!validProjectile || !hasCoverRuntime || !hasGeometryResolver
+                || !isEnvironmentHit || !resolvedCover || !intactCover)
             {
                 return DomainResult.Success;
             }

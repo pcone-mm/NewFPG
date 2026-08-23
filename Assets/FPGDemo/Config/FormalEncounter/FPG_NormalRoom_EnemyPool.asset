@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Normal Room Core
   designerNotes: 
   entries:
-  - enemy: {fileID: 11400000, guid: 78a6cabda29c4054b9415701981a8f69, type: 2}
+  - enemy: {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
     selectionWeight: 5
     minDepth: 0
     maxDepth: 99
@@ -29,11 +29,4 @@ MonoBehaviour:
     maxDepth: 99
     maxPerWave: 8
     maxPerRoom: 24
-    themeEligible: 1
-  - enemy: {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
-    selectionWeight: 2
-    minDepth: 1
-    maxDepth: 99
-    maxPerWave: 2
-    maxPerRoom: 4
     themeEligible: 1

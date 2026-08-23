@@ -21,13 +21,13 @@ MonoBehaviour:
   lockedBudget: 24
   fixedSpawns:
   - waveIndex: 0
-    enemy: {fileID: 11400000, guid: 78a6cabda29c4054b9415701981a8f69, type: 2}
+    enemy: {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
     count: 3
   - waveIndex: 0
     enemy: {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}
     count: 1
   - waveIndex: 1
-    enemy: {fileID: 11400000, guid: 78a6cabda29c4054b9415701981a8f69, type: 2}
+    enemy: {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
     count: 2
   - waveIndex: 1
     enemy: {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}

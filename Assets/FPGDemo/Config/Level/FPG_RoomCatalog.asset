@@ -13,6 +13,4 @@ MonoBehaviour:
   m_Name: FPG_RoomCatalog
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomCatalog
   rooms:
-  - {fileID: 11400000, guid: bde7957c923a50044aaf470491518496, type: 2}
   - {fileID: 11400000, guid: 59388094cecaf864986145504f473a97, type: 2}
-  - {fileID: 11400000, guid: ca8c6d458baf6834095c3da1e572d971, type: 2}

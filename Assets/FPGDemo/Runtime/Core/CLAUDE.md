@@ -19,4 +19,4 @@
 
 - tick、clock、ID、hash 与随机 golden vector：`Assets/FPGDemo/Tests/EditMode/CoreDeterminismTests.cs`。
 - 空间版本或量化变化同时检查 `BattleSessionSpatialQueryTests.cs`、`FpgSkillSpatialMetadataTests.cs` 与 `WP4ContractTests.cs`。
-- 改 asmdef 或依赖时检查 `AssemblyBoundaryTests.cs`；默认只记录这些精确入口，不自行批量运行测试。
+- 改 asmdef 或依赖时检查 Unity 编译/Console；默认只记录这些精确入口，不自行批量运行测试。

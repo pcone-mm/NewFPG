@@ -2,6 +2,7 @@ using System.Reflection;
 using FPG.Demo.Core;
 using FPG.Demo.Player;
 using FPG.Demo.Run;
+using FPG.Demo.Skills;
 using FPG.Demo.Unity;
 using NUnit.Framework;
 using UnityEngine;
@@ -237,6 +238,9 @@ namespace FPG.Demo.Tests.EditMode
                 FpgFormalPlayerPresentationBridge bridge =
                     bridgeRoot.AddComponent<FpgFormalPlayerPresentationBridge>();
                 SetPrivateField(bridge, "playerTickDriver", tickDriver);
+                AudioSource heldAudio = bridgeRoot.AddComponent<AudioSource>();
+                FpgPresentationHandle heldAudioHandle =
+                    new FpgPresentationHandle(99);
 
                 FpgFormalPlayerPresentationSnapshot[] endingSnapshots =
                 {
@@ -274,6 +278,18 @@ namespace FPG.Demo.Tests.EditMode
                 for (int index = 0; index < endingSnapshots.Length; index++)
                 {
                     reticle.SetChargeProgress(true, 1f);
+                    SetPrivateField(
+                        bridge,
+                        "secondaryChargeAudioHandle",
+                        heldAudioHandle);
+                    SetPrivateField(
+                        bridge,
+                        "secondaryChargeAudioInstance",
+                        heldAudio);
+                    SetPrivateField(
+                        bridge,
+                        "secondaryChargeAudioSource",
+                        driverRoot.transform);
                     SetPrivateField(bridge, "snapshot", endingSnapshots[index]);
                     InvokePrivate(bridge, "UpdateSecondaryChargeFeedback");
                     AssertChargeRingState(
@@ -282,7 +298,48 @@ namespace FPG.Demo.Tests.EditMode
                         false,
                         0f,
                         labels[index]);
+                    bool preservesBinding = index == 1;
+                    Assert.That(bridge.HasSecondaryChargeAudio, Is.False);
+                    Assert.That(
+                        GetPrivateField<FpgPresentationHandle>(
+                            bridge,
+                            "secondaryChargeAudioHandle").IsValid,
+                        Is.EqualTo(preservesBinding),
+                        labels[index] + " held-audio handle");
+                    Assert.That(
+                        GetPrivateField<Transform>(
+                            bridge,
+                            "secondaryChargeAudioSource") != null,
+                        Is.EqualTo(preservesBinding),
+                        labels[index] + " held-audio source");
                 }
+
+                SetPrivateField(
+                    bridge,
+                    "secondaryChargeAudioHandle",
+                    heldAudioHandle);
+                SetPrivateField(
+                    bridge,
+                    "secondaryChargeAudioInstance",
+                    heldAudio);
+                SetPrivateField(
+                    bridge,
+                    "secondaryChargeAudioSource",
+                    driverRoot.transform);
+                InvokePrivate(
+                    bridge,
+                    "HandleEncounterLifecycle",
+                    new FpgEncounterLifecycleEvent(
+                        FpgEncounterLifecycleEventType.Restarted,
+                        new TickIndex(31L),
+                        FpgEncounterPhase.Combat));
+                Assert.That(bridge.HasSecondaryChargeAudio, Is.False);
+                Assert.That(
+                    GetPrivateField<FpgPresentationHandle>(
+                        bridge,
+                        "secondaryChargeAudioHandle").IsValid,
+                    Is.False,
+                    "restart held-audio handle");
 
                 reticle.SetChargeProgress(true, 1f);
                 bridge.Clear();
@@ -404,13 +461,25 @@ namespace FPG.Demo.Tests.EditMode
             field.SetValue(target, value);
         }
 
-        private static void InvokePrivate(object target, string methodName)
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, fieldName);
+            return (T)field.GetValue(target);
+        }
+
+        private static void InvokePrivate(
+            object target,
+            string methodName,
+            params object[] arguments)
         {
             MethodInfo method = target.GetType().GetMethod(
                 methodName,
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null, methodName);
-            method.Invoke(target, null);
+            method.Invoke(target, arguments);
         }
     }
 }

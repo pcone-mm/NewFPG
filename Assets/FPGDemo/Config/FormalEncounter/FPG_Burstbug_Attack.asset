@@ -20,9 +20,14 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 66
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: normal_skill1
     loop: 0
+    holdUntilCanceled: 0
     animationPlaybackMode: 0
     animationStartTick: 0
     animationEndTick: 66
@@ -60,7 +65,29 @@ MonoBehaviour:
         rid: 1908295348123337098
     reloadEvents: []
     summonEvents: []
-    activePresentationTracks: []
+    selfDestructOwnerEvents: []
+    activePresentationTracks:
+    - trackId: track.burstbug.fast.active
+      displayName: Active Presentation
+      vfxEvents: []
+      audioEvents:
+      - eventId: presentation.burstbug.fast.projectile.0
+        tick: 36
+        authoredOrdinal: 3
+        boundGameplayEventId: event.burstbug-fast.attack.0
+        presentation:
+          clip: {fileID: 8300000, guid: 37b6809c8309b6442b34b9e7793ccd6c, type: 3}
+          variations:
+          - {fileID: 8300000, guid: c2f1f73895f9ec14bb87cd543ec5008f, type: 3}
+          - {fileID: 8300000, guid: 4d46eedc0bef795429335ebd62cb58ee, type: 3}
+          - {fileID: 8300000, guid: 68326c3910e139f4bbff4d9e36339fab, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      cameraShakeEvents: []
     warnings:
     - eventId: warning.burstbug-fast
       warningId: enemy-source-fast
@@ -76,6 +103,22 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
+    - rid: 1019
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: b908b6b48e2ab364f8bd0c89f12a26af, type: 3}
+        variations:
+        - {fileID: 8300000, guid: e780934aef2bba34385fe3811016bfcf, type: 3}
+        - {fileID: 8300000, guid: 14189330804d18c4895df87cd6e56af5, type: 3}
+        - {fileID: 8300000, guid: 162c09c4ecff92042af2e263608d1d41, type: 3}
+        - {fileID: 8300000, guid: 9cf76f0aac92fc7488f44176f4d64c6a, type: 3}
+        - {fileID: 8300000, guid: c0e6e4b668a547741bf76ae86204812c, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
     - rid: 1908295348123337097
       type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
       data:
@@ -89,6 +132,8 @@ MonoBehaviour:
         baseVfx:
           rid: 1908295348123337099
         baseAudio:
+          rid: 1019
+        environmentAudioOverride:
           rid: -2
         baseCameraShake:
           rid: -2

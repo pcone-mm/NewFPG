@@ -392,7 +392,6 @@ namespace FPG.Demo.Unity
             if (!playerRuntimeId.IsValid || maxLife <= 0 || life <= 0 || paused
                 || encounterPhase == FpgEncounterPhase.None
                 || encounterPhase == FpgEncounterPhase.Preparing
-                || encounterPhase == FpgEncounterPhase.Cleared
                 || encounterPhase == FpgEncounterPhase.Defeated
                 || encounterPhase == FpgEncounterPhase.Failed
                 || encounterPhase == FpgEncounterPhase.Faulted

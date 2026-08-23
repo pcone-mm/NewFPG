@@ -22,6 +22,26 @@ namespace FPG.Demo.Tests.EditMode
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Secondary_Charge.asset";
         private const string ReloadPath =
             "Assets/FPGDemo/Config/FormalEncounter/Characters/Skills/FPG_Fei_Reload.asset";
+        private const string ReloadClipRoot =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Reload_";
+        private const string ImmediateSecondaryLaunchClipRoot =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Immediate_Launch_";
+        private const string ImmediateSecondaryHitClipPath =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Immediate_Hit_01.wav";
+        private const string ImmediateSecondaryWeakpointClipPath =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Immediate_Weakpoint_01.wav";
+        private const string ChargeSecondaryStartClipPath =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Charge_Start_01.wav";
+        private const string ChargeSecondaryHoldClipPath =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Charge_Hold_01.wav";
+        private const string ChargeSecondaryReleaseClipRoot =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Charge_Release_";
+        private const string ChargeSecondaryCancelClipRoot =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Charge_Cancel_";
+        private const string ChargeSecondaryHitClipPath =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Charge_Hit_02.wav";
+        private const string ChargeSecondaryWeakpointClipPath =
+            "Assets/FPGDemo/Audio/Forest/SFX/SFX_Fei_Secondary_Charge_Weakpoint_02.wav";
         private const string PresentationBridgePath =
             "Assets/FPGDemo/Runtime/Unity/FpgFormalPlayerPresentationBridge.cs";
         private const string TickDriverPath =
@@ -155,6 +175,49 @@ namespace FPG.Demo.Tests.EditMode
                 primaryExecute.ActivePresentationTracks[0].VfxEvents[0]
                     .BoundGameplayEventId,
                 Is.EqualTo("event.fei.primary.attack.0"));
+            Assert.That(
+                primaryExecute.ActivePresentationTracks[0].AudioEvents.Count,
+                Is.EqualTo(1));
+            FpgAudioPresentationEventDefinition primaryAudio =
+                primaryExecute.ActivePresentationTracks[0].AudioEvents[0];
+            Assert.That(
+                primaryAudio.EventId,
+                Is.EqualTo("presentation.fei.primary.audio.0"));
+            Assert.That(primaryAudio.Tick, Is.EqualTo(0));
+            Assert.That(
+                primaryAudio.BoundGameplayEventId,
+                Is.EqualTo("event.fei.primary.attack.0"));
+            Assert.That(primaryAudio.Presentation.ClipCount, Is.EqualTo(4));
+            Assert.That(
+                primaryAudio.Presentation.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                primaryAudio.Presentation.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerSocket));
+            Assert.That(
+                primaryAudio.Presentation.OwnerSocketId,
+                Is.EqualTo("weapon.primary.muzzle"));
+            FpgImpactPresentationBundleDefinition primaryImpact =
+                primaryExecute.AttackEvents[0].ImpactPresentation;
+            Assert.That(primaryImpact, Is.Not.Null);
+            Assert.That(
+                primaryImpact.EnvironmentAudioOverride,
+                Is.Not.Null);
+            Assert.That(
+                primaryImpact.EnvironmentAudioOverride.ClipCount,
+                Is.EqualTo(4));
+            Assert.That(
+                primaryImpact.EnvironmentAudioOverride.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                primaryImpact.EnvironmentAudioOverride.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerRoot));
+            Assert.That(
+                primaryImpact.EnvironmentAudioOverride.OwnerSocketId,
+                Is.Empty);
+            StringAssert.StartsWith(
+                "SFX_Fei_Primary_EnvironmentHit_",
+                primaryImpact.EnvironmentAudioOverride.Clip.name);
 
             FpgSkillSequenceDefinition chargeEnter =
                 FindSequence(chargeSecondary, FpgSkillSequenceKind.ChargeEnter);
@@ -165,6 +228,29 @@ namespace FPG.Demo.Tests.EditMode
                 chargeEnter.ActivePresentationTracks[0].VfxEvents[0]
                     .BoundGameplayEventId,
                 Is.Empty);
+            FpgSkillActivePresentationTrackDefinition chargeTrack =
+                chargeEnter.ActivePresentationTracks[0];
+            Assert.That(chargeTrack.AudioEvents.Count, Is.EqualTo(2));
+            FpgAudioPresentationEventDefinition chargeStart =
+                chargeTrack.AudioEvents.Single(value =>
+                    value.EventId
+                        == "presentation.fei.secondary.charge.audio.0");
+            FpgAudioPresentationEventDefinition chargeHold =
+                chargeTrack.AudioEvents.Single(value =>
+                    value.EventId
+                        == "presentation.fei.secondary.charge.hold.0");
+            AssertChargeAudio(
+                chargeStart,
+                ChargeSecondaryStartClipPath,
+                "SFX_Fei_Secondary_Charge_Start_01",
+                1,
+                FpgAudioPresentationPlaybackMode.OneShot);
+            AssertChargeAudio(
+                chargeHold,
+                ChargeSecondaryHoldClipPath,
+                "SFX_Fei_Secondary_Charge_Hold_01",
+                2,
+                FpgAudioPresentationPlaybackMode.HeldLoop);
 
             FpgSkillSequenceDefinition execute =
                 FindSequence(immediateSecondary, FpgSkillSequenceKind.Execute);
@@ -175,9 +261,103 @@ namespace FPG.Demo.Tests.EditMode
                 execute.ActivePresentationTracks[0].VfxEvents[0]
                     .BoundGameplayEventId,
                 Is.EqualTo("event.fei.secondary.execute.attack.0"));
+            FpgSkillActivePresentationTrackDefinition immediateTrack =
+                execute.ActivePresentationTracks[0];
+            Assert.That(
+                immediateTrack.TrackId,
+                Is.EqualTo("track.fei.secondary.execute.active"));
+            Assert.That(immediateTrack.AudioEvents.Count, Is.EqualTo(1));
+            FpgAudioPresentationEventDefinition immediateAudio =
+                immediateTrack.AudioEvents[0];
+            Assert.That(
+                immediateAudio.EventId,
+                Is.EqualTo("presentation.fei.secondary.execute.audio.0"));
+            Assert.That(immediateAudio.Tick, Is.Zero);
+            Assert.That(
+                immediateAudio.BoundGameplayEventId,
+                Is.EqualTo("event.fei.secondary.execute.attack.0"));
+            Assert.That(immediateAudio.Presentation.ClipCount, Is.EqualTo(5));
+            Assert.That(
+                immediateAudio.Presentation.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                immediateAudio.Presentation.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerSocket));
+            Assert.That(
+                immediateAudio.Presentation.OwnerSocketId,
+                Is.EqualTo("weapon.secondary.muzzle"));
+
+            for (int index = 0;
+                index < immediateAudio.Presentation.ClipCount;
+                index++)
+            {
+                UnityEngine.AudioClip clip =
+                    immediateAudio.Presentation.GetClip(index);
+                Assert.That(clip, Is.Not.Null);
+                StringAssert.StartsWith(
+                    "SFX_Fei_Secondary_Immediate_Launch_",
+                    clip.name);
+                Assert.That(clip.channels, Is.EqualTo(1));
+                Assert.That(clip.frequency, Is.EqualTo(48000));
+
+                string clipPath = AssetDatabase.GetAssetPath(clip);
+                Assert.That(
+                    clipPath,
+                    Is.EqualTo(ImmediateSecondaryLaunchClipRoot
+                        + (index + 1).ToString("00")
+                        + ".wav"));
+                UnityEditor.AudioImporter importer =
+                    AssetImporter.GetAtPath(clipPath)
+                    as UnityEditor.AudioImporter;
+                Assert.That(importer, Is.Not.Null, clipPath);
+                Assert.That(importer.forceToMono, Is.True);
+                Assert.That(importer.loadInBackground, Is.False);
+                UnityEditor.AudioImporterSampleSettings settings =
+                    importer.defaultSampleSettings;
+                Assert.That(
+                    settings.loadType,
+                    Is.EqualTo(
+                        UnityEngine.AudioClipLoadType.DecompressOnLoad));
+                Assert.That(
+                    settings.compressionFormat,
+                    Is.EqualTo(
+                        UnityEngine.AudioCompressionFormat.PCM));
+                Assert.That(
+                    settings.sampleRateSetting,
+                    Is.EqualTo(
+                        UnityEditor.AudioSampleRateSetting.PreserveSampleRate));
+                Assert.That(settings.preloadAudioData, Is.True);
+            }
+
+            FpgSkillProjectileEventDefinition immediateProjectile =
+                execute.ProjectileEvents[0];
+            Assert.That(immediateProjectile.CollisionPresentation, Is.Not.Null);
+            AssertImpactAudio(
+                immediateProjectile.CollisionPresentation.BaseAudio,
+                ImmediateSecondaryHitClipPath,
+                "SFX_Fei_Secondary_Immediate_Hit_01");
+            AssertImpactAudio(
+                immediateProjectile.CollisionPresentation
+                    .WeakpointAudioOverride,
+                ImmediateSecondaryWeakpointClipPath,
+                "SFX_Fei_Secondary_Immediate_Weakpoint_01");
 
             FpgSkillSequenceDefinition release =
                 FindSequence(chargeSecondary, FpgSkillSequenceKind.Release);
+            FpgSkillSequenceDefinition cancel =
+                FindSequence(chargeSecondary, FpgSkillSequenceKind.Cancel);
+            Assert.That(release.ProjectileEvents.Count, Is.EqualTo(1));
+            FpgImpactPresentationBundleDefinition chargeImpact =
+                release.ProjectileEvents[0].CollisionPresentation;
+            Assert.That(chargeImpact, Is.Not.Null);
+            AssertImpactAudio(
+                chargeImpact.BaseAudio,
+                ChargeSecondaryHitClipPath,
+                "SFX_Fei_Secondary_Charge_Hit_02");
+            AssertImpactAudio(
+                chargeImpact.WeakpointAudioOverride,
+                ChargeSecondaryWeakpointClipPath,
+                "SFX_Fei_Secondary_Charge_Weakpoint_02");
             Assert.That(
                 release.ActivePresentationTracks.Count,
                 Is.EqualTo(1));
@@ -185,6 +365,40 @@ namespace FPG.Demo.Tests.EditMode
                 release.ActivePresentationTracks[0].VfxEvents[0]
                     .BoundGameplayEventId,
                 Is.EqualTo("event.fei.secondary.release.attack.0"));
+            FpgSkillActivePresentationTrackDefinition releaseTrack =
+                release.ActivePresentationTracks[0];
+            Assert.That(
+                releaseTrack.TrackId,
+                Is.EqualTo("track.fei.secondary.release.active"));
+            Assert.That(releaseTrack.AudioEvents.Count, Is.EqualTo(1));
+            AssertChargeAudioGroup(
+                releaseTrack.AudioEvents[0],
+                "presentation.fei.secondary.release.audio.0",
+                "event.fei.secondary.release.attack.0",
+                ChargeSecondaryReleaseClipRoot,
+                7,
+                2,
+                FpgAudioPresentationAnchor.OwnerSocket,
+                "weapon.secondary.muzzle");
+
+            Assert.That(cancel.ActivePresentationTracks.Count, Is.EqualTo(1));
+            FpgSkillActivePresentationTrackDefinition cancelTrack =
+                cancel.ActivePresentationTracks[0];
+            Assert.That(
+                cancelTrack.TrackId,
+                Is.EqualTo("track.fei.secondary.cancel.active"));
+            Assert.That(cancelTrack.VfxEvents.Count, Is.Zero);
+            Assert.That(cancelTrack.CameraShakeEvents.Count, Is.Zero);
+            Assert.That(cancelTrack.AudioEvents.Count, Is.EqualTo(1));
+            AssertChargeAudioGroup(
+                cancelTrack.AudioEvents[0],
+                "presentation.fei.secondary.cancel.audio.0",
+                string.Empty,
+                ChargeSecondaryCancelClipRoot,
+                5,
+                0,
+                FpgAudioPresentationAnchor.OwnerRoot,
+                string.Empty);
 
             FpgSkillSequenceDefinition reloadExecute =
                 FindSequence(reload, FpgSkillSequenceKind.Execute);
@@ -194,6 +408,220 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 reloadExecute.ReloadEvents[0].SuccessAnimationName,
                 Is.EqualTo("u1_buff_ready"));
+
+            Assert.That(reloadExecute.ActivePresentationTracks.Count, Is.EqualTo(1));
+            FpgSkillActivePresentationTrackDefinition reloadTrack =
+                reloadExecute.ActivePresentationTracks[0];
+            Assert.That(reloadTrack.TrackId, Is.EqualTo("track.fei.reload.active"));
+            Assert.That(reloadTrack.VfxEvents.Count, Is.Zero);
+            Assert.That(reloadTrack.CameraShakeEvents.Count, Is.Zero);
+            Assert.That(reloadTrack.AudioEvents.Count, Is.EqualTo(1));
+
+            FpgAudioPresentationEventDefinition reloadAudio =
+                reloadTrack.AudioEvents[0];
+            Assert.That(
+                reloadAudio.EventId,
+                Is.EqualTo("presentation.fei.reload.commit.audio.0"));
+            Assert.That(reloadAudio.Tick, Is.EqualTo(40));
+            Assert.That(
+                reloadAudio.BoundGameplayEventId,
+                Is.EqualTo("event.fei.reload.commit.0"));
+            Assert.That(reloadAudio.Presentation.ClipCount, Is.EqualTo(5));
+            Assert.That(
+                reloadAudio.Presentation.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                reloadAudio.Presentation.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerRoot));
+            Assert.That(reloadAudio.Presentation.OwnerSocketId, Is.Empty);
+
+            for (int index = 0; index < reloadAudio.Presentation.ClipCount; index++)
+            {
+                UnityEngine.AudioClip clip =
+                    reloadAudio.Presentation.GetClip(index);
+                Assert.That(clip, Is.Not.Null);
+                StringAssert.StartsWith(
+                    "SFX_Fei_Reload_",
+                    clip.name);
+                Assert.That(clip.channels, Is.EqualTo(1));
+                Assert.That(clip.frequency, Is.EqualTo(48000));
+
+                string clipPath = AssetDatabase.GetAssetPath(clip);
+                Assert.That(
+                    clipPath,
+                    Is.EqualTo(ReloadClipRoot
+                        + (index + 1).ToString("00")
+                        + ".wav"));
+                UnityEditor.AudioImporter importer =
+                    AssetImporter.GetAtPath(clipPath) as UnityEditor.AudioImporter;
+                Assert.That(importer, Is.Not.Null, clipPath);
+                Assert.That(importer.forceToMono, Is.True);
+                Assert.That(importer.loadInBackground, Is.False);
+                UnityEditor.AudioImporterSampleSettings settings =
+                    importer.defaultSampleSettings;
+                Assert.That(
+                    settings.loadType,
+                    Is.EqualTo(UnityEngine.AudioClipLoadType.DecompressOnLoad));
+                Assert.That(
+                    settings.compressionFormat,
+                    Is.EqualTo(UnityEngine.AudioCompressionFormat.PCM));
+                Assert.That(
+                    settings.sampleRateSetting,
+                    Is.EqualTo(UnityEditor.AudioSampleRateSetting.PreserveSampleRate));
+                Assert.That(settings.preloadAudioData, Is.True);
+            }
+        }
+
+        private static void AssertImpactAudio(
+            FpgAudioPresentationDefinition audio,
+            string expectedPath,
+            string expectedName)
+        {
+            Assert.That(audio, Is.Not.Null);
+            Assert.That(audio.ClipCount, Is.EqualTo(1));
+            Assert.That(
+                audio.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                audio.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerRoot));
+            Assert.That(audio.OwnerSocketId, Is.Empty);
+            Assert.That(audio.MinDistance, Is.EqualTo(1f));
+            Assert.That(audio.MaxDistance, Is.EqualTo(20f));
+            Assert.That(audio.Clip.name, Is.EqualTo(expectedName));
+            Assert.That(AssetDatabase.GetAssetPath(audio.Clip), Is.EqualTo(expectedPath));
+            Assert.That(audio.Clip.channels, Is.EqualTo(1));
+            Assert.That(audio.Clip.frequency, Is.EqualTo(48000));
+
+            AudioImporter importer =
+                AssetImporter.GetAtPath(expectedPath) as AudioImporter;
+            Assert.That(importer, Is.Not.Null, expectedPath);
+            Assert.That(importer.forceToMono, Is.True);
+            Assert.That(importer.loadInBackground, Is.False);
+            AudioImporterSampleSettings settings =
+                importer.defaultSampleSettings;
+            Assert.That(
+                settings.loadType,
+                Is.EqualTo(UnityEngine.AudioClipLoadType.DecompressOnLoad));
+            Assert.That(
+                settings.compressionFormat,
+                Is.EqualTo(UnityEngine.AudioCompressionFormat.PCM));
+            Assert.That(
+                settings.sampleRateSetting,
+                Is.EqualTo(AudioSampleRateSetting.PreserveSampleRate));
+            Assert.That(settings.preloadAudioData, Is.True);
+        }
+
+        private static void AssertChargeAudio(
+            FpgAudioPresentationEventDefinition audioEvent,
+            string expectedPath,
+            string expectedName,
+            int expectedOrdinal,
+            FpgAudioPresentationPlaybackMode expectedPlaybackMode)
+        {
+            Assert.That(audioEvent.Tick, Is.Zero);
+            Assert.That(audioEvent.AuthoredOrdinal, Is.EqualTo(expectedOrdinal));
+            Assert.That(audioEvent.BoundGameplayEventId, Is.Empty);
+            FpgAudioPresentationDefinition audio = audioEvent.Presentation;
+            Assert.That(audio, Is.Not.Null);
+            Assert.That(audio.ClipCount, Is.EqualTo(1));
+            Assert.That(audio.Clip.name, Is.EqualTo(expectedName));
+            Assert.That(
+                AssetDatabase.GetAssetPath(audio.Clip),
+                Is.EqualTo(expectedPath));
+            Assert.That(
+                audio.PlaybackMode,
+                Is.EqualTo(expectedPlaybackMode));
+            Assert.That(
+                audio.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                audio.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerSocket));
+            Assert.That(
+                audio.OwnerSocketId,
+                Is.EqualTo("weapon.secondary.muzzle"));
+            Assert.That(audio.Clip.channels, Is.EqualTo(1));
+            Assert.That(audio.Clip.frequency, Is.EqualTo(48000));
+
+            AudioImporter importer =
+                AssetImporter.GetAtPath(expectedPath) as AudioImporter;
+            Assert.That(importer, Is.Not.Null, expectedPath);
+            Assert.That(importer.forceToMono, Is.True);
+            Assert.That(importer.loadInBackground, Is.False);
+            AudioImporterSampleSettings settings =
+                importer.defaultSampleSettings;
+            Assert.That(
+                settings.loadType,
+                Is.EqualTo(UnityEngine.AudioClipLoadType.DecompressOnLoad));
+            Assert.That(
+                settings.compressionFormat,
+                Is.EqualTo(UnityEngine.AudioCompressionFormat.PCM));
+            Assert.That(
+                settings.sampleRateSetting,
+                Is.EqualTo(AudioSampleRateSetting.PreserveSampleRate));
+            Assert.That(settings.preloadAudioData, Is.True);
+        }
+
+        private static void AssertChargeAudioGroup(
+            FpgAudioPresentationEventDefinition audioEvent,
+            string expectedEventId,
+            string expectedBoundGameplayEventId,
+            string expectedClipRoot,
+            int expectedClipCount,
+            int expectedOrdinal,
+            FpgAudioPresentationAnchor expectedAnchor,
+            string expectedSocketId)
+        {
+            Assert.That(audioEvent.EventId, Is.EqualTo(expectedEventId));
+            Assert.That(audioEvent.Tick, Is.Zero);
+            Assert.That(audioEvent.AuthoredOrdinal, Is.EqualTo(expectedOrdinal));
+            Assert.That(
+                audioEvent.BoundGameplayEventId,
+                Is.EqualTo(expectedBoundGameplayEventId));
+            FpgAudioPresentationDefinition audio = audioEvent.Presentation;
+            Assert.That(audio, Is.Not.Null);
+            Assert.That(audio.ClipCount, Is.EqualTo(expectedClipCount));
+            Assert.That(
+                audio.PlaybackMode,
+                Is.EqualTo(FpgAudioPresentationPlaybackMode.OneShot));
+            Assert.That(
+                audio.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(audio.Anchor, Is.EqualTo(expectedAnchor));
+            Assert.That(audio.OwnerSocketId, Is.EqualTo(expectedSocketId));
+
+            for (int index = 0; index < expectedClipCount; index++)
+            {
+                UnityEngine.AudioClip clip = audio.GetClip(index);
+                Assert.That(clip, Is.Not.Null);
+                string expectedPath = expectedClipRoot
+                    + (index + 1).ToString("00")
+                    + ".wav";
+                Assert.That(
+                    AssetDatabase.GetAssetPath(clip),
+                    Is.EqualTo(expectedPath));
+                Assert.That(clip.channels, Is.EqualTo(1));
+                Assert.That(clip.frequency, Is.EqualTo(48000));
+
+                AudioImporter importer =
+                    AssetImporter.GetAtPath(expectedPath) as AudioImporter;
+                Assert.That(importer, Is.Not.Null, expectedPath);
+                Assert.That(importer.forceToMono, Is.True);
+                Assert.That(importer.loadInBackground, Is.False);
+                AudioImporterSampleSettings settings =
+                    importer.defaultSampleSettings;
+                Assert.That(
+                    settings.loadType,
+                    Is.EqualTo(UnityEngine.AudioClipLoadType.DecompressOnLoad));
+                Assert.That(
+                    settings.compressionFormat,
+                    Is.EqualTo(UnityEngine.AudioCompressionFormat.PCM));
+                Assert.That(
+                    settings.sampleRateSetting,
+                    Is.EqualTo(AudioSampleRateSetting.PreserveSampleRate));
+                Assert.That(settings.preloadAudioData, Is.True);
+            }
         }
 
         [Test]
@@ -312,7 +740,7 @@ namespace FPG.Demo.Tests.EditMode
 
             Assert.That(immediate.EventId, Is.Not.EqualTo(charged.EventId));
             AssertProjectileEventEquivalent(charged, immediate);
-            AssertMuzzlePresentationEquivalent(
+            AssertMuzzleVfxPresentationEquivalent(
                 chargedSequence,
                 charged.EventId,
                 immediateSequence,
@@ -349,22 +777,29 @@ namespace FPG.Demo.Tests.EditMode
             AssertCompiledProjectileActionEquivalent(
                 compiledCharged,
                 compiledImmediate);
-            Assert.That(
+            ulong immediatePresentationHash =
                 ResolveProjectilePresentationContentHash(
                     compiledImmediateSequence,
-                    compiledImmediateEvent.ActionIndex),
-                Is.EqualTo(ResolveProjectilePresentationContentHash(
+                    compiledImmediateEvent.ActionIndex);
+            ulong chargedPresentationHash =
+                ResolveProjectilePresentationContentHash(
                     compiledChargedSequence,
-                    compiledChargedEvent.ActionIndex)));
+                    compiledChargedEvent.ActionIndex);
+            Assert.That(immediatePresentationHash, Is.Not.Zero);
+            Assert.That(chargedPresentationHash, Is.Not.Zero);
+            Assert.That(
+                immediatePresentationHash,
+                Is.Not.EqualTo(chargedPresentationHash),
+                "Secondary modes share gameplay payloads but own independent presentation content.");
         }
 
         [Test]
         public void FeiSecondaryProjectilePresentationKeepsOffsetsEditableAndImpactAlive()
         {
             const string projectilePath =
-                "Assets/FPGDemo/Presentation/Characters/Fei/VFX/PF_FPG_Fei_Secondary_Projectile.prefab";
+                "Assets/FPGDemo/Presentation/Characters/Players/Fei/VFX/PF_FPG_Fei_Secondary_Projectile.prefab";
             const string impactPath =
-                "Assets/FPGDemo/Presentation/Characters/Fei/VFX/PF_FPG_Fei_Secondary_Hit.prefab";
+                "Assets/FPGDemo/Presentation/Characters/Players/Fei/VFX/PF_FPG_Fei_Secondary_Hit.prefab";
             FpgPlayerSkillDefinition secondary =
                 LoadRequired<FpgPlayerSkillDefinition>(ChargeSecondaryPath);
             FpgSkillSequenceDefinition release =
@@ -584,13 +1019,13 @@ namespace FPG.Demo.Tests.EditMode
                 expected.FlightVfx,
                 actual.FlightVfx,
                 "projectile flight VFX");
-            AssertImpactPresentationEquivalent(
+            AssertImpactVisualPresentationEquivalent(
                 expected.CollisionPresentation,
                 actual.CollisionPresentation,
                 "projectile collision presentation");
         }
 
-        private static void AssertMuzzlePresentationEquivalent(
+        private static void AssertMuzzleVfxPresentationEquivalent(
             FpgSkillSequenceDefinition expectedSequence,
             string expectedGameplayEventId,
             FpgSkillSequenceDefinition actualSequence,
@@ -614,9 +1049,6 @@ namespace FPG.Demo.Tests.EditMode
                 actualTrack.VfxEvents.Count,
                 Is.EqualTo(expectedTrack.VfxEvents.Count));
             Assert.That(actualTrack.VfxEvents.Count, Is.EqualTo(1));
-            Assert.That(
-                actualTrack.AudioEvents.Count,
-                Is.EqualTo(expectedTrack.AudioEvents.Count));
             Assert.That(
                 actualTrack.CameraShakeEvents.Count,
                 Is.EqualTo(expectedTrack.CameraShakeEvents.Count));
@@ -789,7 +1221,7 @@ namespace FPG.Demo.Tests.EditMode
                 && value.ActionIndex == actionIndex).PresentationContentHash;
         }
 
-        private static void AssertImpactPresentationEquivalent(
+        private static void AssertImpactVisualPresentationEquivalent(
             FpgImpactPresentationBundleDefinition expected,
             FpgImpactPresentationBundleDefinition actual,
             string context)
@@ -807,10 +1239,6 @@ namespace FPG.Demo.Tests.EditMode
                 expected.BaseVfx,
                 actual.BaseVfx,
                 context + " base VFX");
-            AssertAudioPresentationEquivalent(
-                expected.BaseAudio,
-                actual.BaseAudio,
-                context + " base audio");
             AssertCameraShakePresentationEquivalent(
                 expected.BaseCameraShake,
                 actual.BaseCameraShake,
@@ -819,10 +1247,6 @@ namespace FPG.Demo.Tests.EditMode
                 expected.WeakpointVfxOverride,
                 actual.WeakpointVfxOverride,
                 context + " weakpoint VFX");
-            AssertAudioPresentationEquivalent(
-                expected.WeakpointAudioOverride,
-                actual.WeakpointAudioOverride,
-                context + " weakpoint audio");
             AssertCameraShakePresentationEquivalent(
                 expected.WeakpointCameraShakeOverride,
                 actual.WeakpointCameraShakeOverride,
@@ -859,30 +1283,6 @@ namespace FPG.Demo.Tests.EditMode
                 actual.RotationOffsetEuler,
                 Is.EqualTo(expected.RotationOffsetEuler),
                 context + " rotation offset");
-        }
-
-        private static void AssertAudioPresentationEquivalent(
-            FpgAudioPresentationDefinition expected,
-            FpgAudioPresentationDefinition actual,
-            string context)
-        {
-            Assert.That(
-                actual == null,
-                Is.EqualTo(expected == null),
-                context + " presence");
-            if (expected == null || actual == null)
-            {
-                return;
-            }
-
-            Assert.That(
-                actual.Clip,
-                Is.SameAs(expected.Clip),
-                context + " clip");
-            Assert.That(
-                actual.Volume,
-                Is.EqualTo(expected.Volume),
-                context + " volume");
         }
 
         private static void AssertCameraShakePresentationEquivalent(

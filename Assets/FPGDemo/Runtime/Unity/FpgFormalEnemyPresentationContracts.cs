@@ -8,16 +8,22 @@ namespace FPG.Demo.Unity
         public FpgResolvedEnemySkillWarning(
             string eventName,
             string warningName,
-            string socketName)
+            string socketName,
+            int startTick,
+            int endTick)
         {
             EventName = eventName ?? string.Empty;
             WarningName = warningName ?? string.Empty;
             SocketName = socketName ?? string.Empty;
+            StartTick = startTick;
+            EndTick = endTick;
         }
 
         public string EventName { get; }
         public string WarningName { get; }
         public string SocketName { get; }
+        public int StartTick { get; }
+        public int EndTick { get; }
     }
 
     public static class FpgEnemySkillPresentationResolver
@@ -128,7 +134,9 @@ namespace FPG.Demo.Unity
                     resolved = new FpgResolvedEnemySkillWarning(
                         eventName,
                         warning.WarningId,
-                        warning.SocketId);
+                        warning.SocketId,
+                        warning.StartTick,
+                        warning.EndTick);
                     return true;
                 }
             }

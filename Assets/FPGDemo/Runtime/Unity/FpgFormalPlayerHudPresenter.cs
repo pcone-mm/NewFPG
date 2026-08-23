@@ -52,6 +52,8 @@ namespace FPG.Demo.Unity
         public FpgFormalBarView AmmoBar => ammoBar;
         public CombatPresentationProfile PresentationProfile =>
             presentationProfile;
+        public int SupplementalFeedbackFaultCount { get; private set; }
+        public event Action<FpgSupplementalFeedbackEvent> SupplementalFeedback;
 
         public bool TryValidate(out string error)
         {
@@ -126,12 +128,25 @@ namespace FPG.Demo.Unity
             barrierBar.SetPaused(snapshot.IsPaused);
             ammoBar.SetPaused(snapshot.IsPaused);
 
+            bool canPublishSupplemental = !immediate && !snapshot.IsPaused;
             if (snapshot.Life != lastLife || snapshot.MaxLife != lastMaxLife)
             {
+                int previousLife = lastLife;
+                int previousMaxLife = lastMaxLife;
                 lifeBar.SetValue(snapshot.Life, snapshot.MaxLife, immediate);
                 SetText(
                     lifeText,
                     FormatValue(lifePresentation, snapshot.Life, snapshot.MaxLife));
+                if (canPublishSupplemental)
+                {
+                    TryPublishSupplementalFeedback(
+                        FpgSupplementalFeedbackEvent.CreateResourceChange(
+                            FpgSupplementalFeedbackKind.HudLifeChanged,
+                            previousLife,
+                            snapshot.Life,
+                            previousMaxLife,
+                            snapshot.MaxLife));
+                }
                 lastLife = snapshot.Life;
                 lastMaxLife = snapshot.MaxLife;
             }
@@ -142,6 +157,8 @@ namespace FPG.Demo.Unity
                 || snapshot.IsCoverMoving != lastCoverMoving
                 || snapshot.CurrentCoverId != lastCoverId)
             {
+                int previousBarrier = lastBarrier;
+                int previousMaxBarrier = lastMaxBarrier;
                 barrierBar.SetValue(
                     snapshot.CoverDurability,
                     snapshot.MaxCoverDurability,
@@ -149,6 +166,16 @@ namespace FPG.Demo.Unity
                 SetText(
                     barrierText,
                     FormatCoverValue(snapshot));
+                if (canPublishSupplemental)
+                {
+                    TryPublishSupplementalFeedback(
+                        FpgSupplementalFeedbackEvent.CreateResourceChange(
+                            FpgSupplementalFeedbackKind.HudBarrierChanged,
+                            previousBarrier,
+                            snapshot.CoverDurability,
+                            previousMaxBarrier,
+                            snapshot.MaxCoverDurability));
+                }
                 lastBarrier = snapshot.CoverDurability;
                 lastMaxBarrier = snapshot.MaxCoverDurability;
                 lastCoverDestroyed = snapshot.IsCoverDestroyed;
@@ -159,6 +186,8 @@ namespace FPG.Demo.Unity
             if (snapshot.Ammo != lastAmmo
                 || snapshot.MagazineCapacity != lastMagazineCapacity)
             {
+                int previousAmmo = lastAmmo;
+                int previousMagazineCapacity = lastMagazineCapacity;
                 ammoBar.SetValue(
                     snapshot.Ammo,
                     snapshot.MagazineCapacity,
@@ -169,6 +198,16 @@ namespace FPG.Demo.Unity
                         ammoPresentation,
                         snapshot.Ammo,
                         snapshot.MagazineCapacity));
+                if (canPublishSupplemental)
+                {
+                    TryPublishSupplementalFeedback(
+                        FpgSupplementalFeedbackEvent.CreateResourceChange(
+                            FpgSupplementalFeedbackKind.HudAmmoChanged,
+                            previousAmmo,
+                            snapshot.Ammo,
+                            previousMagazineCapacity,
+                            snapshot.MagazineCapacity));
+                }
                 lastAmmo = snapshot.Ammo;
                 lastMagazineCapacity = snapshot.MagazineCapacity;
             }
@@ -186,6 +225,7 @@ namespace FPG.Demo.Unity
         {
             snapshot = FpgFormalPlayerPresentationSnapshot.Unavailable;
             ClearVisuals();
+            SupplementalFeedbackFaultCount = 0;
         }
 
         private WeaponState snapshotForStateWeapon = (WeaponState)(-1);
@@ -213,6 +253,27 @@ namespace FPG.Demo.Unity
             lastMagazineCapacity = int.MinValue;
             lastState = (FpgFormalPlayerPresentationState)(-1);
             snapshotForStateWeapon = (WeaponState)(-1);
+        }
+
+        private void TryPublishSupplementalFeedback(
+            in FpgSupplementalFeedbackEvent feedbackEvent)
+        {
+            if (feedbackEvent.Kind == FpgSupplementalFeedbackKind.None)
+            {
+                return;
+            }
+
+            try
+            {
+                SupplementalFeedback?.Invoke(feedbackEvent);
+            }
+            catch (Exception)
+            {
+                if (SupplementalFeedbackFaultCount < int.MaxValue)
+                {
+                    SupplementalFeedbackFaultCount++;
+                }
+            }
         }
 
         private bool TryResolveResourcePresentations(out string error)

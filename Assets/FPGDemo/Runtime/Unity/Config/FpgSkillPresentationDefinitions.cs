@@ -13,6 +13,24 @@ namespace FPG.Demo.Unity
         OwnerSocket = 1
     }
 
+    public enum FpgAudioPresentationSpace
+    {
+        TwoDimensional = 0,
+        WorldPositioned = 1
+    }
+
+    public enum FpgAudioPresentationAnchor
+    {
+        OwnerRoot = 0,
+        OwnerSocket = 1
+    }
+
+    public enum FpgAudioPresentationPlaybackMode
+    {
+        OneShot = 0,
+        HeldLoop = 1
+    }
+
     [Serializable]
     public sealed class FpgVfxPresentationDefinition
     {
@@ -73,21 +91,82 @@ namespace FPG.Demo.Unity
         [SerializeField]
         private AudioClip clip;
 
+        [SerializeField]
+        private AudioClip[] variations = Array.Empty<AudioClip>();
+
         [SerializeField, Range(0f, 1f)]
         private float volume = 1f;
 
+        [SerializeField]
+        private FpgAudioPresentationSpace space =
+            FpgAudioPresentationSpace.TwoDimensional;
+
+        [SerializeField]
+        private FpgAudioPresentationAnchor anchor =
+            FpgAudioPresentationAnchor.OwnerRoot;
+
+        [SerializeField]
+        private FpgAudioPresentationPlaybackMode playbackMode =
+            FpgAudioPresentationPlaybackMode.OneShot;
+
+        [SerializeField]
+        private string socketId = string.Empty;
+
+        [SerializeField, Min(0.01f)]
+        private float minDistance = 1f;
+
+        [SerializeField, Min(0.01f)]
+        private float maxDistance = 20f;
+
         public AudioClip Clip => clip;
+        public int ClipCount => (clip == null ? 0 : 1)
+            + (variations == null ? 0 : variations.Length);
         public float Volume => volume;
+        public FpgAudioPresentationSpace Space => space;
+        public FpgAudioPresentationAnchor Anchor => anchor;
+        public FpgAudioPresentationPlaybackMode PlaybackMode => playbackMode;
+        public string OwnerSocketId => socketId;
+        public float MinDistance => minDistance;
+        public float MaxDistance => maxDistance;
+
+        public AudioClip GetClip(int index)
+        {
+            int primaryCount = clip == null ? 0 : 1;
+            if (index < 0 || index >= ClipCount)
+            {
+                return null;
+            }
+
+            return index < primaryCount
+                ? clip
+                : variations[index - primaryCount];
+        }
 
         internal bool TryValidate(out string error)
         {
-            if (clip == null
+            if (ClipCount <= 0
+                || HasInvalidOrDuplicateVariations()
                 || !FpgPresentationAuthoringHash.IsFinite(volume)
                 || volume < 0f
-                || volume > 1f)
+                || volume > 1f
+                || !Enum.IsDefined(typeof(FpgAudioPresentationSpace), space)
+                || !Enum.IsDefined(typeof(FpgAudioPresentationAnchor), anchor)
+                || !Enum.IsDefined(
+                    typeof(FpgAudioPresentationPlaybackMode),
+                    playbackMode)
+                || !FpgPresentationAuthoringHash.IsFinitePositive(minDistance)
+                || !FpgPresentationAuthoringHash.IsFinitePositive(maxDistance)
+                || maxDistance < minDistance
+                || (space == FpgAudioPresentationSpace.TwoDimensional
+                    && (anchor != FpgAudioPresentationAnchor.OwnerRoot
+                        || !string.IsNullOrEmpty(socketId)))
+                || (space == FpgAudioPresentationSpace.WorldPositioned
+                    && (anchor == FpgAudioPresentationAnchor.OwnerSocket
+                        ? !FpgSkillStableId.IsValid(socketId)
+                        : !string.IsNullOrEmpty(socketId))))
             {
                 error =
-                    "Audio presentation requires a clip and finite volume in [0, 1].";
+                    "Audio presentation requires a clip, finite volume, valid space/anchor and positive distance parameters.";
                 return false;
             }
 
@@ -98,8 +177,45 @@ namespace FPG.Demo.Unity
         internal ulong ComputeContentHash()
         {
             ulong hash = FpgPresentationAuthoringHash.Begin(2UL);
-            hash = FpgPresentationAuthoringHash.AppendObject(hash, clip);
-            return FpgPresentationAuthoringHash.AppendFloat(hash, volume);
+            hash = StableHash.Append(hash, unchecked((ulong)ClipCount));
+            for (int index = 0; index < ClipCount; index++)
+            {
+                hash = FpgPresentationAuthoringHash.AppendObject(
+                    hash,
+                    GetClip(index));
+            }
+
+            hash = FpgPresentationAuthoringHash.AppendFloat(hash, volume);
+            hash = StableHash.Append(hash, unchecked((ulong)(int)space));
+            hash = StableHash.Append(hash, unchecked((ulong)(int)anchor));
+            hash = StableHash.Append(
+                hash,
+                unchecked((ulong)(int)playbackMode));
+            hash = FpgPresentationAuthoringHash.AppendString(hash, socketId);
+            hash = FpgPresentationAuthoringHash.AppendFloat(hash, minDistance);
+            return FpgPresentationAuthoringHash.AppendFloat(hash, maxDistance);
+        }
+
+        private bool HasInvalidOrDuplicateVariations()
+        {
+            for (int index = 0; index < ClipCount; index++)
+            {
+                AudioClip candidate = GetClip(index);
+                if (candidate == null)
+                {
+                    return true;
+                }
+
+                for (int previous = 0; previous < index; previous++)
+                {
+                    if (GetClip(previous) == candidate)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 
@@ -151,6 +267,12 @@ namespace FPG.Demo.Unity
         private FpgAudioPresentationDefinition baseAudio;
 
         [SerializeReference]
+        private FpgAudioPresentationDefinition environmentAudioOverride;
+
+        [SerializeReference]
+        private FpgAudioPresentationDefinition interceptionAudioOverride;
+
+        [SerializeReference]
         private FpgCameraShakePresentationDefinition baseCameraShake;
 
         [SerializeReference]
@@ -165,6 +287,10 @@ namespace FPG.Demo.Unity
 
         public FpgVfxPresentationDefinition BaseVfx => baseVfx;
         public FpgAudioPresentationDefinition BaseAudio => baseAudio;
+        public FpgAudioPresentationDefinition EnvironmentAudioOverride =>
+            environmentAudioOverride;
+        public FpgAudioPresentationDefinition InterceptionAudioOverride =>
+            interceptionAudioOverride;
         public FpgCameraShakePresentationDefinition BaseCameraShake =>
             baseCameraShake;
         public FpgVfxPresentationDefinition WeakpointVfxOverride =>
@@ -176,6 +302,8 @@ namespace FPG.Demo.Unity
 
         internal bool HasAny => baseVfx != null
             || baseAudio != null
+            || environmentAudioOverride != null
+            || interceptionAudioOverride != null
             || baseCameraShake != null
             || weakpointVfxOverride != null
             || weakpointAudioOverride != null
@@ -185,6 +313,8 @@ namespace FPG.Demo.Unity
         {
             if (!TryValidateOptional(baseVfx, out error)
                 || !TryValidateOptional(baseAudio, out error)
+                || !TryValidateOptional(environmentAudioOverride, out error)
+                || !TryValidateOptional(interceptionAudioOverride, out error)
                 || !TryValidateOptional(baseCameraShake, out error)
                 || !TryValidateOptional(weakpointVfxOverride, out error)
                 || !TryValidateOptional(weakpointAudioOverride, out error)
@@ -205,6 +335,12 @@ namespace FPG.Demo.Unity
                 CompileOptional(baseVfx, keyPrefix + ":base.vfx"),
                 CompileOptional(baseAudio, keyPrefix + ":base.audio"),
                 CompileOptional(
+                    environmentAudioOverride,
+                    keyPrefix + ":environment.audio"),
+                CompileOptional(
+                    interceptionAudioOverride,
+                    keyPrefix + ":interception.audio"),
+                CompileOptional(
                     baseCameraShake,
                     keyPrefix + ":base.camera-shake"),
                 CompileOptional(
@@ -221,9 +357,11 @@ namespace FPG.Demo.Unity
 
         internal ulong ComputeContentHash()
         {
-            ulong hash = FpgPresentationAuthoringHash.Begin(4UL);
+            ulong hash = FpgPresentationAuthoringHash.Begin(5UL);
             hash = AppendOptional(hash, baseVfx);
             hash = AppendOptional(hash, baseAudio);
+            hash = AppendOptional(hash, environmentAudioOverride);
+            hash = AppendOptional(hash, interceptionAudioOverride);
             hash = AppendOptional(hash, baseCameraShake);
             hash = AppendOptional(hash, weakpointVfxOverride);
             hash = AppendOptional(hash, weakpointAudioOverride);

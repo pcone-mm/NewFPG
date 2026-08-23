@@ -24,7 +24,21 @@ namespace FPG.Demo.Unity
         Defeat = 18,
         ReticleTargetLock = 19,
         EnemyDangerTick = 20,
-        Count = 22
+        RoomEntered = 22,
+        ExitUnlocked = 23,
+        ExitConfirmed = 24,
+        InteractionFocus = 25,
+        InteractionConfirm = 26,
+        InteractionReject = 27,
+        EnemySpawn = 28,
+        EnemyDeath = 29,
+        Count = 30
+    }
+
+    public enum CombatAudioBus
+    {
+        Sfx = 0,
+        Ui = 1
     }
 
     /// <summary>
@@ -39,13 +53,22 @@ namespace FPG.Demo.Unity
             int priority,
             float cooldownSeconds,
             int maxConcurrentVoices,
-            float volume = 1f)
+            float volume = 1f,
+            CombatAudioBus bus = CombatAudioBus.Sfx,
+            FpgAudioPresentationSpace space =
+                FpgAudioPresentationSpace.TwoDimensional,
+            float minDistance = 1f,
+            float maxDistance = 20f)
         {
             Cue = cue;
             Priority = priority;
             CooldownSeconds = cooldownSeconds;
             MaxConcurrentVoices = maxConcurrentVoices;
             Volume = volume;
+            Bus = bus;
+            Space = space;
+            MinDistance = minDistance;
+            MaxDistance = maxDistance;
         }
 
         public CombatAudioCue Cue { get; }
@@ -62,6 +85,10 @@ namespace FPG.Demo.Unity
         /// never requires a code change to rebalance it.
         /// </summary>
         public float Volume { get; }
+        public CombatAudioBus Bus { get; }
+        public FpgAudioPresentationSpace Space { get; }
+        public float MinDistance { get; }
+        public float MaxDistance { get; }
     }
 
     /// <summary>
@@ -77,6 +104,9 @@ namespace FPG.Demo.Unity
 
         [SerializeField]
         private AudioClip clip;
+
+        [SerializeField]
+        private AudioClip[] variations = Array.Empty<AudioClip>();
 
         // Unity AudioSource priority uses 0 as highest and 256 as lowest.
         [SerializeField, Range(0, 256)]
@@ -94,12 +124,44 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(1)]
         private int maxConcurrentVoices = 1;
 
+        [SerializeField]
+        private CombatAudioBus bus = CombatAudioBus.Sfx;
+
+        [SerializeField]
+        private FpgAudioPresentationSpace space =
+            FpgAudioPresentationSpace.TwoDimensional;
+
+        [SerializeField, Min(0.01f)]
+        private float minDistance = 1f;
+
+        [SerializeField, Min(0.01f)]
+        private float maxDistance = 20f;
+
         public CombatAudioCue Cue => cue;
         public AudioClip Clip => clip;
+        public int ClipCount => (clip == null ? 0 : 1)
+            + (variations == null ? 0 : variations.Length);
         public int Priority => priority;
         public float Volume => volume;
         public float CooldownSeconds => cooldownSeconds;
         public int MaxConcurrentVoices => maxConcurrentVoices;
+        public CombatAudioBus Bus => bus;
+        public FpgAudioPresentationSpace Space => space;
+        public float MinDistance => minDistance;
+        public float MaxDistance => maxDistance;
+
+        public AudioClip GetClip(int index)
+        {
+            int primaryCount = clip == null ? 0 : 1;
+            if (index < 0 || index >= ClipCount)
+            {
+                return null;
+            }
+
+            return index < primaryCount
+                ? clip
+                : variations[index - primaryCount];
+        }
 
         public bool TryValidate(out string error)
         {
@@ -114,9 +176,15 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
-            if (requireClip && clip == null)
+            if (requireClip && ClipCount <= 0)
             {
                 error = $"Combat audio cue {cue} must reference an AudioClip.";
+                return false;
+            }
+
+            if (HasInvalidOrDuplicateVariations())
+            {
+                error = $"Combat audio cue {cue} contains a missing or duplicate clip variation.";
                 return false;
             }
 
@@ -149,8 +217,47 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!Enum.IsDefined(typeof(CombatAudioBus), bus)
+                || !Enum.IsDefined(typeof(FpgAudioPresentationSpace), space)
+                || !IsFinitePositiveValue(minDistance)
+                || !IsFinitePositiveValue(maxDistance)
+                || maxDistance < minDistance)
+            {
+                error = $"Combat audio cue {cue} has invalid bus, space or distance parameters.";
+                return false;
+            }
+
             error = string.Empty;
             return true;
+        }
+
+        private bool HasInvalidOrDuplicateVariations()
+        {
+            for (int index = 0; index < ClipCount; index++)
+            {
+                AudioClip candidate = GetClip(index);
+                if (candidate == null)
+                {
+                    return true;
+                }
+
+                for (int previous = 0; previous < index; previous++)
+                {
+                    if (GetClip(previous) == candidate)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsFinitePositiveValue(float value)
+        {
+            return !float.IsNaN(value)
+                && !float.IsInfinity(value)
+                && value > 0f;
         }
     }
 
@@ -167,19 +274,27 @@ namespace FPG.Demo.Unity
 
         private static readonly CombatAudioCuePolicy[] RequiredCuePolicies =
         {
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyFastThreatTelegraph, 60, 0.20f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyFastThreatRelease, 50, 0.10f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyInterceptableThreatTelegraph, 75, 0.20f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyInterceptableThreatRelease, 65, 0.08f, 3),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyHeavyThreatTelegraph, 30, 0.20f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyHeavyThreatRelease, 25, 0.12f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerDamaged, 20, 0.15f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.PlayerBarrierBroken, 15, 0.25f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyBreak, 20, 0.25f, 1),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyFastThreatTelegraph, 60, 0.20f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyFastThreatRelease, 50, 0.10f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyInterceptableThreatTelegraph, 75, 0.20f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyInterceptableThreatRelease, 65, 0.08f, 3, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyHeavyThreatTelegraph, 80, 0.20f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyHeavyThreatRelease, 65, 0.12f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.PlayerDamaged, 20, 0.15f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.PlayerBarrierBroken, 15, 0.25f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.TwoDimensional),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyBreak, 20, 0.25f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
             new CombatAudioCuePolicy(CombatAudioCue.Victory, 10, 0.50f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.Defeat, 5, 0.50f, 1),
             new CombatAudioCuePolicy(CombatAudioCue.ReticleTargetLock, 130, 0.08f, 1),
-            new CombatAudioCuePolicy(CombatAudioCue.EnemyDangerTick, 65, 0.18f, 1)
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyDangerTick, 85, 0.12f, 1, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.RoomEntered, 120, 0.25f, 1, 1f, CombatAudioBus.Ui),
+            new CombatAudioCuePolicy(CombatAudioCue.ExitUnlocked, 120, 0.25f, 1, 1f, CombatAudioBus.Ui),
+            new CombatAudioCuePolicy(CombatAudioCue.ExitConfirmed, 110, 0.25f, 1, 1f, CombatAudioBus.Ui),
+            new CombatAudioCuePolicy(CombatAudioCue.InteractionFocus, 130, 0.08f, 1, 1f, CombatAudioBus.Ui),
+            new CombatAudioCuePolicy(CombatAudioCue.InteractionConfirm, 125, 0.12f, 1, 1f, CombatAudioBus.Ui),
+            new CombatAudioCuePolicy(CombatAudioCue.InteractionReject, 125, 0.12f, 1, 1f, CombatAudioBus.Ui),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemySpawn, 30, 0.10f, 3, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned),
+            new CombatAudioCuePolicy(CombatAudioCue.EnemyDeath, 45, 0.10f, 3, 1f, CombatAudioBus.Sfx, FpgAudioPresentationSpace.WorldPositioned)
         };
 
         [Header("Fixed presentation capacity")]
@@ -327,6 +442,13 @@ namespace FPG.Demo.Unity
 
             error = string.Empty;
             return true;
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value)
+                && !float.IsInfinity(value)
+                && value > 0f;
         }
 
         internal static bool IsPlayableCue(CombatAudioCue cue)

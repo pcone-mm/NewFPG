@@ -100,6 +100,308 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void AudioPoolConfiguresWorldPositionedSourceWithLinearRolloff()
+        {
+            GameObject owner = new GameObject("SpatialSkillAudioPoolTest");
+            AudioClip clip = AudioClip.Create("SpatialSkillAudio", 32, 1, 8000, false);
+            FpgSkillAudioSourcePool pool = new FpgSkillAudioSourcePool();
+            try
+            {
+                Assert.That(
+                    pool.TryPrepare(owner.transform, 1, out string error),
+                    Is.True,
+                    error);
+                Vector3 position = new Vector3(3f, 2f, -4f);
+                Assert.That(
+                    pool.TryPlay(
+                        clip,
+                        0.75f,
+                        FpgAudioPresentationSpace.WorldPositioned,
+                        position,
+                        2f,
+                        18f),
+                    Is.True);
+
+                AudioSource source =
+                    owner.GetComponentInChildren<AudioSource>(true);
+                Assert.That(source.spatialBlend, Is.EqualTo(1f));
+                Assert.That(source.rolloffMode, Is.EqualTo(AudioRolloffMode.Linear));
+                Assert.That(source.dopplerLevel, Is.Zero);
+                Assert.That(source.minDistance, Is.EqualTo(2f));
+                Assert.That(source.maxDistance, Is.EqualTo(18f));
+                Assert.That(source.transform.position, Is.EqualTo(position));
+            }
+            finally
+            {
+                pool.Dispose();
+                Object.DestroyImmediate(clip);
+                Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void AudioPoolHeldLoopFollowsSourceAndReleasesForReuse()
+        {
+            GameObject owner = new GameObject("HeldSkillAudioPoolTest");
+            AudioClip clip = AudioClip.Create(
+                "HeldSkillAudio",
+                128,
+                1,
+                8000,
+                false);
+            FpgSkillAudioSourcePool pool = new FpgSkillAudioSourcePool();
+            try
+            {
+                Assert.That(
+                    pool.TryPrepare(owner.transform, 1, out string error),
+                    Is.True,
+                    error);
+                Vector3 initial = new Vector3(2f, 3f, -1f);
+                Assert.That(
+                    pool.TryBorrowHeld(
+                        clip,
+                        0.6f,
+                        FpgAudioPresentationSpace.WorldPositioned,
+                        initial,
+                        1f,
+                        12f,
+                        out AudioSource held),
+                    Is.True);
+                Assert.That(held, Is.Not.Null);
+                Assert.That(held.loop, Is.True);
+                Assert.That(held.clip, Is.SameAs(clip));
+                Assert.That(held.transform.position, Is.EqualTo(initial));
+
+                Assert.That(
+                    pool.TryBorrowHeld(
+                        clip,
+                        0.6f,
+                        FpgAudioPresentationSpace.WorldPositioned,
+                        initial,
+                        1f,
+                        12f,
+                        out _),
+                    Is.False,
+                    "A held source must reserve its fixed-pool slot.");
+
+                Vector3 moved = new Vector3(-4f, 1f, 6f);
+                Assert.That(pool.TryUpdateHeld(held, moved), Is.True);
+                Assert.That(held.transform.position, Is.EqualTo(moved));
+                Assert.That(pool.TryReleaseHeld(held), Is.True);
+                Assert.That(held.loop, Is.False);
+                Assert.That(held.clip, Is.Null);
+
+                Assert.That(
+                    pool.TryBorrowHeld(
+                        clip,
+                        0.5f,
+                        FpgAudioPresentationSpace.WorldPositioned,
+                        initial,
+                        1f,
+                        12f,
+                        out AudioSource reused),
+                    Is.True);
+                Assert.That(reused, Is.SameAs(held));
+                pool.Clear();
+                Assert.That(reused.loop, Is.False);
+                Assert.That(reused.clip, Is.Null);
+            }
+            finally
+            {
+                pool.Dispose();
+                Object.DestroyImmediate(clip);
+                Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void AudioPresentationDefinitionValidatesSpatialAnchorAndHash()
+        {
+            AudioClip clip = AudioClip.Create("SpatialDefinition", 32, 1, 8000, false);
+            FpgAudioPresentationDefinition definition =
+                new FpgAudioPresentationDefinition();
+            try
+            {
+                SetPrivateField(definition, "clip", clip);
+                Assert.That(
+                    definition.TryValidate(out string defaultError),
+                    Is.True,
+                    defaultError);
+                Assert.That(
+                    definition.PlaybackMode,
+                    Is.EqualTo(FpgAudioPresentationPlaybackMode.OneShot));
+                ulong twoDimensionalHash = definition.ComputeContentHash();
+
+                SetPrivateField(
+                    definition,
+                    "space",
+                    FpgAudioPresentationSpace.WorldPositioned);
+                SetPrivateField(
+                    definition,
+                    "anchor",
+                    FpgAudioPresentationAnchor.OwnerSocket);
+                SetPrivateField(definition, "socketId", "weapon.primary.muzzle");
+                SetPrivateField(definition, "minDistance", 2f);
+                SetPrivateField(definition, "maxDistance", 18f);
+
+                Assert.That(
+                    definition.TryValidate(out string spatialError),
+                    Is.True,
+                    spatialError);
+                Assert.That(
+                    definition.ComputeContentHash(),
+                    Is.Not.EqualTo(twoDimensionalHash));
+                ulong spatialHash = definition.ComputeContentHash();
+
+                SetPrivateField(
+                    definition,
+                    "playbackMode",
+                    FpgAudioPresentationPlaybackMode.HeldLoop);
+                Assert.That(
+                    definition.TryValidate(out string heldError),
+                    Is.True,
+                    heldError);
+                Assert.That(
+                    definition.ComputeContentHash(),
+                    Is.Not.EqualTo(spatialHash));
+
+                SetPrivateField(
+                    definition,
+                    "space",
+                    FpgAudioPresentationSpace.TwoDimensional);
+                Assert.That(definition.TryValidate(out _), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(clip);
+            }
+        }
+
+        [Test]
+        public void AudioPresentationVariationsAffectHashAndRejectDuplicates()
+        {
+            AudioClip primary = AudioClip.Create(
+                "AudioVariationPrimary",
+                32,
+                1,
+                8000,
+                false);
+            AudioClip alternate = AudioClip.Create(
+                "AudioVariationAlternate",
+                32,
+                1,
+                8000,
+                false);
+            FpgAudioPresentationDefinition definition =
+                new FpgAudioPresentationDefinition();
+            try
+            {
+                SetPrivateField(definition, "clip", primary);
+                Assert.That(definition.TryValidate(out _), Is.True);
+                ulong singleClipHash = definition.ComputeContentHash();
+
+                SetPrivateField(
+                    definition,
+                    "variations",
+                    new[] { alternate });
+                Assert.That(definition.TryValidate(out _), Is.True);
+                Assert.That(definition.ClipCount, Is.EqualTo(2));
+                Assert.That(definition.GetClip(0), Is.SameAs(primary));
+                Assert.That(definition.GetClip(1), Is.SameAs(alternate));
+                Assert.That(
+                    definition.ComputeContentHash(),
+                    Is.Not.EqualTo(singleClipHash));
+
+                SetPrivateField(
+                    definition,
+                    "variations",
+                    new[] { primary });
+                Assert.That(definition.TryValidate(out _), Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(alternate);
+                Object.DestroyImmediate(primary);
+            }
+        }
+
+        [Test]
+        public void AudioVariationSelectionNeverImmediatelyRepeats()
+        {
+            const int ClipCount = 4;
+            for (int previous = 0; previous < ClipCount; previous++)
+            {
+                for (uint random = 0; random < 32u; random++)
+                {
+                    int selected = FpgAudioVariationSelection.SelectIndex(
+                        ClipCount,
+                        previous,
+                        random);
+                    Assert.That(selected, Is.InRange(0, ClipCount - 1));
+                    Assert.That(selected, Is.Not.EqualTo(previous));
+                }
+            }
+
+            Assert.That(
+                FpgAudioVariationSelection.SelectIndex(1, 0, 123u),
+                Is.Zero);
+        }
+
+        [Test]
+        public void ImpactAudioResolutionUsesEnvironmentOverrideWithBaseFallback()
+        {
+            FpgPresentationHandle baseAudio = new FpgPresentationHandle(11);
+            FpgPresentationHandle environmentAudio =
+                new FpgPresentationHandle(12);
+            FpgPresentationHandle weakpointAudio =
+                new FpgPresentationHandle(13);
+            FpgPresentationHandle interceptionAudio =
+                new FpgPresentationHandle(14);
+            FpgCompiledImpactPresentation presentation =
+                new FpgCompiledImpactPresentation(
+                    default(FpgPresentationHandle),
+                    baseAudio,
+                    environmentAudio,
+                    interceptionAudio,
+                    default(FpgPresentationHandle),
+                    default(FpgPresentationHandle),
+                    weakpointAudio,
+                    default(FpgPresentationHandle),
+                    1UL);
+
+            Assert.That(
+                presentation.ResolveAudio(false, false),
+                Is.EqualTo(baseAudio));
+            Assert.That(
+                presentation.ResolveAudio(false, true),
+                Is.EqualTo(environmentAudio));
+            Assert.That(
+                presentation.ResolveAudio(true, true),
+                Is.EqualTo(weakpointAudio));
+            Assert.That(
+                presentation.ResolveInterceptionAudio(),
+                Is.EqualTo(interceptionAudio));
+
+            FpgCompiledImpactPresentation legacyPresentation =
+                new FpgCompiledImpactPresentation(
+                    default(FpgPresentationHandle),
+                    baseAudio,
+                    default(FpgPresentationHandle),
+                    default(FpgPresentationHandle),
+                    default(FpgPresentationHandle),
+                    default(FpgPresentationHandle),
+                    default(FpgPresentationHandle),
+                    default(FpgPresentationHandle),
+                    2UL);
+            Assert.That(
+                legacyPresentation.ResolveAudio(false, true),
+                Is.EqualTo(baseAudio));
+            Assert.That(
+                legacyPresentation.ResolveInterceptionAudio(),
+                Is.EqualTo(baseAudio));
+        }
+
+        [Test]
         public void TrajectoryViewUsesExactEndpointsAndRejectsMissingContract()
         {
             GameObject root = new GameObject("TrajectoryViewTest");
@@ -453,6 +755,8 @@ namespace FPG.Demo.Tests.EditMode
                     new FpgCompiledImpactPresentation(
                         default(FpgPresentationHandle),
                         new FpgPresentationHandle(1),
+                        default(FpgPresentationHandle),
+                        default(FpgPresentationHandle),
                         default(FpgPresentationHandle),
                         default(FpgPresentationHandle),
                         default(FpgPresentationHandle),

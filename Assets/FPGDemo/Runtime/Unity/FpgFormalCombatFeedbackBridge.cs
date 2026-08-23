@@ -33,6 +33,10 @@ namespace FPG.Demo.Unity
         private FpgResolvedDamageFeedback[] feedbackBuffer =
             Array.Empty<FpgResolvedDamageFeedback>();
         private Vector2[] framePositions = Array.Empty<Vector2>();
+        private RuntimeId[] frameSupplementalTargetIds =
+            Array.Empty<RuntimeId>();
+        private FpgSupplementalFeedbackKind[] frameSupplementalHitKinds =
+            Array.Empty<FpgSupplementalFeedbackKind>();
         private FpgFormalCombatRuntimeBundle observedRuntime;
         private readonly FpgSkillImpactPresentationConsumer
             skillImpactPresentationConsumer =
@@ -50,6 +54,7 @@ namespace FPG.Demo.Unity
         private long enemyProjectileCursor;
         private long nextEnemyProjectileBindingOrdinal;
         private int framePositionCount;
+        private int frameSupplementalHitCount;
         private bool prepared;
         private bool presentationPaused;
         private bool actionSubscribed;
@@ -72,12 +77,17 @@ namespace FPG.Demo.Unity
         public int EnemySkillWarningStartCount { get; private set; }
         public int EnemySkillWarningEndCount { get; private set; }
         public int EnemyActivePresentationCount { get; private set; }
+        public int SupplementalFeedbackFaultCount { get; private set; }
         public int ActiveEnemySkillWarningCount =>
             activeEnemySkillWarningCount;
+        public int EnemySkillWarningCapacity => presentationProfile == null
+            ? 0
+            : presentationProfile.PoolCapacities.ThreatTelegraphCapacity;
         public D0CombatVfxWorld SkillVfxWorld => skillVfxWorld;
         public string LastPrepareError { get; private set; } = string.Empty;
         public event Action<FpgFormalEnemySkillWarningPresentationEvent>
             EnemySkillWarningChanged;
+        public event Action<FpgSupplementalFeedbackEvent> SupplementalFeedback;
 
         public int ActivePopupCount
         {
@@ -139,6 +149,9 @@ namespace FPG.Demo.Unity
                 {
                     ResetRuntimePresentationState();
                     skillPresentationWorld?.ClearRuntimePresentation();
+                    TryPublishSupplementalFeedback(
+                        FpgSupplementalFeedbackEvent.Create(
+                            FpgSupplementalFeedbackKind.StopAll));
                 }
 
                 presentationPaused = true;
@@ -212,6 +225,8 @@ namespace FPG.Demo.Unity
             }
 
             framePositionCount = 0;
+            frameSupplementalHitCount = 0;
+            bool frameProjectileIntercepted = false;
             for (int index = 0; index < count; index++)
             {
                 FpgResolvedDamageFeedback feedback = feedbackBuffer[index];
@@ -222,8 +237,40 @@ namespace FPG.Demo.Unity
                     continue;
                 }
 
+                FpgSupplementalFeedbackKind supplementalHitKind =
+                    ResolveSupplementalHitKind(feedback);
+                if (supplementalHitKind
+                    == FpgSupplementalFeedbackKind.ProjectileIntercept)
+                {
+                    frameProjectileIntercepted = true;
+                }
+                else
+                {
+                    frameSupplementalHitCount =
+                        CollectTargetedSupplementalHit(
+                            feedback.TargetId,
+                            supplementalHitKind,
+                            frameSupplementalTargetIds,
+                            frameSupplementalHitKinds,
+                            frameSupplementalHitCount);
+                }
                 TryPresentReticleHit(feedback.AttackId);
                 TryPresent(feedback);
+            }
+
+            for (int index = 0; index < frameSupplementalHitCount; index++)
+            {
+                TryPublishSupplementalFeedback(
+                    FpgSupplementalFeedbackEvent.CreateTargeted(
+                        frameSupplementalHitKinds[index],
+                        frameSupplementalTargetIds[index]));
+            }
+
+            if (frameProjectileIntercepted)
+            {
+                TryPublishSupplementalFeedback(
+                    FpgSupplementalFeedbackEvent.Create(
+                        FpgSupplementalFeedbackKind.ProjectileIntercept));
             }
         }
 
@@ -262,6 +309,9 @@ namespace FPG.Demo.Unity
             popupPool = new FpgDamagePopupView[poolCapacity];
             framePositions = new Vector2[poolCapacity];
             feedbackBuffer = new FpgResolvedDamageFeedback[feedbackReadCapacity];
+            frameSupplementalTargetIds = new RuntimeId[feedbackReadCapacity];
+            frameSupplementalHitKinds =
+                new FpgSupplementalFeedbackKind[feedbackReadCapacity];
             int enemyProjectileCapacity = presentationProfile.PoolCapacities
                 .EnemyProjectileCapacity;
             enemyProjectileStates = new ProjectilePresentationState[
@@ -319,6 +369,8 @@ namespace FPG.Demo.Unity
 
             if (popupPool.Length != presentationProfile.PoolCapacities.HitTipCapacity
                 || feedbackBuffer.Length != feedbackReadCapacity
+                || frameSupplementalTargetIds.Length != feedbackReadCapacity
+                || frameSupplementalHitKinds.Length != feedbackReadCapacity
                 || enemyProjectileEvents.Length != feedbackReadCapacity
                 || enemyProjectileStates.Length
                     != presentationProfile.PoolCapacities
@@ -354,6 +406,7 @@ namespace FPG.Demo.Unity
             EnemySkillWarningStartCount = 0;
             EnemySkillWarningEndCount = 0;
             EnemyActivePresentationCount = 0;
+            SupplementalFeedbackFaultCount = 0;
             presentationPaused = false;
             LastPrepareError = string.Empty;
         }
@@ -452,6 +505,9 @@ namespace FPG.Demo.Unity
                 || lifecycle.Type
                     == FpgEncounterLifecycleEventType.Disposed)
             {
+                TryPublishSupplementalFeedback(
+                    FpgSupplementalFeedbackEvent.Create(
+                        FpgSupplementalFeedbackKind.StopAll));
                 ResetRuntimePresentationState();
             }
         }
@@ -758,6 +814,7 @@ namespace FPG.Demo.Unity
             skillImpactPresentationConsumer.Clear();
             damageCursor = 0L;
             framePositionCount = 0;
+            frameSupplementalHitCount = 0;
             ClearFeedbackBuffer(feedbackBuffer.Length);
             ResetEnemyProjectilePresentation();
             ClearEnemySkillWarnings();
@@ -784,6 +841,89 @@ namespace FPG.Demo.Unity
             }
         }
 
+        private void TryPublishSupplementalFeedback(
+            in FpgSupplementalFeedbackEvent feedbackEvent)
+        {
+            if (feedbackEvent.Kind == FpgSupplementalFeedbackKind.None)
+            {
+                return;
+            }
+
+            try
+            {
+                SupplementalFeedback?.Invoke(feedbackEvent);
+            }
+            catch (Exception)
+            {
+                SupplementalFeedbackFaultCount++;
+            }
+        }
+
+        internal static FpgSupplementalFeedbackKind ResolveSupplementalHitKind(
+            in FpgResolvedDamageFeedback feedback)
+        {
+            if (feedback.Sequence <= 0L || feedback.AppliedDamage <= 0)
+            {
+                return FpgSupplementalFeedbackKind.None;
+            }
+
+            if (feedback.IsWeakpoint)
+            {
+                return FpgSupplementalFeedbackKind.WeakpointHit;
+            }
+
+            return feedback.IsProjectile
+                ? FpgSupplementalFeedbackKind.ProjectileIntercept
+                : FpgSupplementalFeedbackKind.BodyHit;
+        }
+
+        internal static int CollectTargetedSupplementalHit(
+            RuntimeId targetId,
+            FpgSupplementalFeedbackKind candidate,
+            RuntimeId[] targetIds,
+            FpgSupplementalFeedbackKind[] hitKinds,
+            int count)
+        {
+            if (!targetId.IsValid
+                || (candidate != FpgSupplementalFeedbackKind.BodyHit
+                    && candidate
+                        != FpgSupplementalFeedbackKind.WeakpointHit)
+                || targetIds == null
+                || hitKinds == null
+                || count < 0)
+            {
+                return Math.Max(0, count);
+            }
+
+            int boundedCount = Math.Min(
+                count,
+                Math.Min(targetIds.Length, hitKinds.Length));
+            for (int index = 0; index < boundedCount; index++)
+            {
+                if (targetIds[index] != targetId)
+                {
+                    continue;
+                }
+
+                if (candidate == FpgSupplementalFeedbackKind.WeakpointHit)
+                {
+                    hitKinds[index] = candidate;
+                }
+
+                return boundedCount;
+            }
+
+            if (boundedCount >= targetIds.Length
+                || boundedCount >= hitKinds.Length)
+            {
+                return boundedCount;
+            }
+
+            targetIds[boundedCount] = targetId;
+            hitKinds[boundedCount] = candidate;
+            return boundedCount + 1;
+        }
+
         private void HandleActionCommitted(FpgFormalPlayerActionEvent action)
         {
             if (action.Type != FpgFormalPlayerActionType.PrimaryReleaseCommitted
@@ -791,6 +931,13 @@ namespace FPG.Demo.Unity
             {
                 return;
             }
+
+            TryPublishSupplementalFeedback(
+                FpgSupplementalFeedbackEvent.Create(
+                    action.Type
+                        == FpgFormalPlayerActionType.PrimaryReleaseCommitted
+                            ? FpgSupplementalFeedbackKind.PrimaryFire
+                            : FpgSupplementalFeedbackKind.SecondaryFire));
 
             try
             {
@@ -922,7 +1069,14 @@ namespace FPG.Demo.Unity
                     == FpgRegisteredPresentationKind.Vfx
                 && registered.Anchor == FpgVfxPresentationAnchor.OwnerSocket
                     ? registered.SocketId
-                    : string.Empty;
+                    : registered.Kind == FpgRegisteredPresentationKind.Audio
+                        && registered.Audio != null
+                        && registered.Audio.Space
+                            == FpgAudioPresentationSpace.WorldPositioned
+                        && registered.Audio.Anchor
+                            == FpgAudioPresentationAnchor.OwnerSocket
+                            ? registered.Audio.OwnerSocketId
+                            : string.Empty;
             if (encounterDirector == null
                 || !encounterDirector.TryResolveEnemyPresentationSource(
                     skillEvent.OwnerRuntimeId,
@@ -1014,7 +1168,8 @@ namespace FPG.Demo.Unity
                     out FpgCompiledSkillActionPresentation presentation)
                 || presentation.ActionKind
                     != FpgSkillActionKind.LaunchProjectile
-                || !presentation.FlightVfx.IsValid)
+                || !presentation.FlightVfx.IsValid
+                    && !presentation.FlightAudio.IsValid)
             {
                 return;
             }
@@ -1027,7 +1182,8 @@ namespace FPG.Demo.Unity
             {
                 EnemyProjectileFlightBinding binding =
                     enemyProjectileBindings[existing];
-                binding.Handle = presentation.FlightVfx;
+                binding.VfxHandle = presentation.FlightVfx;
+                binding.AudioHandle = presentation.FlightAudio;
                 enemyProjectileBindings[existing] = binding;
                 return;
             }
@@ -1052,7 +1208,8 @@ namespace FPG.Demo.Unity
                     OwnerRuntimeId = skillEvent.OwnerRuntimeId,
                     ExecutionId = skillEvent.RuntimeEvent.ExecutionId,
                     GameplayEventId = skillEvent.Event.EventId,
-                    Handle = presentation.FlightVfx,
+                    VfxHandle = presentation.FlightVfx,
+                    AudioHandle = presentation.FlightAudio,
                     Ordinal = nextEnemyProjectileBindingOrdinal++
                 };
         }
@@ -1252,12 +1409,23 @@ namespace FPG.Demo.Unity
             enemyProjectileBindings[bindingIndex] = binding;
 
             GameObject instance = null;
-            if (skillPresentationWorld == null
-                || !skillPresentationWorld.TryBorrowFlightVfx(
-                    binding.Handle,
-                    ToWorldPosition(state.LastPoint),
-                    ResolveProjectileRotation(state, state.Path.Start),
-                    out instance))
+            Vector3 spawnPosition = ToWorldPosition(state.LastPoint);
+            if (binding.VfxHandle.IsValid
+                && (skillPresentationWorld == null
+                    || !skillPresentationWorld.TryBorrowFlightVfx(
+                        binding.VfxHandle,
+                        spawnPosition,
+                        ResolveProjectileRotation(state, state.Path.Start),
+                        out instance)))
+            {
+                PresentationFaultCount++;
+            }
+
+            if (binding.AudioHandle.IsValid
+                && (skillPresentationWorld == null
+                    || !skillPresentationWorld.TryPresentAudioAt(
+                        binding.AudioHandle,
+                        spawnPosition)))
             {
                 PresentationFaultCount++;
             }
@@ -1269,7 +1437,7 @@ namespace FPG.Demo.Unity
                     BindingIndex = bindingIndex,
                     ProjectileId = request.ProjectileId,
                     RuntimeId = request.RuntimeId,
-                    Handle = binding.Handle,
+                    Handle = binding.VfxHandle,
                     Instance = instance,
                     LastPoint = state.LastPoint
                 };
@@ -1747,6 +1915,10 @@ namespace FPG.Demo.Unity
             popupPool = Array.Empty<FpgDamagePopupView>();
             feedbackBuffer = Array.Empty<FpgResolvedDamageFeedback>();
             framePositions = Array.Empty<Vector2>();
+            frameSupplementalTargetIds = Array.Empty<RuntimeId>();
+            frameSupplementalHitKinds =
+                Array.Empty<FpgSupplementalFeedbackKind>();
+            frameSupplementalHitCount = 0;
             enemyProjectileStates =
                 Array.Empty<ProjectilePresentationState>();
             enemyProjectileEvents =
@@ -1789,7 +1961,8 @@ namespace FPG.Demo.Unity
             public RuntimeId OwnerRuntimeId;
             public SkillExecutionId ExecutionId;
             public int GameplayEventId;
-            public FpgPresentationHandle Handle;
+            public FpgPresentationHandle VfxHandle;
+            public FpgPresentationHandle AudioHandle;
             public int ActiveProjectileCount;
             public bool HasSpawned;
             public long Ordinal;
@@ -1809,6 +1982,9 @@ namespace FPG.Demo.Unity
 
         private void OnDisable()
         {
+            TryPublishSupplementalFeedback(
+                FpgSupplementalFeedbackEvent.Create(
+                    FpgSupplementalFeedbackKind.StopAll));
             UnsubscribeFromActions();
             UnsubscribeFromLifecycle();
             ClearEnemySkillWarnings();

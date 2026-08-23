@@ -1719,21 +1719,118 @@ namespace FPG.Demo.Editor.SkillAuthoring
             FpgSkillEventRecord eventRecord,
             SerializedProperty presentation)
         {
-            SerializedProperty clip = presentation?.FindPropertyRelative("clip");
             float volume = ReadFloat(
                 presentation?.FindPropertyRelative("volume"),
                 -1f);
-            if (clip == null
-                || clip.objectReferenceValue == null
+            SerializedProperty spaceProperty =
+                presentation?.FindPropertyRelative("space");
+            SerializedProperty anchorProperty =
+                presentation?.FindPropertyRelative("anchor");
+            int space = spaceProperty != null
+                && spaceProperty.propertyType == SerializedPropertyType.Enum
+                    ? spaceProperty.intValue
+                    : -1;
+            int anchor = anchorProperty != null
+                && anchorProperty.propertyType == SerializedPropertyType.Enum
+                    ? anchorProperty.intValue
+                    : -1;
+            string socketId = ReadFirstString(presentation, "socketId");
+            float minDistance = ReadFloat(
+                presentation?.FindPropertyRelative("minDistance"),
+                0f);
+            float maxDistance = ReadFloat(
+                presentation?.FindPropertyRelative("maxDistance"),
+                0f);
+            bool validSpatialConfiguration =
+                (space == 0
+                    && anchor == 0
+                    && string.IsNullOrEmpty(socketId))
+                || (space == 1
+                    && anchor == 0
+                    && string.IsNullOrEmpty(socketId))
+                || (space == 1
+                    && anchor == 1
+                    && IsValidStableSocketId(socketId));
+            if (!HasValidAudioVariations(presentation)
                 || !IsFinite(volume)
                 || volume < 0f
-                || volume > 1f)
+                || volume > 1f
+                || (space != 0 && space != 1)
+                || (anchor != 0 && anchor != 1)
+                || !validSpatialConfiguration
+                || !IsFinitePositive(minDistance)
+                || !IsFinitePositive(maxDistance)
+                || maxDistance < minDistance)
             {
                 result.Add(EventError(
                     eventRecord,
                     "音效事件“" + eventRecord.Name
                     + "”需要 AudioClip 和 0-1 音量。"));
             }
+        }
+
+        private static bool HasValidAudioVariations(
+            SerializedProperty presentation)
+        {
+            if (presentation == null)
+            {
+                return false;
+            }
+
+            HashSet<UnityEngine.Object> clips =
+                new HashSet<UnityEngine.Object>();
+            SerializedProperty primary =
+                presentation.FindPropertyRelative("clip");
+            if (primary != null && primary.objectReferenceValue != null)
+            {
+                clips.Add(primary.objectReferenceValue);
+            }
+
+            SerializedProperty variations =
+                presentation.FindPropertyRelative("variations");
+            if (variations != null && variations.isArray)
+            {
+                for (int index = 0; index < variations.arraySize; index++)
+                {
+                    UnityEngine.Object candidate = variations
+                        .GetArrayElementAtIndex(index)
+                        .objectReferenceValue;
+                    if (candidate == null || !clips.Add(candidate))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return clips.Count > 0;
+        }
+
+        private static bool IsValidStableSocketId(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)
+                || !string.Equals(value, value.Trim(), StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            for (int index = 0; index < value.Length; index++)
+            {
+                char character = value[index];
+                bool valid = character >= 'a' && character <= 'z'
+                    || character >= 'A' && character <= 'Z'
+                    || character >= '0' && character <= '9'
+                    || character == '-'
+                    || character == '_'
+                    || character == '.'
+                    || character == ':'
+                    || character == '/';
+                if (!valid)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static void ValidateCameraShakePresentation(

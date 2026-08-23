@@ -6,7 +6,7 @@
 
 - `Heidemarie_30093/`、`Fei_30048/` 和 `Monsters/` 是已跟踪的导入输入与审计产物，包含 `SpineSource/`、`Configs/`、`Metadata/`、`Preview/` 和对应 README。
 - `Editor/` 只保存导入纹理后处理，不承载角色专用生成器或正式 gameplay authoring。
-- `External/CZN/` 保存审计过的原始副本与 vendored spine-unity 3.8；`Assets/FPGDemo/SourceArt/CZN/` 和 `Presentation/Characters/*/Spine` 才是正式 FPG 的源输入与运行时渲染边界。
+- `External/CZN/` 保存审计过的原始副本与 vendored spine-unity 3.8；`Assets/FPGDemo/SourceArt/CZN/` 和 `Presentation/Characters/Players|Enemies/<Name>/Spine` 才是正式 FPG 的源输入与运行时渲染边界。
 
 ## 工作规则
 

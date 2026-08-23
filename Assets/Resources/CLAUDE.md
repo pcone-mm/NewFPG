@@ -9,7 +9,7 @@
 
 ## 工作规则
 
-- 新的正式配置放入 `Assets/FPGDemo/Config/`，正式表现资源放入 `Assets/FPGDemo/Presentation/`；没有现存 `Resources.Load` 调用证据时不要继续扩张本目录。
+- 新的正式配置放入 `Assets/FPGDemo/Config/`，正式视觉表现资源放入 `Assets/FPGDemo/Presentation/`，正式音频资源放入 `Assets/FPGDemo/Audio/`；没有现存 `Resources.Load` 调用证据时不要继续扩张本目录。
 - 移动、改名或删除资产前先反查加载路径、序列化类型和 GUID，并让 `.meta` 始终跟随资源。
 - 资产能够被 Unity 导入不等于仍能被正式主线加载；不得恢复已删除的 `MonsterCombatHud` 或旧测试入口来证明可用。
 

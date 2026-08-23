@@ -1,0 +1,280 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a45d1e0f2b8e43c2a705b3ac8dd9a320, type: 3}
+  m_Name: ForestCombatAudioBank
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.CombatAudioBank
+  concurrentVoiceLimit: 16
+  cueEntries:
+  - cue: 8
+    clip: {fileID: 8300000, guid: 472db97385a8da8409d303977e6e296e, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 10c222fcf40f0d64da4b0c704f28c40a, type: 3}
+    - {fileID: 8300000, guid: b12f25bd68c02ee44aa802744e964eb8, type: 3}
+    priority: 60
+    volume: 1
+    cooldownSeconds: 0.2
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 9
+    clip: {fileID: 8300000, guid: 88d71595b1750ea49bf1a7b9b2955a71, type: 3}
+    variations:
+    - {fileID: 8300000, guid: fb18f404f71a0d04ea4e161b4d48a3db, type: 3}
+    - {fileID: 8300000, guid: 33619307d8bf9ff4d8435a9e3a8d94b1, type: 3}
+    - {fileID: 8300000, guid: 31e51d8b7426d934faad2665e0e8b4e2, type: 3}
+    priority: 50
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 10
+    clip: {fileID: 8300000, guid: 8d9d97c7be9473f48855d76077038653, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 9043a1fd1d39c46458c7625849fe4b10, type: 3}
+    - {fileID: 8300000, guid: 0d8b6898e014fb54d83fefc8632a8a36, type: 3}
+    priority: 75
+    volume: 1
+    cooldownSeconds: 0.2
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 11
+    clip: {fileID: 8300000, guid: a11ae4951d0c3b347b76776567a8c486, type: 3}
+    variations:
+    - {fileID: 8300000, guid: bd0e42a45129c814ca87d38c464ca002, type: 3}
+    - {fileID: 8300000, guid: dd490f9729467d849baf7982b10a6d18, type: 3}
+    - {fileID: 8300000, guid: 1f06b3fda4ce48946920ada2a45fa3ed, type: 3}
+    - {fileID: 8300000, guid: 1d6478b1fc33dbd4db815c568ead8eac, type: 3}
+    priority: 65
+    volume: 1
+    cooldownSeconds: 0.08
+    maxConcurrentVoices: 3
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 12
+    clip: {fileID: 8300000, guid: aedf13a7424575b47ab47072702396e5, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 8d6a05789a0d78b49a797ae000385bd1, type: 3}
+    - {fileID: 8300000, guid: 63d459774915e4f419c5721da260beb4, type: 3}
+    - {fileID: 8300000, guid: 8ce717be03bebe846992438960e82967, type: 3}
+    priority: 80
+    volume: 1
+    cooldownSeconds: 0.2
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 13
+    clip: {fileID: 8300000, guid: 2be615bbdfc6aef468bcb4e8899e49a3, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 7baa323d3bd422745b3e8400259d58d9, type: 3}
+    - {fileID: 8300000, guid: 650339f82310a4f4ab7666612fbae42a, type: 3}
+    - {fileID: 8300000, guid: 95f3cbad282607a4496c88f3d23fbdbb, type: 3}
+    priority: 65
+    volume: 1
+    cooldownSeconds: 0.12
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 14
+    clip: {fileID: 8300000, guid: 637202bc19a08674dbcc58d7594ae6ea, type: 3}
+    variations: []
+    priority: 20
+    volume: 1
+    cooldownSeconds: 0.15
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 15
+    clip: {fileID: 8300000, guid: a520783524d43354e967f68a7734297a, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 0c8ffe7abad96884e9600a1107a1c9f2, type: 3}
+    - {fileID: 8300000, guid: 34179fe64a309e646a7ec0d25aeef97a, type: 3}
+    priority: 15
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 16
+    clip: {fileID: 8300000, guid: 4347d1922337c274e9a31060ef32214e, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 52e7ceb9384e5f24a982bcb777eddc71, type: 3}
+    - {fileID: 8300000, guid: cca36206152e2af43aad7f52a98ccc73, type: 3}
+    priority: 20
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 17
+    clip: {fileID: 0}
+    variations: []
+    priority: 10
+    volume: 1
+    cooldownSeconds: 0.5
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 18
+    clip: {fileID: 0}
+    variations: []
+    priority: 5
+    volume: 1
+    cooldownSeconds: 0.5
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 19
+    clip: {fileID: 0}
+    variations: []
+    priority: 130
+    volume: 1
+    cooldownSeconds: 0.08
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 20
+    clip: {fileID: 8300000, guid: 1052fb9a167c25642896f5ec5dfb55e7, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 0bf2ad99f4fc34f49b5303549829d06f, type: 3}
+    - {fileID: 8300000, guid: 5477c2625205e85489ac1474ff973f22, type: 3}
+    priority: 85
+    volume: 1
+    cooldownSeconds: 0.12
+    maxConcurrentVoices: 1
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 22
+    clip: {fileID: 8300000, guid: 8ddfc4590d52ece45a0df1a8c95cd0de, type: 3}
+    variations: []
+    priority: 120
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+    bus: 1
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 23
+    clip: {fileID: 8300000, guid: 0c2bf83a6973794449c1f8b825f15ec7, type: 3}
+    variations: []
+    priority: 120
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+    bus: 1
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 24
+    clip: {fileID: 8300000, guid: 318edcfdd239b9347a98da7ecaec195a, type: 3}
+    variations: []
+    priority: 110
+    volume: 1
+    cooldownSeconds: 0.25
+    maxConcurrentVoices: 1
+    bus: 1
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 25
+    clip: {fileID: 8300000, guid: a2e3ca79b8d63644d83114e8cf0a118c, type: 3}
+    variations: []
+    priority: 130
+    volume: 1
+    cooldownSeconds: 0.08
+    maxConcurrentVoices: 1
+    bus: 1
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 26
+    clip: {fileID: 8300000, guid: 2504ad2a623b20f408f287f48df9229a, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 753cf12837b846043a8358a30a18b1de, type: 3}
+    - {fileID: 8300000, guid: 4d78920dc00e5c741b4e5bc3f520278d, type: 3}
+    priority: 125
+    volume: 1
+    cooldownSeconds: 0.12
+    maxConcurrentVoices: 1
+    bus: 1
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 27
+    clip: {fileID: 8300000, guid: bb6effcd7e3c89e44984e5b431b65448, type: 3}
+    variations: []
+    priority: 125
+    volume: 1
+    cooldownSeconds: 0.12
+    maxConcurrentVoices: 1
+    bus: 1
+    space: 0
+    minDistance: 1
+    maxDistance: 20
+  - cue: 28
+    clip: {fileID: 8300000, guid: bb061c0e931088642867669c4a766e42, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 32c40d24a061c0d4c9e32514d752ff2e, type: 3}
+    - {fileID: 8300000, guid: 69b2371452ac1ab47b3137a0b908aa40, type: 3}
+    - {fileID: 8300000, guid: 25cd73f5c5f3170499fc313c5d89f7ee, type: 3}
+    priority: 30
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 3
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20
+  - cue: 29
+    clip: {fileID: 8300000, guid: 45f7332b79b5ad34483fc23029e580a1, type: 3}
+    variations:
+    - {fileID: 8300000, guid: 0edd370c525d52e4d88500eeb44eb90f, type: 3}
+    - {fileID: 8300000, guid: 239cbe694268cdf469ffe9686e4e2d19, type: 3}
+    - {fileID: 8300000, guid: 3a2bb7016a8bac443806f1bcef4ae4d5, type: 3}
+    - {fileID: 8300000, guid: 9caa68ff7acf29542996705c130fc5a9, type: 3}
+    - {fileID: 8300000, guid: a18a4f459c7e7e449ac21ba355fc3ced, type: 3}
+    priority: 45
+    volume: 1
+    cooldownSeconds: 0.1
+    maxConcurrentVoices: 3
+    bus: 0
+    space: 1
+    minDistance: 1
+    maxDistance: 20

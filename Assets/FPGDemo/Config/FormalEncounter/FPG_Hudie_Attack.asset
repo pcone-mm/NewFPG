@@ -20,6 +20,10 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 60
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: attack
     loop: 0
@@ -57,12 +61,36 @@ MonoBehaviour:
       allowedTargetKinds: 0
       flightVfx:
         rid: 1908295348123337103
+      flightAudio:
+        rid: 2450906127936258320
       collisionPresentation:
         rid: 1908295348123337104
     reloadEvents: []
     summonEvents: []
     selfDestructOwnerEvents: []
-    activePresentationTracks: []
+    activePresentationTracks:
+    - trackId: track.hudie-projectile.active
+      displayName: Active Presentation
+      vfxEvents: []
+      audioEvents:
+      - eventId: presentation.hudie-projectile.launch.0
+        tick: 49
+        authoredOrdinal: 3
+        boundGameplayEventId: event.hudie-projectile.attack.0
+        presentation:
+          clip: {fileID: 8300000, guid: c845997ce742eed4c9ab89080ff08511, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 1140db8bafd75854fbeb2c56cb3dd1c6, type: 3}
+          - {fileID: 8300000, guid: 174813682b8dc834198b47e52e742b2e, type: 3}
+          - {fileID: 8300000, guid: 8c5d4c40d5df1824e998a622f5fd83c6, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          playbackMode: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      cameraShakeEvents: []
     warnings:
     - eventId: warning.hudie-projectile
       warningId: enemy-source-fast
@@ -91,13 +119,17 @@ MonoBehaviour:
         baseVfx:
           rid: 1908295348123337105
         baseAudio:
+          rid: 2450906127936258322
+        environmentAudioOverride:
+          rid: -2
+        interceptionAudioOverride:
           rid: -2
         baseCameraShake:
           rid: -2
         weakpointVfxOverride:
           rid: -2
         weakpointAudioOverride:
-          rid: -2
+          rid: 2450906127936258323
         weakpointCameraShakeOverride:
           rid: -2
     - rid: 1908295348123337105
@@ -107,3 +139,49 @@ MonoBehaviour:
         durationSeconds: 1
         scale: {x: 1, y: 1, z: 1}
         rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 2450906127936258320
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: dce54c39a5df55542890ea75d01927de, type: 3}
+        variations:
+        - {fileID: 8300000, guid: bdefc7539c9b8cd4e9efcb88651f1322, type: 3}
+        - {fileID: 8300000, guid: 8fd432784439a82478b6de8218151521, type: 3}
+        - {fileID: 8300000, guid: 041e65e0e6611c14f9406dc5327b4133, type: 3}
+        - {fileID: 8300000, guid: 7cf8e767eff2c7b4788e65f683f98621, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258322
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: 9e7185122a715c04197e828c92f270e6, type: 3}
+        variations:
+        - {fileID: 8300000, guid: 03611926aa06f2f4f831a03d3886bbb0, type: 3}
+        - {fileID: 8300000, guid: a4f5b9d891e2a9649976ed4ef31b3018, type: 3}
+        - {fileID: 8300000, guid: 20477283f5e7eb04fb254cfade62dfd4, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258323
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: c4f5c1e3e71b5da4ea19b812fefd984a, type: 3}
+        variations:
+        - {fileID: 8300000, guid: b78c36f53fe659a438987e9dd503236c, type: 3}
+        - {fileID: 8300000, guid: 7c7d8153b85232d47950079c64e14e76, type: 3}
+        - {fileID: 8300000, guid: 98e605a8a8b1d084d8b0af0af220b143, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20

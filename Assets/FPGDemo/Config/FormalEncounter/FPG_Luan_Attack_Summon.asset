@@ -20,6 +20,10 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 80
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: die&broken
     loop: 0
@@ -54,7 +58,69 @@ MonoBehaviour:
       targetSource: 3
       targetOffset: {x: 0, y: 0, z: 0}
       boundGameplayEventId: 
-    activePresentationTracks: []
+    activePresentationTracks:
+    - trackId: track.luan-summon.active
+      displayName: Active Presentation
+      vfxEvents: []
+      audioEvents:
+      - eventId: presentation.luan-summon.telegraph.0
+        tick: 0
+        authoredOrdinal: 4
+        boundGameplayEventId: 
+        presentation:
+          clip: {fileID: 8300000, guid: 5d14d308d0a2df548832f56d8dfcecce, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 9e764b36496b4d4489c991b0b26d188e, type: 3}
+          - {fileID: 8300000, guid: 0feb51eae5db06c4392dd632a4833a9a, type: 3}
+          - {fileID: 8300000, guid: 6ffd6c5d794421f4c9fa317aba76ec55, type: 3}
+          - {fileID: 8300000, guid: 05c6658f54785bd4db370647f345cd11, type: 3}
+          - {fileID: 8300000, guid: 020c6fcb2ab72b144bed30305d031a80, type: 3}
+          - {fileID: 8300000, guid: 06673de1276daf64cb5ce3d2a0f0cb34, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          playbackMode: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      - eventId: presentation.luan-summon.commit.0
+        tick: 44
+        authoredOrdinal: 5
+        boundGameplayEventId: event.luan-summon.attack.0
+        presentation:
+          clip: {fileID: 8300000, guid: b176c2838a5de53479e3619b3d720510, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 7d23ae6f728b9034b80d94207bf5f9ad, type: 3}
+          - {fileID: 8300000, guid: 9b19c66c26b3f0947b2ad5f9fb9181af, type: 3}
+          - {fileID: 8300000, guid: 3626c09f047b10e45b961a989a1ffeb6, type: 3}
+          - {fileID: 8300000, guid: fd51260afe7ab1f4084fc5e1400ebb71, type: 3}
+          - {fileID: 8300000, guid: 6bc272c6e30d0254386fd94b6308c2ca, type: 3}
+          - {fileID: 8300000, guid: ae51ffe8a99f7de4893d0bb000d8bf37, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          playbackMode: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      - eventId: presentation.luan-summon.self-destruct.1
+        tick: 71
+        authoredOrdinal: 6
+        boundGameplayEventId: event.luan-summon.self-destruct.1
+        presentation:
+          clip: {fileID: 8300000, guid: c30aa7d757504f740acc0f0d16a7e585, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 3859d2d94836aa84b972a197556c97bb, type: 3}
+          - {fileID: 8300000, guid: d4f3f3827913eaa479669a46c7a623d5, type: 3}
+          - {fileID: 8300000, guid: f2ce041671925fb409f20335934b80e2, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          playbackMode: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      cameraShakeEvents: []
     warnings:
     - eventId: warning.luan-summon
       warningId: enemy-summon-warning

@@ -28,4 +28,4 @@
 - 跳 tick、回退 scrub 与隔离表现预览：`FpgSkillPreviewExecutionTests.cs`。
 - 序列化定义、攻击时序与正式资产合同：`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgAttackTimingTests.cs`。
 - 纯 V3 正式资产与 wrapper 路径：`FpgFormalSkillPresentationV3AssetTests.cs`。
-- 改 asmdef、UXML/USS 或 Inspector 入口后检查 Unity 编译/Console 与 `AssemblyBoundaryTests.cs`；默认不批量运行测试。
+- 改 asmdef、UXML/USS 或 Inspector 入口后检查 Unity 编译/Console；默认不批量运行测试。

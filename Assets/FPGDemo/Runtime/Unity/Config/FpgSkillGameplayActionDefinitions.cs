@@ -428,6 +428,7 @@ namespace FPG.Demo.Unity
                 trajectory,
                 impact,
                 default(FpgPresentationHandle),
+                default(FpgPresentationHandle),
                 default(FpgCompiledImpactPresentation),
                 0,
                 hash);
@@ -522,6 +523,9 @@ namespace FPG.Demo.Unity
         private FpgVfxPresentationDefinition flightVfx;
 
         [SerializeReference]
+        private FpgAudioPresentationDefinition flightAudio;
+
+        [SerializeReference]
         private FpgImpactPresentationBundleDefinition collisionPresentation;
 
         public FpgSkillProjectileImpactMode ImpactMode => impactMode;
@@ -548,10 +552,12 @@ namespace FPG.Demo.Unity
         public AttackTargetKinds AllowedTargetKinds =>
             NormalizeAllowedTargetKinds(allowedTargetKinds);
         public FpgVfxPresentationDefinition FlightVfx => flightVfx;
+        public FpgAudioPresentationDefinition FlightAudio => flightAudio;
         public FpgImpactPresentationBundleDefinition CollisionPresentation =>
             collisionPresentation;
 
         internal override bool HasPresentation => flightVfx != null
+            || flightAudio != null
             || (collisionPresentation != null
                 && collisionPresentation.HasAny);
 
@@ -568,6 +574,8 @@ namespace FPG.Demo.Unity
             }
 
             if ((flightVfx != null && !flightVfx.TryValidate(out error))
+                || (flightAudio != null
+                    && !flightAudio.TryValidate(out error))
                 || (collisionPresentation != null
                     && !collisionPresentation.TryValidate(out error)))
             {
@@ -655,6 +663,10 @@ namespace FPG.Demo.Unity
                 ? default(FpgPresentationHandle)
                 : FpgSkillStableId.CompilePresentationHandle(
                     scopePrefix + ":" + EventId + ":flight.vfx");
+            FpgPresentationHandle flightAudioHandle = flightAudio == null
+                ? default(FpgPresentationHandle)
+                : FpgSkillStableId.CompilePresentationHandle(
+                    scopePrefix + ":" + EventId + ":flight.audio");
             FpgCompiledImpactPresentation collision =
                 collisionPresentation == null
                     ? default(FpgCompiledImpactPresentation)
@@ -668,6 +680,11 @@ namespace FPG.Demo.Unity
                     : flightVfx.ComputeContentHash());
             hash = StableHash.Append(
                 hash,
+                flightAudio == null
+                    ? 0UL
+                    : flightAudio.ComputeContentHash());
+            hash = StableHash.Append(
+                hash,
                 collisionPresentation == null
                     ? 0UL
                     : collisionPresentation.ComputeContentHash());
@@ -677,6 +694,7 @@ namespace FPG.Demo.Unity
                 default(FpgPresentationHandle),
                 default(FpgCompiledImpactPresentation),
                 flight,
+                flightAudioHandle,
                 collision,
                 0,
                 hash);
@@ -741,6 +759,7 @@ namespace FPG.Demo.Unity
                 actionIndex,
                 default(FpgPresentationHandle),
                 default(FpgCompiledImpactPresentation),
+                default(FpgPresentationHandle),
                 default(FpgPresentationHandle),
                 default(FpgCompiledImpactPresentation),
                 FpgSkillStableId.CompileAnimation(successAnimationName),

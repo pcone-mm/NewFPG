@@ -120,6 +120,40 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void EnvironmentBlockDamagesMappedCoverWithoutDamagingPlayer()
+        {
+            ScriptedProjectileWorldPort world = CombatLabHarness.CreateProjectileWorldPort(
+                ScriptedProjectileSweepMode.EnvironmentAtFirstSweep);
+            using (BattleSession session = CreateSession(world))
+            {
+                FpgCoverRuntime covers = new FpgCoverRuntime(
+                    session.PlayerRuntimeId,
+                    new[]
+                    {
+                        new FpgCoverNodeDefinition("current", 0, 100, true)
+                    },
+                    new TickDuration(3));
+                Assert.That(
+                    session.TryBindCoverRuntime(
+                        covers,
+                        new GeometryResolver(new GeometryId(1), "current")).IsSuccess,
+                    Is.True);
+
+                FinalSnapshot before = session.GetFinalSnapshot();
+                StartZeroPhaseThreat(session, flightTicks: 3);
+                CombatLabHarness.PumpTicks(session, 2);
+
+                ProjectileSnapshot projectile = session.GetProjectileSnapshot(0);
+                FinalSnapshot after = session.GetFinalSnapshot();
+                Assert.That(projectile.TerminalReason, Is.EqualTo(ProjectileTerminalReason.EnvironmentBlocked));
+                Assert.That(after.PlayerLife, Is.EqualTo(before.PlayerLife));
+                Assert.That(after.PlayerBarrier, Is.EqualTo(before.PlayerBarrier));
+                Assert.That(covers.CurrentSnapshot.Durability, Is.EqualTo(80));
+                Assert.That(session.ConsumedImpactCount, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
         public void NoSweepHitAtArrivalBecomesMissedWithoutDamage()
         {
             ScriptedProjectileWorldPort world = CombatLabHarness.CreateProjectileWorldPort(
@@ -452,6 +486,30 @@ namespace FPG.Demo.Tests.EditMode
         private sealed class EmptyInputSource : IPlayerInputSource
         {
             public PlayerInputFrame GetFrame(TickIndex tick) => PlayerInputFrame.Empty(tick);
+        }
+
+        private sealed class GeometryResolver : IFpgCoverGeometryResolver
+        {
+            private readonly GeometryId geometryId;
+            private readonly string coverId;
+
+            public GeometryResolver(GeometryId geometryId, string coverId)
+            {
+                this.geometryId = geometryId;
+                this.coverId = coverId;
+            }
+
+            public bool TryResolveCoverId(GeometryId value, out string resolvedCoverId)
+            {
+                if (value == geometryId)
+                {
+                    resolvedCoverId = coverId;
+                    return true;
+                }
+
+                resolvedCoverId = string.Empty;
+                return false;
+            }
         }
 
         private sealed class SingleProjectileInterceptPort : IAttackResolutionPort

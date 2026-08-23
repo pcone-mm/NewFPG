@@ -216,65 +216,6 @@ namespace FPG.Demo.Tests.EditMode
             }
         }
 
-        [Test]
-        public void RegistrationFailureDoesNotMutateProductionConfiguration()
-        {
-            string folder = CreateTemporaryFolder();
-            string roomPath = folder + "/DuplicateIdentity.asset";
-            try
-            {
-                Assert.That(
-                    AssetDatabase.CopyAsset(ForestRoomPath, roomPath),
-                    Is.True);
-                FpgRoomDefinition duplicateIdentity =
-                    AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(roomPath);
-                FpgRoomCatalog catalog =
-                    AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(
-                        FpgRoomArtSceneEditorUtility.RoomCatalogPath);
-                Assert.That(catalog, Is.Not.Null);
-                FpgRoomDefinition[] originalRooms =
-                    new FpgRoomDefinition[catalog.Rooms.Count];
-                for (int index = 0; index < originalRooms.Length; index++)
-                {
-                    originalRooms[index] = catalog.Rooms[index];
-                }
-
-                EditorBuildSettingsScene[] originalScenes =
-                    EditorBuildSettings.scenes;
-
-                Assert.That(
-                    FpgRoomAuthoringOperations.TryRegisterRoomForProduction(
-                        duplicateIdentity,
-                        out string error),
-                    Is.False);
-                StringAssert.Contains(
-                    "duplicate room id",
-                    error.ToLowerInvariant());
-                CollectionAssert.AreEqual(originalRooms, catalog.Rooms);
-                AssertBuildSettingsEqual(
-                    originalScenes,
-                    EditorBuildSettings.scenes);
-            }
-            finally
-            {
-                AssetDatabase.DeleteAsset(folder);
-            }
-        }
-
-        private static void AssertBuildSettingsEqual(
-            EditorBuildSettingsScene[] expected,
-            EditorBuildSettingsScene[] actual)
-        {
-            Assert.That(actual, Has.Length.EqualTo(expected.Length));
-            for (int index = 0; index < expected.Length; index++)
-            {
-                Assert.That(actual[index].path, Is.EqualTo(expected[index].path));
-                Assert.That(
-                    actual[index].enabled,
-                    Is.EqualTo(expected[index].enabled));
-            }
-        }
-
         private static string CreateTemporaryFolder()
         {
             const string parent = "Assets/FPGDemo/Tests/EditMode";

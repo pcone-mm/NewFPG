@@ -407,6 +407,14 @@ namespace FPG.Demo.Unity
                     return false;
                 }
 
+                if (!TryAddOptional(
+                    actionScope + ":flight.audio",
+                    action.FlightAudio,
+                    out error))
+                {
+                    return false;
+                }
+
                 if (!TryAddImpact(
                     actionScope + ":collision",
                     action.CollisionPresentation,
@@ -435,6 +443,10 @@ namespace FPG.Demo.Unity
                     out error)
                 && TryAddOptional(prefix + ":base.audio", definition.BaseAudio,
                     out error)
+                && TryAddOptional(prefix + ":environment.audio",
+                    definition.EnvironmentAudioOverride, out error)
+                && TryAddOptional(prefix + ":interception.audio",
+                    definition.InterceptionAudioOverride, out error)
                 && TryAddOptional(prefix + ":base.camera-shake",
                     definition.BaseCameraShake, out error)
                 && TryAddOptional(prefix + ":weakpoint.vfx",

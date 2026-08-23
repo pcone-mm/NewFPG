@@ -2419,7 +2419,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fff673bf30d686f45b189cc3d4a5e896, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgBootRoomEntrance
-  roomDefinition: {fileID: 11400000, guid: ca8c6d458baf6834095c3da1e572d971, type: 2}
+  roomDefinition: {fileID: 11400000, guid: 59388094cecaf864986145504f473a97, type: 2}
   hitColliders:
   - {fileID: 1218905655}
   statusRenderers:

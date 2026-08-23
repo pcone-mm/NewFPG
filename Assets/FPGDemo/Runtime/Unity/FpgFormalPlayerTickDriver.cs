@@ -1347,7 +1347,8 @@ namespace FPG.Demo.Unity
             FpgFormalCombatRuntimeBundle runtime,
             TickIndex tick,
             in FpgResolvedAimContext aim,
-            bool finalCommit = false)
+            bool finalCommit = false,
+            bool roomInteraction = false)
         {
             if (runtime == null || runtime.IsDisposed
                 || runtime.Player == null
@@ -1382,14 +1383,11 @@ namespace FPG.Demo.Unity
                 ? FpgEncounterPhase.None
                 : encounterDirector.Phase;
             bool encounterActive = encounterDirector != null
-                && !encounterDirector.IsPaused
-                && phase != FpgEncounterPhase.None
-                && phase != FpgEncounterPhase.Preparing
-                && phase != FpgEncounterPhase.Cleared
-                && phase != FpgEncounterPhase.Defeated
-                && phase != FpgEncounterPhase.Failed
-                && phase != FpgEncounterPhase.Faulted
-                && phase != FpgEncounterPhase.Disposed;
+                && IsAttackPhaseActive(
+                    phase,
+                    encounterDirector.IsPaused,
+                    roomInteraction,
+                    encounterDirector.HasAvailableExits);
             return FpgAttackAvailability.Resolve(
                 slot,
                 true,
@@ -1403,6 +1401,23 @@ namespace FPG.Demo.Unity
                 skillExecutionController.GetRequiredAmmo(slot),
                 currentAim,
                 finalCommit);
+        }
+
+        internal static bool IsAttackPhaseActive(
+            FpgEncounterPhase phase,
+            bool paused,
+            bool roomInteraction,
+            bool hasAvailableExits)
+        {
+            return !paused
+                && phase != FpgEncounterPhase.None
+                && phase != FpgEncounterPhase.Preparing
+                && (phase != FpgEncounterPhase.Cleared
+                    || roomInteraction && hasAvailableExits)
+                && phase != FpgEncounterPhase.Defeated
+                && phase != FpgEncounterPhase.Failed
+                && phase != FpgEncounterPhase.Faulted
+                && phase != FpgEncounterPhase.Disposed;
         }
 
         private FpgPlayerFacingDirection ResolveAcceptedAttackDirection(
@@ -2243,7 +2258,8 @@ namespace FPG.Demo.Unity
                         runtime,
                         tick,
                         commitAim,
-                        finalCommit: true);
+                        finalCommit: true,
+                        roomInteraction: roomInteraction);
                 if (!finalAvailability.Ready)
                 {
                     skillExecutionController.AbortAfterProcessedTick(
@@ -3460,25 +3476,29 @@ namespace FPG.Demo.Unity
                 : runtime.Covers.CurrentSnapshot;
             FpgResolvedAimContext resolvedAim = ResolvedAimContext.WithCurrentCover(
                 cover.IsValid ? cover.CoverId : string.Empty);
+            FpgEncounterPhase phase = encounterDirector == null
+                ? FpgEncounterPhase.None
+                : encounterDirector.Phase;
+            bool roomInteraction = phase == FpgEncounterPhase.Cleared
+                && encounterDirector != null
+                && encounterDirector.HasAvailableExits;
             primaryAttackAvailability = ResolveAttackAvailability(
                 FpgPlayerSkillSlot.Primary,
                 runtime,
                 tick,
-                resolvedAim);
+                resolvedAim,
+                roomInteraction: roomInteraction);
             secondaryAttackAvailability = ResolveAttackAvailability(
                 FpgPlayerSkillSlot.Secondary,
                 runtime,
                 tick,
-                resolvedAim);
-            FpgEncounterPhase phase = encounterDirector == null
-                ? FpgEncounterPhase.None
-                : encounterDirector.Phase;
+                resolvedAim,
+                roomInteraction: roomInteraction);
             bool reticleHidden = player.Combatant.IsDead
                 || encounterDirector == null
                 || encounterDirector.IsPaused
                 || phase == FpgEncounterPhase.None
                 || phase == FpgEncounterPhase.Preparing
-                || phase == FpgEncounterPhase.Cleared
                 || phase == FpgEncounterPhase.Defeated
                 || phase == FpgEncounterPhase.Failed
                 || phase == FpgEncounterPhase.Faulted

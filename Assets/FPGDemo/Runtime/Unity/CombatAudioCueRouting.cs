@@ -13,6 +13,8 @@ namespace FPG.Demo.Unity
     /// </summary>
     public static class CombatAudioCueRouting
     {
+        private const int CombatTicksPerSecond = 60;
+
         /// <summary>
         /// Emits the free-reticle lock feedback only on the visual transition
         /// into the weakpoint. This is intentionally based on presentation
@@ -53,6 +55,45 @@ namespace FPG.Demo.Unity
 
             cue = CombatAudioCue.None;
             return false;
+        }
+
+        public static int GetHeavyDisplayedSeconds(long remainingTicks)
+        {
+            if (remainingTicks <= 0L)
+            {
+                return 0;
+            }
+
+            long displayed = (remainingTicks - 1L)
+                / CombatTicksPerSecond + 1L;
+            return displayed > int.MaxValue
+                ? int.MaxValue
+                : (int)displayed;
+        }
+
+        /// <summary>
+        /// Routes committed enemy lifecycle boundaries. Death is owned here
+        /// rather than by the combat trace so one death cannot be presented
+        /// twice by independent observers of the same committed result.
+        /// </summary>
+        public static bool TryGetEnemyLifecycleCue(
+            FpgEncounterLifecycleEventType lifecycleType,
+            out CombatAudioCue cue)
+        {
+            switch (lifecycleType)
+            {
+                case FpgEncounterLifecycleEventType.EnemyActivated:
+                    cue = CombatAudioCue.EnemySpawn;
+                    return true;
+
+                case FpgEncounterLifecycleEventType.EnemyDied:
+                    cue = CombatAudioCue.EnemyDeath;
+                    return true;
+
+                default:
+                    cue = CombatAudioCue.None;
+                    return false;
+            }
         }
 
         /// <summary>

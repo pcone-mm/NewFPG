@@ -88,6 +88,9 @@ namespace FPG.Demo.Unity
         private FpgPresentationHandle secondaryChargeVfxHandle;
         private GameObject secondaryChargeVfxInstance;
         private Transform secondaryChargeVfxSource;
+        private FpgPresentationHandle secondaryChargeAudioHandle;
+        private AudioSource secondaryChargeAudioInstance;
+        private Transform secondaryChargeAudioSource;
         private bool prepared;
         private bool active;
         private bool subscribed;
@@ -107,6 +110,8 @@ namespace FPG.Demo.Unity
         public bool IsPrepared => prepared;
         public bool IsActive => active;
         public bool HasSecondaryChargeVfx => secondaryChargeVfxInstance != null;
+        public bool HasSecondaryChargeAudio =>
+            secondaryChargeAudioInstance != null;
         public int VitalsGapCount { get; private set; }
         public int VitalsReadCapacity => vitalsBuffer.Length;
         public int SkillSequenceGapCount { get; private set; }
@@ -903,6 +908,22 @@ namespace FPG.Demo.Unity
                     return;
                 }
             }
+            else if (registered.Kind == FpgRegisteredPresentationKind.Audio
+                && registered.Audio != null
+                && registered.Audio.Space
+                    == FpgAudioPresentationSpace.WorldPositioned
+                && registered.Audio.Anchor
+                    == FpgAudioPresentationAnchor.OwnerSocket)
+            {
+                if (playerEntity == null
+                    || !playerEntity.TryResolvePresentationSocket(
+                        registered.Audio.OwnerSocketId,
+                        out source))
+                {
+                    SkillPresentationFaultCount++;
+                    return;
+                }
+            }
 
             if (source == null
                 || !TryPresentActivePresentation(
@@ -929,14 +950,24 @@ namespace FPG.Demo.Unity
             in FpgRegisteredPresentation registered,
             Transform source)
         {
-            bool isHeldSecondaryCharge =
+            bool isHeldSecondaryChargeVfx =
                 presentationEvent.Slot == FpgPlayerSkillSlot.Secondary
                 && presentationEvent.SequenceKind
                     == FpgSkillSequenceKind.ChargeEnter
                 && presentationEvent.Kind == FpgActivePresentationKind.Vfx
                 && registered.Kind == FpgRegisteredPresentationKind.Vfx
                 && !presentationEvent.RequiresGameplayCommit;
-            if (!isHeldSecondaryCharge)
+            bool isHeldSecondaryChargeAudio =
+                presentationEvent.Slot == FpgPlayerSkillSlot.Secondary
+                && presentationEvent.SequenceKind
+                    == FpgSkillSequenceKind.ChargeEnter
+                && presentationEvent.Kind == FpgActivePresentationKind.Audio
+                && registered.Kind == FpgRegisteredPresentationKind.Audio
+                && registered.Audio != null
+                && registered.Audio.PlaybackMode
+                    == FpgAudioPresentationPlaybackMode.HeldLoop
+                && !presentationEvent.RequiresGameplayCommit;
+            if (!isHeldSecondaryChargeVfx && !isHeldSecondaryChargeAudio)
             {
                 return skillPresentationWorld.TryPresent(
                     presentationEvent.Handle,
@@ -946,6 +977,27 @@ namespace FPG.Demo.Unity
             if (!ShouldShowSecondaryChargeFeedback())
             {
                 return true;
+            }
+
+            if (isHeldSecondaryChargeAudio)
+            {
+                ReleaseSecondaryChargeAudio();
+                if (!skillPresentationWorld.TryBorrowHeldAudio(
+                        presentationEvent.Handle,
+                        source,
+                        out AudioSource audioInstance)
+                    || audioInstance == null)
+                {
+                    return false;
+                }
+
+                secondaryChargeAudioHandle = presentationEvent.Handle;
+                secondaryChargeAudioInstance = audioInstance;
+                secondaryChargeAudioSource = source;
+                return skillPresentationWorld.TryUpdateHeldAudio(
+                    secondaryChargeAudioHandle,
+                    secondaryChargeAudioInstance,
+                    secondaryChargeAudioSource);
             }
 
             ReleaseSecondaryChargeVfx();
@@ -1008,30 +1060,57 @@ namespace FPG.Demo.Unity
                 return;
             }
 
-            if (secondaryChargeVfxInstance == null)
+            if (secondaryChargeVfxInstance == null
+                && secondaryChargeVfxHandle.IsValid
+                && secondaryChargeVfxSource != null
+                && skillPresentationWorld != null)
             {
-                if (!secondaryChargeVfxHandle.IsValid
-                    || secondaryChargeVfxSource == null
-                    || skillPresentationWorld == null
-                    || !skillPresentationWorld.TryBorrowHeldVfx(
+                if (!skillPresentationWorld.TryBorrowHeldVfx(
                         secondaryChargeVfxHandle,
                         secondaryChargeVfxSource,
                         out secondaryChargeVfxInstance))
                 {
-                    return;
+                    SkillPresentationFaultCount++;
                 }
             }
 
-            if (secondaryChargeVfxSource == null
-                || skillPresentationWorld == null
-                || !skillPresentationWorld.TryUpdateHeldVfx(
-                    secondaryChargeVfxHandle,
-                    secondaryChargeVfxInstance,
-                    secondaryChargeVfxSource,
-                    snapshot.SecondaryChargeProgress))
+            if (secondaryChargeVfxInstance != null
+                && (secondaryChargeVfxSource == null
+                    || skillPresentationWorld == null
+                    || !skillPresentationWorld.TryUpdateHeldVfx(
+                        secondaryChargeVfxHandle,
+                        secondaryChargeVfxInstance,
+                        secondaryChargeVfxSource,
+                        snapshot.SecondaryChargeProgress)))
             {
                 SkillPresentationFaultCount++;
                 ReleaseSecondaryChargeVfx();
+            }
+
+            if (secondaryChargeAudioInstance == null
+                && secondaryChargeAudioHandle.IsValid
+                && secondaryChargeAudioSource != null
+                && skillPresentationWorld != null)
+            {
+                if (!skillPresentationWorld.TryBorrowHeldAudio(
+                        secondaryChargeAudioHandle,
+                        secondaryChargeAudioSource,
+                        out secondaryChargeAudioInstance))
+                {
+                    SkillPresentationFaultCount++;
+                }
+            }
+
+            if (secondaryChargeAudioInstance != null
+                && (secondaryChargeAudioSource == null
+                    || skillPresentationWorld == null
+                    || !skillPresentationWorld.TryUpdateHeldAudio(
+                        secondaryChargeAudioHandle,
+                        secondaryChargeAudioInstance,
+                        secondaryChargeAudioSource)))
+            {
+                SkillPresentationFaultCount++;
+                ReleaseSecondaryChargeAudio();
             }
         }
 
@@ -1047,6 +1126,7 @@ namespace FPG.Demo.Unity
             CombatAimReticle reticle = ResolveAimReticle();
             reticle?.SetChargeProgress(false, 0f);
             ReleaseSecondaryChargeVfx();
+            ReleaseSecondaryChargeAudio();
         }
 
         private void SuspendSecondaryChargeFeedback()
@@ -1054,6 +1134,7 @@ namespace FPG.Demo.Unity
             CombatAimReticle reticle = ResolveAimReticle();
             reticle?.SetChargeProgress(false, 0f);
             ReleaseSecondaryChargeVfx(clearBinding: false);
+            ReleaseSecondaryChargeAudio(clearBinding: false);
         }
 
         private void ReleaseSecondaryChargeVfx(bool clearBinding = true)
@@ -1072,6 +1153,27 @@ namespace FPG.Demo.Unity
 
             if (skillPresentationWorld == null
                 || !skillPresentationWorld.TryReleaseHeldVfx(instance))
+            {
+                SkillPresentationFaultCount++;
+            }
+        }
+
+        private void ReleaseSecondaryChargeAudio(bool clearBinding = true)
+        {
+            AudioSource instance = secondaryChargeAudioInstance;
+            secondaryChargeAudioInstance = null;
+            if (clearBinding)
+            {
+                secondaryChargeAudioHandle = default(FpgPresentationHandle);
+                secondaryChargeAudioSource = null;
+            }
+            if (instance == null)
+            {
+                return;
+            }
+
+            if (skillPresentationWorld == null
+                || !skillPresentationWorld.TryReleaseHeldAudio(instance))
             {
                 SkillPresentationFaultCount++;
             }

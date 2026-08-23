@@ -6,7 +6,7 @@
 
 - `Prefabs/`、`Materials/`、`Meshes/`、`Shaders/` 和 `Textures/` 保存供应商源依赖；`Timeline/` 与 `VFX_Lab/` 只是预览、样例和选型内容。
 - `Scripts/` 是供应商 demo 辅助脚本，不承载 `FPG.Demo` gameplay。
-- 项目自有 wrapper 放在 `Assets/FPGDemo/Presentation/Characters/*/VFX/`。正式配置只引用 wrapper；wrapper 可保留对本目录 Prefab、Material、Mesh、Shader 或 Texture 的显式 GUID 依赖。
+- 项目自有 wrapper 放在 `Assets/FPGDemo/Presentation/Characters/Players/*/VFX/` 或 `Assets/FPGDemo/Presentation/Characters/Enemies/Shared/VFX/`。正式配置只引用 wrapper；wrapper 可保留对本目录 Prefab、Material、Mesh、Shader 或 Texture 的显式 GUID 依赖。
 
 ## 工作规则
 

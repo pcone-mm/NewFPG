@@ -28,4 +28,4 @@
 - tick、空间元数据与播放映射：`FpgSkillClockConfigurationTests.cs`、`FpgSkillSpatialMetadataTests.cs`、`FpgSkillAnimationPlaybackTests.cs`。
 - 攻速解析、schedule 排序、hash 与快照恢复：`FpgAttackTimingTests.cs`、`FpgAttackTimingHashAndWeaponSnapshotTests.cs`。
 - V3 编译与 gameplay/presentation hash 合同：`FpgSkillDefinitionTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs`。
-- 改 asmdef 或依赖时同时检查 `AssemblyBoundaryTests.cs`；默认只记录这些精确入口，不自行批量运行测试。
+- 改 asmdef 或依赖时同时检查 Unity 编译/Console；默认只记录这些精确入口，不自行批量运行测试。

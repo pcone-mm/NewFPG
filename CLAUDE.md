@@ -4,9 +4,11 @@
 
 - `Assets/FPGDemo/` 是唯一正式游戏主线，运行入口固定为 `Boot -> FormalRoom`；代码使用 `FPG.Demo.*` 命名空间。进入该目录后先读它的局部指南。
 - `Assets/InitTestScene/` 只保存 Editor/Development 用的 `BattleTest` harness；它以 additive 方式复用 `FormalRoom`，不得进入生产场景列表、Release 构建或成为第二条正式主线。
-- `Assets/FPGDemo/Runtime/` 保存纯领域程序集和 Unity 适配层；`Config/`、`Presentation/`、`Scenes/`、`Editor/`、`Tests/` 分别保存正式配置、表现资产、场景、编辑工具和合同测试。更细边界由各子目录 `CLAUDE.md` 定义。
+- `Assets/FPGDemo/Runtime/` 保存纯领域程序集和 Unity 适配层；`Config/`、`Presentation/`、`Scenes/`、`Editor/`、`Tests/`、`Audio/` 分别保存正式配置、表现资产、场景、编辑工具、合同测试和音频映射资源。更细边界由各子目录 `CLAUDE.md` 定义。
 - `Assets/Imported/CZN/` 与 `Assets/FPGDemo/SourceArt/CZN/` 保存 CZN/Spine 输入，`External/CZN/SpineRuntime-3.8/` 是项目内 vendored Spine 运行时，`Tools/CznResourcePipeline/` 与 `.codex/skills/czn-character-spine-unity-import/` 保存可复用导入流程。
-- `Assets/Art/`、`Assets/Materials/`、`Assets/Resources/`、`Assets/Rendering/`、`Assets/Settings/`、`Assets/ThirdParty/`、`Assets/ParadoxNotion/` 和 `Assets/VFX_Klaus/` 是保留的源资源、渲染配置或外部资产，不是正式运行入口；复用前必须先确认 `Assets/FPGDemo/` 中存在真实引用和所有权边界。
+- `Tools/ForestAudio/` 是离线只读的 Soundminer 索引与 WAV 候选生成工具；它不属于 Unity 运行时入口，进入后先读该目录局部指南。
+- `Prototypes/FpgBuildSandbox/` 是与 Unity 正式主线隔离的 Web 构筑沙盒，只使用测试数据验证玩法与界面；进入后先读该目录局部指南。
+- `Assets/Art/`、`Assets/Materials/`、`Assets/Resources/`、`Assets/Rendering/`、`Assets/Settings/`、`Assets/ThirdParty/`、`Assets/URP_SSR/`、`Assets/ParadoxNotion/`、`Assets/VFX_Klaus/` 和 `Assets/Feel/` 是保留的源资源、渲染配置或外部资产，不是正式运行入口；复用前必须先确认 `Assets/FPGDemo/` 中存在真实引用和所有权边界。
 - `Assets/Editor/` 保存项目级启动与设置工具；正式 FPG authoring 仍位于 `Assets/FPGDemo/Editor/`。修改自动启动行为前先读顶层 Editor 局部指南。
 
 ## 技术栈
@@ -15,6 +17,8 @@
 - 项目 Fixed Timestep 固定为 `1/60`，与 `FPG.Skills` 的 60Hz tick 合同一致；修改 `TimeManager.asset` 时同步检查 `GameBootstrap` 与 `FpgSkillClockConfigurationTests.cs`。
 - `FPG.Core`、`FPG.Combat`、`FPG.Player`、`FPG.Enemy`、`FPG.Skills` 与 `FPG.Run` 是无 UnityEngine 依赖的领域程序集；`FPG.Unity` 负责场景、输入、物理和表现适配。
 - `Packages/manifest.json` 通过本地路径引用 spine-unity `3.8`，并安装 Unity MCP 与 Unity Skills。
+- More Mountains Feel `6.0` vendored 在 `Assets/Feel/`；正式接入只放在 `Assets/FPGDemo/Integrations/Feel/`，不得让 `FPG.Unity` 或纯领域程序集直接依赖插件 API。
+- Web 构筑沙盒使用 TypeScript `5.7`、Vite `6`、Three.js `0.170`、Vitest `2.1` 与 Playwright `1.49`，依赖和验证均留在其独立目录内。
 - Behavior Designer、嵌入式 A* 和 Unity AI Navigation 已从正式依赖中移除；没有明确任务和新的架构决定时不要重新引入。
 
 ## 写代码逻辑必读

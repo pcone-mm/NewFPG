@@ -20,9 +20,14 @@ MonoBehaviour:
   sequences:
   - kind: 1
     durationTicks: 96
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
     alternateAnimations: []
     mainAnimation: normal_skill2
     loop: 0
+    holdUntilCanceled: 0
     animationPlaybackMode: 0
     animationStartTick: 0
     animationEndTick: 96
@@ -56,10 +61,13 @@ MonoBehaviour:
       allowedTargetKinds: 0
       flightVfx:
         rid: 1908295348123337100
+      flightAudio:
+        rid: 2450906127936258311
       collisionPresentation:
         rid: 1908295348123337101
     reloadEvents: []
     summonEvents: []
+    selfDestructOwnerEvents: []
     activePresentationTracks: []
     warnings:
     - eventId: warning.burstbug-interceptable-volley
@@ -89,7 +97,11 @@ MonoBehaviour:
         baseVfx:
           rid: 1908295348123337102
         baseAudio:
+          rid: 2450906127936258312
+        environmentAudioOverride:
           rid: -2
+        interceptionAudioOverride:
+          rid: 2450906127936258313
         baseCameraShake:
           rid: -2
         weakpointVfxOverride:
@@ -105,3 +117,51 @@ MonoBehaviour:
         durationSeconds: 1
         scale: {x: 1, y: 1, z: 1}
         rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 2450906127936258311
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: da1d43d6b07e9a14993a7b51948d7f34, type: 3}
+        variations:
+        - {fileID: 8300000, guid: dd1b73e137b2b5b49a889142e466d4f5, type: 3}
+        - {fileID: 8300000, guid: 70594111b78acb9419a249f302222d2a, type: 3}
+        - {fileID: 8300000, guid: cdf651ec0fcb2494eaae0ee52cf30ed2, type: 3}
+        - {fileID: 8300000, guid: d197d78333d3e5946a7defad827657cd, type: 3}
+        - {fileID: 8300000, guid: 504d07e3474beed43b02fef14a559f31, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258312
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: 42d8775ccfd001742b4953ec6c6c6300, type: 3}
+        variations:
+        - {fileID: 8300000, guid: 9899fac9cbfd3a04f9eb45fe583cf668, type: 3}
+        - {fileID: 8300000, guid: 3872c6a182d2acf4389d2a643c1f3f0f, type: 3}
+        - {fileID: 8300000, guid: 66b20c6273832184b9235cbec41d18c4, type: 3}
+        - {fileID: 8300000, guid: cda6b6c6996696b49a8bdde9ad8cbc6a, type: 3}
+        - {fileID: 8300000, guid: 6aa7c0b4b1486e846a1a9dd665ca08b7, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258313
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: c860118efe2816d42b4ef3f90a4d0c94, type: 3}
+        variations:
+        - {fileID: 8300000, guid: 8d09a086e27ee854e90dd9641e790bc3, type: 3}
+        - {fileID: 8300000, guid: 2a474403f26acd74b8f6f3a00279f87f, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20

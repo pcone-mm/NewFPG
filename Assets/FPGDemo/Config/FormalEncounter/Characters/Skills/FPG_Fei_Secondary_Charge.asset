@@ -52,7 +52,35 @@ MonoBehaviour:
           rotationOffsetEuler: {x: 0, y: 0, z: 0}
         anchor: 1
         socketId: weapon.secondary.muzzle
-      audioEvents: []
+      audioEvents:
+      - eventId: presentation.fei.secondary.charge.audio.0
+        tick: 0
+        authoredOrdinal: 1
+        boundGameplayEventId: 
+        presentation:
+          clip: {fileID: 8300000, guid: 4afc10906637c5d47bfc7eb58b95aea8, type: 3}
+          variations: []
+          volume: 1
+          space: 1
+          anchor: 1
+          playbackMode: 0
+          socketId: weapon.secondary.muzzle
+          minDistance: 1
+          maxDistance: 20
+      - eventId: presentation.fei.secondary.charge.hold.0
+        tick: 0
+        authoredOrdinal: 2
+        boundGameplayEventId: 
+        presentation:
+          clip: {fileID: 8300000, guid: 429f7009b35ff36439e0ccdc6dfa985d, type: 3}
+          variations: []
+          volume: 1
+          space: 1
+          anchor: 1
+          playbackMode: 1
+          socketId: weapon.secondary.muzzle
+          minDistance: 1
+          maxDistance: 20
       cameraShakeEvents: []
     warnings: []
   - kind: 3
@@ -139,7 +167,27 @@ MonoBehaviour:
           rotationOffsetEuler: {x: 0, y: 0, z: 0}
         anchor: 1
         socketId: weapon.secondary.muzzle
-      audioEvents: []
+      audioEvents:
+      - eventId: presentation.fei.secondary.release.audio.0
+        tick: 0
+        authoredOrdinal: 2
+        boundGameplayEventId: event.fei.secondary.release.attack.0
+        presentation:
+          clip: {fileID: 8300000, guid: 3d7ee7cba81215f4eb1a4a58c115a685, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 6b6364a53856335409d36b16df96a1bd, type: 3}
+          - {fileID: 8300000, guid: bc9194ecef02d614188704e22db2169f, type: 3}
+          - {fileID: 8300000, guid: 72a1756edc795e9489e3c754eb203d84, type: 3}
+          - {fileID: 8300000, guid: ad7dcb15c310e5c42924765c33045581, type: 3}
+          - {fileID: 8300000, guid: ae8c1bf46d4250f45b72fa022dcf89a6, type: 3}
+          - {fileID: 8300000, guid: 387d9dbf5f1c0bb45b18e9f88539b0ff, type: 3}
+          volume: 1
+          space: 1
+          anchor: 1
+          playbackMode: 0
+          socketId: weapon.secondary.muzzle
+          minDistance: 1
+          maxDistance: 20
       cameraShakeEvents: []
     warnings: []
   - kind: 5
@@ -161,7 +209,30 @@ MonoBehaviour:
     reloadEvents: []
     summonEvents: []
     selfDestructOwnerEvents: []
-    activePresentationTracks: []
+    activePresentationTracks:
+    - trackId: track.fei.secondary.cancel.active
+      displayName: Active Presentation
+      vfxEvents: []
+      audioEvents:
+      - eventId: presentation.fei.secondary.cancel.audio.0
+        tick: 0
+        authoredOrdinal: 0
+        boundGameplayEventId: 
+        presentation:
+          clip: {fileID: 8300000, guid: 871e2eea6a5277648833acd65cfd6af6, type: 3}
+          variations:
+          - {fileID: 8300000, guid: b74f4923b81f73f4b869151e6596b10d, type: 3}
+          - {fileID: 8300000, guid: 6ba2b37266f84964e8e15fe61c5bc9bb, type: 3}
+          - {fileID: 8300000, guid: f6302f060b0348a40af0bda26f640d43, type: 3}
+          - {fileID: 8300000, guid: 75bd9bfec072b644fb93f3d72a512cec, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          playbackMode: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      cameraShakeEvents: []
     warnings: []
   secondaryTriggerMode: 0
   minimumChargeTicks: 30
@@ -185,13 +256,15 @@ MonoBehaviour:
         baseVfx:
           rid: 1908295348123337096
         baseAudio:
+          rid: 2450906127936258306
+        environmentAudioOverride:
           rid: -2
         baseCameraShake:
           rid: -2
         weakpointVfxOverride:
           rid: -2
         weakpointAudioOverride:
-          rid: -2
+          rid: 2450906127936258307
         weakpointCameraShakeOverride:
           rid: -2
     - rid: 1908295348123337096
@@ -201,3 +274,27 @@ MonoBehaviour:
         durationSeconds: 1.8
         scale: {x: 1.25, y: 1.25, z: 1.25}
         rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 2450906127936258306
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: e070c42b470fdf24681ba00ad6f926fb, type: 3}
+        variations: []
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258307
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: 6285075e29ce32b458b5b01b544192cf, type: 3}
+        variations: []
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20

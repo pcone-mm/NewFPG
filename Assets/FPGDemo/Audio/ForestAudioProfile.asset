@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98af157828169764bb258f993c3bd5e2, type: 3}
+  m_Name: ForestAudioProfile
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgRoomAudioProfile
+  explorationMusic: {fileID: 8300000, guid: ddf13b20eabeef8478dcf920b209a092, type: 3}
+  explorationMusicVariations: []
+  combatMusic: {fileID: 8300000, guid: 580b9a4032c13634f8b9eefd1a25ff97, type: 3}
+  combatMusicVariations: []
+  victoryStinger: {fileID: 8300000, guid: aacf922a78384454ab306a45d4bf1671, type: 3}
+  victoryStingerVariations: []
+  defeatStinger: {fileID: 8300000, guid: cb02cdaa6ded9294fa3cca6be7979183, type: 3}
+  defeatStingerVariations: []
+  ambienceLoop: {fileID: 8300000, guid: 7dd5cf36622d2b94299e3e66e80e0bc2, type: 3}
+  ambienceVariations:
+  - {fileID: 8300000, guid: 1c1bd2707d6a4304388a005ba68c14e4, type: 3}
+  - {fileID: 8300000, guid: 8027145643494114ba7c48dc23e7f99b, type: 3}
+  ambiencePointClips:
+  - {fileID: 8300000, guid: 82816cd10f849d143bb72ceb90d639ad, type: 3}
+  - {fileID: 8300000, guid: 2c76c3b5d0245ba4abf9c37b2d3437de, type: 3}
+  - {fileID: 8300000, guid: 4262b479dbf9f5544b8fd8ab4f004cc4, type: 3}
+  - {fileID: 8300000, guid: a5a69270c6eece046a0e6cf275a284eb, type: 3}
+  - {fileID: 8300000, guid: 091c35d96f490b54ea2c8459dc0aeb5c, type: 3}
+  - {fileID: 8300000, guid: 43842ad099151d94c924acc79479dc5b, type: 3}
+  - {fileID: 8300000, guid: 7c34222a4e434d14fbf046a23124d809, type: 3}
+  - {fileID: 8300000, guid: adb7b101801a0ef49ad45ac204ea61ff, type: 3}
+  ambiencePointMinIntervalSeconds: 8
+  ambiencePointMaxIntervalSeconds: 18
+  ambiencePointVolume: 0.6
+  ambiencePointHorizontalExtent: 10
+  ambiencePointVerticalExtent: 4
+  ambiencePointMinDistance: 2
+  ambiencePointMaxDistance: 24
+  ambiencePointVoiceLimit: 4
+  musicFadeSeconds: 1.25
+  ambienceFadeSeconds: 0.75

@@ -41,6 +41,8 @@ namespace FPG.Demo.Run
         private readonly bool[] projectileWorldReleased;
         private readonly bool useSpatialAttackQuery;
         private readonly EnemyRuntime[] enemyRuntimes;
+        private FpgCoverRuntime coverRuntime;
+        private IFpgCoverGeometryResolver coverGeometryResolver;
 
         private int projectileSlotCount;
         private int enemyRuntimeCount;
@@ -156,6 +158,7 @@ namespace FPG.Demo.Run
         public RuntimeId PlayerRuntimeId => Player.RuntimeId;
         public RuntimeId EnemyRuntimeId => Enemy.RuntimeId;
         public PlayerExposureState PlayerExposureState => Player.Exposure.State;
+        public FpgCoverRuntime Covers => coverRuntime;
         public WeaponState PlayerWeaponState => Player.Weapon.State;
         public long ControlCommandCount => controlCommandCount;
         public ulong ControlCommandDigest => controlCommandDigest;
@@ -170,6 +173,22 @@ namespace FPG.Demo.Run
         public ulong ThreatScheduleDecisionDigest => threatScheduleDecisionDigest;
 
         public event Action<EnemyLifecycleChange> EnemyRuntimeChanged;
+
+        public DomainResult TryBindCoverRuntime(
+            FpgCoverRuntime covers,
+            IFpgCoverGeometryResolver geometryResolver)
+        {
+            if (coverRuntime != null
+                || covers == null
+                || geometryResolver == null)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            coverRuntime = covers;
+            coverGeometryResolver = geometryResolver;
+            return DomainResult.Success;
+        }
 
         public int ActiveProjectileCount
         {
@@ -1547,42 +1566,80 @@ namespace FPG.Demo.Run
         private void ResolveImpact(ImpactIntent intent)
         {
             ImpactResolution resolution;
-            ProjectileRuntime projectile = FindProjectileByRuntimeId(intent.TargetId);
-            if (projectile != null)
+            bool isCoverImpact = intent.SpatialContext.HasValue
+                && intent.SpatialContext.TargetKind
+                    == QueryTargetKind.EnvironmentBlocker;
+            bool currentCoverImpact = false;
+            if (isCoverImpact)
             {
-                ProjectileState previousProjectileState = projectile.State;
-                resolution = combatKernel.DamageResolver.ResolveProjectile(intent, projectile);
-                RecordProjectileStateChange(
-                    intent.ImpactTick,
-                    projectile,
-                    previousProjectileState);
-            }
-            else if (intent.TargetId == Enemy.RuntimeId)
-            {
-                bool breakEnabled = Enemy.ControlState == EnemyControlState.Active;
-                resolution = combatKernel.DamageResolver.ResolveCombatant(
-                    intent,
-                    Enemy.Combatant,
-                    DefenseSnapshot.Exposed,
-                    breakEnabled);
-            }
-            else if (intent.TargetId == Player.RuntimeId)
-            {
-                DefenseSnapshot defense = Player.Exposure.CreateDefenseSnapshot(
-                    Definition.PerfectRetractWindow,
-                    Definition.PerfectRetractMultiplierBasisPoints);
-                resolution = combatKernel.DamageResolver.ResolveCombatant(
-                    intent,
-                    Player.Combatant,
-                    defense,
-                    false);
+                if (coverRuntime != null
+                    && coverGeometryResolver != null
+                    && coverGeometryResolver.TryResolveCoverId(
+                        intent.SpatialContext.GeometryId,
+                        out string coverId)
+                    && coverRuntime.TryGetIntactDefenseState(
+                        coverId,
+                        out CombatantState coverDefense))
+                {
+                    resolution = combatKernel.DamageResolver.ResolveCombatant(
+                        intent,
+                        coverDefense,
+                        new DefenseSnapshot(
+                            ExposureMode.Withdrawn,
+                            TickIndex.Invalid,
+                            TickDuration.Zero,
+                            DamageSpec.BasisPoints),
+                        false);
+                    currentCoverImpact = coverRuntime.IsCurrentCover(coverId);
+                }
+                else
+                {
+                    DomainResult ledgerResult = combatKernel.ImpactLedger.TryConsume(
+                        intent.ImpactId);
+                    resolution = ledgerResult.IsSuccess
+                        ? ImpactResolution.Rejected(RejectReason.InvalidTarget)
+                        : ImpactResolution.Rejected(ledgerResult.RejectReason);
+                }
             }
             else
             {
-                DomainResult ledgerResult = combatKernel.ImpactLedger.TryConsume(intent.ImpactId);
-                resolution = ledgerResult.IsSuccess
-                    ? ImpactResolution.Rejected(RejectReason.InvalidTarget)
-                    : ImpactResolution.Rejected(ledgerResult.RejectReason);
+                ProjectileRuntime projectile = FindProjectileByRuntimeId(intent.TargetId);
+                if (projectile != null)
+                {
+                    ProjectileState previousProjectileState = projectile.State;
+                    resolution = combatKernel.DamageResolver.ResolveProjectile(intent, projectile);
+                    RecordProjectileStateChange(
+                        intent.ImpactTick,
+                        projectile,
+                        previousProjectileState);
+                }
+                else if (intent.TargetId == Enemy.RuntimeId)
+                {
+                    bool breakEnabled = Enemy.ControlState == EnemyControlState.Active;
+                    resolution = combatKernel.DamageResolver.ResolveCombatant(
+                        intent,
+                        Enemy.Combatant,
+                        DefenseSnapshot.Exposed,
+                        breakEnabled);
+                }
+                else if (intent.TargetId == Player.RuntimeId)
+                {
+                    DefenseSnapshot defense = Player.Exposure.CreateDefenseSnapshot(
+                        Definition.PerfectRetractWindow,
+                        Definition.PerfectRetractMultiplierBasisPoints);
+                    resolution = combatKernel.DamageResolver.ResolveCombatant(
+                        intent,
+                        Player.Combatant,
+                        defense,
+                        false);
+                }
+                else
+                {
+                    DomainResult ledgerResult = combatKernel.ImpactLedger.TryConsume(intent.ImpactId);
+                    resolution = ledgerResult.IsSuccess
+                        ? ImpactResolution.Rejected(RejectReason.InvalidTarget)
+                        : ImpactResolution.Rejected(ledgerResult.RejectReason);
+                }
             }
 
             if (!resolution.Result.IsSuccess)
@@ -1647,20 +1704,23 @@ namespace FPG.Demo.Run
 
             if (resolution.BarrierBroken)
             {
-                PlayerExposureState previousExposure = Player.Exposure.State;
-                Player.Exposure.ForceExposed(intent.ImpactTick, out bool exposureChanged);
-                Player.Weapon.CancelForWithdrawn();
-                if (exposureChanged)
+                if (!isCoverImpact || currentCoverImpact)
                 {
-                    combatKernel.Trace.Record(
-                        intent.ImpactTick,
-                        CombatEventType.ExposureChanged,
-                        Player.RuntimeId,
-                        Player.RuntimeId,
-                        intent.AttackId,
-                        intent.ImpactId,
-                        (int)previousExposure,
-                        (int)Player.Exposure.State);
+                    PlayerExposureState previousExposure = Player.Exposure.State;
+                    Player.Exposure.ForceExposed(intent.ImpactTick, out bool exposureChanged);
+                    Player.Weapon.CancelForWithdrawn();
+                    if (exposureChanged)
+                    {
+                        combatKernel.Trace.Record(
+                            intent.ImpactTick,
+                            CombatEventType.ExposureChanged,
+                            Player.RuntimeId,
+                            Player.RuntimeId,
+                            intent.AttackId,
+                            intent.ImpactId,
+                            (int)previousExposure,
+                            (int)Player.Exposure.State);
+                    }
                 }
 
                 combatKernel.Trace.Record(
@@ -2381,6 +2441,50 @@ namespace FPG.Demo.Run
 
                         case ProjectileSweepHitKind.EnvironmentBlocked:
                         {
+                            if (projectile.Team == Team.Enemy
+                                && coverRuntime != null
+                                && coverGeometryResolver != null
+                                && coverGeometryResolver.TryResolveCoverId(
+                                    sweepHit.GeometryId,
+                                    out string coverId)
+                                && coverRuntime.TryGetIntactDefenseState(
+                                    coverId,
+                                    out _))
+                            {
+                                if (combatKernel.ImpactQueue.Count
+                                        >= combatKernel.ImpactQueue.Capacity
+                                    || combatKernel.ImpactQueue.Count
+                                        >= combatKernel.ImpactLedger.RemainingCapacity)
+                                {
+                                    return DomainResult.Rejected(RejectReason.BufferCapacity);
+                                }
+
+                                ImpactIntent intent = new ImpactIntent(
+                                    idAllocator.NextImpactId(),
+                                    projectile.AttackId,
+                                    ShotId.Invalid,
+                                    projectile.OwnerId,
+                                    Player.RuntimeId,
+                                    tick,
+                                    projectile.Definition.DamageSpec,
+                                    HitPart.Body,
+                                    DamageType.Normal,
+                                    CombatTags.EnemyAttack,
+                                    spatialContext: new ImpactSpatialContext(
+                                        sweepHit.Point,
+                                        sweepHit.GeometryId,
+                                        QueryTargetKind.EnvironmentBlocker,
+                                        HitPart.Body));
+                                DomainResult queued = combatKernel.ImpactQueue.TryEnqueue(
+                                    intent,
+                                    ImpactPhasePriority.EnemyImpact,
+                                    projectile.RuntimeId);
+                                if (!queued.IsSuccess)
+                                {
+                                    return queued;
+                                }
+                            }
+
                             ProjectileState previousState = projectile.State;
                             DomainResult blocked = projectile.TryBlock(tick);
                             if (!blocked.IsSuccess)

@@ -307,6 +307,7 @@ Transform:
   - {fileID: 291307311}
   - {fileID: 1006316505}
   - {fileID: 1948683519}
+  - {fileID: 1079799025}
   m_Father: {fileID: 2120138973}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &148185015
@@ -998,10 +999,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 680280a254af60c46826ce8e247023ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.CombatAimReticle
-  pointerSensitivity: 1
   lockSystemCursor: 1
   resetOnApplicationFocus: 1
   chargeProgressImage: {fileID: 705101984}
+  layeredGraphic: {fileID: 0}
 --- !u!224 &866874729
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1061,7 +1062,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 30, y: 1, z: 30}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: -0.5, z: 0}
 --- !u!4 &928228705
 Transform:
   m_ObjectHideFlags: 0
@@ -1236,6 +1237,52 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1032177266}
   m_CullTransparentMesh: 1
+--- !u!1 &1079799024
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1079799025}
+  - component: {fileID: 1079799026}
+  m_Layer: 0
+  m_Name: FeelFeedbackRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1079799025
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1079799024}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 148185014}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1079799026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1079799024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2fe2afe2a7ee5c14cbc6aa6aae26f2d6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FPG.Demo.Unity.FpgFeelEnemyHitRouter
+  combatFeedbackBridge: {fileID: 148185015}
+  enemyEntityPool: {fileID: 1650634909}
 --- !u!1 &1154465460
 GameObject:
   m_ObjectHideFlags: 0
@@ -1798,6 +1845,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgFormalPlayerTickDriver
   encounterDirector: {fileID: 1650634901}
   aimAnchor: {fileID: 0}
+  shotOrigin: {fileID: 0}
   aimCamera: {fileID: 1438643787}
   aimViewportSource: {fileID: 866874728}
   cameraFeedback: {fileID: 713450179}
@@ -1807,6 +1855,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 805306368
   playerRoot: {fileID: 0}
+  coverTraversalPresenter: {fileID: 0}
   captureFromDevices: 1
   handlePauseAndRestart: 1
   inputBufferTicks: 8
@@ -2105,6 +2154,90 @@ MonoBehaviour:
   fillRect: {fileID: 828452547}
   normalizedValue: 0
   transitionDuration: 0.14
+--- !u!1 &1711409469
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1711409470}
+  - component: {fileID: 1711409473}
+  - component: {fileID: 1711409472}
+  - component: {fileID: 1711409471}
+  m_Layer: 0
+  m_Name: AudioRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1711409470
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711409469}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2120138973}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1711409471
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711409469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54e5397e832fc4e40a3f8ee06d54baa6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgFormalAudioCoordinator
+  encounterHost: {fileID: 2120138972}
+  encounterDirector: {fileID: 1650634901}
+  combatFeedback: {fileID: 148185015}
+  aimReticle: {fileID: 866874728}
+  combatAudio: {fileID: 1711409473}
+  musicDirector: {fileID: 1711409472}
+--- !u!114 &1711409472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711409469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c9b356fb0ec73204b9763cb951ccbc24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.MusicDirector
+  profile: {fileID: 11400000, guid: ec6cc4a4251345e4ca6b81a80acd8864, type: 2}
+  musicGroup: {fileID: 1345803363075187465, guid: dfb5f18b1520b26458b7fac015518c1c, type: 2}
+  ambienceGroup: {fileID: -1415058928951089617, guid: dfb5f18b1520b26458b7fac015518c1c, type: 2}
+  returnToExplorationAfterVictory: 1
+--- !u!114 &1711409473
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1711409469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1e9e119ed206a1449cff4a420df077d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.CombatAudioPresenter
+  bank: {fileID: 11400000, guid: 424fc34bc98364a42be55e24e32e8e6b, type: 2}
+  sfxGroup: {fileID: 120385411370531587, guid: dfb5f18b1520b26458b7fac015518c1c, type: 2}
+  uiGroup: {fileID: 5820754574503605083, guid: dfb5f18b1520b26458b7fac015518c1c, type: 2}
+  poolCapacityOverride: 0
 --- !u!1 &1758405980
 GameObject:
   m_ObjectHideFlags: 0
@@ -2476,6 +2609,7 @@ MonoBehaviour:
   playerInputPort: {fileID: 1650634902}
   physicsQueryPort: {fileID: 1650634903}
   combatPortFactory: {fileID: 1650634903}
+  enableShootingDiagnostics: 1
 --- !u!4 &2120138973
 Transform:
   m_ObjectHideFlags: 0
@@ -2496,6 +2630,7 @@ Transform:
   - {fileID: 1650634904}
   - {fileID: 1669218434}
   - {fileID: 1278297451}
+  - {fileID: 1711409470}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807

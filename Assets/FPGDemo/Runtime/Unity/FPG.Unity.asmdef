@@ -10,7 +10,8 @@
         "FPG.Skills",
         "spine-unity",
         "Unity.InputSystem",
-        "Unity.ugui"
+        "Unity.ugui",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

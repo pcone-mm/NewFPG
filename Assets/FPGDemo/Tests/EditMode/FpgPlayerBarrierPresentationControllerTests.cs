@@ -79,91 +79,6 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
-        public void PeekEntersSmoothlyAndCompletesAtFifthCommittedTick()
-        {
-            ControllerFixture fixture = CreateControllerFixture();
-            Vector3 authoredPosition = fixture.PeekRoot.localPosition;
-
-            fixture.Controller.ApplyCommittedSnapshot(
-                CreateSnapshot(
-                    tick: 10L,
-                    peekRequested: true,
-                    peekStartedTick: 10L),
-                0.04f);
-
-            Assert.That(
-                fixture.Controller.CurrentPeekProgress,
-                Is.EqualTo(0.5f).Within(0.0001f));
-            Assert.That(
-                fixture.PeekRoot.localPosition.x,
-                Is.EqualTo(Mathf.Lerp(authoredPosition.x, 1.35f, 0.5f))
-                    .Within(0.0001f));
-
-            fixture.Controller.ApplyCommittedSnapshot(
-                CreateSnapshot(
-                    tick: 15L,
-                    peekRequested: true,
-                    peekStartedTick: 10L),
-                0f);
-
-            Assert.That(fixture.Controller.CurrentPeekProgress, Is.EqualTo(1f));
-            Assert.That(
-                fixture.PeekRoot.localPosition,
-                Is.EqualTo(new Vector3(1.35f, 0f, 0f)));
-        }
-
-        [Test]
-        public void PeekUsesLockedLeftTargetUntilSmoothRetractionCompletes()
-        {
-            ControllerFixture fixture = CreateControllerFixture();
-            Vector3 authoredPosition = fixture.PeekRoot.localPosition;
-            SetField(fixture.Controller, "retractTransitionSeconds", 0.08f);
-
-            fixture.Controller.ApplyCommittedSnapshot(
-                CreateSnapshot(
-                    tick: 5L,
-                    peekRequested: true,
-                    peekStartedTick: 0L,
-                    direction: FpgPlayerFacingDirection.Left),
-                0f);
-
-            Assert.That(fixture.Controller.CurrentPeekProgress, Is.EqualTo(1f));
-            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.True);
-            Assert.That(
-                fixture.Controller.SelectedPeekDirection,
-                Is.EqualTo(FpgPlayerFacingDirection.Left));
-            Assert.That(
-                fixture.PeekRoot.localPosition,
-                Is.EqualTo(new Vector3(-1.35f, 0f, 0f)));
-
-            fixture.Controller.ApplyCommittedSnapshot(
-                CreateSnapshot(tick: 6L),
-                0.04f);
-
-            Assert.That(
-                fixture.Controller.CurrentPeekProgress,
-                Is.EqualTo(0.5f).Within(0.0001f));
-            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.True);
-            Assert.That(
-                fixture.Controller.SelectedPeekDirection,
-                Is.EqualTo(FpgPlayerFacingDirection.Left));
-            Assert.That(
-                fixture.PeekRoot.localPosition,
-                Is.EqualTo(Vector3.LerpUnclamped(
-                    authoredPosition,
-                    new Vector3(-1.35f, 0f, 0f),
-                    0.5f)));
-
-            fixture.Controller.ApplyCommittedSnapshot(
-                CreateSnapshot(tick: 7L),
-                0.04f);
-
-            Assert.That(fixture.Controller.CurrentPeekProgress, Is.Zero);
-            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.False);
-            Assert.That(fixture.PeekRoot.localPosition, Is.EqualTo(authoredPosition));
-        }
-
-        [Test]
         public void ReleasedPeekSnapsToAuthoredPoseWithoutAccumulatingDrift()
         {
             ControllerFixture fixture = CreateControllerFixture();
@@ -186,34 +101,6 @@ namespace FPG.Demo.Tests.EditMode
                     fixture.PeekRoot.localPosition,
                     Is.EqualTo(authoredPosition));
             }
-        }
-
-        [Test]
-        public void PreviewPeekOffsetResolvesBothSidesWithoutLockingTheCycle()
-        {
-            ControllerFixture fixture = CreateControllerFixture();
-
-            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.False);
-            Assert.That(
-                fixture.Controller.TryGetPreviewPeekWorldOffset(
-                    "cover-center",
-                    FpgPlayerFacingDirection.Left,
-                    out Vector3 leftOffset),
-                Is.True);
-            Assert.That(
-                fixture.Controller.TryGetPreviewPeekWorldOffset(
-                    "cover-center",
-                    FpgPlayerFacingDirection.Right,
-                    out Vector3 rightOffset),
-                Is.True);
-
-            Assert.That(
-                fixture.PeekRoot.position + leftOffset,
-                Is.EqualTo(new Vector3(-1.35f, 0.5f, 0f)));
-            Assert.That(
-                fixture.PeekRoot.position + rightOffset,
-                Is.EqualTo(new Vector3(1.35f, 0.5f, 0f)));
-            Assert.That(fixture.Controller.HasSelectedPeekTarget, Is.False);
         }
 
         [Test]

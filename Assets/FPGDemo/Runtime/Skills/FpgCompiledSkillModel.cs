@@ -192,6 +192,8 @@ namespace FPG.Demo.Skills
         public FpgCompiledImpactPresentation(
             FpgPresentationHandle baseVfx,
             FpgPresentationHandle baseAudio,
+            FpgPresentationHandle environmentAudioOverride,
+            FpgPresentationHandle interceptionAudioOverride,
             FpgPresentationHandle baseCameraShake,
             FpgPresentationHandle weakpointVfxOverride,
             FpgPresentationHandle weakpointAudioOverride,
@@ -200,6 +202,8 @@ namespace FPG.Demo.Skills
         {
             BaseVfx = baseVfx;
             BaseAudio = baseAudio;
+            EnvironmentAudioOverride = environmentAudioOverride;
+            InterceptionAudioOverride = interceptionAudioOverride;
             BaseCameraShake = baseCameraShake;
             WeakpointVfxOverride = weakpointVfxOverride;
             WeakpointAudioOverride = weakpointAudioOverride;
@@ -209,6 +213,8 @@ namespace FPG.Demo.Skills
 
         public FpgPresentationHandle BaseVfx { get; }
         public FpgPresentationHandle BaseAudio { get; }
+        public FpgPresentationHandle EnvironmentAudioOverride { get; }
+        public FpgPresentationHandle InterceptionAudioOverride { get; }
         public FpgPresentationHandle BaseCameraShake { get; }
         public FpgPresentationHandle WeakpointVfxOverride { get; }
         public FpgPresentationHandle WeakpointAudioOverride { get; }
@@ -217,10 +223,33 @@ namespace FPG.Demo.Skills
 
         public bool HasAny => BaseVfx.IsValid
             || BaseAudio.IsValid
+            || EnvironmentAudioOverride.IsValid
+            || InterceptionAudioOverride.IsValid
             || BaseCameraShake.IsValid
             || WeakpointVfxOverride.IsValid
             || WeakpointAudioOverride.IsValid
             || WeakpointCameraShakeOverride.IsValid;
+
+        public FpgPresentationHandle ResolveAudio(
+            bool anyWeakpoint,
+            bool environmentOnly)
+        {
+            if (anyWeakpoint && WeakpointAudioOverride.IsValid)
+            {
+                return WeakpointAudioOverride;
+            }
+
+            return environmentOnly && EnvironmentAudioOverride.IsValid
+                ? EnvironmentAudioOverride
+                : BaseAudio;
+        }
+
+        public FpgPresentationHandle ResolveInterceptionAudio()
+        {
+            return InterceptionAudioOverride.IsValid
+                ? InterceptionAudioOverride
+                : BaseAudio;
+        }
     }
 
     public readonly struct FpgCompiledSkillActionPresentation
@@ -231,6 +260,7 @@ namespace FPG.Demo.Skills
             FpgPresentationHandle trajectoryVfx,
             FpgCompiledImpactPresentation impact,
             FpgPresentationHandle flightVfx,
+            FpgPresentationHandle flightAudio,
             FpgCompiledImpactPresentation collision,
             int successAnimation,
             ulong presentationContentHash)
@@ -248,6 +278,7 @@ namespace FPG.Demo.Skills
             TrajectoryVfx = trajectoryVfx;
             Impact = impact;
             FlightVfx = flightVfx;
+            FlightAudio = flightAudio;
             Collision = collision;
             SuccessAnimation = successAnimation;
             PresentationContentHash = presentationContentHash;
@@ -265,6 +296,7 @@ namespace FPG.Demo.Skills
         public FpgPresentationHandle TrajectoryVfx { get; }
         public FpgCompiledImpactPresentation Impact { get; }
         public FpgPresentationHandle FlightVfx { get; }
+        public FpgPresentationHandle FlightAudio { get; }
         public FpgCompiledImpactPresentation Collision { get; }
         public int SuccessAnimation { get; }
         public ulong PresentationContentHash { get; }
@@ -272,6 +304,7 @@ namespace FPG.Demo.Skills
         public bool HasAny => TrajectoryVfx.IsValid
             || Impact.HasAny
             || FlightVfx.IsValid
+            || FlightAudio.IsValid
             || Collision.HasAny
             || SuccessAnimation > 0;
 
@@ -287,6 +320,7 @@ namespace FPG.Demo.Skills
             {
                 case FpgSkillActionKind.Attack:
                     return !FlightVfx.IsValid
+                        && !FlightAudio.IsValid
                         && !Collision.HasAny
                         && SuccessAnimation == 0;
 
@@ -299,6 +333,7 @@ namespace FPG.Demo.Skills
                     return !TrajectoryVfx.IsValid
                         && !Impact.HasAny
                         && !FlightVfx.IsValid
+                        && !FlightAudio.IsValid
                         && !Collision.HasAny
                         && SuccessAnimation > 0;
 
@@ -1368,6 +1403,7 @@ namespace FPG.Demo.Skills
                     AddPresentationHandle(handles, action.TrajectoryVfx);
                     AddImpactHandles(handles, action.Impact);
                     AddPresentationHandle(handles, action.FlightVfx);
+                    AddPresentationHandle(handles, action.FlightAudio);
                     AddImpactHandles(handles, action.Collision);
                 }
             }
@@ -1379,6 +1415,8 @@ namespace FPG.Demo.Skills
         {
             AddPresentationHandle(handles, value.BaseVfx);
             AddPresentationHandle(handles, value.BaseAudio);
+            AddPresentationHandle(handles, value.EnvironmentAudioOverride);
+            AddPresentationHandle(handles, value.InterceptionAudioOverride);
             AddPresentationHandle(handles, value.BaseCameraShake);
             AddPresentationHandle(handles, value.WeakpointVfxOverride);
             AddPresentationHandle(handles, value.WeakpointAudioOverride);
@@ -1549,6 +1587,7 @@ namespace FPG.Demo.Skills
                     value.TrajectoryVfx);
                 hash = AppendImpactPresentationHash(hash, value.Impact);
                 hash = AppendPresentationHandleHash(hash, value.FlightVfx);
+                hash = AppendPresentationHandleHash(hash, value.FlightAudio);
                 hash = AppendImpactPresentationHash(hash, value.Collision);
                 hash = StableHash.Append(
                     hash,
@@ -1640,6 +1679,12 @@ namespace FPG.Demo.Skills
         {
             hash = AppendPresentationHandleHash(hash, impact.BaseVfx);
             hash = AppendPresentationHandleHash(hash, impact.BaseAudio);
+            hash = AppendPresentationHandleHash(
+                hash,
+                impact.EnvironmentAudioOverride);
+            hash = AppendPresentationHandleHash(
+                hash,
+                impact.InterceptionAudioOverride);
             hash = AppendPresentationHandleHash(
                 hash,
                 impact.BaseCameraShake);

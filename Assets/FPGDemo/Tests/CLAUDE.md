@@ -22,6 +22,9 @@
 - 技能实体绑定、编辑、正式玩家资产与 inclusive 暴露边界：`FpgSkillAuthoringEditorTests.cs`、`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgPlayerSkillExecutionControllerTests.cs`。
 - 攻速解析、resolved schedule/hash、武器快照与 Fei 连射/打断集成：`FpgAttackTimingTests.cs`、`FpgAttackTimingHashAndWeaponSnapshotTests.cs`、`FpgFeiAttackSpeedIntegrationTests.cs`。
 - 技能表现 registry、VFX 池与清理生命周期：`FpgSkillPresentationRuntimeTests.cs`、`D0CombatVfxWorldTests.cs`。
+- 音频 cue 路由、Bank 的 bus/空间/variation 校验、固定 voice pool 与技能音频变体：`CombatAudioCueRoutingTests.cs`、`CombatAudioBankTests.cs`、`CombatAudioPresenterTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs`、`FpgSkillPresentationRuntimeTests.cs`。
+- supplemental feedback 与 More Mountains Feel 的事件、聚合、prefab、场景路由和清理：`FpgSupplementalFeedbackTests.cs`、`FpgFeelEnemyHitAssetTests.cs`。
+- Sprite Shadow Caster 的 sprite mesh/material 生成、复用与 importer 刷新：`FpgSpriteShadowCasterAuthoringTests.cs`。
 - 射击配置投影、玩家朝向、瞄准/掩体几何和分层准星：`FpgShootingTuningSnapshotTests.cs`、`FpgEntityPrefabContractTests.cs`、`FpgShootingContractsTests.cs`、`FpgLayeredAimIndicatorTests.cs`、`CombatAimViewportMathTests.cs`。
 - BattleTest 的纯 GM 语法、沙盒 external spawn、Editor 窗口与场景生命周期：`FpgBattleGmCommandParserTests.cs`、`FpgBattleTestSandboxRuntimeTests.cs`、`FpgBattleGmEditorWindowTests.cs`、`FpgBattleTestPlayModeTests.cs`。PlayMode fixture 必须卸载 BattleTest/FormalRoom/Art Scene 并恢复原 active scene。
 - `BuildSettingsTests.cs` 同时保证生产清单排除 BattleTest；Development 构建临时改写 global/active scene list 的测试或工具必须在 `finally` 恢复。

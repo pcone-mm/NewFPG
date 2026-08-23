@@ -78,7 +78,23 @@ MonoBehaviour:
           rotationOffsetEuler: {x: 0, y: 0, z: 0}
         anchor: 1
         socketId: weapon.primary.muzzle
-      audioEvents: []
+      audioEvents:
+      - eventId: presentation.fei.primary.audio.0
+        tick: 0
+        authoredOrdinal: 2
+        boundGameplayEventId: event.fei.primary.attack.0
+        presentation:
+          clip: {fileID: 8300000, guid: edc6ab33e4ad5d34098a9e66890c9da3, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 2e3f34dfb0d29934f92f994577090f60, type: 3}
+          - {fileID: 8300000, guid: 4efec09aff2ced54087e2770eb8c95ad, type: 3}
+          - {fileID: 8300000, guid: 0adf31a0354dfb1479bb7d83c4cfc771, type: 3}
+          volume: 1
+          space: 1
+          anchor: 1
+          socketId: weapon.primary.muzzle
+          minDistance: 1
+          maxDistance: 20
       cameraShakeEvents: []
     warnings: []
   secondaryTriggerMode: 0
@@ -103,13 +119,15 @@ MonoBehaviour:
         baseVfx:
           rid: 1908295348123337093
         baseAudio:
-          rid: -2
+          rid: 2450906127936258290
+        environmentAudioOverride:
+          rid: 2450906127936258292
         baseCameraShake:
           rid: -2
         weakpointVfxOverride:
           rid: -2
         weakpointAudioOverride:
-          rid: -2
+          rid: 2450906127936258291
         weakpointCameraShakeOverride:
           rid: -2
     - rid: 1908295348123337093
@@ -119,3 +137,45 @@ MonoBehaviour:
         durationSeconds: 1
         scale: {x: 1, y: 1, z: 1}
         rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 2450906127936258290
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: da1cc01213d822046a316bd84686a2b0, type: 3}
+        variations:
+        - {fileID: 8300000, guid: 16b8ce07d86d2fa41a3e0a1d706ae0ca, type: 3}
+        - {fileID: 8300000, guid: 2d6e3a08192492c4da2b03151e8656ec, type: 3}
+        - {fileID: 8300000, guid: ef57e62ace9726748ba8f509ddb534f6, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258291
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: 85685240706f80d45bb010f78add3e0f, type: 3}
+        variations:
+        - {fileID: 8300000, guid: fd7ff10cd20203c4a834eccf7e481b3c, type: 3}
+        - {fileID: 8300000, guid: f74d6b6aea16ace429efce542a8eb6d8, type: 3}
+        - {fileID: 8300000, guid: 1efb25e78586ed2479e5cc0cce4279d0, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258292
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: cdf455a21de20f64ab005f4af54e0a65, type: 3}
+        variations:
+        - {fileID: 8300000, guid: 25bfa3a40da9cce41a859a20cddf58c6, type: 3}
+        - {fileID: 8300000, guid: ffe2838ffc696c04a9b8eeac3cc01089, type: 3}
+        - {fileID: 8300000, guid: 0b56a942d41fcc241993b970f90ecb34, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20

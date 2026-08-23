@@ -44,7 +44,29 @@ MonoBehaviour:
       successAnimationName: u1_buff_ready
     summonEvents: []
     selfDestructOwnerEvents: []
-    activePresentationTracks: []
+    activePresentationTracks:
+    - trackId: track.fei.reload.active
+      displayName: Active Presentation
+      vfxEvents: []
+      audioEvents:
+      - eventId: presentation.fei.reload.commit.audio.0
+        tick: 40
+        authoredOrdinal: 1
+        boundGameplayEventId: event.fei.reload.commit.0
+        presentation:
+          clip: {fileID: 8300000, guid: 1fe14ccecaeb5894f8eef247930d76d0, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 905292cc82f384d46b5d6580d724a848, type: 3}
+          - {fileID: 8300000, guid: c3e274a93bd4e8349b4155d6d8650bb9, type: 3}
+          - {fileID: 8300000, guid: df2c8ada391586842ad54c6b40c20e8e, type: 3}
+          - {fileID: 8300000, guid: 8adfeb461a26e5245b205fb5e6aa98fa, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      cameraShakeEvents: []
     warnings: []
   secondaryTriggerMode: 0
   minimumChargeTicks: 0

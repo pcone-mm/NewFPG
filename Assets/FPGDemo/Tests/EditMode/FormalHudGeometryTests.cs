@@ -21,9 +21,9 @@ namespace FPG.Demo.Tests.EditMode
         private const string FormalRoomScenePath =
             "Assets/FPGDemo/Scenes/FormalRoom.unity";
         private const string OverheadBarPrefabPath =
-            "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_OverheadHealthBar.prefab";
+            "Assets/FPGDemo/Presentation/HUD/Prefabs/PF_FPG_OverheadHealthBar.prefab";
         private const string DamagePopupPrefabPath =
-            "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_DamagePopup.prefab";
+            "Assets/FPGDemo/Presentation/HUD/Prefabs/PF_FPG_DamagePopup.prefab";
         private const string BehaviorScriptPath =
             "Assets/FPGDemo/Runtime/Unity/Config/FpgEnemyBehaviorDefinition.cs";
         private const string PresentationProfilePath =

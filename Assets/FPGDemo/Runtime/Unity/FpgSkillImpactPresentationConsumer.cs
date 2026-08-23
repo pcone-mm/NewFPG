@@ -193,6 +193,22 @@ namespace FPG.Demo.Unity
                 FaultCount++;
             }
 
+            FpgCompiledImpactPresentation presentation =
+                bindings[bindingIndex].Presentation;
+            if (contact.ContactKind
+                    == FpgSkillImpactContactKind.Intercepted
+                && presentation.InterceptionAudioOverride.IsValid)
+            {
+                if (!world.TryPresentAudioAt(
+                    presentation.InterceptionAudioOverride,
+                    ToWorldPosition(contact.ContactPoint)))
+                {
+                    FaultCount++;
+                }
+
+                return;
+            }
+
             int groupIndex = FindOrCreateGroup(
                 contact.Correlation,
                 contact.GroupKind);
@@ -205,6 +221,16 @@ namespace FPG.Demo.Unity
             GroupState state = groups[groupIndex];
             state.HasContact = true;
             state.AnyWeakpoint |= weakpoint;
+            if (contact.ContactKind
+                == FpgSkillImpactContactKind.EnvironmentBlocked)
+            {
+                state.LastEnvironmentContactPoint = contact.ContactPoint;
+            }
+            else
+            {
+                state.HasNonEnvironmentContact = true;
+                state.LastNonEnvironmentContactPoint = contact.ContactPoint;
+            }
             groups[groupIndex] = state;
         }
 
@@ -221,7 +247,14 @@ namespace FPG.Demo.Unity
                 && groups[groupIndex].HasContact
                 && !world.TryPresentImpactGroup(
                     bindings[bindingIndex].Presentation,
-                    groups[groupIndex].AnyWeakpoint))
+                    groups[groupIndex].AnyWeakpoint,
+                    !groups[groupIndex].HasNonEnvironmentContact,
+                    ToWorldPosition(
+                        groups[groupIndex].HasNonEnvironmentContact
+                            ? groups[groupIndex]
+                                .LastNonEnvironmentContactPoint
+                            : groups[groupIndex]
+                                .LastEnvironmentContactPoint)))
             {
                 FaultCount++;
             }
@@ -347,12 +380,19 @@ namespace FPG.Demo.Unity
                 GroupKind = groupKind;
                 HasContact = false;
                 AnyWeakpoint = false;
+                HasNonEnvironmentContact = false;
+                LastEnvironmentContactPoint = default(SpatialVectorKey);
+                LastNonEnvironmentContactPoint =
+                    default(SpatialVectorKey);
             }
 
             public FpgSkillImpactCorrelation Correlation;
             public FpgSkillImpactPresentationGroupKind GroupKind;
             public bool HasContact;
             public bool AnyWeakpoint;
+            public bool HasNonEnvironmentContact;
+            public SpatialVectorKey LastEnvironmentContactPoint;
+            public SpatialVectorKey LastNonEnvironmentContactPoint;
         }
     }
 }

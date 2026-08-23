@@ -322,6 +322,10 @@ namespace FPG.Demo.Tests.EditMode
                     Assert.That(floor.transform.parent.name, Is.EqualTo("World"));
                     Assert.That(floor.isTrigger, Is.False);
                     Assert.That(floor.gameObject.layer, Is.EqualTo(28));
+                    Assert.That(
+                        floor.bounds.max.y,
+                        Is.EqualTo(0f).Within(0.0001f),
+                        "The floor blocker must end at the gameplay plane so projectile anchors are not spawned inside it.");
 
                     List<FpgFormalCombatPortFactory> factories =
                         FindComponents<FpgFormalCombatPortFactory>(scene);
@@ -380,6 +384,15 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void FormalProjectileQueriesHitBothSidesOfPlanarCoverBlockers()
+        {
+            Assert.That(
+                Physics.queriesHitBackfaces,
+                Is.True,
+                "Formal cover blockers use planar MeshColliders and must be queryable from both projectile directions.");
+        }
+
+        [Test]
         public void FormalSkillAssetsAreV3OnlyAndCompileWithoutRemovedFields()
         {
             Assert.That(FormalSkillPaths, Has.Length.EqualTo(9));
@@ -423,6 +436,22 @@ namespace FPG.Demo.Tests.EditMode
                     Is.True,
                     path + ": " + compileError);
             }
+        }
+
+        [Test]
+        public void FormalEnemyCatalogResolvesEveryAuthoredSkillSocket()
+        {
+            const string enemyCatalogPath =
+                "Assets/FPGDemo/Config/FormalEncounter/FPG_NormalRoom_EnemyCatalog.asset";
+            FpgEnemyDefinitionCatalog enemyCatalog =
+                AssetDatabase.LoadAssetAtPath<FpgEnemyDefinitionCatalog>(
+                    enemyCatalogPath);
+
+            Assert.That(enemyCatalog, Is.Not.Null, enemyCatalogPath);
+            Assert.That(
+                enemyCatalog.TryValidate(out string error),
+                Is.True,
+                error);
         }
 
         [Test]

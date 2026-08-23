@@ -16,8 +16,9 @@
 - `Runtime/Core|Combat|Player|Enemy|Skills|Run` 保持无 UnityEngine 依赖；进入这些目录前先读对应局部指南。
 - `Runtime/Unity` 负责 Boot、Formal host、输入、物理、玩家/敌人组合和表现桥。
 - `Config/FormalEncounter` 与 `Config/Level` 保存正式权威配置；`Config/FormalEncounter/Characters/Skills` 保存 Fei 的正式技能资产，不从 D0Slice 或 CombatLab 迁移。
-- `Presentation/FormalEncounter` 保存正式 Entity/HUD/出口 prefab；`Presentation/Level` 保存房间 Art Scene 与环境资源；`Presentation/Characters/*/Spine` 保存运行时渲染依赖，`Presentation/Characters/*/VFX` 保存项目自有特效 wrapper。
-- 正式技能配置只引用 `Presentation/Characters/*/VFX/PF_FPG_*` wrapper；wrapper 可保留对 `Assets/VFX_Klaus/` 源材质、网格或 prefab 的显式 GUID 依赖，但不得引用供应商 `Timeline/` 或 `VFX_Lab/` demo。
+- `Audio/` 保存已批准或映射中的音频资源、`ForestAudioRequirements.csv` 状态矩阵、Mixer、CombatAudioBank 与房间音频 Profile；音频审批和离线候选流程以该目录局部指南及资产本地文档为准。
+- `Presentation/Characters/Players|Enemies` 按阵营与角色保存正式 Entity、Spine 和 VFX；`Presentation/HUD` 保存正式战斗 UI，`Presentation/Boot` 保存 Boot 专用表现，`Presentation/Level` 保存掩体、出口、房间 Art Scene 与环境资源。
+- 正式技能配置只引用 `Presentation/Characters/Players/*/VFX/PF_FPG_*` 或 `Presentation/Characters/Enemies/Shared/VFX/PF_FPG_*` wrapper；wrapper 可保留对 `Assets/VFX_Klaus/` 源材质、网格或 prefab 的显式 GUID 依赖，但不得引用供应商 `Timeline/` 或 `VFX_Lab/` demo。
 - `SourceArt/CZN` 与 `Assets/Imported/CZN` 保存 CZN 源输入；项目负责人已确认这些素材可进入公开仓库。
 - `Editor/` 保存构建、正式实体 Inspector 和共享 Editor-only 工具；`Editor/LevelAuthoring` 维护房间编辑、Art Scene 合同、正式预览与 BattleTest 路由，`Editor/CombatTuning` 维护射击调参工作台，进入后先读对应局部指南。
 - `Editor/SkillAuthoring` 保存纯 V3 技能时间轴、校验和隔离预览工具；常规配置修改从 `FPG Demo/Skill Editor` 进入，并先看该目录局部指南。

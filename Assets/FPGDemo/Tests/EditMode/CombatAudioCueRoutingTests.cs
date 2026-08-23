@@ -67,6 +67,31 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void EnemyLifecycleRoutesCommittedActivationAndDeathExactlyOnce()
+        {
+            Assert.That(
+                CombatAudioCueRouting.TryGetEnemyLifecycleCue(
+                    FpgEncounterLifecycleEventType.EnemyActivated,
+                    out CombatAudioCue spawnCue),
+                Is.True);
+            Assert.That(spawnCue, Is.EqualTo(CombatAudioCue.EnemySpawn));
+
+            Assert.That(
+                CombatAudioCueRouting.TryGetEnemyLifecycleCue(
+                    FpgEncounterLifecycleEventType.EnemyDied,
+                    out CombatAudioCue deathCue),
+                Is.True);
+            Assert.That(deathCue, Is.EqualTo(CombatAudioCue.EnemyDeath));
+
+            Assert.That(
+                CombatAudioCueRouting.TryGetEnemyLifecycleCue(
+                    FpgEncounterLifecycleEventType.EnemyQueued,
+                    out CombatAudioCue ignoredCue),
+                Is.False);
+            Assert.That(ignoredCue, Is.EqualTo(CombatAudioCue.None));
+        }
+
+        [Test]
         public void ThreatTransitionsMapOnlyTelegraphAndCommittedReleaseForTheThreeThreatKinds()
         {
             AssertThreatCue(
@@ -212,6 +237,24 @@ namespace FPG.Demo.Tests.EditMode
                     out _),
                 Is.False,
                 "The terminal release owns the zero boundary.");
+        }
+
+        [Test]
+        public void HeavyCountdownUsesTheOfficialSixtyHertzWarningTicks()
+        {
+            Assert.That(
+                CombatAudioCueRouting.GetHeavyDisplayedSeconds(135L),
+                Is.EqualTo(3));
+            Assert.That(
+                CombatAudioCueRouting.GetHeavyDisplayedSeconds(120L),
+                Is.EqualTo(2));
+            Assert.That(
+                CombatAudioCueRouting.GetHeavyDisplayedSeconds(60L),
+                Is.EqualTo(1));
+            Assert.That(
+                CombatAudioCueRouting.GetHeavyDisplayedSeconds(0L),
+                Is.Zero,
+                "The release cue owns the zero boundary.");
         }
 
         private static void AssertCue(in CombatEvent combatEvent, CombatAudioCue expectedCue)

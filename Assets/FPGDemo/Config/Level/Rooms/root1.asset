@@ -62,7 +62,7 @@ MonoBehaviour:
   coverSlots:
   - markerId: cover-left
     displayName: "\u5DE6\u4FA7\u63A9\u4F53"
-    localPosition: {x: -2.66, y: 4.41, z: 1.02}
+    localPosition: {x: 0.1, y: 0, z: 0.29}
     localEulerAngles: {x: 0, y: 0, z: 0}
     prefab: {fileID: 3376033595176221629, guid: fd72b86d1d8724642948ae0219902bfc, type: 3}
     cameraProfile: {fileID: 11400000, guid: 2c32d1c69d64d3a43a95f0927cd0e1e9, type: 2}
@@ -74,7 +74,7 @@ MonoBehaviour:
     playerRightPeekLocalPosition: {x: -4.65, y: 0.5, z: 0}
   - markerId: cover-center
     displayName: "\u4E2D\u592E\u63A9\u4F53"
-    localPosition: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0, y: 0, z: 0.1}
     localEulerAngles: {x: 0, y: 0, z: 0}
     prefab: {fileID: 3376033595176221629, guid: 97054e1e80d65ae4193de9b8f3c7af2f, type: 3}
     cameraProfile: {fileID: 11400000, guid: 83066b92bf6ae9a48a335ff5c38b4360, type: 2}
@@ -86,7 +86,7 @@ MonoBehaviour:
     playerRightPeekLocalPosition: {x: 1, y: 0.5, z: 0}
   - markerId: cover-right
     displayName: "\u53F3\u4FA7\u63A9\u4F53"
-    localPosition: {x: 4.33, y: 0.48, z: 0}
+    localPosition: {x: 4.23, y: 0.48, z: 0.15}
     localEulerAngles: {x: 0, y: 0, z: 0}
     prefab: {fileID: 3376033595176221629, guid: 4cc39e1d325723a4d83c91f28c05b960, type: 3}
     cameraProfile: {fileID: 11400000, guid: d19b3bcc9e9243d48b55549f1aa59568, type: 2}

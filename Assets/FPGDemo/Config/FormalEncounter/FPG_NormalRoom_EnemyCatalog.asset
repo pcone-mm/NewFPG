@@ -13,6 +13,5 @@ MonoBehaviour:
   m_Name: FPG_NormalRoom_EnemyCatalog
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyDefinitionCatalog
   definitions:
-  - {fileID: 11400000, guid: 78a6cabda29c4054b9415701981a8f69, type: 2}
-  - {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}
   - {fileID: 11400000, guid: 9911ba009ba09844e83e65096d796e54, type: 2}
+  - {fileID: 11400000, guid: 562b285e353301941ad90742701e88e0, type: 2}

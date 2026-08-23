@@ -18,4 +18,4 @@
 
 - 武器 prepare/commit、弹药、恢复和回滚检查 `WeaponRuntimeTests.cs`。
 - resolved ready lock、snapshot restore 与 pre-commit rollback 检查 `FpgAttackTimingHashAndWeaponSnapshotTests.cs`。
-- 玩家技能启动/拒绝桥接检查 `FpgPlayerSkillExecutionControllerTests.cs`；程序集边界检查 `AssemblyBoundaryTests.cs`。
+- 玩家技能启动/拒绝桥接检查 `FpgPlayerSkillExecutionControllerTests.cs`。

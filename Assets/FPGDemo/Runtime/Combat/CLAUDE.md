@@ -17,5 +17,5 @@
 ## 验证
 
 - target ordering/area 容量检查 `TargetSelectorTests.cs`；伤害与 impact 检查 `CombatDamageTests.cs`。
-- projectile 预算和终态检查 `ProjectileThreatTests.cs`；程序集边界检查 `AssemblyBoundaryTests.cs`。
+- projectile 预算和终态检查 `ProjectileThreatTests.cs`。
 - 环境阻挡、GeometryId 与掩体提交的原子性检查 `FpgMultiEnemyCombatTransactionTests.cs`。

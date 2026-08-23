@@ -17,6 +17,8 @@ namespace FPG.Demo.Tests.EditMode
         private const int BlockerLayer = 28;
         private const string ForestRoomPath =
             "Assets/FPGDemo/Config/Level/Rooms/Room_forest.asset";
+        private const string Root1RoomPath =
+            "Assets/FPGDemo/Config/Level/Rooms/root1.asset";
 
         private readonly List<GameObject> objects = new List<GameObject>();
 
@@ -33,6 +35,39 @@ namespace FPG.Demo.Tests.EditMode
 
             objects.Clear();
             Physics.SyncTransforms();
+        }
+
+        [Test]
+        public void ClearedRoomAttackPhaseOnlyAllowsAvailableExitInteraction()
+        {
+            Assert.That(
+                FpgFormalPlayerTickDriver.IsAttackPhaseActive(
+                    FpgEncounterPhase.Cleared,
+                    paused: false,
+                    roomInteraction: true,
+                    hasAvailableExits: true),
+                Is.True);
+            Assert.That(
+                FpgFormalPlayerTickDriver.IsAttackPhaseActive(
+                    FpgEncounterPhase.Cleared,
+                    paused: false,
+                    roomInteraction: false,
+                    hasAvailableExits: true),
+                Is.False);
+            Assert.That(
+                FpgFormalPlayerTickDriver.IsAttackPhaseActive(
+                    FpgEncounterPhase.Cleared,
+                    paused: false,
+                    roomInteraction: true,
+                    hasAvailableExits: false),
+                Is.False);
+            Assert.That(
+                FpgFormalPlayerTickDriver.IsAttackPhaseActive(
+                    FpgEncounterPhase.Cleared,
+                    paused: true,
+                    roomInteraction: true,
+                    hasAvailableExits: true),
+                Is.False);
         }
 
         [Test]
@@ -503,6 +538,44 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void Root1RegisteredCoverBlockersFollowActiveHealthStage()
+        {
+            HitboxRegistry registry = CreateRegistry();
+            FpgRoomInstance room = CreateRoomInstance(
+                Root1RoomPath,
+                "Root1RoomInstance");
+            Assert.That(
+                room.TryRegisterCoverBlockers(
+                    registry,
+                    UnityAttackQuerySettings.Default,
+                    out string error),
+                Is.True,
+                error);
+
+            AssertRegisteredCoverStage(
+                room,
+                registry,
+                "cover-left",
+                33,
+                expectedStageCount: 3,
+                expectedActiveStageIndex: 2);
+            AssertRegisteredCoverStage(
+                room,
+                registry,
+                "cover-center",
+                50,
+                expectedStageCount: 2,
+                expectedActiveStageIndex: 1);
+            AssertRegisteredCoverStage(
+                room,
+                registry,
+                "cover-right",
+                0,
+                expectedStageCount: 2,
+                expectedActiveStageIndex: -1);
+        }
+
+        [Test]
         public void CoverRegistrationRejectsGeometryConflictsBeforePartialRegistration()
         {
             HitboxRegistry registry = CreateRegistry();
@@ -697,16 +770,173 @@ namespace FPG.Demo.Tests.EditMode
 
         private FpgRoomInstance CreateForestRoomInstance()
         {
+            return CreateRoomInstance(ForestRoomPath, "ForestRoomInstance");
+        }
+
+        private FpgRoomInstance CreateRoomInstance(
+            string roomPath,
+            string instanceName)
+        {
             FpgRoomDefinition definition =
-                AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(ForestRoomPath);
-            Assert.That(definition, Is.Not.Null, ForestRoomPath);
-            GameObject gameObject = Track(new GameObject("ForestRoomInstance"));
+                AssetDatabase.LoadAssetAtPath<FpgRoomDefinition>(roomPath);
+            Assert.That(definition, Is.Not.Null, roomPath);
+            GameObject gameObject = Track(new GameObject(instanceName));
             FpgRoomInstance instance = gameObject.AddComponent<FpgRoomInstance>();
             Assert.That(
                 instance.TryInitialize(definition, out string error),
                 Is.True,
                 error);
             return instance;
+        }
+
+        private static void AssertRegisteredCoverStage(
+            FpgRoomInstance room,
+            HitboxRegistry registry,
+            string markerId,
+            int durability,
+            int expectedStageCount,
+            int expectedActiveStageIndex)
+        {
+            Assert.That(
+                room.TryGetCoverView(markerId, out FpgCoverEntityView view),
+                Is.True,
+                markerId);
+            view.ApplySnapshot(new FpgCoverSnapshot(
+                markerId,
+                0,
+                durability,
+                100,
+                false,
+                false,
+                false));
+
+            Assert.That(view.HealthStageCount, Is.EqualTo(expectedStageCount));
+            Assert.That(
+                view.BlockingColliderCount,
+                Is.EqualTo(expectedStageCount));
+            Assert.That(
+                view.ActiveHealthStageIndex,
+                Is.EqualTo(expectedActiveStageIndex));
+
+            Transform activeRoot = ResolveStageRoot(
+                view,
+                expectedActiveStageIndex);
+            for (int colliderIndex = 0;
+                colliderIndex < view.BlockingColliderCount;
+                colliderIndex++)
+            {
+                Assert.That(
+                    view.TryGetBlockingCollider(
+                        colliderIndex,
+                        out Collider collider),
+                    Is.True,
+                    markerId);
+                Assert.That(
+                    registry.TryResolve(
+                        collider,
+                        out RegisteredHitbox registered),
+                    Is.True,
+                    markerId);
+                Assert.That(registered.Collider, Is.SameAs(collider));
+
+                GeometryId geometryId =
+                    FpgRoomInstance.DeriveCoverGeometryId(
+                        room.RoomDefinition.RoomId,
+                        markerId,
+                        colliderIndex);
+                Assert.That(registry.TryResolve(geometryId, out _), Is.True);
+                Assert.That(
+                    room.TryResolveCoverId(geometryId, out string coverId),
+                    Is.True);
+                Assert.That(coverId, Is.EqualTo(markerId));
+
+                bool shouldBeEnabled = expectedActiveStageIndex >= 0
+                    && activeRoot != null
+                    && collider.transform.IsChildOf(activeRoot);
+                Assert.That(
+                    collider.enabled,
+                    Is.EqualTo(shouldBeEnabled),
+                    markerId + ":" + colliderIndex);
+                if (shouldBeEnabled)
+                {
+                    AssertMeshColliderRaycasts(collider as MeshCollider, markerId);
+                }
+            }
+        }
+
+        private static Transform ResolveStageRoot(
+            FpgCoverEntityView view,
+            int stageIndex)
+        {
+            if (stageIndex < 0)
+            {
+                return null;
+            }
+
+            SerializedObject serialized = new SerializedObject(view);
+            SerializedProperty stages = serialized.FindProperty("healthStages");
+            GameObject stageRoot = stages.GetArrayElementAtIndex(stageIndex)
+                .FindPropertyRelative("visualRoot")
+                .objectReferenceValue as GameObject;
+            return stageRoot == null ? null : stageRoot.transform;
+        }
+
+        private static void AssertMeshColliderRaycasts(
+            MeshCollider collider,
+            string context)
+        {
+            Assert.That(collider, Is.Not.Null, context);
+            Mesh mesh = collider.sharedMesh;
+            Assert.That(mesh, Is.Not.Null, context);
+            Vector3[] vertices = mesh.vertices;
+            int[] triangles = mesh.triangles;
+            Assert.That(vertices, Is.Not.Empty, context);
+            Assert.That(triangles.Length, Is.GreaterThanOrEqualTo(3), context);
+
+            Vector3 first = default(Vector3);
+            Vector3 second = default(Vector3);
+            Vector3 third = default(Vector3);
+            Vector3 normal = default(Vector3);
+            float largestTriangleAreaSquared = 0f;
+            for (int index = 0; index + 2 < triangles.Length; index += 3)
+            {
+                Vector3 candidateFirst = collider.transform.TransformPoint(
+                    vertices[triangles[index]]);
+                Vector3 candidateSecond = collider.transform.TransformPoint(
+                    vertices[triangles[index + 1]]);
+                Vector3 candidateThird = collider.transform.TransformPoint(
+                    vertices[triangles[index + 2]]);
+                Vector3 candidateNormal = Vector3.Cross(
+                    candidateSecond - candidateFirst,
+                    candidateThird - candidateFirst);
+                if (candidateNormal.sqrMagnitude <= largestTriangleAreaSquared)
+                {
+                    continue;
+                }
+
+                first = candidateFirst;
+                second = candidateSecond;
+                third = candidateThird;
+                normal = candidateNormal;
+                largestTriangleAreaSquared = candidateNormal.sqrMagnitude;
+            }
+
+            Assert.That(
+                largestTriangleAreaSquared,
+                Is.GreaterThan(0.000000000001f),
+                context);
+            normal.Normalize();
+
+            Vector3 triangleCenter = (first + second + third) / 3f;
+            Ray frontRay = new Ray(triangleCenter + normal, -normal);
+            Ray backRay = new Ray(triangleCenter - normal, normal);
+            Physics.SyncTransforms();
+            Assert.That(
+                collider.Raycast(frontRay, out RaycastHit hit, 2f)
+                || collider.Raycast(backRay, out hit, 2f),
+                Is.True,
+                context);
+            Assert.That(hit.collider, Is.SameAs(collider), context);
         }
 
         private BoxCollider CreateCollider(string name, int layer)

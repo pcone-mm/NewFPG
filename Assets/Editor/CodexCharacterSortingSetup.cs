@@ -8,7 +8,7 @@ internal static class CodexCharacterSortingSetup
     private const string LayerName = "Character";
     private const int LayerId = 2026073101;
     private const string PrefabPath =
-        "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab";
+        "Assets/FPGDemo/Presentation/Characters/Players/Fei/Prefabs/PF_FPG_FeiEntity.prefab";
     private const string SpineObjectName = "D0_Fei_30048_StraightAlpha";
     private const string SessionKey = "Codex.CharacterSortingSetup.Completed.v1";
 

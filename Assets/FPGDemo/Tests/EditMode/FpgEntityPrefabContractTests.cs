@@ -8,6 +8,7 @@ using UnityEngine;
 
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
+using FPG.Demo.Run;
 using FPG.Demo.Unity;
 
 namespace FPG.Demo.Tests.EditMode
@@ -35,14 +36,14 @@ namespace FPG.Demo.Tests.EditMode
         public void FormalEntityPrefabsSatisfyTheirContracts()
         {
             FpgPlayerEntityView player = LoadEntity<FpgPlayerEntityView>(
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab");
+                "Assets/FPGDemo/Presentation/Characters/Players/Fei/Prefabs/PF_FPG_FeiEntity.prefab");
             Assert.That(player.TryValidate(out string error), Is.True, error);
 
             string[] enemyPaths =
             {
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_BurstbugEntity.prefab",
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_LuanEntity.prefab",
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_HudieEntity.prefab"
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Burstbug/Prefabs/PF_FPG_BurstbugEntity.prefab",
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Luan/Prefabs/PF_FPG_LuanEntity.prefab",
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Hudie/Prefabs/PF_FPG_HudieEntity.prefab"
             };
             for (int index = 0; index < enemyPaths.Length; index++)
             {
@@ -75,9 +76,9 @@ namespace FPG.Demo.Tests.EditMode
         {
             string[] enemyPaths =
             {
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_BurstbugEntity.prefab",
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_LuanEntity.prefab",
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_HudieEntity.prefab"
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Burstbug/Prefabs/PF_FPG_BurstbugEntity.prefab",
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Luan/Prefabs/PF_FPG_LuanEntity.prefab",
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Hudie/Prefabs/PF_FPG_HudieEntity.prefab"
             };
 
             for (int pathIndex = 0; pathIndex < enemyPaths.Length; pathIndex++)
@@ -107,7 +108,7 @@ namespace FPG.Demo.Tests.EditMode
         public void FormalPlayerAndIndependentCoverPrefabsSatisfyContracts()
         {
             FpgPlayerEntityView player = LoadEntity<FpgPlayerEntityView>(
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab");
+                "Assets/FPGDemo/Presentation/Characters/Players/Fei/Prefabs/PF_FPG_FeiEntity.prefab");
             FpgPlayerBarrierPresentationController cover = player.Barrier;
 
             Assert.That(cover, Is.Not.Null);
@@ -158,50 +159,54 @@ namespace FPG.Demo.Tests.EditMode
             Assert.That(
                 AssetDatabase.GetAssetPath(effect.gameObject),
                 Is.EqualTo(
-                    "Assets/FPGDemo/Presentation/FormalEncounter/VFX/PF_FPG_CoverTransition.prefab"));
+                    "Assets/FPGDemo/Presentation/Level/Covers/VFX/PF_FPG_CoverTransition.prefab"));
 
             AssertCoverPrefabContract(
-                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_DefaultCover.prefab");
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_DefaultCover.prefab");
             GameObject treeCover = AssertCoverPrefabContract(
-                "Assets/FPGDemo/Presentation/FormalEncounter/Covers/PF_FPG_Root1TreeCover.prefab");
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_Root1TreeCover.prefab");
+            AssertCoverHealthStages(
+                treeCover,
+                new[] { 67, 34, 1 },
+                new[]
+                {
+                    "HealthStage_100",
+                    "HealthStage_66",
+                    "HealthStage_33"
+                },
+                new[]
+                {
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block.png",
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block_66.png",
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block_33.png"
+                },
+                "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block_0.png");
 
-            FpgCoverEntityView treeView = treeCover.GetComponent<FpgCoverEntityView>();
-            SerializedObject treeSo = new SerializedObject(treeView);
-            GameObject intactRoot = treeSo.FindProperty("intactRoot")
-                .objectReferenceValue as GameObject;
-            GameObject destroyedRoot = treeSo.FindProperty("destroyedRoot")
-                .objectReferenceValue as GameObject;
-            Assert.That(intactRoot.name, Is.EqualTo("IntactRoot"));
-            Assert.That(destroyedRoot.name, Is.EqualTo("DestroyedRoot"));
-            Transform intactTree = intactRoot.transform.Find("root1_tree1_block");
-            Transform destroyedTree = destroyedRoot.transform.Find(
-                "root1_tree1_block_blood");
-            Assert.That(intactTree, Is.Not.Null);
-            Assert.That(destroyedTree, Is.Not.Null);
-            Transform shadowProxy = intactTree.Find("__ShadowCasterProxy");
-            Assert.That(shadowProxy, Is.Not.Null);
-            Assert.That(
-                AssetDatabase.GetAssetPath(
-                    intactTree.GetComponent<SpriteRenderer>().sprite),
-                Is.EqualTo(
-                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block.png"));
-            Assert.That(
-                AssetDatabase.GetAssetPath(
-                    destroyedTree.GetComponent<SpriteRenderer>().sprite),
-                Is.EqualTo(
-                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_tree1_block_blood.png"));
-            MeshFilter shadowMesh = shadowProxy.GetComponent<MeshFilter>();
-            MeshCollider shadowCollider = shadowProxy.GetComponent<MeshCollider>();
-            Assert.That(shadowMesh, Is.Not.Null);
-            Assert.That(shadowMesh.sharedMesh, Is.Not.Null);
-            Assert.That(shadowCollider, Is.Not.Null);
-            Assert.That(shadowCollider.sharedMesh, Is.SameAs(shadowMesh.sharedMesh));
-            Assert.That(shadowCollider.convex, Is.False);
-            Assert.That(treeView.BlockingColliderCount, Is.EqualTo(1));
-            Assert.That(
-                treeView.TryGetBlockingCollider(0, out Collider blocker),
-                Is.True);
-            Assert.That(blocker, Is.SameAs(shadowCollider));
+            GameObject boatLeft = AssertCoverPrefabContract(
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_BoatLeft.prefab");
+            AssertCoverHealthStages(
+                boatLeft,
+                new[] { 51, 1 },
+                new[] { "HealthStage_100", "HealthStage_50" },
+                new[]
+                {
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_boat_block_L_100_.png",
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_boat_block_L_50.png"
+                },
+                "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_boat_block_L_0.png");
+
+            GameObject boatRight = AssertCoverPrefabContract(
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_BoatRight.prefab");
+            AssertCoverHealthStages(
+                boatRight,
+                new[] { 51, 1 },
+                new[] { "HealthStage_100", "HealthStage_50" },
+                new[]
+                {
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_boat_block_R_100_.png",
+                    "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_boat_block_R_50.png"
+                },
+                "Assets/FPGDemo/Presentation/Level/Environment/rootArt/root1/root1_boat_block_R_0_.png");
         }
 
         [Test]
@@ -341,6 +346,23 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void FormalCoverHealthStagesApplySnapshotsAndToggleColliders()
+        {
+            AssertCoverStageSnapshots(
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_Root1TreeCover.prefab",
+                new[] { 100, 66, 33 },
+                new[] { 0, 1, 2 });
+            AssertCoverStageSnapshots(
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_BoatLeft.prefab",
+                new[] { 100, 50 },
+                new[] { 0, 1 });
+            AssertCoverStageSnapshots(
+                "Assets/FPGDemo/Presentation/Level/Covers/Prefabs/PF_FPG_BoatRight.prefab",
+                new[] { 100, 50 },
+                new[] { 0, 1 });
+        }
+
+        [Test]
         public void SocketRegistryUsesStableIdsAndRejectsDuplicateTransforms()
         {
             GameObject root = CreateObject("SocketRegistryRoot");
@@ -450,7 +472,7 @@ namespace FPG.Demo.Tests.EditMode
             const string definitionPath =
                 "Assets/FPGDemo/Config/FormalEncounter/FPG_Hudie_Enemy.asset";
             const string prefabPath =
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_HudieEntity.prefab";
+                "Assets/FPGDemo/Presentation/Characters/Enemies/Hudie/Prefabs/PF_FPG_HudieEntity.prefab";
             FpgEnemyDefinition definition =
                 AssetDatabase.LoadAssetAtPath<FpgEnemyDefinition>(definitionPath);
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -579,7 +601,7 @@ namespace FPG.Demo.Tests.EditMode
         public void PlayerFacingYawKeepsSpineShotOriginFiniteAtSampleAngles()
         {
             const string path =
-                "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab";
+                "Assets/FPGDemo/Presentation/Characters/Players/Fei/Prefabs/PF_FPG_FeiEntity.prefab";
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             Assert.That(prefab, Is.Not.Null, path);
             GameObject instance =
@@ -684,7 +706,7 @@ namespace FPG.Demo.Tests.EditMode
                 visual.gameObject.AddComponent<SkeletonAnimation>();
             FpgPlayerEntityView authoredPlayer =
                 LoadEntity<FpgPlayerEntityView>(
-                    "Assets/FPGDemo/Presentation/FormalEncounter/PF_FPG_FeiEntity.prefab");
+                    "Assets/FPGDemo/Presentation/Characters/Players/Fei/Prefabs/PF_FPG_FeiEntity.prefab");
             skeleton.skeletonDataAsset =
                 authoredPlayer.SkeletonAnimation.skeletonDataAsset;
             skeleton.Initialize(false);
@@ -815,6 +837,199 @@ namespace FPG.Demo.Tests.EditMode
             }
 
             return prefab;
+        }
+
+        private static void AssertCoverHealthStages(
+            GameObject prefab,
+            int[] expectedThresholds,
+            string[] expectedStageNames,
+            string[] expectedStageSpritePaths,
+            string expectedDestroyedSpritePath)
+        {
+            FpgCoverEntityView view = prefab.GetComponent<FpgCoverEntityView>();
+            SerializedObject serialized = new SerializedObject(view);
+            GameObject intactRoot = serialized.FindProperty("intactRoot")
+                .objectReferenceValue as GameObject;
+            GameObject destroyedRoot = serialized.FindProperty("destroyedRoot")
+                .objectReferenceValue as GameObject;
+            Assert.That(intactRoot, Is.Not.Null, prefab.name);
+            Assert.That(destroyedRoot, Is.Not.Null, prefab.name);
+            Assert.That(intactRoot.name, Is.EqualTo("IntactRoot"));
+            Assert.That(destroyedRoot.name, Is.EqualTo("DestroyedRoot"));
+
+            SerializedProperty stages = serialized.FindProperty("healthStages");
+            Assert.That(stages.arraySize, Is.EqualTo(expectedThresholds.Length));
+            Assert.That(view.HealthStageCount, Is.EqualTo(expectedThresholds.Length));
+            for (int index = 0; index < expectedThresholds.Length; index++)
+            {
+                SerializedProperty stage = stages.GetArrayElementAtIndex(index);
+                Assert.That(
+                    stage.FindPropertyRelative(
+                        "minDurabilityPercentInclusive").intValue,
+                    Is.EqualTo(expectedThresholds[index]),
+                    prefab.name);
+                GameObject visualRoot = stage.FindPropertyRelative("visualRoot")
+                    .objectReferenceValue as GameObject;
+                Assert.That(visualRoot, Is.Not.Null, prefab.name);
+                Assert.That(
+                    visualRoot.name,
+                    Is.EqualTo(expectedStageNames[index]),
+                    prefab.name);
+                Assert.That(
+                    visualRoot.transform.IsChildOf(intactRoot.transform),
+                    Is.True,
+                    prefab.name);
+                Assert.That(
+                    ContainsSpritePath(
+                        visualRoot.transform,
+                        expectedStageSpritePaths[index]),
+                    Is.True,
+                    prefab.name);
+
+                MeshCollider[] colliders =
+                    visualRoot.GetComponentsInChildren<MeshCollider>(true);
+                Assert.That(colliders, Has.Length.EqualTo(1), prefab.name);
+                MeshFilter meshFilter =
+                    colliders[0].GetComponent<MeshFilter>();
+                Assert.That(meshFilter, Is.Not.Null, prefab.name);
+                Assert.That(meshFilter.name, Is.EqualTo("__ShadowCasterProxy"));
+                Assert.That(meshFilter.sharedMesh, Is.Not.Null, prefab.name);
+                Assert.That(
+                    colliders[0].sharedMesh,
+                    Is.SameAs(meshFilter.sharedMesh),
+                    prefab.name);
+                Assert.That(colliders[0].isTrigger, Is.False, prefab.name);
+                Assert.That(colliders[0].convex, Is.False, prefab.name);
+            }
+
+            Assert.That(
+                ContainsSpritePath(
+                    destroyedRoot.transform,
+                    expectedDestroyedSpritePath),
+                Is.True,
+                prefab.name);
+            Assert.That(
+                destroyedRoot.GetComponentsInChildren<Collider>(true),
+                Is.Empty,
+                prefab.name);
+        }
+
+        private void AssertCoverStageSnapshots(
+            string prefabPath,
+            int[] durabilities,
+            int[] expectedStageIndices)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                prefabPath);
+            Assert.That(prefab, Is.Not.Null, prefabPath);
+            GameObject instance =
+                PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            Assert.That(instance, Is.Not.Null, prefabPath);
+            createdObjects.Add(instance);
+            FpgCoverEntityView view =
+                instance.GetComponent<FpgCoverEntityView>();
+            Assert.That(view, Is.Not.Null, prefabPath);
+
+            for (int index = 0; index < durabilities.Length; index++)
+            {
+                view.ApplySnapshot(new FpgCoverSnapshot(
+                    "cover-test",
+                    0,
+                    durabilities[index],
+                    100,
+                    false,
+                    false,
+                    false));
+                AssertActiveCoverStage(
+                    view,
+                    expectedStageIndices[index],
+                    prefabPath + ":" + durabilities[index]);
+            }
+
+            view.ApplySnapshot(new FpgCoverSnapshot(
+                "cover-test",
+                0,
+                0,
+                100,
+                false,
+                false,
+                false));
+            AssertActiveCoverStage(view, -1, prefabPath + ":destroyed");
+        }
+
+        private static void AssertActiveCoverStage(
+            FpgCoverEntityView view,
+            int expectedActiveStageIndex,
+            string context)
+        {
+            SerializedObject serialized = new SerializedObject(view);
+            GameObject destroyedRoot = serialized.FindProperty("destroyedRoot")
+                .objectReferenceValue as GameObject;
+            SerializedProperty stages = serialized.FindProperty("healthStages");
+            Assert.That(
+                view.ActiveHealthStageIndex,
+                Is.EqualTo(expectedActiveStageIndex),
+                context);
+            Assert.That(
+                view.IsDestroyed,
+                Is.EqualTo(expectedActiveStageIndex < 0),
+                context);
+            Assert.That(
+                destroyedRoot.activeSelf,
+                Is.EqualTo(expectedActiveStageIndex < 0),
+                context);
+
+            Transform activeRoot = null;
+            for (int stageIndex = 0; stageIndex < stages.arraySize; stageIndex++)
+            {
+                GameObject stageRoot = stages.GetArrayElementAtIndex(stageIndex)
+                    .FindPropertyRelative("visualRoot")
+                    .objectReferenceValue as GameObject;
+                Assert.That(stageRoot, Is.Not.Null, context);
+                bool isActive = stageIndex == expectedActiveStageIndex;
+                Assert.That(stageRoot.activeSelf, Is.EqualTo(isActive), context);
+                if (isActive)
+                {
+                    activeRoot = stageRoot.transform;
+                }
+            }
+
+            for (int colliderIndex = 0;
+                colliderIndex < view.BlockingColliderCount;
+                colliderIndex++)
+            {
+                Assert.That(
+                    view.TryGetBlockingCollider(
+                        colliderIndex,
+                        out Collider collider),
+                    Is.True,
+                    context);
+                bool shouldBeEnabled = expectedActiveStageIndex >= 0
+                    && collider.transform.IsChildOf(activeRoot);
+                Assert.That(
+                    collider.enabled,
+                    Is.EqualTo(shouldBeEnabled),
+                    context + ":" + colliderIndex);
+            }
+        }
+
+        private static bool ContainsSpritePath(
+            Transform root,
+            string expectedPath)
+        {
+            SpriteRenderer[] renderers =
+                root.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                Sprite sprite = renderers[index].sprite;
+                if (sprite != null
+                    && AssetDatabase.GetAssetPath(sprite) == expectedPath)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private Transform CreateChild(Transform parent, string name)

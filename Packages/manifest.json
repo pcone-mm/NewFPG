@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.besty.unity-skills": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v2.4.2",
+    "com.besty.unity-skills": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v2.4.3",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.1.0",
     "com.esotericsoftware.spine.spine-unity": "file:../External/CZN/SpineRuntime-3.8",
     "com.unity.collab-proxy": "2.12.4",

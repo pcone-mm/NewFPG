@@ -35,6 +35,29 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void ClearedRoomKeepsAimIndicatorVisibleForExitInteraction()
+        {
+            FpgFormalPlayerPresentationSnapshot snapshot =
+                new FpgFormalPlayerPresentationSnapshot(
+                    new TickIndex(30L),
+                    new RuntimeId(1L),
+                    FpgEncounterPhase.Cleared,
+                    false,
+                    100,
+                    100,
+                    50,
+                    50,
+                    8,
+                    8,
+                    PlayerExposureState.Withdrawn,
+                    WeaponState.Ready);
+
+            Assert.That(
+                snapshot.AimIndicatorBaseState,
+                Is.EqualTo(FpgAimIndicatorBaseState.Normal));
+        }
+
+        [Test]
         public void ShotAndHitLayersOverlapAndHitDeduplicatesPerAttack()
         {
             ReticleFixture fixture = new ReticleFixture();

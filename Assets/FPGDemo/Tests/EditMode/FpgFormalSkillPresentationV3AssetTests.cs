@@ -30,11 +30,11 @@ namespace FPG.Demo.Tests.EditMode
         private const string LuanPath =
             "Assets/FPGDemo/Config/FormalEncounter/FPG_Luan_Attack_Summon.asset";
         private const string FeiVfxRoot =
-            "Assets/FPGDemo/Presentation/Characters/Fei/VFX/";
+            "Assets/FPGDemo/Presentation/Characters/Players/Fei/VFX/";
         private const string FeiSecondaryChargePrefabPath =
             FeiVfxRoot + "PF_FPG_Fei_Secondary_Charge.prefab";
         private const string EnemyVfxRoot =
-            "Assets/FPGDemo/Presentation/Characters/EnemyShared/VFX/";
+            "Assets/FPGDemo/Presentation/Characters/Enemies/Shared/VFX/";
 
         [Test]
         public void FormalSkillsArePureSchemaV3Assets()
@@ -238,6 +238,327 @@ namespace FPG.Demo.Tests.EditMode
             AssertAssetPath(
                 action.ImpactPresentation.BaseVfx.Prefab,
                 EnemyVfxRoot + "PF_FPG_Enemy_Heavy_Impact.prefab");
+            AssertWorldAudioGroup(
+                action.ImpactPresentation.BaseAudio,
+                4,
+                "SFX_Burstbug_Heavy_Impact_");
+            AssertWorldAudioGroup(
+                action.ImpactPresentation.WeakpointAudioOverride,
+                4,
+                "SFX_Burstbug_Heavy_Weakpoint_");
+        }
+
+        [Test]
+        public void HeavyWarningResolutionCarriesItsAuthoredCountdownWindow()
+        {
+            FpgEnemyAttackDefinition heavy =
+                LoadRequired<FpgEnemyAttackDefinition>(BurstbugHeavyPath);
+            FpgSkillSequenceDefinition execute =
+                FindSequence(heavy, FpgSkillSequenceKind.Execute);
+            Assert.That(execute.Warnings.Count, Is.EqualTo(1));
+            FpgSkillWarningDefinition warning = execute.Warnings[0];
+            FpgCompiledSkillEvent compiledStart = new FpgCompiledSkillEvent(
+                FpgSkillStableId.CompileEvent(warning.StartEventId),
+                warning.StartTick,
+                FpgSkillEventKind.WarningStarted,
+                FpgSkillStableId.CompileWarning(warning.WarningId),
+                socketId: FpgSkillStableId.CompileOptionalSocket(
+                    warning.SocketId));
+
+            Assert.That(
+                FpgEnemySkillPresentationResolver.TryResolveWarning(
+                    heavy,
+                    FpgSkillSequenceKind.Execute,
+                    compiledStart,
+                    out FpgResolvedEnemySkillWarning resolved),
+                Is.True);
+            Assert.That(resolved.StartTick, Is.EqualTo(0));
+            Assert.That(resolved.EndTick, Is.EqualTo(135));
+            Assert.That(
+                resolved.SocketName,
+                Is.EqualTo("attack.default.origin"));
+        }
+
+        [Test]
+        public void BurstbugFastProjectileAudioMatchesTheSpawnEvent()
+        {
+            FpgEnemyAttackDefinition skill =
+                LoadRequired<FpgEnemyAttackDefinition>(BurstbugFastPath);
+            FpgSkillSequenceDefinition execute =
+                FindSequence(skill, FpgSkillSequenceKind.Execute);
+
+            Assert.That(execute.ActivePresentationTracks.Count, Is.EqualTo(1));
+            FpgSkillActivePresentationTrackDefinition track =
+                execute.ActivePresentationTracks[0];
+            Assert.That(track.TrackId, Is.EqualTo("track.burstbug.fast.active"));
+            Assert.That(track.AudioEvents.Count, Is.EqualTo(1));
+
+            FpgAudioPresentationEventDefinition audio = track.AudioEvents[0];
+            Assert.That(
+                audio.EventId,
+                Is.EqualTo("presentation.burstbug.fast.projectile.0"));
+            Assert.That(audio.Tick, Is.EqualTo(36));
+            Assert.That(audio.AuthoredOrdinal, Is.EqualTo(3));
+            Assert.That(
+                audio.BoundGameplayEventId,
+                Is.EqualTo("event.burstbug-fast.attack.0"));
+            Assert.That(audio.Presentation.ClipCount, Is.EqualTo(4));
+            Assert.That(
+                audio.Presentation.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                audio.Presentation.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerRoot));
+            Assert.That(audio.Presentation.OwnerSocketId, Is.Empty);
+            Assert.That(audio.Presentation.MinDistance, Is.EqualTo(1f));
+            Assert.That(audio.Presentation.MaxDistance, Is.EqualTo(20f));
+            for (int index = 0; index < audio.Presentation.ClipCount; index++)
+            {
+                StringAssert.StartsWith(
+                    "SFX_Burstbug_Fast_Projectile_",
+                    audio.Presentation.GetClip(index).name);
+            }
+        }
+
+        [Test]
+        public void BurstbugFastHitAudioMatchesCollisionPresentation()
+        {
+            FpgEnemyAttackDefinition skill =
+                LoadRequired<FpgEnemyAttackDefinition>(BurstbugFastPath);
+            FpgSkillProjectileEventDefinition projectile =
+                FindSequence(skill, FpgSkillSequenceKind.Execute)
+                    .ProjectileEvents[0];
+
+            Assert.That(projectile.CollisionPresentation, Is.Not.Null);
+            FpgAudioPresentationDefinition audio =
+                projectile.CollisionPresentation.BaseAudio;
+            Assert.That(audio, Is.Not.Null);
+            Assert.That(audio.ClipCount, Is.EqualTo(6));
+            Assert.That(
+                audio.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                audio.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerRoot));
+            Assert.That(audio.OwnerSocketId, Is.Empty);
+            Assert.That(audio.MinDistance, Is.EqualTo(1f));
+            Assert.That(audio.MaxDistance, Is.EqualTo(20f));
+            for (int index = 0; index < audio.ClipCount; index++)
+            {
+                StringAssert.StartsWith(
+                    "SFX_Burstbug_Fast_Hit_",
+                    audio.GetClip(index).name);
+            }
+        }
+
+        [Test]
+        public void BurstbugVolleyAudioSeparatesFlightImpactAndInterception()
+        {
+            FpgEnemyAttackDefinition skill =
+                LoadRequired<FpgEnemyAttackDefinition>(BurstbugVolleyPath);
+            FpgSkillProjectileEventDefinition projectile =
+                FindSequence(skill, FpgSkillSequenceKind.Execute)
+                    .ProjectileEvents[0];
+
+            AssertWorldAudioGroup(
+                projectile.FlightAudio,
+                6,
+                "SFX_Burstbug_Volley_Projectile_");
+            Assert.That(projectile.CollisionPresentation, Is.Not.Null);
+            AssertWorldAudioGroup(
+                projectile.CollisionPresentation.BaseAudio,
+                6,
+                "SFX_Burstbug_Volley_Impact_");
+            AssertWorldAudioGroup(
+                projectile.CollisionPresentation.InterceptionAudioOverride,
+                3,
+                "SFX_Burstbug_Volley_Interception_");
+
+            Assert.That(
+                FpgSkillPresentationRegistry.TryResolveActionPresentation(
+                    skill,
+                    FpgSkillStableId.CompileEvent(
+                        "event.burstbug-interceptable-volley.attack.0"),
+                    out FpgCompiledSkillActionPresentation presentation),
+                Is.True);
+            Assert.That(presentation.FlightAudio.IsValid, Is.True);
+            Assert.That(presentation.Collision.BaseAudio.IsValid, Is.True);
+            Assert.That(
+                presentation.Collision.InterceptionAudioOverride.IsValid,
+                Is.True);
+        }
+
+        [Test]
+        public void HudieProjectileAudioSeparatesLaunchFlightAndImpacts()
+        {
+            FpgEnemyAttackDefinition skill =
+                LoadRequired<FpgEnemyAttackDefinition>(HudiePath);
+            FpgSkillSequenceDefinition execute =
+                FindSequence(skill, FpgSkillSequenceKind.Execute);
+            FpgSkillProjectileEventDefinition projectile =
+                execute.ProjectileEvents[0];
+
+            Assert.That(execute.ActivePresentationTracks.Count, Is.EqualTo(1));
+            FpgSkillActivePresentationTrackDefinition track =
+                execute.ActivePresentationTracks[0];
+            Assert.That(
+                track.TrackId,
+                Is.EqualTo("track.hudie-projectile.active"));
+            Assert.That(track.AudioEvents.Count, Is.EqualTo(1));
+
+            FpgAudioPresentationEventDefinition launch = track.AudioEvents[0];
+            Assert.That(
+                launch.EventId,
+                Is.EqualTo("presentation.hudie-projectile.launch.0"));
+            Assert.That(launch.Tick, Is.EqualTo(49));
+            Assert.That(launch.AuthoredOrdinal, Is.EqualTo(3));
+            Assert.That(
+                launch.BoundGameplayEventId,
+                Is.EqualTo("event.hudie-projectile.attack.0"));
+            AssertWorldAudioGroup(
+                launch.Presentation,
+                4,
+                "SFX_Hudie_Projectile_Launch_");
+            AssertWorldAudioGroup(
+                projectile.FlightAudio,
+                5,
+                "SFX_Hudie_Projectile_Flight_");
+            Assert.That(projectile.CollisionPresentation, Is.Not.Null);
+            AssertWorldAudioGroup(
+                projectile.CollisionPresentation.BaseAudio,
+                4,
+                "SFX_Hudie_Projectile_Impact_");
+            AssertWorldAudioGroup(
+                projectile.CollisionPresentation.WeakpointAudioOverride,
+                4,
+                "SFX_Hudie_Projectile_Weakpoint_");
+
+            Assert.That(
+                FpgSkillPresentationRegistry.TryResolveActionPresentation(
+                    skill,
+                    FpgSkillStableId.CompileEvent(
+                        "event.hudie-projectile.attack.0"),
+                    out FpgCompiledSkillActionPresentation presentation),
+                Is.True);
+            Assert.That(presentation.FlightAudio.IsValid, Is.True);
+            Assert.That(presentation.Collision.BaseAudio.IsValid, Is.True);
+            Assert.That(
+                presentation.Collision.WeakpointAudioOverride.IsValid,
+                Is.True);
+        }
+
+        [Test]
+        public void LuanSummonAudioSeparatesTelegraphAndAppearanceCommit()
+        {
+            FpgEnemyAttackDefinition skill =
+                LoadRequired<FpgEnemyAttackDefinition>(LuanPath);
+            FpgSkillSequenceDefinition execute =
+                FindSequence(skill, FpgSkillSequenceKind.Execute);
+
+            Assert.That(execute.ActivePresentationTracks.Count, Is.EqualTo(1));
+            FpgSkillActivePresentationTrackDefinition track =
+                execute.ActivePresentationTracks[0];
+            Assert.That(track.TrackId, Is.EqualTo("track.luan-summon.active"));
+            Assert.That(track.AudioEvents.Count, Is.EqualTo(3));
+
+            FpgAudioPresentationEventDefinition telegraph =
+                track.AudioEvents[0];
+            Assert.That(
+                telegraph.EventId,
+                Is.EqualTo("presentation.luan-summon.telegraph.0"));
+            Assert.That(telegraph.Tick, Is.Zero);
+            Assert.That(telegraph.AuthoredOrdinal, Is.EqualTo(4));
+            Assert.That(telegraph.BoundGameplayEventId, Is.Empty);
+            AssertWorldAudioGroup(
+                telegraph.Presentation,
+                7,
+                "SFX_Luan_Summon_Telegraph_");
+
+            FpgAudioPresentationEventDefinition commit =
+                track.AudioEvents[1];
+            Assert.That(
+                commit.EventId,
+                Is.EqualTo("presentation.luan-summon.commit.0"));
+            Assert.That(commit.Tick, Is.EqualTo(44));
+            Assert.That(commit.AuthoredOrdinal, Is.EqualTo(5));
+            Assert.That(
+                commit.BoundGameplayEventId,
+                Is.EqualTo("event.luan-summon.attack.0"));
+            AssertWorldAudioGroup(
+                commit.Presentation,
+                7,
+                "SFX_Luan_Summon_Commit_");
+
+            FpgAudioPresentationEventDefinition selfDestruct =
+                track.AudioEvents[2];
+            Assert.That(
+                selfDestruct.EventId,
+                Is.EqualTo("presentation.luan-summon.self-destruct.1"));
+            Assert.That(selfDestruct.Tick, Is.EqualTo(71));
+            Assert.That(selfDestruct.AuthoredOrdinal, Is.EqualTo(6));
+            Assert.That(
+                selfDestruct.BoundGameplayEventId,
+                Is.EqualTo("event.luan-summon.self-destruct.1"));
+            AssertWorldAudioGroup(
+                selfDestruct.Presentation,
+                4,
+                "SFX_Luan_SelfDestruct_");
+
+            Assert.That(
+                skill.TryCompile(
+                    out FpgCompiledSkillDefinition compiled,
+                    out string error),
+                Is.True,
+                error);
+            FpgCompiledSkillSequence compiledExecute =
+                FindSequence(compiled, FpgSkillSequenceKind.Execute);
+            FpgCompiledSkillEvent compiledTelegraph = FindEvent(
+                compiledExecute,
+                "presentation.luan-summon.telegraph.0");
+            FpgCompiledSkillEvent compiledCommit = FindEvent(
+                compiledExecute,
+                "presentation.luan-summon.commit.0");
+            FpgCompiledSkillEvent compiledSelfDestruct = FindEvent(
+                compiledExecute,
+                "presentation.luan-summon.self-destruct.1");
+            Assert.That(compiledTelegraph.PresentationHandle.IsValid, Is.True);
+            Assert.That(compiledTelegraph.BoundGameplayEventId, Is.Zero);
+            Assert.That(compiledCommit.PresentationHandle.IsValid, Is.True);
+            Assert.That(
+                compiledCommit.BoundGameplayEventId,
+                Is.EqualTo(FpgSkillStableId.CompileEvent(
+                    "event.luan-summon.attack.0")));
+            Assert.That(
+                compiledSelfDestruct.PresentationHandle.IsValid,
+                Is.True);
+            Assert.That(
+                compiledSelfDestruct.BoundGameplayEventId,
+                Is.EqualTo(FpgSkillStableId.CompileEvent(
+                    "event.luan-summon.self-destruct.1")));
+        }
+
+        private static void AssertWorldAudioGroup(
+            FpgAudioPresentationDefinition audio,
+            int expectedCount,
+            string expectedNamePrefix)
+        {
+            Assert.That(audio, Is.Not.Null);
+            Assert.That(audio.ClipCount, Is.EqualTo(expectedCount));
+            Assert.That(
+                audio.Space,
+                Is.EqualTo(FpgAudioPresentationSpace.WorldPositioned));
+            Assert.That(
+                audio.Anchor,
+                Is.EqualTo(FpgAudioPresentationAnchor.OwnerRoot));
+            Assert.That(audio.OwnerSocketId, Is.Empty);
+            Assert.That(audio.MinDistance, Is.EqualTo(1f));
+            Assert.That(audio.MaxDistance, Is.EqualTo(20f));
+            for (int index = 0; index < audio.ClipCount; index++)
+            {
+                StringAssert.StartsWith(
+                    expectedNamePrefix,
+                    audio.GetClip(index).name);
+            }
         }
 
         private static void AssertEnemyProjectile(
@@ -347,6 +668,39 @@ namespace FPG.Demo.Tests.EditMode
 
             throw new InvalidOperationException(
                 $"Skill '{skill.name}' does not contain sequence '{kind}'.");
+        }
+
+        private static FpgCompiledSkillSequence FindSequence(
+            FpgCompiledSkillDefinition skill,
+            FpgSkillSequenceKind kind)
+        {
+            for (int index = 0; index < skill.Sequences.Count; index++)
+            {
+                if (skill.Sequences[index].Kind == kind)
+                {
+                    return skill.Sequences[index];
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"Compiled skill does not contain sequence '{kind}'.");
+        }
+
+        private static FpgCompiledSkillEvent FindEvent(
+            FpgCompiledSkillSequence sequence,
+            string eventId)
+        {
+            int compiledEventId = FpgSkillStableId.CompileEvent(eventId);
+            for (int index = 0; index < sequence.Events.Count; index++)
+            {
+                if (sequence.Events[index].EventId == compiledEventId)
+                {
+                    return sequence.Events[index];
+                }
+            }
+
+            throw new InvalidOperationException(
+                $"Compiled sequence does not contain event '{eventId}'.");
         }
 
         private static T LoadRequired<T>(string path)

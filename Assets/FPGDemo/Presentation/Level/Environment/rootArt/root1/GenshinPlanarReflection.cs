@@ -135,8 +135,16 @@ namespace FPG.Demo.Presentation
             reflectionCamera.CopyFrom(sourceCamera);
             reflectionCamera.enabled = false;
             reflectionCamera.useOcclusionCulling = false;
-            reflectionCamera.clearFlags = CameraClearFlags.SolidColor;
-            reflectionCamera.backgroundColor = Color.clear;
+            reflectionCamera.clearFlags = sourceCamera.clearFlags;
+            if (reflectionCamera.clearFlags == CameraClearFlags.Depth ||
+                reflectionCamera.clearFlags == CameraClearFlags.Nothing)
+            {
+                reflectionCamera.clearFlags = CameraClearFlags.SolidColor;
+            }
+
+            Color reflectionBackground = sourceCamera.backgroundColor;
+            reflectionBackground.a = 1f;
+            reflectionCamera.backgroundColor = reflectionBackground;
             reflectionCamera.cullingMask = reflectedLayers;
 
             if (reflectionCamera.TryGetComponent(out UniversalAdditionalCameraData reflectionData))

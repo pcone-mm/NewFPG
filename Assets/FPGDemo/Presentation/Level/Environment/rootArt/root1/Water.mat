@@ -31,6 +31,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _CausticTex:
+        m_Texture: {fileID: 2800000, guid: b728ee6282892c544921ea8aa566ee49, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -47,8 +51,12 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _FlowMap:
+        m_Texture: {fileID: 2800000, guid: a3b834ab5b45787408d92d1695b657fc, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _FoamTex:
-        m_Texture: {fileID: 2800000, guid: 1586f419d3d6ebb408209d40372d57d8, type: 3}
+        m_Texture: {fileID: 2800000, guid: 06c77bd4d5e717940942fe9d6d827c18, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
@@ -60,7 +68,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: caa6cf1a8ef2e8e408e89ae6699fed09, type: 3}
+        m_Texture: {fileID: 2800000, guid: de4dc4c1c276d8a4092453eb70d3fcf3, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OcclusionMap:
@@ -95,60 +103,70 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
+    - _CausticDepthFade: 5
+    - _CausticScale: 0.1
+    - _CausticSpeed: 0.1
+    - _CausticStrength: 0.65
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
-    - _DepthRange: 5.45
+    - _DepthRange: 5.3
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _Distortion: 0.0362
+    - _Distortion: 0.0484
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
-    - _FlowSpeed: 1.06
-    - _FoamCutoff: 0.292
-    - _FoamSpeed: 0.04
-    - _FoamWidth: 2.81
-    - _FresnelBias: 0.06
+    - _FlowMapStrength: 0.005
+    - _FlowMapTiling: 0.01
+    - _FlowSpeed: 0.01
+    - _FoamCutoff: 0.541
+    - _FoamSoftness: 0.3
+    - _FoamSpeed: 0.1
+    - _FoamTiling: 0.12
+    - _FoamWidth: 0.24
+    - _FresnelBias: 0.045
     - _FresnelPower: 5
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossinessSource: 0
     - _GlossyReflections: 0
     - _Metallic: 1
-    - _NormalStrength: 0.764
-    - _NormalTiling: 0.209
+    - _NormalSpeed: 0.16
+    - _NormalStrength: 0.18
+    - _NormalTiling: 0.4
     - _OcclusionStrength: 1
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 0
-    - _ReflectionStrength: 1
+    - _ReflectionStrength: 1.3
     - _Shininess: 0
     - _Smoothness: 0.352
     - _SmoothnessSource: 0
     - _SmoothnessTextureChannel: 0
     - _SpecSource: 0
     - _SpecularHighlights: 1
-    - _SpecularPower: 8
-    - _SpecularStrength: 1.06
+    - _SpecularPower: 128
+    - _SpecularStrength: 0.85
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
-    - _WaveScale: 0.603
-    - _WaveStrength: 0.222
+    - _WaveScale: 0.2
+    - _WaveStrength: 0.05
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _CausticColor: {r: 0.6650944, g: 1, b: 0.9037627, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _DeepColor: {r: 0.09812213, g: 0.27614716, b: 0.46226418, a: 0.9}
+    - _DeepColor: {r: 0.052331794, g: 0.073854715, b: 0.2264151, a: 0.96}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _FoamColor: {r: 0.9103774, g: 0.98051685, b: 1, a: 0.92}
-    - _ShallowColor: {r: 0, g: 0.41674742, b: 0.5754717, a: 0.68}
+    - _FoamColor: {r: 0.92, g: 0.97, b: 1, a: 0.7}
+    - _ShallowColor: {r: 0.22961909, g: 0.34657946, b: 0.3773585, a: 0.82}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _SpecularColor: {r: 1, g: 0.9123409, b: 0.81960785, a: 1}
+    - _SpecularColor: {r: 1, g: 0.98, b: 0.93, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &4680781523613899023

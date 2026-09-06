@@ -30,6 +30,8 @@ namespace FPG.Demo.Presentation
         [Header("Water Plane")]
         [Tooltip("The imported water mesh faces Local Forward, which maps to World Up in this scene.")]
         [SerializeField] private Vector3 localPlaneNormal = Vector3.forward;
+        [Tooltip("For horizontal water volumes, reflect around the visible top surface instead of the mesh pivot.")]
+        [SerializeField] private bool useRendererTopSurface = true;
         [SerializeField] private float planeOffset;
 
         private Camera reflectionCamera;
@@ -198,8 +200,15 @@ namespace FPG.Demo.Presentation
             if (normal.sqrMagnitude < 0.001f)
                 normal = Vector3.up;
 
-            Vector3 planePosition = transform.position + normal * planeOffset;
-            float planeDistance = -Vector3.Dot(normal, planePosition) - clipPlaneOffset;
+            Vector3 planePosition = transform.position;
+            if (useRendererTopSurface && waterRenderer != null && Vector3.Dot(normal, Vector3.up) > 0.999f)
+            {
+                Bounds bounds = waterRenderer.bounds;
+                planePosition = new Vector3(bounds.center.x, bounds.max.y, bounds.center.z);
+            }
+            planePosition += normal * planeOffset;
+            // Clipping bias must not move the mirror: that separates contact points from their reflections.
+            float planeDistance = -Vector3.Dot(normal, planePosition);
             var reflectionPlane = new Vector4(normal.x, normal.y, normal.z, planeDistance);
             Matrix4x4 reflectionMatrix = CalculateReflectionMatrix(reflectionPlane);
 

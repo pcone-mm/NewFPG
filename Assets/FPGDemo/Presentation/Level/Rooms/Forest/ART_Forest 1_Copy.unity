@@ -2553,13 +2553,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FPG.Demo.Presentation.GenshinPlanarReflection
   resolution: 1
-  clipPlaneOffset: 0.07
+  clipPlaneOffset: 0
   reflectedLayers:
     serializedVersion: 2
     m_Bits: 805309751
   renderShadows: 0
   rendererIndex: 0
   localPlaneNormal: {x: 0, y: 0, z: 1}
+  useRendererTopSurface: 1
   planeOffset: 0
 --- !u!84 &1012228019
 RenderTexture:

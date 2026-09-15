@@ -32,6 +32,30 @@ MonoBehaviour:
     displayName: "\u73A9\u5BB6\u5165\u53E3 player-main"
     localPosition: {x: 0, y: 1.04, z: 0}
     localEulerAngles: {x: 0, y: 0, z: 0}
+  - markerId: player-01
+    displayName: "\u73A9\u5BB6\u5165\u53E3 2"
+    localPosition: {x: -6.5, y: -3.5, z: 9.5}
+    localEulerAngles: {x: -0, y: 332.70578, z: -0}
+  - markerId: player-02
+    displayName: "\u73A9\u5BB6\u5165\u53E3 3"
+    localPosition: {x: -4, y: -3.5, z: 8.5}
+    localEulerAngles: {x: -0, y: 338.40936, z: -0}
+  - markerId: player-03
+    displayName: "\u73A9\u5BB6\u5165\u53E3 4"
+    localPosition: {x: -5, y: -3.5, z: 14.5}
+    localEulerAngles: {x: -0, y: 342.04337, z: -0}
+  - markerId: player-04
+    displayName: "\u73A9\u5BB6\u5165\u53E3 5"
+    localPosition: {x: -6, y: -3.5, z: 17.5}
+    localEulerAngles: {x: -0, y: 341.77948, z: -0}
+  - markerId: player-05
+    displayName: "\u73A9\u5BB6\u5165\u53E3 6"
+    localPosition: {x: -7, y: -3.5, z: 22.5}
+    localEulerAngles: {x: -0, y: 342.87354, z: -0}
+  - markerId: player-06
+    displayName: "\u73A9\u5BB6\u5165\u53E3 7"
+    localPosition: {x: -7.5, y: -3.5, z: 16.5}
+    localEulerAngles: {x: -0, y: 335.1966, z: -0}
   enemySpawnPoints:
   - markerId: enemy-any-01
     displayName: Enemy Spawn 01

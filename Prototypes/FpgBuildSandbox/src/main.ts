@@ -3,6 +3,7 @@ import { GameController } from "./game/GameController";
 import { GameRenderer } from "./render/GameRenderer";
 import { AppUi } from "./ui/AppUi";
 import { AudioManager } from "./ui/AudioManager";
+import type { CombatState } from "./game/types";
 
 declare global {
   interface Window {
@@ -13,6 +14,7 @@ declare global {
       fillAura: () => void;
       defeatCombat: () => void;
       worldToScreen: (x: number, z: number, y?: number) => { x: number; y: number };
+      diagnostics: () => ReturnType<GameRenderer["diagnostics"]>;
     };
   }
 }
@@ -33,21 +35,19 @@ window.__FPG_SANDBOX__ = {
   fillAura: () => controller.debugFillAura(),
   defeatCombat: () => controller.debugDefeatCombat(),
   worldToScreen: (x, z, y) => renderer.worldToScreen(x, z, y),
+  diagnostics: () => renderer.diagnostics(),
 };
 
 const fixedStep = 1 / 60;
 let lastTime = performance.now() / 1000;
 let accumulator = 0;
 let primaryHeld = false;
+let pointer: { x: number; y: number } | undefined;
+let audioCombat: CombatState | undefined;
+let audioSerial = -1;
 
 function tryPrimaryFire(autoReload = false): void {
-  const serialBefore = controller.getSnapshot().state.combat?.nextFeedbackSerial;
   controller.dispatchAction({ type: "primary", autoReload });
-  const combatAfter = controller.getSnapshot().state.combat;
-  const serialAfter = combatAfter?.nextFeedbackSerial;
-  if (serialBefore !== undefined && serialAfter !== undefined && serialAfter > serialBefore) audio.play("shoot");
-  const feedback = combatAfter?.feedbackEvents.at(-1);
-  if (feedback?.type === "primary" && feedback.hit && feedback.id.endsWith(`-${(serialAfter ?? 1) - 1}`)) audio.play("hit");
 }
 
 function frame(milliseconds: number): void {
@@ -57,10 +57,24 @@ function frame(milliseconds: number): void {
   accumulator += frameDelta;
   while (accumulator >= fixedStep) {
     controller.tick();
-    if (primaryHeld && controller.getSnapshot().state.mode === "combat") tryPrimaryFire();
+    if (pointer && controller.getSnapshot().state.mode === "combat") {
+      controller.dispatchAction({ type: "aim", ...renderer.screenToWorld(pointer.x, pointer.y, controller.getSnapshot()) });
+    }
+    if (primaryHeld && controller.getSnapshot().state.mode === "combat") tryPrimaryFire(true);
     accumulator -= fixedStep;
   }
   const snapshot = controller.getSnapshot();
+  if (snapshot.state.mode !== "combat") primaryHeld = false;
+  if (audioCombat !== snapshot.state.combat) { audioCombat = snapshot.state.combat; audioSerial = -1; }
+  for (const event of audioCombat?.feedbackEvents ?? []) {
+    const serial = event.serial ?? Number(event.id.split("-").at(-1));
+    if (serial <= audioSerial) continue;
+    audioSerial = serial;
+    if (event.type === "primary") audio.play("shoot");
+    else if (event.type === "enemyDamage" || event.type === "secondary") audio.play("hit");
+    else if (event.type === "enemyDeath") audio.play("kill");
+    else if (event.type === "experienceCollected") audio.play("collect");
+  }
   if (ui.currentMode !== snapshot.state.mode) ui.render(snapshot);
   ui.updateHud(snapshot);
   renderer.render(snapshot, now);
@@ -74,6 +88,7 @@ function isUiInput(event: Event): boolean {
 }
 
 window.addEventListener("mousemove", (event) => {
+  pointer = { x: event.clientX, y: event.clientY };
   const snapshot = controller.getSnapshot();
   if (snapshot.state.mode !== "combat") return;
   const point = renderer.screenToWorld(event.clientX, event.clientY, snapshot);
@@ -82,6 +97,7 @@ window.addEventListener("mousemove", (event) => {
 });
 
 window.addEventListener("mousedown", (event) => {
+  pointer = { x: event.clientX, y: event.clientY };
   const snapshot = controller.getSnapshot();
   if (isUiInput(event) || snapshot.state.mode !== "combat") return;
   const point = renderer.screenToWorld(event.clientX, event.clientY, snapshot);
@@ -96,10 +112,7 @@ window.addEventListener("mousedown", (event) => {
 window.addEventListener("mouseup", (event) => {
   if (event.button === 0) primaryHeld = false;
   if (event.button !== 2 || controller.getSnapshot().state.mode !== "combat") return;
-  const energyBefore = controller.getSnapshot().state.combat?.secondaryEnergy;
   controller.dispatchAction({ type: "secondaryRelease" });
-  const energyAfter = controller.getSnapshot().state.combat?.secondaryEnergy;
-  if (energyBefore !== undefined && energyAfter !== undefined && energyAfter < energyBefore) audio.play("hit");
 });
 
 window.addEventListener("contextmenu", (event) => event.preventDefault());

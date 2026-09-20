@@ -29,7 +29,7 @@
     {
       "id": "ember_repeat_bow",
       "name": "试制·连珠弩",
-      "description": "扩充弹匣并提高主射伤害。",
+      "description": "弹匣容量 +2、主射伤害 +2、额外贯穿 +1/灵阶；贯穿后续目标承受 70% 伤害。",
       "rarity": "common",
       "form": "weapon",
       "factionTags": ["ember", "solar"],
@@ -47,6 +47,11 @@
           "handler": "statAdd",
           "stat": "primaryDamage",
           "value": 2
+        },
+        {
+          "handler": "statAdd",
+          "stat": "primaryPierce",
+          "value": 1
         }
       ],
       "testOnly": true,
@@ -85,7 +90,7 @@
     {
       "id": "ember_last_spark",
       "name": "试制·末火签",
-      "description": "弹匣末弹追加伤害。",
+      "description": "弹匣末弹追加伤害，击杀时造成 6/灵阶伤害的半径 2 爆炸，爆炸不递归触发。",
       "rarity": "rare",
       "form": "charm",
       "factionTags": ["ember", "thunder"],
@@ -103,6 +108,11 @@
           "handler": "statAdd",
           "stat": "primaryDamage",
           "value": 3
+        },
+        {
+          "handler": "statAdd",
+          "stat": "killExplosionDamage",
+          "value": 6
         }
       ],
       "testOnly": true,
@@ -270,7 +280,7 @@
     {
       "id": "storm_echo_bell",
       "name": "试制·回响铃",
-      "description": "蓄力释放时产生额外震击。",
+      "description": "蓄力释放追加 10 伤害，副射基础半径 +0.5/灵阶。",
       "rarity": "common",
       "form": "relic",
       "factionTags": ["storm", "thunder"],
@@ -283,6 +293,11 @@
           "handler": "eventDamage",
           "event": "charge",
           "value": 10
+        },
+        {
+          "handler": "statAdd",
+          "stat": "secondaryRadius",
+          "value": 0.5
         }
       ],
       "testOnly": true,

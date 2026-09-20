@@ -1,0 +1,19 @@
+{
+  "durationTicks": 5400,
+  "stageTicks": 1800,
+  "spawnIntervalTicks": 180,
+  "openingCount": 12,
+  "stageCaps": [24, 36, 48],
+  "batchSizes": [6, 8, 10],
+  "limits": { "enemies": 48, "projectiles": 128, "orbs": 128, "feedback": 512, "particles": 512, "numbers": 64, "support": 96, "ranged": 4, "summoners": 2, "meleeAttacks": 2, "rangedAttacks": 2 },
+  "health": { "melee": 18, "flyer": 12, "ranged": 36, "summoner": 72, "minion": 12, "elite": 260, "boss": 880 },
+  "airRatio": 0.3,
+  "specialistRatio": 0.15,
+  "attack": { "meleeDamage": 4, "rangedDamage": 6, "meleeWindup": 42, "rangedWindup": 54, "cooldown": 150 },
+  "drops": { "fodderAura": 1, "specialistAura": 3, "eliteAura": 45, "fodderMoney": 1, "specialistMoney": 3, "eliteMoney": 55, "bossMoney": 100, "consumableChance": 0.008, "maxConsumables": 2 },
+  "primaryPierce": 1,
+  "pierceMultiplier": 0.7,
+  "secondaryRadius": 3.2,
+  "secondaryChargeRadius": 1.8,
+  "killExplosionRadius": 2
+}

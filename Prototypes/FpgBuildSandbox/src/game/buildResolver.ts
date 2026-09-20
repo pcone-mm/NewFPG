@@ -1,5 +1,6 @@
 import { BLESSINGS, ENCHANTMENTS, FACTION_META, FACTION_SYNERGIES, ITEM_TYPE_META, ITEM_TYPE_SYNERGIES, SPIRITUAL_ITEMS, blessingById, enchantmentById, itemById } from "./content";
 import type { EffectSpec, FactionTag, ItemTypeTag, OwnedItem, ResolvedCombatBuild } from "./types";
+import combatConfig from "./combat-config.json";
 
 const BASE_BUILD: ResolvedCombatBuild = {
   lifeMax: 100,
@@ -16,6 +17,9 @@ const BASE_BUILD: ResolvedCombatBuild = {
   coverReduction: 0.35,
   auraGain: 1,
   damageReduction: 0,
+  primaryPierce: combatConfig.primaryPierce,
+  secondaryRadius: combatConfig.secondaryRadius,
+  killExplosionDamage: 0,
   eventDamage: {},
   eventCover: {},
   eventAmmo: {},
@@ -100,6 +104,8 @@ export function resolveBuild(items: readonly OwnedItem[], blessingIds: readonly 
   }
 
   build.magazine = Math.max(1, Math.round(build.magazine));
+  build.primaryPierce = Math.max(0, Math.floor(build.primaryPierce));
+  build.secondaryRadius = Math.max(0.1, build.secondaryRadius);
   build.reloadTicks = Math.max(24, Math.round(build.reloadTicks));
   build.fireCooldownTicks = Math.max(4, Math.round(build.fireCooldownTicks));
   build.coverReduction = Math.min(0.75, build.coverReduction);

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export type Rarity = "common" | "rare" | "mythic";
 export type LineageId = "ember" | "veil" | "storm" | "ward";
@@ -22,6 +22,9 @@ export type EffectStat =
   | "weakpointMultiplier"
   | "coverReduction"
   | "auraGain"
+  | "primaryPierce"
+  | "secondaryRadius"
+  | "killExplosionDamage"
   | "damageReduction";
 export type EffectEvent = "reload" | "lastShot" | "weakpoint" | "leaveCover" | "coverBreak" | "charge";
 
@@ -137,11 +140,13 @@ export interface RngStreamsState {
 export interface Vec2 {
   x: number;
   z: number;
+  /** World height; omitted only by legacy saves/inputs. */
+  y?: number;
 }
 
 export interface EnemyState {
   id: string;
-  type: "melee" | "ranged" | "summoner" | "minion" | "elite" | "boss";
+  type: "melee" | "flyer" | "ranged" | "summoner" | "minion" | "elite" | "boss";
   position: Vec2;
   hp: number;
   maxHp: number;
@@ -150,6 +155,31 @@ export interface EnemyState {
   spawnTick: number;
   phase?: 1 | 2 | 3;
   staggerTicks?: number;
+  layer?: "ground" | "air";
+  behavior?: "approach" | "windup" | "recover";
+  windupTicks?: number;
+  targetCover?: number;
+  lastHitTick?: number;
+  deathSettled?: boolean;
+}
+
+export interface ExperienceOrbState {
+  id: string;
+  position: Vec2;
+  origin: Vec2;
+  burst: Vec2;
+  value: number;
+  age: number;
+  duration: number;
+}
+
+export interface HordeState {
+  mode: "horde" | "legacy";
+  endTick: number;
+  nextSpawnTick: number;
+  pending: number;
+  supportSpawned: number;
+  stopped: boolean;
 }
 
 export interface ProjectileState {
@@ -161,7 +191,7 @@ export interface ProjectileState {
   lifeTicks: number;
 }
 
-export type CombatFeedbackType = "primary" | "secondary" | "enemyDamage" | "coverMove" | "coverHit" | "reloadStart" | "reloadComplete" | "playerHit";
+export type CombatFeedbackType = "primary" | "secondary" | "enemyDamage" | "enemyDeath" | "experienceCollected" | "explosion" | "coverMove" | "coverHit" | "reloadStart" | "reloadComplete" | "playerHit";
 
 export interface CombatFeedbackEvent {
   id: string;
@@ -174,6 +204,9 @@ export interface CombatFeedbackEvent {
   value?: number;
   charge?: number;
   worldY?: number;
+  targetId?: string;
+  enemyType?: EnemyState["type"];
+  serial?: number;
 }
 
 export interface CombatState {
@@ -203,6 +236,14 @@ export interface CombatState {
   damageTaken: number;
   bossPhaseTicks: [number, number, number];
   spiritWellAvailable: boolean;
+  horde: HordeState;
+  experienceOrbs: ExperienceOrbState[];
+  nextEntitySerial: number;
+  consumableDrops: number;
+  kills: number;
+  combo: number;
+  lastKillTick: number;
+  lastCollectTick: number;
 }
 
 export interface PlayerRunResources {
@@ -269,6 +310,9 @@ export interface ResolvedCombatBuild {
   coverReduction: number;
   auraGain: number;
   damageReduction: number;
+  primaryPierce: number;
+  secondaryRadius: number;
+  killExplosionDamage: number;
   eventDamage: Partial<Record<EffectEvent, number>>;
   eventCover: Partial<Record<EffectEvent, number>>;
   eventAmmo: Partial<Record<EffectEvent, number>>;
@@ -284,7 +328,7 @@ export interface GameSnapshot {
 }
 
 export type GameAction =
-  | { type: "aim"; x: number; z: number }
+  | { type: "aim"; x: number; z: number; y?: number }
   | { type: "moveCover"; direction: -1 | 1 }
   | { type: "primary"; autoReload?: boolean }
   | { type: "secondaryStart" }

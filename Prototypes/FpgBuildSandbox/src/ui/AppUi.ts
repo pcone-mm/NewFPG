@@ -197,7 +197,8 @@ interface CharacterStatMeta {
   key: keyof Pick<ResolvedCombatBuild,
     "lifeMax" | "coverMax" | "magazine" | "primaryDamage" | "secondaryDamage" |
     "secondaryEnergyMax" | "secondaryEnergyCost" | "secondaryEnergyRegen" | "reloadTicks" |
-    "fireCooldownTicks" | "weakpointMultiplier" | "coverReduction" | "damageReduction" | "auraGain">;
+    "fireCooldownTicks" | "weakpointMultiplier" | "coverReduction" | "damageReduction" | "auraGain" |
+    "primaryPierce" | "secondaryRadius" | "killExplosionDamage">;
   label: string;
   icon: string;
   description: string;
@@ -222,6 +223,9 @@ const CHARACTER_STATS: CharacterStatMeta[] = [
   { key: "coverReduction", label: "掩体防护", icon: "shield-check", description: "敌方攻击命中当前掩体时，先按此比例降低掩体承受的伤害。", format: percentValue },
   { key: "damageReduction", label: "全局减伤", icon: "shield-check", description: "敌方伤害进入掩体或生命结算前统一降低的比例。", format: percentValue },
   { key: "auraGain", label: "经验获取倍率", icon: "orbit", description: "击杀敌人与场景交互获得经验时使用的倍率。经验满后可按 G 聚气。", format: (value) => `${value.toFixed(2)}x` },
+  { key: "primaryPierce", label: "主射贯穿", icon: "crosshair", description: "一发主射最多额外穿过的目标数量，后续目标受到衰减伤害。", format: numberValue },
+  { key: "secondaryRadius", label: "副射范围", icon: "zap", description: "右键蓄力爆炸的基础三维范围，蓄力会进一步扩大。", format: (value) => `${value.toFixed(1)}米` },
+  { key: "killExplosionDamage", label: "击杀爆炸", icon: "sparkles", description: "击杀目标时对附近敌人造成的范围伤害；该伤害不会递归触发爆炸。", format: numberValue },
 ];
 
 const EVENT_META: Record<EffectEvent, { label: string; description: string }> = {
@@ -244,6 +248,9 @@ const EFFECT_STAT_TERMS: Record<EffectStat, { label: string; description: string
   weakpointMultiplier: { label: "弱点倍率", description: "主射命中敌人弱点时，对主射基础伤害使用的倍率。" },
   coverReduction: { label: "掩体防护", description: "敌方攻击命中当前掩体时，掩体受到的伤害降低比例。" },
   auraGain: { label: "经验获取倍率", description: "击杀敌人和场景交互获得经验时使用的倍率。" },
+  primaryPierce: { label: "主射贯穿", description: "一发主射可以继续命中的额外目标数量；按射线路径从近到远结算，后续目标受到 70% 伤害。" },
+  secondaryRadius: { label: "副射范围", description: "右键爆炸的基础三维半径，满蓄力再增加 1.8 米。与目标高度之差也计入距离。" },
+  killExplosionDamage: { label: "击杀爆炸", description: "击杀时对半径 2 米内的敌人造成的范围伤害；爆炸击杀不会继续触发爆炸。" },
   damageReduction: { label: "全局减伤", description: "敌方伤害进入掩体或生命结算前统一降低的比例。" },
 };
 
@@ -264,6 +271,9 @@ const EFFECT_STAT_NAMES: Record<EffectStat, string> = {
   weakpointMultiplier: "弱点倍率",
   coverReduction: "掩体防护",
   auraGain: "经验获取",
+  primaryPierce: "主射贯穿",
+  secondaryRadius: "副射范围",
+  killExplosionDamage: "击杀爆炸",
   damageReduction: "全局减伤",
 };
 
@@ -396,8 +406,12 @@ export class AppUi {
     const experienceRatio = snapshot.state.resources.aura / snapshot.state.resources.auraRequired;
     this.setText("experience-value", `${Math.floor(snapshot.state.resources.aura)} / ${snapshot.state.resources.auraRequired}`);
     this.setMeter("experience-meter", experienceRatio);
+    this.setText("gather-count", `聚气 ×${Math.floor(experienceRatio)}`);
     const experienceBar = this.root.querySelector<HTMLElement>("[data-experience-bar]");
-    if (experienceBar) experienceBar.classList.toggle("ready", experienceRatio >= 1);
+    if (experienceBar) {
+      experienceBar.classList.toggle("ready", experienceRatio >= 1);
+      experienceBar.classList.toggle("absorbing", Boolean(snapshot.state.combat && snapshot.state.combat.tick - snapshot.state.combat.lastCollectTick < 12));
+    }
     if (snapshot.state.mode !== "combat") return;
     const { state, build } = snapshot;
     const combat = state.combat;
@@ -421,7 +435,9 @@ export class AppUi {
     if (weaponAction) weaponAction.dataset.weaponState = weaponState;
     this.root.querySelector<HTMLElement>("[data-reload-crosshair]")?.classList.toggle("visible", combat.reloadTicks > 0);
     const objective = this.root.querySelector<HTMLElement>("[data-hud-objective]");
-    if (objective) objective.textContent = combat.cleared ? "房间已肃清" : combat.roomType === "boss" ? `压制首领 · 阶段 ${combat.enemies.find((enemy) => enemy.type === "boss")?.phase ?? 1}` : `肃清敌群 · 第 ${combat.wave}/${combat.totalWaves} 波`;
+    if (objective) objective.textContent = combat.cleared ? (combat.rewardReady ? "房间已肃清" : "正在吸收剩余灵气…") : combat.roomType === "boss" ? `母虫 · 阶段 ${combat.enemies.find((enemy) => enemy.type === "boss")?.phase ?? 1}` : combat.roomType === "elite" ? "重甲虫与支援虫群" : combat.horde.mode === "legacy" ? "肃清旧房间余敌" : `守线 ${Math.min(90, Math.floor(combat.tick / 60))}/90秒 · 余敌 ${combat.enemies.length}`;
+    this.setText("hud-combo", combat.combo >= 2 ? `${combat.combo} 连斩` : "");
+    this.setText("hud-gold", String(state.resources.currency));
     const prompt = this.root.querySelector<HTMLElement>("[data-hud-prompt]");
     if (prompt) {
       let promptState = "hidden";
@@ -462,7 +478,7 @@ export class AppUi {
       <span class="experience-label"><i data-lucide="orbit"></i><b>经验</b></span>
       <em class="experience-track" id="experience-meter" style="--meter:${ratio}"></em>
       <span class="experience-value" id="experience-value">${Math.floor(aura)} / ${auraRequired}</span>
-      <strong class="experience-ready"><kbd>G</kbd> 聚气</strong>
+      <strong class="experience-ready"><kbd>G</kbd> <span id="gather-count">聚气 ×${Math.floor(aura / auraRequired)}</span></strong>
     </div>`;
   }
 
@@ -504,7 +520,8 @@ export class AppUi {
     const coverHealth = combat.coverHealth[combat.playerCoverIndex] ?? 0;
     return `<section class="combat-ui" data-testid="combat-hud">
       <div class="objective-chip"><span class="eyebrow">${ROOM_NAMES[combat.roomType]}</span><strong data-hud-objective>${combat.roomType === "boss" ? "压制首领 · 阶段 1" : `肃清敌群 · 第 ${combat.wave}/${combat.totalWaves} 波`}</strong></div>
-      <div class="resource-strip"><span><i data-lucide="coins"></i>${state.resources.currency}</span><span><i data-lucide="refresh-cw"></i>${state.resources.rerolls}</span><span title="灵物"><i data-lucide="gem"></i>${state.items.length}</span></div>
+      <div class="resource-strip"><span><i data-lucide="coins"></i><b id="hud-gold">${state.resources.currency}</b></span><span><i data-lucide="refresh-cw"></i>${state.resources.rerolls}</span><span title="灵物"><i data-lucide="gem"></i>${state.items.length}</span></div>
+      <div class="combo-feedback" id="hud-combo"></div>
       <div class="vitals-cluster">
         <div class="vital-row life"><i data-lucide="heart"></i><div><span>生命</span><b id="hud-life">${Math.ceil(state.resources.life)} / ${Math.round(build.lifeMax)}</b><em class="meter" id="life-meter" style="--meter:${state.resources.life / build.lifeMax}"></em></div></div>
         <div class="vital-row cover"><i data-lucide="shield"></i><div><span id="hud-cover-label">掩体 ${combat.playerCoverIndex + 1}</span><b id="hud-cover">${coverHealth <= 0 ? `0 / ${Math.round(build.coverMax)} · 已毁` : `${Math.ceil(coverHealth)} / ${Math.round(build.coverMax)}`}</b><em class="meter" id="cover-meter" style="--meter:${coverHealth / build.coverMax}"></em></div></div>
@@ -560,7 +577,7 @@ export class AppUi {
         <div class="offer-grid offer-count-${reward.offers.length}">${reward.offers.map((offer) => this.offerCard(offer, `reward:${offer.id}`, snapshot.build)).join("")}</div>
         ${showsBackpack ? this.backpackDock(snapshot) : ""}
       </div>
-      <footer class="reward-footer"><span>${showsBackpack ? "将灵物拖入右侧背包完成领取；点击卡片也可直接放入" : reward.source === "ritual" ? "灵物与灵蕴共同进入候选" : "选择将在确认后立即生效"}</span><button class="command-button" type="button" data-action="reroll" ${snapshot.state.resources.rerolls <= 0 ? "disabled" : ""}><i data-lucide="refresh-cw"></i><span>重投</span><b>${snapshot.state.resources.rerolls}</b></button></footer>
+      <footer class="reward-footer"><span>${showsBackpack ? "将灵物拖入右侧背包完成领取；点击卡片也可直接放入" : reward.source === "ritual" ? "灵物与灵蕴共同进入候选" : "选择将在确认后立即生效"}</span>${reward.source !== "opening" ? `<button class="text-button" data-action="skip-reward">放弃本次奖励</button>` : ""}<button class="command-button" type="button" data-action="reroll" ${snapshot.state.resources.rerolls <= 0 ? "disabled" : ""}><i data-lucide="refresh-cw"></i><span>重投</span><b>${snapshot.state.resources.rerolls}</b></button></footer>
     </section>`;
   }
 
@@ -807,6 +824,7 @@ export class AppUi {
     if (action === "gather") { this.controller.dispatchAction({ type: "gather" }); return; }
     if (action === "interact") { this.controller.dispatchAction({ type: "interact" }); return; }
     if (action === "reroll") { if (this.controller.rerollReward()) this.audio.play("reward"); return; }
+    if (action === "skip-reward") { if (window.confirm("确定放弃本次奖励？本次聚气或房间奖励不会返还。")) this.controller.skipReward(); return; }
     if (action === "leave-function") { this.controller.dispatchAction({ type: "leaveFunction" }); return; }
     if (action === "restart") { this.controller.restartSameSeed(); return; }
     if (action === "title") { this.controller.returnToTitle(); return; }

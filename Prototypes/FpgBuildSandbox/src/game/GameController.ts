@@ -146,15 +146,16 @@ export class GameController {
   public tick(): void {
     if (this.state.mode !== "combat" || !this.state.combat) return;
     const stream: RngStreamName = this.state.combat.roomType === "boss" ? "boss" : "encounter";
+    const wasReady = this.state.combat.rewardReady;
     this.useRng(stream, (rng) => tickCombat(this.state, this.build, rng));
-    if (this.state.completed) saveRun(this.state);
+    if (this.state.completed || (!wasReady && this.state.combat.rewardReady)) saveRun(this.state);
   }
 
   public dispatchAction(action: GameAction): void {
     const combat = this.state.combat;
     switch (action.type) {
       case "aim":
-        if (this.state.mode === "combat" && combat) combat.aim = { x: action.x, z: action.z };
+        if (this.state.mode === "combat" && combat) combat.aim = { x: action.x, y: action.y ?? 1.2, z: action.z };
         break;
       case "moveCover":
         if (this.state.mode === "combat") moveCover(this.state, this.build, action.direction);
@@ -324,6 +325,13 @@ export class GameController {
     return true;
   }
 
+  public skipReward(): boolean {
+    if (!["reward", "enchantTarget"].includes(this.state.mode) || !this.state.pendingReward || this.state.pendingReward.source === "opening") return false;
+    this.record("rewardSkipped", { source: this.state.pendingReward.source });
+    this.state.pendingEnchantmentId = undefined;
+    this.finalizeReward(); this.notify(); return true;
+  }
+
   public completeRitual(): void {
     if (this.state.mode !== "ritual" || this.state.resources.aura < this.state.resources.auraRequired) return;
     this.state.resources.aura -= this.state.resources.auraRequired;
@@ -349,7 +357,7 @@ export class GameController {
     if (!this.state.combat.cleared && this.state.combat.spiritWellAvailable) {
       this.state.combat.spiritWellAvailable = false;
       const gained = Math.round(24 * this.build.auraGain);
-      this.state.resources.aura = Math.min(this.state.resources.auraRequired, this.state.resources.aura + gained);
+      this.state.resources.aura += gained;
       this.record("spiritWell", { gained });
       this.notify();
       return;
@@ -387,7 +395,7 @@ export class GameController {
       return;
     }
     if (node.type === "experience") {
-      this.state.resources.aura = this.state.resources.auraRequired;
+      this.state.resources.aura = Math.max(this.state.resources.aura, this.state.resources.auraRequired);
       this.record("experiencePack", { aura: this.state.resources.aura });
     }
     this.state.mode = "function";
@@ -511,6 +519,10 @@ export class GameController {
     this.state.combat.spawnQueue = [];
     this.state.combat.enemies = [];
     this.state.combat.projectiles = [];
+    for (const orb of this.state.combat.experienceOrbs) this.state.resources.aura += orb.value;
+    this.state.combat.experienceOrbs = [];
+    this.state.combat.horde.stopped = true;
+    this.state.combat.horde.pending = 0;
     this.state.combat.cleared = true;
     this.state.combat.rewardReady = true;
     this.notify();

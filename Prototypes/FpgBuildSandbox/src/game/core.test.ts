@@ -170,13 +170,12 @@ describe("build rules", () => {
 });
 
 describe("combat and persistence", () => {
-  it("queues seven enemies for each of three normal-room waves", () => {
+  it("opens the 90-second horde with twelve insects and three stages", () => {
     const combat = createCombat("combat", new SeededRng(77), resolveBuild([], []));
     expect(combat.totalWaves).toBe(3);
-    expect(combat.spawnQueue).toHaveLength(21);
-    for (const delayTick of [0, 240, 480]) {
-      expect(combat.spawnQueue.filter((enemy) => enemy.delayTick === delayTick)).toHaveLength(7);
-    }
+    expect(combat.spawnQueue).toHaveLength(0);
+    expect(combat.enemies).toHaveLength(12);
+    expect(combat.horde.endTick).toBe(5400);
   });
 
   it("stores damage on the occupied cover and preserves it after moving", () => {
@@ -268,7 +267,7 @@ describe("combat and persistence", () => {
     controller.dispatchAction({ type: "secondaryRelease" });
     const secondaryNumbers = combat.feedbackEvents.filter((event) => event.type === "enemyDamage").slice(damageNumbersBefore);
     expect(secondaryNumbers).toHaveLength(2);
-    expect(secondaryNumbers.map((event) => event.to)).toEqual(expect.arrayContaining([{ x: 0, z: 10 }, { x: 1.2, z: 10 }]));
+    expect(secondaryNumbers.map((event) => event.to)).toEqual(expect.arrayContaining([{ x: 0, y: 1, z: 10 }, { x: 1.2, y: 1, z: 10 }]));
     expect(secondaryNumbers.every((event) => event.value === Math.round(snapshot.build.secondaryDamage * 1.2))).toBe(true);
   });
 
@@ -287,7 +286,7 @@ describe("combat and persistence", () => {
     tickCombat(state, build, rng);
     expect(boss.phase).toBe(2);
     expect(boss.shield).toBeGreaterThan(0);
-    expect(state.combat.enemies.some((enemy) => enemy.type === "minion")).toBe(true);
+    expect(state.combat.horde.supportSpawned).toBe(14);
     boss.hp = boss.maxHp * 0.34;
     boss.shield = 0;
     tickCombat(state, build, rng);
@@ -325,7 +324,7 @@ describe("combat and persistence", () => {
     (state.resources as typeof state.resources & { barrier: number }).barrier = 63;
     delete (state as Partial<RunState>).nextItemSerial;
     const migrated = migrateSave(state);
-    expect(migrated?.schemaVersion).toBe(4);
+    expect(migrated?.schemaVersion).toBe(5);
     expect(migrated?.backpackCapacity).toBe(12);
     expect(migrated?.nextItemSerial).toBe(1);
     expect(migrated?.combat?.coverHealth).toEqual([100, 100, 63]);

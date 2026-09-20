@@ -122,7 +122,7 @@ test("plays opening, ritual, shop, elite and boss through a complete floor", asy
   await page.getByRole("button", { name: "查看构筑" }).click();
   await expect(page.getByTestId("build-screen")).toBeVisible();
   await expect(page.getByTestId("character-panel")).toBeVisible();
-  await expect(page.locator(".character-stat")).toHaveCount(14);
+  await expect(page.locator(".character-stat")).toHaveCount(17);
   await expect(page.locator(".special-stat")).toHaveCount(6);
   await expect(page.getByTestId("backpack-grid").first().locator(".backpack-slot")).toHaveCount(12);
   await expect(page.getByTestId("backpack-grid").first().locator(".backpack-slot.occupied .item-stars .filled")).toHaveCount(1);

@@ -1,12 +1,8 @@
 import * as THREE from "three";
-import type { CombatFeedbackEvent, EnemyState, GameSnapshot, ProjectileState } from "../game/types";
-
-interface TransientEffect {
-  object: THREE.Object3D;
-  startedAt: number;
-  duration: number;
-  update: (progress: number) => void;
-}
+import type { CombatState, EnemyState, GameSnapshot } from "../game/types";
+import { enemyCenter, enemyRadius, height, raySphere } from "../game/geometry";
+import { SwarmPresentation } from "./SwarmPresentation";
+import { CombatEffects } from "./CombatEffects";
 
 function createForestBitmap(): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
@@ -97,60 +93,13 @@ function material(color: THREE.ColorRepresentation, emissive: THREE.ColorReprese
   return new THREE.MeshStandardMaterial({ color, emissive, roughness: 0.62, metalness: 0.14 });
 }
 
-function createEnemyMesh(enemy: EnemyState): THREE.Group {
-  const group = new THREE.Group();
-  const color = enemy.type === "boss" ? "#cb513b" : enemy.type === "elite" ? "#c7ab67" : enemy.type === "melee" || enemy.type === "minion" ? "#b94d45" : enemy.type === "summoner" ? "#8a6aa7" : "#d5deda";
-  let geometry: THREE.BufferGeometry;
-  if (enemy.type === "boss") geometry = new THREE.OctahedronGeometry(1.65, 1);
-  else if (enemy.type === "summoner") geometry = new THREE.ConeGeometry(0.7, 1.8, 6);
-  else if (enemy.type === "ranged") geometry = new THREE.DodecahedronGeometry(0.67, 0);
-  else geometry = new THREE.CapsuleGeometry(enemy.type === "elite" ? 0.78 : 0.54, enemy.type === "elite" ? 1.3 : 0.85, 4, 8);
-  const body = new THREE.Mesh(geometry, material(color, enemy.type === "boss" ? "#4e1711" : "#07110e"));
-  body.castShadow = true;
-  body.position.y = enemy.type === "boss" ? 1.75 : 1;
-  group.add(body);
-
-  const weakpoint = new THREE.Mesh(new THREE.SphereGeometry(enemy.type === "boss" ? 0.26 : 0.16, 12, 8), material("#f0eee6", "#79c9b6"));
-  weakpoint.position.set(0, enemy.type === "boss" ? 2 : 1.35, -0.55);
-  group.add(weakpoint);
-
-  const healthWidth = enemy.type === "boss" ? 3.2 : enemy.type === "elite" ? 2 : 1.45;
-  const healthY = enemy.type === "boss" ? 3.75 : enemy.type === "elite" ? 2.65 : 2.05;
-  const healthBackground = new THREE.Mesh(
-    new THREE.PlaneGeometry(healthWidth, 0.11),
-    new THREE.MeshBasicMaterial({ color: "#111715", transparent: true, opacity: 0.9, depthTest: false }),
-  );
-  healthBackground.position.set(0, healthY, 0);
-  healthBackground.renderOrder = 8;
-  group.add(healthBackground);
-  const healthFill = new THREE.Mesh(
-    new THREE.PlaneGeometry(healthWidth, 0.065),
-    new THREE.MeshBasicMaterial({ color: enemy.type === "boss" ? "#d65b45" : "#6ec2ac", depthTest: false }),
-  );
-  healthFill.position.set(0, healthY, -0.01);
-  healthFill.renderOrder = 9;
-  healthFill.name = "health-fill";
-  healthFill.userData.width = healthWidth;
-  group.add(healthFill);
-  if (enemy.type === "boss") {
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.07, 8, 48), material("#c7ab67", "#5f4a22"));
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = 1.2;
-    ring.name = "phase-ring";
-    group.add(ring);
-  }
-  group.userData.enemyType = enemy.type;
-  return group;
-}
 
 export class GameRenderer {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly scene = new THREE.Scene();
-  private readonly camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
+  private readonly camera = new THREE.PerspectiveCamera(40, 1, 0.1, 120);
   private readonly player = new THREE.Group();
   private readonly aimMarker: THREE.Mesh;
-  private readonly enemyMeshes = new Map<string, THREE.Group>();
-  private readonly projectileMeshes = new Map<string, THREE.Mesh>();
   private readonly covers: THREE.Group[] = [];
   private readonly mistStrips: THREE.Mesh[] = [];
   private readonly chargeRing: THREE.Mesh;
@@ -159,19 +108,24 @@ export class GameRenderer {
   private readonly chargeSparks: THREE.Mesh[] = [];
   private readonly chargeLight: THREE.PointLight;
   private readonly reloadRing: THREE.Mesh;
-  private readonly handledFeedbackIds = new Set<string>();
-  private readonly transientEffects: TransientEffect[] = [];
-  private lastCombatNodeId?: string;
   private readonly raycaster = new THREE.Raycaster();
-  private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private readonly reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   private readonly resizeObserver: ResizeObserver;
+  private readonly swarm: SwarmPresentation;
+  private readonly pooledEffects: CombatEffects;
+  private lastCombat?: CombatState;
+  private lastDeathSerial = -1;
+  private lastTick = -1;
+  private previousPlayerX = 0;
+  private lastTickTime = 0;
+  private readonly frameTimes: number[] = [];
+  private lastFrameTime = 0;
 
   public constructor(private readonly host: HTMLElement) {
     this.scene.background = new THREE.Color("#101614");
     this.scene.fog = new THREE.Fog("#15201e", 25, 65);
-    this.camera.position.set(0, 5.2, -20);
-    this.camera.lookAt(0, 3.4, 9.5);
+    this.camera.position.set(0, 10, -18);
+    this.camera.lookAt(0, 3.2, 10);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -209,6 +163,7 @@ export class GameRenderer {
     backgroundTexture.colorSpace = THREE.SRGBColorSpace;
     const background = new THREE.Mesh(new THREE.PlaneGeometry(48, 27), new THREE.MeshBasicMaterial({ map: backgroundTexture, fog: false }));
     background.position.set(0, 8.8, 31);
+    background.rotation.y = Math.PI;
     this.scene.add(background);
 
     const ground = new THREE.Mesh(new THREE.PlaneGeometry(42, 36), material("#25332d"));
@@ -222,9 +177,9 @@ export class GameRenderer {
     centralPath.receiveShadow = true;
     this.scene.add(centralPath);
 
-    for (const x of [-14, -11, 11, 14]) {
+    for (const x of [-19, -16, 16, 19]) {
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.75, 19, 9), material("#1b2521"));
-      trunk.position.set(x, 8, 12 + Math.abs(x) * 0.2);
+      trunk.position.set(x, 8, 22 + Math.abs(x) * 0.2);
       trunk.rotation.z = x < 0 ? -0.08 : 0.08;
       trunk.castShadow = true;
       this.scene.add(trunk);
@@ -274,6 +229,8 @@ export class GameRenderer {
     this.player.add(weapon);
     this.player.position.set(0, 0, 1.1);
     this.scene.add(this.player);
+    this.swarm = new SwarmPresentation(this.scene);
+    this.pooledEffects = new CombatEffects(this.scene);
 
     this.aimMarker = new THREE.Mesh(
       new THREE.RingGeometry(0.35, 0.47, 24),
@@ -346,444 +303,106 @@ export class GameRenderer {
     this.resize();
   }
 
+
   private resize(): void {
-    const width = Math.max(1, this.host.clientWidth);
-    const height = Math.max(1, this.host.clientHeight);
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+    const width = Math.max(1, this.host.clientWidth), height = Math.max(1, this.host.clientHeight);
+    this.camera.aspect = width / height; this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
   }
 
   public worldToScreen(x: number, z: number, y = 1.2): { x: number; y: number } {
     const rect = this.renderer.domElement.getBoundingClientRect();
     const projected = new THREE.Vector3(x, y, z).project(this.camera);
-    return {
-      x: rect.left + (projected.x * 0.5 + 0.5) * rect.width,
-      y: rect.top + (-projected.y * 0.5 + 0.5) * rect.height,
-    };
+    return { x: rect.left + (projected.x * 0.5 + 0.5) * rect.width, y: rect.top + (-projected.y * 0.5 + 0.5) * rect.height };
   }
 
-  public screenToWorld(clientX: number, clientY: number, snapshot?: GameSnapshot): { x: number; z: number } {
+  public screenToWorld(clientX: number, clientY: number, snapshot?: GameSnapshot): { x: number; y: number; z: number } {
     const rect = this.renderer.domElement.getBoundingClientRect();
-    const combat = snapshot?.state.mode === "combat" ? snapshot.state.combat : undefined;
-    if (combat) {
-      let nearest: { enemy: EnemyState; dx: number; dy: number; distance: number } | undefined;
-      for (const enemy of combat.enemies) {
-        if (enemy.hp <= 0) continue;
-        const screen = this.worldToScreen(enemy.position.x, enemy.position.z, enemy.type === "boss" ? 1.9 : 1.15);
-        const dx = clientX - screen.x;
-        const dy = clientY - screen.y;
-        const distance = Math.hypot(dx, dy);
-        if (distance <= 76 && (!nearest || distance < nearest.distance)) nearest = { enemy, dx, dy, distance };
-      }
-      if (nearest) {
-        return {
-          x: nearest.enemy.position.x + nearest.dx * 0.022,
-          z: nearest.enemy.position.z + nearest.dy * 0.022,
-        };
-      }
+    this.raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, -(clientY - rect.top) / rect.height * 2 + 1), this.camera);
+    const ray = this.raycaster.ray;
+    const origin = { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z }, direction = { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z };
+    let nearest: { enemy: EnemyState; distance: number } | undefined;
+    for (const enemy of snapshot?.state.combat?.enemies ?? []) {
+      if (enemy.hp <= 0) continue;
+      const distance = raySphere(origin, direction, enemyCenter(enemy), enemyRadius(enemy));
+      if (distance !== undefined && (!nearest || distance < nearest.distance)) nearest = { enemy, distance };
     }
-    const pointer = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -(((clientY - rect.top) / rect.height) * 2 - 1));
-    this.raycaster.setFromCamera(pointer, this.camera);
-    const target = new THREE.Vector3();
-    if (this.raycaster.ray.intersectPlane(this.groundPlane, target)) return { x: THREE.MathUtils.clamp(target.x, -12, 12), z: THREE.MathUtils.clamp(target.z, 3, 18) };
-    return { x: 0, z: 11 };
-  }
-
-  private addTransient(object: THREE.Object3D, startedAt: number, duration: number, update: (progress: number) => void): void {
-    this.scene.add(object);
-    this.transientEffects.push({ object, startedAt, duration, update });
-  }
-
-  private createLine(from: THREE.Vector3, to: THREE.Vector3, color: THREE.ColorRepresentation, opacity: number): THREE.Line {
-    return new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints([from, to]),
-      new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }),
-    );
-  }
-
-  private createBeam(from: THREE.Vector3, to: THREE.Vector3, color: THREE.ColorRepresentation): THREE.Mesh {
-    const direction = to.clone().sub(from);
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.1, 0.24, direction.length(), 12, 1, true),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }),
-    );
-    beam.position.copy(from).add(to).multiplyScalar(0.5);
-    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
-    beam.renderOrder = 11;
-    return beam;
-  }
-
-  private createGroundPulse(position: { x: number; z: number }, color: THREE.ColorRepresentation): THREE.Mesh {
-    const pulse = new THREE.Mesh(
-      new THREE.RingGeometry(0.2, 0.29, 28),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false }),
-    );
-    pulse.rotation.x = -Math.PI / 2;
-    pulse.position.set(position.x, 0.09, position.z);
-    pulse.renderOrder = 10;
-    return pulse;
-  }
-
-  private createImpactBurst(position: { x: number; z: number }, weakpoint: boolean, elapsedSeconds: number): void {
-    const color = weakpoint ? "#ffe792" : "#a6f0df";
-    const burst = new THREE.Group();
-    burst.position.set(position.x, weakpoint ? 1.42 : 1.08, position.z - 0.08);
-    burst.renderOrder = 14;
-
-    const core = new THREE.Mesh(
-      new THREE.OctahedronGeometry(weakpoint ? 0.25 : 0.19, 0),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }),
-    );
-    core.renderOrder = 14;
-    burst.add(core);
-
-    for (let index = 0; index < 2; index += 1) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(weakpoint ? 0.42 : 0.32, 0.026, 6, 28),
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }),
-      );
-      ring.rotation.z = index * Math.PI * 0.5 + Math.PI * 0.25;
-      ring.renderOrder = 14;
-      burst.add(ring);
+    const point = new THREE.Vector3();
+    // Project the cursor to the selected body's depth, retaining its exact aim offset.
+    if (nearest) {
+      ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -nearest.enemy.position.z), point);
+      return { x: point.x, y: point.y, z: point.z };
     }
-
-    const sparkCount = weakpoint ? 10 : 7;
-    for (let index = 0; index < sparkCount; index += 1) {
-      const angle = (index / sparkCount) * Math.PI * 2 + (weakpoint ? 0.18 : 0);
-      const spark = new THREE.Mesh(
-        new THREE.BoxGeometry(0.035, weakpoint ? 0.42 : 0.3, 0.035),
-        new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending }),
-      );
-      spark.position.set(Math.cos(angle) * 0.38, Math.sin(angle) * 0.38, 0);
-      spark.rotation.z = angle - Math.PI * 0.5;
-      spark.userData.direction = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
-      spark.renderOrder = 14;
-      burst.add(spark);
-    }
-
-    const light = new THREE.PointLight(color, weakpoint ? 7 : 4, 4, 2);
-    light.position.z = -0.35;
-    burst.add(light);
-    const duration = weakpoint ? 0.32 : 0.23;
-    this.addTransient(burst, elapsedSeconds, duration, (progress) => {
-      const eased = 1 - (1 - progress) * (1 - progress);
-      core.scale.setScalar(1 + eased * (weakpoint ? 3.2 : 2.2));
-      core.rotation.z = progress * Math.PI * 0.75;
-      for (const child of burst.children) {
-        if (child === core || child === light) continue;
-        const mesh = child as THREE.Mesh;
-        const direction = mesh.userData.direction as THREE.Vector2 | undefined;
-        if (direction) {
-          const travel = eased * (weakpoint ? 0.75 : 0.55);
-          mesh.position.x = direction.x * (0.38 + travel);
-          mesh.position.y = direction.y * (0.38 + travel);
-          mesh.scale.y = 1 - progress * 0.65;
-        } else mesh.scale.setScalar(1 + eased * (weakpoint ? 2.1 : 1.45));
-        (mesh.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - progress);
-      }
-      (core.material as THREE.MeshBasicMaterial).opacity = 1 - progress;
-      light.intensity = (weakpoint ? 7 : 4) * (1 - progress);
-    });
+    ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point);
+    return { x: THREE.MathUtils.clamp(point.x, -16, 16), y: THREE.MathUtils.clamp(point.y, 0.4, 9), z: 12 };
   }
 
-  private createDamageNumber(event: CombatFeedbackEvent, elapsedSeconds: number): void {
-    if (!event.to || !event.value || event.value <= 0) return;
-    const weakpoint = Boolean(event.weakpoint);
-    const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 128;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.font = `800 ${weakpoint ? 76 : 64}px "Noto Sans SC", "Microsoft YaHei", sans-serif`;
-    context.lineJoin = "round";
-    context.strokeStyle = "rgba(6, 13, 11, 0.96)";
-    context.lineWidth = weakpoint ? 14 : 12;
-    const label = String(Math.round(event.value));
-    context.strokeText(label, canvas.width / 2, canvas.height / 2);
-    context.fillStyle = weakpoint ? "#ffe28a" : "#ecf8f4";
-    context.fillText(label, canvas.width / 2, canvas.height / 2);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.minFilter = THREE.LinearFilter;
-    texture.magFilter = THREE.LinearFilter;
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-    }));
-    const baseScale = weakpoint ? 2.35 : 1.85;
-    const startY = event.worldY ?? 2.2;
-    const feedbackSerial = Number.parseInt(event.id.slice(event.id.lastIndexOf("-") + 1), 10) || 0;
-    const laneOffset = ((feedbackSerial % 5) - 2) * 0.34;
-    const verticalOffset = ((feedbackSerial % 3) - 1) * 0.16;
-    const horizontalDrift = ((event.id.charCodeAt(event.id.length - 1) % 5) - 2) * 0.12;
-    const baseX = event.to.x + laneOffset;
-    sprite.position.set(baseX, startY + verticalOffset, event.to.z - 0.08);
-    sprite.scale.set(baseScale, baseScale * 0.5, 1);
-    sprite.renderOrder = 20;
-    this.addTransient(sprite, elapsedSeconds, this.reducedMotion ? 0.62 : 0.9, (progress) => {
-      const pop = progress < 0.18
-        ? THREE.MathUtils.lerp(0.55, 1.16, progress / 0.18)
-        : THREE.MathUtils.lerp(1.16, 1, (progress - 0.18) / 0.82);
-      sprite.scale.set(baseScale * pop, baseScale * 0.5 * pop, 1);
-      sprite.position.y = startY + verticalOffset + (this.reducedMotion ? 0.25 : 1.05) * progress;
-      sprite.position.x = baseX + (this.reducedMotion ? 0 : horizontalDrift * progress);
-      (sprite.material as THREE.SpriteMaterial).opacity = progress < 0.62 ? 1 : 1 - (progress - 0.62) / 0.38;
-    });
-  }
-
-  private consumeFeedback(events: readonly CombatFeedbackEvent[], elapsedSeconds: number): void {
-    for (const event of events) {
-      if (this.handledFeedbackIds.has(event.id)) continue;
-      this.handledFeedbackIds.add(event.id);
-      if (event.type === "enemyDamage") {
-        this.createDamageNumber(event, elapsedSeconds);
-      } else if (event.type === "primary" && event.from && event.to) {
-        const tracerMaterialOpacity = event.hit ? 0.95 : 0.55;
-        const tracer = this.createLine(
-          new THREE.Vector3(event.from.x, 1.25, event.from.z + 0.7),
-          new THREE.Vector3(event.to.x, event.weakpoint ? 1.4 : 1.05, event.to.z),
-          event.weakpoint ? "#fff1a6" : "#9be1d1",
-          tracerMaterialOpacity,
-        );
-        this.addTransient(tracer, elapsedSeconds, 0.16, (progress) => {
-          (tracer.material as THREE.LineBasicMaterial).opacity = tracerMaterialOpacity * (1 - progress);
-        });
-        const muzzle = new THREE.Mesh(
-          new THREE.SphereGeometry(0.2, 8, 6),
-          new THREE.MeshBasicMaterial({ color: "#f4d77d", transparent: true, opacity: 0.95, depthWrite: false }),
-        );
-        muzzle.position.set(event.from.x, 1.25, event.from.z + 0.72);
-        this.addTransient(muzzle, elapsedSeconds, 0.1, (progress) => {
-          muzzle.scale.setScalar(1 + progress * 2.5);
-          (muzzle.material as THREE.MeshBasicMaterial).opacity = 0.95 * (1 - progress);
-        });
-        if (event.hit) {
-          this.createImpactBurst(event.to, Boolean(event.weakpoint), elapsedSeconds);
-          const pulse = this.createGroundPulse(event.to, event.weakpoint ? "#fff1a6" : "#70c8b2");
-          this.addTransient(pulse, elapsedSeconds, 0.28, (progress) => {
-            pulse.scale.setScalar(1 + progress * (event.weakpoint ? 4.8 : 3.2));
-            (pulse.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - progress);
-          });
-        }
-      } else if (event.type === "secondary" && event.from && event.to) {
-        const charge = event.charge ?? 0;
-        const color = event.hit ? "#ffe28a" : "#a8d9d0";
-        const from = new THREE.Vector3(event.from.x, 1.28, event.from.z + 0.7);
-        const to = new THREE.Vector3(event.to.x, 0.72, event.to.z);
-        const beam = this.createBeam(from, to, color);
-        this.addTransient(beam, elapsedSeconds, 0.68, (progress) => {
-          beam.scale.x = 1 + progress * (1.6 + charge);
-          beam.scale.z = 1 + progress * (1.6 + charge);
-          (beam.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - progress);
-        });
-        const burst = new THREE.Mesh(
-          new THREE.SphereGeometry(0.68, 16, 10),
-          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, wireframe: true, depthWrite: false, blending: THREE.AdditiveBlending }),
-        );
-        burst.position.copy(to);
-        burst.renderOrder = 12;
-        this.addTransient(burst, elapsedSeconds, 0.72, (progress) => {
-          burst.scale.setScalar(0.6 + progress * (3.2 + charge * 2));
-          burst.rotation.y = progress * Math.PI;
-          (burst.material as THREE.MeshBasicMaterial).opacity = 0.92 * (1 - progress);
-        });
-        const pulse = this.createGroundPulse(event.to, color);
-        this.addTransient(pulse, elapsedSeconds, 0.7, (progress) => {
-          pulse.scale.setScalar(1 + progress * (10 + charge * 9));
-          (pulse.material as THREE.MeshBasicMaterial).opacity = 0.88 * (1 - progress);
-        });
-      } else if (event.type === "coverMove" && event.from && event.to) {
-        const trail = this.createLine(
-          new THREE.Vector3(event.from.x, 0.18, event.from.z),
-          new THREE.Vector3(event.to.x, 0.18, event.to.z),
-          "#65c2aa",
-          0.75,
-        );
-        this.addTransient(trail, elapsedSeconds, 0.3, (progress) => {
-          (trail.material as THREE.LineBasicMaterial).opacity = 0.75 * (1 - progress);
-        });
-      } else if ((event.type === "reloadComplete" || event.type === "playerHit" || event.type === "coverHit") && event.to) {
-        const color = event.type === "playerHit" ? "#d85643" : event.type === "coverHit" ? "#e0bd69" : "#8ed3c3";
-        const pulse = this.createGroundPulse(event.to, color);
-        this.addTransient(pulse, elapsedSeconds, 0.35, (progress) => {
-          pulse.scale.setScalar(1 + progress * 5);
-          (pulse.material as THREE.MeshBasicMaterial).opacity = 0.85 * (1 - progress);
-        });
-      }
-    }
-    while (this.handledFeedbackIds.size > 256) this.handledFeedbackIds.delete(this.handledFeedbackIds.values().next().value as string);
-  }
-
-  private updateTransients(elapsedSeconds: number): void {
-    for (let index = this.transientEffects.length - 1; index >= 0; index -= 1) {
-      const effect = this.transientEffects[index]!;
-      const progress = (elapsedSeconds - effect.startedAt) / effect.duration;
-      if (progress < 1) {
-        effect.update(Math.max(0, progress));
-        continue;
-      }
-      this.scene.remove(effect.object);
-      effect.object.traverse((child) => {
-        if (child instanceof THREE.Sprite) {
-          const spriteMaterial = child.material as THREE.SpriteMaterial;
-          spriteMaterial.map?.dispose();
-          spriteMaterial.dispose();
-          return;
-        }
-        const renderable = child as THREE.Mesh;
-        renderable.geometry?.dispose();
-        const childMaterial = renderable.material as THREE.Material | THREE.Material[] | undefined;
-        if (Array.isArray(childMaterial)) for (const entry of childMaterial) entry.dispose();
-        else childMaterial?.dispose();
-      });
-      this.transientEffects.splice(index, 1);
-    }
-  }
-
-  private syncEnemy(enemy: EnemyState): void {
-    let group = this.enemyMeshes.get(enemy.id);
-    if (!group) {
-      group = createEnemyMesh(enemy);
-      group.position.set(enemy.position.x, 0, enemy.position.z);
-      this.enemyMeshes.set(enemy.id, group);
-      this.scene.add(group);
-    }
-    group.position.x = THREE.MathUtils.lerp(group.position.x, enemy.position.x, 0.28);
-    group.position.z = THREE.MathUtils.lerp(group.position.z, enemy.position.z, 0.28);
-    const body = group.children[0] as THREE.Mesh;
-    const healthRatio = Math.max(0.35, enemy.hp / enemy.maxHp);
-    body.scale.y = 0.88 + healthRatio * 0.12;
-    const phaseRing = group.getObjectByName("phase-ring");
-    if (phaseRing) phaseRing.visible = enemy.shield > 0 || (enemy.phase ?? 1) > 1;
-    const healthFill = group.getObjectByName("health-fill") as THREE.Mesh | undefined;
-    if (healthFill) {
-      const ratio = THREE.MathUtils.clamp(enemy.hp / enemy.maxHp, 0.001, 1);
-      healthFill.scale.x = ratio;
-      healthFill.position.x = -((healthFill.userData.width as number) * (1 - ratio)) / 2;
-    }
-  }
-
-  private syncProjectile(projectile: ProjectileState): void {
-    let mesh = this.projectileMeshes.get(projectile.id);
-    if (!mesh) {
-      mesh = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), material(projectile.hostile ? "#d05241" : "#dbe7e5", projectile.hostile ? "#891d16" : "#4fa18e"));
-      this.projectileMeshes.set(projectile.id, mesh);
-      this.scene.add(mesh);
-    }
-    mesh.position.set(projectile.position.x, 1.15, projectile.position.z);
+  public diagnostics(): { calls: number; triangles: number; geometries: number; textures: number; medianFrameMs: number; p95FrameMs: number; gpu: string } {
+    const samples = [...this.frameTimes].sort((a, b) => a - b);
+    const gl = this.renderer.getContext(), extension = gl.getExtension("WEBGL_debug_renderer_info");
+    return { calls: this.renderer.info.render.calls, triangles: this.renderer.info.render.triangles,
+      geometries: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures,
+      medianFrameMs: samples[Math.floor(samples.length * 0.5)] ?? 0, p95FrameMs: samples[Math.floor(samples.length * 0.95)] ?? 0,
+      gpu: extension ? String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)) : String(gl.getParameter(gl.RENDERER)) };
   }
 
   public render(snapshot: GameSnapshot, elapsedSeconds: number): void {
-    const combat = snapshot.state.combat;
-    if (combat) {
-      if (this.lastCombatNodeId !== snapshot.state.currentNodeId) {
-        this.lastCombatNodeId = snapshot.state.currentNodeId;
-        this.handledFeedbackIds.clear();
+    if (this.lastFrameTime) { this.frameTimes.push((elapsedSeconds - this.lastFrameTime) * 1000); if (this.frameTimes.length > 300) this.frameTimes.shift(); }
+    this.lastFrameTime = elapsedSeconds;
+    const c = snapshot.state.combat;
+    if (c !== this.lastCombat) {
+      this.lastCombat = c; this.lastDeathSerial = -1; this.lastTick = -1;
+      this.swarm.reset(); this.pooledEffects.reset();
+      this.previousPlayerX = c?.playerPosition.x ?? 0; this.player.position.x = this.previousPlayerX;
+    }
+    const tick = c?.tick ?? 0, t = tick / 60;
+    if (c) {
+      if (this.lastTick !== tick) {
+        this.previousPlayerX = this.player.position.x; this.lastTick = tick; this.lastTickTime = elapsedSeconds;
       }
-      this.player.position.x = THREE.MathUtils.lerp(this.player.position.x, combat.playerPosition.x, 0.24);
-      this.player.position.z = combat.playerPosition.z;
-      this.player.rotation.y = Math.atan2(combat.aim.x - this.player.position.x, combat.aim.z - this.player.position.z);
-      this.aimMarker.position.x = combat.aim.x;
-      this.aimMarker.position.z = combat.aim.z;
-      this.aimMarker.visible = snapshot.state.mode === "combat";
-      this.consumeFeedback(combat.feedbackEvents, elapsedSeconds);
-      const chargeRatio = Math.min(1, combat.chargeTicks / 75);
-      const charging = snapshot.state.mode === "combat" && combat.isCharging;
+      const alpha = snapshot.state.mode === "combat" ? Math.min(1, (elapsedSeconds - this.lastTickTime) * 60 + 0.5) : 1;
+      this.player.position.set(THREE.MathUtils.lerp(this.previousPlayerX, c.playerPosition.x, alpha), 0, c.playerPosition.z);
+      this.player.rotation.y = Math.atan2(c.aim.x - c.playerPosition.x, c.aim.z - c.playerPosition.z);
+      this.aimMarker.position.set(c.aim.x, height(c.aim, 1), c.aim.z);
+      this.aimMarker.quaternion.copy(this.camera.quaternion);
+      this.pooledEffects.consume(c.feedbackEvents, this.reducedMotion);
+      for (const event of c.feedbackEvents) {
+        const serial = event.serial ?? Number(event.id.split("-").at(-1));
+        if (serial <= this.lastDeathSerial) continue;
+        this.lastDeathSerial = serial;
+        if (event.type !== "enemyDeath" || !event.to) continue;
+        const type = event.enemyType ?? "melee";
+        this.swarm.death({ id: event.targetId ?? event.id, type, position: { ...event.to, y: height(event.to) - (type === "boss" ? 1.75 : 1) },
+          layer: type === "flyer" ? "air" : "ground", hp: 0, maxHp: 1, shield: 0, attackCooldown: 0, spawnTick: 0 }, event.tick);
+      }
+      const ratio = Math.min(1, c.chargeTicks / 75), charging = c.isCharging;
       this.chargeRing.visible = charging;
-      this.chargeRing.position.set(this.player.position.x, 0.1, this.player.position.z);
-      this.chargeRing.scale.setScalar(0.7 + chargeRatio * 1.25);
-      (this.chargeRing.material as THREE.MeshBasicMaterial).opacity = 0.35 + chargeRatio * 0.6;
-      this.chargeCore.visible = charging;
-      this.chargeCore.position.set(this.player.position.x, 1.15, this.player.position.z);
-      this.chargeCore.scale.setScalar(0.72 + chargeRatio * 0.8);
-      this.chargeCore.rotation.y = elapsedSeconds * 1.5;
-      (this.chargeCore.material as THREE.MeshBasicMaterial).opacity = 0.28 + chargeRatio * 0.62;
-      this.chargeOrbit.visible = charging;
-      this.chargeOrbit.position.set(this.player.position.x, 1.12, this.player.position.z);
-      this.chargeOrbit.rotation.x = Math.PI / 2 + 0.28;
-      this.chargeOrbit.rotation.z = -elapsedSeconds * 2.4;
-      this.chargeOrbit.scale.setScalar(0.85 + chargeRatio * 0.48);
-      this.chargeLight.visible = charging;
-      this.chargeLight.position.set(this.player.position.x, 1.3, this.player.position.z);
-      this.chargeLight.intensity = charging ? 2 + chargeRatio * 8 : 0;
-      for (let index = 0; index < this.chargeSparks.length; index += 1) {
-        const spark = this.chargeSparks[index]!;
-        const motion = this.reducedMotion ? 0 : elapsedSeconds * (2.2 + chargeRatio * 1.8);
-        const angle = (index / this.chargeSparks.length) * Math.PI * 2 + motion;
-        const radius = 0.76 + chargeRatio * 0.62;
-        spark.visible = charging;
-        spark.position.set(
-          this.player.position.x + Math.cos(angle) * radius,
-          0.68 + (index % 3) * 0.42 + Math.sin(angle * 2) * 0.16,
-          this.player.position.z + Math.sin(angle) * radius,
-        );
-        spark.scale.setScalar(0.7 + chargeRatio * 1.25);
+      this.chargeRing.position.set(this.player.position.x, 0.1, this.player.position.z); this.chargeRing.scale.setScalar(0.7 + ratio * 1.25);
+      (this.chargeRing.material as THREE.MeshBasicMaterial).opacity = 0.35 + ratio * 0.6;
+      this.chargeCore.visible = charging; this.chargeCore.position.set(this.player.position.x, 1.15, this.player.position.z);
+      this.chargeCore.scale.setScalar(0.72 + ratio * 0.8); this.chargeCore.rotation.y = this.reducedMotion ? 0 : t * 1.5;
+      (this.chargeCore.material as THREE.MeshBasicMaterial).opacity = 0.28 + ratio * 0.62;
+      this.chargeOrbit.visible = charging; this.chargeOrbit.position.set(this.player.position.x, 1.12, this.player.position.z);
+      this.chargeOrbit.rotation.set(Math.PI / 2 + 0.28, 0, this.reducedMotion ? 0 : -t * 2.4); this.chargeOrbit.scale.setScalar(0.85 + ratio * 0.48);
+      this.chargeLight.visible = charging; this.chargeLight.position.set(this.player.position.x, 1.3, this.player.position.z); this.chargeLight.intensity = 2 + ratio * 6;
+      for (let i = 0; i < this.chargeSparks.length; i++) {
+        const spark = this.chargeSparks[i]!, angle = i / 6 * Math.PI * 2 + (this.reducedMotion ? 0 : t * 3), radius = 0.76 + ratio * 0.62;
+        spark.visible = charging; spark.position.set(this.player.position.x + Math.cos(angle) * radius, 0.7 + i % 3 * 0.42, this.player.position.z + Math.sin(angle) * radius);
       }
-      this.reloadRing.visible = snapshot.state.mode === "combat" && combat.reloadTicks > 0;
-      this.reloadRing.position.set(this.player.position.x, 0.14, this.player.position.z);
-      this.reloadRing.rotation.z = -elapsedSeconds * 4;
-      const activeEnemyIds = new Set(combat.enemies.map((enemy) => enemy.id));
-      for (const enemy of combat.enemies) this.syncEnemy(enemy);
-      for (const [id, group] of this.enemyMeshes) {
-        if (!activeEnemyIds.has(id)) {
-          this.scene.remove(group);
-          this.enemyMeshes.delete(id);
-        }
-      }
-      const activeProjectileIds = new Set(combat.projectiles.map((projectile) => projectile.id));
-      for (const projectile of combat.projectiles) this.syncProjectile(projectile);
-      for (const [id, mesh] of this.projectileMeshes) {
-        if (!activeProjectileIds.has(id)) {
-          this.scene.remove(mesh);
-          mesh.geometry.dispose();
-          (mesh.material as THREE.Material).dispose();
-          this.projectileMeshes.delete(id);
-        }
-      }
-      for (let index = 0; index < this.covers.length; index += 1) {
-        const cover = this.covers[index]!;
-        const health = combat.coverHealth[index] ?? 0;
-        const ratio = THREE.MathUtils.clamp(health / snapshot.build.coverMax, 0, 1);
-        cover.visible = health > 0;
-        cover.scale.y = 0.72 + ratio * 0.28;
-        const indicator = cover.getObjectByName("cover-indicator") as THREE.Mesh | undefined;
-        if (indicator) indicator.visible = health > 0 && combat.playerCoverIndex === index && snapshot.state.mode === "combat";
+      this.reloadRing.visible = c.reloadTicks > 0; this.reloadRing.position.set(this.player.position.x, 0.14, this.player.position.z); this.reloadRing.rotation.z = this.reducedMotion ? 0 : -t * 4;
+      for (let i = 0; i < this.covers.length; i++) {
+        const cover = this.covers[i]!, hp = c.coverHealth[i] ?? 0;
+        cover.visible = hp > 0;
+        const indicator = cover.getObjectByName("cover-indicator"); if (indicator) indicator.visible = c.playerCoverIndex === i;
       }
     } else {
-      this.aimMarker.visible = false;
-      this.chargeRing.visible = false;
-      this.chargeCore.visible = false;
-      this.chargeOrbit.visible = false;
-      this.chargeLight.visible = false;
-      for (const spark of this.chargeSparks) spark.visible = false;
-      this.reloadRing.visible = false;
-      for (const [, group] of this.enemyMeshes) this.scene.remove(group);
-      this.enemyMeshes.clear();
-      for (const cover of this.covers) {
-        cover.visible = true;
-        cover.scale.y = 1;
-        const indicator = cover.getObjectByName("cover-indicator");
-        if (indicator) indicator.visible = false;
-      }
+      for (const object of [this.chargeRing, this.chargeCore, this.chargeOrbit, this.chargeLight, this.reloadRing, ...this.chargeSparks]) object.visible = false;
+      for (const cover of this.covers) { cover.visible = true; cover.getObjectByName("cover-indicator")!.visible = false; }
     }
-    this.updateTransients(elapsedSeconds);
-    if (!this.reducedMotion) {
-      if (!combat) this.player.rotation.y = Math.sin(elapsedSeconds * 1.6) * 0.035;
-      this.aimMarker.rotation.z = elapsedSeconds * 0.45;
-      for (let index = 0; index < this.mistStrips.length; index += 1) this.mistStrips[index]!.position.x = Math.sin(elapsedSeconds * (0.09 + index * 0.025) + index) * 2.2;
-      for (const group of this.enemyMeshes.values()) {
-        const ring = group.getObjectByName("phase-ring");
-        if (ring) ring.rotation.z = elapsedSeconds * 0.6;
-      }
-    }
+    this.aimMarker.visible = snapshot.state.mode === "combat";
+    this.swarm.render(c, this.reducedMotion, snapshot.state.mode === "combat" ? Math.min(1, (elapsedSeconds - this.lastTickTime) * 60) : 1);
+    this.pooledEffects.render(tick, this.reducedMotion);
+    for (let i = 0; i < this.mistStrips.length; i++) this.mistStrips[i]!.position.x = this.reducedMotion ? 0 : Math.sin(t * 0.1 + i) * 1.2;
     this.renderer.render(this.scene, this.camera);
   }
 }

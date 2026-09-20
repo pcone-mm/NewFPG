@@ -142,6 +142,8 @@ h3 { font-family: "Noto Serif SC", "Songti SC", SimSun, serif; font-weight: 700;
   padding: 10px 14px;
 }
 .objective-chip strong { font-size: 15px; }
+.combo-feedback { position: absolute; right: 28px; top: 125px; color: #ffe28a; font-size: 27px; font-weight: 800; text-shadow: 0 2px 8px #101614; }
+.global-experience.absorbing { box-shadow: 0 -4px 24px #66d9ae88; }
 .resource-strip {
   position: absolute;
   top: 20px;
@@ -258,7 +260,7 @@ h3 { font-family: "Noto Serif SC", "Songti SC", SimSun, serif; font-weight: 700;
 .map-footer { flex: none; color: var(--muted); font-size: 11px; }
 .map-footer code { color: #d8e5e2; }
 
-.reward-layout { display: grid; flex: 1; min-height: 0; }
+.reward-layout { display: grid; flex: 1 0 auto; min-height: 490px; }
 .reward-layout.with-backpack { grid-template-columns: minmax(0, 1fr) 248px; gap: 20px; }
 .offer-grid { display: grid; flex: 1; grid-template-columns: repeat(5, minmax(164px, 1fr)); gap: clamp(10px, 1.4vw, 22px); align-items: stretch; min-height: 390px; }
 .reward-layout .offer-grid { min-height: 0; }
@@ -417,7 +419,7 @@ h3 { font-family: "Noto Serif SC", "Songti SC", SimSun, serif; font-weight: 700;
 .drag-instruction.full { border-color: rgba(207, 83, 63, 0.5); color: #df8a78; }
 .price { display: flex; align-items: center; gap: 6px; margin-top: 13px; color: var(--bronze); font-weight: 700; }
 .price svg { width: 15px; }
-.reward-footer { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 20px; min-height: 68px; color: var(--muted); font-size: 12px; }
+.reward-footer { position: relative; display: flex; flex: none; align-items: center; justify-content: space-between; gap: 20px; min-height: 68px; color: var(--muted); font-size: 12px; }
 .reward-footer .command-button b { color: var(--bronze); }
 
 .backpack-dock { display: flex; min-height: 0; flex-direction: column; border-left: 1px solid var(--line); background: rgba(23,32,29,0.7); padding: 13px; transition: border-color 120ms ease, background 120ms ease; }

@@ -416,14 +416,10 @@ export class AppUi {
     const { state, build } = snapshot;
     const combat = state.combat;
     if (!combat) return;
-    const coverHealth = combat.coverHealth[combat.playerCoverIndex] ?? 0;
-    this.setText("hud-cover-label", `掩体 ${combat.playerCoverIndex + 1}`);
     this.setText("hud-life", `${Math.ceil(state.resources.life)} / ${Math.round(build.lifeMax)}`);
-    this.setText("hud-cover", coverHealth <= 0 ? `0 / ${Math.round(build.coverMax)} · 已毁` : `${Math.ceil(coverHealth)} / ${Math.round(build.coverMax)}`);
     this.setText("hud-ammo", combat.reloadTicks > 0 ? "换弹中" : `${combat.ammo} / ${build.magazine}`);
     this.setText("hud-energy", `${Math.floor(combat.secondaryEnergy)} / ${Math.round(build.secondaryEnergyMax)}`);
     this.setMeter("life-meter", state.resources.life / build.lifeMax);
-    this.setMeter("cover-meter", coverHealth / build.coverMax);
     this.setMeter("energy-meter", combat.secondaryEnergy / build.secondaryEnergyMax);
     const weaponState = combat.reloadTicks > 0 ? "reload" : combat.isCharging ? "charge" : "ready";
     const weaponRatio = weaponState === "reload"
@@ -517,14 +513,12 @@ export class AppUi {
   private combatHud(snapshot: GameSnapshot): string {
     const { state, build } = snapshot;
     const combat = state.combat!;
-    const coverHealth = combat.coverHealth[combat.playerCoverIndex] ?? 0;
     return `<section class="combat-ui" data-testid="combat-hud">
       <div class="objective-chip"><span class="eyebrow">${ROOM_NAMES[combat.roomType]}</span><strong data-hud-objective>${combat.roomType === "boss" ? "压制首领 · 阶段 1" : `肃清敌群 · 第 ${combat.wave}/${combat.totalWaves} 波`}</strong></div>
       <div class="resource-strip"><span><i data-lucide="coins"></i><b id="hud-gold">${state.resources.currency}</b></span><span><i data-lucide="refresh-cw"></i>${state.resources.rerolls}</span><span title="灵物"><i data-lucide="gem"></i>${state.items.length}</span></div>
       <div class="combo-feedback" id="hud-combo"></div>
       <div class="vitals-cluster">
         <div class="vital-row life"><i data-lucide="heart"></i><div><span>生命</span><b id="hud-life">${Math.ceil(state.resources.life)} / ${Math.round(build.lifeMax)}</b><em class="meter" id="life-meter" style="--meter:${state.resources.life / build.lifeMax}"></em></div></div>
-        <div class="vital-row cover"><i data-lucide="shield"></i><div><span id="hud-cover-label">掩体 ${combat.playerCoverIndex + 1}</span><b id="hud-cover">${coverHealth <= 0 ? `0 / ${Math.round(build.coverMax)} · 已毁` : `${Math.ceil(coverHealth)} / ${Math.round(build.coverMax)}`}</b><em class="meter" id="cover-meter" style="--meter:${coverHealth / build.coverMax}"></em></div></div>
         <div class="vital-row energy"><i data-lucide="zap"></i><div><span>灵能</span><b id="hud-energy">${Math.floor(combat.secondaryEnergy)} / ${Math.round(build.secondaryEnergyMax)}</b><em class="meter" id="energy-meter" style="--meter:${combat.secondaryEnergy / build.secondaryEnergyMax}"></em></div></div>
         <div class="combat-numbers"><span><i data-lucide="crosshair"></i><small>主武器</small><b id="hud-ammo">${combat.ammo} / ${build.magazine}</b></span></div>
         <div class="weapon-action" data-weapon-state="ready" data-testid="weapon-state"><span id="hud-weapon-state">武器就绪</span><em class="meter" id="weapon-action-meter" style="--meter:0"></em></div>

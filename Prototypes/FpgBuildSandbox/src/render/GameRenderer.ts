@@ -93,6 +93,51 @@ function material(color: THREE.ColorRepresentation, emissive: THREE.ColorReprese
   return new THREE.MeshStandardMaterial({ color, emissive, roughness: 0.62, metalness: 0.14 });
 }
 
+interface CoverHealthDisplay {
+  group: THREE.Group;
+  fill: THREE.Mesh;
+  label: THREE.Sprite;
+  width: number;
+  lastHp: number;
+  lastMax: number;
+}
+
+function createCoverHealthLabel(): THREE.Sprite {
+  const canvas = document.createElement("canvas");
+  canvas.width = 384;
+  canvas.height = 72;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+  }));
+  sprite.scale.set(2.8, 0.52, 1);
+  sprite.renderOrder = 21;
+  return sprite;
+}
+
+function updateCoverHealthLabel(label: THREE.Sprite, coverIndex: number, hp: number, maxHp: number, ratio: number): void {
+  const material = label.material as THREE.SpriteMaterial;
+  const canvas = material.map?.image as HTMLCanvasElement | undefined;
+  const context = canvas?.getContext("2d");
+  if (!canvas || !context) return;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "rgba(7, 15, 13, 0.88)";
+  context.fillRect(2, 2, canvas.width - 4, canvas.height - 4);
+  context.strokeStyle = ratio <= 0.25 ? "#c74f3b" : ratio <= 0.55 ? "#d6ae59" : "#80bdc8";
+  context.lineWidth = 3;
+  context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+  context.fillStyle = "#e7efec";
+  context.font = "600 26px 'Microsoft YaHei', sans-serif";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(`掩体 ${coverIndex + 1}  ·  ${Math.ceil(hp)} / ${Math.round(maxHp)}`, canvas.width / 2, canvas.height / 2 + 1);
+  if (material.map) material.map.needsUpdate = true;
+}
+
 
 export class GameRenderer {
   private readonly renderer: THREE.WebGLRenderer;
@@ -101,6 +146,7 @@ export class GameRenderer {
   private readonly player = new THREE.Group();
   private readonly aimMarker: THREE.Mesh;
   private readonly covers: THREE.Group[] = [];
+  private readonly coverHealthDisplays: CoverHealthDisplay[] = [];
   private readonly mistStrips: THREE.Mesh[] = [];
   private readonly chargeRing: THREE.Mesh;
   private readonly chargeCore: THREE.Mesh;
@@ -204,9 +250,30 @@ export class GameRenderer {
       indicator.position.y = 0.04;
       indicator.visible = false;
       cover.add(indicator);
+      const healthGroup = new THREE.Group();
+      healthGroup.name = "cover-health";
+      healthGroup.position.set(0, 2.02, -0.64);
+      const healthWidth = 3.35;
+      const healthBackground = new THREE.Mesh(
+        new THREE.BoxGeometry(healthWidth, 0.14, 0.06),
+        new THREE.MeshBasicMaterial({ color: "#111a17", transparent: true, opacity: 0.92, depthTest: false, depthWrite: false }),
+      );
+      healthBackground.renderOrder = 20;
+      const healthFill = new THREE.Mesh(
+        new THREE.BoxGeometry(healthWidth, 0.14, 0.07),
+        new THREE.MeshBasicMaterial({ color: "#80bdc8", depthTest: false, depthWrite: false }),
+      );
+      healthFill.renderOrder = 21;
+      healthFill.position.z = -0.04;
+      const healthLabel = createCoverHealthLabel();
+      healthLabel.position.set(0, 0.3, -0.08);
+      healthGroup.add(healthBackground, healthFill, healthLabel);
+      healthGroup.visible = false;
+      cover.add(healthGroup);
       cover.position.set(x, 0, 2.5);
       this.scene.add(cover);
       this.covers.push(cover);
+      this.coverHealthDisplays.push({ group: healthGroup, fill: healthFill, label: healthLabel, width: healthWidth, lastHp: -1, lastMax: -1 });
     }
 
     const playerBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.56, 1.1, 5, 10), material("#43a28c", "#0c3b31"));
@@ -394,10 +461,30 @@ export class GameRenderer {
         const cover = this.covers[i]!, hp = c.coverHealth[i] ?? 0;
         cover.visible = hp > 0;
         const indicator = cover.getObjectByName("cover-indicator"); if (indicator) indicator.visible = c.playerCoverIndex === i;
+        const display = this.coverHealthDisplays[i]!;
+        display.group.visible = cover.visible && c.playerCoverIndex === i;
+        if (display.group.visible) {
+          const maxHp = Math.max(1, snapshot.build.coverMax);
+          const ratio = THREE.MathUtils.clamp(hp / maxHp, 0, 1);
+          display.fill.scale.x = ratio;
+          display.fill.position.x = -display.width * (1 - ratio) * 0.5;
+          const fillMaterial = display.fill.material as THREE.MeshBasicMaterial;
+          fillMaterial.color.set(ratio <= 0.25 ? "#c74f3b" : ratio <= 0.55 ? "#d6ae59" : "#80bdc8");
+          if (display.lastHp !== hp || display.lastMax !== maxHp) {
+            updateCoverHealthLabel(display.label, i, hp, maxHp, ratio);
+            display.lastHp = hp;
+            display.lastMax = maxHp;
+          }
+        }
       }
     } else {
       for (const object of [this.chargeRing, this.chargeCore, this.chargeOrbit, this.chargeLight, this.reloadRing, ...this.chargeSparks]) object.visible = false;
-      for (const cover of this.covers) { cover.visible = true; cover.getObjectByName("cover-indicator")!.visible = false; }
+      for (let i = 0; i < this.covers.length; i++) {
+        const cover = this.covers[i]!;
+        cover.visible = true;
+        cover.getObjectByName("cover-indicator")!.visible = false;
+        this.coverHealthDisplays[i]!.group.visible = false;
+      }
     }
     this.aimMarker.visible = snapshot.state.mode === "combat";
     this.swarm.render(c, this.reducedMotion, snapshot.state.mode === "combat" ? Math.min(1, (elapsedSeconds - this.lastTickTime) * 60) : 1);

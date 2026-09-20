@@ -161,13 +161,11 @@ h3 { font-family: "Noto Serif SC", "Songti SC", SimSun, serif; font-weight: 700;
 .vital-row { display: grid; grid-template-columns: 20px 1fr; gap: 10px; margin-bottom: 9px; }
 .vital-row > svg { width: 18px; margin-top: 2px; }
 .vital-row.life > svg { color: var(--cinnabar); }
-.vital-row.cover > svg { color: #87c9d3; }
 .vital-row.energy > svg { color: #69bde5; }
 .vital-row > div { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; font-size: 11px; color: var(--muted); }
 .vital-row b { color: var(--cold-white); font-size: 12px; }
 .meter { position: relative; grid-column: 1 / -1; display: block; height: 3px; margin-top: 4px; overflow: hidden; background: rgba(255,255,255,0.12); }
 .meter::after { position: absolute; inset: 0; width: calc(var(--meter) * 100%); background: var(--cinnabar); content: ""; transform-origin: left center; transition: width 120ms linear; }
-.cover .meter::after { background: #80bdc8; }
 .energy .meter::after { background: #4aa9d5; }
 .meter.aura { height: 4px; margin-top: 8px; }
 .meter.aura::after { background: var(--bronze); }

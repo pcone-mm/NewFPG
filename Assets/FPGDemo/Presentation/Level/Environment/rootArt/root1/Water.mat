@@ -112,6 +112,7 @@ Material:
     - _Cull: 2
     - _Cutoff: 0.5
     - _DepthRange: 5.3
+    - _DepthTest: 4
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _Distortion: 0
@@ -152,6 +153,7 @@ Material:
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _TopSurfaceNormalThreshold: 0.5
     - _WaveScale: 0.2
     - _WaveStrength: 0.05
     - _WorkflowMode: 1

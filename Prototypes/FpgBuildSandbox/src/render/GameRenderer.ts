@@ -390,8 +390,11 @@ export class GameRenderer {
     const point = new THREE.Vector3();
     // Keep aim on a fixed firing plane. Moving the cursor to an enemy's depth
     // creates implicit target snapping and makes the ray feel sticky.
-    ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point);
-    return { x: THREE.MathUtils.clamp(point.x, -16, 16), y: THREE.MathUtils.clamp(point.y, 0.4, 9), z: 12 };
+    const intersection = ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point);
+    if (!intersection) return { x: 0, y: 1, z: 12 };
+    // Do not clamp the intersection. A clamp changes the ray direction and
+    // creates a low-angle dead zone immediately in front of the cover.
+    return { x: point.x, y: point.y, z: 12 };
   }
 
   public diagnostics(): { calls: number; triangles: number; geometries: number; textures: number; medianFrameMs: number; p95FrameMs: number; gpu: string } {

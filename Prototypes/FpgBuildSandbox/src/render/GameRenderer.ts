@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { CombatState, EnemyState, GameSnapshot } from "../game/types";
-import { enemyCenter, enemyRadius, height, raySphere } from "../game/geometry";
+import type { CombatState, GameSnapshot } from "../game/types";
+import { height } from "../game/geometry";
 import { SwarmPresentation } from "./SwarmPresentation";
 import { CombatEffects } from "./CombatEffects";
 
@@ -383,23 +383,13 @@ export class GameRenderer {
     return { x: rect.left + (projected.x * 0.5 + 0.5) * rect.width, y: rect.top + (-projected.y * 0.5 + 0.5) * rect.height };
   }
 
-  public screenToWorld(clientX: number, clientY: number, snapshot?: GameSnapshot): { x: number; y: number; z: number } {
+  public screenToWorld(clientX: number, clientY: number, _snapshot?: GameSnapshot): { x: number; y: number; z: number } {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, -(clientY - rect.top) / rect.height * 2 + 1), this.camera);
     const ray = this.raycaster.ray;
-    const origin = { x: ray.origin.x, y: ray.origin.y, z: ray.origin.z }, direction = { x: ray.direction.x, y: ray.direction.y, z: ray.direction.z };
-    let nearest: { enemy: EnemyState; distance: number } | undefined;
-    for (const enemy of snapshot?.state.combat?.enemies ?? []) {
-      if (enemy.hp <= 0) continue;
-      const distance = raySphere(origin, direction, enemyCenter(enemy), enemyRadius(enemy));
-      if (distance !== undefined && (!nearest || distance < nearest.distance)) nearest = { enemy, distance };
-    }
     const point = new THREE.Vector3();
-    // Project the cursor to the selected body's depth, retaining its exact aim offset.
-    if (nearest) {
-      ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -nearest.enemy.position.z), point);
-      return { x: point.x, y: point.y, z: point.z };
-    }
+    // Keep aim on a fixed firing plane. Moving the cursor to an enemy's depth
+    // creates implicit target snapping and makes the ray feel sticky.
     ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point);
     return { x: THREE.MathUtils.clamp(point.x, -16, 16), y: THREE.MathUtils.clamp(point.y, 0.4, 9), z: 12 };
   }

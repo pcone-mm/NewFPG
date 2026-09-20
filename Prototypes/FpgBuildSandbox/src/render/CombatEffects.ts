@@ -5,8 +5,10 @@ import { height } from "../game/geometry";
 interface Particle { origin: THREE.Vector3; velocity: THREE.Vector3; color: THREE.Color; start: number; duration: number; size: number }
 interface Pulse { position: Vec2; start: number; radius: number; color: THREE.Color; absorb: boolean }
 interface NumberSlot { sprite: THREE.Sprite; canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; targetId?: string; value: number; start: number; tick: number; priority: boolean; origin: THREE.Vector3; weak: boolean }
+interface BeamSlot { group: THREE.Group; core: THREE.Mesh; halo: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; start: number; duration: number; kind: "primary" | "secondary" }
 export class CombatEffects {
   private readonly particles: Particle[] = [];
+  private readonly beams: BeamSlot[] = [];
   private readonly mesh: THREE.InstancedMesh;
   private readonly transform = new THREE.Object3D();
   private readonly numbers: NumberSlot[] = [];
@@ -18,6 +20,15 @@ export class CombatEffects {
     this.mesh.frustumCulled = false; this.mesh.count = 0; this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(this.mesh);
     this.rings = new THREE.InstancedMesh(new THREE.RingGeometry(0.94, 1, 32), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthWrite: false, blending: THREE.AdditiveBlending }), 32);
     this.rings.frustumCulled = false; this.rings.count = 0; scene.add(this.rings);
+    const beamGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true);
+    for (let i = 0; i < 48; i++) {
+      const group = new THREE.Group();
+      const core = new THREE.Mesh(beamGeometry, new THREE.MeshBasicMaterial({ color: "#d9fff7", transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
+      const halo = new THREE.Mesh(beamGeometry, new THREE.MeshBasicMaterial({ color: "#73d9c2", transparent: true, opacity: 0.2, depthWrite: false, blending: THREE.AdditiveBlending }));
+      core.renderOrder = 16; halo.renderOrder = 15;
+      group.add(halo, core); group.visible = false; scene.add(group);
+      this.beams.push({ group, core, halo, from: new THREE.Vector3(), to: new THREE.Vector3(), start: -999, duration: 0, kind: "primary" });
+    }
     for (let i = 0; i < 64; i++) {
       const canvas = document.createElement("canvas"); canvas.width = 192; canvas.height = 96;
       const context = canvas.getContext("2d")!;
@@ -27,12 +38,26 @@ export class CombatEffects {
       this.numbers.push({ sprite, canvas, context, value: 0, start: -999, tick: -999, priority: false, origin: new THREE.Vector3(), weak: false });
     }
   }
-  reset(lastSerial = -1): void { this.lastSerial = lastSerial; this.particles.length = 0; this.pulses.length = 0; for (const slot of this.numbers) { slot.start = -999; slot.sprite.visible = false; } }
+  reset(lastSerial = -1): void { this.lastSerial = lastSerial; this.particles.length = 0; this.pulses.length = 0; for (const beam of this.beams) beam.group.visible = false; for (const slot of this.numbers) { slot.start = -999; slot.sprite.visible = false; } }
   private particle(position: Vec2, tick: number, color: string, i: number, speed: number, duration: number, size = 0.07): void {
     if (this.particles.length >= 512) this.particles.shift();
     const angle = i * 2.399963, y = Math.sin(i * 1.7);
     this.particles.push({ origin: new THREE.Vector3(position.x, height(position), position.z), velocity: new THREE.Vector3(Math.cos(angle), y, Math.sin(angle)).multiplyScalar(speed),
       color: new THREE.Color(color), start: tick, duration, size });
+  }
+  private beam(from: Vec2, to: Vec2, tick: number, kind: "primary" | "secondary"): void {
+    const slot = this.beams.find((candidate) => !candidate.group.visible) ?? [...this.beams].sort((a, b) => a.start - b.start)[0];
+    if (!slot) return;
+    slot.from.set(from.x, height(from, 1.1), from.z);
+    slot.to.set(to.x, height(to, 1), to.z);
+    slot.start = tick;
+    slot.duration = kind === "primary" ? 7 : 14;
+    slot.kind = kind;
+    const coreMaterial = slot.core.material as THREE.MeshBasicMaterial;
+    const haloMaterial = slot.halo.material as THREE.MeshBasicMaterial;
+    coreMaterial.color.set(kind === "primary" ? "#e5fff9" : "#fff0b0");
+    haloMaterial.color.set(kind === "primary" ? "#5cd7ba" : "#e9a84e");
+    slot.group.visible = true;
   }
   private damageNumber(e: CombatFeedbackEvent): void {
     if (!e.to || !e.value) return;
@@ -59,13 +84,7 @@ export class CombatEffects {
         this.pulses.push({ position: { ...e.to }, start: e.tick, radius: e.type === "experienceCollected" ? 1.2 : e.value ?? 2, color: new THREE.Color(e.type === "experienceCollected" ? "#81ffcb" : "#ffd774"), absorb: e.type === "experienceCollected" });
       }
       if (e.type === "primary" || e.type === "secondary") {
-        if (e.from) {
-          const steps = e.type === "primary" ? 12 : 28;
-          for (let i = 0; i < steps; i++) {
-            const t = i / steps;
-            this.particle({ x: e.from.x + (e.to.x - e.from.x) * t, y: height(e.from) + (height(e.to) - height(e.from)) * t, z: e.from.z + (e.to.z - e.from.z) * t }, e.tick, e.type === "primary" ? "#b9f6df" : "#ffe4a0", i, 0, e.type === "primary" ? 7 : 18, e.type === "primary" ? 0.048 : 0.13);
-          }
-        }
+        if (e.from) this.beam(e.from, e.to, e.tick, e.type);
       }
       if (e.type === "enemyDamage" || e.type === "enemyDeath" || e.type === "secondary" || e.type === "explosion" || e.type === "experienceCollected" || e.type === "coverHit") {
         const count = e.type === "secondary" ? 48 : e.type === "enemyDeath" ? 12 : e.type === "experienceCollected" ? 5 : 7;
@@ -85,6 +104,25 @@ export class CombatEffects {
       this.rings.setMatrixAt(rings, this.transform.matrix); this.rings.setColorAt(rings++, pulse.color.clone().multiplyScalar(1 - progress));
     }
     this.rings.count = rings; this.rings.instanceMatrix.needsUpdate = true; if (this.rings.instanceColor) this.rings.instanceColor.needsUpdate = true;
+    const axis = new THREE.Vector3(0, 1, 0);
+    for (const beam of this.beams) {
+      const age = tick - beam.start;
+      if (age < 0 || age >= beam.duration) { beam.group.visible = false; continue; }
+      const progress = age / beam.duration;
+      const direction = beam.to.clone().sub(beam.from);
+      const length = Math.max(0.05, direction.length());
+      direction.normalize();
+      beam.group.position.copy(beam.from).add(beam.to).multiplyScalar(0.5);
+      beam.group.quaternion.setFromUnitVectors(axis, direction);
+      const width = beam.kind === "primary" ? 0.035 : 0.08;
+      const haloWidth = beam.kind === "primary" ? 0.13 : 0.3;
+      beam.core.scale.set(width, length, width);
+      beam.halo.scale.set(haloWidth, length, haloWidth);
+      const fade = reduced ? 0.72 : Math.min(1, (1 - progress) * 2.8);
+      (beam.core.material as THREE.MeshBasicMaterial).opacity = fade;
+      (beam.halo.material as THREE.MeshBasicMaterial).opacity = fade * 0.22;
+      beam.group.visible = true;
+    }
     let count = 0;
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i]!, age = tick - p.start, life = age / p.duration;

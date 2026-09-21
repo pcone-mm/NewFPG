@@ -198,6 +198,13 @@ describe("combat and persistence", () => {
     expect(state.combat.coverHealth[1]).toBe(middleCoverHealth);
     expect(state.combat.coverHealth[2]).toBeCloseTo(74);
     expect(state.combat.coverHealth[0]).toBe(100);
+
+    // A projectile already aimed at the abandoned middle lane cannot damage
+    // that empty cover after the player moves right.
+    state.combat.projectiles.push({ id: "abandoned-lane", position: { x: 0, z: 3.2 }, velocity: { x: 0, z: -0.8 }, damage: 40, hostile: true, lifeTicks: 2 });
+    tickCombat(state, build, rng);
+    expect(state.combat.coverHealth[1]).toBe(middleCoverHealth);
+    expect(state.resources.life).toBe(100);
   });
 
   it("stops hostile projectiles at the physical cover before they reach the player", () => {

@@ -134,7 +134,7 @@ function updateCoverHealthLabel(label: THREE.Sprite, coverIndex: number, hp: num
   context.font = "600 26px 'Microsoft YaHei', sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(`掩体 ${coverIndex + 1}  ·  ${Math.ceil(hp)} / ${Math.round(maxHp)}`, canvas.width / 2, canvas.height / 2 + 1);
+  context.fillText(hp <= 0 ? `掩体 ${coverIndex + 1}  ·  已毁` : `掩体 ${coverIndex + 1}  ·  ${Math.ceil(hp)} / ${Math.round(maxHp)}`, canvas.width / 2, canvas.height / 2 + 1);
   if (material.map) material.map.needsUpdate = true;
 }
 
@@ -234,14 +234,105 @@ export class GameRenderer {
 
     for (const x of [-7.5, 0, 7.5]) {
       const cover = new THREE.Group();
-      const base = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.5, 1.05), material("#59635b"));
-      base.position.y = 0.75;
-      base.castShadow = true;
-      base.receiveShadow = true;
-      cover.add(base);
-      const cap = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.22, 1.22), material("#8a7350"));
-      cap.position.y = 1.57;
-      cover.add(cap);
+      const structure = new THREE.Group();
+      structure.name = "cover-structure";
+      const body = new THREE.Mesh(new THREE.BoxGeometry(4.15, 1.28, 0.9), material("#53635c", "#0b241e"));
+      body.position.y = 0.72;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      structure.add(body);
+      const frontPlate = new THREE.Mesh(new THREE.BoxGeometry(3.76, 1.02, 0.12), material("#68766c", "#102d24"));
+      frontPlate.name = "cover-front-plate";
+      frontPlate.position.set(0, 0.72, -0.51);
+      frontPlate.castShadow = true;
+      structure.add(frontPlate);
+      for (const side of [-1, 1]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.72, 1.08), material("#3b4d46", "#071b17"));
+        post.position.set(side * 1.88, 0.86, 0);
+        post.castShadow = true;
+        post.receiveShadow = true;
+        structure.add(post);
+      }
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(4.55, 0.2, 1.2), material("#927b55", "#302414"));
+      cap.name = "cover-cap";
+      cap.position.y = 1.72;
+      cap.castShadow = true;
+      structure.add(cap);
+      const lowerRail = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.12, 1.0), material("#8a7350", "#2d2415"));
+      lowerRail.position.set(0, 0.14, -0.08);
+      structure.add(lowerRail);
+      const inlay = material("#4f9a86", "#123e32");
+      for (const inlayX of [-1.3, 0, 1.3]) {
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.82, 0.035), inlay);
+        strip.position.set(inlayX, 0.72, -0.585);
+        structure.add(strip);
+      }
+      const boltMaterial = material("#b99d61", "#49391c");
+      for (const boltX of [-1.64, 1.64]) for (const boltY of [0.38, 1.18]) {
+        const bolt = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), boltMaterial);
+        bolt.position.set(boltX, boltY, -0.59);
+        structure.add(bolt);
+      }
+      cover.add(structure);
+
+      const crackMaterial = new THREE.LineBasicMaterial({ color: "#c55443", transparent: true, opacity: 0.86, depthTest: false });
+      const damage = new THREE.Group();
+      damage.name = "cover-damage";
+      for (const points of [
+        [new THREE.Vector3(-1.55, 1.24, -0.595), new THREE.Vector3(-0.78, 0.86, -0.6), new THREE.Vector3(-0.98, 0.33, -0.605)],
+        [new THREE.Vector3(0.42, 1.48, -0.595), new THREE.Vector3(0.12, 1.03, -0.6), new THREE.Vector3(0.52, 0.52, -0.605), new THREE.Vector3(0.28, 0.23, -0.61)],
+      ]) {
+        const crack = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), crackMaterial);
+        crack.renderOrder = 18;
+        damage.add(crack);
+      }
+      for (const [chipX, chipY, chipScale] of [[-1.34, 0.26, 1], [1.2, 1.3, 0.75]] as const) {
+        const chip = new THREE.Mesh(new THREE.BoxGeometry(0.3 * chipScale, 0.16 * chipScale, 0.16), material("#37463f"));
+        chip.position.set(chipX, chipY, -0.63);
+        chip.rotation.z = chipX < 0 ? -0.24 : 0.18;
+        damage.add(chip);
+      }
+      damage.visible = false;
+      cover.add(damage);
+
+      const severe = new THREE.Group();
+      severe.name = "cover-severe";
+      const breach = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.72, 0.14), new THREE.MeshBasicMaterial({ color: "#17241f", transparent: true, opacity: 0.92 }));
+      breach.position.set(0.12, 0.78, -0.63);
+      severe.add(breach);
+      for (const side of [-1, 1]) {
+        const brokenPlate = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.5, 0.16), material("#46564e", "#0a211b"));
+        brokenPlate.position.set(side * 1.24, 0.58, -0.62);
+        brokenPlate.rotation.z = side * 0.16;
+        brokenPlate.castShadow = true;
+        severe.add(brokenPlate);
+      }
+      severe.visible = false;
+      cover.add(severe);
+
+      const destroyed = new THREE.Group();
+      destroyed.name = "cover-destroyed";
+      const rubbleMaterial = material("#43534b", "#0a1b16");
+      for (const [rubbleX, rubbleY, rubbleZ, rubbleScale, rubbleRotation] of [
+        [-1.65, 0.16, 0.05, 0.72, -0.18], [-0.62, 0.1, -0.1, 0.5, 0.24], [0.42, 0.13, 0.08, 0.84, -0.12], [1.55, 0.2, -0.02, 0.62, 0.16],
+      ] as const) {
+        const rubble = new THREE.Mesh(new THREE.BoxGeometry(0.9 * rubbleScale, 0.28 * rubbleScale, 0.72 * rubbleScale), rubbleMaterial);
+        rubble.position.set(rubbleX, rubbleY, rubbleZ);
+        rubble.rotation.z = rubbleRotation;
+        rubble.rotation.y = rubbleRotation * 0.7;
+        rubble.castShadow = true;
+        destroyed.add(rubble);
+      }
+      for (const side of [-1, 1]) {
+        const brokenPost = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.82, 0.92), material("#59675d", "#0b211b"));
+        brokenPost.position.set(side * 1.75, 0.42, 0);
+        brokenPost.rotation.z = side * 0.32;
+        brokenPost.castShadow = true;
+        destroyed.add(brokenPost);
+      }
+      destroyed.visible = false;
+      cover.add(destroyed);
+
       const indicator = new THREE.Mesh(
         new THREE.RingGeometry(1.85, 2.05, 36),
         new THREE.MeshBasicMaterial({ color: "#78cbbb", transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false }),
@@ -461,13 +552,26 @@ export class GameRenderer {
       this.reloadRing.visible = c.reloadTicks > 0; this.reloadRing.position.set(this.player.position.x, 0.14, this.player.position.z); this.reloadRing.rotation.z = this.reducedMotion ? 0 : -t * 4;
       for (let i = 0; i < this.covers.length; i++) {
         const cover = this.covers[i]!, hp = c.coverHealth[i] ?? 0;
-        cover.visible = hp > 0;
+        const maxHp = Math.max(1, snapshot.build.coverMax);
+        const ratio = THREE.MathUtils.clamp(hp / maxHp, 0, 1);
+        const stage = ratio <= 0 ? 3 : ratio <= 0.25 ? 2 : ratio <= 0.6 ? 1 : 0;
+        cover.visible = true;
+        const structure = cover.getObjectByName("cover-structure");
+        const damage = cover.getObjectByName("cover-damage");
+        const severe = cover.getObjectByName("cover-severe");
+        const destroyed = cover.getObjectByName("cover-destroyed");
+        if (structure) {
+          structure.visible = stage < 3;
+          structure.scale.y = stage === 2 ? 0.88 : 1;
+          structure.position.y = stage === 2 ? -0.08 : 0;
+        }
+        if (damage) damage.visible = stage === 1;
+        if (severe) severe.visible = stage === 2;
+        if (destroyed) destroyed.visible = stage === 3;
         const indicator = cover.getObjectByName("cover-indicator"); if (indicator) indicator.visible = c.playerCoverIndex === i;
         const display = this.coverHealthDisplays[i]!;
-        display.group.visible = cover.visible && c.playerCoverIndex === i;
+        display.group.visible = c.playerCoverIndex === i;
         if (display.group.visible) {
-          const maxHp = Math.max(1, snapshot.build.coverMax);
-          const ratio = THREE.MathUtils.clamp(hp / maxHp, 0, 1);
           display.fill.scale.x = ratio;
           display.fill.position.x = -display.width * (1 - ratio) * 0.5;
           const fillMaterial = display.fill.material as THREE.MeshBasicMaterial;
@@ -484,6 +588,11 @@ export class GameRenderer {
       for (let i = 0; i < this.covers.length; i++) {
         const cover = this.covers[i]!;
         cover.visible = true;
+        const structure = cover.getObjectByName("cover-structure");
+        if (structure) { structure.visible = true; structure.scale.y = 1; structure.position.y = 0; }
+        const damage = cover.getObjectByName("cover-damage"); if (damage) damage.visible = false;
+        const severe = cover.getObjectByName("cover-severe"); if (severe) severe.visible = false;
+        const destroyed = cover.getObjectByName("cover-destroyed"); if (destroyed) destroyed.visible = false;
         cover.getObjectByName("cover-indicator")!.visible = false;
         this.coverHealthDisplays[i]!.group.visible = false;
       }

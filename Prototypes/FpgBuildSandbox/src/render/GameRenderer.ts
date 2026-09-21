@@ -293,6 +293,17 @@ export class GameRenderer {
         chip.rotation.z = chipX < 0 ? -0.24 : 0.18;
         damage.add(chip);
       }
+      const damageGap = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.56, 0.1), new THREE.MeshBasicMaterial({ color: "#1a2923", transparent: true, opacity: 0.94, depthTest: false }));
+      damageGap.position.set(-0.48, 0.82, -0.66);
+      damageGap.rotation.z = -0.12;
+      damage.add(damageGap);
+      for (const [pieceX, pieceY, pieceRotation] of [[-0.98, 1.12, -0.24], [0.02, 0.48, 0.18], [0.92, 0.96, -0.16]] as const) {
+        const fracture = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.18, 0.13), material("#3b4b43", "#081b16"));
+        fracture.position.set(pieceX, pieceY, -0.68);
+        fracture.rotation.z = pieceRotation;
+        fracture.castShadow = true;
+        damage.add(fracture);
+      }
       damage.visible = false;
       cover.add(damage);
 
@@ -570,7 +581,13 @@ export class GameRenderer {
           structure.position.y = stage === 2 ? -0.18 : 0;
         }
         if (body) body.visible = stage < 2;
-        if (frontPlate) frontPlate.visible = stage < 2;
+        if (frontPlate) {
+          frontPlate.visible = stage < 2;
+          frontPlate.position.x = stage === 1 ? 0.08 : 0;
+          frontPlate.rotation.z = stage === 1 ? 0.035 : 0;
+          const frontMaterial = (frontPlate as THREE.Mesh).material as THREE.MeshStandardMaterial;
+          frontMaterial.color.set(stage === 1 ? "#59675e" : "#68766c");
+        }
         if (cap) cap.rotation.z = stage === 2 ? -0.08 : 0;
         if (damage) { damage.visible = stage === 1; damage.scale.set(stage === 1 ? 1.18 : 1, stage === 1 ? 1.12 : 1, 1); }
         if (severe) { severe.visible = stage === 2; severe.scale.setScalar(stage === 2 ? 1.1 : 1); }
@@ -598,7 +615,13 @@ export class GameRenderer {
         const structure = cover.getObjectByName("cover-structure");
         if (structure) { structure.visible = true; structure.scale.y = 1; structure.position.y = 0; }
         const body = cover.getObjectByName("cover-body"); if (body) body.visible = true;
-        const frontPlate = cover.getObjectByName("cover-front-plate"); if (frontPlate) frontPlate.visible = true;
+        const frontPlate = cover.getObjectByName("cover-front-plate");
+        if (frontPlate) {
+          frontPlate.visible = true;
+          frontPlate.position.x = 0;
+          frontPlate.rotation.z = 0;
+          ((frontPlate as THREE.Mesh).material as THREE.MeshStandardMaterial).color.set("#68766c");
+        }
         const cap = cover.getObjectByName("cover-cap"); if (cap) cap.rotation.z = 0;
         const damage = cover.getObjectByName("cover-damage"); if (damage) { damage.visible = false; damage.scale.set(1, 1, 1); }
         const severe = cover.getObjectByName("cover-severe"); if (severe) { severe.visible = false; severe.scale.setScalar(1); }

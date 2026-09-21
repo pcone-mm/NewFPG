@@ -61,6 +61,15 @@ describe("horde director and damage", () => {
     expect(f.c.enemies.map((e) => e.hp < 100)).toEqual([true, true, false, false]);
     expect(f.c.secondaryEnergy).toBe(65);
   });
+  it("places a low-angle charged attack on the visible ground intersection", () => {
+    const f = fixture(); f.c.enemies = [enemy("ground", 0, 0, 10.6)];
+    f.c.aim = { x: 0, y: -0.384615, z: 12 }; f.c.isCharging = true; f.c.chargeTicks = 75;
+    releaseSecondary(f.state, f.build, f.rng);
+    const event = f.c.feedbackEvents.find((candidate) => candidate.type === "secondary");
+    expect(event?.to?.y).toBeGreaterThan(0);
+    expect(event?.to?.z).toBeGreaterThan(9);
+    expect(f.c.enemies[0]!.hp).toBeLessThan(100);
+  });
   it("settles death once and prevents recursive kill explosions", () => {
     const f = fixture(); f.build.killExplosionDamage = 6;
     const a = enemy("a", 0, 0, 10, 1), b = enemy("b", 1.8, 0, 10, 6), c = enemy("c", 3.6, 0, 10, 6);

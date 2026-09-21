@@ -37,6 +37,9 @@ export class SwarmPresentation {
   private readonly bars: Batch;
   private readonly warnings: Batch;
   private readonly projectiles: Batch;
+  private readonly projectileCores: Batch;
+  private readonly projectileGlows: Batch;
+  private readonly projectileTrails: Batch;
   private readonly orbs: Batch;
   private readonly halos: Batch;
   private readonly trails: Batch;
@@ -54,6 +57,9 @@ export class SwarmPresentation {
     this.bars = new Batch(scene, new THREE.BoxGeometry(1, 1, 1), glowMat, 100);
     this.warnings = new Batch(scene, new THREE.RingGeometry(0.82, 1, 20), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true, opacity: 0.85 }), 50);
     this.projectiles = new Batch(scene, new THREE.IcosahedronGeometry(1, 0), glowMat, 128);
+    this.projectileCores = new Batch(scene, new THREE.ConeGeometry(0.62, 1, 8), new THREE.MeshStandardMaterial({ color: "#ff6544", emissive: "#8f2118", emissiveIntensity: 1.4, roughness: 0.32, metalness: 0.2, flatShading: true }), 128);
+    this.projectileGlows = new Batch(scene, new THREE.SphereGeometry(1, 8, 6), new THREE.MeshBasicMaterial({ color: "#ff3d2f", transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }), 128);
+    this.projectileTrails = new Batch(scene, new THREE.CylinderGeometry(0.35, 0.04, 1, 6), new THREE.MeshBasicMaterial({ color: "#e34a32", transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }), 256);
     this.orbs = new Batch(scene, new THREE.IcosahedronGeometry(1, 0), glowMat, 128);
     this.halos = new Batch(scene, new THREE.IcosahedronGeometry(1, 1), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false }), 128);
     this.trails = new Batch(scene, new THREE.CylinderGeometry(1, 0.15, 1, 5), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }), 384);
@@ -133,7 +139,18 @@ export class SwarmPresentation {
         const corpse = this.corpses[i]!, age = (c.tick - corpse.start) / 32;
         if (age >= 1) this.corpses.splice(i, 1); else this.insect(corpse.enemy, c.tick, c.aim, reduced, reduced ? 0.9 : age);
       }
-      for (const p of c.projectiles) this.projectiles.put(p.position.x, height(p.position, 1.15), p.position.z, 0.16, 0.16, 0.22, "#ff7750");
+      for (const p of c.projectiles) {
+        const position = new THREE.Vector3(p.position.x, height(p.position, 1.15), p.position.z);
+        const velocity = new THREE.Vector3(p.velocity.x, height(p.velocity), p.velocity.z);
+        if (velocity.lengthSq() < 1e-6) velocity.set(0, 0, 1); else velocity.normalize();
+        const nose = position.clone().addScaledVector(velocity, 0.3);
+        const tail = position.clone().addScaledVector(velocity, -0.28);
+        const trailEnd = position.clone().addScaledVector(velocity, -0.9);
+        this.projectiles.put(position.x, position.y, position.z, 0.2, 0.2, 0.2, "#ff9b55");
+        this.projectileCores.segment(tail, nose, 0.13, "#ff6544");
+        this.projectileGlows.put(position.x, position.y, position.z, 0.34, 0.34, 0.34, "#ff3d2f");
+        this.projectileTrails.segment(trailEnd, tail, 0.12, "#d94332");
+      }
       const live = new Set<string>();
       for (const o of c.experienceOrbs) {
         live.add(o.id); const p = o.position, size = 0.14 + Math.min(0.12, o.value * 0.015);
@@ -149,6 +166,6 @@ export class SwarmPresentation {
       }
       for (const id of this.previous.keys()) if (!live.has(id)) this.previous.delete(id);
     }
-    for (const batch of [this.shell, this.limbs, this.glow, this.wings, this.bars, this.warnings, this.projectiles, this.orbs, this.halos, this.trails]) batch.finish();
+    for (const batch of [this.shell, this.limbs, this.glow, this.wings, this.bars, this.warnings, this.projectiles, this.projectileCores, this.projectileGlows, this.projectileTrails, this.orbs, this.halos, this.trails]) batch.finish();
   }
 }

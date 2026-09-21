@@ -9,6 +9,20 @@ const chest = (combat: CombatState): Vec2 => ({ ...combat.playerPosition, y: 1.3
 // same origin for hit queries keeps the cursor, rendered beam and damage ray
 // on exactly one line even though the character is below the camera.
 export const AIM_RAY_ORIGIN: Vec2 = { x: 0, y: 10, z: -18 };
+
+function secondaryImpactPoint(aim: Vec2): Vec2 {
+  const aimHeight = height(aim, 1);
+  if (aimHeight >= 0.08) return { ...aim, y: aimHeight };
+  const directionY = aimHeight - height(AIM_RAY_ORIGIN);
+  if (Math.abs(directionY) < 1e-6) return { ...aim, y: 0.08 };
+  const travel = (0.08 - height(AIM_RAY_ORIGIN)) / directionY;
+  if (travel <= 0) return { ...aim, y: 0.08 };
+  return {
+    x: AIM_RAY_ORIGIN.x + (aim.x - AIM_RAY_ORIGIN.x) * travel,
+    y: 0.08,
+    z: AIM_RAY_ORIGIN.z + (aim.z - AIM_RAY_ORIGIN.z) * travel,
+  };
+}
 const entityId = (combat: CombatState, kind: string): string => `${kind}-${combat.nextEntitySerial++}`;
 
 export function pushCombatFeedback(combat: CombatState, event: Omit<CombatFeedbackEvent, "id" | "tick">): void {
@@ -165,7 +179,7 @@ export function releaseSecondary(state: RunState, build: ResolvedCombatBuild, rn
   const charge = Math.min(1, combat.chargeTicks / 75); combat.chargeTicks = 0;
   if (combat.secondaryEnergy < build.secondaryEnergyCost) return false;
   combat.secondaryEnergy -= build.secondaryEnergyCost; combat.fireCooldown = Math.max(combat.fireCooldown, 18);
-  const center = { ...combat.aim, y: height(combat.aim, 1) }, radius = build.secondaryRadius + charge * config.secondaryChargeRadius;
+  const center = secondaryImpactPoint(combat.aim), radius = build.secondaryRadius + charge * config.secondaryChargeRadius;
   const targets = combat.enemies.filter((e) => e.hp > 0 && distance3(enemyCenter(e), center) <= radius);
   const damage = build.secondaryDamage * (0.45 + charge * 0.75) + (build.eventDamage.charge ?? 0);
   for (const target of targets) damageEnemy(state, build, target, damage, rng);

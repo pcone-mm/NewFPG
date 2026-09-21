@@ -70,6 +70,14 @@ describe("horde director and damage", () => {
     expect(event?.to?.z).toBeGreaterThan(9);
     expect(f.c.enemies[0]!.hp).toBeLessThan(100);
   });
+  it("retargets every enemy to the player's current cover lane", () => {
+    const f = fixture();
+    const ranged = enemy("ranged", -5, 0, 10); ranged.type = "ranged"; ranged.targetCover = 0; ranged.attackCooldown = 999;
+    f.c.playerCoverIndex = 2; f.c.enemies = [ranged];
+    tickCombat(f.state, f.build, f.rng);
+    expect(ranged.targetCover).toBe(2);
+    expect(ranged.position.x).toBeGreaterThan(-5);
+  });
   it("settles death once and prevents recursive kill explosions", () => {
     const f = fixture(); f.build.killExplosionDamage = 6;
     const a = enemy("a", 0, 0, 10, 1), b = enemy("b", 1.8, 0, 10, 6), c = enemy("c", 3.6, 0, 10, 6);

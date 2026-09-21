@@ -153,15 +153,15 @@ export class SwarmPresentation {
       }
       const live = new Set<string>();
       for (const o of c.experienceOrbs) {
-        live.add(o.id); const p = o.position, size = 0.14 + Math.min(0.12, o.value * 0.015);
-        this.orbs.put(p.x, height(p), p.z, size, size * 1.3, size, "#a4ffe0");
-        this.halos.put(p.x, height(p), p.z, size * 2.5, size * 2.5, size * 2.5, "#5debbc");
+        live.add(o.id); const p = o.position, size = 0.07 + Math.min(0.05, o.value * 0.006);
+        this.orbs.put(p.x, height(p), p.z, size, size * 1.25, size, "#86dfff");
+        this.halos.put(p.x, height(p), p.z, size * 1.55, size * 1.55, size * 1.55, "#3d9de1");
         const history = this.previous.get(o.id) ?? { points: [], tick: -1 };
         if (history.tick < 0 || c.tick - history.tick >= 4) { history.points.unshift({ ...p }); history.points.length = Math.min(3, history.points.length); history.tick = c.tick; this.previous.set(o.id, history); }
         const points = [p, ...history.points];
         if (o.age > 24) for (let i = 1; i < points.length; i++) {
           const a = points[i - 1]!, b = points[i]!;
-          this.trails.segment(new THREE.Vector3(a.x, height(a), a.z), new THREE.Vector3(b.x, height(b), b.z), 0.1 / i, "#68efc0");
+          this.trails.segment(new THREE.Vector3(a.x, height(a), a.z), new THREE.Vector3(b.x, height(b), b.z), 0.045 / i, "#5bbde4");
         }
       }
       for (const id of this.previous.keys()) if (!live.has(id)) this.previous.delete(id);

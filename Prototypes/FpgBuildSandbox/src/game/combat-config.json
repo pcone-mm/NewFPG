@@ -9,7 +9,7 @@
   "health": { "melee": 18, "flyer": 12, "ranged": 36, "summoner": 72, "minion": 12, "elite": 260, "boss": 880 },
   "airRatio": 0.3,
   "specialistRatio": 0.15,
-  "attack": { "meleeDamage": 4, "rangedDamage": 6, "meleeWindup": 42, "rangedWindup": 54, "cooldown": 150 },
+  "attack": { "meleeDamage": 3, "rangedDamage": 4.5, "meleeWindup": 42, "rangedWindup": 54, "cooldown": 150 },
   "drops": { "fodderAura": 2, "specialistAura": 6, "eliteAura": 45, "fodderMoney": 1, "specialistMoney": 3, "eliteMoney": 55, "bossMoney": 100, "consumableChance": 0.008, "maxConsumables": 2 },
   "primaryPierce": 1,
   "pierceMultiplier": 0.7,

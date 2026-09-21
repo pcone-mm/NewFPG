@@ -272,7 +272,9 @@ function updateEnemies(state: RunState, build: ResolvedCombatBuild, rng: SeededR
     if (e.attackCooldown > 0) e.attackCooldown--;
     if (e.type === "boss") { updateBoss(state, build, e, rng); continue; }
     const melee = e.type === "melee" || e.type === "minion";
-    const lane = e.targetCover ?? Math.max(0, Math.min(2, Math.round(e.position.x / 7.5) + 1));
+    // Enemies always retarget the player's current lane. This prevents ranged
+    // fire and melee pressure from being wasted on empty or abandoned covers.
+    const lane = c.playerCoverIndex;
     e.targetCover = lane;
     const serial = Number(e.id.replace(/\D/g, "")) || 0;
     const rank = melee ? laneRanks[lane]!++ : 0;

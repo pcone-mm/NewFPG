@@ -170,6 +170,13 @@ describe("build rules", () => {
 });
 
 describe("combat and persistence", () => {
+  it("starts with twelve primary rounds", () => {
+    const build = resolveBuild([], []);
+    const combat = createCombat("combat", new SeededRng(12), build);
+    expect(build.magazine).toBe(12);
+    expect(combat.ammo).toBe(12);
+  });
+
   it("opens the 90-second horde with twelve insects and three stages", () => {
     const combat = createCombat("combat", new SeededRng(77), resolveBuild([], []));
     expect(combat.totalWaves).toBe(3);

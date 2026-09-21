@@ -5,7 +5,7 @@ import combatConfig from "./combat-config.json";
 const BASE_BUILD: ResolvedCombatBuild = {
   lifeMax: 100,
   coverMax: 100,
-  magazine: 8,
+  magazine: 12,
   primaryDamage: 12,
   secondaryDamage: 28,
   secondaryEnergyMax: 100,

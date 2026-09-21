@@ -237,6 +237,7 @@ export class GameRenderer {
       const structure = new THREE.Group();
       structure.name = "cover-structure";
       const body = new THREE.Mesh(new THREE.BoxGeometry(4.15, 1.28, 0.9), material("#53635c", "#0b241e"));
+      body.name = "cover-body";
       body.position.y = 0.72;
       body.castShadow = true;
       body.receiveShadow = true;
@@ -554,19 +555,25 @@ export class GameRenderer {
         const cover = this.covers[i]!, hp = c.coverHealth[i] ?? 0;
         const maxHp = Math.max(1, snapshot.build.coverMax);
         const ratio = THREE.MathUtils.clamp(hp / maxHp, 0, 1);
-        const stage = ratio <= 0 ? 3 : ratio <= 0.25 ? 2 : ratio <= 0.6 ? 1 : 0;
+        const stage = ratio <= 0 ? 3 : ratio >= 0.7 ? 0 : ratio >= 0.3 ? 1 : 2;
         cover.visible = true;
         const structure = cover.getObjectByName("cover-structure");
+        const body = cover.getObjectByName("cover-body");
+        const frontPlate = cover.getObjectByName("cover-front-plate");
+        const cap = cover.getObjectByName("cover-cap");
         const damage = cover.getObjectByName("cover-damage");
         const severe = cover.getObjectByName("cover-severe");
         const destroyed = cover.getObjectByName("cover-destroyed");
         if (structure) {
           structure.visible = stage < 3;
-          structure.scale.y = stage === 2 ? 0.88 : 1;
-          structure.position.y = stage === 2 ? -0.08 : 0;
+          structure.scale.y = stage === 2 ? 0.78 : 1;
+          structure.position.y = stage === 2 ? -0.18 : 0;
         }
-        if (damage) damage.visible = stage === 1;
-        if (severe) severe.visible = stage === 2;
+        if (body) body.visible = stage < 2;
+        if (frontPlate) frontPlate.visible = stage < 2;
+        if (cap) cap.rotation.z = stage === 2 ? -0.08 : 0;
+        if (damage) { damage.visible = stage === 1; damage.scale.set(stage === 1 ? 1.18 : 1, stage === 1 ? 1.12 : 1, 1); }
+        if (severe) { severe.visible = stage === 2; severe.scale.setScalar(stage === 2 ? 1.1 : 1); }
         if (destroyed) destroyed.visible = stage === 3;
         const indicator = cover.getObjectByName("cover-indicator"); if (indicator) indicator.visible = c.playerCoverIndex === i;
         const display = this.coverHealthDisplays[i]!;
@@ -575,7 +582,7 @@ export class GameRenderer {
           display.fill.scale.x = ratio;
           display.fill.position.x = -display.width * (1 - ratio) * 0.5;
           const fillMaterial = display.fill.material as THREE.MeshBasicMaterial;
-          fillMaterial.color.set(ratio <= 0.25 ? "#c74f3b" : ratio <= 0.55 ? "#d6ae59" : "#80bdc8");
+          fillMaterial.color.set(ratio < 0.3 ? "#c74f3b" : ratio < 0.7 ? "#d6ae59" : "#80bdc8");
           if (display.lastHp !== hp || display.lastMax !== maxHp) {
             updateCoverHealthLabel(display.label, i, hp, maxHp, ratio);
             display.lastHp = hp;
@@ -590,8 +597,11 @@ export class GameRenderer {
         cover.visible = true;
         const structure = cover.getObjectByName("cover-structure");
         if (structure) { structure.visible = true; structure.scale.y = 1; structure.position.y = 0; }
-        const damage = cover.getObjectByName("cover-damage"); if (damage) damage.visible = false;
-        const severe = cover.getObjectByName("cover-severe"); if (severe) severe.visible = false;
+        const body = cover.getObjectByName("cover-body"); if (body) body.visible = true;
+        const frontPlate = cover.getObjectByName("cover-front-plate"); if (frontPlate) frontPlate.visible = true;
+        const cap = cover.getObjectByName("cover-cap"); if (cap) cap.rotation.z = 0;
+        const damage = cover.getObjectByName("cover-damage"); if (damage) { damage.visible = false; damage.scale.set(1, 1, 1); }
+        const severe = cover.getObjectByName("cover-severe"); if (severe) { severe.visible = false; severe.scale.setScalar(1); }
         const destroyed = cover.getObjectByName("cover-destroyed"); if (destroyed) destroyed.visible = false;
         cover.getObjectByName("cover-indicator")!.visible = false;
         this.coverHealthDisplays[i]!.group.visible = false;

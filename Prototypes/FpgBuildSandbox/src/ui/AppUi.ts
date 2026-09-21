@@ -425,11 +425,16 @@ export class AppUi {
     const weaponRatio = weaponState === "reload"
       ? 1 - combat.reloadTicks / Math.max(1, build.reloadTicks)
       : weaponState === "charge" ? combat.chargeTicks / 75 : 0;
-    this.setText("hud-weapon-state", weaponState === "reload" ? "换弹" : weaponState === "charge" ? `蓄力 ${Math.min(100, Math.round(weaponRatio * 100))}%` : "武器就绪");
-    this.setMeter("weapon-action-meter", weaponRatio);
-    const weaponAction = this.root.querySelector<HTMLElement>("[data-weapon-state]");
-    if (weaponAction) weaponAction.dataset.weaponState = weaponState;
-    this.root.querySelector<HTMLElement>("[data-reload-crosshair]")?.classList.toggle("visible", combat.reloadTicks > 0);
+     const weaponPercent = Math.min(100, Math.round(weaponRatio * 100));
+     this.setText("hud-weapon-state", weaponState === "reload" ? `换弹 ${weaponPercent}%` : weaponState === "charge" ? `蓄力 ${weaponPercent}%` : "武器就绪");
+     this.setMeter("weapon-action-meter", weaponRatio);
+     const weaponAction = this.root.querySelector<HTMLElement>("[data-weapon-state]");
+     if (weaponAction) weaponAction.dataset.weaponState = weaponState;
+     const reloadIndicator = this.root.querySelector<HTMLElement>("[data-reload-crosshair]");
+     if (reloadIndicator) {
+       reloadIndicator.style.setProperty("--reload-progress", String(combat.reloadTicks > 0 ? weaponRatio : 0));
+       reloadIndicator.classList.toggle("visible", combat.reloadTicks > 0);
+     }
     const objective = this.root.querySelector<HTMLElement>("[data-hud-objective]");
     if (objective) objective.textContent = combat.cleared ? (combat.rewardReady ? "房间已肃清" : "正在吸收剩余灵气…") : combat.roomType === "boss" ? `母虫 · 阶段 ${combat.enemies.find((enemy) => enemy.type === "boss")?.phase ?? 1}` : combat.roomType === "elite" ? "重甲虫与支援虫群" : combat.horde.mode === "legacy" ? "肃清旧房间余敌" : `守线 ${Math.min(90, Math.floor(combat.tick / 60))}/90秒 · 余敌 ${combat.enemies.length}`;
     this.setText("hud-combo", combat.combo >= 2 ? `${combat.combo} 连斩` : "");
@@ -529,7 +534,7 @@ export class AppUi {
         ${iconButton("pause", "暂停", "pause")}
       </nav>
       <div class="hud-prompt" data-hud-prompt></div>
-      <div class="reload-crosshair" data-reload-crosshair data-testid="reload-crosshair" aria-label="换弹中"><i data-lucide="refresh-cw"></i></div>
+       <div class="reload-crosshair" data-reload-crosshair data-testid="reload-crosshair" style="--reload-progress:0" aria-label="换弹进度"><i data-lucide="refresh-cw"></i></div>
       <div class="build-signals">${[...snapshot.build.activeFactionSynergies, ...snapshot.build.activeItemTypeSynergies].slice(-3).map((name) => `<span>${escapeHtml(name)}</span>`).join("")}</div>
     </section>`;
   }

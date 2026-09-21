@@ -5,6 +5,10 @@ import type { AnalyticsEvent, CombatFeedbackEvent, CombatState, EnemyState, Reso
 
 const COVER_X = [-7.5, 0, 7.5] as const;
 const chest = (combat: CombatState): Vec2 => ({ ...combat.playerPosition, y: 1.35 });
+// The fixed perspective camera is the player's aiming reference. Using the
+// same origin for hit queries keeps the cursor, rendered beam and damage ray
+// on exactly one line even though the character is below the camera.
+export const AIM_RAY_ORIGIN: Vec2 = { x: 0, y: 10, z: -18 };
 const entityId = (combat: CombatState, kind: string): string => `${kind}-${combat.nextEntitySerial++}`;
 
 export function pushCombatFeedback(combat: CombatState, event: Omit<CombatFeedbackEvent, "id" | "tick">): void {
@@ -135,7 +139,8 @@ export function firePrimary(state: RunState, build: ResolvedCombatBuild, rng: Se
   const combat = state.combat;
   if (!combat || combat.cleared || combat.reloadTicks > 0 || combat.fireCooldown > 0 || combat.ammo <= 0) return false;
   combat.ammo--; combat.fireCooldown = build.fireCooldownTicks;
-  const origin = chest(combat), aim = { ...combat.aim, y: height(combat.aim, 1) };
+  const feedbackOrigin = chest(combat), aim = { ...combat.aim, y: height(combat.aim, 1) };
+  const origin = combat.aimOrigin ?? feedbackOrigin;
   const length = Math.max(0.001, distance3(origin, aim));
   const direction = { x: (aim.x - origin.x) / length, y: (height(aim) - height(origin)) / length, z: (aim.z - origin.z) / length };
   const hits = combat.enemies.filter((e) => e.hp > 0).map((target) => ({ target, t: raySphere(origin, direction, enemyCenter(target), enemyRadius(target)) }))
@@ -148,7 +153,7 @@ export function firePrimary(state: RunState, build: ResolvedCombatBuild, rng: Se
     damageEnemy(state, build, target, damage, rng, weakpoint); total += damage; anyWeakpoint ||= weakpoint;
   }
   const end = hits.length ? enemyCenter(hits[hits.length - 1]!.target) : aim;
-  pushCombatFeedback(combat, { type: "primary", from: origin, to: end, hit: hits.length > 0, weakpoint: anyWeakpoint, value: Math.round(total) });
+  pushCombatFeedback(combat, { type: "primary", from: feedbackOrigin, to: end, hit: hits.length > 0, weakpoint: anyWeakpoint, value: Math.round(total) });
   addEvent(state, hits.length ? "shotHit" : "shotMiss", { targets: hits.length, weakpoint: anyWeakpoint, damage: Math.round(total) });
   return true;
 }

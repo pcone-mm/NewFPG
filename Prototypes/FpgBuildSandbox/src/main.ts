@@ -1,5 +1,6 @@
 import "./styles.css";
 import { GameController } from "./game/GameController";
+import { AIM_RAY_ORIGIN } from "./game/combat";
 import { GameRenderer } from "./render/GameRenderer";
 import { AppUi } from "./ui/AppUi";
 import { AudioManager } from "./ui/AudioManager";
@@ -50,6 +51,11 @@ function tryPrimaryFire(autoReload = false): void {
   controller.dispatchAction({ type: "primary", autoReload });
 }
 
+function updateAim(clientX: number, clientY: number, snapshot: ReturnType<GameController["getSnapshot"]>): void {
+  const point = renderer.screenToWorld(clientX, clientY, snapshot);
+  controller.dispatchAction({ type: "aim", ...point, origin: AIM_RAY_ORIGIN });
+}
+
 function frame(milliseconds: number): void {
   const now = milliseconds / 1000;
   const frameDelta = Math.min(0.25, now - lastTime);
@@ -58,7 +64,7 @@ function frame(milliseconds: number): void {
   while (accumulator >= fixedStep) {
     controller.tick();
     if (pointer && controller.getSnapshot().state.mode === "combat") {
-      controller.dispatchAction({ type: "aim", ...renderer.screenToWorld(pointer.x, pointer.y, controller.getSnapshot()) });
+      updateAim(pointer.x, pointer.y, controller.getSnapshot());
     }
     if (primaryHeld && controller.getSnapshot().state.mode === "combat") tryPrimaryFire(true);
     accumulator -= fixedStep;
@@ -91,18 +97,16 @@ window.addEventListener("mousemove", (event) => {
   pointer = { x: event.clientX, y: event.clientY };
   const snapshot = controller.getSnapshot();
   if (snapshot.state.mode !== "combat") return;
-  const point = renderer.screenToWorld(event.clientX, event.clientY, snapshot);
   ui.updateCrosshairPosition(event.clientX, event.clientY);
-  controller.dispatchAction({ type: "aim", ...point });
+  updateAim(event.clientX, event.clientY, snapshot);
 });
 
 window.addEventListener("mousedown", (event) => {
   pointer = { x: event.clientX, y: event.clientY };
   const snapshot = controller.getSnapshot();
   if (isUiInput(event) || snapshot.state.mode !== "combat") return;
-  const point = renderer.screenToWorld(event.clientX, event.clientY, snapshot);
   ui.updateCrosshairPosition(event.clientX, event.clientY);
-  controller.dispatchAction({ type: "aim", ...point });
+  updateAim(event.clientX, event.clientY, snapshot);
   if (event.button === 0) {
     primaryHeld = true;
     tryPrimaryFire(true);

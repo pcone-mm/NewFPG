@@ -155,7 +155,10 @@ export class GameController {
     const combat = this.state.combat;
     switch (action.type) {
       case "aim":
-        if (this.state.mode === "combat" && combat) combat.aim = { x: action.x, y: action.y ?? 1.2, z: action.z };
+        if (this.state.mode === "combat" && combat) {
+          combat.aim = { x: action.x, y: action.y ?? 1.2, z: action.z };
+          combat.aimOrigin = action.origin ? { ...action.origin } : undefined;
+        }
         break;
       case "moveCover":
         if (this.state.mode === "combat") moveCover(this.state, this.build, action.direction);

@@ -387,14 +387,12 @@ export class GameRenderer {
     const rect = this.renderer.domElement.getBoundingClientRect();
     this.raycaster.setFromCamera(new THREE.Vector2((clientX - rect.left) / rect.width * 2 - 1, -(clientY - rect.top) / rect.height * 2 + 1), this.camera);
     const ray = this.raycaster.ray;
+    // The combat ray uses this same fixed camera ray origin. Keeping the
+    // endpoint on its z=12 plane makes the visible marker and hit direction
+    // identical without target snapping or low-angle clamping.
     const point = new THREE.Vector3();
-    // Keep aim on a fixed firing plane. Moving the cursor to an enemy's depth
-    // creates implicit target snapping and makes the ray feel sticky.
-    const intersection = ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point);
-    if (!intersection) return { x: 0, y: 1, z: 12 };
-    // Do not clamp the intersection. A clamp changes the ray direction and
-    // creates a low-angle dead zone immediately in front of the cover.
-    return { x: point.x, y: point.y, z: 12 };
+    if (!ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point)) return { x: 0, y: 1, z: 12 };
+    return { x: point.x, y: point.y, z: point.z };
   }
 
   public diagnostics(): { calls: number; triangles: number; geometries: number; textures: number; medianFrameMs: number; p95FrameMs: number; gpu: string } {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GameController } from "./GameController";
 import { resolveBuild } from "./buildResolver";
-import { createCombat, damageEnemy, dropExperience, firePrimary, moveCover, releaseSecondary, tickCombat } from "./combat";
+import { AIM_RAY_ORIGIN, createCombat, damageEnemy, dropExperience, firePrimary, moveCover, releaseSecondary, tickCombat } from "./combat";
 import { SeededRng } from "./rng";
 import { migrateSave } from "./save";
 import type { EnemyState, RunState } from "./types";
@@ -44,6 +44,15 @@ describe("horde director and damage", () => {
     expect(100 - f.c.enemies[0]!.hp).toBeCloseTo(12 * 0.7);
     f.c.fireCooldown = 0; f.c.aim = { x: 0, y: 6, z: 8 }; firePrimary(f.state, f.build, f.rng);
     expect(f.c.enemies[1]!.hp).toBe(82);
+  });
+  it("keeps camera cursor rays aligned with close ground targets", () => {
+    const f = fixture();
+    f.c.enemies = [enemy("close", 0, 0, 8)];
+    f.c.aimOrigin = { ...AIM_RAY_ORIGIN };
+    // Camera ray through (0, 1, 8), continued to the shared z=12 aim plane.
+    f.c.aim = { x: 0, y: -0.384615, z: 12 };
+    firePrimary(f.state, f.build, f.rng);
+    expect(f.c.enemies[0]!.hp).toBeLessThan(100);
   });
   it("uses a sphere for charged explosions, rather than an infinite vertical cylinder", () => {
     const f = fixture(); f.c.enemies = [enemy("near", 0, 0), enemy("near-air", 1, 3), enemy("high", 0, 7), enemy("far", 6, 0)];

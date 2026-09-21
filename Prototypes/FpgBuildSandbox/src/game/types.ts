@@ -224,6 +224,8 @@ export interface CombatState {
   coverHealth: [number, number, number];
   playerPosition: Vec2;
   aim: Vec2;
+  /** Optional camera ray origin supplied by the presentation layer. */
+  aimOrigin?: Vec2;
   ammo: number;
   reloadTicks: number;
   fireCooldown: number;
@@ -328,7 +330,7 @@ export interface GameSnapshot {
 }
 
 export type GameAction =
-  | { type: "aim"; x: number; z: number; y?: number }
+  | { type: "aim"; x: number; z: number; y?: number; origin?: Vec2 }
   | { type: "moveCover"; direction: -1 | 1 }
   | { type: "primary"; autoReload?: boolean }
   | { type: "secondaryStart" }

@@ -155,6 +155,7 @@ export class GameRenderer {
   private readonly chargeLight: THREE.PointLight;
   private readonly reloadRing: THREE.Mesh;
   private readonly raycaster = new THREE.Raycaster();
+  private readonly aimVisualPoint = new THREE.Vector3(0, 0.08, 12);
   private readonly reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   private readonly resizeObserver: ResizeObserver;
   private readonly swarm: SwarmPresentation;
@@ -392,6 +393,16 @@ export class GameRenderer {
     // identical without target snapping or low-angle clamping.
     const point = new THREE.Vector3();
     if (!ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -12), point)) return { x: 0, y: 1, z: 12 };
+    // Low cursor positions intersect the z=12 plane below the ground. Keep
+    // the actual combat endpoint unchanged, but place the visible reticle on
+    // the ground intersection so it never disappears underground.
+    if (point.y < 0.08) {
+      const groundPoint = new THREE.Vector3();
+      if (ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.08), groundPoint)) this.aimVisualPoint.copy(groundPoint);
+      else this.aimVisualPoint.copy(point).setY(0.08);
+    } else {
+      this.aimVisualPoint.copy(point);
+    }
     return { x: point.x, y: point.y, z: point.z };
   }
 
@@ -421,7 +432,7 @@ export class GameRenderer {
       const alpha = snapshot.state.mode === "combat" ? Math.min(1, (elapsedSeconds - this.lastTickTime) * 60 + 0.5) : 1;
       this.player.position.set(THREE.MathUtils.lerp(this.previousPlayerX, c.playerPosition.x, alpha), 0, c.playerPosition.z);
       this.player.rotation.y = Math.atan2(c.aim.x - c.playerPosition.x, c.aim.z - c.playerPosition.z);
-      this.aimMarker.position.set(c.aim.x, height(c.aim, 1), c.aim.z);
+      this.aimMarker.position.copy(this.aimVisualPoint);
       this.aimMarker.quaternion.copy(this.camera.quaternion);
       this.pooledEffects.consume(c.feedbackEvents, this.reducedMotion);
       for (const event of c.feedbackEvents) {

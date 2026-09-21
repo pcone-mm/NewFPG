@@ -67,7 +67,7 @@ export class GameController {
       floor,
       currentNodeId: floor.startNodeId,
       visitedNodeIds: [floor.startNodeId],
-      resources: { life: 100, aura: 0, auraRequired: 100, currency: 80, rerolls: 1, consumables: 0 },
+      resources: { life: 100, aura: 0, auraRequired: 80, currency: 80, rerolls: 1, consumables: 0 },
       items: [],
       backpackCapacity: 12,
       nextItemSerial: 0,

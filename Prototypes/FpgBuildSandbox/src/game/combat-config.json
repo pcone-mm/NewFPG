@@ -10,7 +10,7 @@
   "airRatio": 0.3,
   "specialistRatio": 0.15,
   "attack": { "meleeDamage": 4, "rangedDamage": 6, "meleeWindup": 42, "rangedWindup": 54, "cooldown": 150 },
-  "drops": { "fodderAura": 1, "specialistAura": 3, "eliteAura": 45, "fodderMoney": 1, "specialistMoney": 3, "eliteMoney": 55, "bossMoney": 100, "consumableChance": 0.008, "maxConsumables": 2 },
+  "drops": { "fodderAura": 2, "specialistAura": 6, "eliteAura": 45, "fodderMoney": 1, "specialistMoney": 3, "eliteMoney": 55, "bossMoney": 100, "consumableChance": 0.008, "maxConsumables": 2 },
   "primaryPierce": 1,
   "pierceMultiplier": 0.7,
   "secondaryRadius": 3.2,

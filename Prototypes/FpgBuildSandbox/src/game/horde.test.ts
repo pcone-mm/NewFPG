@@ -68,14 +68,14 @@ describe("horde director and damage", () => {
     damageEnemy(f.state, f.build, a, 10, f.rng); damageEnemy(f.state, f.build, a, 10, f.rng);
     expect(a.hp).toBe(0); expect(b.hp).toBe(0); expect(c.hp).toBe(6);
     expect(f.c.kills).toBe(2); expect(f.state.resources.currency - money).toBe(2);
-    expect(f.c.experienceOrbs.reduce((sum, orb) => sum + orb.value, 0)).toBe(2);
+    expect(f.c.experienceOrbs.reduce((sum, orb) => sum + orb.value, 0)).toBe(4);
   });
   it("settles cover-break retaliation through the same loot path", () => {
     const f = fixture(); f.build.eventDamage.coverBreak = 100;
     f.c.enemies = [enemy("victim")]; f.c.coverHealth[1] = 1;
     f.c.projectiles = [{ id: "impact", position: { x: 0, y: 1, z: 4 }, velocity: { x: 0, y: 0, z: -2 }, damage: 20, hostile: true, lifeTicks: 2 }];
     tickCombat(f.state, f.build, f.rng);
-    expect(f.c.kills).toBe(1); expect(f.c.experienceOrbs.length).toBe(1);
+    expect(f.c.kills).toBe(1); expect(f.c.experienceOrbs.length).toBe(2);
   });
   it("intercepts descending projectiles but lets shots above the cover pass", () => {
     const f = fixture(); f.c.projectiles = [
@@ -123,11 +123,11 @@ describe("experience, rewards and persistence", () => {
   it("fixes auraGain at drop time and credits only on arrival", () => {
     const f = fixture(); f.build.auraGain = 1.5; const e = enemy("xp", 0, 4, 10, 1); f.c.enemies = [e];
     damageEnemy(f.state, f.build, e, 10, f.rng); f.build.auraGain = 4;
-    expect(f.state.resources.aura).toBe(0); expect(f.c.experienceOrbs.reduce((s, o) => s + o.value, 0)).toBe(1.5);
+    expect(f.state.resources.aura).toBe(0); expect(f.c.experienceOrbs.reduce((s, o) => s + o.value, 0)).toBe(3);
     for (let i = 0; i < 30; i++) tickCombat(f.state, f.build, f.rng);
     expect(f.state.resources.aura).toBe(0);
     for (let i = 0; i < 60; i++) tickCombat(f.state, f.build, f.rng);
-    expect(f.state.resources.aura).toBeCloseTo(1.5); expect(f.c.experienceOrbs.length).toBe(0);
+    expect(f.state.resources.aura).toBeCloseTo(3); expect(f.c.experienceOrbs.length).toBe(0);
   });
   it("conserves split and merged values at the 128 orb limit and follows cover switches", () => {
     const f = fixture(); for (let i = 0; i < 200; i++) dropExperience(f.c, { x: 0, y: 4, z: 14 }, 3);
@@ -147,7 +147,7 @@ describe("experience, rewards and persistence", () => {
     for (let i = 0; i < 90; i++) f.controller.tick(); expect(f.c.rewardReady).toBe(true); expect(f.state.resources.aura).toBe(3);
   });
   it("retains overflow across repeated rituals and allows a full backpack to skip", () => {
-    const f = fixture(); f.state.resources.aura = 250; f.state.backpackCapacity = 0;
+    const f = fixture(); f.state.resources.aura = 210; f.state.backpackCapacity = 0;
     for (let i = 0; i < 2; i++) {
       f.controller.dispatchAction({ type: "gather" }); f.controller.completeRitual();
       expect(f.state.pendingReward?.offers.length).toBe(5); expect(f.controller.skipReward()).toBe(true); expect(f.state.mode).toBe("combat");

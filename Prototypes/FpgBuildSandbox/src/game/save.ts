@@ -25,6 +25,9 @@ export function migrateSave(raw: Partial<RunState>): RunState | undefined {
   if ((raw.schemaVersion ?? 0) > SCHEMA_VERSION) return undefined;
   const legacyResources = raw.resources as PlayerRunResources & { barrier?: number };
   const { barrier: legacyBarrier, ...resources } = legacyResources;
+  // The current prototype tuning uses an 80-point gather threshold. Existing
+  // local runs keep their aura but adopt the new threshold on load.
+  resources.auraRequired = Math.min(resources.auraRequired ?? 80, 80);
   const coverHealth: [number, number, number] = raw.combat?.coverHealth
     ? [...raw.combat.coverHealth]
     : [100, 100, 100];

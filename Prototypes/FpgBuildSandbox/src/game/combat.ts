@@ -80,7 +80,7 @@ export function dropExperience(combat: CombatState, position: Vec2, value: numbe
     const angle = serial * 2.399963;
     combat.experienceOrbs.push({ id: entityId(combat, "orb"), position: { ...position }, origin: { ...position },
       burst: { x: position.x + Math.cos(angle) * 1.5, y: height(position) + 0.7 + (serial % 3) * 0.22, z: position.z + Math.sin(angle) },
-      value: part, age: 0, duration: 60 + serial % 19 });
+      value: part, age: 0, duration: 48 + serial % 13 });
   }
 }
 

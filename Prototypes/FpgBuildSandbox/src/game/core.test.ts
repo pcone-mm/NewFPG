@@ -253,6 +253,22 @@ describe("combat and persistence", () => {
     expect(combat.feedbackEvents.some((event) => event.type === "reloadStart")).toBe(true);
   });
 
+  it("starts held secondary fire after primary cooldown clears", () => {
+    const controller = beginCombat("secondary-input-buffer");
+    const snapshot = controller.getSnapshot();
+    const combat = snapshot.state.combat;
+    if (!combat) throw new Error("Combat missing");
+    controller.dispatchAction({ type: "primary" });
+    expect(combat.fireCooldown).toBeGreaterThan(0);
+    expect(combat.isCharging).toBe(false);
+    for (let tick = 0; tick < snapshot.build.fireCooldownTicks; tick += 1) {
+      controller.tick();
+      controller.dispatchAction({ type: "secondaryStart" });
+    }
+    expect(combat.isCharging).toBe(true);
+    expect(combat.chargeTicks).toBe(0);
+  });
+
   it("emits positioned damage-number feedback for primary and secondary hits", () => {
     const controller = beginCombat("damage-number-feedback-test");
     const snapshot = controller.getSnapshot();

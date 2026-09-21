@@ -170,7 +170,7 @@ export class GameController {
         }
         break;
       case "secondaryStart":
-        if (this.state.mode === "combat" && combat && !combat.cleared && combat.reloadTicks === 0 && combat.fireCooldown === 0 && combat.secondaryEnergy >= this.build.secondaryEnergyCost) {
+        if (this.state.mode === "combat" && combat && !combat.cleared && !combat.isCharging && combat.reloadTicks === 0 && combat.fireCooldown === 0 && combat.secondaryEnergy >= this.build.secondaryEnergyCost) {
           combat.isCharging = true;
           combat.chargeTicks = 0;
         }

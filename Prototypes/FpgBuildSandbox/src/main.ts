@@ -43,6 +43,7 @@ const fixedStep = 1 / 60;
 let lastTime = performance.now() / 1000;
 let accumulator = 0;
 let primaryHeld = false;
+let secondaryHeld = false;
 let pointer: { x: number; y: number } | undefined;
 let audioCombat: CombatState | undefined;
 let audioSerial = -1;
@@ -67,10 +68,11 @@ function frame(milliseconds: number): void {
       updateAim(pointer.x, pointer.y, controller.getSnapshot());
     }
     if (primaryHeld && controller.getSnapshot().state.mode === "combat") tryPrimaryFire(true);
+    if (secondaryHeld && controller.getSnapshot().state.mode === "combat") controller.dispatchAction({ type: "secondaryStart" });
     accumulator -= fixedStep;
   }
   const snapshot = controller.getSnapshot();
-  if (snapshot.state.mode !== "combat") primaryHeld = false;
+  if (snapshot.state.mode !== "combat") { primaryHeld = false; secondaryHeld = false; }
   if (audioCombat !== snapshot.state.combat) { audioCombat = snapshot.state.combat; audioSerial = -1; }
   for (const event of audioCombat?.feedbackEvents ?? []) {
     const serial = event.serial ?? Number(event.id.split("-").at(-1));
@@ -110,13 +112,18 @@ window.addEventListener("mousedown", (event) => {
   if (event.button === 0) {
     primaryHeld = true;
     tryPrimaryFire(true);
-  } else if (event.button === 2) controller.dispatchAction({ type: "secondaryStart" });
+  } else if (event.button === 2) {
+    secondaryHeld = true;
+    controller.dispatchAction({ type: "secondaryStart" });
+  }
 });
 
 window.addEventListener("mouseup", (event) => {
   if (event.button === 0) primaryHeld = false;
-  if (event.button !== 2 || controller.getSnapshot().state.mode !== "combat") return;
-  controller.dispatchAction({ type: "secondaryRelease" });
+  if (event.button === 2) {
+    secondaryHeld = false;
+    if (controller.getSnapshot().state.mode === "combat") controller.dispatchAction({ type: "secondaryRelease" });
+  }
 });
 
 window.addEventListener("contextmenu", (event) => event.preventDefault());
@@ -146,5 +153,6 @@ window.addEventListener("keydown", (event) => {
 
 window.addEventListener("blur", () => {
   primaryHeld = false;
+  secondaryHeld = false;
   if (controller.getSnapshot().state.mode === "combat") controller.pause("pause");
 });

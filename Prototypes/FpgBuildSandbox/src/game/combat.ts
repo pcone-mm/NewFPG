@@ -333,10 +333,9 @@ export function tickCombat(state: RunState, build: ResolvedCombatBuild, rng: See
     const from = { ...p.position, y: height(p.position, 1.15) };
     p.position = { x: from.x + p.velocity.x, y: height(from) + height(p.velocity), z: from.z + p.velocity.z }; p.lifeTicks--;
     if (!p.hostile) continue;
-    // Only the cover the player currently occupies can intercept a hostile
-    // projectile. A shot aimed at an abandoned lane must pass through it,
-    // otherwise ranged enemies keep damaging empty covers after a move.
-    const hits = c.coverHealth.map((hp, i) => ({ i, t: i === c.playerCoverIndex && hp > 0 ? segmentBox(from, p.position, { x: COVER_X[i]! - 2.25, y: 0, z: 1.89 }, { x: COVER_X[i]! + 2.25, y: 1.68, z: 3.11 }) : undefined }))
+    // Once fired, a projectile follows its actual trajectory and can hit any
+    // physical cover along the path, even if the player moved before impact.
+    const hits = c.coverHealth.map((hp, i) => ({ i, t: hp > 0 ? segmentBox(from, p.position, { x: COVER_X[i]! - 2.25, y: 0, z: 1.89 }, { x: COVER_X[i]! + 2.25, y: 1.68, z: 3.11 }) : undefined }))
       .filter((hit): hit is { i: number; t: number } => hit.t !== undefined).sort((a, b) => a.t - b.t);
     if (hits.length) { damageCover(state, build, hits[0]!.i, p.damage, rng); p.lifeTicks = 0; }
     else if (segmentBox(from, p.position, { x: c.playerPosition.x - 0.6, y: 0, z: 0.5 }, { x: c.playerPosition.x + 0.6, y: 2.3, z: 1.7 }) !== undefined) {

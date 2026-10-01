@@ -24,8 +24,5 @@
 
 ## 验证
 
-- 编辑、实体绑定、筛选、剪贴板、动作选择与删除引用保护：`Assets/FPGDemo/Tests/EditMode/FpgSkillAuthoringEditorTests.cs`、`FpgSkillAuthoringChoicesTests.cs`。
-- 跳 tick、回退 scrub 与隔离表现预览：`FpgSkillPreviewExecutionTests.cs`。
-- 序列化定义、攻击时序与正式资产合同：`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgAttackTimingTests.cs`。
-- 纯 V3 正式资产与 wrapper 路径：`FpgFormalSkillPresentationV3AssetTests.cs`。
-- 改 asmdef、UXML/USS 或 Inspector 入口后检查 Unity 编译/Console；默认不批量运行测试。
+- 改 asmdef、UXML/USS、Inspector 入口或时间轴编辑器后只检查 Unity 编译/Console 和人工操作；默认不运行测试。
+- 用户明确要求自动化验证时，仅运行仍保留的核心运行时冒烟测试，不扫描已删除的历史合同。

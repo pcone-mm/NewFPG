@@ -24,8 +24,5 @@
 
 ## 验证
 
-- 核心执行与容量合同：`Assets/FPGDemo/Tests/EditMode/FpgSkillRuntimeTests.cs`。
-- tick、空间元数据与播放映射：`FpgSkillClockConfigurationTests.cs`、`FpgSkillSpatialMetadataTests.cs`、`FpgSkillAnimationPlaybackTests.cs`。
-- 攻速解析、schedule 排序、hash 与快照恢复：`FpgAttackTimingTests.cs`、`FpgAttackTimingHashAndWeaponSnapshotTests.cs`。
-- V3 编译与 gameplay/presentation hash 合同：`FpgSkillDefinitionTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs`。
-- 改 asmdef 或依赖时同时检查 Unity 编译/Console；默认只记录这些精确入口，不自行批量运行测试。
+- 技能运行时改动默认检查 Unity 编译/Console 和人工试玩；用户明确要求时可运行保留的 `FpgSkillRuntimeTests.cs`。
+- 改 asmdef 或依赖时不要扫描测试目录，也不要恢复已删除的历史技能合同测试。

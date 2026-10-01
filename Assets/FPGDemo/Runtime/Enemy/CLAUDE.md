@@ -17,7 +17,5 @@
 
 ## 验证
 
-- threat 预算、取消、release 与终态：`Assets/FPGDemo/Tests/EditMode/ProjectileThreatTests.cs`。
-- schedule、snapshot 与 replay：`BattleSessionThreatScheduleTests.cs`。
-- presentation language 与正式 scheduler：`FpgThreatPresentationContractTests.cs`、`FpgFormalEnemySkillSchedulerTests.cs`。
-- 改 asmdef 或依赖时检查 Unity 编译/Console；默认只记录这些精确入口，不自行批量运行测试。
+- 改 threat、schedule 或敌人技能状态时检查 Unity 编译/Console 和 BattleTest 人工行为；默认不运行测试。
+- 目前没有敌人专用自动化冒烟测试；用户明确要求时只运行 `Assets/FPGDemo/Tests/CLAUDE.md` 中列出的保留测试。

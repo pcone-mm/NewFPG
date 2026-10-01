@@ -1,7 +1,15 @@
 ---
 name: unity-camera
-description: Control Unity Scene View and Game cameras — move/rotate the view, create and configure cameras, set FOV/clip planes/projection. Use when framing the Scene View, creating or adjusting cameras, tweaking FOV or clipping planes, or scripting camera setup, even if the user just says "镜头" or "相机". 控制 Unity Scene View 与游戏相机(移动/旋转视图、创建与配置相机、设置 FOV/裁剪面/投影);当用户要取景 Scene View、创建或调整相机、修改 FOV 或裁剪面时使用。
+description: Control Unity Scene View and Game cameras
 ---
+
+> **Before calling any skill in this module:** if you are about to call a skill with parameters guessed from its name or description, STOP — read this file (or fetch its schema via `GET /skills/recommend?includeSchema=true`) first. If you already have the parameter definitions from recommend/schema, you may proceed straight to dryRun.
+
+## Triggers
+- Framing the Scene View
+- Creating or adjusting cameras
+- Tweaking FOV or clipping planes
+- 取景 Scene View、创建或调整相机、修改 FOV 或裁剪面
 
 # Camera Skills
 
@@ -37,7 +45,7 @@ Align Scene View camera to look at an object.
 - `path` (string, optional): Target GameObject hierarchy path.
 
 ### `camera_get_info`
-Get Scene View camera position and rotation.
+Get **the editor Scene View viewport camera's** position and rotation — the developer's viewport, *not* a Camera component in the scene. It takes no target parameters for exactly that reason. For a Game Camera's state use `camera_get_properties` (or `camera_list` to find one); if you just created a camera with `camera_create` and want to confirm its transform, `camera_get_info` will not show it.
 **Parameters:** None.
 
 ### `camera_set_transform`
@@ -90,12 +98,15 @@ Set Game Camera properties (FOV, clip planes, clear flags, background color, dep
 | nearClipPlane | float? | No | null | Near clipping plane distance |
 | farClipPlane | float? | No | null | Far clipping plane distance |
 | depth | float? | No | null | Camera rendering depth |
-| clearFlags | string | No | null | Clear flags (e.g. Skybox, SolidColor, Depth, Nothing) |
-| bgR | float? | No | null | Background color red component |
-| bgG | float? | No | null | Background color green component |
-| bgB | float? | No | null | Background color blue component |
+| clearFlags | string | No | null | Clear flags: `Skybox`, `Color`, `SolidColor`, `Depth`, `Nothing`. `Color` and `SolidColor` are two names for the same underlying `CameraClearFlags` value, so both are accepted and the response always echoes it back as `Color` — do not read that as the write having been ignored |
+| bgR | float? | No | null | Background color red component (0-1) |
+| bgG | float? | No | null | Background color green component (0-1) |
+| bgB | float? | No | null | Background color blue component (0-1) |
+| bgA | float? | No | null | Background color alpha (0-1) |
 
-**Returns:** `{ success, name }`
+Any `bg*` channel you omit keeps the camera's current value, so you can set alpha alone.
+
+**Returns:** `{ success, name, applied, fieldOfView, nearClipPlane, farClipPlane, orthographic, orthographicSize, depth, cullingMask, clearFlags, backgroundColor, rect }` — the response echoes the camera's state **after** the write, and `applied` lists which parameters were actually changed, named exactly as you passed them (the background channels appear individually as `bgR`, `bgG`, `bgB`, `bgA`, not lumped under `backgroundColor`), so a parameter absent from `applied` was not supplied. That echo is your verification: a second `camera_get_properties` call is redundant. An unparseable `clearFlags` rejects the whole call with `SEMANTIC_INVALID` + `validValues` before anything is applied, so the numeric parameters in the same call are never half-written.
 
 ### `camera_set_culling_mask`
 Set Game Camera culling mask by layer names (comma-separated).

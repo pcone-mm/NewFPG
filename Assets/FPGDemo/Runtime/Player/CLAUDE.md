@@ -16,6 +16,4 @@
 
 ## 验证
 
-- 武器 prepare/commit、弹药、恢复和回滚检查 `WeaponRuntimeTests.cs`。
-- resolved ready lock、snapshot restore 与 pre-commit rollback 检查 `FpgAttackTimingHashAndWeaponSnapshotTests.cs`。
-- 玩家技能启动/拒绝桥接检查 `FpgPlayerSkillExecutionControllerTests.cs`。
+- 武器状态机改动默认检查 Unity 编译/Console 和人工试玩；用户明确要求时可运行保留的 `WeaponRuntimeTests.cs`。

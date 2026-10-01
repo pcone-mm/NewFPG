@@ -10,4 +10,4 @@
 - 迁移/修复工具必须显式人工触发，不得自动运行、批量手改 YAML 或把第三方插件 API 扩散到领域/运行时 asmdef；迁移落地后删除过期入口，而不是把它变成长期流程。
 - `Audio/FpgForestAudioApprovalBinder` 只负责把已批准的 WAV 组写入正式技能/表现资产；Soundminer 搜索、编辑和候选报告留在 `Tools/ForestAudio/` 与 Audio 目录的资产本地文档，不在 Editor 工具中读取或写回源数据库。
 - 所有 Scene、Prefab、配置与 Build Settings 写入使用 Unity Editor API，保留 GUID/.meta，并在失败时停止而不是留下半更新状态。
-- 验证以 Unity 编译/Console、`BuildSettingsTests.cs`、`FpgRoomArtSceneContractTests.cs`、`FpgCoverCameraAuthoringTests.cs`、`FpgShootingTuningSnapshotTests.cs` 和对应子目录指南为准。
+- Demo 默认只验证 Unity 编译/Console 和人工操作；不要自动运行测试。用户明确要求时，才按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择一个相关冒烟测试。

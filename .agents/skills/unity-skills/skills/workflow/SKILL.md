@@ -1,7 +1,16 @@
 ---
 name: unity-workflow
-description: Persistent operation history and orchestration — snapshots, task/session undo, bookmarks, and batch planning/retry/rollback. Use when undoing a whole task or session, snapshotting before risky changes, planning or previewing batch operations, or rolling back, even if the user just says "撤销整个操作" or "回滚". 持久化操作历史与编排(快照、任务/会话级撤销、书签、批量规划/重试/回滚);当用户要撤销整个任务或会话、在高危改动前快照、规划或预览批量操作、或回滚时使用。
+description: Persistent operation history and orchestration
 ---
+
+> **Before calling any skill in this module:** if you are about to call a skill with parameters guessed from its name or description, STOP — read this file (or fetch its schema via `GET /skills/recommend?includeSchema=true`) first. If you already have the parameter definitions from recommend/schema, you may proceed straight to dryRun.
+
+## Triggers
+- Undoing a whole task or session
+- Snapshotting before risky changes
+- Planning/previewing batch operations
+- Rolling back
+- 撤销整个任务或会话、高危改动前快照、规划/预览批量操作、回滚
 
 # Workflow Skills
 
@@ -17,6 +26,8 @@ Allows tagging tasks, snapshotting objects before modification, and undoing spec
 - **含 NeverInSemi 高危 skill**：`bookmark_delete` / `workflow_delete_task`（标 Operation.Delete，删除书签/任务记录）、`workflow_clear_history`（Operation.Delete + RiskLevel=high，清空全部历史+redo栈+文件存储，不可逆）。这些在 Approval/Auto 下返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调。
 
 > 注意：`workflow_undo_task` / `workflow_session_undo` 不是 Delete operation（标的是 Modify/Execute），它们能在 Approval/Auto 直接撤销已记录任务。
+
+**Surface profile:** `workflow_undo_task` / `workflow_redo_task` / `workflow_revert_task` / `workflow_session_undo` inspect every snapshot the target task(s) would restore. If any snapshot would author a category the active profile withdraws — a scene GameObject, or a `.unity` / `.mat` asset — the whole call is refused with `SURFACE_EXCLUDED` (`surfaceProfile`/`category`/`operation`/`manualDoc`/`userControlled`/`hint` at the top level, not nested under `details`) rather than partially applied. Snapshots of scripts, prefabs, textures, ScriptableObjects, and Editor/project settings are unaffected — those stay undoable under every profile.
 
 **DO NOT** (common hallucinations):
 - `workflow_save` does not exist → use `workflow_task_end` to end and save a task

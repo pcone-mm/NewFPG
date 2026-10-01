@@ -1,7 +1,15 @@
 ---
 name: unity-primetween
-description: Inspect PrimeTween Free, discover its public animation factories, and generate lifecycle-aware PrimeTween runtime scripts. Use when checking a PrimeTween installation, exploring supported animation APIs, or generating Transform/Sequence animation code. 检查 PrimeTween Free 安装状态、探索其公开动画工厂方法、或生成生命周期感知的 PrimeTween 运行时代码(Transform/Sequence 动画)时使用。
+description: Inspect PrimeTween Free and generate runtime tween scripts
 ---
+
+> **Before calling any skill in this module:** if you are about to call a skill with parameters guessed from its name or description, STOP — read this file (or fetch its schema via `GET /skills/recommend?includeSchema=true`) first. If you already have the parameter definitions from recommend/schema, you may proceed straight to dryRun.
+
+## Triggers
+- Checking a PrimeTween installation
+- Exploring supported animation APIs
+- Generating Transform/Sequence animation code
+- 检查 PrimeTween 安装状态、探索动画 API、生成 Transform/Sequence 动画代码
 
 # PrimeTween Skills
 
@@ -10,7 +18,8 @@ PrimeTween Free support is intentionally tailored to its API rather than mirrori
 ## Guardrails
 
 - PrimeTween must be installed as `com.kyrylokuzyk.primetween`.
-- Query skills run directly in all operating modes. Script generators create a C# asset and can trigger compilation, so they are high-risk and require Bypass or an Allowlist entry in Auto/Approval modes.
+- Query skills (`primetween_get_status`, `primetween_get_config`, `primetween_list_factories`) run directly in all operating modes.
+- Auto-forbidden in this module: the two script generators `primetween_generate_tween_script` and `primetween_generate_sequence_script` (both `MayTriggerReload = true`, `RiskLevel = "high"` — writing a new `.cs` triggers compilation + Domain Reload). They return `MODE_FORBIDDEN` under Approval **and** Auto, and are reachable only under Bypass mode or via a user-managed Allowlist entry; the grant flow returns `MODE_FORBIDDEN` too, so do not attempt it.
 - `primetween_get_config` is read-only. `PrimeTweenConfig` is runtime state, not a serialized project configuration asset.
 - Generated scripts support Transform `Position`, `LocalPosition`, `EulerAngles`, `LocalEulerAngles`, and `Scale`. Use `primetween_list_factories` before requesting an API outside that supported generator set.
 - PrimeTween handles are non-reusable. Generated scripts stop their owned live handle on disable instead of using a DOTween `SetLink` equivalent.

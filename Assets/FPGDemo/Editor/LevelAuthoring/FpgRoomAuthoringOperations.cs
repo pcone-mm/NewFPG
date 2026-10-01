@@ -32,6 +32,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
             string artScenePath = string.Empty;
             bool canDeleteCreatedAssets = true;
             List<string> createdCameraProfilePaths = new List<string>();
+            bool duplicationSucceeded = false;
+            bool sourceSceneClosedForDuplication = false;
+            bool sourceSceneWasLoaded = false;
+            string previousActiveScenePath = string.Empty;
+            Scene previousActiveScene = default;
+            Scene duplicationIsolationScene = default;
 
             if (sourceRoom == null)
             {
@@ -69,6 +75,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 error =
                     "Save the source Art Scene before duplicating the room.";
                 return false;
+            }
+
+            sourceSceneWasLoaded = sourceScene.IsValid() && sourceScene.isLoaded;
+            previousActiveScene = SceneManager.GetActiveScene();
+            if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+            {
+                previousActiveScenePath = previousActiveScene.path;
             }
 
             if (!FpgRoomArtSceneContractValidator.TryValidateScene(
@@ -135,42 +148,41 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 AssetDatabase.CreateAsset(duplicateRoom, roomAssetPath);
                 AssetDatabase.SaveAssetIfDirty(duplicateRoom);
 
-                if (!TryBindArtSceneRoot(duplicateRoom, out error))
+                // Volumetric Fog 2 keeps a process-wide manager and scans every
+                // loaded scene. Keep the source Art Scene closed while the copy
+                // is opened for binding/validation so its manager cannot delete
+                // or replace the copy's manager.
+                if (sourceSceneWasLoaded)
                 {
-                    return false;
-                }
-
-                if (!FpgRoomArtSceneContractValidator.TryValidateScene(
-                        duplicateRoom,
-                        out error))
-                {
-                    return false;
-                }
-
-                if (registerForProduction
-                    && !TryRegisterRoomForProductionCore(
-                        duplicateRoom,
-                        out canDeleteCreatedAssets,
-                        out error))
-                {
-                    if (!canDeleteCreatedAssets)
+                    if (!TryCloseSourceSceneForDuplication(
+                            sourceRoom.ArtScenePath,
+                            out duplicationIsolationScene,
+                            out error))
                     {
-                        error +=
-                            " Registration rollback was incomplete; the created RoomDefinition and Art Scene were preserved to avoid dangling production references.";
+                        return false;
                     }
-                    return false;
+
+                    sourceSceneClosedForDuplication = true;
                 }
 
-                return true;
+                duplicationSucceeded = TryFinalizeRoomDuplication(
+                    duplicateRoom,
+                    registerForProduction,
+                    ref canDeleteCreatedAssets,
+                    out error);
             }
             catch (Exception exception)
             {
                 error = exception.GetBaseException().Message;
-                return false;
             }
             finally
             {
-                if (!string.IsNullOrWhiteSpace(error))
+                bool canRestoreSourceScene = true;
+                // On failure, close and clean the copied Art Scene before
+                // reopening the source. Reopening first would put two fog
+                // managers back into the global search scope and can mutate
+                // the partially-copied scene during rollback.
+                if (!duplicationSucceeded)
                 {
                     CleanupFailedDuplication(
                         roomAssetPath,
@@ -183,7 +195,194 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         FpgCoverCameraProfileAuthoring.DeleteCreatedProfiles(
                             createdCameraProfilePaths);
                     }
+
+                    Scene loadedDuplicate = SceneManager.GetSceneByPath(
+                        artScenePath);
+                    if (loadedDuplicate.IsValid() && loadedDuplicate.isLoaded)
+                    {
+                        canRestoreSourceScene = false;
+                        error +=
+                            " Source Art Scene was left closed because the copied Art Scene could not be safely unloaded.";
+                    }
                 }
+
+                if (sourceSceneClosedForDuplication
+                    && canRestoreSourceScene
+                    && !TryRestoreSourceSceneAfterDuplication(
+                        sourceRoom.ArtScenePath,
+                        previousActiveScenePath,
+                        previousActiveScene,
+                        duplicationIsolationScene,
+                        out string restoreError))
+                {
+                    duplicationSucceeded = false;
+                    error = string.IsNullOrWhiteSpace(error)
+                        ? restoreError
+                        : error + " " + restoreError;
+                }
+            }
+
+            return duplicationSucceeded;
+        }
+
+        private static bool TryFinalizeRoomDuplication(
+            FpgRoomDefinition duplicateRoom,
+            bool registerForProduction,
+            ref bool canDeleteCreatedAssets,
+            out string error)
+        {
+            if (!TryBindArtSceneRoot(duplicateRoom, out error))
+            {
+                return false;
+            }
+
+            if (!FpgRoomArtSceneContractValidator.TryValidateScene(
+                    duplicateRoom,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!registerForProduction)
+            {
+                return true;
+            }
+
+            if (!TryRegisterRoomForProductionCore(
+                    duplicateRoom,
+                    out canDeleteCreatedAssets,
+                    out error))
+            {
+                if (!canDeleteCreatedAssets)
+                {
+                    error +=
+                        " Registration rollback was incomplete; the created RoomDefinition and Art Scene were preserved to avoid dangling production references.";
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryCloseSourceSceneForDuplication(
+            string sourceScenePath,
+            out Scene isolationScene,
+            out string error)
+        {
+            isolationScene = default;
+            Scene sourceScene = SceneManager.GetSceneByPath(sourceScenePath);
+            if (!sourceScene.IsValid() || !sourceScene.isLoaded)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            if (sourceScene.isDirty)
+            {
+                error =
+                    $"Save source Art Scene '{sourceScenePath}' before duplicating it.";
+                return false;
+            }
+
+            // Unity cannot close the only loaded scene. Create a disposable
+            // empty scene so the source can still be isolated from the copy.
+            if (SceneManager.sceneCount <= 1)
+            {
+                isolationScene = EditorSceneManager.NewScene(
+                    NewSceneSetup.EmptyScene,
+                    NewSceneMode.Additive);
+                if (!isolationScene.IsValid() || !isolationScene.isLoaded)
+                {
+                    error =
+                        "Could not create a temporary isolation Scene while duplicating the room.";
+                    return false;
+                }
+            }
+
+            if (!EditorSceneManager.CloseScene(sourceScene, true))
+            {
+                if (isolationScene.IsValid() && isolationScene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(isolationScene, true);
+                    isolationScene = default;
+                }
+                error =
+                    $"Could not temporarily close source Art Scene '{sourceScenePath}' while duplicating it.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryRestoreSourceSceneAfterDuplication(
+            string sourceScenePath,
+            string previousActiveScenePath,
+            Scene previousActiveScene,
+            Scene isolationScene,
+            out string error)
+        {
+            try
+            {
+                Scene sourceScene = SceneManager.GetSceneByPath(sourceScenePath);
+                if (!sourceScene.IsValid() || !sourceScene.isLoaded)
+                {
+                    sourceScene = EditorSceneManager.OpenScene(
+                        sourceScenePath,
+                        OpenSceneMode.Additive);
+                }
+
+                if (!sourceScene.IsValid() || !sourceScene.isLoaded)
+                {
+                    error =
+                        $"Could not reopen source Art Scene '{sourceScenePath}' after duplication.";
+                    return false;
+                }
+
+                Scene previousActive = previousActiveScene;
+                if (!previousActive.IsValid() || !previousActive.isLoaded)
+                {
+                    previousActive = string.IsNullOrWhiteSpace(
+                            previousActiveScenePath)
+                        ? default
+                        : SceneManager.GetSceneByPath(previousActiveScenePath);
+                }
+                if (string.Equals(
+                        previousActiveScenePath,
+                        sourceScenePath,
+                        StringComparison.Ordinal))
+                {
+                    previousActive = sourceScene;
+                }
+
+                if (previousActive.IsValid()
+                    && previousActive.isLoaded
+                    && SceneManager.GetActiveScene() != previousActive
+                    && !SceneManager.SetActiveScene(previousActive))
+                {
+                    error =
+                        $"Could not restore active Scene '{previousActiveScenePath}' after duplicating the room.";
+                    return false;
+                }
+
+                if (isolationScene.IsValid()
+                    && isolationScene.isLoaded
+                    && !EditorSceneManager.CloseScene(isolationScene, true))
+                {
+                    error =
+                        $"Could not close temporary isolation Scene '{isolationScene.path}' after duplicating the room.";
+                    return false;
+                }
+
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error =
+                    "Could not restore the source Art Scene after duplication: "
+                    + exception.GetBaseException().Message;
+                return false;
             }
         }
 

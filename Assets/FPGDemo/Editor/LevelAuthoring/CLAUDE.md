@@ -20,4 +20,4 @@
 - Boot、FormalRoom、HUD、出口与 Art Scene 都是 committed authored 资产；编辑器工具不得重建或批量覆盖它们。
 - 持久化修改只能由明确的用户操作通过 `SerializedObject`、`AssetDatabase`、`Undo` 和 `EditorSceneManager` 完成；仅失败回滚可逐字节备份/恢复刚创建的资产与 `.meta` 以保留 GUID，不能把该例外用于 authoring YAML。
 - 所有入口必须 fail-closed，不得重建 CombatLab、旧 Stage、旧 Host 或隐式迁移源。
-- 验证以 Unity 编译/Console、`FormalFirstAuthoringContractTests.cs`、`FpgCoverCameraAuthoringTests.cs`、`FpgCoverCameraProfileTests.cs`、`FpgFormalCameraPoseUtilityTests.cs`、`FpgRoomArtSceneContractTests.cs`、`FpgRoomDefinitionTests.cs`、`FpgRoomDuplicationContractTests.cs`、`FpgRoomAuthoringSafetyTests.cs`、`FpgSpriteShadowCasterAuthoringTests.cs`、`BuildSettingsTests.cs`、`FpgBattleGmEditorWindowTests.cs` 和 `FpgBattleTestPlayModeTests.cs` 为准。
+- Demo 默认只验证 Unity 编译/Console 和编辑器人工操作；不要自动运行测试。用户明确要求时，仅按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择一个相关冒烟测试。

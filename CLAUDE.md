@@ -14,7 +14,7 @@
 ## 技术栈
 
 - Unity `6000.3.15f1`，Universal Render Pipeline `17.3.0`，Input System `1.19.0`，Unity Test Framework `1.6.0`。
-- 项目 Fixed Timestep 固定为 `1/60`，与 `FPG.Skills` 的 60Hz tick 合同一致；修改 `TimeManager.asset` 时同步检查 `GameBootstrap` 与 `FpgSkillClockConfigurationTests.cs`。
+- 项目 Fixed Timestep 固定为 `1/60`，与 `FPG.Skills` 的 60Hz tick 合同一致；修改 `TimeManager.asset` 时确认 `GameBootstrap` 和运行时行为。
 - `FPG.Core`、`FPG.Combat`、`FPG.Player`、`FPG.Enemy`、`FPG.Skills` 与 `FPG.Run` 是无 UnityEngine 依赖的领域程序集；`FPG.Unity` 负责场景、输入、物理和表现适配。
 - `Packages/manifest.json` 通过本地路径引用 spine-unity `3.8`，并安装 Unity MCP 与 Unity Skills。
 - More Mountains Feel `6.0` vendored 在 `Assets/Feel/`；正式接入只放在 `Assets/FPGDemo/Integrations/Feel/`，不得让 `FPG.Unity` 或纯领域程序集直接依赖插件 API。
@@ -45,17 +45,17 @@
 
 - 不得从正式 `FPG.Demo.*` 代码重新依赖已删除的 `NewFPG.*` 原型、旧场景、旧 Host、CombatLab 或 D0 运行入口。序列化资产仍保留的 D0 前缀类型只视为兼容合同。
 - 修改 asmdef、稳定 ID、容量、tick、hash 或跨程序集合同前，先检查依赖闭包和对应局部指南；确定性与 fail-closed 行为优先于隐式回退。
-- 正式业务配置以 `Assets/FPGDemo/Config/` 为真源，不建立平行配置链；字段所有权、范围和读取时机由对应 Config/Editor 局部指南、Inspector 与合同测试共同约束。
+- 正式业务配置以 `Assets/FPGDemo/Config/` 为真源，不建立平行配置链；字段所有权、范围和读取时机由对应 Config/Editor 局部指南、Inspector 与运行时校验共同约束。
 - 处理 CZN/Spine 模型、动画、特效或导入资源前，先读 `.codex/skills/czn-character-spine-unity-import/SKILL.md`；保留 Git LFS 属性、原始证据、生成报告和每个资源的 `.meta`。
 - Scene、Prefab、Build Settings 和 Unity 资源引用通过 Unity Editor、Unity MCP 或现有 installer 修改，不批量手改 YAML。移动资源时让 `.meta` 始终跟随资源。
 - 人工试玩、视觉、手感、难度和交互验收交给主管/用户；未执行项必须明确标为待确认，不得以静态检查或自动测试替代主观结论。
 - 不维护独立 Workflow 长文：稳定规则放最近作用域的 `CLAUDE.md`，重复专家流程放 skill/script/hook，资产交付证据跟随资产目录的 README/Metadata；不得建立与代码、配置或测试平行的文档真源。
-- 除非用户明确要求，不新增测试文件、不批量运行 EditMode/PlayMode。代码变更只做最小静态检查、现有 Unity 编译/Console 检查或明确指定的精确测试。
+- Demo 阶段默认不新增测试、不运行或扫描整套 EditMode/PlayMode。代码变更只做最小静态检查、Unity 编译/Console 检查和必要的人工试玩；只有用户明确要求时才运行 `Assets/FPGDemo/Tests/` 中的保留冒烟测试。
 - 生成物和探索输出默认不进入上下文：`Library/`、`Temp/`、`Logs/`、`UserSettings/`、`output/`、`tmp/`、`TestResults/`、`.workbuddy/`、根目录 `.tmp*`、`Assets/Screenshots/` 和根目录 `wp*_patch_*.xml`。
 - 不要把 `ProjectSettings/`、包版本、渲染管线或第三方资产当作顺手清理项；搜索先从最可能相关的小目录开始。
 
 ## 验证原则
 
 - 只改文档或目录指南时运行 `git diff --check`，并检查 `Assets/**/CLAUDE.md` 与相邻 `.meta` 配对。
-- 修改 C# 或 Unity 资源时先确认 Unity 编译和 Console，再按局部指南选择最小合同验证；没有执行的测试不得表述为已通过。
-- 修改正式入口、依赖闭包、配置真源或资源 GUID 时，优先使用现有 Build Settings、assembly boundary、authoring 与 asset contract 检查，不自行扩张测试范围。
+- 修改 C# 或 Unity 资源时先确认 Unity 编译和 Console；不要把未运行的测试表述为已通过。
+- 修改正式入口、依赖闭包、配置真源或资源 GUID 时，优先使用 Unity 编译、Console、人工试玩和现有编辑器校验，不自行扩张测试范围。

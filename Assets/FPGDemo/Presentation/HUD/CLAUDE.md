@@ -6,4 +6,4 @@
 - `HitTip/` 保存命中提示使用的正式贴图；`T_FPG_ChargeProgressRing.asset` 保存蓄力进度环表现资源。不要把这些输入复制进角色 Entity、技能配置或场景临时副本。
 - HUD prefab 可暴露 UI port、布局和本地动画，不得保存生命值、伤害结果、敌人选择或其他权威 gameplay 状态。
 - Scene 与配置对 HUD prefab 的引用通过 GUID 维护；移动、重命名或替换时必须保留 `.meta` 并同步路径合同测试。
-- 修改后检查 Unity 编译/Console、`FormalHudGeometryTests.cs`、`FormalCombatPresentationStreamTests.cs` 及对应 presentation profile 合同。
+- 修改后默认检查 Unity 编译/Console、Prefab/Scene 引用和人工视觉效果；不要自动运行测试。用户明确要求时，按测试目录指南选择保留冒烟测试。

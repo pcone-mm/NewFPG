@@ -5,10 +5,7 @@
         "FPG.Unity",
         "FPG.Run",
         "FPG.Core",
-        "FPG.Combat",
-        "FPG.Enemy",
-        "FPG.Player",
-        "Unity.ugui"
+        "FPG.Enemy"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

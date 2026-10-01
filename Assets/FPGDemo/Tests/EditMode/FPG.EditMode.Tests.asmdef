@@ -5,13 +5,10 @@
         "FPG.Core",
         "FPG.Combat",
         "FPG.Player",
-        "FPG.Enemy",
         "FPG.Run",
         "FPG.Unity",
         "FPG.Skills",
         "FPG.LevelAuthoring.Editor",
-        "FPG.SkillAuthoring.Editor",
-        "spine-unity",
         "Unity.InputSystem"
     ],
     "optionalUnityReferences": [

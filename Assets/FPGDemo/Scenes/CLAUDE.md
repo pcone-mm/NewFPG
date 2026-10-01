@@ -18,7 +18,5 @@
 
 ## 验证
 
-- 修改入口、catalog 或 Art Scene 后检查 `Assets/FPGDemo/Tests/EditMode/BuildSettingsTests.cs` 与 `FpgRoomArtSceneContractTests.cs`。
-- 修改 BattleTest 路由时同时检查 `FpgBattleTestPlayModeTests.cs`，并确认生产清单仍排除该场景。
-- 修改 Boot 选择或 FormalRoom authoring 后检查 `Assets/FPGDemo/Tests/EditMode/FormalFirstAuthoringContractTests.cs` 与 `FpgBootSecondaryModeSelectionTests.cs`。
-- 默认只执行 Unity 编译与 Console 检查；批量 EditMode/PlayMode 测试需用户明确要求。
+- 修改入口、catalog、Art Scene 或 BattleTest 路由后默认只执行 Unity 编译、Console 和人工场景检查；确认生产清单仍排除 BattleTest。
+- 自动化测试默认不运行。用户明确要求时，按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择一个相关冒烟测试。

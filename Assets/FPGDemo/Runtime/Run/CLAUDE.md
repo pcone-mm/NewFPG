@@ -14,6 +14,5 @@
 - stream 使用固定容量和单调 sequence；消费者发现 cursor gap 时必须清理陈旧 correlation 绑定并从保留窗口继续，不能猜测丢失事件。
 - Summon 与 owner 生命周期是两个显式调度 payload；有 Summon 绑定的 `SelfDestructOwner` 通过该事件的 schedule sequence 等待结果，只有 `Queued` 才提交自毁，Retry/Rejected/Skipped 不得误杀 owner 或泄漏容量。
 - 跨房只携带已校验的 `FpgPlayerRunResourceState`，不携带敌人、投射物或瞬态武器状态。
-- 正式事务、掩体排序/承伤/traversal、召唤依赖与 owner 自毁检查 `FpgMultiEnemyCombatTransactionTests.cs`；跨房资源检查 `FpgPlayerRunResourceStateTests.cs`。
-- BattleTest 计划、external spawn 与 GM 语法检查 `FpgBattleTestSandboxRuntimeTests.cs`、`FpgBattleGmCommandParserTests.cs`。
-- impact contact、group completion、终止与 gap 合同检查 `FpgSkillImpactPresentationStreamTests.cs`。
+- Demo 默认通过 Unity 编译/Console 和 BattleTest 人工试玩检查遭遇流程，不自动运行测试。
+- 用户明确要求自动化验证时，仅按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择保留冒烟测试。

@@ -59,6 +59,5 @@ rg -n "FindObjectsByType\(" Assets/Feel -g "*.cs"
 
 ## 验证
 
-- 修改事件分类、目标聚合或 HUD 资源事件后检查 `FpgSupplementalFeedbackTests.cs`。
-- 修改共享 prefab、敌人挂接、场景路由、Spring 或清理行为后检查 `FpgFeelEnemyHitAssetTests.cs`。
-- 两项验证都必须先确认 Unity 编译与 Console；没有当前 Test Runner 结果时不得宣称测试通过。
+- Demo 默认只确认 Unity 编译/Console、共享 Prefab/Scene 引用和人工试玩，不自动运行 Feel 测试。
+- 用户明确要求自动化验证时，按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择保留冒烟测试；没有当前 Test Runner 结果时不得宣称测试通过。

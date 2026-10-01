@@ -16,6 +16,5 @@
 
 ## 验证
 
-- target ordering/area 容量检查 `TargetSelectorTests.cs`；伤害与 impact 检查 `CombatDamageTests.cs`。
-- projectile 预算和终态检查 `ProjectileThreatTests.cs`。
-- 环境阻挡、GeometryId 与掩体提交的原子性检查 `FpgMultiEnemyCombatTransactionTests.cs`。
+- Demo 默认通过 Unity 编译/Console 和人工战斗试玩检查 Combat 行为，不自动运行测试。
+- 用户明确要求自动化验证时，仅按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择保留冒烟测试。

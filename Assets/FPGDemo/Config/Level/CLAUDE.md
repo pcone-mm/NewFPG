@@ -11,4 +11,4 @@
 - 复制正式房间只使用 Room Editor 的 `Duplicate Room` / `FpgRoomAuthoringOperations`：修复 `FpgRoomArtRoot` 绑定、为每个不同的源镜头 Profile 克隆一次并保留房内显式共享拓扑，同时把 catalog/Build Settings 注册视为同一事务；不要手工复制资产后单独改 Build Settings。
 - Enemy spawn role 必须与正式 Encounter Profile/Override 和 spawn role 预检一致。
 - 通过 Room Editor 的 SceneAsset 字段、Scene Tool 或 Unity MCP 修改，不复制 YAML，也不只改 GUID/path 其中一侧。
-- 验证以 Room Editor、Unity 编译/Console、`FpgRoomDefinitionTests.cs`、`FpgCoverCameraProfileTests.cs`、`FpgCoverCameraAuthoringTests.cs`、`FpgFormalCameraPoseUtilityTests.cs`、`FpgRoomArtSceneContractTests.cs`、`FpgRoomDuplicationContractTests.cs`、`FpgRoomAuthoringSafetyTests.cs`、`BuildSettingsTests.cs`、`FpgExitRoomRefreshRuleTests.cs` 和 `FpgRoomExitRuntimeTests.cs` 为准。
+- Demo 默认以 Room Editor、Unity 编译/Console 和人工场景检查为准，不自动运行测试。用户明确要求时，仅按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择房间相关冒烟测试。

@@ -1,7 +1,15 @@
 ---
 name: unity-behavior
-description: Drive Unity Behavior (com.unity.behavior) behavior graphs — discover and inspect graph assets, create empty graphs, attach and bind BehaviorGraphAgent components, and read/write blackboard variables on agents or graph defaults. Use when wiring NPC/AI decision logic, behavior trees, behavior graphs, or blackboard variables, even if the user just says "behavior graph", "行为图", "行为树", or "给这个 NPC 挂个 AI". 操作 Unity Behavior 行为图(查找与检查图资产、创建空图、挂载并绑定 BehaviorGraphAgent、读写黑板变量);当用户要搭建 NPC/AI 决策逻辑、行为树、行为图或黑板变量时使用。
+description: Drive Unity Behavior behavior graphs and blackboard variables
 ---
+
+> **Before calling any skill in this module:** if you are about to call a skill with parameters guessed from its name or description, STOP — read this file (or fetch its schema via `GET /skills/recommend?includeSchema=true`) first. If you already have the parameter definitions from recommend/schema, you may proceed straight to dryRun.
+
+## Triggers
+- Wiring NPC/AI decision logic
+- Working with behavior trees/graphs
+- Reading/writing blackboard variables
+- 搭建 NPC/AI 决策逻辑、使用行为树/行为图、读写黑板变量
 
 # Behavior Skills
 

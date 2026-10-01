@@ -1,7 +1,16 @@
 ---
 name: unity-editor
-description: Control and observe the Unity Editor — read persistent scene/file changes, enter/exit/pause/step play mode, inspect live GameObject runtime state, select objects, undo/redo, and execute menu items. Use after the user edited Unity while the AI was away, when file watching reports changes, or when driving Editor state. 控制并观察 Unity 编辑器(读取持久化场景/文件变更、进入/退出/暂停/单帧步进 play mode、检查运行时状态、选中对象、撤销/重做、执行菜单项);当用户在 AI 离开期间修改了 Unity、文件监控发现变化、或需要操控编辑器状态时使用。
+description: Control and observe the Unity Editor state
 ---
+
+> **Before calling any skill in this module:** if you are about to call a skill with parameters guessed from its name or description, STOP — read this file (or fetch its schema via `GET /skills/recommend?includeSchema=true`) first. If you already have the parameter definitions from recommend/schema, you may proceed straight to dryRun.
+
+## Triggers
+- Reading persistent scene/file changes
+- Driving play mode
+- Inspecting runtime state
+- Executing menu items
+- 读取持久化场景/文件变更、操控 Play Mode、检查运行时状态、执行菜单项
 
 # Unity Editor Skills
 
@@ -9,9 +18,9 @@ Observe and control the Unity Editor without parsing scene YAML.
 
 ## Operating Mode
 
-- **Approval**：本模块 Mixed —— `editor_get_changes` / `editor_get_selection` / `editor_get_context` / `editor_get_state` / `editor_get_tags` / `editor_get_layers` / `editor_playmode_inspect` 标 `SkillMode.SemiAuto`，可直接执行；其余 `editor_select` / `editor_undo` / `editor_redo` / `editor_execute_menu` / `editor_playmode_step` 默认 FullAuto，Approval 模式下需 grant。
+- **Approval**：本模块 Mixed —— `editor_get_changes` / `editor_get_selection` / `editor_get_context` / `editor_get_state` / `editor_get_tags` / `editor_get_layers` / `editor_playmode_inspect` 标 `SkillMode.SemiAuto`，可直接执行；其余 `editor_select` / `editor_undo` / `editor_redo` / `editor_playmode_step` 默认 FullAuto，Approval 模式下需 grant。
 - **Auto / Bypass**：FullAuto 直接执行。
-- **含 NeverInSemi 高危 skill**：`editor_play` / `editor_play_capture` / `editor_stop` / `editor_pause`（标 `MayEnterPlayMode = true`）。这些在 Approval/Auto 下返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调。
+- **含 NeverInSemi 高危 skill**：`editor_play` / `editor_play_capture` / `editor_stop` / `editor_pause`（标 `MayEnterPlayMode = true`）；`editor_execute_menu`（标 `MayTriggerReload = true` —— `Assets/Refresh`、`Assets/Reimport All` 之类的菜单项会触发域重载）。这些在 Approval **和** Auto 下都返 `MODE_FORBIDDEN`，仅 Bypass 或 Allowlist 命中可调；**grant 流程对它们不适用**，不要尝试。
 
 **DO NOT** (common hallucinations):
 - `editor_run` does not exist → use `editor_play` to enter play mode
@@ -250,3 +259,12 @@ print(step_status["details"]["frameCount"], step_status["details"]["isPaused"])
 ## Exact Signatures
 
 Exact names, parameters, defaults, and returns are defined by `GET /skills/schema` or `unity_skills.get_skill_schema()`, not by this file.
+
+## Common Errors
+
+Full transport-level codes (COMPILING/RATE_LIMIT etc.) → ../../references/protocol-error-codes.md
+
+| Error | Trigger | Fix |
+|---|---|---|
+| `TARGET_NOT_FOUND` | The requested GameObject or menu item could not be found (e.g., `Menu item not found or failed`). | Verify the object with `gameobject_find` / `scene_get_hierarchy`, or check the exact menu path spelling before retrying. |
+| `SKILL_ERROR` | A play-mode state conflict occurred, such as `Already in play mode`, `Not in play mode`, or an active frame-step job already exists. | Match the editor state to the skill requirement: enter/exit play mode first, or wait for the existing step job to finish. |

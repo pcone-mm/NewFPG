@@ -1,7 +1,16 @@
 ---
 name: unity-netcode
-description: Set up Netcode for GameObjects (NGO 2.x) multiplayer — configure NetworkManager, NetworkObjects/prefabs, spawning, and host/server/client lifecycle. Use when scaffolding multiplayer, registering network prefabs, wiring spawn logic, or starting host/server/client, even if the user just says "联机" or "多人游戏". 搭建 Netcode for GameObjects(NGO 2.x)多人联机(配置 NetworkManager、NetworkObject/预制体、生成、host/server/client 生命周期);当用户要搭建多人联机、注册网络预制体、连接生成逻辑或启动 host/server/client 时使用。
+description: Set up Netcode for GameObjects (NGO 2.x) multiplayer
 ---
+
+> **Before calling any skill in this module:** if you are about to call a skill with parameters guessed from its name or description, STOP — read this file (or fetch its schema via `GET /skills/recommend?includeSchema=true`) first. If you already have the parameter definitions from recommend/schema, you may proceed straight to dryRun.
+
+## Triggers
+- Scaffolding multiplayer
+- Registering network prefabs
+- Wiring spawn logic
+- Starting host/server/client
+- 搭建多人联机、注册网络预制体、连接生成逻辑、启动 host/server/client
 
 # Unity Netcode for GameObjects Skills
 

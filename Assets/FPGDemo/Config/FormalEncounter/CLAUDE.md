@@ -15,4 +15,4 @@
 - skill、sequence、event、track、warning、socket ID、authored ordinal 与 gameplay/presentation hash 是稳定合同；缺引用或校验失败时不得生成部分可用的 compiled skill。
 - Boot/FormalRoom、HUD、出口和 Build Settings 都是显式维护的 authored 资产，不得由生成器或旧 D0 数据回写。
 - 稳定 ID、引用、容量和动画键必须通过各自 `TryValidate`，失败时不得构造部分有效遭遇。
-- 验证以 Unity 编译/Console、`FormalFirstAuthoringContractTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgSkillDefinitionTests.cs` 和对应 Formal EditMode 合同为准；Fei 攻速/攻击时序检查 `FpgFeiAttackSpeedIntegrationTests.cs`、`FpgAttackTimingHashAndWeaponSnapshotTests.cs`，射击字段投影检查 `FpgShootingTuningSnapshotTests.cs`、`FpgShootingContractsTests.cs`，纯 V3 资产与 wrapper 路径检查 `FpgFormalSkillPresentationV3AssetTests.cs`，根运动检查 `FpgFormalEnemyRootMotionAssetTests.cs`。
+- Demo 默认以 `TryValidate/TryBuildData`、Unity 编译/Console 和人工试玩为准，不自动运行测试。用户明确要求时，只运行仍保留的核心冒烟测试。

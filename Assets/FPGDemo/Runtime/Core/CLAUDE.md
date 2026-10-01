@@ -17,6 +17,5 @@
 
 ## 验证
 
-- tick、clock、ID、hash 与随机 golden vector：`Assets/FPGDemo/Tests/EditMode/CoreDeterminismTests.cs`。
-- 空间版本或量化变化同时检查 `BattleSessionSpatialQueryTests.cs`、`FpgSkillSpatialMetadataTests.cs` 与 `WP4ContractTests.cs`。
-- 改 asmdef 或依赖时检查 Unity 编译/Console；默认只记录这些精确入口，不自行批量运行测试。
+- 改 tick、clock、ID、hash 或空间量化时检查 Unity 编译/Console 和核心运行时行为；默认不运行测试。
+- 用户明确要求自动化验证时，仅运行 `FpgSkillRuntimeTests.cs` 或直接相关的保留测试，不扫描整套测试目录。

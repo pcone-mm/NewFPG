@@ -25,5 +25,4 @@
 - 根运动开始、终止、取消与对象池重置必须恢复 VisualRoot/Spine authored 状态，同时保持 gameplay/projectile anchor 相对 Entity 的合同。
 - 不得恢复 `BattleSessionHost`、`BattleSceneContext`、CombatLab 绑定或 `NewFPG.*` 依赖。
 - pause/restart/disable/跨房时清理订阅、输入、session、presentation registry/pool/correlation 和 runtime bundle，失败则进入 fault。
-- Cover 输入与 prefab 合同检查 `UnityBattleInputSourceTests.cs`、`ProjectWideBattleInputAssetTests.cs` 和 `FpgEntityPrefabContractTests.cs`。
-- 验证以 Unity 编译/Console、`GameBootstrapConfigTests.cs`、`FormalFirstAuthoringContractTests.cs`、`FpgFormalCameraPoseUtilityTests.cs`、`FpgFormalPlayerCameraFeedbackTests.cs`、`FpgAttackTimingTests.cs`、`FpgFeiAttackSpeedIntegrationTests.cs`、`FpgPlayerSkillExecutionControllerTests.cs`、`FpgPlayerBarrierPresentationControllerTests.cs`、`FpgEntityPrefabContractTests.cs`、`FpgShootingTuningSnapshotTests.cs`、`FpgSkillPresentationRuntimeTests.cs`、`CombatAudioCueRoutingTests.cs`、`CombatAudioBankTests.cs`、`CombatAudioPresenterTests.cs`、`D0CombatVfxWorldTests.cs`、`FpgShootingContractsTests.cs`、`FpgBattleTestPlayModeTests.cs`、`FpgFormalEnemyRootMotionAssetTests.cs` 与对应 Formal EditMode 合同为准。
+- Unity 适配改动默认只验证 Unity 编译/Console 和人工试玩，不自动运行测试。用户明确要求时，仅按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择一个保留冒烟测试。

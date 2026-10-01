@@ -15,4 +15,4 @@
 - trajectory prefab 根节点必须有可校验的 `FpgTrajectoryVfxView`；正式配置只引用 `Presentation/Characters/Players/*/VFX/PF_FPG_*` 或 `Presentation/Characters/Enemies/Shared/VFX/PF_FPG_*` wrapper，不直连供应商 demo。
 - 缺少引用、ID 冲突、容量不足或动画/Prefab 校验失败时必须 fail-closed。
 - Behavior 的 `animationRootMotionRules` 是逐动画显式 allowlist；缺少规则即禁用，重复动画名或无效 Spine bridge 配置必须 fail-closed。
-- 修改后检查对应 `TryValidate/TryBuildData`、Unity 编译/Console、`CombatAimViewportMathTests.cs`、`FpgShootingTuningSnapshotTests.cs`、`FpgSkillDefinitionTests.cs`、`FpgPlayerSkillAssetContractTests.cs`、`FpgAttackTimingTests.cs`、`FpgAttackTimingHashAndWeaponSnapshotTests.cs`、`FpgPlayerSkillExecutionControllerTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs`、`FpgFormalEnemyRootMotionAssetTests.cs` 与现存的精确 Formal EditMode 合同。
+- 修改后检查对应 `TryValidate/TryBuildData`、Unity 编译/Console 和人工试玩；默认不运行测试。用户明确要求时，只运行仍保留的相关冒烟测试。

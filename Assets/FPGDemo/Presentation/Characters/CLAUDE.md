@@ -11,4 +11,4 @@
 - Enemy `VisualRoot` 上的 `FpgEntitySkeletonRootMotionBridge` 只抽取 Behavior 明确启用的动画和约定 root bone/track；不得用 Rigidbody 模式或移动 anchor 绕过 Entity 根运动合同。
 - 正式技能配置只引用 `Players/*/VFX/PF_FPG_*` 或 `Enemies/Shared/VFX/PF_FPG_*` wrapper；wrapper 可显式依赖 `Assets/VFX_Klaus/` 源材质、网格或 prefab，但不得引用供应商 Timeline/VFX_Lab demo。
 - Spine 渲染依赖不得重新引用根 `Assets/Art`；Prefab、渲染输入与各自 `.meta` 必须成套维护。
-- 修改后检查 Unity 编译/Console、`FpgEntityPrefabContractTests.cs`、`FpgFormalEnemyRootMotionAssetTests.cs`、`FpgSkillAuthoringChoicesTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs` 与相关玩家技能资产合同。
+- 修改后默认检查 Unity 编译/Console、Prefab/Asset 引用和人工视觉效果；不要自动运行测试。用户明确要求时，按测试目录指南选择保留冒烟测试。

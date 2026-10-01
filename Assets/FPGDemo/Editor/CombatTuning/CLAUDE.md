@@ -7,4 +7,4 @@
 - 朝向翻转 delay/duration 属于 ThreeC 可写字段，live preview 必须驱动现有 `FpgPlayerFacingController`，停止预览或失败回滚时恢复捕获快照。
 - 写回只覆盖窗口声明的 ThreeC、CombatFeel 与 Weapon 字段，使用 `SerializedObject` 和单一 Undo group；写后必须重新捕获并逐字段核对，任一步失败整组回滚，不得部分保存或改写 Skill 资产。
 - Catalog GUID 与角色 ID 只可保存在 `SessionState`；临时快照和 Play Mode 诊断不得成为持久配置真源。
-- 验证检查 Unity 编译/Console、`FpgShootingTuningSnapshotTests.cs`、`FpgShootingContractsTests.cs`、`FpgLayeredAimIndicatorTests.cs` 与相关正式技能资产合同；默认不批量运行测试。
+- Demo 默认检查 Unity 编译/Console、调参面板和人工试玩；不要自动运行测试。用户明确要求时，按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择保留冒烟测试。

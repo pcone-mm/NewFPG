@@ -10,4 +10,4 @@
 - 房间 Art Scene 只拥有环境与表现内容；Camera、AudioListener 与表现绑定的局部合同以 `Level/CLAUDE.md` 为准，不得拥有 Host、RoomInstance 或 gameplay 状态。
 - 轨迹 wrapper 根节点必须带可校验的 `FpgTrajectoryVfxView`；muzzle/charge/flight/impact wrapper 的生命周期、duration 与预热容量由技能配置和 presentation world 共同校验。
 - 不得直接绑定根 `Assets/Art`、旧 D0Slice 或临时场景副本。
-- 修改后检查 Unity 编译/Console、`FpgEntityPrefabContractTests.cs`、`FormalFirstAuthoringContractTests.cs` 和相关正式 HUD 合同；技能 wrapper、轨迹和全局预热预算另检查 `FpgFormalSkillPresentationV3AssetTests.cs` 与 `FpgSkillPresentationRuntimeTests.cs`。
+- 修改后默认检查 Unity 编译/Console、Prefab/Scene 引用和人工视觉效果；不自动运行测试。用户明确要求时，只按测试目录指南选择保留冒烟测试。

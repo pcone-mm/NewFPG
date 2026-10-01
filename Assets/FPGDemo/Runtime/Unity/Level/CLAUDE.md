@@ -16,4 +16,4 @@
 - room ID 与 Art Scene GUID 是资产、预览和运行时共享身份，整房复制时必须生成新的两者；marker ID 只在房间内作用，可以保留，group/tag 引用默认共享。
 - Editor playtest override 只用于临时正式预览，使用后必须清理，不能成为全局运行入口。
 - `FpgRoomTransitionCurtain` 归 Boot 所有，跨房时先遮罩，再卸载旧 Art Scene、装载新 Art Scene、重建遭遇，最后揭幕；任一步失败都保持 fail-closed。
-- 验证以 Unity 编译/Console、`FormalFirstAuthoringContractTests.cs`、`FpgCoverCameraProfileTests.cs`、`FpgFormalCameraPoseUtilityTests.cs`、`FpgRoomDefinitionTests.cs`、`FpgEntityPrefabContractTests.cs`、`FpgMultiEnemyCombatTransactionTests.cs`、`FpgShootingContractsTests.cs`、`FpgBattleTestSandboxRuntimeTests.cs`、`FpgRoomArtSceneContractTests.cs`、`FpgRoomArtSceneLoaderPlayModeTests.cs`、`FpgBattleTestPlayModeTests.cs`、`FpgRoomExitRuntimeTests.cs` 为准。
+- 房间/Encounter 适配改动默认只验证 Unity 编译/Console 和 BattleTest 人工试玩，不自动运行测试。用户明确要求时，按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择一个保留冒烟测试。

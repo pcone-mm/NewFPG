@@ -6,4 +6,4 @@
 - 音频的格式、hash、来源记录和候选生成由 `Tools/ForestAudio/` 及 Audio 目录资产本地文档负责；`__pycache__/`、audition 输出和工作副本不进入 Unity 资产或提交。
 - 绑定后的技能仍须通过 schema V3 的 audio track/impact 校验；不要在 Editor 建立第二套事件 ID、时间轴或音频配置。
 
-验证：Unity 编译/Console、`CombatAudioBankTests.cs`、`CombatAudioPresenterTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs`、`FpgSkillPresentationRuntimeTests.cs`；若 binder 报 managed-reference 或缺 clip 错误，先修复绑定前置条件再保存。
+验证：Unity 编译/Console、音频资源引用和人工试听；不要自动运行测试。若 binder 报 managed-reference 或缺 clip 错误，先修复绑定前置条件再保存。

@@ -7,4 +7,4 @@
 - `ForestCombatAudioBank.asset` 维护稳定 `CombatAudioCue`、SFX/UI bus、空间参数、并发/冷却和变体；`ForestAudioProfile.asset` 维护房间音乐、stinger、ambience bed、空间点声与淡入淡出。映射阶段的空 clip 是允许的中间状态；宣称播放就绪或交付前必须显式通过 `TryValidatePlayback`，因为当前 presenter/director 的 `TryPrepare` 只做 mapping 校验，实际 cue/state 缺 clip 时会拒绝播放，不得用占位音频掩盖缺口。
 - `FPG_AudioMixer.mixer` 是正式音频 bus 真源；`FormalRoom/AudioRoot` 通过 Runtime/Unity 的 coordinator/presenter 消费已提交事件。音频只能影响表现，不能改变 combat trace、tick、hash 或结果。
 
-验证优先使用 Unity 编译/Console、`CombatAudioCueRoutingTests.cs`、`CombatAudioBankTests.cs`、`CombatAudioPresenterTests.cs`、`FpgFormalSkillPresentationV3AssetTests.cs` 和 `FpgSkillPresentationRuntimeTests.cs`。详细 Soundminer 输入、导出格式和审批步骤留在本目录资产文档与离线脚本，不复制进更高层指南。
+Demo 阶段验证优先使用 Unity 编译/Console、音频资源引用检查和人工试玩，不自动运行音频测试。用户明确要求自动化验证时，按 `Assets/FPGDemo/Tests/CLAUDE.md` 选择仍保留的冒烟测试。详细 Soundminer 输入、导出格式和审批步骤留在本目录资产文档与离线脚本，不复制进更高层指南。

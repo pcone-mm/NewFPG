@@ -7,4 +7,4 @@
 - 正式 FPG 资产不得引用 `FeelDemos/`、`FeelDemosHDRP/` 或插件 demo prefab；只通过项目适配层使用所需运行时类型。
 - 不为绕过项目生命周期、对象池或事件边界而修改供应商源码。Unity 版本兼容补丁必须显式、最小，并在插件升级时单独复核。
 - 当前 Unity 6 兼容点是 `FindObjectsByType` 必须显式传 `FindObjectsSortMode.None`；升级后用 `rg -n "FindObjectsByType\\(" Assets/Feel -g "*.cs"` 复核。
-- 修改或升级后先检查 Unity 编译/Console，再运行 `FpgSupplementalFeedbackTests.cs` 与 `FpgFeelEnemyHitAssetTests.cs`；同时确认正式场景和 prefab 没有引用 demo 资产。
+- 修改或升级后先检查 Unity 编译/Console，并确认正式场景和 prefab 没有引用 demo 资产；Demo 默认不运行自动化测试。

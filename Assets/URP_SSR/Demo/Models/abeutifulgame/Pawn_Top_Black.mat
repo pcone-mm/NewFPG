@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  version: 9
+  version: 10
 --- !u!21 &2100000
 Material:
   serializedVersion: 8
@@ -21,8 +21,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Pawn_Top_Black
-  m_Shader: {fileID: -6465566751694194690, guid: b9d29dfa1474148e792ac720cbd45122,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: b9d29dfa1474148e792ac720cbd45122, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -30,6 +29,7 @@ Material:
   - _TRANSMISSION
   m_InvalidKeywords:
   - _DISABLE_SSR_TRANSPARENT
+  - _EMISSION
   - _ENABLE_FOG_ON_TRANSPARENT
   m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
@@ -44,6 +44,7 @@ Material:
   - TransparentDepthPostpass
   - TransparentBackface
   - RayTracingPrepass
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -57,13 +58,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - metallicRoughnessTexture:
-        m_Texture: {fileID: 6596988136469870771, guid: 94aa64b338942490984ad73a1b6e0970,
-          type: 3}
+        m_Texture: {fileID: 6596988136469870771, guid: 94aa64b338942490984ad73a1b6e0970, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - normalTexture:
-        m_Texture: {fileID: -4526626698427911320, guid: 94aa64b338942490984ad73a1b6e0970,
-          type: 3}
+        m_Texture: {fileID: -4526626698427911320, guid: 94aa64b338942490984ad73a1b6e0970, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - occlusionTexture:
@@ -106,11 +105,13 @@ Material:
     - _CastShadows: 1
     - _Cull: 2
     - _DstBlend: 10
+    - _DstBlendAlpha: 10
     - _Metallic: 1
     - _QueueControl: 1
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _SrcBlend: 5
+    - _SrcBlendAlpha: 1
     - _Surface: 1
     - _WorkflowMode: 1
     - _ZTest: 4

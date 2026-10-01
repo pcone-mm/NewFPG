@@ -117,7 +117,7 @@ Transform:
   m_GameObject: {fileID: 169863372051999528}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.9, y: 0, z: -0.1}
+  m_LocalPosition: {x: 0.9, y: 0, z: -0.06}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -181,7 +181,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
 --- !u!1 &1710609685683897306
 GameObject:
   m_ObjectHideFlags: 0
@@ -239,8 +239,8 @@ Transform:
   m_GameObject: {fileID: 2085289641040419814}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.35, y: 0.42, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalPosition: {x: -6.1481, y: 1.8299, z: -0.0069827}
+  m_LocalScale: {x: 0.267245, y: 0.267245, z: 0.267245}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 70818561377208099}
@@ -338,7 +338,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
 --- !u!1 &2825275493430973249
 GameObject:
   m_ObjectHideFlags: 0
@@ -431,8 +431,8 @@ Transform:
   m_GameObject: {fileID: 3376033595176221629}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0.41496, y: -0.39534, z: 0.0017195}
+  m_LocalScale: {x: 1.7357396, y: 1.7357396, z: 1.7357396}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4531500574543964417}
@@ -585,7 +585,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
 --- !u!1 &6240860034199637404
 GameObject:
   m_ObjectHideFlags: 0
@@ -790,7 +790,7 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1
 --- !u!1 &7794804029095897576
 GameObject:
   m_ObjectHideFlags: 0
@@ -1108,4 +1108,4 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_SpriteSortPoint: 0
+  m_SpriteSortPoint: 1

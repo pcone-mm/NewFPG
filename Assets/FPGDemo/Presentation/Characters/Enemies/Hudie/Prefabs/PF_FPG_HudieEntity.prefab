@@ -412,7 +412,7 @@ MeshRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!114 &5621907520704672879
@@ -520,6 +520,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2506973234221986556, guid: e17b8419de3208d4fbdb1cbbbe721258, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3264166133609719559, guid: e17b8419de3208d4fbdb1cbbbe721258, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3347780327324735305, guid: e17b8419de3208d4fbdb1cbbbe721258, type: 3}

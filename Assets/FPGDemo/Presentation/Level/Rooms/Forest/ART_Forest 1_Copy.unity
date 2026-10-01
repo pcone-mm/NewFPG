@@ -353,6 +353,10 @@ PrefabInstance:
       value: ground1
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 94cca888bfb15ec4ba4ea8769c13f2c0, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 94cca888bfb15ec4ba4ea8769c13f2c0, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 0
       objectReference: {fileID: 0}
@@ -627,7 +631,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShadowIntensity: {r: 0, g: 1, b: 0, a: 0}
     - _ToLightDir: {r: -0.10027614, g: 0.85649526, b: 0.5063208, a: 0}
-    - _WindDirection: {r: 5.9526563, g: 3.968431, b: 0, a: 226.81848}
+    - _WindDirection: {r: 11.42602, g: 7.617296, b: 0, a: 245.97754}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &385462111
@@ -1417,7 +1421,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 1}
     - _ShadowIntensity: {r: 0.7, g: 0.3, b: 0, a: 0}
     - _ToLightDir: {r: -0.43018165, g: 0.8732118, b: 0.22900876, a: 0}
-    - _WindDirection: {r: 5.9526563, g: 3.968431, b: 0, a: 226.81848}
+    - _WindDirection: {r: 11.42602, g: 7.617296, b: 0, a: 245.97754}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &470380847
@@ -4457,7 +4461,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DetailColor: {r: 0.3795, g: 0.345, b: 0.29325, a: 0}
     - _DetailData: {r: 0.5, g: 4, b: -0.5, a: 0}
-    - _DetailWindDirection: {r: 2.381055, g: 0.3968436, b: 0.7936872, a: 0}
+    - _DetailWindDirection: {r: 4.5703893, g: 0.76173306, b: 1.5234661, a: 0}
     - _DistanceData: {r: 0, g: 5.2, b: 0.000001, a: 0.056235775}
     - _FogOfWarCenter: {r: 0, g: 0, b: 0, a: 1}
     - _FogOfWarCenterAdjusted: {r: 0, g: 0, b: 0, a: 1}
@@ -4470,7 +4474,7 @@ Material:
     - _ShadowData: {r: 0.5, g: 0, b: 250, a: 0}
     - _SpecularColor: {r: 0.5, g: 0.5, b: 0.5, a: 0}
     - _SunDir: {r: 0.35458517, g: 0.74314487, b: -0.56745493, a: 0}
-    - _WindDirection: {r: 2.381055, g: 0.3968436, b: 0.7936872, a: 0}
+    - _WindDirection: {r: 4.5703893, g: 0.76173306, b: 1.5234661, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &2048112318

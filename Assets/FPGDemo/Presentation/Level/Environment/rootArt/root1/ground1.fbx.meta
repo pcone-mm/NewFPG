@@ -3,7 +3,12 @@ guid: 94cca888bfb15ec4ba4ea8769c13f2c0
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Mix River 1
+    second: {fileID: 2100000, guid: a445b74175800a54c9085010f8b006b6, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

@@ -18,7 +18,7 @@ MonoBehaviour:
     flow.
   artScene:
     sceneGuid: 0da3dbe6a954823438fc845701436a17
-    scenePath: Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest 1_Copy.unity
+    scenePath: Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_root1.unity
   mainGroup: {fileID: 11400000, guid: d814bbfb2d3a02f48a22d86a71c75a59, type: 2}
   tags:
   - {fileID: 11400000, guid: 0eab32ab239bbc149b531942e59c03a6, type: 2}

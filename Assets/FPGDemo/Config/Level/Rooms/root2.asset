@@ -68,10 +68,10 @@ MonoBehaviour:
     cameraProfile: {fileID: 11400000, guid: 3d3bf66ba2aecbd4d973ec2cb766c06d, type: 2}
     maxDurability: 100
     isStartingCover: 1
-    playerReachableLocalPosition: {x: -4.5, y: 0.5, z: 0}
+    playerReachableLocalPosition: {x: -5, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
-    playerLeftPeekLocalPosition: {x: -5.5, y: 0.5, z: 0}
-    playerRightPeekLocalPosition: {x: -3.5, y: 0.5, z: 0}
+    playerLeftPeekLocalPosition: {x: -6.5, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: -3.44, y: 0.5, z: 0}
   - markerId: cover-right
     displayName: "\u53F3\u4FA7\u63A9\u4F53"
     localPosition: {x: 4.28, y: 0.24, z: 0.25}
@@ -80,7 +80,7 @@ MonoBehaviour:
     cameraProfile: {fileID: 11400000, guid: 842aa776869817a4181238405d194ae6, type: 2}
     maxDurability: 100
     isStartingCover: 0
-    playerReachableLocalPosition: {x: 4.69, y: 0.5, z: 0}
+    playerReachableLocalPosition: {x: 6, y: 0.5, z: 0}
     playerReachableLocalEulerAngles: {x: 0, y: 0, z: 0}
-    playerLeftPeekLocalPosition: {x: 2.82, y: 0.5, z: 0}
-    playerRightPeekLocalPosition: {x: 6.55, y: 0.5, z: 0}
+    playerLeftPeekLocalPosition: {x: 4.03, y: 0.5, z: 0}
+    playerRightPeekLocalPosition: {x: 8.27, y: 0.5, z: 0}

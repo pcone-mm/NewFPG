@@ -2687,22 +2687,36 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
                 if (!replacement.IsValid())
                 {
-                    isolationScene = EditorSceneManager.NewScene(
-                        NewSceneSetup.EmptyScene,
-                        NewSceneMode.Additive);
-                    replacement = isolationScene;
+                    if (SceneManager.sceneCount <= 1)
+                    {
+                        // Unity cannot activate an unsaved Additive scene. When
+                        // the room is the only loaded scene, replace it with a
+                        // temporary Single scene; this also makes the temporary
+                        // scene the active scene as part of creation.
+                        isolationScene = EditorSceneManager.NewScene(
+                            NewSceneSetup.EmptyScene,
+                            NewSceneMode.Single);
+                        replacement = isolationScene;
+                    }
                 }
 
+                bool replacementActive =
+                    replacement.IsValid()
+                    && replacement.isLoaded
+                    && SceneManager.GetActiveScene() == replacement;
                 if (!replacement.IsValid()
                     || !replacement.isLoaded
-                    || !SceneManager.SetActiveScene(replacement))
+                    || (!replacementActive
+                        && !SceneManager.SetActiveScene(replacement)))
                 {
                     error = "Could not activate a replacement Scene before deleting the Art Scene.";
                     return false;
                 }
             }
 
-            if (!EditorSceneManager.CloseScene(scene, true))
+            Scene loadedTarget = SceneManager.GetSceneByPath(scenePath);
+            if (loadedTarget.IsValid() && loadedTarget.isLoaded
+                && !EditorSceneManager.CloseScene(loadedTarget, true))
             {
                 if (previousActive.IsValid()
                     && previousActive.isLoaded

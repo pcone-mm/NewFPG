@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using FPG.Demo.Unity;
@@ -19,9 +20,205 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private const string EditorBuildSettingsAssetPath =
             "ProjectSettings/EditorBuildSettings.asset";
 
+        private const string DraftArtSceneFolder =
+            "Assets/FPGDemo/Presentation/Level/Rooms";
+
+        private sealed class RoomAssetBackup
+        {
+            public string assetPath;
+            public string absoluteAssetPath;
+            public string backupAssetPath;
+            public string guid;
+            public bool hasMetaFile;
+        }
+
+        public static bool TryCreateRoomDraft(
+            string requestedRoomAssetPath,
+            out FpgRoomDefinition room,
+            out string error)
+        {
+            room = null;
+            if (!TryValidateRoomAssetPath(
+                    requestedRoomAssetPath,
+                    out string roomAssetPath,
+                    out error))
+            {
+                return false;
+            }
+
+            string roomName = Path.GetFileNameWithoutExtension(roomAssetPath);
+            string artScenePath = DraftArtSceneFolder + "/" + roomName + ".unity";
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRoot))
+            {
+                error = "Could not resolve the Unity project root.";
+                return false;
+            }
+            if (AssetPathOccupied(roomAssetPath))
+            {
+                error = $"RoomDefinition output path '{roomAssetPath}' already exists.";
+                return false;
+            }
+
+            if (AssetPathOccupied(artScenePath))
+            {
+                error = $"Art Scene output path '{artScenePath}' already exists.";
+                return false;
+            }
+
+            if (!TryEnsureAssetFolder(DraftArtSceneFolder, out error))
+            {
+                return false;
+            }
+
+            Scene previousActive = SceneManager.GetActiveScene();
+            Scene draftScene = default;
+            try
+            {
+                draftScene = EditorSceneManager.NewScene(
+                    NewSceneSetup.EmptyScene,
+                    NewSceneMode.Additive);
+                if (!draftScene.IsValid() || !draftScene.isLoaded)
+                {
+                    error = "Unity could not create the draft Art Scene.";
+                    bool cleanupSafe = true;
+                    CleanupFailedDuplication(
+                        roomAssetPath,
+                        artScenePath,
+                        ref cleanupSafe,
+                        ref room,
+                        ref error);
+                    RestoreActiveSceneAfterDraft(previousActive, draftScene, ref error);
+                    return false;
+                }
+
+                GameObject rootObject = new GameObject("FpgRoomArtRoot");
+                SceneManager.MoveGameObjectToScene(rootObject, draftScene);
+                FpgRoomArtRoot root = rootObject.AddComponent<FpgRoomArtRoot>();
+                EditorSceneManager.MarkSceneDirty(draftScene);
+                if (!EditorSceneManager.SaveScene(draftScene, artScenePath))
+                {
+                    error = $"Could not save draft Art Scene '{artScenePath}'.";
+                    bool cleanupSafe = true;
+                    CleanupFailedDuplication(
+                        roomAssetPath,
+                        artScenePath,
+                        ref cleanupSafe,
+                        ref room,
+                        ref error);
+                    RestoreActiveSceneAfterDraft(previousActive, draftScene, ref error);
+                    return false;
+                }
+
+                room = ScriptableObject.CreateInstance<FpgRoomDefinition>();
+                room.name = roomName;
+                SerializedObject roomData = new SerializedObject(room);
+                roomData.FindProperty("roomId").stringValue = GenerateRoomId();
+                roomData.FindProperty("displayName").stringValue = roomName;
+                SerializedProperty artScene = roomData.FindProperty("artScene");
+                artScene.FindPropertyRelative("sceneGuid").stringValue =
+                    AssetDatabase.AssetPathToGUID(artScenePath);
+                artScene.FindPropertyRelative("scenePath").stringValue = artScenePath;
+                roomData.ApplyModifiedPropertiesWithoutUndo();
+                AssetDatabase.CreateAsset(room, roomAssetPath);
+                AssetDatabase.SaveAssetIfDirty(room);
+
+                SerializedObject rootData = new SerializedObject(root);
+                rootData.FindProperty("roomDefinition").objectReferenceValue = room;
+                rootData.ApplyModifiedPropertiesWithoutUndo();
+                EditorSceneManager.MarkSceneDirty(draftScene);
+                if (!EditorSceneManager.SaveScene(draftScene, artScenePath))
+                {
+                    error = $"Could not bind draft Art Scene '{artScenePath}' to its RoomDefinition.";
+                    bool cleanupSafe = true;
+                    CleanupFailedDuplication(
+                        roomAssetPath,
+                        artScenePath,
+                        ref cleanupSafe,
+                        ref room,
+                        ref error);
+                    RestoreActiveSceneAfterDraft(previousActive, draftScene, ref error);
+                    return false;
+                }
+
+                if (!FpgRoomArtSceneContractValidator.TryValidateScene(
+                        room,
+                        out error))
+                {
+                    error = "Draft Art Scene contract is invalid: " + error;
+                    bool cleanupSafe = true;
+                    CleanupFailedDuplication(
+                        roomAssetPath,
+                        artScenePath,
+                        ref cleanupSafe,
+                        ref room,
+                        ref error);
+                    RestoreActiveSceneAfterDraft(previousActive, draftScene, ref error);
+                    return false;
+                }
+
+                Scene currentActiveScene = SceneManager.GetActiveScene();
+                if (currentActiveScene != draftScene
+                    && !SceneManager.SetActiveScene(draftScene))
+                {
+                    string activeSceneName = currentActiveScene.IsValid()
+                        ? string.IsNullOrWhiteSpace(currentActiveScene.path)
+                            ? currentActiveScene.name
+                            : currentActiveScene.path
+                        : "<none>";
+                    error =
+                        $"Draft Art Scene '{artScenePath}' was created, but Unity could not make it active (valid: {draftScene.IsValid()}, loaded: {draftScene.isLoaded}, roots: {(draftScene.IsValid() ? draftScene.rootCount : 0)}, current active: '{activeSceneName}').";
+                    bool cleanupSafe = true;
+                    CleanupFailedDuplication(
+                        roomAssetPath,
+                        artScenePath,
+                        ref cleanupSafe,
+                        ref room,
+                        ref error);
+                    RestoreActiveSceneAfterDraft(previousActive, draftScene, ref error);
+                    return false;
+                }
+
+                error = string.Empty;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = "Could not create draft room: "
+                    + exception.GetBaseException().Message;
+                bool cleanupSafe = true;
+                CleanupFailedDuplication(
+                    roomAssetPath,
+                    artScenePath,
+                    ref cleanupSafe,
+                    ref room,
+                    ref error);
+                RestoreActiveSceneAfterDraft(previousActive, draftScene, ref error);
+                return false;
+            }
+        }
+
+
         public static bool TryDuplicateRoomWithArtScene(
             FpgRoomDefinition sourceRoom,
             string requestedRoomAssetPath,
+            bool registerForProduction,
+            out FpgRoomDefinition duplicateRoom,
+            out string error)
+        {
+            return TryDuplicateRoomWithArtScene(
+                sourceRoom,
+                requestedRoomAssetPath,
+                Path.GetFileNameWithoutExtension(requestedRoomAssetPath ?? string.Empty),
+                registerForProduction,
+                out duplicateRoom,
+                out error);
+        }
+
+        public static bool TryDuplicateRoomWithArtScene(
+            FpgRoomDefinition sourceRoom,
+            string requestedRoomAssetPath,
+            string requestedRoomName,
             bool registerForProduction,
             out FpgRoomDefinition duplicateRoom,
             out string error)
@@ -50,6 +247,24 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     out roomAssetPath,
                     out error))
             {
+                return false;
+            }
+
+            requestedRoomName = (requestedRoomName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(requestedRoomName)
+                || !string.Equals(
+                    requestedRoomName,
+                    Path.GetFileNameWithoutExtension(roomAssetPath),
+                    StringComparison.Ordinal))
+            {
+                error =
+                    "The requested room name must exactly match the RoomDefinition asset file name.";
+                return false;
+            }
+
+            if (AssetPathOccupied(roomAssetPath))
+            {
+                error = $"RoomDefinition output path '{roomAssetPath}' already exists.";
                 return false;
             }
 
@@ -95,18 +310,32 @@ namespace FPG.Demo.Editor.LevelAuthoring
             string sourceSceneDirectory = Path.GetDirectoryName(
                     sourceRoom.ArtScenePath)
                 ?.Replace('\\', '/');
-            string sourceSceneName = Path.GetFileNameWithoutExtension(
-                sourceRoom.ArtScenePath);
-            if (string.IsNullOrWhiteSpace(sourceSceneDirectory)
-                || string.IsNullOrWhiteSpace(sourceSceneName))
+            if (string.IsNullOrWhiteSpace(sourceSceneDirectory))
             {
                 error = "Source Art Scene path is not a valid Assets-relative path.";
                 return false;
             }
 
-            artScenePath = AssetDatabase.GenerateUniqueAssetPath(
-                sourceSceneDirectory + "/" + sourceSceneName + "_Copy.unity");
-            roomAssetPath = AssetDatabase.GenerateUniqueAssetPath(roomAssetPath);
+            artScenePath = sourceSceneDirectory + "/" + requestedRoomName + ".unity";
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRoot))
+            {
+                error = "Could not resolve the Unity project root.";
+                return false;
+            }
+            if (AssetPathOccupied(artScenePath))
+            {
+                error = $"Art Scene output path '{artScenePath}' already exists.";
+                return false;
+            }
+
+            if (!FpgCoverCameraProfileAuthoring.TryPreflightRoomDuplicateProfiles(
+                    sourceRoom,
+                    roomAssetPath,
+                    out error))
+            {
+                return false;
+            }
 
             try
             {
@@ -119,16 +348,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
 
                 duplicateRoom = UnityEngine.Object.Instantiate(sourceRoom);
-                duplicateRoom.name = Path.GetFileNameWithoutExtension(
-                    roomAssetPath);
+                duplicateRoom.name = requestedRoomName;
                 SerializedObject roomData = new SerializedObject(duplicateRoom);
                 roomData.FindProperty("roomId").stringValue = GenerateRoomId();
                 SerializedProperty displayName = roomData.FindProperty(
                     "displayName");
-                displayName.stringValue = string.IsNullOrWhiteSpace(
-                        displayName.stringValue)
-                    ? duplicateRoom.name
-                    : displayName.stringValue + " Copy";
+                displayName.stringValue = requestedRoomName;
                 SerializedProperty artScene = roomData.FindProperty("artScene");
                 artScene.FindPropertyRelative("sceneGuid").stringValue =
                     AssetDatabase.AssetPathToGUID(artScenePath);
@@ -215,10 +440,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         duplicationIsolationScene,
                         out string restoreError))
                 {
-                    duplicationSucceeded = false;
                     error = string.IsNullOrWhiteSpace(error)
                         ? restoreError
                         : error + " " + restoreError;
+                    if (duplicationSucceeded)
+                    {
+                        error += " The duplicate was created successfully and remains preserved; its source Art Scene could not be restored.";
+                    }
                 }
             }
 
@@ -253,12 +481,20 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     out canDeleteCreatedAssets,
                     out error))
             {
+                string registrationError = error;
+                error =
+                    "Room was copied, but production registration was not completed: "
+                    + registrationError;
                 if (!canDeleteCreatedAssets)
                 {
                     error +=
-                        " Registration rollback was incomplete; the created RoomDefinition and Art Scene were preserved to avoid dangling production references.";
+                        " Production registration rollback was incomplete; inspect the RoomCatalog and Build Settings before registering it again.";
                 }
-                return false;
+
+                // Copying the authoring assets is useful even when an existing
+                // catalog entry is invalid. Keep the new room and Art Scene so
+                // the author can repair the blocking data and register later.
+                return true;
             }
 
             return true;
@@ -818,8 +1054,36 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private static bool AssetExists(string assetPath)
         {
-            return !string.IsNullOrWhiteSpace(assetPath)
-                && AssetDatabase.LoadMainAssetAtPath(assetPath) != null;
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                return false;
+            }
+
+            if (AssetDatabase.LoadMainAssetAtPath(assetPath) != null)
+            {
+                return true;
+            }
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            return !string.IsNullOrWhiteSpace(projectRoot)
+                && File.Exists(ToAbsoluteProjectPath(projectRoot, assetPath));
+        }
+
+        private static bool AssetPathOccupied(string assetPath)
+        {
+            if (AssetExists(assetPath))
+            {
+                return true;
+            }
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRoot))
+            {
+                return false;
+            }
+
+            string absolutePath = ToAbsoluteProjectPath(projectRoot, assetPath);
+            return File.Exists(absolutePath + ".meta");
         }
 
         private static void TryDeleteBackupDirectory(string backupDirectory)
@@ -1296,6 +1560,809 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 .Any(candidate => candidate == room);
         }
 
+        public static bool TryRemoveRoomFromProduction(
+            FpgRoomDefinition room,
+            out string error)
+        {
+            try
+            {
+                error = string.Empty;
+                if (room == null)
+                {
+                    error = "Cannot remove a missing RoomDefinition from production.";
+                    return false;
+                }
+
+                if (!IsRoomRegistered(room)
+                    && !EditorBuildSettings.globalScenes.Any(scene =>
+                        scene != null
+                        && string.Equals(scene.path, room.ArtScenePath, StringComparison.Ordinal))
+                    && !EditorBuildSettings.scenes.Any(scene =>
+                        scene != null
+                        && string.Equals(scene.path, room.ArtScenePath, StringComparison.Ordinal)))
+                {
+                    return true;
+                }
+
+                if (EditorUtility.IsDirty(room))
+                {
+                    error = $"Save RoomDefinition '{room.name}' before changing production registration.";
+                    return false;
+                }
+
+                Scene roomScene = SceneManager.GetSceneByPath(room.ArtScenePath);
+                if (roomScene.IsValid() && roomScene.isLoaded && roomScene.isDirty)
+                {
+                    error = $"Save Art Scene '{roomScene.path}' before changing production registration.";
+                    return false;
+                }
+
+                FpgRoomCatalog catalog = AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(
+                    FpgRoomArtSceneEditorUtility.RoomCatalogPath);
+                if (catalog == null)
+                {
+                    error = "Room catalog is missing.";
+                    return false;
+                }
+
+                if (EditorUtility.IsDirty(catalog))
+                {
+                    error = "Save the production RoomCatalog before changing registration.";
+                    return false;
+                }
+
+                if (!TryLoadEditorBuildSettingsAsset(
+                        out EditorBuildSettings buildSettingsAsset,
+                        out error))
+                {
+                    return false;
+                }
+
+                if (EditorUtility.IsDirty(buildSettingsAsset))
+                {
+                    error = "Save Build Settings before changing production registration.";
+                    return false;
+                }
+
+                UnityEngine.Object dirtyBuildProfile = FindDirtyBuildProfile();
+                if (dirtyBuildProfile != null)
+                {
+                    error = $"Save Build Profile '{AssetDatabase.GetAssetPath(dirtyBuildProfile)}' before changing production registration.";
+                    return false;
+                }
+
+                FpgRoomDefinition[] originalRooms = catalog.Rooms.ToArray();
+                int roomIndex = Array.IndexOf(originalRooms, room);
+                List<FpgRoomDefinition> prospectiveRooms = roomIndex < 0
+                    ? new List<FpgRoomDefinition>(originalRooms)
+                    : originalRooms.Where(candidate => candidate != room).ToList();
+                if (prospectiveRooms.Count == 0)
+                {
+                    error = "The last production room cannot be removed. Register another room first.";
+                    return false;
+                }
+
+                if (!TryValidateRoomIdentitySet(prospectiveRooms, out error)
+                    || !FpgRoomArtSceneContractValidator.TryValidateUniqueReferences(
+                        prospectiveRooms,
+                        out error)
+                    || !TryValidateProductionRoomSet(prospectiveRooms, out error))
+                {
+                    return false;
+                }
+
+                prospectiveRooms.Sort((left, right) =>
+                    StringComparer.Ordinal.Compare(left.RoomId, right.RoomId));
+                if (!FpgProductionSceneList.TryBuild(
+                        prospectiveRooms,
+                        out string[] expectedScenes,
+                        out error))
+                {
+                    return false;
+                }
+
+                EditorBuildSettingsScene[] originalGlobalBuildSettings =
+                    EditorBuildSettings.globalScenes;
+                EditorBuildSettingsScene[] originalEffectiveBuildSettings =
+                    EditorBuildSettings.scenes;
+                EditorBuildSettingsScene[] targetBuildSettings = expectedScenes
+                    .Select(path => new EditorBuildSettingsScene(path, true))
+                    .ToArray();
+                bool globalBuildSettingsChanged =
+                    !FpgProductionSceneList.TryValidateConfiguredScenes(
+                        originalGlobalBuildSettings,
+                        expectedScenes,
+                        out _);
+                bool effectiveBuildSettingsValid =
+                    FpgProductionSceneList.TryValidateConfiguredScenes(
+                        originalEffectiveBuildSettings,
+                        expectedScenes,
+                        out _);
+                if (!globalBuildSettingsChanged && !effectiveBuildSettingsValid)
+                {
+                    error = "Active Build Settings override the global production scene list. Update or disable the active Build Profile override before removing rooms.";
+                    return false;
+                }
+
+                bool catalogChanged = !originalRooms.SequenceEqual(prospectiveRooms);
+                bool buildSettingsChanged = globalBuildSettingsChanged;
+                if (!catalogChanged && !buildSettingsChanged)
+                {
+                    return true;
+                }
+
+                try
+                {
+                    if (catalogChanged
+                        && !TrySetCatalogRooms(catalog, prospectiveRooms, out error))
+                    {
+                        return false;
+                    }
+
+                    if (!FpgRoomArtSceneContractValidator.TryValidateCatalog(
+                            out error))
+                    {
+                        RestoreProductionRegistration(
+                            catalog,
+                            originalRooms,
+                            originalGlobalBuildSettings,
+                            catalogChanged,
+                            buildSettingsChanged,
+                            ref error);
+                        return false;
+                    }
+
+                    if (catalogChanged && !TryPersistCatalog(catalog, out error))
+                    {
+                        RestoreProductionRegistration(
+                            catalog,
+                            originalRooms,
+                            originalGlobalBuildSettings,
+                            catalogChanged,
+                            buildSettingsChanged,
+                            ref error);
+                        return false;
+                    }
+
+                    if (buildSettingsChanged)
+                    {
+                        EditorBuildSettings.globalScenes = targetBuildSettings;
+                    }
+
+                bool globalSettingsValid =
+                    FpgProductionSceneList.TryValidateConfiguredScenes(
+                        EditorBuildSettings.globalScenes,
+                        expectedScenes,
+                        out error);
+                bool effectiveSettingsValid =
+                    FpgProductionSceneList.TryValidateConfiguredScenes(
+                        EditorBuildSettings.scenes,
+                        expectedScenes,
+                        out string effectiveError);
+                if (!globalSettingsValid || !effectiveSettingsValid)
+                {
+                    if (!effectiveSettingsValid)
+                    {
+                        error = "Active Build Settings are invalid: " + effectiveError;
+                    }
+                    RestoreProductionRegistration(
+                        catalog,
+                        originalRooms,
+                        originalGlobalBuildSettings,
+                        catalogChanged,
+                        buildSettingsChanged,
+                        ref error);
+                    return false;
+                }
+
+                    if (buildSettingsChanged
+                        && !TryPersistEditorBuildSettings(
+                            buildSettingsAsset,
+                            out error))
+                    {
+                        RestoreProductionRegistration(
+                            catalog,
+                            originalRooms,
+                            originalGlobalBuildSettings,
+                            catalogChanged,
+                            buildSettingsChanged,
+                            ref error);
+                        return false;
+                    }
+
+                    return true;
+                }
+                catch (Exception exception)
+                {
+                    error = exception.GetBaseException().Message;
+                    RestoreProductionRegistration(
+                        catalog,
+                        originalRooms,
+                        originalGlobalBuildSettings,
+                        catalogChanged,
+                        buildSettingsChanged,
+                        ref error);
+                    return false;
+                }
+            }
+            catch (Exception exception)
+            {
+                error = "Could not remove room from production: "
+                    + exception.GetBaseException().Message;
+                return false;
+            }
+        }
+
+        public static bool TryGetRoomDeletionPlan(
+            FpgRoomDefinition room,
+            out string report,
+            out bool canDelete,
+            out string error)
+        {
+            report = string.Empty;
+            canDelete = false;
+            error = string.Empty;
+            if (room == null)
+            {
+                error = "A RoomDefinition is required.";
+                return false;
+            }
+
+            string roomPath = AssetDatabase.GetAssetPath(room);
+            if (string.IsNullOrWhiteSpace(roomPath)
+                || !roomPath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                error = "RoomDefinition must be a saved project asset.";
+                return false;
+            }
+
+            string scenePath = room.ArtScenePath;
+            if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    room,
+                    out string sceneReferenceError))
+            {
+                error = "Cannot safely determine the room-owned Art Scene: "
+                    + sceneReferenceError;
+                return false;
+            }
+
+            List<string> lines = new List<string>
+            {
+                "Assets to delete:",
+                $"- RoomDefinition: {roomPath}",
+                $"- Art Scene: {scenePath}"
+            };
+            List<string> blockers = new List<string>();
+            if (EditorUtility.IsDirty(room))
+            {
+                blockers.Add($"RoomDefinition '{roomPath}' has unsaved changes.");
+            }
+
+            Scene loadedScene = SceneManager.GetSceneByPath(scenePath);
+            if (loadedScene.IsValid() && loadedScene.isLoaded && loadedScene.isDirty)
+            {
+                blockers.Add($"Art Scene '{scenePath}' has unsaved changes.");
+            }
+
+            bool registered = IsRoomRegistered(room);
+            if (registered)
+            {
+                FpgRoomCatalog catalog = AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(
+                    FpgRoomArtSceneEditorUtility.RoomCatalogPath);
+                if (catalog != null && catalog.Count <= 1)
+                {
+                    blockers.Add("This is the last production room. Register another room before deleting it.");
+                }
+                lines.Add("Production registration: will be removed from RoomCatalog and Build Settings.");
+            }
+            else if (EditorBuildSettings.scenes.Any(scene =>
+                         scene != null
+                         && string.Equals(scene.path, scenePath, StringComparison.Ordinal))
+                     || EditorBuildSettings.globalScenes.Any(scene =>
+                         scene != null
+                         && string.Equals(scene.path, scenePath, StringComparison.Ordinal)))
+            {
+                blockers.Add($"Build Settings reference '{scenePath}', but the room is not registered in RoomCatalog.");
+            }
+
+            string[] excludedRoomReferencePaths =
+            {
+                roomPath,
+                scenePath,
+                FpgRoomArtSceneEditorUtility.RoomCatalogPath
+            };
+            if (!TryFindDirectAssetReferences(
+                    roomPath,
+                    excludedRoomReferencePaths,
+                    out List<string> roomReferences,
+                    out error))
+            {
+                return false;
+            }
+            for (int index = 0; index < roomReferences.Count; index++)
+            {
+                blockers.Add($"RoomDefinition is referenced by '{roomReferences[index]}'.");
+            }
+
+            if (!TryFindDirectAssetReferences(
+                    scenePath,
+                    new[] { roomPath, scenePath },
+                    out List<string> sceneReferences,
+                    out error))
+            {
+                return false;
+            }
+            for (int index = 0; index < sceneReferences.Count; index++)
+            {
+                blockers.Add($"Art Scene is referenced by '{sceneReferences[index]}'.");
+            }
+
+            FpgRoomDefinition[] allRooms =
+                FpgRoomArtSceneEditorUtility.LoadAllRooms();
+            for (int index = 0; index < allRooms.Length; index++)
+            {
+                FpgRoomDefinition otherRoom = allRooms[index];
+                if (otherRoom == null || otherRoom == room)
+                {
+                    continue;
+                }
+
+                string otherRoomPath = AssetDatabase.GetAssetPath(otherRoom);
+                FpgRoomArtSceneReference otherReference = otherRoom.ArtScene;
+                if (otherReference != null
+                    && (string.Equals(
+                            otherReference.SceneGuid,
+                            room.ArtScene.SceneGuid,
+                            StringComparison.Ordinal)
+                        || string.Equals(
+                            otherReference.ScenePath,
+                            scenePath,
+                            StringComparison.Ordinal)))
+                {
+                    blockers.Add(
+                        $"Art Scene is also assigned to RoomDefinition '{otherRoomPath}'.");
+                }
+            }
+
+            List<FpgCoverCameraProfile> profiles = new List<FpgCoverCameraProfile>();
+            SerializedObject roomData = new SerializedObject(room);
+            SerializedProperty covers = roomData.FindProperty("coverSlots");
+            if (covers != null && covers.isArray)
+            {
+                for (int coverIndex = 0; coverIndex < covers.arraySize; coverIndex++)
+                {
+                    FpgCoverCameraProfile profile = covers
+                        .GetArrayElementAtIndex(coverIndex)
+                        .FindPropertyRelative("cameraProfile")
+                        ?.objectReferenceValue as FpgCoverCameraProfile;
+                    if (profile != null && !profiles.Contains(profile))
+                    {
+                        profiles.Add(profile);
+                    }
+                }
+            }
+
+            List<string> profilePathsToDelete = new List<string>();
+            for (int index = 0; index < profiles.Count; index++)
+            {
+                FpgCoverCameraProfile profile = profiles[index];
+                string profilePath = AssetDatabase.GetAssetPath(profile);
+                if (string.IsNullOrWhiteSpace(profilePath))
+                {
+                    blockers.Add($"Camera profile '{profile.name}' is not a saved asset and cannot be safely classified.");
+                    continue;
+                }
+
+                if (string.Equals(
+                        profilePath,
+                        FpgCoverCameraProfileAuthoring.DefaultTemplatePath,
+                        StringComparison.Ordinal))
+                {
+                    lines.Add($"- Shared camera template retained: {profilePath}");
+                    continue;
+                }
+
+                if (!TryFindDirectAssetReferences(
+                        profilePath,
+                        new[] { roomPath, scenePath, profilePath },
+                        out List<string> profileReferences,
+                        out error))
+                {
+                    return false;
+                }
+
+                if (profileReferences.Count == 0)
+                {
+                    if (EditorUtility.IsDirty(profile))
+                    {
+                        blockers.Add(
+                            $"Camera profile '{profilePath}' has unsaved changes and would be deleted.");
+                    }
+                    else
+                    {
+                        profilePathsToDelete.Add(profilePath);
+                        lines.Add($"- Unreferenced camera profile: {profilePath}");
+                    }
+                }
+                else
+                {
+                    for (int referenceIndex = 0;
+                        referenceIndex < profileReferences.Count;
+                        referenceIndex++)
+                    {
+                        blockers.Add($"Camera profile '{profilePath}' is also referenced by '{profileReferences[referenceIndex]}'.");
+                    }
+                }
+            }
+
+            if (profilePathsToDelete.Count == 0)
+            {
+                lines.Add("- No unreferenced camera profiles will be deleted.");
+            }
+
+            if (blockers.Count > 0)
+            {
+                lines.Add(string.Empty);
+                lines.Add("Deletion blocked:");
+                lines.AddRange(blockers.Select(blocker => "- " + blocker));
+            }
+
+            report = string.Join(Environment.NewLine, lines);
+            canDelete = blockers.Count == 0;
+            return true;
+        }
+
+        public static bool TryDeleteRoomCompletely(
+            FpgRoomDefinition room,
+            out string error)
+        {
+            error = string.Empty;
+            if (!TryGetRoomDeletionPlan(
+                    room,
+                    out string plan,
+                    out bool canDelete,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!canDelete)
+            {
+                error = plan;
+                return false;
+            }
+
+            string roomPath = AssetDatabase.GetAssetPath(room);
+            string scenePath = room.ArtScenePath;
+            List<FpgCoverCameraProfile> profiles = GetRoomCameraProfiles(room);
+            List<string> deletePaths = new List<string> { roomPath, scenePath };
+            for (int index = 0; index < profiles.Count; index++)
+            {
+                string profilePath = AssetDatabase.GetAssetPath(profiles[index]);
+                if (!string.IsNullOrWhiteSpace(profilePath)
+                    && !string.Equals(
+                        profilePath,
+                        FpgCoverCameraProfileAuthoring.DefaultTemplatePath,
+                        StringComparison.Ordinal))
+                {
+                    deletePaths.Add(profilePath);
+                }
+            }
+
+            bool wasRegistered = IsRoomRegistered(room);
+            FpgRoomCatalog productionCatalog = AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(
+                FpgRoomArtSceneEditorUtility.RoomCatalogPath);
+            FpgRoomDefinition[] originalProductionRooms = productionCatalog == null
+                ? Array.Empty<FpgRoomDefinition>()
+                : productionCatalog.Rooms.ToArray();
+            EditorBuildSettingsScene[] originalProductionBuildSettings =
+                EditorBuildSettings.globalScenes.ToArray();
+
+            if (wasRegistered)
+            {
+                if (productionCatalog == null
+                    || EditorUtility.IsDirty(productionCatalog))
+                {
+                    error = productionCatalog == null
+                        ? "RoomCatalog is missing; the production registration cannot be backed up."
+                        : "Save the production RoomCatalog before deleting the room.";
+                    return false;
+                }
+
+                if (!TryLoadEditorBuildSettingsAsset(
+                        out EditorBuildSettings buildSettingsAsset,
+                        out error))
+                {
+                    return false;
+                }
+                if (EditorUtility.IsDirty(buildSettingsAsset))
+                {
+                    error = "Save Build Settings before deleting the room.";
+                    return false;
+                }
+
+                UnityEngine.Object dirtyBuildProfile = FindDirtyBuildProfile();
+                if (dirtyBuildProfile != null)
+                {
+                    error = $"Save Build Profile '{AssetDatabase.GetAssetPath(dirtyBuildProfile)}' before deleting the room.";
+                    return false;
+                }
+            }
+
+            List<string> backupPaths = new List<string>(deletePaths);
+            if (wasRegistered)
+            {
+                backupPaths.Add(FpgRoomArtSceneEditorUtility.RoomCatalogPath);
+                backupPaths.Add(EditorBuildSettingsAssetPath);
+            }
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRoot))
+            {
+                error = "Could not resolve the Unity project root for deletion rollback.";
+                return false;
+            }
+
+            string backupDirectory = Path.Combine(
+                projectRoot,
+                "Temp",
+                "FpgRoomDeletion_" + Guid.NewGuid().ToString("N"));
+            List<RoomAssetBackup> backups = new List<RoomAssetBackup>();
+            List<string> backupAssetPaths = new List<string>(backupPaths.Count);
+            HashSet<string> uniqueSourcePaths = new HashSet<string>(
+                StringComparer.Ordinal);
+            HashSet<string> uniqueBackupPaths = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+            if (Directory.Exists(backupDirectory) || File.Exists(backupDirectory))
+            {
+                error = $"Deletion rollback directory '{backupDirectory}' is already occupied.";
+                return false;
+            }
+
+            for (int index = 0; index < backupPaths.Count; index++)
+            {
+                string assetPath = backupPaths[index];
+                if (!uniqueSourcePaths.Add(assetPath))
+                {
+                    error = $"Deletion rollback source '{assetPath}' appears more than once.";
+                    return false;
+                }
+
+                string backupAssetPath = BuildDeletionBackupAssetPath(
+                    backupDirectory,
+                    assetPath,
+                    index);
+                if (!uniqueBackupPaths.Add(backupAssetPath))
+                {
+                    error = $"Deletion rollback backup path '{backupAssetPath}' is not unique.";
+                    return false;
+                }
+
+                if (File.Exists(backupAssetPath)
+                    || File.Exists(backupAssetPath + ".meta"))
+                {
+                    error = $"Deletion rollback backup path '{backupAssetPath}' is already occupied.";
+                    return false;
+                }
+
+                backupAssetPaths.Add(backupAssetPath);
+            }
+
+            try
+            {
+                Directory.CreateDirectory(backupDirectory);
+                for (int index = 0; index < backupPaths.Count; index++)
+                {
+                    string assetPath = backupPaths[index];
+                    if (!AssetExists(assetPath))
+                    {
+                        error = $"Expected rollback source '{assetPath}' is missing.";
+                        TryDeleteBackupDirectory(backupDirectory);
+                        return false;
+                    }
+
+                    string absoluteAssetPath = ToAbsoluteProjectPath(
+                        projectRoot,
+                        assetPath);
+                    string backupAssetPath = backupAssetPaths[index];
+                    bool hasMetaFile = assetPath.StartsWith(
+                        "Assets/",
+                        StringComparison.Ordinal);
+                    if (hasMetaFile)
+                    {
+                        CopyAssetFiles(absoluteAssetPath, backupAssetPath);
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(backupDirectory);
+                        File.Copy(absoluteAssetPath, backupAssetPath, true);
+                    }
+                    backups.Add(new RoomAssetBackup
+                    {
+                        assetPath = assetPath,
+                        absoluteAssetPath = absoluteAssetPath,
+                        backupAssetPath = backupAssetPath,
+                        guid = hasMetaFile
+                            ? AssetDatabase.AssetPathToGUID(assetPath)
+                            : string.Empty,
+                        hasMetaFile = hasMetaFile
+                    });
+                }
+            }
+            catch (Exception exception)
+            {
+                TryDeleteBackupDirectory(backupDirectory);
+                error = "Could not create deletion rollback backup: "
+                    + exception.GetBaseException().Message;
+                return false;
+            }
+
+            if (!TryCloseRoomSceneForDeletion(
+                    scenePath,
+                    out bool sceneWasLoaded,
+                    out Scene previousActive,
+                    out Scene isolationScene,
+                    out error))
+            {
+                RestoreRoomSceneAfterDeletion(
+                    scenePath,
+                    sceneWasLoaded,
+                    previousActive,
+                    isolationScene,
+                    ref error);
+                TryDeleteBackupDirectory(backupDirectory);
+                return false;
+            }
+
+            if (wasRegistered && !TryRemoveRoomFromProduction(room, out error))
+            {
+                string removalError = error;
+                bool registrationRestored = productionCatalog != null
+                    && RestoreProductionRegistration(
+                        productionCatalog,
+                        originalProductionRooms,
+                        originalProductionBuildSettings,
+                        true,
+                        true,
+                        ref error);
+                if (!registrationRestored)
+                {
+                    registrationRestored = TryRestoreProductionRegistrationFromBackups(
+                        backups,
+                        originalProductionRooms,
+                        originalProductionBuildSettings,
+                        out string backupRestoreError);
+                    if (!registrationRestored)
+                    {
+                        error = removalError + " Production registration recovery failed: "
+                            + backupRestoreError
+                            + $". Recovery files remain at '{backupDirectory}'.";
+                    }
+                    else
+                    {
+                        error = removalError
+                            + " Production registration was restored from its rollback files.";
+                    }
+                }
+                else
+                {
+                    error = removalError
+                        + " Production registration was restored.";
+                }
+
+                RestoreRoomSceneAfterDeletion(
+                    scenePath,
+                    sceneWasLoaded,
+                    previousActive,
+                    isolationScene,
+                    ref error);
+                if (registrationRestored)
+                {
+                    TryDeleteBackupDirectory(backupDirectory);
+                }
+                return false;
+            }
+
+            string deleteError = string.Empty;
+            for (int index = 0; index < deletePaths.Count; index++)
+            {
+                string assetPath = deletePaths[index];
+                try
+                {
+                    if (!AssetDatabase.DeleteAsset(assetPath)
+                        || AssetExists(assetPath))
+                    {
+                        deleteError = $"Could not delete '{assetPath}'.";
+                        break;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    deleteError = $"Could not delete '{assetPath}': {exception.GetBaseException().Message}";
+                    break;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(deleteError))
+            {
+                try
+                {
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                    if (deletePaths.Any(AssetExists))
+                    {
+                        deleteError = "Unity still reports one or more deleted room assets.";
+                    }
+                }
+                catch (Exception exception)
+                {
+                    deleteError = "AssetDatabase refresh after deletion failed: "
+                        + exception.GetBaseException().Message;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(deleteError))
+            {
+                bool restored = TryRestoreRoomAssetSet(backups, out string restoreError);
+                if (restored && wasRegistered && productionCatalog != null
+                    && !RestoreProductionRegistration(
+                        productionCatalog,
+                        originalProductionRooms,
+                        originalProductionBuildSettings,
+                        true,
+                        true,
+                        ref restoreError))
+                {
+                    restored = TryRestoreProductionRegistrationFromBackups(
+                        backups,
+                        originalProductionRooms,
+                        originalProductionBuildSettings,
+                        out string backupRestoreError);
+                    if (!restored)
+                    {
+                        restoreError += " Rollback-file recovery failed: "
+                            + backupRestoreError;
+                    }
+                }
+
+                error = deleteError;
+                if (restored)
+                {
+                    error += " All room assets and production registration were restored.";
+                    TryDeleteBackupDirectory(backupDirectory);
+                }
+                else
+                {
+                    error += " Automatic rollback failed: " + restoreError
+                        + $". Recovery files remain at '{backupDirectory}'.";
+                }
+
+                RestoreRoomSceneAfterDeletion(
+                    scenePath,
+                    sceneWasLoaded,
+                    previousActive,
+                    isolationScene,
+                    ref error);
+                return false;
+            }
+
+            TryDeleteBackupDirectory(backupDirectory);
+            CompleteRoomSceneDeletion(previousActive, isolationScene);
+            error = string.Empty;
+            return true;
+        }
+
+        private static string BuildDeletionBackupAssetPath(
+            string backupDirectory,
+            string assetPath,
+            int index)
+        {
+            return Path.Combine(
+                backupDirectory,
+                index.ToString("D4", CultureInfo.InvariantCulture)
+                    + "_"
+                    + Path.GetFileName(assetPath));
+        }
+
         [MenuItem("FPG Demo/Room Authoring/Repair Selected Room Production Contract")]
         private static void RepairSelectedRoomProductionContract()
         {
@@ -1357,19 +2424,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 .Where(candidate =>
                     (candidate.hideFlags & HideFlags.DontSaveInEditor) == 0)
                 .ToArray();
-            if (sceneRoots.Length != 1)
+            List<FpgRoomArtRoot> candidates = new List<FpgRoomArtRoot>();
+            for (int index = 0; index < sceneRoots.Length; index++)
             {
-                error =
-                    $"Art Scene '{scene.path}' must contain exactly one scene root; found {sceneRoots.Length}.";
-                return false;
+                candidates.AddRange(
+                    sceneRoots[index].GetComponentsInChildren<FpgRoomArtRoot>(true));
             }
 
-            FpgRoomArtRoot[] candidates = sceneRoots[0]
-                .GetComponentsInChildren<FpgRoomArtRoot>(true);
-            if (candidates.Length != 1 || candidates[0].gameObject != sceneRoots[0])
+            if (candidates.Count != 1 || candidates[0].transform.parent != null)
             {
-                error =
-                    $"Art Scene '{scene.path}' must contain exactly one FpgRoomArtRoot on its sole scene root.";
+                error = candidates.Count != 1
+                    ? $"Art Scene '{scene.path}' must contain exactly one FpgRoomArtRoot; found {candidates.Count}."
+                    : $"Art Scene '{scene.path}' FpgRoomArtRoot must be attached to a scene root.";
                 return false;
             }
 
@@ -1431,6 +2497,374 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 error += $" Rollback failed: {rollbackError}";
             }
+        }
+
+        private static List<FpgCoverCameraProfile> GetRoomCameraProfiles(
+            FpgRoomDefinition room)
+        {
+            List<FpgCoverCameraProfile> profiles =
+                new List<FpgCoverCameraProfile>();
+            if (room == null)
+            {
+                return profiles;
+            }
+
+            SerializedObject roomData = new SerializedObject(room);
+            SerializedProperty covers = roomData.FindProperty("coverSlots");
+            if (covers == null || !covers.isArray)
+            {
+                return profiles;
+            }
+
+            for (int index = 0; index < covers.arraySize; index++)
+            {
+                FpgCoverCameraProfile profile = covers
+                    .GetArrayElementAtIndex(index)
+                    .FindPropertyRelative("cameraProfile")
+                    ?.objectReferenceValue as FpgCoverCameraProfile;
+                if (profile != null && !profiles.Contains(profile))
+                {
+                    profiles.Add(profile);
+                }
+            }
+
+            return profiles;
+        }
+
+        private static bool TryFindDirectAssetReferences(
+            string targetAssetPath,
+            IReadOnlyCollection<string> excludedPaths,
+            out List<string> references,
+            out string error)
+        {
+            references = new List<string>();
+            error = string.Empty;
+            if (string.IsNullOrWhiteSpace(targetAssetPath))
+            {
+                error = "Reference scan requires a valid target asset path.";
+                return false;
+            }
+
+            HashSet<string> excluded = new HashSet<string>(
+                excludedPaths ?? Array.Empty<string>(),
+                StringComparer.Ordinal);
+            string[] allPaths = AssetDatabase.GetAllAssetPaths();
+            for (int index = 0; index < allPaths.Length; index++)
+            {
+                string candidatePath = allPaths[index];
+                if (string.IsNullOrWhiteSpace(candidatePath)
+                    || excluded.Contains(candidatePath)
+                    || !candidatePath.StartsWith("Assets/", StringComparison.Ordinal)
+                        && !candidatePath.StartsWith("Packages/", StringComparison.Ordinal)
+                    || AssetDatabase.IsValidFolder(candidatePath))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    string[] dependencies = AssetDatabase.GetDependencies(
+                        candidatePath,
+                        false);
+                    if (dependencies.Any(dependency => string.Equals(
+                            dependency,
+                            targetAssetPath,
+                            StringComparison.Ordinal)))
+                    {
+                        references.Add(candidatePath);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    error = $"Could not scan references from '{candidatePath}': "
+                        + exception.GetBaseException().Message;
+                    return false;
+                }
+            }
+
+            references.Sort(StringComparer.Ordinal);
+            return true;
+        }
+
+        private static bool TryEnsureAssetFolder(
+            string folderPath,
+            out string error)
+        {
+            string normalized = (folderPath ?? string.Empty).Replace('\\', '/');
+            if (!normalized.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                error = $"Art Scene folder '{normalized}' must be inside Assets.";
+                return false;
+            }
+
+            string[] segments = normalized.Split('/');
+            string current = segments[0];
+            for (int index = 1; index < segments.Length; index++)
+            {
+                string next = current + "/" + segments[index];
+                if (!AssetDatabase.IsValidFolder(next))
+                {
+                    string guid = AssetDatabase.CreateFolder(current, segments[index]);
+                    if (string.IsNullOrWhiteSpace(guid))
+                    {
+                        error = $"Could not create Art Scene folder '{next}'.";
+                        return false;
+                    }
+                }
+
+                current = next;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static void RestoreActiveSceneAfterDraft(
+            Scene previousActive,
+            Scene draftScene,
+            ref string error)
+        {
+            try
+            {
+                if (previousActive.IsValid()
+                    && previousActive.isLoaded
+                    && SceneManager.GetActiveScene() != previousActive
+                    && !SceneManager.SetActiveScene(previousActive))
+                {
+                    error += $" Could not restore active Scene '{previousActive.path}'.";
+                }
+
+                if (draftScene.IsValid()
+                    && draftScene.isLoaded
+                    && !draftScene.isDirty
+                    && !EditorSceneManager.CloseScene(draftScene, true))
+                {
+                    error += $" Temporary draft Scene '{draftScene.path}' remains open.";
+                }
+            }
+            catch (Exception exception)
+            {
+                error += " Draft Scene cleanup failed: "
+                    + exception.GetBaseException().Message;
+            }
+        }
+
+        private static bool TryCloseRoomSceneForDeletion(
+            string scenePath,
+            out bool wasLoaded,
+            out Scene previousActive,
+            out Scene isolationScene,
+            out string error)
+        {
+            previousActive = SceneManager.GetActiveScene();
+            isolationScene = default;
+            Scene scene = SceneManager.GetSceneByPath(scenePath);
+            wasLoaded = scene.IsValid() && scene.isLoaded;
+            if (!wasLoaded)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            if (scene.isDirty)
+            {
+                error = $"Save Art Scene '{scenePath}' before deleting the room.";
+                return false;
+            }
+
+            if (SceneManager.GetActiveScene() == scene)
+            {
+                Scene replacement = default;
+                for (int index = 0; index < SceneManager.sceneCount; index++)
+                {
+                    Scene candidate = SceneManager.GetSceneAt(index);
+                    if (candidate.IsValid() && candidate.isLoaded && candidate != scene)
+                    {
+                        replacement = candidate;
+                        break;
+                    }
+                }
+
+                if (!replacement.IsValid())
+                {
+                    isolationScene = EditorSceneManager.NewScene(
+                        NewSceneSetup.EmptyScene,
+                        NewSceneMode.Additive);
+                    replacement = isolationScene;
+                }
+
+                if (!replacement.IsValid()
+                    || !replacement.isLoaded
+                    || !SceneManager.SetActiveScene(replacement))
+                {
+                    error = "Could not activate a replacement Scene before deleting the Art Scene.";
+                    return false;
+                }
+            }
+
+            if (!EditorSceneManager.CloseScene(scene, true))
+            {
+                if (previousActive.IsValid()
+                    && previousActive.isLoaded
+                    && SceneManager.GetActiveScene() != previousActive)
+                {
+                    SceneManager.SetActiveScene(previousActive);
+                }
+                error = $"Could not close Art Scene '{scenePath}' before deletion.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static void RestoreRoomSceneAfterDeletion(
+            string scenePath,
+            bool sceneWasLoaded,
+            Scene previousActive,
+            Scene isolationScene,
+            ref string error)
+        {
+            try
+            {
+                Scene restoredScene = SceneManager.GetSceneByPath(scenePath);
+                if (sceneWasLoaded
+                    && (!restoredScene.IsValid() || !restoredScene.isLoaded)
+                    && AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) != null)
+                {
+                    restoredScene = EditorSceneManager.OpenScene(
+                        scenePath,
+                        OpenSceneMode.Additive);
+                }
+
+                Scene targetActive = previousActive;
+                if (string.Equals(previousActive.path, scenePath, StringComparison.Ordinal))
+                {
+                    targetActive = restoredScene;
+                }
+                if ((!targetActive.IsValid() || !targetActive.isLoaded)
+                    && restoredScene.IsValid()
+                    && restoredScene.isLoaded)
+                {
+                    targetActive = restoredScene;
+                }
+                if (targetActive.IsValid()
+                    && targetActive.isLoaded
+                    && SceneManager.GetActiveScene() != targetActive
+                    && !SceneManager.SetActiveScene(targetActive))
+                {
+                    error += $" Could not restore active Scene '{targetActive.path}'.";
+                }
+
+                if (isolationScene.IsValid()
+                    && isolationScene.isLoaded
+                    && SceneManager.sceneCount > 1
+                    && SceneManager.GetActiveScene() != isolationScene
+                    && !EditorSceneManager.CloseScene(isolationScene, true))
+                {
+                    error += " Could not close the temporary isolation Scene.";
+                }
+            }
+            catch (Exception exception)
+            {
+                error += " Art Scene restoration failed: "
+                    + exception.GetBaseException().Message;
+            }
+        }
+
+        private static void CompleteRoomSceneDeletion(
+            Scene previousActive,
+            Scene isolationScene)
+        {
+            if (previousActive.IsValid()
+                && previousActive.isLoaded
+                && !string.IsNullOrWhiteSpace(previousActive.path)
+                && AssetDatabase.LoadAssetAtPath<SceneAsset>(previousActive.path) != null
+                && SceneManager.GetActiveScene() != previousActive)
+            {
+                SceneManager.SetActiveScene(previousActive);
+            }
+
+            if (isolationScene.IsValid()
+                && isolationScene.isLoaded
+                && SceneManager.sceneCount > 1)
+            {
+                EditorSceneManager.CloseScene(isolationScene, true);
+            }
+        }
+
+        private static bool TryRestoreRoomAssetSet(
+            IReadOnlyList<RoomAssetBackup> backups,
+            out string error)
+        {
+            List<string> failures = new List<string>();
+            if (backups == null)
+            {
+                error = "Room deletion backups are missing.";
+                return false;
+            }
+
+            for (int index = 0; index < backups.Count; index++)
+            {
+                RoomAssetBackup backup = backups[index];
+                bool restored;
+                string restoreError;
+                if (backup.hasMetaFile)
+                {
+                    restored = TryRestoreAssetFiles(
+                        backup.absoluteAssetPath,
+                        backup.backupAssetPath,
+                        out restoreError);
+                }
+                else
+                {
+                    restored = TryRestoreFile(
+                        backup.backupAssetPath,
+                        backup.absoluteAssetPath,
+                        out restoreError);
+                }
+                if (!restored)
+                {
+                    failures.Add($"'{backup.assetPath}': {restoreError}");
+                }
+            }
+
+            try
+            {
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            }
+            catch (Exception exception)
+            {
+                failures.Add("AssetDatabase refresh: "
+                    + exception.GetBaseException().Message);
+            }
+
+            for (int index = 0; index < backups.Count; index++)
+            {
+                RoomAssetBackup backup = backups[index];
+                bool identityMatches = false;
+                try
+                {
+                    identityMatches = backup.hasMetaFile
+                        ? AssetHasGuid(backup.assetPath, backup.guid)
+                        : File.Exists(backup.absoluteAssetPath)
+                            && FilesHaveSameContents(
+                                backup.backupAssetPath,
+                                backup.absoluteAssetPath);
+                }
+                catch (Exception exception)
+                {
+                    failures.Add($"'{backup.assetPath}' verification failed: "
+                        + exception.GetBaseException().Message);
+                }
+                if (!identityMatches)
+                {
+                    failures.Add($"Identity check failed for '{backup.assetPath}'.");
+                }
+            }
+
+            error = string.Join(" ", failures);
+            return failures.Count == 0;
         }
 
         private static bool TrySetCatalogRooms(
@@ -1649,6 +3083,81 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         }
 
+        private static bool ProductionRegistrationMatches(
+            IReadOnlyList<FpgRoomDefinition> originalRooms,
+            IReadOnlyList<EditorBuildSettingsScene> originalGlobalBuildSettings,
+            out string error)
+        {
+            FpgRoomCatalog catalog = AssetDatabase.LoadAssetAtPath<FpgRoomCatalog>(
+                FpgRoomArtSceneEditorUtility.RoomCatalogPath);
+            bool catalogMatches = catalog != null
+                && catalog.Rooms.SequenceEqual(originalRooms ?? Array.Empty<FpgRoomDefinition>());
+            EditorBuildSettingsScene[] currentBuildSettings =
+                EditorBuildSettings.globalScenes;
+            bool buildSettingsMatch = originalGlobalBuildSettings != null
+                && currentBuildSettings.Length == originalGlobalBuildSettings.Count
+                && Enumerable.Range(0, currentBuildSettings.Length).All(index =>
+                    currentBuildSettings[index] != null
+                    && originalGlobalBuildSettings[index] != null
+                    && string.Equals(
+                        currentBuildSettings[index].path,
+                        originalGlobalBuildSettings[index].path,
+                        StringComparison.Ordinal)
+                    && currentBuildSettings[index].enabled
+                        == originalGlobalBuildSettings[index].enabled);
+            if (catalogMatches && buildSettingsMatch)
+            {
+                error = string.Empty;
+                return true;
+            }
+
+            List<string> failures = new List<string>();
+            if (!catalogMatches)
+            {
+                failures.Add("RoomCatalog does not match its pre-operation snapshot.");
+            }
+            if (!buildSettingsMatch)
+            {
+                failures.Add("Build Settings do not match their pre-operation snapshot.");
+            }
+            error = string.Join(" ", failures);
+            return false;
+        }
+
+        private static bool TryRestoreProductionRegistrationFromBackups(
+            IReadOnlyList<RoomAssetBackup> backups,
+            IReadOnlyList<FpgRoomDefinition> originalRooms,
+            IReadOnlyList<EditorBuildSettingsScene> originalGlobalBuildSettings,
+            out string error)
+        {
+            if (!TryRestoreRoomAssetSet(backups, out error))
+            {
+                return false;
+            }
+
+            try
+            {
+                AssetDatabase.ImportAsset(
+                    FpgRoomArtSceneEditorUtility.RoomCatalogPath,
+                    ImportAssetOptions.ForceUpdate
+                        | ImportAssetOptions.ForceSynchronousImport);
+                EditorBuildSettings.globalScenes =
+                    originalGlobalBuildSettings?.ToArray()
+                    ?? Array.Empty<EditorBuildSettingsScene>();
+            }
+            catch (Exception exception)
+            {
+                error = "Could not reload restored production settings: "
+                    + exception.GetBaseException().Message;
+                return false;
+            }
+
+            return ProductionRegistrationMatches(
+                originalRooms,
+                originalGlobalBuildSettings,
+                out error);
+        }
+
         private static bool TryValidateProductionRoomSet(
             IReadOnlyList<FpgRoomDefinition> rooms,
             out string error)
@@ -1740,7 +3249,16 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (!normalizedPath.StartsWith("Assets/", StringComparison.Ordinal)
                 || !normalizedPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase))
             {
-                error = "Duplicate Room asset path must be an Assets-relative .asset path.";
+                error = "Room asset path must be an Assets-relative .asset path.";
+                return false;
+            }
+
+            string fileName = Path.GetFileNameWithoutExtension(normalizedPath);
+            if (string.IsNullOrWhiteSpace(fileName)
+                || !string.Equals(fileName, fileName.Trim(), StringComparison.Ordinal)
+                || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                error = "Room name must be a non-empty file name without invalid characters or surrounding spaces.";
                 return false;
             }
 

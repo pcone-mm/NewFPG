@@ -190,6 +190,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         internal void PrepareForSceneSaveOrSwitch()
         {
+            StopCameraPreviewInternal(
+                "Scene changed; camera preview stopped.",
+                true);
             DestroyPreview();
         }
 
@@ -671,11 +674,22 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         continue;
                     }
 
+                    SerializedProperty scaleProperty =
+                        FpgRoomAuthoringSchema.FindRelative(slot, "scaleMultiplier");
+                    Vector3 scaleMultiplier = scaleProperty != null
+                        ? scaleProperty.vector3Value
+                        : Vector3.one;
+                    if (!IsFinitePositiveScale(scaleMultiplier))
+                    {
+                        continue;
+                    }
+
                     InstantiatePreview(
                         prefab,
                         previewRoot.transform,
                         FpgRoomAuthoringSchema.GetMarkerPosition(slot),
-                        FpgRoomAuthoringSchema.GetMarkerRotation(slot));
+                        FpgRoomAuthoringSchema.GetMarkerRotation(slot),
+                        scaleMultiplier);
                 }
             }
 
@@ -935,7 +949,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            if (selectedMarker.Kind == FpgRoomMarkerKind.Cover)
+            bool scaleSelectedCover = selectedMarker.Kind == FpgRoomMarkerKind.Cover
+                && Tools.current == Tool.Scale;
+            if (selectedMarker.Kind == FpgRoomMarkerKind.Cover
+                && !scaleSelectedCover)
             {
                 DrawSelectedCoverReachableHandle(serializedRoom, marker);
                 DrawSelectedCoverPeekHandle(
@@ -952,10 +969,35 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             Vector3 position = FpgRoomAuthoringSchema.GetMarkerPosition(marker);
             Quaternion rotation = FpgRoomAuthoringSchema.GetMarkerRotation(marker);
+            SerializedProperty scaleMultiplierProperty = scaleSelectedCover
+                ? FpgRoomAuthoringSchema.FindRelative(marker, "scaleMultiplier")
+                : null;
+            if (Tools.current == Tool.Scale && !scaleSelectedCover)
+            {
+                return;
+            }
+
+            Vector3 scaleMultiplier = scaleMultiplierProperty != null
+                ? scaleMultiplierProperty.vector3Value
+                : Vector3.one;
+            if (scaleSelectedCover
+                && !IsFinitePositiveScale(scaleMultiplier))
+            {
+                return;
+            }
+
             EditorGUI.BeginChangeCheck();
             if (Tools.current == Tool.Rotate)
             {
                 rotation = Handles.RotationHandle(rotation, position);
+            }
+            else if (scaleSelectedCover)
+            {
+                scaleMultiplier = Handles.ScaleHandle(
+                    scaleMultiplier,
+                    position,
+                    rotation,
+                    HandleUtility.GetHandleSize(position));
             }
             else
             {
@@ -969,7 +1011,30 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             serializedRoom.Update();
             marker = FpgRoomAuthoringSchema.FindMarkerProperty(serializedRoom, selectedMarker.Kind, selectedMarker.Index);
-            if (Tools.current == Tool.Rotate)
+            if (scaleSelectedCover)
+            {
+                scaleMultiplierProperty = FpgRoomAuthoringSchema.FindRelative(
+                    marker,
+                    "scaleMultiplier");
+                if (scaleMultiplierProperty == null
+                    || !TryConstrainPositiveScale(
+                        scaleMultiplier,
+                        out Vector3 constrainedScale))
+                {
+                    return;
+                }
+
+                scaleMultiplier = constrainedScale;
+                Vector3 currentScale = scaleMultiplierProperty.vector3Value;
+                if (currentScale == scaleMultiplier)
+                {
+                    return;
+                }
+
+                Undo.RecordObject(room, "Scale Room Cover");
+                scaleMultiplierProperty.vector3Value = scaleMultiplier;
+            }
+            else if (Tools.current == Tool.Rotate)
             {
                 Quaternion currentRotation =
                     FpgRoomAuthoringSchema.GetMarkerRotation(marker);
@@ -1012,6 +1077,40 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             RoomChanged?.Invoke();
+        }
+
+        private static bool IsFinitePositiveScale(Vector3 value)
+        {
+            return IsFinitePositive(value.x)
+                && IsFinitePositive(value.y)
+                && IsFinitePositive(value.z);
+        }
+
+        private static bool TryConstrainPositiveScale(
+            Vector3 value,
+            out Vector3 constrainedScale)
+        {
+            if (float.IsNaN(value.x) || float.IsInfinity(value.x)
+                || float.IsNaN(value.y) || float.IsInfinity(value.y)
+                || float.IsNaN(value.z) || float.IsInfinity(value.z))
+            {
+                constrainedScale = default;
+                return false;
+            }
+
+            const float MinimumScale = 0.001f;
+            constrainedScale = new Vector3(
+                Mathf.Max(value.x, MinimumScale),
+                Mathf.Max(value.y, MinimumScale),
+                Mathf.Max(value.z, MinimumScale));
+            return true;
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value)
+                && !float.IsInfinity(value)
+                && value > 0f;
         }
 
         private void DrawSelectedCoverReachableHandle(
@@ -1451,12 +1550,29 @@ namespace FPG.Demo.Editor.LevelAuthoring
             Vector3 localPosition,
             Quaternion localRotation)
         {
+            return InstantiatePreview(
+                prefab,
+                parent,
+                localPosition,
+                localRotation,
+                Vector3.one);
+        }
+
+        private static GameObject InstantiatePreview(
+            GameObject prefab,
+            Transform parent,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 scaleMultiplier)
+        {
             GameObject instance = UnityEngine.Object.Instantiate(prefab, parent);
             Vector3 prefabScale = instance.transform.localScale;
             instance.name = prefab.name + " (鎴块棿棰勮)";
             instance.transform.localPosition = localPosition;
             instance.transform.localRotation = localRotation;
-            instance.transform.localScale = prefabScale;
+            instance.transform.localScale = Vector3.Scale(
+                prefabScale,
+                scaleMultiplier);
             ApplyPreviewFlags(instance);
             foreach (Behaviour behaviour in instance.GetComponentsInChildren<Behaviour>(true))
             {

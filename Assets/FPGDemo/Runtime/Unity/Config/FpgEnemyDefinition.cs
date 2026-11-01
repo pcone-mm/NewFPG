@@ -136,17 +136,35 @@ namespace FPG.Demo.Unity
                 }
             }
 
-            FpgEnemyEntityView entityView =
-                entityViewPrefab.GetComponent<FpgEnemyEntityView>();
-            if (entityView == null)
+            IFpgFormalEnemyEntityBinder entityView =
+                entityViewPrefab.GetComponent<IFpgFormalEnemyEntityBinder>();
+            IFpgFormalEnemyPresentationView presentationView =
+                entityViewPrefab.GetComponent<IFpgFormalEnemyPresentationView>();
+            IFpgFormalEnemyMotionView motionView =
+                entityViewPrefab.GetComponent<IFpgFormalEnemyMotionView>();
+            IFpgFormalEnemyExternalMotionView externalMotionView =
+                entityViewPrefab.GetComponent<
+                    IFpgFormalEnemyExternalMotionView>();
+            IFpgEnemyMovementSnapshotReceiver movementReceiver =
+                entityViewPrefab.GetComponent<
+                    IFpgEnemyMovementSnapshotReceiver>();
+            IFpgFormalEnemyViewValidation viewValidation =
+                entityViewPrefab.GetComponent<IFpgFormalEnemyViewValidation>();
+            if (entityView == null
+                || presentationView == null
+                || motionView == null
+                || externalMotionView == null
+                || movementReceiver == null
+                || viewValidation == null)
             {
                 error = $"Formal enemy '{enemyDefinitionId}' prefab requires "
-                    + "an FpgEnemyEntityView.";
+                    + "a formal entity binder, presentation view, skill motion view, "
+                    + "external motion view, movement snapshot receiver, and "
+                    + "validation contract on its root.";
                 return false;
             }
 
-            if (!entityView.TryValidate(out error)
-                || !entityView.TryValidatePresentation(this, out error))
+            if (!viewValidation.TryValidateFormalView(this, out error))
             {
                 error = $"Formal enemy '{enemyDefinitionId}' entity view is "
                     + "invalid: " + error;

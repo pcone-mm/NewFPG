@@ -77,6 +77,50 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void PausedTicksHoldTimelineAndShiftFutureEventsExactlyOnce()
+        {
+            FpgCompiledSkillSequence sequence = Sequence(
+                2,
+                PayloadEvent(10, 0),
+                PayloadEvent(20, 1),
+                PayloadEvent(30, 2));
+            FpgSkillExecutionRuntime runtime =
+                new FpgSkillExecutionRuntime(sequence.EventCount);
+
+            Assert.That(
+                runtime.Start(
+                    sequence,
+                    new SkillExecutionId(42L),
+                    new TickIndex(100L)).IsSuccess,
+                Is.True);
+            Assert.That(
+                runtime.Tick(new TickIndex(100L)).EventResultCount,
+                Is.EqualTo(1));
+
+            FpgSkillRuntimeResult firstPaused =
+                runtime.PauseTick(new TickIndex(101L));
+            FpgSkillRuntimeResult secondPaused =
+                runtime.PauseTick(new TickIndex(102L));
+            Assert.That(firstPaused.IsSuccess, Is.True);
+            Assert.That(secondPaused.IsSuccess, Is.True);
+            Assert.That(firstPaused.EventResultCount, Is.Zero);
+            Assert.That(secondPaused.EventResultCount, Is.Zero);
+            Assert.That(runtime.RemainingEventCount, Is.EqualTo(2));
+
+            FpgSkillRuntimeResult resumed =
+                runtime.Tick(new TickIndex(103L));
+            Assert.That(resumed.EventResultCount, Is.EqualTo(1));
+            Assert.That(runtime.GetResult(0).EventId, Is.EqualTo(20));
+            Assert.That(runtime.GetResult(0).ScheduledTick, Is.EqualTo(new TickIndex(103L)));
+
+            FpgSkillRuntimeResult endpoint =
+                runtime.Tick(new TickIndex(104L));
+            Assert.That(endpoint.EventResultCount, Is.EqualTo(1));
+            Assert.That(runtime.GetResult(0).EventId, Is.EqualTo(30));
+            Assert.That(endpoint.State, Is.EqualTo(FpgSkillExecutionState.Completed));
+        }
+
+        [Test]
         public void HoldSequenceEmitsEventsOnceAndRunsUntilCanceled()
         {
             FpgCompiledSkillSequence sequence = HoldSequence(

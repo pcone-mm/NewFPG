@@ -2,6 +2,7 @@ using System;
 using FPG.Demo.Core;
 using FPG.Demo.Run;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace FPG.Demo.Unity
 {
@@ -258,6 +259,11 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!TryBindRoomNavigationVolume(out error))
+            {
+                return false;
+            }
+
             return encounterHost.TryPrepareAndStart(out error);
         }
 
@@ -268,6 +274,11 @@ namespace FPG.Demo.Unity
                 error = disposed
                     ? "Formal encounter host has been disposed."
                     : "Formal encounter host has no encounter runtime host.";
+                return false;
+            }
+
+            if (!TryBindRoomNavigationVolume(out error))
+            {
                 return false;
             }
 
@@ -284,7 +295,70 @@ namespace FPG.Demo.Unity
                 return false;
             }
 
+            if (!TryBindRoomNavigationVolume(out error))
+            {
+                return false;
+            }
+
             return encounterHost.TryPrepareAndStart(startRequest, out error);
+        }
+
+        private bool TryBindRoomNavigationVolume(out string error)
+        {
+            FpgRoomNavigationVolume volume = null;
+            if (roomArtSceneLoader != null
+                && roomArtSceneLoader.ActiveArtRoot != null)
+            {
+                // Keep the navigation contract owned by the loaded Art Scene,
+                // while accepting either a root component or a scene-authored
+                // child volume. This avoids a null query context when an Art
+                // Scene groups navigation under its environment hierarchy.
+                volume = roomArtSceneLoader.ActiveArtRoot
+                    .GetComponent<FpgRoomNavigationVolume>();
+                if (volume == null)
+                {
+                    volume = roomArtSceneLoader.ActiveArtRoot
+                        .GetComponentInChildren<FpgRoomNavigationVolume>(true);
+                }
+            }
+
+            // The navigation volume is authored by the additive Art Scene,
+            // but its component may live beside the presentation root rather
+            // than below it. Resolve only within that loaded scene so a
+            // transient root hierarchy change cannot silently disable enemy
+            // position queries.
+            if (volume == null && roomArtSceneLoader != null
+                && roomArtSceneLoader.HasActiveArtScene)
+            {
+                FpgRoomNavigationVolume[] sceneVolumes =
+                    UnityEngine.Object.FindObjectsByType<
+                        FpgRoomNavigationVolume>(
+                            FindObjectsInactive.Include,
+                            FindObjectsSortMode.None);
+                Scene artScene = roomArtSceneLoader.ActiveArtScene;
+                for (int index = 0; index < sceneVolumes.Length; index++)
+                {
+                    FpgRoomNavigationVolume candidate = sceneVolumes[index];
+                    if (candidate != null && candidate.gameObject.scene == artScene)
+                    {
+                        volume = candidate;
+                        break;
+                    }
+                }
+            }
+
+            return encounterDirector == null
+                ? ReturnMissingDirector(out error)
+                : encounterDirector.TryConfigureRoomNavigationVolume(
+                    volume,
+                    worldCamera,
+                    out error);
+        }
+
+        private bool ReturnMissingDirector(out string error)
+        {
+            error = "Formal host has no room encounter director.";
+            return false;
         }
 
         public bool TryCapturePlayerRunResources(

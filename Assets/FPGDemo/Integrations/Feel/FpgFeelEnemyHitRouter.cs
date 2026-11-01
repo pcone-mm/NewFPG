@@ -118,7 +118,7 @@ namespace FPG.Demo.Unity
             }
 
             if (!feedbackEvent.HasTarget
-                || !TryResolveFeedback(
+                || !TryResolveHitTarget(
                     feedbackEvent.TargetId,
                     out FpgFeelEnemyHitFeedback feedback))
             {
@@ -126,35 +126,45 @@ namespace FPG.Demo.Unity
                 return;
             }
 
+            bool routed = false;
             try
             {
                 if (feedback.TryPlayHit())
                 {
-                    RoutedHitCount++;
-                }
-                else
-                {
-                    SuppressedHitCount++;
+                    routed = true;
                 }
             }
             catch (Exception)
             {
                 RoutingFaultCount++;
             }
+
+            if (routed)
+            {
+                RoutedHitCount++;
+            }
+            else
+            {
+                SuppressedHitCount++;
+            }
         }
 
-        private bool TryResolveFeedback(
+        private bool TryResolveHitTarget(
             FPG.Demo.Core.RuntimeId targetId,
             out FpgFeelEnemyHitFeedback feedback)
         {
             feedback = null;
-            if (enemyEntityPool == null
-                || !enemyEntityPool.TryGet(targetId, out FpgEnemyEntityHandle handle)
+            if (enemyEntityPool == null)
+            {
+                return false;
+            }
+
+            if (!enemyEntityPool.TryGet(targetId, out FpgEnemyEntityHandle handle)
                 || !handle.IsValid
                 || handle.Instance == null
                 || !handle.Instance.activeInHierarchy
-                || !(handle.Binder is FpgEnemyEntityView entityView)
-                || !entityView.GameplayEnabled)
+                || handle.Binder == null
+                || !handle.Binder.GameplayEnabled)
             {
                 return false;
             }
@@ -174,8 +184,11 @@ namespace FPG.Demo.Unity
                         FpgFeelEnemyHitFeedback>(true);
             }
 
-            feedback = cachedFeedbacks[handle.PoolSlot];
-            return feedback != null && feedback.isActiveAndEnabled;
+            FpgFeelEnemyHitFeedback cached = cachedFeedbacks[handle.PoolSlot];
+            feedback = cached != null && cached.isActiveAndEnabled
+                ? cached
+                : null;
+            return feedback != null;
         }
 
         private void EnsureCacheCapacity()

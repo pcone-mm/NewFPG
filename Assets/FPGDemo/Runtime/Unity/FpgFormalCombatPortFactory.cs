@@ -81,6 +81,7 @@ namespace FPG.Demo.Unity
                 playerShotPresentationSink,
             UnityAttackQueryPort attackQueryPort,
             FpgFormalEnemyAttackScheduler attackScheduler,
+            FpgFormalEnemyAiCoordinator aiCoordinator,
             IFpgBattleTickSynchronizer synchronizer,
             IFpgPlayerRoomSnapshotPort playerSnapshotPort,
             HitboxRegistry staticHitboxRegistry,
@@ -100,6 +101,8 @@ namespace FPG.Demo.Unity
             PlayerShotPresentationSink = playerShotPresentationSink;
             AttackQueryPort = attackQueryPort;
             AttackScheduler = attackScheduler;
+            AiCoordinator = aiCoordinator
+                ?? throw new ArgumentNullException(nameof(aiCoordinator));
             Synchronizer = synchronizer;
             PlayerSnapshotPort = playerSnapshotPort;
             this.staticHitboxRegistry = staticHitboxRegistry;
@@ -126,6 +129,7 @@ namespace FPG.Demo.Unity
         }
         public UnityAttackQueryPort AttackQueryPort { get; }
         public FpgFormalEnemyAttackScheduler AttackScheduler { get; }
+        public FpgFormalEnemyAiCoordinator AiCoordinator { get; }
         public IFpgBattleTickSynchronizer Synchronizer { get; }
         public IFpgPlayerRoomSnapshotPort PlayerSnapshotPort { get; }
         public HitboxRegistry StaticHitboxRegistry => staticHitboxRegistry;
@@ -199,6 +203,7 @@ namespace FPG.Demo.Unity
             Covers?.Reset();
             playerEntity.SetGameplayCollidersEnabled(true);
             CombatPort.ResetPresentationState(new TickIndex(0L));
+            AiCoordinator.Clear();
             AttackScheduler.Clear();
             ProjectileWorldPort.ClearAll();
             anchorMap.Clear();
@@ -223,6 +228,7 @@ namespace FPG.Demo.Unity
         {
             ClearPendingShotPresentation();
             playerEntity.SetGameplayCollidersEnabled(false);
+            AiCoordinator.Clear();
             AttackScheduler.Clear();
             ProjectileWorldPort.ClearAll();
             CombatPort.ClearAll();
@@ -237,6 +243,7 @@ namespace FPG.Demo.Unity
             ClearPendingShotPresentation();
             playerEntity.SetGameplayCollidersEnabled(false);
             ClearPendingShotPresentation();
+            AiCoordinator.Clear();
             AttackScheduler.Clear();
             ProjectileWorldPort.ClearAll();
         }
@@ -251,6 +258,7 @@ namespace FPG.Demo.Unity
             playerEntity.SetGameplayCollidersEnabled(false);
             CombatPort.ClearAll();
             ProjectileWorldPort.ClearAll();
+            AiCoordinator.Dispose();
             AttackScheduler.Clear();
             CombatKernel.Dispose();
             anchorMap.TryUnregister(Player.RuntimeId, false, 0);
@@ -936,7 +944,9 @@ namespace FPG.Demo.Unity
                     new TickDuration(groggyDurationTicks),
                     observedProjectileWorldPort,
                     summonSink,
-                    playerProjectileAreaQueryPort: attackQueryPort);
+                    playerProjectileAreaQueryPort: attackQueryPort,
+                    enemyHitReactionPort:
+                        enemyMotionAuthority as IFpgEnemyHitReactionPort);
                 FpgSkillExecutionIdAllocator skillExecutionIds =
                     new FpgSkillExecutionIdAllocator();
                 FpgFormalEnemyAttackScheduler scheduler = new FpgFormalEnemyAttackScheduler(
@@ -948,6 +958,12 @@ namespace FPG.Demo.Unity
                     skillExecutionIds,
                     enemyMotionAuthority,
                     physics);
+                FpgFormalEnemyAiCoordinator aiCoordinator =
+                    new FpgFormalEnemyAiCoordinator(
+                        scheduler,
+                        combatPort,
+                        enemyMotionAuthority,
+                        enemyCapacity);
                 FpgFormalUnityTickSynchronizer synchronizer =
                     new FpgFormalUnityTickSynchronizer(
                         scheduler,
@@ -955,7 +971,8 @@ namespace FPG.Demo.Unity
                         formalHitboxRegistry,
                         staticHitboxRegistry,
                         enemyMotionAuthority,
-                        physics);
+                        physics,
+                        aiCoordinator);
                 FpgFormalPlayerRoomSnapshotPort snapshotPort =
                     new FpgFormalPlayerRoomSnapshotPort(player);
                 bundle = new FpgFormalCombatRuntimeBundle(
@@ -971,6 +988,7 @@ namespace FPG.Demo.Unity
                     playerShotPresentationBridge,
                     attackQueryPort,
                     scheduler,
+                    aiCoordinator,
                     synchronizer,
                     snapshotPort,
                     staticHitboxRegistry,
@@ -1014,12 +1032,14 @@ namespace FPG.Demo.Unity
         private readonly HitboxRegistry staticHitboxes;
         private readonly IFpgFormalEnemyMotionAuthority motionAuthority;
         private readonly IUnityPhysicsQueryBackend physics;
+        private readonly FpgFormalEnemyAiCoordinator aiCoordinator;
 
         private FpgFormalCombatRuntimeBundle runtime;
         private IFpgFormalPlayerTickDriver playerDriver;
         private TickIndex phaseTick = TickIndex.Invalid;
         private int nextPhaseIndex;
         private RejectReason externalFailure = RejectReason.None;
+        public string LastFaultDiagnostic { get; private set; } = string.Empty;
 
         public FpgFormalUnityTickSynchronizer(
             FpgFormalEnemyAttackScheduler scheduler,
@@ -1027,7 +1047,8 @@ namespace FPG.Demo.Unity
             FpgFormalHitboxRegistry formalHitboxes,
             HitboxRegistry staticHitboxes,
             IFpgFormalEnemyMotionAuthority motionAuthority,
-            IUnityPhysicsQueryBackend physics)
+            IUnityPhysicsQueryBackend physics,
+            FpgFormalEnemyAiCoordinator aiCoordinator = null)
         {
             this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
             this.anchorMap = anchorMap ?? throw new ArgumentNullException(nameof(anchorMap));
@@ -1036,6 +1057,7 @@ namespace FPG.Demo.Unity
             this.motionAuthority = motionAuthority
                 ?? throw new ArgumentNullException(nameof(motionAuthority));
             this.physics = physics ?? throw new ArgumentNullException(nameof(physics));
+            this.aiCoordinator = aiCoordinator;
         }
 
         public bool TryBind(
@@ -1077,25 +1099,33 @@ namespace FPG.Demo.Unity
             phaseTick = TickIndex.Invalid;
             nextPhaseIndex = 0;
             externalFailure = RejectReason.None;
+            LastFaultDiagnostic = string.Empty;
         }
 
         public DomainResult Synchronize(FpgBattleTickPhase phase, TickIndex tick)
         {
+            LastFaultDiagnostic = string.Empty;
             if (!tick.IsValid || runtime == null || playerDriver == null
                 || !anchorMap.IsInitialized || !formalHitboxes.IsInitialized
                 || !staticHitboxes.IsReadyForQueries)
             {
+                LastFaultDiagnostic =
+                    $"Synchronize {phase} rejected invalid runtime bindings.";
                 return DomainResult.Rejected(RejectReason.InvalidState);
             }
 
             if (externalFailure != RejectReason.None)
             {
+                LastFaultDiagnostic =
+                    $"Synchronize {phase} reported external failure {externalFailure}.";
                 return DomainResult.Rejected(externalFailure);
             }
 
             if (nextPhaseIndex < 0 || nextPhaseIndex >= TickOrder.Length
                 || phase != TickOrder[nextPhaseIndex])
             {
+                LastFaultDiagnostic =
+                    $"Synchronize received {phase} while expecting index {nextPhaseIndex}.";
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
@@ -1112,14 +1142,18 @@ namespace FPG.Demo.Unity
                 {
                     motionResult = motionAuthority.AdvanceMotion(tick);
                 }
-                catch (Exception)
+                catch (Exception exception)
                 {
+                    LastFaultDiagnostic =
+                        $"Motion synchronization threw {exception.GetType().Name}: {exception.Message}";
                     return DomainResult.Rejected(
                         RejectReason.InvariantFault);
                 }
 
                 if (!motionResult.IsSuccess)
                 {
+                    LastFaultDiagnostic =
+                        $"Motion synchronization rejected {motionResult.RejectReason}.";
                     return motionResult;
                 }
             }
@@ -1135,8 +1169,10 @@ namespace FPG.Demo.Unity
                 {
                     physics.SyncTransforms();
                 }
-                catch (Exception)
+                catch (Exception exception)
                 {
+                    LastFaultDiagnostic =
+                        $"Physics.SyncTransforms threw {exception.GetType().Name}: {exception.Message}";
                     return DomainResult.Rejected(
                         RejectReason.InvariantFault);
                 }
@@ -1147,10 +1183,19 @@ namespace FPG.Demo.Unity
             else if (phase == FpgBattleTickPhase.EnemyAttackDirector)
             {
                 result = scheduler.Tick(tick);
+                if (result.IsSuccess && aiCoordinator != null)
+                {
+                    // The scheduler advances already-running timelines first;
+                    // the AI then evaluates this same fixed tick and may start
+                    // the next skill through the explicit executor contract.
+                    result = aiCoordinator.Advance(tick);
+                }
             }
 
             if (!result.IsSuccess)
             {
+                LastFaultDiagnostic =
+                    $"Synchronize {phase} rejected {result.RejectReason}.";
                 return result;
             }
 

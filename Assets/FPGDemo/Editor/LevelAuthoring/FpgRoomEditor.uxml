@@ -7,6 +7,8 @@
             <ui:VisualElement class="toolbar-spacer" />
             <uie:ToolbarButton name="create-room-button" text="新建" tooltip="创建房间资产" />
             <uie:ToolbarButton name="duplicate-room-button" text="复制" tooltip="复制房间并生成新房间 ID" />
+            <uie:ToolbarButton name="remove-production-room-button" text="移出生产" tooltip="从 RoomCatalog 和 Build Settings 移除，保留资产文件" />
+            <uie:ToolbarButton name="delete-room-button" text="彻底删除" tooltip="检查外部引用后删除关卡资产" class="danger-button" />
             <uie:ToolbarButton name="save-room-button" text="保存关卡" tooltip="保存 RoomDefinition 与当前关卡美术场景" />
             <uie:ToolbarButton name="frame-room-button" text="聚焦" tooltip="在 SceneView 中聚焦所选标记或房间" />
         </uie:Toolbar>

@@ -25,6 +25,7 @@ namespace FPG.Demo.Unity
         [SerializeField] private FpgFormalHitboxRegistry formalHitboxRegistry;
         [SerializeField] private FpgOverheadHealthBarPool overheadHealthBarPool;
         [SerializeField] private Camera overheadHealthBarCamera;
+        [NonSerialized] private Camera roomWorldCamera;
 
         [Header("Exits")]
         [SerializeField] private FpgRoomExitRuntime[] exitRuntimes =
@@ -36,6 +37,7 @@ namespace FPG.Demo.Unity
         [Header("Spatial Anchors")]
         [SerializeField] private Transform playerAnchor;
         [SerializeField] private Transform entrySafetyAnchor;
+        [NonSerialized] private FpgRoomNavigationVolume roomNavigationVolume;
 
         [Header("Session Ports")]
         [SerializeField] private MonoBehaviour formalCombatPortFactoryComponent;
@@ -86,6 +88,8 @@ namespace FPG.Demo.Unity
         public FpgPlayerEntityView ConfiguredPlayerEntity => configuredPlayerEntity;
         public FpgRoomInstance RoomInstance => roomInstance;
         public Transform PlayerAnchor => playerAnchor;
+        public FpgRoomNavigationVolume RoomNavigationVolume =>
+            roomNavigationVolume;
         public bool HasPlayerBinding => playerBindingConfigured
             && configuredPlayerEntity != null
             && playerAnchor == configuredPlayerEntity.transform;
@@ -112,6 +116,7 @@ namespace FPG.Demo.Unity
             || Phase == FpgEncounterPhase.Disposed;
         public int PresentationFaultCount { get; private set; }
         public int EnemyVitalsGapCount { get; private set; }
+        public string LastError { get; private set; } = string.Empty;
         public FpgExitAttackRegistry ExitAttackRegistry => exitAttackRegistry;
         public bool HasAvailableExits => exitAttackRegistry.Count > 0;
 
@@ -244,6 +249,23 @@ namespace FPG.Demo.Unity
             return true;
         }
 
+        public bool TryConfigureRoomNavigationVolume(
+            FpgRoomNavigationVolume volume,
+            Camera worldCamera,
+            out string error)
+        {
+            if (disposed || prepared || session != null || combatStarted)
+            {
+                error = "Room navigation volume cannot change after session preparation begins.";
+                return false;
+            }
+
+            roomNavigationVolume = volume;
+            roomWorldCamera = worldCamera;
+            error = string.Empty;
+            return true;
+        }
+
         public bool TryPrepareSession(
             FpgRoomRunRequest nextRequest,
             FpgEncounterPlan nextPlan,
@@ -314,6 +336,7 @@ namespace FPG.Demo.Unity
             ClearPreparedRuntime(disposePools: true);
             PresentationFaultCount = 0;
             EnemyVitalsGapCount = 0;
+            LastError = string.Empty;
             request = nextRequest;
             encounterPlan = nextPlan;
             enemyCatalog = nextEnemyCatalog;
@@ -408,7 +431,10 @@ namespace FPG.Demo.Unity
                 runtimeEntityCapacity,
                 formalHitboxRegistry,
                 overheadHealthBarPool,
-                presentationLeaseTicks);
+                presentationLeaseTicks,
+                roomNavigationVolume,
+                playerAnchor,
+                roomWorldCamera);
             FpgEnemyRoster roster = new FpgEnemyRoster(profile.EnemyRosterCapacity);
             FpgMultiEnemyCombatCapacity combatCapacity = factory.Capacity;
             enemyVitalsBuffer = new FpgVitalsSnapshot[
@@ -692,9 +718,37 @@ namespace FPG.Demo.Unity
                     session.Runtime.FailureReason == FpgEncounterFailureReason.None
                         ? FpgEncounterFailureReason.SynchronizerFault
                         : session.Runtime.FailureReason;
+                string diagnostic = session.LastFaultDiagnostic;
+                if (combatRuntime?.Synchronizer
+                    is FpgFormalUnityTickSynchronizer synchronizer
+                    && !string.IsNullOrWhiteSpace(synchronizer.LastFaultDiagnostic))
+                {
+                    diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                        ? synchronizer.LastFaultDiagnostic
+                        : diagnostic + "; " + synchronizer.LastFaultDiagnostic;
+                }
+
+                if (!string.IsNullOrWhiteSpace(entityPort?.LastMotionFaultDiagnostic))
+                {
+                    diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                        ? entityPort.LastMotionFaultDiagnostic
+                        : diagnostic + "; " + entityPort.LastMotionFaultDiagnostic;
+                }
+
+                if (!string.IsNullOrWhiteSpace(
+                        combatRuntime?.CombatPort?.LastProcessFaultDiagnostic))
+                {
+                    diagnostic = string.IsNullOrWhiteSpace(diagnostic)
+                        ? combatRuntime.CombatPort.LastProcessFaultDiagnostic
+                        : diagnostic + "; "
+                            + combatRuntime.CombatPort.LastProcessFaultDiagnostic;
+                }
                 return FailRuntime(
                     reason,
-                    "Formal Session faulted: " + advanced.RejectReason,
+                    "Formal Session faulted: " + advanced.RejectReason
+                        + (string.IsNullOrWhiteSpace(diagnostic)
+                            ? string.Empty
+                            : " (" + diagnostic + ")"),
                     out error);
             }
 
@@ -941,6 +995,10 @@ namespace FPG.Demo.Unity
                 definition);
             if (!registered.IsSuccess)
             {
+                Debug.LogError(
+                    $"[FpgRoomEncounterDirector] Attack owner registration failed "
+                    + $"for runtime={runtimeId}: {registered.RejectReason}.",
+                    this);
                 ReportCallbackFailure(registered.RejectReason);
             }
         }
@@ -1589,6 +1647,7 @@ namespace FPG.Demo.Unity
             string message,
             out string error)
         {
+            LastError = message ?? string.Empty;
             Phase = FpgEncounterPhase.Failed;
             LockExits(true);
             ClearPreparedRuntime(disposePools: true);
@@ -1604,6 +1663,7 @@ namespace FPG.Demo.Unity
             string message,
             out string error)
         {
+            LastError = message ?? string.Empty;
             bool lifecycleAlreadyPublished = session != null
                 && (session.Runtime.Phase == FpgEncounterPhase.Failed
                     || session.Runtime.Phase == FpgEncounterPhase.Faulted);
@@ -1626,6 +1686,9 @@ namespace FPG.Demo.Unity
             }
 
             Failed?.Invoke(reason, message ?? string.Empty);
+            Debug.LogError(
+                $"[FpgRoomEncounterDirector] Encounter fault ({reason}): {LastError}",
+                this);
             error = string.IsNullOrWhiteSpace(message)
                 ? "Formal Session faulted."
                 : message;

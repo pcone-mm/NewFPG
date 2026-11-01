@@ -304,6 +304,28 @@ namespace FPG.Demo.Skills
             return FpgSkillRuntimeResult.Success(State, resultCount);
         }
 
+        public FpgSkillRuntimeResult PauseTick(TickIndex tick)
+        {
+            ClearResults();
+            FpgSkillRuntimeResult readiness = ValidateRunningTick(tick);
+            if (!readiness.IsSuccess)
+            {
+                return readiness;
+            }
+
+            if (tick.Value == long.MaxValue
+                || startTick.Value == long.MaxValue)
+            {
+                return FpgSkillRuntimeResult.Rejected(
+                    FpgSkillRuntimeError.TickRangeOverflow,
+                    State);
+            }
+
+            startTick = new TickIndex(startTick.Value + 1L);
+            nextTick = new TickIndex(tick.Value + 1L);
+            return FpgSkillRuntimeResult.Success(State, 0);
+        }
+
         public FpgSkillRuntimeResult CancelRemaining(TickIndex tick)
         {
             ClearResults();

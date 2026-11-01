@@ -230,6 +230,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 room == null ? "Room" : room.name,
                 coverId,
                 true,
+                true,
                 out clone,
                 out _,
                 out error);
@@ -399,6 +400,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                             roomName,
                             coverId,
                             false,
+                            false,
                             out clone,
                             out string clonePath,
                             out error))
@@ -414,6 +416,90 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             roomData.ApplyModifiedPropertiesWithoutUndo();
+            return true;
+        }
+
+        internal static bool TryPreflightRoomDuplicateProfiles(
+            FpgRoomDefinition sourceRoom,
+            string duplicateRoomAssetPath,
+            out string error)
+        {
+            if (sourceRoom == null || string.IsNullOrWhiteSpace(duplicateRoomAssetPath))
+            {
+                error = "Room duplication camera-profile inputs are invalid.";
+                return false;
+            }
+
+            SerializedObject roomData = new SerializedObject(sourceRoom);
+            SerializedProperty covers = roomData.FindProperty("coverSlots");
+            if (covers == null || !covers.isArray)
+            {
+                error = "Source room does not expose cover slots.";
+                return false;
+            }
+
+            string roomName = Path.GetFileNameWithoutExtension(
+                duplicateRoomAssetPath);
+            string targetFolder = ResolveProfileFolder(
+                duplicateRoomAssetPath,
+                roomName);
+            HashSet<FpgCoverCameraProfile> uniqueProfiles =
+                new HashSet<FpgCoverCameraProfile>();
+            HashSet<string> plannedPaths = new HashSet<string>(
+                StringComparer.Ordinal);
+            for (int coverIndex = 0; coverIndex < covers.arraySize; coverIndex++)
+            {
+                SerializedProperty cover = covers.GetArrayElementAtIndex(coverIndex);
+                FpgCoverCameraProfile source = cover
+                    .FindPropertyRelative("cameraProfile")
+                    ?.objectReferenceValue as FpgCoverCameraProfile;
+                if (source == null)
+                {
+                    error = $"Cover {coverIndex} has no camera profile.";
+                    return false;
+                }
+
+                if (!uniqueProfiles.Add(source))
+                {
+                    continue;
+                }
+
+                if (EditorUtility.IsDirty(source))
+                {
+                    error = $"Save camera profile '{source.name}' before duplicating the room.";
+                    return false;
+                }
+
+                if (!source.TryValidate(out string profileError))
+                {
+                    error = $"Camera profile '{source.name}' is invalid: {profileError}";
+                    return false;
+                }
+
+                string coverId = cover.FindPropertyRelative("markerId")?.stringValue;
+                string fileName = "CAM_" + SanitizeSegment(roomName)
+                    + "_" + SanitizeSegment(coverId) + ".asset";
+                string profilePath = targetFolder + "/" + fileName;
+                if (!plannedPaths.Add(profilePath))
+                {
+                    error = $"Multiple camera profiles would use output path '{profilePath}'.";
+                    return false;
+                }
+
+                string absoluteProfilePath = Path.Combine(
+                    Application.dataPath,
+                    profilePath.Substring("Assets/".Length)
+                        .Replace('/', Path.DirectorySeparatorChar));
+                if (AssetDatabase.LoadMainAssetAtPath(profilePath) != null
+                    || File.Exists(absoluteProfilePath)
+                    || File.Exists(absoluteProfilePath + ".meta"))
+                {
+                    error = $"Camera profile output path '{profilePath}' already exists.";
+                    return false;
+                }
+            }
+
+            error = string.Empty;
             return true;
         }
 
@@ -442,6 +528,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             string roomName,
             string coverId,
             bool registerUndo,
+            bool allowUniquePath,
             out FpgCoverCameraProfile clone,
             out string clonePath,
             out string error)
@@ -474,8 +561,16 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             string fileName = "CAM_" + SanitizeSegment(roomName)
                 + "_" + SanitizeSegment(coverId) + ".asset";
-            clonePath = AssetDatabase.GenerateUniqueAssetPath(
-                targetFolder + "/" + fileName);
+            string requestedPath = targetFolder + "/" + fileName;
+            clonePath = allowUniquePath
+                ? AssetDatabase.GenerateUniqueAssetPath(requestedPath)
+                : requestedPath;
+            if (!allowUniquePath
+                && AssetDatabase.LoadMainAssetAtPath(clonePath) != null)
+            {
+                error = $"Camera profile output path '{clonePath}' already exists.";
+                return false;
+            }
             try
             {
                 clone = UnityEngine.Object.Instantiate(source);

@@ -15,6 +15,7 @@
 - `FpgPlayerSkillExecutionController` 按有效玩家配置的 `AllowWithdrawTick` 判断暴露，截止 tick 为 inclusive；缺失或早于末次攻击的值由 Config 校验拒绝，运行时不得按动画或表现时长改变其语义。
 - `FpgFormalPlayerCameraFeedback` 是 Formal Camera 的唯一状态所有者：基础 `FpgResolvedCameraShot` 由玩家 Pose 与掩体 Profile 解析，掩体过渡与玩家视觉共用时长和曲线，后坐/震屏只作为增量叠加；取消或故障恢复已提交 Shot，其他组件不得直接覆盖 Rig/Camera。
 - `FpgSkillPresentationRegistry/World` 把 compiled handle 解析到 wrapper、音频、轨迹和相机反馈；复用 FormalRoom 的共享 VFX root，不建立第二个 gameplay 状态源。`D0CombatVfxWorld` 池满时只回收最老的非 held 实例；held 实例必须显式释放且不可驱逐，全局 active cap 达限仍拒绝获取。
+- Enemy AI 按 `AI/Core`、`AI/Execution/Movement`、`AI/Execution/Skills`、`AI/Integration` 组织：Core 持有固定 tick 的 Control/Brain 状态和决策；Movement 只采样/执行 AI 请求并返回快照；Skills 只执行时间线事件；Coordinator 负责端口适配、敌人生命周期同步和调试快照。Entity View 只应用移动与动画表现。Patrol 没有路线数据时保持静止，不得隐式生成巡逻路线。
 - `FpgFormalAudioCoordinator` 只观察已提交的 encounter 生命周期、combat trace、threat/reticle 表现状态并路由稳定音频 cue，不拥有伤害、战斗状态或结果；`FormalRoom/AudioRoot` 是 `CombatAudioPresenter` 与 `MusicDirector` 的唯一运行时组合入口。
 - `CombatAudioPresenter` 使用 `CombatAudioBank` 的固定 SFX/UI voice pool、variation、cooldown、bus 与空间参数；`MusicDirector` 只接受显式生命周期状态，管理房间 Profile 的双源音乐 crossfade、stinger、ambience bed 和固定容量空间点声池；点声随机序列只属于表现层。`TryValidateMapping`/`TryPrepare` 可表示尚未导入 clip 的映射阶段；宣称播放就绪前必须显式通过 `TryValidatePlayback`，当前缺 clip 会在实际 cue/state 阶段拒绝，不能静默补生成音频。
 - Player/Combat presentation bridge 与 `FpgSkillImpactPresentationConsumer` 只消费已提交 timeline/impact 事件；commit cache 和 correlation 只用于去重与生命周期管理，不能决定命中或伤害。

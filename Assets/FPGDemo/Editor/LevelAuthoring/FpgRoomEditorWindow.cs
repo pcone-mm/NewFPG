@@ -36,6 +36,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private bool refreshQueued;
         private bool rebuildMarkerDetailsQueued;
         private bool suppressRoomSelectionChanged;
+        private bool selectedRoomSceneReady;
+        private string selectedRoomSceneError = string.Empty;
 
         private FpgEncounterProfile formalPreviewProfile;
         private FpgEncounterOverrideDefinition formalPreviewOverride;
@@ -70,6 +72,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
         private VisualElement formalPreviewOutput;
         private readonly Dictionary<FpgRoomMarkerKind, Button> markerToolButtons =
             new Dictionary<FpgRoomMarkerKind, Button>();
+        private readonly Dictionary<string, VisualElement> roomPropertyFields =
+            new Dictionary<string, VisualElement>(StringComparer.Ordinal);
+        private readonly Dictionary<string, VisualElement> markerPropertyFields =
+            new Dictionary<string, VisualElement>(StringComparer.Ordinal);
 
         [MenuItem("FPG Demo/Room Editor", priority = 120)]
         public static void Open()
@@ -93,6 +99,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
             EditorApplication.quitting += OnEditorQuitting;
             EditorSceneManager.sceneDirtied += OnSceneDirtied;
             EditorSceneManager.sceneSaved += OnSceneSaved;
+            EditorSceneManager.sceneOpened += OnEditorSceneOpened;
+            EditorSceneManager.sceneClosed += OnEditorSceneClosed;
+            SceneManager.activeSceneChanged += OnActiveSceneChanged;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
             EditorApplication.delayCall -= RebuildScenePreviewAfterReload;
             EditorApplication.delayCall += RebuildScenePreviewAfterReload;
@@ -113,6 +122,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
             EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
             EditorSceneManager.sceneDirtied -= OnSceneDirtied;
             EditorSceneManager.sceneSaved -= OnSceneSaved;
+            EditorSceneManager.sceneOpened -= OnEditorSceneOpened;
+            EditorSceneManager.sceneClosed -= OnEditorSceneClosed;
+            SceneManager.activeSceneChanged -= OnActiveSceneChanged;
             RestoreGameViewAspect(true);
             DisposeSceneTool();
         }
@@ -144,14 +156,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            if (selectedRoom != null && sceneTool.Room != selectedRoom)
-            {
-                sceneTool.SetRoom(selectedRoom);
-            }
-            else
-            {
-                sceneTool.RebuildPreview();
-            }
+            RefreshSelectedSceneBinding();
         }
 
         private void DisposeSceneTool()
@@ -171,6 +176,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void OnEditorPlayModeStateChanged(PlayModeStateChange state)
         {
+            UpdateSceneToolControls();
             UpdateCameraPreviewControls();
         }
 
@@ -282,10 +288,40 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             rootVisualElement.Q<Button>("create-room-button").clicked += CreateRoom;
             rootVisualElement.Q<Button>("duplicate-room-button").clicked += DuplicateRoom;
+            Button removeProductionButton =
+                rootVisualElement.Q<Button>("remove-production-room-button");
+            if (removeProductionButton != null)
+            {
+                removeProductionButton.clicked += RemoveRoomFromProduction;
+            }
+
+            Button deleteRoomButton = rootVisualElement.Q<Button>("delete-room-button");
+            if (deleteRoomButton != null)
+            {
+                deleteRoomButton.clicked += DeleteRoomCompletely;
+            }
             rootVisualElement.Q<Button>("save-room-button").clicked += SaveRoom;
-            rootVisualElement.Q<Button>("frame-room-button").clicked += () => sceneTool?.FrameSelection();
-            rootVisualElement.Q<Button>("duplicate-marker-button").clicked += () => sceneTool?.DuplicateSelectedMarker();
-            rootVisualElement.Q<Button>("delete-marker-button").clicked += () => sceneTool?.DeleteSelectedMarker();
+            rootVisualElement.Q<Button>("frame-room-button").clicked += () =>
+            {
+                if (selectedRoomSceneReady)
+                {
+                    sceneTool?.FrameSelection();
+                }
+            };
+            rootVisualElement.Q<Button>("duplicate-marker-button").clicked += () =>
+            {
+                if (selectedRoomSceneReady)
+                {
+                    sceneTool?.DuplicateSelectedMarker();
+                }
+            };
+            rootVisualElement.Q<Button>("delete-marker-button").clicked += () =>
+            {
+                if (selectedRoomSceneReady)
+                {
+                    sceneTool?.DeleteSelectedMarker();
+                }
+            };
             rootVisualElement.Q<Button>("audit-camera-profiles-button").clicked += AuditCameraProfiles;
 
             foreach (KeyValuePair<FpgRoomMarkerKind, Button> pair in markerToolButtons)
@@ -293,8 +329,11 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 FpgRoomMarkerKind kind = pair.Key;
                 pair.Value.clicked += () =>
                 {
-                    sceneTool?.SetPlacementKind(kind);
-                    RefreshMarkerToolStyles();
+                    if (selectedRoomSceneReady)
+                    {
+                        sceneTool?.SetPlacementKind(kind);
+                        RefreshMarkerToolStyles();
+                    }
                 };
             }
 
@@ -636,93 +675,12 @@ namespace FPG.Demo.Editor.LevelAuthoring
             UpdateCameraPreviewControls();
         }
 
-        private void UpdateLevelStatus(string message = null)
-        {
-            if (statusLabel == null)
-            {
-                return;
-            }
-
-            if (selectedRoom == null)
-            {
-                statusLabel.text = string.IsNullOrWhiteSpace(message)
-                    ? "未选择房间。"
-                    : message;
-                return;
-            }
-
-            string roomState = EditorUtility.IsDirty(selectedRoom)
-                ? "RoomDefinition：未保存"
-                : "RoomDefinition：已保存";
-            string sceneState;
-            FpgRoomDefinition definition =
-                selectedRoom as FpgRoomDefinition;
-            string referenceError = string.Empty;
-            if (definition == null
-                || !FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
-                    definition,
-                    out referenceError))
-            {
-                sceneState = "Art Scene：错误（" + referenceError + "）";
-            }
-            else
-            {
-                Scene artScene =
-                    SceneManager.GetSceneByPath(definition.ArtScenePath);
-                sceneState = !artScene.IsValid() || !artScene.isLoaded
-                    ? "Art Scene：未打开"
-                    : artScene.isDirty
-                        ? "Art Scene：未保存"
-                        : "Art Scene：已保存";
-            }
-
-            if (definition != null
-                && FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
-                    definition,
-                    out _))
-            {
-                Scene loadedArtScene = SceneManager.GetSceneByPath(
-                    definition.ArtScenePath);
-                if (loadedArtScene.IsValid()
-                    && loadedArtScene.isLoaded
-                    && !FpgRoomArtRoot.TryResolve(
-                        loadedArtScene,
-                        definition,
-                        out _,
-                        out string rootError))
-                {
-                    sceneState = "Art Scene: contract error (" + rootError + ")";
-                }
-            }
-
-            string productionState = definition == null
-                ? string.Empty
-                : !FpgRoomAuthoringOperations.IsRoomRegistered(definition)
-                    ? " | Production: not registered"
-                    : !FpgProductionSceneList.TryValidateEditorBuildSettings(out _)
-                        ? " | Production: Build Settings mismatch"
-                        : " | Production: registered";
-            string cameraState = sceneTool?.IsCameraPreviewActive == true
-                ? $" | Camera: 16:9 {selectedPreviewCharacter?.DisplayName}"
-                : string.Empty;
-            string cameraTemplateState = selectedCameraTemplate == null
-                ? string.Empty
-                : EditorUtility.IsDirty(selectedCameraTemplate)
-                    ? " | Camera Template: unsaved"
-                    : " | Camera Template: saved";
-            string prefix = string.IsNullOrWhiteSpace(message)
-                ? string.Empty
-                : message + " | ";
-            statusLabel.text =
-                prefix + roomState + " | " + sceneState + cameraState
-                + cameraTemplateState + productionState;
-        }
-
         private void OnSceneDirtied(Scene scene)
         {
             if (IsSelectedArtScene(scene))
             {
-                UpdateLevelStatus();
+                RefreshSelectedSceneBinding();
+                RefreshValidation();
             }
         }
 
@@ -730,7 +688,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             if (IsSelectedArtScene(scene))
             {
-                UpdateLevelStatus();
+                RefreshSelectedSceneBinding();
+                RefreshValidation();
             }
         }
 
@@ -751,7 +710,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             previewCharacterField?.SetEnabled(!isPlaying);
             applyCameraPreviewButton?.SetEnabled(
                 !isPlaying
-                && selectedRoom != null
+                && selectedRoomSceneReady
                 && selectedPreviewCharacter != null);
             stopCameraPreviewButton?.SetEnabled(
                 !isPlaying
@@ -770,9 +729,21 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     out Button coverButton))
             {
                 coverButton.SetEnabled(!isPlaying
-                    && selectedRoom != null
+                    && selectedRoomSceneReady
                     && selectedCameraTemplate != null);
             }
+
+            rootVisualElement.Q<Button>("create-room-button")?.SetEnabled(!isPlaying);
+            rootVisualElement.Q<Button>("duplicate-room-button")?.SetEnabled(
+                !isPlaying && selectedRoom is FpgRoomDefinition);
+            rootVisualElement.Q<Button>("remove-production-room-button")?.SetEnabled(
+                !isPlaying && selectedRoom is FpgRoomDefinition
+                && FpgRoomAuthoringOperations.IsRoomRegistered(
+                    selectedRoom as FpgRoomDefinition));
+            rootVisualElement.Q<Button>("delete-room-button")?.SetEnabled(
+                !isPlaying && selectedRoom is FpgRoomDefinition);
+            rootVisualElement.Q<Button>("save-room-button")?.SetEnabled(
+                !isPlaying && selectedRoom is FpgRoomDefinition);
         }
 
         private string RestoreGameViewAspect(bool logFailure)
@@ -933,6 +904,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             ScriptableObject keepSelection = selectedRoom;
+            string keepSelectionGuid = GetAssetGuid(keepSelection);
             List<ScriptableObject> assets = FpgRoomAuthoringSchema.FindAllRooms();
             Dictionary<string, int> idCounts = assets
                 .Select(room => FpgRoomAuthoringSchema.GetString(room, "roomId"))
@@ -963,9 +935,18 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             ApplyFilters();
-            if (keepSelection != null && allRooms.Any(record => record.Asset == keepSelection))
+            FpgRoomRecord keepRecord = allRooms.FirstOrDefault(record =>
+                !string.IsNullOrEmpty(keepSelectionGuid)
+                && string.Equals(
+                    GetAssetGuid(record.Asset),
+                    keepSelectionGuid,
+                    StringComparison.Ordinal));
+            if (keepRecord != null)
             {
-                SelectRoom(keepSelection);
+                // Rebind the selected asset after a project refresh without reopening
+                // its Art Scene. A failed scene switch must leave the room editable
+                // without prompting again on every property refresh.
+                SelectRoom(keepRecord.Asset, false);
             }
         }
 
@@ -986,6 +967,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 && MatchesStatus(record.Status, status)));
             roomList?.RefreshItems();
             roomCountLabel.text = $"{filteredRooms.Count} / {allRooms.Count} rooms";
+            RestoreRoomListSelection(selectedRoom);
         }
 
         private static bool MatchesStatus(FpgRoomValidationStatus value, string filter)
@@ -1010,90 +992,102 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
         }
 
-        private bool SelectRoom(ScriptableObject room)
+        private bool SelectRoom(
+            ScriptableObject room,
+            bool openArtScene = true)
         {
-            if (ReferenceEquals(selectedRoom, room))
+            room = ResolveRoomAsset(room);
+            bool sameAsset = AreSameAsset(selectedRoom, room);
+            string selectionMessage = string.Empty;
+            bool canceled = false;
+            bool sceneReady = false;
+            string sceneError = string.Empty;
+            if (room is FpgRoomDefinition definition)
             {
-                bool rebuildBindings = roomDetails != null
+                if (openArtScene || !sameAsset)
+                {
+                    bool opened = TryOpenArtSceneForRoom(
+                        definition,
+                        out selectionMessage,
+                        out canceled);
+                    sceneReady = opened
+                        && IsArtSceneReady(definition, out sceneError);
+                    if (opened && !sceneReady)
+                    {
+                        selectionMessage = sceneError;
+                    }
+                }
+                else
+                {
+                    // Refreshes can replace the Unity object instance while retaining
+                    // the same asset GUID. Re-evaluate readiness without reopening the
+                    // scene or showing another dirty-scene dialog.
+                    sceneReady = IsArtSceneReady(definition, out sceneError);
+                    selectionMessage = sceneReady
+                        ? string.Empty
+                        : selectedRoomSceneError;
+                }
+                if (!sceneReady && string.IsNullOrWhiteSpace(selectionMessage))
+                {
+                    selectionMessage = sceneError;
+                }
+            }
+
+            if (canceled)
+            {
+                statusLabel.text = selectionMessage;
+                return false;
+            }
+
+            bool rebuildBindings = !sameAsset
+                || roomDetails != null
                     && (roomDetails.childCount == 0
                         || room != null
                         && (serializedRoom == null
                             || serializedRoom.targetObject != room));
-                if (rebuildBindings)
-                {
-                    serializedRoom = room == null
-                        ? null
-                        : new SerializedObject(room);
-                }
-                else
-                {
-                    serializedRoom?.Update();
-                }
-
-                if (sceneTool?.Room != room)
-                {
-                    sceneTool?.SetRoom(room);
-                }
-                else
-                {
-                    sceneTool?.RebuildPreview();
-                }
-
-                if (rebuildBindings)
-                {
-                    RebuildRoomDetails();
-                    RefreshMarkers();
-                    RefreshValidation();
-                    RestoreRoomListSelection(room);
-                    UpdateCameraPreviewControls();
-                }
-
-                UpdateLevelStatus();
-                return true;
-            }
-
-            string selectionMessage = string.Empty;
-            if (room is FpgRoomDefinition definition
-                && !TryOpenArtSceneForRoom(
-                    definition,
-                    out selectionMessage))
-            {
-                if (!string.IsNullOrWhiteSpace(selectionMessage))
-                {
-                    statusLabel.text = selectionMessage;
-                }
-
-                return false;
-            }
-
             selectedRoom = room;
             serializedRoom = room == null ? null : new SerializedObject(room);
-            SessionState.SetString(
-                SelectedRoomSessionKey,
-                AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(room)));
-            bool cameraPreviewWasActive = sceneTool?.IsCameraPreviewActive == true;
-            sceneTool?.SetRoom(room);
-            RebuildRoomDetails();
-            RefreshMarkers();
-            RefreshValidation();
-
-            RestoreRoomListSelection(room);
-
-            bool cameraPreviewIsActive = sceneTool?.IsCameraPreviewActive == true;
-            if (!cameraPreviewWasActive || cameraPreviewIsActive)
+            if (!sameAsset)
             {
-                UpdateLevelStatus(selectionMessage);
+                SessionState.SetString(
+                    SelectedRoomSessionKey,
+                    GetAssetGuid(room));
             }
 
+            selectedRoomSceneReady = sceneReady;
+            selectedRoomSceneError = sceneReady || !(room is FpgRoomDefinition)
+                ? string.Empty
+                : string.IsNullOrWhiteSpace(selectionMessage)
+                    ? "目标 Art Scene 未打开。"
+                    : selectionMessage;
+            sceneTool?.SetRoom(sceneReady ? room : null);
+            if (rebuildBindings)
+            {
+                RebuildRoomDetails();
+                RefreshMarkers();
+                RefreshValidation();
+            }
+            else
+            {
+                serializedRoom?.Update();
+                RefreshMarkers();
+                RefreshValidation();
+            }
+
+            RestoreRoomListSelection(room);
+            UpdateSceneToolControls();
             UpdateCameraPreviewControls();
+            UpdateLevelStatus(selectionMessage);
             return true;
         }
 
         private bool TryOpenArtSceneForRoom(
             FpgRoomDefinition room,
-            out string message)
+            out string message,
+            out bool canceled)
         {
             message = string.Empty;
+            canceled = false;
             if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
                     room,
                     out string referenceError))
@@ -1101,7 +1095,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 sceneTool?.PrepareForSceneSaveOrSwitch();
                 message =
                     $"Room '{room.RoomId}' Art Scene is unavailable: {referenceError}";
-                return true;
+                return false;
             }
 
             Scene currentScene = SceneManager.GetActiveScene();
@@ -1115,64 +1109,117 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return true;
             }
 
-            bool roomDirty = selectedRoom != null
-                && EditorUtility.IsDirty(selectedRoom);
-            bool sceneDirty = currentScene.IsValid()
-                && currentScene.isLoaded
-                && currentScene.isDirty;
-            if (roomDirty || sceneDirty)
+            bool savedPendingChanges = false;
+            bool discardedPendingChanges = false;
+            List<Scene> dirtyScenes = GetDirtyLoadedScenes();
+
+            List<UnityEngine.Object> dirtyAssets =
+                GetRoomAuthoringAssets(selectedRoom as FpgRoomDefinition)
+                    .Where(EditorUtility.IsDirty)
+                    .OrderBy(AssetDatabase.GetAssetPath, StringComparer.Ordinal)
+                    .ToList();
+            if (dirtyAssets.Count > 0 || dirtyScenes.Count > 0)
             {
-                string currentRoomName = selectedRoom == null
-                    ? "<none>"
-                    : selectedRoom.name;
-                string currentSceneName = currentScene.IsValid()
-                    ? currentScene.name
-                    : "<none>";
+                List<string> pendingNames = dirtyAssets
+                    .Select(asset => asset.name)
+                    .ToList();
+                for (int index = 0; index < dirtyScenes.Count; index++)
+                {
+                    Scene scene = dirtyScenes[index];
+                    pendingNames.Add(string.IsNullOrWhiteSpace(scene.path)
+                        ? scene.name
+                        : scene.path);
+                }
                 int choice = EditorUtility.DisplayDialogComplex(
                     "切换关卡美术场景",
-                    $"当前 RoomDefinition '{currentRoomName}' 或场景 '{currentSceneName}' 有未保存修改。",
+                    $"以下已加载场景或关卡编辑数据有未保存修改：{string.Join("、", pendingNames)}。",
                     "保存",
                     "放弃",
                     "取消");
                 if (choice == 2)
                 {
-                    message = "已取消切换关卡美术场景。";
+                    canceled = true;
+                    message = "已取消切换关卡美术场景；仍选中原关卡。";
                     return false;
                 }
 
+                discardedPendingChanges = choice == 1;
                 sceneTool?.PrepareForSceneSaveOrSwitch();
                 if (choice == 0)
                 {
-                    if (selectedRoom != null)
+                    savedPendingChanges = true;
+                    try
                     {
-                        AssetDatabase.SaveAssetIfDirty(selectedRoom);
-                    }
+                        for (int index = 0; index < dirtyAssets.Count; index++)
+                        {
+                            UnityEngine.Object asset = dirtyAssets[index];
+                            if (string.IsNullOrWhiteSpace(
+                                    AssetDatabase.GetAssetPath(asset)))
+                            {
+                                message =
+                                    $"无法保存未保存资产 '{asset.name}'，目标关卡资料仍可编辑，场景工具已停用。";
+                                return false;
+                            }
 
-                    if (sceneDirty
-                        && !EditorSceneManager.SaveScene(currentScene))
+                            AssetDatabase.SaveAssetIfDirty(asset);
+                        }
+
+                        for (int index = 0; index < dirtyScenes.Count; index++)
+                        {
+                            Scene scene = dirtyScenes[index];
+                            if (!EditorSceneManager.SaveScene(scene))
+                            {
+                                message =
+                                    $"无法保存场景 '{scene.path}'，目标关卡资料仍可编辑，但场景工具已停用。";
+                                return false;
+                            }
+                        }
+                    }
+                    catch (Exception exception)
                     {
                         message =
-                            $"无法保存场景 '{currentScene.path}'，已取消切换。";
-                        sceneTool?.RebuildPreview();
+                            "无法保存关卡编辑数据："
+                            + exception.GetBaseException().Message
+                            + "；目标关卡资料仍可编辑，场景工具已停用。";
                         return false;
                     }
 
-                    if (selectedRoom != null
-                        && EditorUtility.IsDirty(selectedRoom))
+                    if (dirtyAssets.Any(EditorUtility.IsDirty)
+                        || dirtyScenes.Any(scene => scene.isDirty))
                     {
                         message =
-                            $"无法保存 RoomDefinition '{selectedRoom.name}'，已取消切换。";
-                        sceneTool?.RebuildPreview();
+                            "部分关卡编辑资产或已加载场景仍未保存，目标关卡资料仍可编辑，场景工具已停用。";
                         return false;
                     }
                 }
-                else if (selectedRoom != null)
+                else
                 {
-                    string roomPath =
-                        AssetDatabase.GetAssetPath(selectedRoom);
-                    AssetDatabase.ImportAsset(
-                        roomPath,
-                        ImportAssetOptions.ForceUpdate);
+                    try
+                    {
+                        for (int index = 0; index < dirtyAssets.Count; index++)
+                        {
+                            UnityEngine.Object asset = dirtyAssets[index];
+                            string assetPath = AssetDatabase.GetAssetPath(asset);
+                            if (string.IsNullOrWhiteSpace(assetPath))
+                            {
+                                message =
+                                    $"无法放弃未保存资产 '{asset.name}'：它不是可重新导入的项目资产，目标关卡资料仍可编辑。";
+                                return false;
+                            }
+
+                            AssetDatabase.ImportAsset(
+                                assetPath,
+                                ImportAssetOptions.ForceUpdate);
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        message =
+                            "无法放弃关卡编辑资产修改："
+                            + exception.GetBaseException().Message
+                            + "；目标关卡资料仍可编辑，场景工具已停用。";
+                        return false;
+                    }
                 }
             }
             else
@@ -1188,7 +1235,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 if (!SceneManager.SetActiveScene(artScene))
                 {
                     message =
-                        $"无法将关卡美术场景 '{room.ArtScenePath}' 设为 Active。";
+                        $"无法将关卡美术场景 '{room.ArtScenePath}' 设为 Active；目标关卡资料仍可编辑，场景工具已停用。";
                     return false;
                 }
             }
@@ -1196,12 +1243,32 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 message =
                     $"打开关卡美术场景 '{room.ArtScenePath}' 失败："
-                    + exception.GetBaseException().Message;
+                    + exception.GetBaseException().Message
+                    + "；目标关卡资料仍可编辑，场景工具已停用。";
                 return false;
             }
 
-            message = $"已打开关卡美术场景：{room.ArtScenePath}";
+            message = savedPendingChanges
+                ? $"已保存未保存修改并切换关卡美术场景：{room.ArtScenePath}"
+                : discardedPendingChanges
+                    ? $"已放弃未保存修改并切换关卡美术场景：{room.ArtScenePath}"
+                    : $"已切换关卡美术场景：{room.ArtScenePath}";
             return true;
+        }
+
+        private static List<Scene> GetDirtyLoadedScenes()
+        {
+            List<Scene> dirtyScenes = new List<Scene>();
+            for (int index = 0; index < SceneManager.sceneCount; index++)
+            {
+                Scene scene = SceneManager.GetSceneAt(index);
+                if (scene.IsValid() && scene.isLoaded && scene.isDirty)
+                {
+                    dirtyScenes.Add(scene);
+                }
+            }
+
+            return dirtyScenes;
         }
 
         private void RestoreRoomListSelection(ScriptableObject room)
@@ -1211,8 +1278,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            int roomIndex =
-                filteredRooms.FindIndex(record => record.Asset == room);
+            string guid = GetAssetGuid(room);
+            int roomIndex = filteredRooms.FindIndex(record =>
+                !string.IsNullOrEmpty(guid)
+                && string.Equals(
+                    GetAssetGuid(record.Asset),
+                    guid,
+                    StringComparison.Ordinal));
             suppressRoomSelectionChanged = true;
             try
             {
@@ -1232,6 +1304,225 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
         }
 
+        private ScriptableObject ResolveRoomAsset(ScriptableObject room)
+        {
+            if (room == null)
+            {
+                return null;
+            }
+
+            string guid = GetAssetGuid(room);
+            if (string.IsNullOrEmpty(guid))
+            {
+                return room;
+            }
+
+            FpgRoomRecord record = allRooms.FirstOrDefault(candidate =>
+                string.Equals(
+                    GetAssetGuid(candidate.Asset),
+                    guid,
+                    StringComparison.Ordinal));
+            return record?.Asset ?? room;
+        }
+
+        private static bool AreSameAsset(
+            UnityEngine.Object first,
+            UnityEngine.Object second)
+        {
+            if (first == second)
+            {
+                return true;
+            }
+
+            string firstGuid = GetAssetGuid(first);
+            string secondGuid = GetAssetGuid(second);
+            return !string.IsNullOrEmpty(firstGuid)
+                && string.Equals(firstGuid, secondGuid, StringComparison.Ordinal);
+        }
+
+        private static string GetAssetGuid(UnityEngine.Object asset)
+        {
+            if (asset == null)
+            {
+                return string.Empty;
+            }
+
+            string path = AssetDatabase.GetAssetPath(asset);
+            return string.IsNullOrEmpty(path)
+                ? string.Empty
+                : AssetDatabase.AssetPathToGUID(path);
+        }
+
+        private bool IsArtSceneReady(
+            FpgRoomDefinition room,
+            out string error)
+        {
+            error = string.Empty;
+            if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    room,
+                    out error))
+            {
+                return false;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid()
+                || !activeScene.isLoaded
+                || !string.Equals(
+                    activeScene.path,
+                    room.ArtScenePath,
+                    StringComparison.Ordinal))
+            {
+                error = $"当前场景未切换到目标 Art Scene '{room.ArtScenePath}'。";
+                return false;
+            }
+
+            if (!FpgRoomArtRoot.TryResolve(
+                    activeScene,
+                    room,
+                    out _,
+                    out error))
+            {
+                error = "目标 Art Scene 合同无效：" + error;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void RefreshSelectedSceneBinding(string message = null)
+        {
+            bool ready = false;
+            string error = string.Empty;
+            if (selectedRoom is FpgRoomDefinition definition)
+            {
+                ready = IsArtSceneReady(definition, out error);
+            }
+
+            selectedRoomSceneReady = ready;
+            selectedRoomSceneError = ready ? string.Empty : error;
+            if (sceneTool != null
+                && !AreSameAsset(
+                    sceneTool.Room,
+                    ready ? selectedRoom : null))
+            {
+                if (!ready)
+                {
+                    sceneTool.PrepareForSceneSaveOrSwitch();
+                }
+
+                sceneTool.SetRoom(ready ? selectedRoom : null);
+            }
+
+            UpdateSceneToolControls();
+            UpdateCameraPreviewControls();
+            UpdateLevelStatus(message);
+        }
+
+        private void OnActiveSceneChanged(Scene previous, Scene current)
+        {
+            RefreshSelectedSceneBinding();
+        }
+
+        private void OnEditorSceneOpened(Scene scene, OpenSceneMode mode)
+        {
+            RefreshSelectedSceneBinding();
+        }
+
+        private void OnEditorSceneClosed(Scene scene)
+        {
+            RefreshSelectedSceneBinding();
+        }
+
+        private void UpdateSceneToolControls()
+        {
+            bool enabled = selectedRoomSceneReady
+                && selectedRoom is FpgRoomDefinition
+                && !EditorApplication.isPlayingOrWillChangePlaymode;
+            rootVisualElement.Q<Button>("frame-room-button")?.SetEnabled(enabled);
+            rootVisualElement.Q<Button>("duplicate-marker-button")?.SetEnabled(enabled);
+            rootVisualElement.Q<Button>("delete-marker-button")?.SetEnabled(enabled);
+            rootVisualElement.Q<FloatField>("snap-field")?.SetEnabled(enabled);
+            rootVisualElement.Q<Toggle>("show-marker-handles-toggle")?.SetEnabled(enabled);
+            foreach (Button button in markerToolButtons.Values)
+            {
+                button.SetEnabled(enabled);
+            }
+
+            RefreshMarkerToolStyles();
+        }
+
+        private void UpdateLevelStatus(string message = null)
+        {
+            if (statusLabel == null)
+            {
+                return;
+            }
+
+            if (selectedRoom == null)
+            {
+                statusLabel.text = string.IsNullOrWhiteSpace(message)
+                    ? "未选择房间。"
+                    : message;
+                return;
+            }
+
+            string roomState = EditorUtility.IsDirty(selectedRoom)
+                ? "草稿：未保存"
+                : "草稿：已保存";
+            string sceneState;
+            if (selectedRoom is FpgRoomDefinition definition
+                && selectedRoomSceneReady)
+            {
+                Scene artScene = SceneManager.GetActiveScene();
+                sceneState = artScene.isDirty
+                    ? "Art Scene：未保存"
+                    : "Art Scene：已打开且可编辑";
+            }
+            else if (selectedRoom is FpgRoomDefinition)
+            {
+                string reason = string.IsNullOrWhiteSpace(selectedRoomSceneError)
+                    ? "当前场景未切换到目标关卡"
+                    : selectedRoomSceneError;
+                sceneState = "Art Scene：未切换，场景工具已停用（" + reason + "）";
+            }
+            else
+            {
+                sceneState = "Art Scene：不可用";
+            }
+
+            string productionState = string.Empty;
+            if (selectedRoom is FpgRoomDefinition productionRoom)
+            {
+                bool registered =
+                    FpgRoomAuthoringOperations.IsRoomRegistered(productionRoom);
+                bool roomValid = productionRoom.Validate().IsValid;
+                bool editorValidationPassed = !validation.Any(
+                    item => item.Severity == FpgRoomValidationSeverity.Error);
+                bool buildSettingsValid = registered
+                    && FpgProductionSceneList.TryValidateEditorBuildSettings(out _);
+                productionState = registered
+                    ? buildSettingsValid && roomValid && editorValidationPassed
+                        ? " | 生产校验：通过"
+                        : " | 生产校验：待修复"
+                    : " | 生产状态：草稿，尚未登记";
+            }
+
+            string cameraState = sceneTool?.IsCameraPreviewActive == true
+                ? $" | Camera: 16:9 {selectedPreviewCharacter?.DisplayName}"
+                : string.Empty;
+            string cameraTemplateState = selectedCameraTemplate == null
+                ? string.Empty
+                : EditorUtility.IsDirty(selectedCameraTemplate)
+                    ? " | Camera Template: unsaved"
+                    : " | Camera Template: saved";
+            string prefix = string.IsNullOrWhiteSpace(message)
+                ? string.Empty
+                : message + " | ";
+            statusLabel.text = prefix + roomState + " | " + sceneState
+                + cameraState + cameraTemplateState + productionState;
+        }
+
         private void RebuildRoomDetails()
         {
             roomDetails.Unbind();
@@ -1248,6 +1539,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 "roomId", "displayName", "designerNotes", "artScene", "mainGroup", "tags"
             };
+            roomPropertyFields.Clear();
             foreach (string propertyName in properties)
             {
                 SerializedProperty property = serializedRoom.FindProperty(propertyName);
@@ -1257,7 +1549,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
 
                 PropertyField field = new PropertyField(property, FpgRoomAuthoringSchema.ChinesePropertyName(propertyName));
+                field.name = propertyName;
                 field.BindProperty(property);
+                roomPropertyFields[propertyName] = field;
                 if (propertyName == "roomId")
                 {
                     List<ScriptableObject> rooms = FpgRoomAuthoringSchema.FindAllRooms();
@@ -1398,6 +1692,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             formalPreviewOutput.Clear();
             FpgRoomDefinition room = selectedRoom as FpgRoomDefinition;
+            if (!TryValidateRoomForGameplayPreview(room, out string validationError))
+            {
+                formalPreviewOutput.Add(new HelpBox(
+                    "玩法预览被阻止，关卡尚未通过完整校验：\n" + validationError,
+                    HelpBoxMessageType.Error));
+                return;
+            }
+
             if (!FpgEncounterPreviewUtility.TryGenerate(
                     room,
                     formalPreviewProfile,
@@ -1518,6 +1820,13 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
 
             FpgRoomDefinition room = selectedRoom as FpgRoomDefinition;
+            if (!TryValidateRoomForGameplayPreview(room, out string validationError))
+            {
+                ResetFormalEncounterPreviewOutput(
+                    "玩法预览被阻止，关卡尚未通过完整校验：\n" + validationError);
+                return;
+            }
+
             if (!FpgEncounterPreviewUtility.TryGenerate(
                     room,
                     formalPreviewProfile,
@@ -1677,6 +1986,38 @@ namespace FPG.Demo.Editor.LevelAuthoring
             }
         }
 
+        private static bool TryValidateRoomForGameplayPreview(
+            FpgRoomDefinition room,
+            out string error)
+        {
+            List<string> errors = new List<string>();
+            if (room == null)
+            {
+                error = "未选择有效的 RoomDefinition。";
+                return false;
+            }
+
+            List<ScriptableObject> rooms = FpgRoomAuthoringSchema.FindAllRooms();
+            Dictionary<string, int> idCounts = rooms
+                .Select(candidate => FpgRoomAuthoringSchema.GetString(candidate, "roomId"))
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .GroupBy(id => id, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+            errors.AddRange(FpgRoomAuthoringSchema.Validate(room, idCounts)
+                .Where(item => item.Severity == FpgRoomValidationSeverity.Error)
+                .Select(item => item.Message));
+
+            if (!FpgRoomArtSceneContractValidator.TryValidateScene(
+                    room,
+                    out string contractError))
+            {
+                errors.Add("Art Scene 契约：" + contractError);
+            }
+
+            error = string.Join("\n", errors.Distinct());
+            return errors.Count == 0;
+        }
+
         private void ResetFormalEncounterPreviewOutput(string message)
         {
             if (formalPreviewOutput == null)
@@ -1704,10 +2045,37 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (propertyName == "artScene"
                 && selectedRoom is FpgRoomDefinition definition)
             {
-                TryOpenArtSceneForRoom(
+                bool opened = TryOpenArtSceneForRoom(
                     definition,
-                    out statusMessage);
-                sceneTool?.RebuildPreview();
+                    out statusMessage,
+                    out bool canceled);
+                string sceneError = string.Empty;
+                bool ready = false;
+                if (opened)
+                {
+                    ready = IsArtSceneReady(
+                        definition,
+                        out sceneError);
+                    if (!ready)
+                    {
+                        statusMessage = sceneError;
+                    }
+                }
+
+                selectedRoomSceneReady = ready;
+                selectedRoomSceneError = ready
+                    ? string.Empty
+                    : string.IsNullOrWhiteSpace(statusMessage)
+                        ? "Art Scene 尚未切换。"
+                        : statusMessage;
+                if (canceled)
+                {
+                    selectedRoomSceneReady = false;
+                    selectedRoomSceneError = statusMessage;
+                }
+                sceneTool?.SetRoom(ready ? selectedRoom : null);
+                UpdateSceneToolControls();
+                UpdateCameraPreviewControls();
             }
 
             QueueCurrentRoomRefresh();
@@ -1769,6 +2137,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             markerDetails.Unbind();
             markerDetails.Clear();
+            markerPropertyFields.Clear();
             if (serializedRoom == null || handle == null)
             {
                 Label empty = new Label("Select a marker in the list or Scene View.");
@@ -1891,7 +2260,9 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             SerializedProperty boundProperty = property.Copy();
             PropertyField field = new PropertyField(boundProperty, label);
+            field.name = boundProperty.propertyPath;
             field.BindProperty(boundProperty);
+            markerPropertyFields[boundProperty.propertyPath] = field;
             field.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
             {
                 if (serializedRoom != null && serializedRoom.hasModifiedProperties)
@@ -2026,13 +2397,23 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     {
                         Scene loadedArtScene = SceneManager.GetSceneByPath(
                             definition.ArtScenePath);
-                        if (loadedArtScene.IsValid()
-                            && loadedArtScene.isLoaded
-                            && !FpgRoomArtRoot.TryResolve(
-                                loadedArtScene,
+                        bool contractValid;
+                        string contractError;
+                        if (loadedArtScene.IsValid() && loadedArtScene.isLoaded)
+                        {
+                            contractValid = FpgRoomArtSceneContractValidator.TryValidateLoadedSceneForAuthoring(
                                 definition,
-                                out _,
-                                out string contractError))
+                                loadedArtScene,
+                                out contractError);
+                        }
+                        else
+                        {
+                            contractValid = FpgRoomArtSceneContractValidator.TryValidateScene(
+                                definition,
+                                out contractError);
+                        }
+
+                        if (!contractValid)
                         {
                             validation.Add(new FpgRoomValidationItem(
                                 FpgRoomValidationSeverity.Error,
@@ -2082,12 +2463,51 @@ namespace FPG.Demo.Editor.LevelAuthoring
             {
                 FpgRoomMarkerHandle marker = markers.FirstOrDefault(candidate =>
                     candidate.Kind == item.MarkerKind.Value && candidate.Index == item.MarkerIndex);
-                sceneTool?.SelectMarker(marker, true);
+                if (marker != null)
+                {
+                    int markerListIndex = markers.IndexOf(marker);
+                    markerList.SetSelectionWithoutNotify(new[] { markerListIndex });
+                    sceneTool?.SelectMarker(marker, selectedRoomSceneReady);
+                    RebuildMarkerDetails(marker);
+                    EditorApplication.delayCall += () =>
+                        FocusValidationProperty(
+                            item.PropertyPath,
+                            "marker-details-scroll",
+                            markerDetails);
+                }
             }
             else if (!string.IsNullOrWhiteSpace(item.PropertyPath))
             {
-                rootVisualElement.Q<ScrollView>("room-details-scroll")?.ScrollTo(roomDetails);
+                FocusValidationProperty(
+                    item.PropertyPath,
+                    "room-details-scroll",
+                    roomDetails);
             }
+        }
+
+        private void FocusValidationProperty(
+            string propertyPath,
+            string scrollViewName,
+            VisualElement fallback)
+        {
+            ScrollView scrollView = rootVisualElement.Q<ScrollView>(scrollViewName);
+            if (scrollView == null)
+            {
+                return;
+            }
+
+            Dictionary<string, VisualElement> fields = scrollViewName == "marker-details-scroll"
+                ? markerPropertyFields
+                : roomPropertyFields;
+            if (!string.IsNullOrWhiteSpace(propertyPath)
+                && fields.TryGetValue(propertyPath, out VisualElement field))
+            {
+                scrollView.ScrollTo(field);
+                field.Focus();
+                return;
+            }
+
+            scrollView.ScrollTo(fallback);
         }
 
         private void QueueCurrentRoomRefresh()
@@ -2141,35 +2561,49 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         private void CreateRoom()
         {
-            Type roomType = FpgRoomAuthoringSchema.RoomType;
-            if (roomType == null)
-            {
-                EditorUtility.DisplayDialog("Cannot Create Room", "FPG.Unity does not expose FpgRoomDefinition.", "OK");
-                return;
-            }
-
-            EnsureAssetFolder(FpgRoomAuthoringSchema.DefaultRoomAssetFolder);
             string path = EditorUtility.SaveFilePanelInProject(
-                "Create Room",
+                "新建关卡草稿",
                 "Room_New",
                 "asset",
-                "Choose a location for the room asset.",
+                "输入关卡名称并选择 RoomDefinition 资产位置。将同时创建同名 Art Scene 草稿。",
                 FpgRoomAuthoringSchema.DefaultRoomAssetFolder);
             if (string.IsNullOrWhiteSpace(path))
             {
                 return;
             }
 
-            ScriptableObject asset = ScriptableObject.CreateInstance(roomType);
-            SerializedObject serialized = new SerializedObject(asset);
-            serialized.FindProperty("roomId").stringValue = GenerateRoomId();
-            serialized.FindProperty("displayName").stringValue = Path.GetFileNameWithoutExtension(path);
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            AssetDatabase.CreateAsset(asset, AssetDatabase.GenerateUniqueAssetPath(path));
-            AssetDatabase.SaveAssetIfDirty(asset);
+            if (!FpgRoomAuthoringOperations.TryCreateRoomDraft(
+                    path,
+                    out FpgRoomDefinition draft,
+                    out string error))
+            {
+                EditorUtility.DisplayDialog("新建关卡草稿失败", error, "确定");
+                UpdateLevelStatus("新建草稿失败：" + error);
+                return;
+            }
+
             RefreshRoomAssets();
-            SelectRoom(asset);
-            Selection.activeObject = asset;
+            bool selected = SelectRoom(draft);
+            if (!selected)
+            {
+                UpdateLevelStatus(
+                    $"已创建草稿 '{draft.DisplayName}'，但已取消切换；当前关卡保持不变。新草稿仍可在列表中打开。");
+                return;
+            }
+
+            Selection.activeObject = draft;
+            string status =
+                $"已创建未登记生产的草稿 '{draft.DisplayName}'。";
+            if (!selectedRoomSceneReady)
+            {
+                status += " Art Scene 未切换，场景编辑工具已停用："
+                    + selectedRoomSceneError;
+            }
+            else
+            {
+                status += " Art Scene 可直接编辑预览。";
+            }
+            UpdateLevelStatus(status);
         }
 
         private void DuplicateRoom()
@@ -2181,12 +2615,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
             string sourcePath = AssetDatabase.GetAssetPath(sourceRoom);
             string directory = Path.GetDirectoryName(sourcePath)?.Replace('\\', '/');
-            string defaultName = sourceRoom.name + "_Copy";
+            string defaultName = string.IsNullOrWhiteSpace(sourceRoom.DisplayName)
+                ? "Room_New"
+                : sourceRoom.DisplayName;
             string path = EditorUtility.SaveFilePanelInProject(
-                "Duplicate Room",
+                "复制关卡",
                 defaultName,
                 "asset",
-                "Copies the room and Art Scene, repairs the scene root binding, and registers both for production.",
+                "输入新的完整关卡名称。该名称将用于资产名、显示名和 Art Scene 文件名。复制会保留副本；生产登记失败时不会阻断复制。",
                 directory);
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -2197,24 +2633,134 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (!FpgRoomAuthoringOperations.TryDuplicateRoomWithArtScene(
                     sourceRoom,
                     path,
+                    Path.GetFileNameWithoutExtension(path),
                     true,
                     out FpgRoomDefinition copy,
                     out string error))
             {
-                sceneTool?.RebuildPreview();
                 EditorUtility.DisplayDialog(
-                    "Duplicate Room Failed",
+                    "复制关卡失败",
                     error,
-                    "OK");
-                UpdateLevelStatus("Duplicate room failed: " + error);
+                    "确定");
+                RefreshSelectedSceneBinding();
+                UpdateLevelStatus("复制关卡失败：" + error);
                 return;
             }
 
             RefreshRoomAssets();
-            SelectRoom(copy);
+            bool selected = SelectRoom(copy);
+            if (!selected)
+            {
+                sceneTool?.RebuildPreview();
+                string canceledMessage =
+                    $"已复制关卡 '{copy.DisplayName}'，但已取消切换；当前关卡保持不变。复制资产仍可在列表中打开。";
+                if (!string.IsNullOrWhiteSpace(error))
+                {
+                    canceledMessage += " " + error;
+                    EditorUtility.DisplayDialog(
+                        "复制已完成，但登记有警告",
+                        error,
+                        "确定");
+                }
+                UpdateLevelStatus(canceledMessage);
+                return;
+            }
+
             Selection.activeObject = copy;
-            UpdateLevelStatus(
-                $"Duplicated room '{copy.RoomId}' with a bound Art Scene and production registration.");
+            string successMessage = string.IsNullOrWhiteSpace(error)
+                ? $"已复制关卡 '{copy.DisplayName}'，并已登记生产。"
+                : $"已复制关卡 '{copy.DisplayName}'，但生产登记未完成；副本已保留。";
+            if (!selectedRoomSceneReady)
+            {
+                successMessage += " Art Scene 未切换，场景编辑工具已停用："
+                    + selectedRoomSceneError;
+            }
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                successMessage += " " + error;
+                EditorUtility.DisplayDialog(
+                    "复制已完成，但登记有警告",
+                    error,
+                    "确定");
+            }
+            UpdateLevelStatus(successMessage);
+        }
+
+        private void RemoveRoomFromProduction()
+        {
+            if (!(selectedRoom is FpgRoomDefinition definition))
+            {
+                return;
+            }
+
+            if (!FpgRoomAuthoringOperations.TryRemoveRoomFromProduction(
+                    definition,
+                    out string error))
+            {
+                EditorUtility.DisplayDialog("移出生产失败", error, "确定");
+                UpdateLevelStatus("移出生产失败：" + error);
+                return;
+            }
+
+            RefreshRoomAssets();
+            UpdateLevelStatus("已从生产目录和 Build Settings 移除；关卡资产已保留。");
+        }
+
+        private void DeleteRoomCompletely()
+        {
+            if (!(selectedRoom is FpgRoomDefinition definition))
+            {
+                return;
+            }
+
+            if (!FpgRoomAuthoringOperations.TryGetRoomDeletionPlan(
+                    definition,
+                    out string report,
+                    out bool canDelete,
+                    out string error))
+            {
+                EditorUtility.DisplayDialog("无法删除关卡", error, "确定");
+                UpdateLevelStatus("删除预检失败：" + error);
+                return;
+            }
+
+            if (!canDelete)
+            {
+                EditorUtility.DisplayDialog("无法删除关卡", report, "确定");
+                UpdateLevelStatus("删除已阻止：存在未保存修改或外部引用。");
+                return;
+            }
+
+            if (!EditorUtility.DisplayDialog(
+                    "彻底删除关卡？",
+                    report,
+                    "删除",
+                    "取消"))
+            {
+                UpdateLevelStatus("已取消彻底删除关卡。");
+                return;
+            }
+
+            sceneTool?.PrepareForSceneSaveOrSwitch();
+            if (!FpgRoomAuthoringOperations.TryDeleteRoomCompletely(
+                    definition,
+                    out error))
+            {
+                EditorUtility.DisplayDialog("删除关卡失败", error, "确定");
+                RefreshRoomAssets();
+                UpdateLevelStatus("删除失败：" + error);
+                return;
+            }
+
+            selectedRoom = null;
+            serializedRoom = null;
+            selectedRoomSceneReady = false;
+            selectedRoomSceneError = string.Empty;
+            SessionState.SetString(SelectedRoomSessionKey, string.Empty);
+            sceneTool?.SetRoom(null);
+            RefreshRoomAssets();
+            SelectRoom(filteredRooms.FirstOrDefault()?.Asset);
+            UpdateLevelStatus("关卡、专属 Art Scene 和无引用镜头配置已删除。");
         }
 
         private void SaveRoom()
@@ -2224,65 +2770,80 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 return;
             }
 
-            if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
-                    definition,
-                    out string referenceError))
-            {
-                UpdateLevelStatus("保存关卡失败：" + referenceError);
-                return;
-            }
+            HashSet<UnityEngine.Object> authoringAssets =
+                GetRoomAuthoringAssets(definition);
 
-            Scene artScene =
-                SceneManager.GetSceneByPath(definition.ArtScenePath);
-            if (!artScene.IsValid() || !artScene.isLoaded
-                || SceneManager.GetActiveScene() != artScene)
+            Scene activeScene = SceneManager.GetActiveScene();
+            bool activeTargetArtScene = activeScene.IsValid()
+                && activeScene.isLoaded
+                && string.Equals(
+                    activeScene.path,
+                    definition.ArtScenePath,
+                    StringComparison.Ordinal);
+            try
             {
-                UpdateLevelStatus(
-                    $"保存关卡失败：当前 Active Scene 必须是 '{definition.ArtScenePath}'。");
-                return;
-            }
-
-            sceneTool?.PrepareForSceneSaveOrSwitch();
-            AssetDatabase.SaveAssetIfDirty(selectedRoom);
-            if (selectedCameraTemplate != null)
-            {
-                AssetDatabase.SaveAssetIfDirty(selectedCameraTemplate);
-            }
-            HashSet<FpgCoverCameraProfile> cameraProfiles =
-                new HashSet<FpgCoverCameraProfile>();
-            for (int index = 0; index < definition.CoverSlots.Count; index++)
-            {
-                FpgCoverCameraProfile profile =
-                    definition.CoverSlots[index].CameraProfile;
-                if (profile != null && cameraProfiles.Add(profile))
+                foreach (UnityEngine.Object asset in authoringAssets)
                 {
-                    AssetDatabase.SaveAssetIfDirty(profile);
+                    AssetDatabase.SaveAssetIfDirty(asset);
+                }
+
+                bool sceneSaved = !activeTargetArtScene
+                    || !activeScene.isDirty
+                    || EditorSceneManager.SaveScene(activeScene);
+                if (authoringAssets.Any(EditorUtility.IsDirty)
+                    || !sceneSaved)
+                {
+                    UpdateLevelStatus("保存失败：RoomDefinition、镜头配置或当前目标 Art Scene 仍未保存。");
+                    return;
                 }
             }
-            bool sceneSaved = !artScene.isDirty
-                || EditorSceneManager.SaveScene(artScene);
-            if (EditorUtility.IsDirty(selectedRoom)
-                || (selectedCameraTemplate != null
-                    && EditorUtility.IsDirty(selectedCameraTemplate))
-                || cameraProfiles.Any(EditorUtility.IsDirty)
-                || !sceneSaved)
+            catch (Exception exception)
             {
-                sceneTool?.RebuildPreview();
-                UpdateLevelStatus("保存关卡失败，请检查 Console。");
+                UpdateLevelStatus("保存失败：" + exception.GetBaseException().Message);
                 return;
             }
 
-            if (!FpgRoomArtSceneContractValidator.TryValidateScene(
+            string saveMessage = activeTargetArtScene
+                ? "草稿和目标 Art Scene 已保存。"
+                : "RoomDefinition 与镜头配置已保存为草稿；Art Scene 未保存，因为它不是当前 Active Scene。";
+            if (activeTargetArtScene
+                && !FpgRoomArtSceneContractValidator.TryValidateScene(
                     definition,
                     out string contractError))
             {
-                sceneTool?.RebuildPreview();
-                UpdateLevelStatus("关卡已保存，但 Art Scene 契约无效：" + contractError);
-                return;
+                saveMessage += " Art Scene 正式合同待修复：" + contractError;
             }
 
-            sceneTool?.RebuildPreview();
-            UpdateLevelStatus("关卡已保存");
+            RefreshSelectedSceneBinding();
+            RefreshRoomAssets();
+            UpdateLevelStatus(saveMessage);
+        }
+
+        private HashSet<UnityEngine.Object> GetRoomAuthoringAssets(
+            FpgRoomDefinition room)
+        {
+            HashSet<UnityEngine.Object> assets =
+                new HashSet<UnityEngine.Object>();
+            if (room != null)
+            {
+                assets.Add(room);
+                for (int index = 0; index < room.CoverSlots.Count; index++)
+                {
+                    FpgCoverCameraProfile profile =
+                        room.CoverSlots[index]?.CameraProfile;
+                    if (profile != null)
+                    {
+                        assets.Add(profile);
+                    }
+                }
+            }
+
+            if (selectedCameraTemplate != null)
+            {
+                assets.Add(selectedCameraTemplate);
+            }
+
+            return assets;
         }
 
 

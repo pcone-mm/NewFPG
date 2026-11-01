@@ -3,10 +3,10 @@
 本目录负责正式房间、出口、玩家组合和 Encounter 桥接；BattleTest 只能通过显式 sandbox mode 复用这些合同，不得恢复 CombatLab 或 D0 scenario 运行职责。
 
 - `FpgRoomDefinition/Markers/Validation` 定义房间序列化合同；Art Scene 引用必须同时持有稳定 GUID 与运行时路径。Cover slot 必须有有效 `FpgCoverEntityView` prefab、`FpgCoverCameraProfile`、正耐久、有限的独立玩家到达 pose，以及有限且互不重合的左右探身位置，并满足唯一初始项与唯一到达 X。
-- `FpgRoomInstance` 只解析 gameplay marker 并实例化可破坏物与 cover slot，不实例化旧环境 prefab；它按 marker ID 解析 Profile，并由玩家世界 Pose 生成不可变 Camera Shot。`TryResolveCoverPeekPosition` 只把当前 cover slot 的左右 authored 位置变换到世界空间，不从 prefab 或 ThreeC 推导偏移。cover view 只按领域 snapshot 切换完好/损毁根和阻挡 collider。
+- `FpgRoomInstance` 只解析 gameplay marker 并实例化可破坏物与 cover slot，不实例化旧环境 prefab；它按 marker ID 解析 Profile，并由玩家世界 Pose 生成不可变 Camera Shot。掩体实例根缩放等于 Prefab 根缩放乘 `FpgRoomCoverSlot.ScaleMultiplier`；缩放不得改变 `TryResolveCoverPeekPosition` 使用的左右 authored 位置。cover view 只按领域 snapshot 切换完好/损毁根和阻挡 collider。
 - Cover blocker 从 `intactRoot` 下的 Mesh 派生：存在 `__ShadowCasterProxy` 时只取同名 proxy，否则取可渲染 Mesh；每个源 Mesh 必须在同一对象上有匹配的非 trigger、非 convex MeshCollider，旧 `blockingColliders` 仅保留序列化兼容。RoomInstance 以稳定 GeometryId 注册 collider 并维护 GeometryId 到 CoverId 的解析。
 - `FpgRoomArtSceneLoader` 由 FormalRoom 唯一拥有，负责 additive load/unload、active scene 切换、`LightProbes.Tetrahedralize` 和核心加载失败回滚；表现绑定或 Light Probe 更新异常只警告，不得阻断房间进入。
-- 每个 Art Scene 必须只有一个 scene-root `FpgRoomArtRoot`，并通过 `IFpgRoomArtPresentationBinding` 显式绑定/解绑 Formal Camera、可选的 `RenderSettings.sun` 与瞄准视口；表现绑定不能反写 gameplay 状态，单个表现适配器异常不得阻断房间加载。
+- 每个 Art Scene 必须恰有一个顶层 `FpgRoomArtRoot` 并引用匹配的 RoomDefinition；允许额外的顶层非 gameplay 对象，整个场景不得包含 gameplay 组件/Host。Art Scene 通过 `IFpgRoomArtPresentationBinding` 显式绑定/解绑 Formal Camera、可选的 `RenderSettings.sun` 与瞄准视口；表现绑定不能反写 gameplay 状态，单个表现适配器异常不得阻断房间加载。
 - `FpgWaterPlanarReflection` 是本目录内唯一遵循 `IFpgRoomArtPresentationBinding` 的水面运行时适配器：`TryBind` 解析 Art Scene 水面 Renderer 并接收 Formal Camera，用一台隐藏镜像相机按 `updateInterval` 将正式相机可见场景渲染到半分辨率 RenderTexture。水面层和 UI 层必须排除以避免递归或错误 UI 倒影；`Unbind` 必须恢复材质属性块并释放运行时 Camera 与 RenderTexture。场景耦合的 `Presentation/Level/.../GenshinPlanarReflection` 不走此合同，不能把它接入房间、战斗或 gameplay 状态。
 - `FpgFormalEncounterHost`、`FpgRoomEncounterDirector` 和 adapters 把房间/Profile/Override 连接到 `FpgEncounterSession`。
 - `FpgRoomEncounterDirector` 只在 `BattleTestSandbox` 预热完整敌人 catalog 并接受 external spawn；生产模式不得开放该入口，任何 spawn 仍需通过房间点位、容量和实体池校验。

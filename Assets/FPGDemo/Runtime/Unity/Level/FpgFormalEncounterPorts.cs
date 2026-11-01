@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FPG.Demo.Combat;
 using FPG.Demo.Core;
 using FPG.Demo.Run;
+using FPG.Demo.Skills;
 using UnityEngine;
 
 namespace FPG.Demo.Unity
@@ -287,7 +288,8 @@ namespace FPG.Demo.Unity
     public sealed class FpgUnityEncounterEntityPort :
         IFpgEncounterEntityPort,
         IFpgFormalEnemyPresentationPort,
-        IFpgFormalEnemyMotionAuthority
+        IFpgFormalEnemyMotionAuthority,
+        IFpgEnemyHitReactionPort
     {
         private const int DefaultPresentationLeaseTicks = 12;
 
@@ -298,7 +300,16 @@ namespace FPG.Demo.Unity
         private readonly FpgFormalHitboxRegistry hitboxRegistry;
         private readonly FpgOverheadHealthBarPool healthBarPool;
         private readonly RuntimeBinding[] bindings;
+        private readonly Vector3[] agentPositions;
+        private readonly bool[] agentActive;
+        private readonly IFpgEnemyMovementExecutor[] movementExecutors;
+        private readonly bool[] externalMovementActive;
+        private readonly string[] movementAnimationNames;
+        private readonly TickIndex[] movementAnimationStartTicks;
         private readonly int presentationLeaseTicks;
+        private readonly FpgRoomNavigationVolume navigationVolume;
+        private readonly Transform playerAnchor;
+        private readonly Camera worldCamera;
 
         public FpgUnityEncounterEntityPort(
             FpgEnemyEntityPool entityPool,
@@ -308,7 +319,10 @@ namespace FPG.Demo.Unity
             int capacity,
             FpgFormalHitboxRegistry hitboxRegistry = null,
             FpgOverheadHealthBarPool healthBarPool = null,
-            int presentationLeaseTicks = DefaultPresentationLeaseTicks)
+            int presentationLeaseTicks = DefaultPresentationLeaseTicks,
+            FpgRoomNavigationVolume navigationVolume = null,
+            Transform playerAnchor = null,
+            Camera worldCamera = null)
         {
             this.entityPool = entityPool ?? throw new ArgumentNullException(nameof(entityPool));
             this.anchorMap = anchorMap ?? throw new ArgumentNullException(nameof(anchorMap));
@@ -327,7 +341,20 @@ namespace FPG.Demo.Unity
             this.hitboxRegistry = hitboxRegistry;
             this.healthBarPool = healthBarPool;
             this.presentationLeaseTicks = presentationLeaseTicks;
+            this.navigationVolume = navigationVolume;
+            this.playerAnchor = playerAnchor;
+            this.worldCamera = worldCamera;
             bindings = new RuntimeBinding[capacity];
+            agentPositions = new Vector3[capacity];
+            agentActive = new bool[capacity];
+            movementExecutors = new IFpgEnemyMovementExecutor[capacity];
+            externalMovementActive = new bool[capacity];
+            movementAnimationNames = new string[capacity];
+            movementAnimationStartTicks = new TickIndex[capacity];
+            for (int index = 0; index < capacity; index++)
+            {
+                movementAnimationStartTicks[index] = TickIndex.Invalid;
+            }
         }
 
         public int Capacity => bindings.Length;
@@ -337,6 +364,15 @@ namespace FPG.Demo.Unity
         public int HealthBarReleaseFailureCount { get; private set; }
         public int HealthBarCallbackFaultCount { get; private set; }
         public int EnemyPresentationFailureCount { get; private set; }
+        public string LastMotionFaultDiagnostic { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Raised after a committed enemy hit has been delivered to the
+        /// presentation view. The formal AI coordinator subscribes to this
+        /// event so HitReact is driven by the authoritative combat hit rather
+        /// than by a view-local callback.
+        /// </summary>
+        public event Action<RuntimeId, TickIndex> CommittedEnemyHit;
 
         public bool TryResolvePresentationSource(
             RuntimeId runtimeId,
@@ -414,8 +450,13 @@ namespace FPG.Demo.Unity
                     pose,
                     entry.SpawnSequence,
                     out FpgEnemyEntityHandle handle,
-                    out _))
+                    out string acquireError))
             {
+                Debug.LogError(
+                    $"[FpgUnityEncounterEntityPort] Prepare acquire failed for "
+                    + $"'{definition.EnemyDefinitionId}' runtime={runtimeId} "
+                    + $"sequence={entry.SpawnSequence}: {acquireError}",
+                    this.entityPool);
                 return DomainResult.Rejected(RejectReason.BufferCapacity);
             }
 
@@ -498,6 +539,10 @@ namespace FPG.Demo.Unity
                 definition,
                 binder,
                 registeredHitPartCount);
+            movementExecutors[bindingIndex] = null;
+            externalMovementActive[bindingIndex] = false;
+            movementAnimationNames[bindingIndex] = string.Empty;
+            movementAnimationStartTicks[bindingIndex] = TickIndex.Invalid;
             return DomainResult.Success;
         }
 
@@ -524,6 +569,21 @@ namespace FPG.Demo.Unity
                 return DomainResult.Success;
             }
 
+            bool requiresExternalMovement = binding.Definition != null
+                && binding.Definition.Behavior != null
+                && binding.Definition.Behavior.UsesExternalMovement;
+            if (requiresExternalMovement
+                && (!(binding.Binder is IFpgEnemyMovementSnapshotReceiver)
+                    || !(binding.Binder
+                        is IFpgFormalEnemyExternalMotionView)))
+            {
+                Debug.LogError(
+                    $"[FpgUnityEncounterEntityPort] Enemy "
+                    + $"{runtimeId} has no external movement presentation contract.",
+                    binding.Binder as UnityEngine.Object);
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
             if (healthBarPool != null)
             {
                 if (TryBindHealthBar(
@@ -542,6 +602,26 @@ namespace FPG.Demo.Unity
 
             if (!entityPool.TrySetGameplayEnabled(runtimeId, true))
             {
+                if (binding.HealthBarBound)
+                {
+                    if (!TryReleaseHealthBar(runtimeId))
+                    {
+                        HealthBarReleaseFailureCount++;
+                    }
+                    binding.HealthBarBound = false;
+                }
+
+                Debug.LogError(
+                    $"[FpgUnityEncounterEntityPort] Activate failed to enable "
+                    + $"runtime={runtimeId} sequence={entry.SpawnSequence}.",
+                    this.entityPool);
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            if (requiresExternalMovement
+                && !TryEnableExternalMovement(runtimeId))
+            {
+                entityPool.TrySetGameplayEnabled(runtimeId, false);
                 if (binding.HealthBarBound)
                 {
                     if (!TryReleaseHealthBar(runtimeId))
@@ -596,23 +676,274 @@ namespace FPG.Demo.Unity
             IncrementEnemyPresentationFailureCount();
             return false;
         }
+
+        /// <summary>
+        /// Enables the shared external movement contract. Both Sprite and
+        /// Spine views apply the resulting snapshot; neither chooses goals.
+        /// </summary>
+        public bool TryEnableExternalMovement(RuntimeId runtimeId)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (binding.Definition == null
+                || binding.Definition.Behavior == null
+                || !binding.Definition.Behavior.UsesExternalMovement
+                || !(binding.Binder is IFpgEnemyMovementSnapshotReceiver)
+                || !(binding.Binder is IFpgFormalEnemyExternalMotionView))
+            {
+                return false;
+            }
+
+            if (movementExecutors[index] == null)
+            {
+                FpgEnemyBehaviorDefinition behavior =
+                    binding.Definition.Behavior;
+                if (behavior.UsesPositionQueryMovement)
+                {
+                    movementExecutors[index] =
+                        new FpgEnemyPositionQueryMovementExecutor(
+                            behavior.PositionQuery);
+                }
+                else if (behavior.UsesLateralChaseMovement)
+                {
+                    movementExecutors[index] =
+                        new FpgEnemyLateralChaseMovementExecutor(behavior);
+                }
+                else
+                {
+                    movementExecutors[index] =
+                        new FpgEnemyStationaryMovementExecutor();
+                }
+            }
+
+            externalMovementActive[index] = true;
+            return true;
+        }
+
+        public void ClearExternalMovementGoal(RuntimeId runtimeId)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0 || !externalMovementActive[index])
+            {
+                return;
+            }
+
+            movementExecutors[index]?.ClearGoal();
+        }
+
+        public bool TryGetExternalMovementGoal(
+            RuntimeId runtimeId,
+            out FpgEnemyAiMovementGoal goal)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0
+                || !externalMovementActive[index]
+                || movementExecutors[index] == null
+                || !movementExecutors[index].HasGoal)
+            {
+                goal = FpgEnemyAiMovementGoal.Invalid;
+                return false;
+            }
+
+            Vector3 value = movementExecutors[index].Goal;
+            goal = new FpgEnemyAiMovementGoal(
+                value.x,
+                value.y,
+                value.z);
+            return true;
+        }
+
+        public void ApplyAiMovementPresentation(
+            RuntimeId runtimeId,
+            TickIndex tick,
+            bool moving)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0
+                || !externalMovementActive[index]
+                || !tick.IsValid
+                || !bindings[index].Activated
+                || !(bindings[index].Binder
+                    is IFpgEnemyMovementSnapshotReceiver receiver))
+            {
+                return;
+            }
+
+            FpgEnemyBehaviorDefinition behavior =
+                bindings[index].Definition.Behavior;
+            string animationName = moving
+                && !string.IsNullOrWhiteSpace(behavior.MovementAnimation)
+                    ? behavior.MovementAnimation
+                    : behavior.IdleAnimation;
+            if (string.IsNullOrWhiteSpace(animationName))
+            {
+                return;
+            }
+
+            if (!string.Equals(
+                    movementAnimationNames[index],
+                    animationName,
+                    StringComparison.Ordinal)
+                || !movementAnimationStartTicks[index].IsValid)
+            {
+                movementAnimationNames[index] = animationName;
+                movementAnimationStartTicks[index] = tick;
+            }
+
+            float elapsedSeconds = (float)(tick.Value
+                - movementAnimationStartTicks[index].Value)
+                / FpgSkillRuntimeConstants.TickRate;
+            DomainResult presented = receiver.ApplyMovementAnimation(
+                animationName,
+                Mathf.Max(0f, elapsedSeconds));
+            if (!presented.IsSuccess)
+            {
+                IncrementEnemyPresentationFailureCount();
+            }
+        }
+
+        public bool TryAdvanceExternalMovement(
+            RuntimeId runtimeId,
+            TickIndex tick,
+            in FpgEnemyAiMoveRequest request,
+            out FpgEnemyAiMovementState state)
+        {
+            state = FpgEnemyAiMovementState.Idle;
+            int index = FindBinding(runtimeId);
+            if (index < 0 || !externalMovementActive[index]
+                || movementExecutors[index] == null)
+            {
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated
+                || binding.Binder == null
+                || binding.Binder.GameplayAnchor == null
+                || !(binding.Binder
+                    is IFpgEnemyMovementSnapshotReceiver receiver))
+            {
+                state = FpgEnemyAiMovementState.Faulted;
+                return true;
+            }
+
+            movementExecutors[index].ConfigureContext(
+                new FpgEnemyMovementContext(
+                    navigationVolume,
+                    playerAnchor,
+                    worldCamera,
+                    agentPositions,
+                    agentActive,
+                    bindings.Length,
+                    index));
+            FpgEnemyMovementRequest movementRequest =
+                new FpgEnemyMovementRequest(
+                    allowMovement: true,
+                    requestReposition: true,
+                    moveSpeed: request.MoveSpeed,
+                    resetGoal: request.ForceReposition);
+            FpgEnemyMovementSnapshot snapshot =
+                movementExecutors[index].Advance(
+                    tick,
+                    binding.Binder.GameplayAnchor.position,
+                    in movementRequest);
+            DomainResult applied = receiver.ApplyMovementSnapshot(in snapshot);
+            if (!applied.IsSuccess
+                || !anchorMap.TryUpdatePose(runtimeId))
+            {
+                state = FpgEnemyAiMovementState.Faulted;
+                return true;
+            }
+
+            agentPositions[index] = binding.Binder.GameplayAnchor.position;
+            state = snapshot.State == FpgEnemyMovementExecutionState.Moving
+                ? FpgEnemyAiMovementState.Moving
+                : snapshot.State == FpgEnemyMovementExecutionState.NoValidPosition
+                    ? FpgEnemyAiMovementState.NoValidPosition
+                    : snapshot.State == FpgEnemyMovementExecutionState.Blocked
+                        ? FpgEnemyAiMovementState.NoValidPosition
+                        : FpgEnemyAiMovementState.Idle;
+            return true;
+        }
+
+        public void DisableExternalMovement(RuntimeId runtimeId)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0)
+            {
+                return;
+            }
+
+            externalMovementActive[index] = false;
+            movementExecutors[index]?.Reset();
+            movementAnimationNames[index] = string.Empty;
+            movementAnimationStartTicks[index] = TickIndex.Invalid;
+        }
+
         public DomainResult AdvanceMotion(TickIndex tick)
         {
+            LastMotionFaultDiagnostic = string.Empty;
             if (!tick.IsValid)
             {
+                LastMotionFaultDiagnostic = "AdvanceMotion rejected an invalid tick.";
                 return DomainResult.Rejected(RejectReason.WrongTick);
             }
 
             for (int index = 0; index < bindings.Length; index++)
             {
                 RuntimeBinding binding = bindings[index];
+                agentActive[index] = binding.Activated
+                    && binding.Binder != null
+                    && binding.Binder.GameplayAnchor != null;
+                if (agentActive[index])
+                {
+                    agentPositions[index] =
+                        binding.Binder.GameplayAnchor.position;
+                }
+            }
+
+            for (int index = 0; index < bindings.Length; index++)
+            {
+                RuntimeBinding binding = bindings[index];
+                // Prepared pool slots are already bound so their presentation
+                // can be sampled during the warning window, but they are not
+                // part of the encounter until activation. Sprite views keep
+                // their renderer animated here while gameplay remains
+                // disabled; only active entities may move or mutate anchors.
                 if (!binding.RuntimeId.IsValid)
                 {
                     continue;
                 }
 
-                if (!(binding.Binder is IFpgFormalEnemyMotionView view))
+                if (!binding.Activated)
                 {
+                    if (binding.Binder
+                            is IFpgFormalEnemyExternalMotionView preparedView)
+                    {
+                        try
+                        {
+                            preparedView.AdvanceFormalPresentation(tick);
+                        }
+                        catch (Exception)
+                        {
+                            // Warning presentation is best-effort and must
+                            // not affect activation or encounter state.
+                        }
+                    }
+
+                    continue;
+                }
+
+                if (!(binding.Binder
+                    is IFpgFormalEnemyExternalMotionView externalView))
+                {
+                    LastMotionFaultDiagnostic =
+                        $"AdvanceMotion binding {index} has no external presentation view.";
                     return DomainResult.Rejected(
                         RejectReason.InvalidDefinition);
                 }
@@ -620,22 +951,195 @@ namespace FPG.Demo.Unity
                 DomainResult advanced;
                 try
                 {
-                    advanced = view.AdvanceFormalMotion(tick);
+                    advanced = externalView.AdvanceFormalPresentation(tick);
                 }
-                catch (Exception)
+                catch (Exception exception)
                 {
+                    LastMotionFaultDiagnostic =
+                        $"AdvanceMotion binding {index} threw {exception.GetType().Name}: {exception.Message}";
                     return DomainResult.Rejected(
                         RejectReason.InvariantFault);
                 }
 
                 if (!advanced.IsSuccess)
                 {
+                    LastMotionFaultDiagnostic =
+                        $"AdvanceMotion binding {index} rejected {advanced.RejectReason}.";
                     return advanced;
+                }
+
+                if (!anchorMap.TryUpdatePose(binding.RuntimeId))
+                {
+                    LastMotionFaultDiagnostic =
+                        $"AdvanceMotion binding {index} could not update anchor pose for {binding.RuntimeId}.";
+                    return DomainResult.Rejected(
+                        RejectReason.InvariantFault);
+                }
+
+                if (binding.Binder.GameplayAnchor != null)
+                {
+                    agentPositions[index] =
+                        binding.Binder.GameplayAnchor.position;
                 }
             }
 
             return DomainResult.Success;
         }
+
+        public DomainResult NotifyCommittedEnemyHit(
+            RuntimeId runtimeId,
+            TickIndex tick)
+        {
+            if (!runtimeId.IsValid || !tick.IsValid)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            int index = FindBinding(runtimeId);
+            if (index < 0)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidTarget);
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated || binding.Binder == null
+                || !binding.Binder.GameplayEnabled)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            try
+            {
+                // Views without a hit reaction retain their existing combat
+                // behavior. Feel remains an independent, optional visual
+                // effect. The AI notification below is still emitted for
+                // those views because the committed hit is authoritative.
+                if (binding.Binder is IFpgFormalEnemyHitView hitView)
+                {
+                    hitView.NotifyFormalHit();
+                }
+
+                // Event subscribers are intentionally isolated from encounter
+                // simulation. A faulty observer must not turn a committed
+                // damage result into an encounter failure.
+                try
+                {
+                    CommittedEnemyHit?.Invoke(runtimeId, tick);
+                }
+                catch (Exception exception)
+                {
+                    LastMotionFaultDiagnostic =
+                        $"NotifyCommittedEnemyHit observer threw {exception.GetType().Name}: {exception.Message}";
+                }
+
+                return DomainResult.Success;
+            }
+            catch (Exception exception)
+            {
+                LastMotionFaultDiagnostic =
+                    $"NotifyCommittedEnemyHit binding {index} threw {exception.GetType().Name}: {exception.Message}";
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+        }
+
+        public bool CanStartAttack(RuntimeId runtimeId)
+        {
+            return CanEnemyPositionStartAttack(runtimeId)
+                && HasEnemyLineOfSight(runtimeId);
+        }
+
+        public bool CanEnemyPositionStartAttack(RuntimeId runtimeId)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0)
+            {
+                return false;
+            }
+
+            RuntimeBinding binding = bindings[index];
+            if (!binding.Activated)
+            {
+                return false;
+            }
+
+            if (externalMovementActive[index]
+                && movementExecutors[index] != null
+                && binding.Binder != null
+                && binding.Binder.GameplayAnchor != null)
+            {
+                try
+                {
+                    movementExecutors[index].ConfigureContext(
+                        new FpgEnemyMovementContext(
+                            navigationVolume,
+                            playerAnchor,
+                            worldCamera,
+                            agentPositions,
+                            agentActive,
+                            bindings.Length,
+                            index));
+                    if (!movementExecutors[index].CanStartAttack(
+                            binding.Binder.GameplayAnchor.position))
+                    {
+                        return false;
+                    }
+
+                    return true;
+                }
+                catch (Exception exception)
+                {
+                    LastMotionFaultDiagnostic =
+                        $"CanStartAttack binding {index} threw {exception.GetType().Name}: {exception.Message}";
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Supplies the ground-plane target distance to the AI decision layer.
+        /// The port already owns both the player anchor and active enemy binding,
+        /// so callers do not need to reach into a view for perception facts.
+        /// </summary>
+        public bool TryGetEnemyTargetDistance(
+            RuntimeId runtimeId,
+            out float distance)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0
+                || playerAnchor == null
+                || bindings[index].Binder == null
+                || bindings[index].Binder.GameplayAnchor == null)
+            {
+                distance = 0f;
+                return false;
+            }
+
+            Vector3 delta = playerAnchor.position
+                - bindings[index].Binder.GameplayAnchor.position;
+            delta.y = 0f;
+            distance = delta.magnitude;
+            return !float.IsNaN(distance) && !float.IsInfinity(distance);
+        }
+
+        public bool HasEnemyLineOfSight(RuntimeId runtimeId)
+        {
+            int index = FindBinding(runtimeId);
+            if (index < 0
+                || playerAnchor == null
+                || bindings[index].Binder == null
+                || bindings[index].Binder.GameplayAnchor == null)
+            {
+                return false;
+            }
+
+            return navigationVolume == null
+                || navigationVolume.HasLineOfSight(
+                    bindings[index].Binder.GameplayAnchor.position,
+                    playerAnchor.position);
+        }
+
 
         public DomainResult StartSkillMotion(
             in FpgFormalEnemySkillSequenceFrame frame)
@@ -666,10 +1170,19 @@ namespace FPG.Demo.Unity
 
             try
             {
-                return view.StartFormalSkillMotion(frame);
+                DomainResult started = view.StartFormalSkillMotion(frame);
+                if (!started.IsSuccess)
+                {
+                    LastMotionFaultDiagnostic =
+                        $"StartSkillMotion binding {index} rejected {started.RejectReason} for {frame.OwnerRuntimeId}.";
+                }
+
+                return started;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                LastMotionFaultDiagnostic =
+                    $"StartSkillMotion binding {index} threw {exception.GetType().Name}: {exception.Message}";
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
         }
@@ -704,10 +1217,19 @@ namespace FPG.Demo.Unity
 
             try
             {
-                return view.ApplyFormalSkillMotionFrame(frame);
+                DomainResult applied = view.ApplyFormalSkillMotionFrame(frame);
+                if (!applied.IsSuccess)
+                {
+                    LastMotionFaultDiagnostic =
+                        $"ApplySkillMotionFrame binding {index} rejected {applied.RejectReason} for {frame.OwnerRuntimeId}.";
+                }
+
+                return applied;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                LastMotionFaultDiagnostic =
+                    $"ApplySkillMotionFrame binding {index} threw {exception.GetType().Name}: {exception.Message}";
                 return DomainResult.Rejected(RejectReason.InvariantFault);
             }
         }
@@ -805,6 +1327,7 @@ namespace FPG.Demo.Unity
                 preservePresentationLease,
                 preservePresentationLease ? presentationLeaseTicks : 0);
             bool gameplayDisabled = entityPool.TrySetGameplayEnabled(runtimeId, false);
+            DisableExternalMovement(runtimeId);
 
             int removedHitParts = hitboxRegistry == null
                 ? 0
@@ -821,6 +1344,13 @@ namespace FPG.Demo.Unity
             // All external references are gone before the entity becomes
             // available to another RuntimeId.
             bool entityReleased = entityPool.TryRelease(runtimeId);
+            movementExecutors[index]?.Reset();
+            movementExecutors[index] = null;
+            externalMovementActive[index] = false;
+            agentActive[index] = false;
+            agentPositions[index] = Vector3.zero;
+            movementAnimationNames[index] = string.Empty;
+            movementAnimationStartTicks[index] = TickIndex.Invalid;
             bindings[index] = default(RuntimeBinding);
 
             return anchorRemoved

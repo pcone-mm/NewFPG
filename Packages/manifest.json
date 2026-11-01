@@ -3,6 +3,7 @@
     "com.besty.unity-skills": "https://github.com/Besty0728/Unity-Skills.git?path=/SkillsForUnity#v2.8.2",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#v10.2.0",
     "com.esotericsoftware.spine.spine-unity": "file:../External/CZN/SpineRuntime-3.8",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.cloud.gltfast": "6.20.0",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.entities": "1.4.8",

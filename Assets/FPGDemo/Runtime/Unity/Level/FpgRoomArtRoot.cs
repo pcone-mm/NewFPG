@@ -8,6 +8,16 @@ namespace FPG.Demo.Unity
     [DisallowMultipleComponent]
     public sealed class FpgRoomArtRoot : MonoBehaviour
     {
+        private static readonly Type[] ForbiddenArtSceneComponents =
+        {
+            typeof(GameBootstrap),
+            typeof(FpgFormalEncounterHost),
+            typeof(FpgEncounterHost),
+            typeof(FpgRoomEncounterDirector),
+            typeof(FpgRoomInstance),
+            typeof(FpgRoomArtSceneLoader)
+        };
+
         [SerializeField]
         private FpgRoomDefinition roomDefinition;
 
@@ -33,34 +43,91 @@ namespace FPG.Demo.Unity
             }
 
             GameObject[] allSceneRoots = scene.GetRootGameObjects();
-            List<GameObject> sceneRoots = new List<GameObject>(
-                allSceneRoots.Length);
+            List<GameObject> authoredSceneRoots =
+                new List<GameObject>(allSceneRoots.Length);
+            List<FpgRoomArtRoot> candidates =
+                new List<FpgRoomArtRoot>(1);
             for (int index = 0; index < allSceneRoots.Length; index++)
             {
                 GameObject sceneRoot = allSceneRoots[index];
-                if ((sceneRoot.hideFlags & HideFlags.DontSaveInEditor) == 0)
+                if (sceneRoot == null || IsEditorPreviewObject(sceneRoot.transform))
                 {
-                    sceneRoots.Add(sceneRoot);
+                    continue;
+                }
+
+                authoredSceneRoots.Add(sceneRoot);
+                Transform[] descendants = sceneRoot.GetComponentsInChildren<Transform>(
+                    true);
+                for (int descendantIndex = 0;
+                    descendantIndex < descendants.Length;
+                    descendantIndex++)
+                {
+                    Transform descendant = descendants[descendantIndex];
+                    if (descendant == null
+                        || IsEditorPreviewObject(descendant))
+                    {
+                        continue;
+                    }
+
+                    FpgRoomArtRoot descendantRoot =
+                        descendant.GetComponent<FpgRoomArtRoot>();
+                    if (descendantRoot != null)
+                    {
+                        candidates.Add(descendantRoot);
+                    }
                 }
             }
 
-            if (sceneRoots.Count != 1)
+            if (candidates.Count != 1)
             {
                 error =
-                    $"Art Scene '{scene.path}' must contain exactly one scene root after excluding transient editor previews; found {sceneRoots.Count}.";
-                return false;
-            }
-
-            FpgRoomArtRoot[] candidates =
-                sceneRoots[0].GetComponentsInChildren<FpgRoomArtRoot>(true);
-            if (candidates.Length != 1
-                || candidates[0].gameObject != sceneRoots[0])
-            {
-                error = $"Art Scene '{scene.path}' must contain exactly one FpgRoomArtRoot on its sole scene root.";
+                    $"Art Scene '{scene.path}' must contain exactly one FpgRoomArtRoot after excluding transient editor previews; found {candidates.Count}.";
                 return false;
             }
 
             FpgRoomArtRoot candidate = candidates[0];
+            if (candidate.transform.parent != null)
+            {
+                error =
+                    $"Art Scene '{scene.path}' FpgRoomArtRoot must be attached to a scene root.";
+                return false;
+            }
+
+            for (int rootIndex = 0;
+                rootIndex < authoredSceneRoots.Count;
+                rootIndex++)
+            {
+                Transform[] descendants = authoredSceneRoots[rootIndex]
+                    .GetComponentsInChildren<Transform>(true);
+                for (int descendantIndex = 0;
+                    descendantIndex < descendants.Length;
+                    descendantIndex++)
+                {
+                    Transform descendant = descendants[descendantIndex];
+                    if (descendant == null
+                        || IsEditorPreviewObject(descendant))
+                    {
+                        continue;
+                    }
+
+                    for (int forbiddenIndex = 0;
+                        forbiddenIndex < ForbiddenArtSceneComponents.Length;
+                        forbiddenIndex++)
+                    {
+                        Type forbiddenType =
+                            ForbiddenArtSceneComponents[forbiddenIndex];
+                        Component forbiddenComponent =
+                            descendant.GetComponent(forbiddenType);
+                        if (forbiddenComponent != null)
+                        {
+                            error =
+                                $"Art Scene '{scene.path}' cannot contain {forbiddenType.Name} ('{forbiddenComponent.name}').";
+                            return false;
+                        }
+                    }
+                }
+            }
+
             if (!candidate.TryValidate(expectedRoom, out error))
             {
                 return false;
@@ -100,6 +167,22 @@ namespace FPG.Demo.Unity
 
             error = string.Empty;
             return true;
+        }
+
+        private static bool IsEditorPreviewObject(Transform candidate)
+        {
+            for (Transform current = candidate;
+                current != null;
+                current = current.parent)
+            {
+                if ((current.gameObject.hideFlags
+                        & HideFlags.DontSaveInEditor) != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public bool TryBindPresentation(

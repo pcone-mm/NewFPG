@@ -123,6 +123,7 @@ namespace FPG.Demo.Unity
         D0ActorSocketRegistry SocketRegistry { get; }
         Transform OverheadHealthBarAnchor { get; }
         int HitPartCount { get; }
+        bool GameplayEnabled { get; }
 
         bool TryGetHitPart(
             int hitPartOrdinal,
@@ -137,6 +138,18 @@ namespace FPG.Demo.Unity
 
         void SetFormalGameplayEnabled(bool enabled);
         void UnbindFormalRuntime();
+    }
+
+    public interface IFpgFormalEnemyViewValidation
+    {
+        bool TryValidateFormalView(
+            FpgEnemyDefinition definition,
+            out string error);
+    }
+
+    public interface IFpgFormalEnemyHitView
+    {
+        void NotifyFormalHit();
     }
 
     /// <summary>
@@ -161,8 +174,6 @@ namespace FPG.Demo.Unity
     /// </summary>
     public interface IFpgFormalEnemyMotionView
     {
-        DomainResult AdvanceFormalMotion(TickIndex tick);
-
         DomainResult StartFormalSkillMotion(
             in FpgFormalEnemySkillSequenceFrame frame);
 
@@ -171,11 +182,24 @@ namespace FPG.Demo.Unity
     }
 
     /// <summary>
+    /// Presentation-only motion path used when the AI movement executor owns
+    /// gameplay-anchor displacement. Implementations advance animation,
+    /// hit-react and skill presentation without sampling or mutating a
+    /// position-query goal.
+    /// </summary>
+    public interface IFpgFormalEnemyExternalMotionView
+    {
+        DomainResult AdvanceFormalPresentation(TickIndex tick);
+    }
+
+    /// <summary>
     /// Fixed-tick authority used by the formal battle synchronizer and enemy
     /// skill scheduler. Implementations cover both Prepared and Active views.
     /// </summary>
     public interface IFpgFormalEnemyMotionAuthority
     {
+        bool CanStartAttack(RuntimeId runtimeId);
+
         DomainResult AdvanceMotion(TickIndex tick);
 
         DomainResult StartSkillMotion(

@@ -10,7 +10,8 @@ namespace FPG.Demo.Unity
     {
         FixedPosition = 0,
         Patrol = 1,
-        Chase = 2
+        Chase = 2,
+        LateralChase = 3
     }
 
 }

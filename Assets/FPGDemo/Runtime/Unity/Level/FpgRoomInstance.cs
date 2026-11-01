@@ -82,12 +82,21 @@ namespace FPG.Demo.Unity
                 for (int index = 0; index < covers.Count; index++)
                 {
                     FpgRoomCoverSlot slot = covers[index];
+                    if (!slot.HasValidScaleMultiplier)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cover '{slot.MarkerId}' requires finite, positive scale multipliers.");
+                    }
+
                     GameObject instance = InstantiateOwned(
                         slot.Prefab,
                         $"{slot.Prefab.name} [{slot.MarkerId}]",
                         slot.LocalPosition,
                         slot.LocalRotation,
                         preservePrefabScale: true);
+                    instance.transform.localScale = Vector3.Scale(
+                        instance.transform.localScale,
+                        slot.ScaleMultiplier);
                     FpgCoverEntityView view =
                         instance.GetComponent<FpgCoverEntityView>();
                     view.ApplyDestroyed(false);

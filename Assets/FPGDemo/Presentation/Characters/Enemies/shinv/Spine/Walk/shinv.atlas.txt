@@ -1,0 +1,125 @@
+
+shinv-walk.png
+size: 1987,2019
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+shinü/bangdai1
+  rotate: true
+  xy: 1293, 391
+  size: 370, 448
+  orig: 370, 448
+  offset: 0, 0
+  index: -1
+shinü/bangdai2
+  rotate: false
+  xy: 1293, 763
+  size: 463, 364
+  orig: 553, 364
+  offset: 90, 0
+  index: -1
+shinü/chibang
+  rotate: true
+  xy: 1317, 1129
+  size: 351, 613
+  orig: 351, 613
+  offset: 0, 0
+  index: -1
+shinü/chuxu1
+  rotate: false
+  xy: 1758, 630
+  size: 223, 497
+  orig: 223, 497
+  offset: 0, 0
+  index: -1
+shinü/chuxu2
+  rotate: true
+  xy: 710, 599
+  size: 116, 486
+  orig: 116, 486
+  offset: 0, 0
+  index: -1
+shinü/gaizi
+  rotate: false
+  xy: 1791, 341
+  size: 190, 287
+  orig: 200, 294
+  offset: 0, 0
+  index: -1
+shinü/gongdeng
+  rotate: true
+  xy: 2, 2
+  size: 581, 1077
+  orig: 583, 1079
+  offset: 1, 1
+  index: -1
+shinü/gongdeng2
+  rotate: false
+  xy: 1594, 86
+  size: 195, 303
+  orig: 198, 305
+  offset: 2, 1
+  index: -1
+shinü/liuhai1
+  rotate: false
+  xy: 1235, 95
+  size: 357, 294
+  orig: 357, 294
+  offset: 0, 0
+  index: -1
+shinü/liuhai2
+  rotate: false
+  xy: 1791, 66
+  size: 149, 273
+  orig: 150, 273
+  offset: 0, 0
+  index: -1
+shinü/liuhai3
+  rotate: true
+  xy: 1421, 2
+  size: 82, 193
+  orig: 82, 195
+  offset: 0, 2
+  index: -1
+shinü/shenzi
+  rotate: false
+  xy: 2, 585
+  size: 706, 1432
+  orig: 706, 1432
+  offset: 0, 0
+  index: -1
+shinü/tou
+  rotate: true
+  xy: 1317, 1482
+  size: 535, 668
+  orig: 537, 670
+  offset: 1, 1
+  index: -1
+shinü/yougebo
+  rotate: false
+  xy: 710, 1273
+  size: 605, 744
+  orig: 607, 744
+  offset: 0, 0
+  index: -1
+shinü/yupei
+  rotate: false
+  xy: 1081, 40
+  size: 152, 557
+  orig: 152, 558
+  offset: 0, 1
+  index: -1
+shinü/zuogebo
+  rotate: false
+  xy: 710, 717
+  size: 581, 554
+  orig: 581, 554
+  offset: 0, 0
+  index: -1
+shinü/zuoshou
+  rotate: true
+  xy: 1235, 2
+  size: 91, 184
+  orig: 91, 185
+  offset: 0, 0
+  index: -1

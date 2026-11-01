@@ -207,3 +207,20 @@ restore-browser.ps1
 sangfor-final-clean.ps1
 uninstall-ludashi-bundles.ps1
 uninstall-sangfor.ps1
+
+# Workspace-only content kept locally but not versioned
+/.agents/
+/.tmp-lark-config/
+/bin/
+/.codex-*.patch
+/Captures/
+/SpineProjects/
+/Tools/spine-MCP/
+/External/CZN/SpineRuntimeUnity6Probe/
+
+# Local web build sandbox; the Unity project is the repository source of truth
+/Prototypes/FpgBuildSandbox/
+
+# Local TexturePacker importer and its vendor examples
+/Assets/codeandweb.com/
+/Assets/codeandweb.com.meta

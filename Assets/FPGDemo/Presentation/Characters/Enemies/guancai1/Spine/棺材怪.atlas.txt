@@ -1,0 +1,95 @@
+
+棺材怪.png
+size: 3448,4074
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+fuzhi
+  rotate: true
+  xy: 2, 3824
+  size: 248, 493
+  orig: 248, 495
+  offset: 0, 0
+  index: -1
+guancai1
+  rotate: false
+  xy: 1006, 2421
+  size: 2440, 1074
+  orig: 2443, 1076
+  offset: 1, 1
+  index: -1
+guancai2
+  rotate: true
+  xy: 2, 2681
+  size: 814, 1002
+  orig: 814, 1002
+  offset: 0, 0
+  index: -1
+guancaiban
+  rotate: false
+  xy: 2, 1364
+  size: 3308, 1055
+  orig: 3308, 1055
+  offset: 0, 0
+  index: -1
+houtui2
+  rotate: false
+  xy: 1719, 2
+  size: 1411, 1360
+  orig: 1411, 1360
+  offset: 0, 0
+  index: -1
+muban
+  rotate: false
+  xy: 497, 3497
+  size: 2880, 575
+  orig: 2882, 578
+  offset: 1, 1
+  index: -1
+zuoshou
+  rotate: true
+  xy: 2, 171
+  size: 1191, 1715
+  orig: 1192, 1739
+  offset: 1, 0
+  index: -1
+
+棺材怪2.png
+size: 3402,2777
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+houtui 拷贝 2
+  rotate: false
+  xy: 1822, 2
+  size: 1578, 1478
+  orig: 1578, 1480
+  offset: 0, 2
+  index: -1
+shengzi
+  rotate: false
+  xy: 2, 1482
+  size: 3129, 1293
+  orig: 3129, 1370
+  offset: 0, 0
+  index: -1
+youshou
+  rotate: false
+  xy: 2, 98
+  size: 1818, 1382
+  orig: 1818, 1382
+  offset: 0, 0
+  index: -1
+
+棺材怪3.png
+size: 2840,1792
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+guanguo
+  rotate: false
+  xy: 2, 2
+  size: 2836, 1788
+  orig: 2839, 1792
+  offset: 1, 1
+  index: -1

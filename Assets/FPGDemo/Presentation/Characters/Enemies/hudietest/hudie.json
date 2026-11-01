@@ -1,0 +1,65 @@
+{ "skeleton": { "images": "images/" },
+"PhotoshopToSpine": { "scale": 1, "padding": 1, "trim": true },
+"bones": [
+	{ "name": "root" }
+],
+"slots": [
+	{ "name": "w4", "bone": "root", "attachment": "w4" },
+	{ "name": "图层 8", "bone": "root", "attachment": "图层 8" },
+	{ "name": "图层 10", "bone": "root", "attachment": "图层 10" },
+	{ "name": "eye2", "bone": "root", "attachment": "eye2" },
+	{ "name": "eye1", "bone": "root", "attachment": "eye1" },
+	{ "name": "line", "bone": "root", "attachment": "line" },
+	{ "name": "body", "bone": "root", "attachment": "body" },
+	{ "name": "l3", "bone": "root", "attachment": "l3" },
+	{ "name": "l2", "bone": "root", "attachment": "l2" },
+	{ "name": "l1", "bone": "root", "attachment": "l1" },
+	{ "name": "r3", "bone": "root", "attachment": "r3" },
+	{ "name": "r2", "bone": "root", "attachment": "r2" },
+	{ "name": "r1", "bone": "root", "attachment": "r1" }
+],
+"skins": {
+	"default": {
+		"w4": {
+			"w4": { "x": 305.5, "y": -253, "width": 133, "height": 56 }
+		},
+		"图层 8": {
+			"图层 8": { "x": 339, "y": -99, "width": 324, "height": 200 }
+		},
+		"图层 10": {
+			"图层 10": { "x": 101, "y": -89, "width": 158, "height": 164 }
+		},
+		"eye2": {
+			"eye2": { "x": 79, "y": -104, "width": 28, "height": 28 }
+		},
+		"eye1": {
+			"eye1": { "x": 278, "y": -94, "width": 46, "height": 36 }
+		},
+		"line": {
+			"line": { "x": 177.5, "y": -94.5, "width": 137, "height": 93 }
+		},
+		"body": {
+			"body": { "x": 193, "y": -182.5, "width": 152, "height": 105 }
+		},
+		"l3": {
+			"l3": { "x": 125.5, "y": -294.5, "width": 61, "height": 189 }
+		},
+		"l2": {
+			"l2": { "x": 99.5, "y": -261, "width": 103, "height": 176 }
+		},
+		"l1": {
+			"l1": { "x": 75, "y": -246.5, "width": 152, "height": 181 }
+		},
+		"r3": {
+			"r3": { "x": 196, "y": -290.5, "width": 70, "height": 219 }
+		},
+		"r2": {
+			"r2": { "x": 227, "y": -257, "width": 136, "height": 198 }
+		},
+		"r1": {
+			"r1": { "x": 196.5, "y": -249.5, "width": 89, "height": 213 }
+		}
+	}
+},
+"animations": { "animation": {} }
+}

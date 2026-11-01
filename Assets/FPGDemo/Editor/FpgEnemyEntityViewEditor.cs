@@ -467,8 +467,8 @@ namespace FPG.Demo.Editor
         private static Transform EnsureHitboxRoot(
             FpgEnemyEntityView view)
         {
-            Transform gameplayAnchor = view.GameplayAnchor;
-            Transform root = gameplayAnchor.Find("Hitboxes");
+            Transform hitboxParentAnchor = view.HitboxParentAnchor;
+            Transform root = hitboxParentAnchor.Find("Hitboxes");
             if (root != null)
             {
                 return root;
@@ -480,7 +480,7 @@ namespace FPG.Demo.Editor
                 "Create formal enemy hitbox root");
             Undo.SetTransformParent(
                 rootObject.transform,
-                gameplayAnchor,
+                hitboxParentAnchor,
                 "Parent formal enemy hitbox root");
             rootObject.transform.localPosition = Vector3.zero;
             rootObject.transform.localRotation = Quaternion.identity;
@@ -497,7 +497,7 @@ namespace FPG.Demo.Editor
                 return false;
             }
 
-            Transform hitboxRoot = view.GameplayAnchor.Find("Hitboxes");
+            Transform hitboxRoot = view.HitboxParentAnchor.Find("Hitboxes");
             if (hitboxRoot == null
                 || collider.transform.parent != hitboxRoot)
             {

@@ -17,7 +17,10 @@ namespace FPG.Demo.Unity
     public sealed class FpgEnemyEntityView : MonoBehaviour,
         IFpgFormalEnemyEntityBinder,
         IFpgFormalEnemyPresentationView,
-        IFpgFormalEnemyMotionView
+        IFpgFormalEnemyMotionView,
+        IFpgFormalEnemyViewValidation,
+        IFpgFormalEnemyExternalMotionView,
+        IFpgEnemyMovementSnapshotReceiver
     {
         private const int MainAnimationTrack = 0;
 
@@ -32,6 +35,12 @@ namespace FPG.Demo.Unity
 
         [SerializeField]
         private Transform gameplayAnchor;
+
+        [SerializeField]
+        private Transform lateralFacingPivot;
+
+        [SerializeField]
+        private bool invertLateralFacing;
 
         [SerializeField]
         private Transform projectileAnchor;
@@ -121,6 +130,24 @@ namespace FPG.Demo.Unity
         private float authoredSkeletonTimeScale = 1f;
 
         [NonSerialized]
+        private Vector3 authoredEntityLocalScale = Vector3.one;
+
+        [NonSerialized]
+        private Vector3 authoredVisualLocalScale = Vector3.one;
+
+        [NonSerialized]
+        private float authoredLateralFacingSign = 1f;
+
+        [NonSerialized]
+        private Transform[] authoredLateralFacingPoints = Array.Empty<Transform>();
+
+        [NonSerialized]
+        private Vector3[] authoredLateralFacingPointPositions = Array.Empty<Vector3>();
+
+        [NonSerialized]
+        private bool hasAuthoredEntityPose;
+
+        [NonSerialized]
         private TickDrivenAnimationKind tickDrivenAnimationKind;
 
         [NonSerialized]
@@ -128,6 +155,9 @@ namespace FPG.Demo.Unity
 
         [NonSerialized]
         private string tickDrivenAnimationName = string.Empty;
+
+        [NonSerialized]
+        private string movementAnimationName = string.Empty;
 
         [NonSerialized]
         private TickIndex tickDrivenStartTick = TickIndex.Invalid;
@@ -150,7 +180,14 @@ namespace FPG.Demo.Unity
 
         [NonSerialized]
         private string lastRootMotionError = string.Empty;
+
+        [NonSerialized]
+        private TickIndex lastNavigationMotionTick = TickIndex.Invalid;
+
         public Transform GameplayAnchor => gameplayAnchor == null ? transform : gameplayAnchor;
+        public Transform HitboxParentAnchor => lateralFacingPivot == null
+            ? GameplayAnchor
+            : lateralFacingPivot;
         public Transform ProjectileAnchor => projectileAnchor == null ? GameplayAnchor : projectileAnchor;
         public Transform WeakpointAnchor => weakpointAnchor == null ? GameplayAnchor : weakpointAnchor;
         public D0ActorSocketRegistry SocketRegistry => socketRegistry != null
@@ -265,6 +302,7 @@ namespace FPG.Demo.Unity
             runtimeId = string.Empty;
             spawnSequence = -1;
             gameplayEnabled = false;
+            RestoreAuthoredEntityPose();
         }
 
         public bool TryBindFormalRuntime(
@@ -344,7 +382,93 @@ namespace FPG.Demo.Unity
             ClearRuntimeBinding();
         }
 
-        public DomainResult AdvanceFormalMotion(TickIndex tick)
+        public DomainResult AdvanceFormalPresentation(TickIndex tick)
+        {
+            return AdvanceFormalPresentationInternal(tick);
+        }
+
+        public DomainResult ApplyMovementSnapshot(
+            in FpgEnemyMovementSnapshot snapshot)
+        {
+            if (!presentationInitialized || !snapshot.Tick.IsValid)
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (lastNavigationMotionTick.IsValid
+                && snapshot.Tick.Value < lastNavigationMotionTick.Value)
+            {
+                return DomainResult.Rejected(RejectReason.WrongTick);
+            }
+
+            lastNavigationMotionTick = snapshot.Tick;
+            Transform anchor = GameplayAnchor;
+            Vector3 current = anchor != null ? anchor.position : transform.position;
+            transform.position += snapshot.Position - current;
+            if (snapshot.IsMoving)
+            {
+                SetMovementFacing(snapshot.Delta, snapshot.FacingReferenceRight);
+            }
+
+            return DomainResult.Success;
+        }
+
+        public DomainResult ApplyMovementAnimation(
+            string animationName,
+            float elapsedSeconds)
+        {
+            if (!presentationInitialized
+                || activeSkillExecutionId.IsValid
+                || hasPendingSkillFrame
+                || string.IsNullOrWhiteSpace(animationName))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidState);
+            }
+
+            if (!HasAnimation(animationName))
+            {
+                return DomainResult.Rejected(RejectReason.InvalidDefinition);
+            }
+
+            if (string.Equals(
+                    movementAnimationName,
+                    animationName,
+                    System.StringComparison.Ordinal)
+                && tickDrivenAnimationKind == TickDrivenAnimationKind.None)
+            {
+                return DomainResult.Success;
+            }
+
+            StopTickDrivenAnimation();
+            if (!TryPlayLoop(animationName))
+            {
+                return DomainResult.Rejected(RejectReason.InvariantFault);
+            }
+
+            movementAnimationName = animationName;
+            return DomainResult.Success;
+        }
+
+        public void SetMovementFacing(
+            Vector3 movement,
+            Vector3 facingReferenceRight)
+        {
+            if (movement.sqrMagnitude <= 0.0000001f)
+            {
+                return;
+            }
+
+            Vector3 right = facingReferenceRight.sqrMagnitude > 0.0000001f
+                ? facingReferenceRight.normalized
+                : Vector3.right;
+            float horizontal = Vector3.Dot(movement, right);
+            if (Mathf.Abs(horizontal) > 0.0001f)
+            {
+                SetLateralFacing(horizontal);
+            }
+        }
+
+        private DomainResult AdvanceFormalPresentationInternal(TickIndex tick)
         {
             if (!tick.IsValid || !presentationInitialized)
             {
@@ -458,6 +582,7 @@ namespace FPG.Demo.Unity
             hasPendingSkillFrame = false;
             skillAnimationEvaluator?.Reset();
             activeSkillExecutionId = frame.ExecutionId;
+            movementAnimationName = string.Empty;
             synchronouslyTerminatedSkillExecutionId =
                 SkillExecutionId.Invalid;
             returnToIdleOnNextMotionTick = false;
@@ -641,7 +766,9 @@ namespace FPG.Demo.Unity
 
             if (!HasAnimation(data, behavior.EntryAnimation)
                 || !HasAnimation(data, behavior.IdleAnimation)
-                || !HasAnimation(data, behavior.DeathAnimation))
+                || !HasAnimation(data, behavior.DeathAnimation)
+                || (!string.IsNullOrWhiteSpace(behavior.MovementAnimation)
+                    && !HasAnimation(data, behavior.MovementAnimation)))
             {
                 error = $"Formal enemy '{definition.EnemyDefinitionId}' "
                     + "behavior references a missing Spine animation.";
@@ -686,6 +813,14 @@ namespace FPG.Demo.Unity
 
             error = string.Empty;
             return true;
+        }
+
+        public bool TryValidateFormalView(
+            FpgEnemyDefinition definition,
+            out string error)
+        {
+            return TryValidate(out error)
+                && TryValidatePresentation(definition, out error);
         }
 
         public bool TryValidate(out string error)
@@ -769,6 +904,7 @@ namespace FPG.Demo.Unity
 
         private void Awake()
         {
+            CaptureAuthoredEntityPose();
             SetFormalGameplayEnabled(false);
         }
 
@@ -789,6 +925,8 @@ namespace FPG.Demo.Unity
         {
             try
             {
+                CaptureAuthoredEntityPose();
+                RestoreAuthoredEntityPose();
                 skeletonAnimation.Initialize(false);
                 if (skeletonAnimation.AnimationState == null)
                 {
@@ -915,6 +1053,175 @@ namespace FPG.Demo.Unity
             {
                 ClearPendingSkillFrameAndReturnToIdle();
             }
+        }
+
+        private void SetLateralFacing(float worldDirectionX)
+        {
+            CaptureAuthoredEntityPose();
+            if (Mathf.Abs(worldDirectionX) <= 0.0001f)
+            {
+                return;
+            }
+
+            float pointFacingSign = authoredLateralFacingSign
+                * Mathf.Sign(worldDirectionX);
+            float visualFacingSign = invertLateralFacing
+                ? -pointFacingSign
+                : pointFacingSign;
+
+            if (lateralFacingPivot == null)
+            {
+                Vector3 entityScale = transform.localScale;
+                entityScale.x = Mathf.Abs(authoredEntityLocalScale.x)
+                    * visualFacingSign;
+                transform.localScale = entityScale;
+                return;
+            }
+
+            if (skeletonAnimation != null)
+            {
+                Vector3 visualScale = skeletonAnimation.transform.localScale;
+                visualScale.x = Mathf.Abs(authoredVisualLocalScale.x)
+                    * visualFacingSign;
+                skeletonAnimation.transform.localScale = visualScale;
+            }
+
+            // Keep colliders at positive scale and mirror their anchor points.
+            for (int index = 0;
+                index < authoredLateralFacingPoints.Length;
+                index++)
+            {
+                Transform point = authoredLateralFacingPoints[index];
+                if (point == null)
+                {
+                    continue;
+                }
+
+                Vector3 localPosition =
+                    authoredLateralFacingPointPositions[index];
+                localPosition.x *= visualFacingSign;
+                point.position = lateralFacingPivot.TransformPoint(localPosition);
+            }
+        }
+
+        private void CaptureAuthoredEntityPose()
+        {
+            if (hasAuthoredEntityPose)
+            {
+                return;
+            }
+
+            authoredEntityLocalScale = transform.localScale;
+            authoredVisualLocalScale = skeletonAnimation == null
+                ? Vector3.one
+                : skeletonAnimation.transform.localScale;
+            authoredLateralFacingSign = 1f;
+            if (skeletonAnimation != null)
+            {
+                Vector3 authoredRight = skeletonAnimation.transform
+                    .TransformDirection(Vector3.right);
+                float alignment = Vector3.Dot(
+                    authoredRight,
+                    Vector3.right);
+                if (Mathf.Abs(alignment) > 0.0001f)
+                {
+                    authoredLateralFacingSign = Mathf.Sign(alignment);
+                }
+            }
+
+            CaptureAuthoredLateralFacingPoints();
+            hasAuthoredEntityPose = true;
+        }
+
+        private void RestoreAuthoredEntityPose()
+        {
+            CaptureAuthoredEntityPose();
+            transform.localScale = authoredEntityLocalScale;
+            if (skeletonAnimation != null)
+            {
+                skeletonAnimation.transform.localScale = authoredVisualLocalScale;
+            }
+
+            if (lateralFacingPivot == null)
+            {
+                return;
+            }
+
+            for (int index = 0;
+                index < authoredLateralFacingPoints.Length;
+                index++)
+            {
+                Transform point = authoredLateralFacingPoints[index];
+                if (point != null)
+                {
+                    point.position = lateralFacingPivot.TransformPoint(
+                        authoredLateralFacingPointPositions[index]);
+                }
+            }
+        }
+
+        private void CaptureAuthoredLateralFacingPoints()
+        {
+            if (lateralFacingPivot == null)
+            {
+                authoredLateralFacingPoints = Array.Empty<Transform>();
+                authoredLateralFacingPointPositions = Array.Empty<Vector3>();
+                return;
+            }
+
+            var points = new List<Transform>();
+            Collider[] colliders = hitParts ?? Array.Empty<Collider>();
+            for (int index = 0; index < colliders.Length; index++)
+            {
+                AddLateralFacingPoint(points, colliders[index] == null
+                    ? null
+                    : colliders[index].transform);
+            }
+
+            AddLateralFacingPoint(points, projectileAnchor);
+            AddLateralFacingPoint(points, weakpointAnchor);
+            AddLateralFacingPoint(points, overheadHealthBarAnchor);
+
+            IReadOnlyList<D0ActorSocketBinding> bindings = SocketRegistry == null
+                ? null
+                : SocketRegistry.Bindings;
+            if (bindings != null)
+            {
+                for (int index = 0; index < bindings.Count; index++)
+                {
+                    D0ActorSocketBinding binding = bindings[index];
+                    AddLateralFacingPoint(points, binding == null
+                        ? null
+                        : binding.Anchor);
+                }
+            }
+
+            authoredLateralFacingPoints = points.ToArray();
+            authoredLateralFacingPointPositions =
+                new Vector3[authoredLateralFacingPoints.Length];
+            for (int index = 0;
+                index < authoredLateralFacingPoints.Length;
+                index++)
+            {
+                authoredLateralFacingPointPositions[index] =
+                    lateralFacingPivot.InverseTransformPoint(
+                        authoredLateralFacingPoints[index].position);
+            }
+        }
+
+        private void AddLateralFacingPoint(
+            List<Transform> points,
+            Transform point)
+        {
+            if (point == null
+                || point == lateralFacingPivot
+                || !point.IsChildOf(lateralFacingPivot)
+                || points.Contains(point))
+            {
+                return;
+            }
+
+            points.Add(point);
         }
 
         private void MarkTickDrivenSkillMotionTerminal()
@@ -1349,6 +1656,7 @@ namespace FPG.Demo.Unity
             if (boundBehavior.UsesAnimationRootMotion(
                     boundBehavior.IdleAnimation))
             {
+                movementAnimationName = boundBehavior.IdleAnimation;
                 return TryStartTickDrivenAnimation(
                     boundBehavior.IdleAnimation,
                     true,
@@ -1361,6 +1669,9 @@ namespace FPG.Demo.Unity
 
             StopTickDrivenAnimation();
             bool played = TryPlayLoop(boundBehavior.IdleAnimation);
+            movementAnimationName = played
+                ? boundBehavior.IdleAnimation
+                : string.Empty;
             error = played
                 ? string.Empty
                 : "Formal idle Spine animation could not start.";
@@ -1432,6 +1743,7 @@ namespace FPG.Demo.Unity
             hitboxBoneFollowRuntime = null;
             ClearSkillWarnings();
             StopTickDrivenAnimation();
+            RestoreAuthoredEntityPose();
             rootMotionBridge?.ResetForPool();
             if (skeletonAnimation != null && presentationInitialized)
             {
@@ -1454,6 +1766,7 @@ namespace FPG.Demo.Unity
             skillAnimationEvaluator?.Reset();
             skillAnimationEvaluator = null;
             activeSkillExecutionId = SkillExecutionId.Invalid;
+            movementAnimationName = string.Empty;
             synchronouslyTerminatedSkillExecutionId =
                 SkillExecutionId.Invalid;
             pendingSkillFrame =
@@ -1463,6 +1776,7 @@ namespace FPG.Demo.Unity
             boundDefinition = null;
             boundBehavior = null;
             lastRootMotionError = string.Empty;
+            lastNavigationMotionTick = TickIndex.Invalid;
         }
 
         private bool TryCreateHitboxBoneFollowRuntime(

@@ -30,6 +30,66 @@ namespace FPG.Demo.Unity
         public int SpawnPointRoundRobinCursor => spawnPointRoundRobinCursor;
         public bool IsDisposed => disposed;
 
+        public int ActiveAiRuntimeCount
+        {
+            get
+            {
+                FpgFormalCombatRuntimeBundle runtime =
+                    host == null || host.EncounterDirector == null
+                        ? null
+                        : host.EncounterDirector.CombatRuntime;
+                return runtime == null || runtime.AiCoordinator == null
+                    ? 0
+                    : runtime.AiCoordinator.ActiveRuntimeCount;
+            }
+        }
+
+        public bool TryGetAiSnapshot(
+            int ordinal,
+            out FpgEnemyAiSnapshot snapshot)
+        {
+            FpgFormalCombatRuntimeBundle runtime =
+                host == null || host.EncounterDirector == null
+                    ? null
+                    : host.EncounterDirector.CombatRuntime;
+            if (disposed || runtime == null || runtime.AiCoordinator == null)
+            {
+                snapshot = default(FpgEnemyAiSnapshot);
+                return false;
+            }
+
+            return runtime.AiCoordinator.TryGetSnapshot(
+                ordinal,
+                out snapshot);
+        }
+
+        public bool TryDescribeAiSnapshot(
+            int ordinal,
+            out string description)
+        {
+            if (!TryGetAiSnapshot(ordinal, out FpgEnemyAiSnapshot snapshot))
+            {
+                description = string.Empty;
+                return false;
+            }
+
+            string skill = string.IsNullOrEmpty(snapshot.CurrentSkillId)
+                ? "-"
+                : snapshot.CurrentSkillId;
+            string movementGoal = snapshot.MovementGoal.IsValid
+                ? $"({snapshot.MovementGoal.X:0.##},"
+                    + $"{snapshot.MovementGoal.Y:0.##},"
+                    + $"{snapshot.MovementGoal.Z:0.##})"
+                : "-";
+            description = "#" + ordinal + "  "
+                + snapshot.ControlState + "/" + snapshot.BrainState
+                + "  Skill=" + skill
+                + "  Move=" + snapshot.MovementState
+                + "  Goal=" + movementGoal
+                + "  原因=" + snapshot.LastTransitionReason;
+            return true;
+        }
+
         public bool TryExecute(string commandLine, out string result)
         {
             if (disposed)

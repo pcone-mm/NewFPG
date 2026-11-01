@@ -314,6 +314,15 @@ namespace FPG.Demo.Unity
 
                 if (marker is FpgRoomCoverSlot cover)
                 {
+                    if (!cover.HasValidScaleMultiplier)
+                    {
+                        AddMarkerError(
+                            issues,
+                            FpgRoomValidationCode.InvalidCoverScaleMultiplier,
+                            marker,
+                            $"Cover slot '{marker.MarkerId}' requires finite, positive scale multipliers.");
+                    }
+
                     if (cover.CameraProfile == null)
                     {
                         AddMarkerError(

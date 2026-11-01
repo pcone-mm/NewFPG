@@ -17,6 +17,8 @@ MonoBehaviour:
   mode: 2
   entrySpeed: 3
   moveSpeed: 2
+  moveDurationTicks: 120
+  positionQuery: {fileID: 11400000, guid: 2026dd10e69314e45b2927d470d549e4, type: 2}
   stopDuringAttack: 1
   entryAnimation: appear
   idleAnimation: idle

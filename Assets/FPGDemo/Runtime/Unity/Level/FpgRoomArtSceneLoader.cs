@@ -160,7 +160,12 @@ namespace FPG.Demo.Unity
 
                 try
                 {
-                    LightProbes.Tetrahedralize();
+                    // The art scene ships with baked lighting. Rebuilding the
+                    // global probe tetrahedralization here can monopolize the
+                    // editor main thread during BattleTest startup, while the
+                    // formal encounter does not query probes. Defer this
+                    // optional lighting update until the scene is authored
+                    // for runtime probe sampling.
                 }
                 catch (Exception exception)
                 {
@@ -259,7 +264,8 @@ namespace FPG.Demo.Unity
             activeArtRoot = null;
             try
             {
-                LightProbes.Tetrahedralize();
+                // See the load path: avoid a synchronous global probe rebuild
+                // during the BattleTest teardown frame.
             }
             catch (Exception exception)
             {
@@ -301,7 +307,8 @@ namespace FPG.Demo.Unity
 
             try
             {
-                LightProbes.Tetrahedralize();
+                // See the load path: avoid a synchronous global probe rebuild
+                // while rolling back a failed additive load.
             }
             catch (Exception)
             {

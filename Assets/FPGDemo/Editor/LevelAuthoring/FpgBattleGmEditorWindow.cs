@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using FPG.Demo.Run;
 using FPG.Demo.Unity;
@@ -28,6 +29,20 @@ namespace FPG.Demo.Editor.LevelAuthoring
 
         [SerializeField]
         private string spawnPointId = string.Empty;
+
+        [NonSerialized]
+        private List<string> enemyDefinitionOptions =
+            new List<string>();
+
+        [NonSerialized]
+        private List<string> spawnPointOptions =
+            new List<string>();
+
+        [NonSerialized]
+        private string[] enemyDefinitionPopupLabels = Array.Empty<string>();
+
+        [NonSerialized]
+        private string[] spawnPointPopupLabels = Array.Empty<string>();
 
         [SerializeField]
         private string commandLine = "gm.spawn burstbug 1 enemy-any-01";
@@ -68,6 +83,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             if (IsReady(latestReadyBootstrap))
             {
                 bootstrap = latestReadyBootstrap;
+                RefreshSelectionOptions(GetReadyRuntime());
             }
         }
 
@@ -83,6 +99,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
             DrawConnection();
 
             FpgBattleGmRuntime runtime = GetReadyRuntime();
+            RefreshSelectionOptions(runtime);
             DrawRuntimeState(runtime);
             using (new EditorGUI.DisabledScope(runtime == null))
             {
@@ -110,6 +127,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 if (EditorGUI.EndChangeCheck())
                 {
                     bootstrap = selected;
+                    RefreshSelectionOptions(GetReadyRuntime());
                 }
 
                 if (!EditorApplication.isPlaying)
@@ -173,6 +191,42 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 EditorGUILayout.LabelField(
                     "玩家无敌：" + TranslateSwitch(runtime.IsPlayerInvincible)
                     + "    怪物 AI：" + TranslateSwitch(runtime.IsEnemyAiEnabled));
+
+                DrawAiSnapshots(runtime);
+            }
+        }
+
+        private static void DrawAiSnapshots(FpgBattleGmRuntime runtime)
+        {
+            int count = runtime == null ? 0 : runtime.ActiveAiRuntimeCount;
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("敌人 AI 状态", EditorStyles.boldLabel);
+            if (count <= 0)
+            {
+                EditorGUILayout.LabelField("暂无已注册的 AI Runtime。", EditorStyles.miniLabel);
+                return;
+            }
+
+            int shown = Mathf.Min(count, 8);
+            for (int index = 0; index < shown; index++)
+            {
+                if (!runtime.TryDescribeAiSnapshot(
+                        index,
+                        out string description))
+                {
+                    continue;
+                }
+
+                EditorGUILayout.LabelField(
+                    description,
+                    EditorStyles.miniLabel);
+            }
+
+            if (count > shown)
+            {
+                EditorGUILayout.LabelField(
+                    "还有 " + (count - shown) + " 个 AI Runtime 未显示。",
+                    EditorStyles.miniLabel);
             }
         }
 
@@ -216,24 +270,98 @@ namespace FPG.Demo.Editor.LevelAuthoring
             EditorGUILayout.LabelField("召唤敌人", EditorStyles.boldLabel);
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                enemyDefinitionId = EditorGUILayout.TextField(
-                    "敌人配置 ID",
-                    enemyDefinitionId ?? string.Empty);
-                spawnCount = EditorGUILayout.IntField("数量", spawnCount);
-                spawnPointId = EditorGUILayout.TextField(
-                    "出生点 ID（留空轮询）",
-                    spawnPointId ?? string.Empty);
-
-                if (GUILayout.Button("召唤敌人", GUILayout.Height(26f))
-                    && runtime != null)
+                bool hasEnemyDefinitions = enemyDefinitionPopupLabels.Length > 0;
+                bool hasSpawnPoints = spawnPointPopupLabels.Length > 0;
+                if (!hasEnemyDefinitions)
                 {
-                    Record(
-                        runtime.TrySpawn(
-                            enemyDefinitionId,
-                            spawnCount,
-                            spawnPointId,
-                            out string result),
-                        result);
+                    EditorGUILayout.HelpBox(
+                        "当前战斗目录没有可用的敌人配置。",
+                        MessageType.Warning);
+                }
+
+                if (!hasSpawnPoints)
+                {
+                    EditorGUILayout.HelpBox(
+                        "当前房间没有可用的敌人出生点。",
+                        MessageType.Warning);
+                }
+
+                using (new EditorGUI.DisabledScope(
+                           !hasEnemyDefinitions || !hasSpawnPoints))
+                {
+                    if (hasEnemyDefinitions)
+                    {
+                        int enemyIndex = IndexOf(
+                            enemyDefinitionOptions,
+                            enemyDefinitionId);
+                        int nextEnemyIndex = EditorGUILayout.Popup(
+                            "敌人配置",
+                            enemyIndex < 0 ? 0 : enemyIndex,
+                            enemyDefinitionPopupLabels);
+                        if (nextEnemyIndex >= 0
+                            && nextEnemyIndex < enemyDefinitionOptions.Count)
+                        {
+                            enemyDefinitionId =
+                                enemyDefinitionOptions[nextEnemyIndex];
+                        }
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField(
+                            "敌人配置",
+                            "（无可用选项）");
+                    }
+
+                    spawnCount = EditorGUILayout.IntField("数量", spawnCount);
+
+                    if (hasSpawnPoints)
+                    {
+                        int spawnPointIndex = IndexOf(
+                            spawnPointOptions,
+                            spawnPointId);
+                        int nextSpawnPointIndex = EditorGUILayout.Popup(
+                            "出生点",
+                            spawnPointIndex < 0 ? 0 : spawnPointIndex,
+                            spawnPointPopupLabels);
+                        if (nextSpawnPointIndex >= 0
+                            && nextSpawnPointIndex < spawnPointOptions.Count)
+                        {
+                            spawnPointId =
+                                spawnPointOptions[nextSpawnPointIndex];
+                        }
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField(
+                            "出生点",
+                            "（无可用选项）");
+                    }
+                }
+
+                if (hasSpawnPoints)
+                {
+                    EditorGUILayout.LabelField(
+                        string.IsNullOrEmpty(spawnPointId)
+                            ? "出生点：自动按当前房间顺序轮询"
+                            : "出生点 ID：" + spawnPointId,
+                        EditorStyles.miniLabel);
+                }
+
+                using (new EditorGUI.DisabledScope(
+                           runtime == null
+                           || !hasEnemyDefinitions
+                           || !hasSpawnPoints))
+                {
+                    if (GUILayout.Button("召唤敌人", GUILayout.Height(26f)))
+                    {
+                        Record(
+                            runtime.TrySpawn(
+                                enemyDefinitionId,
+                                spawnCount,
+                                spawnPointId,
+                                out string result),
+                            result);
+                    }
                 }
             }
         }
@@ -351,6 +479,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
 
                 window.bootstrap = source;
+                window.RefreshSelectionOptions(window.GetReadyRuntime());
                 window.Repaint();
             }
         }
@@ -371,6 +500,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 }
 
                 window.bootstrap = null;
+                window.RefreshSelectionOptions(null);
                 window.Repaint();
             }
         }
@@ -379,6 +509,161 @@ namespace FPG.Demo.Editor.LevelAuthoring
         {
             return source != null && source.IsReady
                 && source.GmRuntime != null && !source.GmRuntime.IsDisposed;
+        }
+
+        private void RefreshSelectionOptions(FpgBattleGmRuntime runtime)
+        {
+            if (enemyDefinitionOptions == null)
+            {
+                enemyDefinitionOptions = new List<string>();
+            }
+
+            if (spawnPointOptions == null)
+            {
+                spawnPointOptions = new List<string>();
+            }
+
+            if (enemyDefinitionPopupLabels == null)
+            {
+                enemyDefinitionPopupLabels = Array.Empty<string>();
+            }
+
+            if (spawnPointPopupLabels == null)
+            {
+                spawnPointPopupLabels = Array.Empty<string>();
+            }
+
+            enemyDefinitionOptions.Clear();
+            spawnPointOptions.Clear();
+            enemyDefinitionPopupLabels = Array.Empty<string>();
+            spawnPointPopupLabels = Array.Empty<string>();
+
+            FpgRoomEncounterDirector director = runtime == null
+                || runtime.Host == null
+                ? null
+                : runtime.Host.EncounterDirector;
+            if (director == null)
+            {
+                return;
+            }
+
+            FpgEnemyDefinitionCatalog catalog = director.EnemyCatalog;
+            IReadOnlyList<FpgEnemyDefinition> definitions =
+                catalog == null ? null : catalog.Definitions;
+            List<string> enemyLabels = new List<string>();
+            if (definitions != null)
+            {
+                for (int index = 0; index < definitions.Count; index++)
+                {
+                    FpgEnemyDefinition definition = definitions[index];
+                    if (definition == null
+                        || string.IsNullOrWhiteSpace(
+                            definition.EnemyDefinitionId))
+                    {
+                        continue;
+                    }
+
+                    string id = definition.EnemyDefinitionId;
+                    if (enemyDefinitionOptions.Contains(id))
+                    {
+                        continue;
+                    }
+
+                    enemyDefinitionOptions.Add(id);
+                    enemyLabels.Add(BuildDisplayLabel(
+                        id,
+                        definition.DisplayName));
+                }
+            }
+
+            FpgRoomDefinition room = director.RoomDefinition;
+            IReadOnlyList<FpgRoomEnemySpawnPoint> spawnPoints =
+                room == null ? null : room.EnemySpawnPoints;
+            List<string> spawnLabels = new List<string>();
+            if (spawnPoints != null && spawnPoints.Count > 0)
+            {
+                spawnPointOptions.Add(string.Empty);
+                spawnLabels.Add("自动轮询（按当前房间顺序）");
+                for (int index = 0; index < spawnPoints.Count; index++)
+                {
+                    FpgRoomEnemySpawnPoint point = spawnPoints[index];
+                    if (point == null
+                        || string.IsNullOrWhiteSpace(point.MarkerId))
+                    {
+                        continue;
+                    }
+
+                    string id = point.MarkerId;
+                    if (spawnPointOptions.Contains(id))
+                    {
+                        continue;
+                    }
+
+                    spawnPointOptions.Add(id);
+                    spawnLabels.Add(BuildDisplayLabel(
+                        id,
+                        point.DisplayName));
+                }
+
+                // Do not offer an empty "auto" row when every marker record
+                // in the room is invalid.
+                if (spawnPointOptions.Count == 1)
+                {
+                    spawnPointOptions.Clear();
+                    spawnLabels.Clear();
+                }
+            }
+
+            enemyDefinitionPopupLabels = enemyLabels.ToArray();
+            spawnPointPopupLabels = spawnLabels.ToArray();
+
+            if (enemyDefinitionOptions.Count == 0)
+            {
+                enemyDefinitionId = string.Empty;
+            }
+            else if (IndexOf(enemyDefinitionOptions, enemyDefinitionId) < 0)
+            {
+                enemyDefinitionId = enemyDefinitionOptions[0];
+            }
+
+            if (spawnPointOptions.Count == 0)
+            {
+                spawnPointId = string.Empty;
+            }
+            else if (IndexOf(spawnPointOptions, spawnPointId) < 0)
+            {
+                spawnPointId = spawnPointOptions[0];
+            }
+        }
+
+        private static string BuildDisplayLabel(string id, string displayName)
+        {
+            return string.IsNullOrWhiteSpace(displayName)
+                || string.Equals(id, displayName.Trim(),
+                    StringComparison.Ordinal)
+                ? id
+                : id + "（" + displayName.Trim() + "）";
+        }
+
+        private static int IndexOf(
+            IReadOnlyList<string> values,
+            string value)
+        {
+            if (values == null)
+            {
+                return -1;
+            }
+
+            for (int index = 0; index < values.Count; index++)
+            {
+                if (string.Equals(values[index], value,
+                    StringComparison.Ordinal))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
         }
 
         private static string TranslateSwitch(bool enabled)

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections;
+using System.Reflection;
 using FPG.Demo.Run;
 using FPG.Demo.Unity;
 using NUnit.Framework;
@@ -18,6 +19,69 @@ namespace FPG.Demo.Tests.PlayMode
             "Assets/FPGDemo/Scenes/FormalRoom.unity";
         private const string ArtScenePath =
             "Assets/FPGDemo/Presentation/Level/Rooms/Forest/ART_Forest.unity";
+
+        [Test]
+        public void GroundNavigationStepMovesAlongDefaultLayerFloor()
+        {
+            GameObject floor = GameObject.CreatePrimitive(
+                PrimitiveType.Cube);
+            GameObject blocker = null;
+            GameObject volumeObject = new GameObject(
+                "GroundNavigationVolumeTest");
+            try
+            {
+                floor.transform.position = new Vector3(0f, -0.5f, 0f);
+                floor.transform.localScale = new Vector3(20f, 1f, 20f);
+                FpgRoomNavigationVolume volume =
+                    volumeObject.AddComponent<FpgRoomNavigationVolume>();
+                FieldInfo obstacleLayersField = typeof(
+                    FpgRoomNavigationVolume).GetField(
+                        "obstacleLayers",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(obstacleLayersField, Is.Not.Null);
+                obstacleLayersField.SetValue(
+                    volume,
+                    (LayerMask)((1 << 0) | (1 << 28)));
+
+                Physics.SyncTransforms();
+                Vector3 from = Vector3.zero;
+                Vector3 target = new Vector3(2f, 0f, 0f);
+                Assert.That(
+                    volume.TryGetSafeGroundStep(
+                        from,
+                        target,
+                        0.1f,
+                        0.3f,
+                        out Vector3 next),
+                    Is.True);
+                Assert.That(next.x, Is.GreaterThan(from.x));
+
+                blocker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                blocker.layer = 28;
+                blocker.transform.position = new Vector3(4f, 0.55f, 0f);
+                blocker.transform.localScale = new Vector3(1f, 1.1f, 1f);
+                Physics.SyncTransforms();
+                Vector3 blockedSpawn = new Vector3(4f, 0f, 0f);
+                Assert.That(
+                    volume.TryGetSafeGroundStep(
+                        blockedSpawn,
+                        new Vector3(7f, 0f, 0f),
+                        0.1f,
+                        0.3f,
+                        out Vector3 escaped),
+                    Is.True);
+                Assert.That(escaped.x, Is.GreaterThan(blockedSpawn.x));
+            }
+            finally
+            {
+                Object.DestroyImmediate(volumeObject);
+                Object.DestroyImmediate(floor);
+                if (blocker != null)
+                {
+                    Object.DestroyImmediate(blocker);
+                }
+            }
+        }
 
         [UnityTest]
         public IEnumerator BattleTestBootsEmptySandboxAndRunsGmCommands()

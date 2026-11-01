@@ -351,6 +351,46 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 out error);
         }
 
+        public static bool TryValidateLoadedSceneForAuthoring(
+            FpgRoomDefinition room,
+            Scene scene,
+            out string error)
+        {
+            if (!FpgRoomArtSceneEditorUtility.TryValidateStoredReference(
+                    room,
+                    out error))
+            {
+                return false;
+            }
+
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                error = "Art Scene must be valid and loaded before authoring validation.";
+                return false;
+            }
+
+            if (!string.Equals(
+                    scene.path,
+                    room.ArtScenePath,
+                    StringComparison.Ordinal))
+            {
+                error =
+                    $"Loaded Art Scene '{scene.path}' does not match room '{room.RoomId}' reference '{room.ArtScenePath}'.";
+                return false;
+            }
+
+            if (!FpgRoomArtRoot.TryResolve(
+                    scene,
+                    room,
+                    out _,
+                    out error))
+            {
+                return false;
+            }
+
+            return TryValidateMissingPrefabAssets(scene, out error);
+        }
+
         internal static bool TryValidateSceneForBindingRepair(
             FpgRoomDefinition room,
             out string error)
@@ -400,21 +440,10 @@ namespace FPG.Demo.Editor.LevelAuthoring
                         ref error);
                 }
 
-                if (!FpgRoomArtRoot.TryResolve(
-                        scene,
+                if (!TryValidateLoadedSceneForAuthoring(
                         room,
-                        out FpgRoomArtRoot root,
-                        out error))
-                {
-                    return CompleteSceneValidation(
-                        false,
-                        openedForValidation,
                         scene,
-                        previousActive,
-                        ref error);
-                }
-
-                if (!TryValidateForbiddenComponents(root, out error))
+                        out error))
                 {
                     return CompleteSceneValidation(
                         false,
@@ -456,6 +485,88 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     previousActive,
                     ref error);
             }
+        }
+
+        private static bool TryValidateMissingPrefabAssets(
+            Scene scene,
+            out string error)
+        {
+            List<string> missingPaths = new List<string>();
+            HashSet<string> uniquePaths = new HashSet<string>(
+                StringComparer.Ordinal);
+            GameObject[] sceneRoots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < sceneRoots.Length; rootIndex++)
+            {
+                GameObject sceneRoot = sceneRoots[rootIndex];
+                if (sceneRoot == null
+                    || IsEditorPreviewObject(sceneRoot.transform))
+                {
+                    continue;
+                }
+
+                Transform[] descendants = sceneRoot.GetComponentsInChildren<Transform>(
+                    true);
+                for (int index = 0; index < descendants.Length; index++)
+                {
+                    Transform descendant = descendants[index];
+                    if (descendant == null
+                        || IsEditorPreviewObject(descendant))
+                    {
+                        continue;
+                    }
+
+                    GameObject candidate = descendant.gameObject;
+                    if (PrefabUtility.GetPrefabInstanceStatus(candidate)
+                        != PrefabInstanceStatus.MissingAsset)
+                    {
+                        continue;
+                    }
+
+                    string hierarchyPath = GetHierarchyPath(candidate.transform);
+                    if (uniquePaths.Add(hierarchyPath))
+                    {
+                        missingPaths.Add(hierarchyPath);
+                    }
+                }
+            }
+
+            if (missingPaths.Count > 0)
+            {
+                error = $"Art Scene '{scene.path}' contains missing Prefab instance(s): "
+                    + string.Join(", ", missingPaths)
+                    + ". Restore the Prefab asset or remove these instances before previewing.";
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool IsEditorPreviewObject(Transform candidate)
+        {
+            for (Transform current = candidate;
+                current != null;
+                current = current.parent)
+            {
+                if ((current.gameObject.hideFlags
+                        & HideFlags.DontSaveInEditor) != 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string GetHierarchyPath(Transform target)
+        {
+            List<string> parts = new List<string>();
+            for (Transform current = target; current != null; current = current.parent)
+            {
+                parts.Add(current.name);
+            }
+            parts.Reverse();
+            return string.Join("/", parts);
         }
 
         private static bool CompleteSceneValidation(
@@ -506,36 +617,6 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     + exception.GetBaseException().Message;
                 return false;
             }
-        }
-
-        private static bool TryValidateForbiddenComponents(
-            FpgRoomArtRoot root,
-            out string error)
-        {
-            Type[] forbidden =
-            {
-                typeof(GameBootstrap),
-                typeof(FpgFormalEncounterHost),
-                typeof(FpgEncounterHost),
-                typeof(FpgRoomEncounterDirector),
-                typeof(FpgRoomInstance),
-                typeof(FpgRoomArtSceneLoader)
-            };
-            for (int index = 0; index < forbidden.Length; index++)
-            {
-                Component component = root.GetComponentInChildren(
-                    forbidden[index],
-                    true);
-                if (component != null)
-                {
-                    error =
-                        $"Art Scene '{root.gameObject.scene.path}' cannot contain {forbidden[index].Name} ('{component.name}').";
-                    return false;
-                }
-            }
-
-            error = string.Empty;
-            return true;
         }
 
     }

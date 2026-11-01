@@ -267,6 +267,80 @@ namespace FPG.Demo.Tests.EditMode
         }
 
         [Test]
+        public void CoverScaleMultiplierDefaultsToOneAndReportsInvalidOrExtremeValues()
+        {
+            FpgRoomCoverSlot newSlot = new FpgRoomCoverSlot();
+            Assert.That(newSlot.ScaleMultiplier, Is.EqualTo(Vector3.one));
+            Assert.That(newSlot.HasValidScaleMultiplier, Is.True);
+            Assert.That(newSlot.HasScaleMultiplierWarning, Is.False);
+
+            FpgRoomDefinition clone = Object.Instantiate(
+                LoadRequired<FpgRoomDefinition>(RoomPath));
+            try
+            {
+                foreach (FpgRoomCoverSlot slot in clone.CoverSlots)
+                {
+                    Assert.That(slot.ScaleMultiplier, Is.EqualTo(Vector3.one));
+                    Assert.That(slot.HasValidScaleMultiplier, Is.True);
+                    Assert.That(slot.HasScaleMultiplierWarning, Is.False);
+                }
+
+                SerializedObject serialized = new SerializedObject(clone);
+                SerializedProperty firstCover = serialized.FindProperty("coverSlots")
+                    .GetArrayElementAtIndex(0);
+                SerializedProperty scale = firstCover.FindPropertyRelative(
+                    "scaleMultiplier");
+
+                scale.vector3Value = new Vector3(0.1f, 1f, 10f);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                Assert.That(clone.CoverSlots[0].HasValidScaleMultiplier, Is.True);
+                Assert.That(clone.CoverSlots[0].HasScaleMultiplierWarning, Is.False);
+
+                serialized.Update();
+                scale = serialized.FindProperty("coverSlots")
+                    .GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("scaleMultiplier");
+                scale.vector3Value = new Vector3(0.09f, 1f, 10.01f);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                Assert.That(clone.CoverSlots[0].HasValidScaleMultiplier, Is.True);
+                Assert.That(clone.CoverSlots[0].HasScaleMultiplierWarning, Is.True);
+
+                Vector3[] invalidScales =
+                {
+                    new Vector3(0f, 1f, 1f),
+                    new Vector3(-1f, 1f, 1f),
+                    new Vector3(float.NaN, 1f, 1f),
+                    new Vector3(float.PositiveInfinity, 1f, 1f)
+                };
+                for (int index = 0; index < invalidScales.Length; index++)
+                {
+                    serialized.Update();
+                    scale = serialized.FindProperty("coverSlots")
+                        .GetArrayElementAtIndex(0)
+                        .FindPropertyRelative("scaleMultiplier");
+                    scale.vector3Value = invalidScales[index];
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                    Assert.That(
+                        clone.CoverSlots[0].HasValidScaleMultiplier,
+                        Is.False,
+                        $"Expected invalid multiplier {invalidScales[index]} to be rejected.");
+                    Assert.That(
+                        clone.CoverSlots[0].HasScaleMultiplierWarning,
+                        Is.False,
+                        "Invalid values are errors, not extreme-value warnings.");
+                    AssertRoomIssue(
+                        clone.Validate(),
+                        FpgRoomValidationCode.InvalidCoverScaleMultiplier);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(clone);
+            }
+        }
+
+        [Test]
         public void RoomInstanceCreatesCoversWithoutInstantiatingArtEnvironment()
         {
             GameObject host = new GameObject("RoomInstanceTestHost");
@@ -321,6 +395,108 @@ namespace FPG.Demo.Tests.EditMode
             finally
             {
                 Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void RoomInstanceAppliesCoverScaleWithoutChangingAuthoredPlayerGeometry()
+        {
+            FpgRoomDefinition definition = Object.Instantiate(
+                LoadRequired<FpgRoomDefinition>(RoomPath));
+            GameObject host = new GameObject("RoomInstanceCoverScaleTestHost");
+            try
+            {
+                Vector3 reachablePosition =
+                    definition.CoverSlots[0].PlayerReachableLocalPosition;
+                Vector3 leftPeekPosition =
+                    definition.CoverSlots[0].PlayerLeftPeekLocalPosition;
+                Vector3 multiplier = new Vector3(2f, 0.5f, 1.5f);
+                SerializedObject serialized = new SerializedObject(definition);
+                serialized.FindProperty("coverSlots")
+                    .GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("scaleMultiplier")
+                    .vector3Value = multiplier;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                FpgRoomInstance instance = host.AddComponent<FpgRoomInstance>();
+                Assert.That(
+                    instance.TryInitialize(definition, out string error),
+                    Is.True,
+                    error);
+
+                FpgRoomCoverSlot slot = definition.CoverSlots[0];
+                GameObject cover = instance.CoverInstances[0];
+                Assert.That(
+                    cover.transform.localScale,
+                    Is.EqualTo(Vector3.Scale(
+                        slot.Prefab.transform.localScale,
+                        multiplier)));
+                Assert.That(cover.transform.localPosition, Is.EqualTo(slot.LocalPosition));
+
+                host.transform.SetPositionAndRotation(
+                    new Vector3(3f, 2f, -4f),
+                    Quaternion.Euler(0f, 30f, 0f));
+                Assert.That(
+                    instance.TryResolveCoverPeekPosition(
+                        slot.MarkerId,
+                        FpgPlayerFacingDirection.Left,
+                        out Vector3 leftWorld),
+                    Is.True);
+                Assert.That(
+                    leftWorld,
+                    Is.EqualTo(host.transform.TransformPoint(
+                        leftPeekPosition)));
+                Assert.That(
+                    slot.PlayerReachableLocalPosition,
+                    Is.EqualTo(reachablePosition));
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(definition);
+            }
+        }
+
+        [Test]
+        public void RoomInstanceRejectsInvalidCoverScaleMultipliers()
+        {
+            FpgRoomDefinition definition = Object.Instantiate(
+                LoadRequired<FpgRoomDefinition>(RoomPath));
+            GameObject host = new GameObject("RoomInstanceInvalidCoverScaleTestHost");
+            try
+            {
+                FpgRoomInstance instance = host.AddComponent<FpgRoomInstance>();
+                SerializedObject serialized = new SerializedObject(definition);
+                Vector3[] invalidScales =
+                {
+                    new Vector3(0f, 1f, 1f),
+                    new Vector3(-1f, 1f, 1f),
+                    new Vector3(float.NaN, 1f, 1f),
+                    new Vector3(float.PositiveInfinity, 1f, 1f)
+                };
+
+                for (int index = 0; index < invalidScales.Length; index++)
+                {
+                    serialized.Update();
+                    serialized.FindProperty("coverSlots")
+                        .GetArrayElementAtIndex(0)
+                        .FindPropertyRelative("scaleMultiplier")
+                        .vector3Value = invalidScales[index];
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                    Assert.That(
+                        instance.TryInitialize(definition, out string error),
+                        Is.False,
+                        $"Expected invalid multiplier {invalidScales[index]} to be rejected.");
+                    Assert.That(error, Is.Not.Empty);
+                    Assert.That(instance.CoverInstances, Is.Empty);
+                    Assert.That(host.transform.childCount, Is.EqualTo(0));
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(host);
+                Object.DestroyImmediate(definition);
             }
         }
 

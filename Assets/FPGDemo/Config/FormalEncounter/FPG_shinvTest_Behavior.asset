@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db3b7a9e76324f0a8154039e0f5279fe, type: 3}
+  m_Name: FPG_shinvTest_Behavior
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyBehaviorDefinition
+  behaviorId: shinv-test-behavior
+  displayName: "\u4F8D\u5973\u6D4B\u8BD5\u884C\u4E3A"
+  mode: 2
+  entrySpeed: 3
+  moveSpeed: 1
+  lateralAttackDistance: 2.8
+  lateralStopDistance: 0.35
+  moveDurationTicks: 60
+  positionQuery: {fileID: 11400000, guid: ef23d3f5f1c2fc445b606e6d969400a6, type: 2}
+  stopDuringAttack: 1
+  entryAnimation: walk
+  idleAnimation: walk
+  movementAnimation: 
+  deathAnimation: walk
+  animationRootMotionRules: []

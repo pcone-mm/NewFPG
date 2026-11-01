@@ -191,6 +191,10 @@ namespace FPG.Demo.Unity
                         definition,
                         out error))
                 {
+                    Debug.LogError(
+                        $"[FpgEnemyEntityPool] Bind failed for '{definition.EnemyDefinitionId}' "
+                        + $"runtime={runtimeId} sequence={spawnSequence}: {error}",
+                        slot.Instance);
                     slot.Binder.UnbindFormalRuntime();
                     slot.Instance.SetActive(false);
                     return false;

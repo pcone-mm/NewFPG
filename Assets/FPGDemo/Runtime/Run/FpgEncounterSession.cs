@@ -94,6 +94,7 @@ namespace FPG.Demo.Run
         private bool entrySnapshotCaptured;
         private bool disposed;
         private long executedTickCount;
+        private string lastFaultDiagnostic = string.Empty;
 
         public FpgEncounterSession(
             FpgRoomRunRequest request,
@@ -123,6 +124,7 @@ namespace FPG.Demo.Run
         public FpgEncounterRuntime Runtime => runtime;
         public FpgEnemyRoster Roster => runtime.Roster;
         public FpgEncounterSessionState State { get; private set; }
+        public string LastFaultDiagnostic => lastFaultDiagnostic;
         public long ExecutedTickCount => executedTickCount;
         public TickIndex CurrentTick => runtime.CurrentTick;
 
@@ -164,6 +166,7 @@ namespace FPG.Demo.Run
             if (result.IsSuccess)
             {
                 State = FpgEncounterSessionState.Running;
+                lastFaultDiagnostic = string.Empty;
             }
 
             return result;
@@ -197,7 +200,11 @@ namespace FPG.Demo.Run
                 DomainResult synchronized = synchronizer.Synchronize(phase, tick);
                 if (!synchronized.IsSuccess)
                 {
-                    return Fault(tick, synchronized.RejectReason);
+                    return Fault(
+                        tick,
+                        phase,
+                        "Synchronize",
+                        synchronized.RejectReason);
                 }
 
                 DomainResult phaseResult;
@@ -212,7 +219,13 @@ namespace FPG.Demo.Run
 
                 if (!phaseResult.IsSuccess)
                 {
-                    return Fault(tick, phaseResult.RejectReason);
+                    return Fault(
+                        tick,
+                        phase,
+                        phase == FpgBattleTickPhase.LifecycleBoundary
+                            ? "Runtime.Advance"
+                            : "Combat.Process",
+                        phaseResult.RejectReason);
                 }
 
                 if (phase == FpgBattleTickPhase.EncounterCompletion)
@@ -220,6 +233,11 @@ namespace FPG.Demo.Run
                     DomainResult completion = EvaluateCompletion(tick);
                     if (!completion.IsSuccess)
                     {
+                        lastFaultDiagnostic = FormatFaultDiagnostic(
+                            tick,
+                            phase,
+                            "EvaluateCompletion",
+                            completion.RejectReason);
                         return completion;
                     }
                 }
@@ -285,6 +303,7 @@ namespace FPG.Demo.Run
 
             runtime.EmitRestarted();
             executedTickCount = 0L;
+            lastFaultDiagnostic = string.Empty;
             State = FpgEncounterSessionState.NotStarted;
             return DomainResult.Success;
         }
@@ -384,11 +403,29 @@ namespace FPG.Demo.Run
             return DomainResult.Success;
         }
 
-        private DomainResult Fault(TickIndex tick, RejectReason reason)
+        private DomainResult Fault(
+            TickIndex tick,
+            FpgBattleTickPhase phase,
+            string source,
+            RejectReason reason)
         {
             State = FpgEncounterSessionState.Faulted;
+            lastFaultDiagnostic = FormatFaultDiagnostic(
+                tick,
+                phase,
+                source,
+                reason);
             runtime.Fail(FpgEncounterFailureReason.SynchronizerFault, reason);
             return DomainResult.Rejected(reason);
+        }
+
+        private static string FormatFaultDiagnostic(
+            TickIndex tick,
+            FpgBattleTickPhase phase,
+            string source,
+            RejectReason reason)
+        {
+            return $"tick={tick.Value}, phase={phase}, source={source}, reject={reason}";
         }
 
         private void ForwardLifecycleEvent(FpgEncounterLifecycleEvent lifecycleEvent)

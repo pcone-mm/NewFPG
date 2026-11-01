@@ -3,7 +3,7 @@
 本目录保存正式房间环境资源与 additive Art Scene，不拥有正式 gameplay Host。
 
 - `Covers/Prefabs/` 保存通用与房间特定的正式掩体 Entity，`Covers/VFX/` 保存掩体切换表现；`RoomExit/` 按 Prefab、Material、Shader 聚合正式房间出口表现。这些 authored 资产只承载几何、碰撞、anchor 与表现组件，耐久、选择、移动和房间流程状态属于 Run/RoomDefinition。
-- `Rooms/` 下由 `FPG_RoomCatalog` 与 Build Settings 通过 GUID/path 注册的是正式 Art Scene；整房复制会按源场景名生成唯一 `_Copy` 路径，不得用文件名模式推断房间身份或所有权。`Environment/` 保存可复用源资源，不能再作为 `RoomDefinition` 的运行时 prefab 回退。
+- `Rooms/` 下只有由 `FPG_RoomCatalog` 与 Build Settings 通过 GUID/path 注册的 Art Scene 才属于生产关卡；未登记草稿保留为普通项目资产。整房复制时由用户输入的新关卡名称同时决定 RoomDefinition、显示名和 Art Scene 文件名，输出路径冲突必须停止并说明。不得用文件名模式推断房间身份或所有权。`Environment/` 保存可复用源资源，不能再作为 `RoomDefinition` 的运行时 prefab 回退。
 - `Environment/Generated/SpriteShadowCasters/` 保存由 Unity Editor 产出、按源 sprite GUID 命名的 scene-coupled mesh/material；当前正式 Art Scene 与 `PF_FPG_Root1TreeCover` 直接引用其 GUID。不要手改、重命名或按 hash 单独删除，重新生成或替换时必须让 asset、`.meta` 与全部消费者原子维护。
 - `Environment/rootArt/root1/` 保存 root1 掩体变体使用的树/船分阶段源 sprite；源图、`.meta` 与 `Covers/Prefabs/` 下的 prefab 引用必须成套维护，不能把这些表现输入复制进 `RoomDefinition` 或运行时状态。
 - `Covers/Prefabs/PF_FPG_DefaultCover.prefab` 是通用模板；`PF_FPG_Root1TreeCover.prefab`、`PF_FPG_BoatLeft.prefab` 与 `PF_FPG_BoatRight.prefab` 是 `root1.asset` 使用的房间特定变体。所有正式 `PF_FPG_*Cover` 都通过 `FpgCoverEntityView` 独占完好/损毁根和阻挡 collider。
@@ -11,7 +11,7 @@
 - `PF_FPG_Root1TreeCover` 的 shadow proxy 引用 `Environment/Generated/SpriteShadowCasters/` 中的 mesh/material；这些引用与 `.meta` 必须成套维护，不得复制进配置资产或按 hash 文件名手工清理。
 - `Covers/VFX/PF_FPG_CoverTransition.prefab` 是 `FpgCoverTransitionEffectView` 的 authored wrapper；玩家 Entity 上的 `FpgCoverTraversalPresenter` 只能移动玩家视觉并播放 transition VFX，不能提交 gameplay traversal 或拥有相机状态。
 - `RoomExit/Prefabs/PF_FPG_RoomExit.prefab` 是正式出口表现入口，只引用同域 `RoomExit/Materials` 与 `RoomExit/Shaders`；房间解锁、切换和刷新规则仍由正式 runtime/config 拥有。
-- 每个 Art Scene 只有一个 scene root，根上只有一个 `FpgRoomArtRoot`，并引用匹配的 `FpgRoomDefinition`。天空盒、环境光与可选的 `RenderSettings.sun` 直接由该 Art Scene 的 Lighting 设置拥有。
+- 每个 Art Scene 必须有且只有一个位于顶层的 `FpgRoomArtRoot`，并引用匹配的 `FpgRoomDefinition`；允许额外的顶层非 gameplay 对象。整个场景禁止 `GameBootstrap`、Encounter Host、RoomInstance 或 Art Scene loader。天空盒、环境光与可选的 `RenderSettings.sun` 直接由该 Art Scene 的 Lighting 设置拥有。
 - Art Scene 可拥有环境 renderer/collider、lighting、Camera、AudioListener、Volume 与 `IFpgRoomArtPresentationBinding`，不得拥有 GameBootstrap、Encounter Host、RoomInstance 或 Art Scene loader。
 - RoomDefinition 的 Scene GUID 是移动后的身份真源，Assets-relative path 用于运行时加载；移动/重命名场景必须通过 Unity Editor 并让同步工具更新路径，catalog 中 GUID/path/name 不得重复。
 - 各 Art Scene 的 LightingSettings 与烘焙数据随场景成套维护；体积雾/光适配器从 Art Root 下自动发现插件组件并绑定 Formal Camera/可选 Sun，不维护 Inspector 引用数组，也不把插件对象放进 FormalRoom。

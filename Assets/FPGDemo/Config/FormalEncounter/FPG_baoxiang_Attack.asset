@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
+  m_Name: FPG_baoxiang_Attack
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
+  authoringSchemaVersion: 3
+  skillId: baoxiang-basic-attack
+  displayName: "\u5BF6\u7BB1\u602A Basic Attack (Battle Test)"
+  designerNotes: 'Battle Test animation placeholder: BORN/animation/die are available,
+    but attack and hit are missing. Attack currently reuses the idle animation only
+    so GM spawn/combat flow can be tested. Add attack/hit to this same rig before
+    normal encounter use. Straight Alpha re-export is recommended for Linear color
+    space.'
+  sequences:
+  - kind: 1
+    durationTicks: 72
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
+    alternateAnimations: []
+    mainAnimation: animation
+    loop: 0
+    holdUntilCanceled: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 72
+    sourceAnimationDurationTicks: 0
+    attackEvents:
+    - eventId: event.baoxiang.attack.0
+      tick: 48
+      authoredOrdinal: 0
+      socketId: 
+      targetSource: 2
+      targetOffset: {x: 0, y: 0, z: 0}
+      mode: 3
+      ammoCost: 0
+      baseDamage: 18
+      breakDamage: 6
+      weakpointDamageMultiplierBasisPoints: 10000
+      weakpointBreakMultiplierBasisPoints: 10000
+      pelletCount: 0
+      additionalPenetrationCount: 0
+      areaCombatantLimit: 0
+      areaProjectileLimit: 0
+      allowedTargetKinds: 0
+      threatDefinitionId: 453
+      boundTargetPolicy: 0
+      delayTicks: 0
+      threatPresentationKind: 2
+      trajectoryPresentation:
+        rid: -2
+      impactPresentation:
+        rid: -2
+    projectileEvents: []
+    reloadEvents: []
+    summonEvents: []
+    selfDestructOwnerEvents: []
+    activePresentationTracks: []
+    warnings:
+    - eventId: warning.baoxiang
+      warningId: enemy-weakpoint-heavy
+      startTick: 0
+      endTick: 47
+      authoredOrdinal: 1
+      socketId: 
+  priority: 0
+  firstReadyOffsetTicks: 90
+  sequenceCooldownTicks: 150
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

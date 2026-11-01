@@ -2571,7 +2571,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b946b759f33f1e4bba964992d08c981, type: 3}
   m_Name: 
   m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEncounterHost
-  roomDefinition: {fileID: 11400000, guid: ca8c6d458baf6834095c3da1e572d971, type: 2}
+  roomDefinition: {fileID: 11400000, guid: 59388094cecaf864986145504f473a97, type: 2}
   encounterProfile: {fileID: 11400000, guid: 29aa5950fa0131b438daf11d0ae3946f, type: 2}
   encounterOverride: {fileID: 11400000, guid: 1b32348124bca83418b15fad4ad16e3a, type: 2}
   enemyCatalog: {fileID: 11400000, guid: f3c83bac29bb6d94a97b5decdf0b5175, type: 2}

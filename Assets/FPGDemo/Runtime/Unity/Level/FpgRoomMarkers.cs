@@ -87,11 +87,21 @@ namespace FPG.Demo.Unity
     }
 
     [Serializable]
-    public sealed class FpgRoomCoverSlot : FpgRoomMarker
+    public sealed class FpgRoomCoverSlot : FpgRoomMarker, ISerializationCallbackReceiver
     {
         [D0PlannerField("掩体 Prefab", "掩体样式、完好与损毁外观以及阻挡碰撞均由 Prefab 所有。")]
         [SerializeField]
         private GameObject prefab;
+
+        [D0PlannerField("掩体缩放倍率", "相对 Prefab 根节点缩放，可分别调整 XYZ；不影响玩家到达点、探身点或镜头配置。")]
+        [SerializeField]
+        private Vector3 scaleMultiplier = Vector3.one;
+
+        // Older room assets do not contain this field. The marker callback
+        // upgrades those assets to the documented one-to-one scale default,
+        // while preserving an explicitly serialized invalid value for validation.
+        [SerializeField]
+        private bool hasSerializedScaleMultiplier;
 
         [D0PlannerField("镜头配置", "玩家抵达该掩体后使用的独立镜头构图配置；正式房间中必填。")]
         [SerializeField]
@@ -122,6 +132,17 @@ namespace FPG.Demo.Unity
         private Vector3 playerRightPeekLocalPosition;
 
         public GameObject Prefab => prefab;
+        public Vector3 ScaleMultiplier => scaleMultiplier;
+        public bool HasValidScaleMultiplier =>
+            FpgRoomValidationUtility.IsFinite(scaleMultiplier)
+            && scaleMultiplier.x > 0f
+            && scaleMultiplier.y > 0f
+            && scaleMultiplier.z > 0f;
+        public bool HasScaleMultiplierWarning =>
+            HasValidScaleMultiplier
+            && (scaleMultiplier.x < 0.1f || scaleMultiplier.x > 10f
+                || scaleMultiplier.y < 0.1f || scaleMultiplier.y > 10f
+                || scaleMultiplier.z < 0.1f || scaleMultiplier.z > 10f);
         public FpgCoverCameraProfile CameraProfile => cameraProfile;
         public int MaxDurability => maxDurability;
         public bool IsStartingCover => isStartingCover;
@@ -139,6 +160,22 @@ namespace FPG.Demo.Unity
             playerReachableLocalPosition,
             PlayerReachableLocalRotation);
         public override FpgRoomMarkerKind Kind => FpgRoomMarkerKind.Cover;
+
+        public void OnBeforeSerialize()
+        {
+            hasSerializedScaleMultiplier = true;
+        }
+
+        public void OnAfterDeserialize()
+        {
+            if (hasSerializedScaleMultiplier)
+            {
+                return;
+            }
+
+            scaleMultiplier = Vector3.one;
+            hasSerializedScaleMultiplier = true;
+        }
 
         internal bool HasFiniteReachablePose =>
             FpgRoomValidationUtility.IsFinite(playerReachableLocalPosition)

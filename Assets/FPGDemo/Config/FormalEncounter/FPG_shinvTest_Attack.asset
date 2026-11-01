@@ -1,0 +1,187 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d655208a74c929042b6cf96bb3419c9d, type: 3}
+  m_Name: FPG_shinvTest_Attack
+  m_EditorClassIdentifier: FPG.Unity::FPG.Demo.Unity.FpgEnemyAttackDefinition
+  authoringSchemaVersion: 3
+  skillId: shinv-test-basic-attack
+  displayName: "\u4F8D\u5973\u6D4B\u8BD5\u8FDC\u7A0B\u653B\u51FB"
+  designerNotes: 'Sprite Battle Test: Walk is the temporary attack animation; projectile
+    damage preserves the 18 / 6 baseline.'
+  sequences:
+  - kind: 1
+    durationTicks: 60
+    allowWithdrawTick: -1
+    attackTimingMode: 0
+    windupAttackSpeedCoefficient: 1
+    differentAttackInterruptTick: -1
+    alternateAnimations: []
+    mainAnimation: walk
+    loop: 0
+    holdUntilCanceled: 0
+    animationPlaybackMode: 0
+    animationStartTick: 0
+    animationEndTick: 60
+    sourceAnimationDurationTicks: 0
+    attackEvents: []
+    projectileEvents:
+    - eventId: event.shinv-test.projectile.attack.0
+      tick: 48
+      authoredOrdinal: 0
+      socketId: 
+      targetSource: 2
+      targetOffset: {x: 0, y: 0, z: 0}
+      impactMode: 2
+      ammoCost: 0
+      baseDamage: 18
+      breakDamage: 6
+      weakpointDamageMultiplierBasisPoints: 10000
+      weakpointBreakMultiplierBasisPoints: 10000
+      threatDefinitionId: 452
+      projectileDefinitionId: 402
+      projectileCount: 1
+      projectileFlightTicks: 36
+      projectileLifetimeTicks: 51
+      projectileMaxHitPoints: 0
+      projectileInterceptable: 0
+      projectileBudgetUnits: 1
+      projectileSweepRadiusKey: 250
+      threatPresentationKind: 0
+      areaCombatantLimit: 0
+      areaProjectileLimit: 0
+      allowedTargetKinds: 0
+      flightVfx:
+        rid: 1908295348123337103
+      flightAudio:
+        rid: 2450906127936258320
+      collisionPresentation:
+        rid: 1908295348123337104
+    reloadEvents: []
+    summonEvents: []
+    selfDestructOwnerEvents: []
+    activePresentationTracks:
+    - trackId: track.shinv-test.projectile.active
+      displayName: Shinv Test Active Presentation
+      vfxEvents: []
+      audioEvents:
+      - eventId: presentation.shinv-test.projectile.launch.0
+        tick: 48
+        authoredOrdinal: 3
+        boundGameplayEventId: event.shinv-test.projectile.attack.0
+        presentation:
+          clip: {fileID: 8300000, guid: c845997ce742eed4c9ab89080ff08511, type: 3}
+          variations:
+          - {fileID: 8300000, guid: 1140db8bafd75854fbeb2c56cb3dd1c6, type: 3}
+          - {fileID: 8300000, guid: 174813682b8dc834198b47e52e742b2e, type: 3}
+          - {fileID: 8300000, guid: 8c5d4c40d5df1824e998a622f5fd83c6, type: 3}
+          volume: 1
+          space: 1
+          anchor: 0
+          playbackMode: 0
+          socketId: 
+          minDistance: 1
+          maxDistance: 20
+      cameraShakeEvents: []
+    warnings:
+    - eventId: warning.shinv-test.projectile
+      warningId: enemy-source-fast
+      startTick: 0
+      endTick: 47
+      authoredOrdinal: 1
+      socketId: 
+  priority: 0
+  firstReadyOffsetTicks: 60
+  sequenceCooldownTicks: 60
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 1908295348123337103
+      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        prefab: {fileID: 3932298295165595242, guid: f141a155979731941a6301177ed6a274, type: 3}
+        durationSeconds: 3
+        scale: {x: 1, y: 1, z: 1}
+        rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 1908295348123337104
+      type: {class: FpgImpactPresentationBundleDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        baseVfx:
+          rid: 1908295348123337105
+        baseAudio:
+          rid: 2450906127936258322
+        environmentAudioOverride:
+          rid: -2
+        interceptionAudioOverride:
+          rid: -2
+        baseCameraShake:
+          rid: -2
+        weakpointVfxOverride:
+          rid: -2
+        weakpointAudioOverride:
+          rid: 2450906127936258323
+        weakpointCameraShakeOverride:
+          rid: -2
+    - rid: 1908295348123337105
+      type: {class: FpgVfxPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        prefab: {fileID: 913033182220537677, guid: 230b092e9fe73c34abcc405d573af03b, type: 3}
+        durationSeconds: 1
+        scale: {x: 1, y: 1, z: 1}
+        rotationOffsetEuler: {x: 0, y: 0, z: 0}
+    - rid: 2450906127936258320
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: dce54c39a5df55542890ea75d01927de, type: 3}
+        variations:
+        - {fileID: 8300000, guid: bdefc7539c9b8cd4e9efcb88651f1322, type: 3}
+        - {fileID: 8300000, guid: 8fd432784439a82478b6de8218151521, type: 3}
+        - {fileID: 8300000, guid: 041e65e0e6611c14f9406dc5327b4133, type: 3}
+        - {fileID: 8300000, guid: 7cf8e767eff2c7b4788e65f683f98621, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258322
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: 9e7185122a715c04197e828c92f270e6, type: 3}
+        variations:
+        - {fileID: 8300000, guid: 03611926aa06f2f4f831a03d3886bbb0, type: 3}
+        - {fileID: 8300000, guid: a4f5b9d891e2a9649976ed4ef31b3018, type: 3}
+        - {fileID: 8300000, guid: 20477283f5e7eb04fb254cfade62dfd4, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20
+    - rid: 2450906127936258323
+      type: {class: FpgAudioPresentationDefinition, ns: FPG.Demo.Unity, asm: FPG.Unity}
+      data:
+        clip: {fileID: 8300000, guid: c4f5c1e3e71b5da4ea19b812fefd984a, type: 3}
+        variations:
+        - {fileID: 8300000, guid: b78c36f53fe659a438987e9dd503236c, type: 3}
+        - {fileID: 8300000, guid: 7c7d8153b85232d47950079c64e14e76, type: 3}
+        - {fileID: 8300000, guid: 98e605a8a8b1d084d8b0af0af220b143, type: 3}
+        volume: 1
+        space: 1
+        anchor: 0
+        playbackMode: 0
+        socketId: 
+        minDistance: 1
+        maxDistance: 20

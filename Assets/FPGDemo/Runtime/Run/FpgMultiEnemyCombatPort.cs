@@ -39,6 +39,7 @@ namespace FPG.Demo.Run
         private readonly IProjectileWorldPort projectileWorldPort;
         private readonly IPlayerProjectileAreaQueryPort playerProjectileAreaQueryPort;
         private readonly IFpgSummonRequestSink summonRequestSink;
+        private readonly IFpgEnemyHitReactionPort enemyHitReactionPort;
         private readonly QueryCandidate[] playerProjectileAreaCandidates;
         private readonly QueryCandidate[] playerProjectileAreaSelected;
         private readonly FixedFpgVitalsStream vitalsStream;
@@ -53,6 +54,7 @@ namespace FPG.Demo.Run
         private int playerHitCommandCount;
         private long lastPlayerHitCommandSequence = -1L;
         private long nextEnemySkillCapacityReservation = 1L;
+        public string LastProcessFaultDiagnostic { get; private set; } = string.Empty;
 
         public FpgMultiEnemyCombatPort(
             CombatKernel combatKernel,
@@ -63,7 +65,8 @@ namespace FPG.Demo.Run
             IProjectileWorldPort projectileWorldPort,
             IFpgSummonRequestSink summonRequestSink,
             FpgPlayerDefensePolicy? playerDefense = null,
-            IPlayerProjectileAreaQueryPort playerProjectileAreaQueryPort = null)
+            IPlayerProjectileAreaQueryPort playerProjectileAreaQueryPort = null,
+            IFpgEnemyHitReactionPort enemyHitReactionPort = null)
         {
             this.combatKernel = combatKernel ?? throw new ArgumentNullException(nameof(combatKernel));
             this.player = player ?? throw new ArgumentNullException(nameof(player));
@@ -72,6 +75,7 @@ namespace FPG.Demo.Run
                 ?? throw new ArgumentNullException(nameof(projectileWorldPort));
             this.summonRequestSink = summonRequestSink
                 ?? throw new ArgumentNullException(nameof(summonRequestSink));
+            this.enemyHitReactionPort = enemyHitReactionPort;
             this.playerProjectileAreaQueryPort = playerProjectileAreaQueryPort
                 ?? NullPlayerProjectileAreaQueryPort.Instance;
             if (projectileWorldPort is NullProjectileWorldPort)
@@ -1003,9 +1007,12 @@ namespace FPG.Demo.Run
 
         public DomainResult Process(FpgBattleTickPhase phase, TickIndex tick, FpgEnemyRoster roster)
         {
+            LastProcessFaultDiagnostic = string.Empty;
             if (combatKernel.IsDisposed || roster == null || !tick.IsValid
                 || !Enum.IsDefined(typeof(FpgBattleTickPhase), phase))
             {
+                LastProcessFaultDiagnostic =
+                    $"Combat.Process {phase} rejected invalid state.";
                 ClearState(preserveTrace: true);
                 return DomainResult.Rejected(
                     combatKernel.IsDisposed ? RejectReason.Disposed : RejectReason.InvalidState);
@@ -1013,6 +1020,8 @@ namespace FPG.Demo.Run
 
             if (currentTick.IsValid && tick < currentTick)
             {
+                LastProcessFaultDiagnostic =
+                    $"Combat.Process {phase} received tick {tick} before {currentTick}.";
                 ClearState(preserveTrace: true);
                 return DomainResult.Rejected(RejectReason.WrongTick);
             }
@@ -1053,13 +1062,20 @@ namespace FPG.Demo.Run
                         break;
                 }
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                LastProcessFaultDiagnostic =
+                    $"Combat.Process {phase} threw {exception.GetType().Name}: {exception.Message}";
                 result = DomainResult.Rejected(RejectReason.InvariantFault);
             }
 
             if (!result.IsSuccess)
             {
+                if (string.IsNullOrEmpty(LastProcessFaultDiagnostic))
+                {
+                    LastProcessFaultDiagnostic =
+                        $"Combat.Process {phase} rejected {result.RejectReason}.";
+                }
                 ClearState(preserveTrace: true);
             }
 
@@ -2955,6 +2971,28 @@ namespace FPG.Demo.Run
                         0,
                         skillExecutionId: skillExecutionId,
                         gameplayEventId: gameplayEventId);
+                }
+
+                if (!resolution.Death
+                    && resolution.Packet.AppliedAmount > 0
+                    && enemyHitReactionPort != null)
+                {
+                    DomainResult reacted;
+                    try
+                    {
+                        reacted = enemyHitReactionPort.NotifyCommittedEnemyHit(
+                            intent.TargetId,
+                            intent.ImpactTick);
+                    }
+                    catch (Exception)
+                    {
+                        return DomainResult.Rejected(RejectReason.InvariantFault);
+                    }
+
+                    if (!reacted.IsSuccess)
+                    {
+                        return reacted;
+                    }
                 }
 
                 PublishVitals(

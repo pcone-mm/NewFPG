@@ -55,6 +55,30 @@ namespace FPG.Demo.Unity
         [SerializeField, Min(0f)]
         private float moveSpeed = 1.5f;
 
+        [D0PlannerField(
+            "Lateral Attack Distance",
+            "Ground-plane XZ distance at which a lateral chaser may attack.")]
+        [SerializeField, Min(0.1f)]
+        private float lateralAttackDistance = 2.8f;
+
+        [D0PlannerField(
+            "Lateral Stop Distance",
+            "Ground-plane XZ distance at which a lateral chaser stops moving toward its target.")]
+        [SerializeField, Min(0.1f)]
+        private float lateralStopDistance = 0.35f;
+
+        [D0PlannerField(
+            "Move Duration Ticks",
+            "Fixed 60Hz ticks to move after an attack before another attack can start.")]
+        [SerializeField, Min(0)]
+        private int moveDurationTicks = 120;
+
+        [D0PlannerField(
+            "Position Query",
+            "Optional 3D query used to find attack positions and avoid room blockers.")]
+        [SerializeField]
+        private FpgEnemyPositionQueryDefinition positionQuery;
+
         [D0PlannerField("Stop During Attack", "When enabled, attack windup and recovery hold the gameplay anchor.")]
         [SerializeField]
         private bool stopDuringAttack = true;
@@ -66,6 +90,12 @@ namespace FPG.Demo.Unity
         [D0PlannerField("Idle Animation", "Presentation key used while active and not attacking.")]
         [SerializeField]
         private string idleAnimation = "idle";
+
+        [D0PlannerField(
+            "Movement Animation",
+            "Optional presentation key used while the AI movement executor is moving.")]
+        [SerializeField]
+        private string movementAnimation = string.Empty;
 
         [D0PlannerField("Death Animation", "Presentation key used after the combatant dies.")]
         [SerializeField]
@@ -84,9 +114,22 @@ namespace FPG.Demo.Unity
         public FpgEnemyBehaviorMode Mode => mode;
         public float EntrySpeed => entrySpeed;
         public float MoveSpeed => moveSpeed;
+        public float LateralAttackDistance => Mathf.Max(0.1f, lateralAttackDistance);
+        public float LateralStopDistance => Mathf.Max(0.1f, lateralStopDistance);
+        public int MoveDurationTicks => Mathf.Max(0, moveDurationTicks);
+        public FpgEnemyPositionQueryDefinition PositionQuery => positionQuery;
+        public bool UsesPositionQueryMovement =>
+            mode == FpgEnemyBehaviorMode.Chase && positionQuery != null;
+        public bool UsesLateralChaseMovement =>
+            mode == FpgEnemyBehaviorMode.LateralChase;
+        public bool UsesStationaryMovement =>
+            mode == FpgEnemyBehaviorMode.FixedPosition
+                || mode == FpgEnemyBehaviorMode.Patrol;
+        public bool UsesExternalMovement => true;
         public bool StopDuringAttack => stopDuringAttack;
         public string EntryAnimation => entryAnimation;
         public string IdleAnimation => idleAnimation;
+        public string MovementAnimation => movementAnimation ?? string.Empty;
         public string DeathAnimation => deathAnimation;
         public IReadOnlyList<FpgAnimationRootMotionRule>
             AnimationRootMotionRules =>
@@ -147,10 +190,34 @@ namespace FPG.Demo.Unity
 
             if (!Enum.IsDefined(typeof(FpgEnemyBehaviorMode), mode)
                 || !IsFiniteNonNegative(entrySpeed)
-                || !IsFiniteNonNegative(moveSpeed))
+                || !IsFiniteNonNegative(moveSpeed)
+                || ((mode == FpgEnemyBehaviorMode.Chase
+                        || mode == FpgEnemyBehaviorMode.LateralChase)
+                    && moveSpeed <= 0f)
+                || moveDurationTicks < 0
+                || (mode == FpgEnemyBehaviorMode.Chase
+                    && positionQuery == null)
+                || (mode == FpgEnemyBehaviorMode.LateralChase
+                    && (!IsFinitePositive(lateralAttackDistance)
+                        || !IsFinitePositive(lateralStopDistance)
+                        || lateralStopDistance > lateralAttackDistance)))
             {
                 error = "Formal behavior '" + behaviorId
                     + "' has invalid movement values.";
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(movementAnimation)
+                && string.IsNullOrWhiteSpace(movementAnimation))
+            {
+                error = "Formal behavior '" + behaviorId
+                    + "' has an invalid movement animation key.";
+                return false;
+            }
+
+            if (positionQuery != null
+                && !positionQuery.TryValidate(out error))
+            {
                 return false;
             }
 
@@ -187,6 +254,13 @@ namespace FPG.Demo.Unity
             return !float.IsNaN(value)
                 && !float.IsInfinity(value)
                 && value >= 0f;
+        }
+
+        private static bool IsFinitePositive(float value)
+        {
+            return !float.IsNaN(value)
+                && !float.IsInfinity(value)
+                && value > 0f;
         }
     }
 }

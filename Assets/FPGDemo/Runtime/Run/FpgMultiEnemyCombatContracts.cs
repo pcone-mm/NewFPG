@@ -8,6 +8,16 @@ using FPG.Demo.Skills;
 namespace FPG.Demo.Run
 {
     /// <summary>
+    /// Receives each committed, nonlethal enemy hit before the battle tick
+    /// continues. Reactions may gate new motion or attacks, so failures are
+    /// authoritative rather than best-effort presentation callbacks.
+    /// </summary>
+    public interface IFpgEnemyHitReactionPort
+    {
+        DomainResult NotifyCommittedEnemyHit(RuntimeId runtimeId, TickIndex tick);
+    }
+
+    /// <summary>
     /// Fixed capacities for the formal multi-enemy combat port. Every hot-path
     /// buffer is allocated by the port constructor and never resized.
     /// </summary>

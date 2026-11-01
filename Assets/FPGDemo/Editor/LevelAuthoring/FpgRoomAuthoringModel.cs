@@ -387,6 +387,28 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 result.Add(ToEditorValidationItem(room, runtimeResult.Issues[index]));
             }
 
+            for (int index = 0; index < definition.CoverSlots.Count; index++)
+            {
+                FPG.Demo.Unity.FpgRoomCoverSlot cover =
+                    definition.CoverSlots[index];
+                if (cover == null)
+                {
+                    continue;
+                }
+
+                string propertyPath =
+                    $"coverSlots.Array.data[{index}].scaleMultiplier";
+                if (cover.HasScaleMultiplierWarning)
+                {
+                    result.Add(new FpgRoomValidationItem(
+                        FpgRoomValidationSeverity.Warning,
+                        $"掩体 '{cover.MarkerId}' 的缩放倍率超出建议范围 0.1 至 10。",
+                        propertyPath,
+                        FpgRoomMarkerKind.Cover,
+                        index));
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(definition.RoomId)
                 && globalIdCounts != null
                 && globalIdCounts.TryGetValue(definition.RoomId, out int count)
@@ -451,6 +473,14 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 issue.Severity == FPG.Demo.Unity.FpgRoomValidationSeverity.Error
                     ? FpgRoomValidationSeverity.Error
                     : FpgRoomValidationSeverity.Warning;
+            if (issue.Code
+                    == FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverScaleMultiplier
+                && markerIndex >= 0)
+            {
+                propertyPath =
+                    $"coverSlots.Array.data[{markerIndex}].scaleMultiplier";
+            }
+
             return new FpgRoomValidationItem(
                 severity,
                 RoomIssueMessage(issue),
@@ -537,6 +567,7 @@ namespace FPG.Demo.Editor.LevelAuthoring
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingCoverSlot:
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingStartingCover:
                 case FPG.Demo.Unity.FpgRoomValidationCode.MultipleStartingCovers:
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverScaleMultiplier:
                     return "coverSlots";
                 default:
                     return null;
@@ -594,6 +625,8 @@ namespace FPG.Demo.Editor.LevelAuthoring
                     return $"掩体 '{issue.MarkerId}' 的 Prefab 契约无效：{issue.Message}";
                 case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverDurability:
                     return $"掩体 '{issue.MarkerId}' 的最大耐久必须大于 0。";
+                case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverScaleMultiplier:
+                    return $"掩体 '{issue.MarkerId}' 的缩放倍率必须为有限的正数。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.InvalidCoverReachablePose:
                     return $"掩体 '{issue.MarkerId}' 的玩家到达点无效。";
                 case FPG.Demo.Unity.FpgRoomValidationCode.MissingStartingCover:

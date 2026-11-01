@@ -1,0 +1,139 @@
+
+shinv-die.png
+size: 2026,2033
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+shinv2/shenzi
+  rotate: false
+  xy: 1611, 813
+  size: 413, 510
+  orig: 464, 592
+  offset: 51, 82
+  index: -1
+shinv2/yupei
+  rotate: false
+  xy: 1448, 769
+  size: 150, 554
+  orig: 152, 556
+  offset: 1, 1
+  index: -1
+shinv2/图层 64 拷贝
+  rotate: false
+  xy: 1081, 1325
+  size: 937, 706
+  orig: 1148, 716
+  offset: 148, 10
+  index: -1
+shinü/bangdai1
+  rotate: true
+  xy: 748, 881
+  size: 370, 448
+  orig: 370, 448
+  offset: 0, 0
+  index: -1
+shinü/bangdai2
+  rotate: true
+  xy: 1448, 304
+  size: 463, 364
+  orig: 553, 364
+  offset: 90, 0
+  index: -1
+shinü/chibang
+  rotate: false
+  xy: 539, 228
+  size: 351, 613
+  orig: 351, 613
+  offset: 0, 0
+  index: -1
+shinü/chuxu1
+  rotate: true
+  xy: 561, 3
+  size: 223, 497
+  orig: 223, 497
+  offset: 0, 0
+  index: -1
+shinü/chuxu2
+  rotate: false
+  xy: 1814, 148
+  size: 116, 486
+  orig: 116, 486
+  offset: 0, 0
+  index: -1
+shinü/gaizi
+  rotate: false
+  xy: 1419, 9
+  size: 190, 287
+  orig: 200, 294
+  offset: 0, 0
+  index: -1
+shinü/gongdeng
+  rotate: true
+  xy: 2, 1450
+  size: 581, 1077
+  orig: 583, 1079
+  offset: 1, 1
+  index: -1
+shinü/gongdeng2
+  rotate: true
+  xy: 748, 1253
+  size: 195, 303
+  orig: 198, 305
+  offset: 2, 1
+  index: -1
+shinü/liuhai1
+  rotate: false
+  xy: 1060, 2
+  size: 357, 294
+  orig: 357, 294
+  offset: 0, 0
+  index: -1
+shinü/liuhai2
+  rotate: false
+  xy: 1611, 29
+  size: 149, 273
+  orig: 150, 273
+  offset: 0, 0
+  index: -1
+shinü/liuhai3
+  rotate: true
+  xy: 1814, 729
+  size: 82, 193
+  orig: 82, 195
+  offset: 0, 2
+  index: -1
+shinü/tou
+  rotate: false
+  xy: 2, 173
+  size: 535, 668
+  orig: 537, 670
+  offset: 1, 1
+  index: -1
+shinü/yougebo
+  rotate: true
+  xy: 2, 843
+  size: 605, 744
+  orig: 607, 744
+  offset: 0, 0
+  index: -1
+shinü/yupei
+  rotate: true
+  xy: 2, 19
+  size: 152, 557
+  orig: 152, 558
+  offset: 0, 1
+  index: -1
+shinü/zuogebo
+  rotate: true
+  xy: 892, 298
+  size: 581, 554
+  orig: 581, 554
+  offset: 0, 0
+  index: -1
+shinü/zuoshou
+  rotate: true
+  xy: 1814, 636
+  size: 91, 184
+  orig: 91, 185
+  offset: 0, 0
+  index: -1
